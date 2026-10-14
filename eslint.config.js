@@ -15,6 +15,15 @@ import js from '@eslint/js';
 import globals from 'globals';
 import importX from 'eslint-plugin-import-x';
 
+const storageQueryImportPatterns = [
+  {
+    regex:
+      '(^kysely(?:/|$)|(?:^|/)db/client(?:\\.js)?$|(?:^|/)storage/utils(?:/|$))',
+    message:
+      'Database queries belong in server/storage/; import a storage operation instead.',
+  },
+];
+
 // Every `t()` call must carry its English fallback: `t(key, fallback)`.
 // The fallback is what Tier-2 locales degrade to when a key is missing
 // (client/lib/ui-i18n.js) — the whole reason tiering is safe. Written as
@@ -106,7 +115,7 @@ const nodeBuiltinImportPatterns = [
 // cannot drift apart on what counts as a swallow; only the remedy in the
 // message differs, because the helpers live in different trees
 // (server/utils/fire-and-forget.js vs client/lib/dom/disposal.js +
-// client/lib/util/debug.js). Hoisted into consts because flat-config rule
+// client/lib/state/debug.js). Hoisted into consts because flat-config rule
 // entries replace rather than merge per rule name: the exemption blocks
 // below re-state their rule lists, and a drifted copy would un-gate this.
 const emptyPromiseCatchSelector =
@@ -148,7 +157,7 @@ const clientSilentFailureRules = [
     message:
       'Empty .catch(() => {}) swallows the rejection without a trace. Give ' +
       'the catch a body that records the failure — debugLog(label, err) from ' +
-      'client/lib/util/debug.js at minimum — or says why it is ignorable ' +
+      'client/lib/state/debug.js at minimum — or says why it is ignorable ' +
       '(B106/B150).',
   },
   {
@@ -158,7 +167,7 @@ const clientSilentFailureRules = [
       'client failure with no trace — the one thing a bug report cannot ' +
       'reconstruct. For disposal/teardown, call disposeAll([...]) from ' +
       'client/lib/dom/disposal.js; otherwise give the catch a body that ' +
-      'records the failure (debugLog from client/lib/util/debug.js) or an ' +
+      'records the failure (debugLog from client/lib/state/debug.js) or an ' +
       'eslint-disable with the reason after `--` (B150).',
   },
   {
@@ -166,7 +175,7 @@ const clientSilentFailureRules = [
     message:
       'void doThing() discards a promise without a catch, so the rejection ' +
       'surfaces as an unhandled rejection with no context. Attach a .catch ' +
-      'that records the failure (debugLog from client/lib/util/debug.js). ' +
+      'that records the failure (debugLog from client/lib/state/debug.js). ' +
       'If the callee is synchronous, drop the `void` — there is no promise ' +
       'to discard (B111/B150).',
   },
@@ -213,6 +222,15 @@ const sharedSilentFailureRules = [
 ];
 
 const clientRestrictedSyntax = [
+  {
+    selector:
+      "AssignmentExpression[operator='='][right.type='Literal'][right.value=''] > " +
+      "MemberExpression.left:matches([computed=false][property.name='innerHTML']," +
+      "[computed=true][property.value='innerHTML'])",
+    message:
+      'Clear DOM nodes with replaceChildren(), so innerHTML writes remain ' +
+      'reserved for reviewed markup (B677, docs/reference/html-escaping.md).',
+  },
   {
     selector: "CallExpression[callee.name='t'][arguments.length<2]",
     message:
@@ -522,6 +540,27 @@ const deckLangLiteralAllowlist = [
   'client/views/settings/tabs/preferences-tab.js',
 ];
 
+const serverSyntaxRules = [
+  'error',
+  {
+    selector:
+      "MemberExpression[object.object.name='process'][object.property.name='env']" +
+      ":not([property.name='NODE_ENV']):not([property.name='NODE_TEST_CONTEXT'])",
+    message:
+      'Read env via envStr/envBool/envInt/envList from server/config/utils.js — ' +
+      'one accessor family, one flag vocabulary (B64). Only NODE_ENV and ' +
+      'NODE_TEST_CONTEXT may be read raw.',
+  },
+  {
+    selector:
+      "VariableDeclarator[init.object.name='process'][init.property.name='env']",
+    message:
+      'Do not alias or destructure process.env — read each variable via ' +
+      'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
+  },
+  ...serverSilentFailureRules,
+];
+
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -556,6 +595,30 @@ export default [
   },
 
   js.configs.recommended,
+
+  // Native dialogs bypass the shared modal vocabulary, including window.*.
+  {
+    files: ['client/**/*.js'],
+    ignores: ['client/vendor/**'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          checkGlobalObject: true,
+          globals: [
+            {
+              name: 'confirm',
+              message: 'Use confirmModal() from client/lib/dom/modal.js.',
+            },
+            {
+              name: 'prompt',
+              message: 'Use createTextInput() from client/lib/dom/modal.js.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 
   // Browser-side source.
   {
@@ -687,25 +750,21 @@ export default [
     files: ['server/**/*.js'],
     ignores: ['server/config/**'],
     rules: {
+      'no-restricted-syntax': serverSyntaxRules,
+    },
+  },
+
+  {
+    files: ['server/routes/**/*.js'],
+    rules: {
       'no-restricted-syntax': [
-        'error',
+        ...serverSyntaxRules,
         {
           selector:
-            "MemberExpression[object.object.name='process'][object.property.name='env']" +
-            ":not([property.name='NODE_ENV']):not([property.name='NODE_TEST_CONTEXT'])",
+            'FunctionDeclaration[id.name=/^get[A-Z].*Params$/], VariableDeclarator[id.name=/^get[A-Z].*Params$/][init.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
           message:
-            'Read env via envStr/envBool/envInt/envList from server/config/utils.js — ' +
-            'one accessor family, one flag vocabulary (B64). Only NODE_ENV and ' +
-            'NODE_TEST_CONTEXT may be read raw.',
+            'Import request parameter validators from server/utils/request-validators.js.',
         },
-        {
-          selector:
-            "VariableDeclarator[init.object.name='process'][init.property.name='env']",
-          message:
-            'Do not alias or destructure process.env — read each variable via ' +
-            'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
-        },
-        ...serverSilentFailureRules,
       ],
     },
   },
@@ -775,6 +834,43 @@ export default [
         'error',
         instanceAdminRestriction,
         ...sharedSilentFailureRules,
+      ],
+    },
+  },
+
+  // Type definitions render pure HTML; runtime effects belong in the client.
+  {
+    files: ['shared/slide-types/types/**/*.js'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          checkGlobalObject: true,
+          globals: [
+            'window',
+            'document',
+            'navigator',
+            'location',
+            'fetch',
+            'XMLHttpRequest',
+            'WebSocket',
+            'EventSource',
+            'setTimeout',
+            'setInterval',
+            'clearTimeout',
+            'clearInterval',
+            'requestAnimationFrame',
+            'cancelAnimationFrame',
+            'requestIdleCallback',
+            'cancelIdleCallback',
+            'MutationObserver',
+            'ResizeObserver',
+            'IntersectionObserver',
+          ].map((name) => ({
+            name,
+            message: 'Slide type modules must render pure HTML.',
+          })),
+        },
       ],
     },
   },
@@ -885,6 +981,35 @@ export default [
     },
   },
 
+  // SQL and database handles belong to storage/db, never to their consumers.
+  {
+    files: ['server/**/*.js'],
+    ignores: [
+      'server/storage/**',
+      'server/db/**',
+      'server/utils/ai/schemas/**',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            ...nodeBuiltinImports,
+            {
+              name: 'zod',
+              message:
+                'Use request validators; zod belongs to AI output schemas.',
+            },
+          ],
+          patterns: [
+            ...nodeBuiltinImportPatterns,
+            ...storageQueryImportPatterns,
+          ],
+        },
+      ],
+    },
+  },
+
   // The directory the zod block exempts still gets the node: prefix rule; a
   // flat-config block that does not match leaves the rule unset rather than
   // inherited.
@@ -893,7 +1018,13 @@ export default [
     rules: {
       'no-restricted-imports': [
         'error',
-        { paths: nodeBuiltinImports, patterns: nodeBuiltinImportPatterns },
+        {
+          paths: nodeBuiltinImports,
+          patterns: [
+            ...nodeBuiltinImportPatterns,
+            ...storageQueryImportPatterns,
+          ],
+        },
       ],
     },
   },

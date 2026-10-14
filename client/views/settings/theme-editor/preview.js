@@ -97,7 +97,7 @@ export function createThemePreview() {
       }
     }
     detachers = [];
-    slidesWrap.innerHTML = '';
+    slidesWrap.replaceChildren();
   }
 
   function renderSlides(theme) {

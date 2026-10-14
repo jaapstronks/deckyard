@@ -30,7 +30,7 @@ deckyard/
 │   ├── auth/            # Authentication (sessions, sandbox mode)
 │   ├── db/              # PostgreSQL client + migrations
 │   ├── config/          # Environment, feature flags, paths
-│   ├── services/        # Domain services (SSE broadcast, notifications)
+│   ├── services/        # Shared domain operations for internal API, v1 and MCP
 │   ├── jobs/            # Background jobs (cleanup, digest emails, bulk export)
 │   ├── integrations/    # Third-party APIs (Brevo, Giphy, Unsplash)
 │   ├── analytics/       # Usage analytics
@@ -132,16 +132,26 @@ Permissions are `read` | `write` | `delete` | `manage` | `comment`. The helper
 is the internal adapter over `loadPresentationForActor`
 (`server/services/presentations.js`, B519), which loads and decides on every
 contract; the helper only renders the 404/403. Sibling helpers cover the other
-shapes: `withPresentationReadAuth` (guest access via share links), `canManage`,
-and the custom-HTML capability checks. Creating a comment has no wrapper: the
-comment service asks the same load with `access: 'comment'`, for an account or
-a share-link guest (B518).
+shapes: `canManage` and the custom-HTML capability checks. Creating a comment
+has no wrapper: the comment service asks the same load with
+`access: 'comment'`, for an account or a share-link guest (B518). A guest is
+never a fallback identity on a signed-in route: their comment routes live
+under the share token (`server/routes/api/share-links/guest-comments.js`,
+D228).
 
 There is deliberately **no composition/wrapper family**. One existed alongside
 these helpers for months with zero call sites and was removed rather than
 adopted (2026-08-05) — a second dispatch form for the same job is what the beta
 stance rules out. Dispatch itself is the route table; keep new routes on the
 direct helpers.
+
+---
+
+## Service Layer
+
+The internal API, public v1 API and MCP are adapters over shared domain operations in `server/services/`. Adapters resolve identity and storage scope, parse their input and render the result in their own response format. Services own deck authorization, validation and mutation side effects; `server/storage/` owns persistence. Export preparation belongs to `server/services/exports.js`, while format builders live in `server/export/` and browser rendering in `server/render/`.
+
+Services are imported by their domain module, such as `server/services/presentations.js`; there is no layer-wide barrel. Event broadcasts and notifications also live here, alongside the deck operations. See [services-layer.md](../reference/services-layer.md) for entry points, identity, error handling and the enforced adapter boundaries.
 
 ---
 
@@ -170,10 +180,10 @@ The layer is flat, and it is not a dispatch:
   (`toStorageContext()`), and issues its queries through direct Kysely on
   `getDb()` (`server/db/client.js`). The scope is where the organization comes
   from — see [tenant-isolation.md](../reference/tenant-isolation.md).
-- **Lifecycle** is a thin module (`server/storage/lifecycle.js`):
+- **Lifecycle** is a thin module in the database layer (`server/db/lifecycle.js`):
   `initializeStorage()` / `closeStorage()` over the shared Kysely pool. There is
-  no adapter class, no mixins, no singleton to dispatch through — B79/D34
-  stripped that; one backend, reached one way.
+  no adapter class, no mixins, no singleton to dispatch through: the adapter
+  layer was stripped (B79, D34); one backend, reached one way.
 
 There is no base class to implement and no capability probing left: a single
 backend either has a query path or the call is a bug.
@@ -242,10 +252,7 @@ Deckyard is MCP-native: `server/mcp/` exposes the full presentation lifecycle
 - **Streamable HTTP/SSE** (`POST /mcp` on the main server, `server/mcp/sse.js`)
   — for remote agents, authenticated with API keys.
 
-Tools live in `server/mcp/tools.js` and reuse the same storage + validation
-layer as the REST API (per-deck authorization via
-`server/mcp/presentation-access.js`). Forks can add their own tools through
-`custom/mcp-tools.js` (see `docs/reference/mcp-server.md`).
+Tools live in `server/mcp/tools.js` and call the shared domain services used by the REST API. Per-deck authorization goes through `server/mcp/presentation-access.js`, which adapts the presentation service to MCP identity and errors. Forks can add their own tools through `custom/mcp-tools.js` (see `docs/reference/mcp-server.md`).
 
 ---
 
@@ -428,21 +435,9 @@ server/storage/presentations/
   …
 ```
 
-A domain that is still a single module stays a flat file; it graduates to its own
-folder only when a second member appears. Inside
-the folder, `index.js` holds the domain's primary facade; other members are
-imported directly by path (`storage/presentations/i18n.js`) — the folder groups
-the domain, it does not force everything through one re-export barrel. What is
-ruled out is a **flat re-export shim next to the folder** that forwards into the
-folder's `index.js` (two barrels for one thing); collapse those into one.
+A domain that is still a single module stays a flat file; it graduates to its own folder only when a second member appears. Inside a decomposed unit, `index.js` is the sole public seam. Consumers outside that unit import the seam; concern modules may import each other inside their own folder. A flat re-export shim next to the folder creates a second seam and is forbidden.
 
-`tests/module-layout.test.js` enforces that last rule — no `P/X.js` beside a
-folder `P/X/` — across both `server/` and `client/` (`client/vendor/`
-excepted), with no allowlist (A7.36 for the server, B526/D262 for the client).
-Its two other rules (no index-only folder, no multi-file folder without an
-`index.js`) stay scoped to the store level of `server/storage/`: client
-folders such as `lib/<area>/` and `views/editor/` are groups imported by path,
-not seams.
+`tests/module-layout.test.js` enforces the eponymous-wrapper rule across `server/` and `client/` (`client/vendor/` excepted). At the store level of `server/storage/`, it also refuses index-only folders, multi-file folders without an `index.js`, and production imports that bypass a decomposed store's seam, including imports from another store. Unit tests may exercise concern modules directly. Client folders such as `lib/<area>/` and `views/editor/` are groups imported by path, not storage seams.
 
 ### One folder = one seam
 
@@ -490,7 +485,7 @@ The full rule behind `AGENTS.md` § _Module layout: one folder = one seam_.
   validated) is pinned in `docs/reference/storage-scope.md` and enforced by
   `tests/storage-call-convention.test.js`. The _shape_ is enforced too:
   `tests/module-layout.test.js` fails on a folder holding nothing but
-  an `index.js`, and on a multi-file folder without one — no allowlist. The
+  an `index.js`, on a multi-file folder without one, and on production imports from outside a decomposed store that bypass its `index.js` - no allowlist. The
   same file enforces the eponymous-wrapper rule above across all of
   `server/`: no `P/X.js` beside a folder `P/X/`.
 - **`client/` follows the same rule.** No `P/X.js` beside a folder `P/X/`

@@ -1,4 +1,4 @@
-import { getLangShortLabel } from '../../lib/format/lang-selector.js';
+import { getLangShortLabel } from '../../lib/dom/lang-selector.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { h } from '../../lib/dom/index.js';
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';
@@ -23,7 +23,7 @@ export function renderFollowLangButtons({
   translatingLang,
   onSelect,
 } = {}) {
-  langWrap.innerHTML = '';
+  langWrap.replaceChildren();
   // A deck with one version has nothing to switch to
   if (availableLangs.length < 2) {
     langWrap.style.display = 'none';

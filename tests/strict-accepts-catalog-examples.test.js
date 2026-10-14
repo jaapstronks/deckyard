@@ -1,6 +1,6 @@
 /**
- * B241 / D87: what `get_slide_types` hands an agent, `create_presentation_from_slides`
- * accepts.
+ * What `get_slide_types` hands an agent, `create_presentation_from_slides`
+ * accepts (B241, D87).
  *
  * The catalog's `example` for a type is its sample (D119, B245) — what the
  * definition itself calls a good slide of this type — or its `defaults` where
@@ -45,7 +45,9 @@ for (const lang of ['nl', 'en-GB']) {
     const refused = [];
     for (const [type, entry] of offeredExamples(lang)) {
       try {
-        validateRefinedSlidesStrict([{ type, content: entry.example }]);
+        validateRefinedSlidesStrict([{ type, content: entry.example }], {
+          slideTypes: SLIDE_TYPES,
+        });
       } catch (err) {
         if (!(err instanceof RawSlideValidationError)) throw err;
         refused.push(`${type}: ${err.details.field} — ${err.message}`);
@@ -102,27 +104,37 @@ test('every core aiExample passes its own content schema (B246)', () => {
   assert.deepEqual(refused, []);
 });
 
-test('the example an agent gets is the sample; defaults only where there is none it can use', () => {
+test('the example an agent gets is the best description the type has', () => {
+  // Three rungs, best first: the sample, then the first prompt example, then
+  // the defaults. Every core type lands on exactly one, and which one is not a
+  // detail — a type on rung 3 is offering an agent an empty template.
   const offered = resolveAgentSlideTypes({ lang: 'nl' });
+  const fromExamples = [];
   const fromDefaults = [];
   for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
     if (!offered[name]) continue;
-    const sample = slideTypeSample(name, def);
-    if (offered[name].example === sample) continue;
+    const example = offered[name].example;
+    if (example === slideTypeSample(name, def)) continue;
+    const worked = SLIDE_TYPE_AI_EXAMPLES[name]?.[0]?.content;
+    if (worked && example === worked) {
+      fromExamples.push(name);
+      continue;
+    }
     assert.deepEqual(
-      offered[name].example,
+      example,
       def.defaultsByLang?.nl || def.defaults,
-      `${name}: not the sample, so its defaults`,
+      `${name}: neither its sample nor a prompt example, so its defaults`,
     );
     fromDefaults.push(name);
   }
-  // No sample at all (embed-slide for the same reason as D107), or one the type
-  // refuses (video-slide). A new entry here is a sample to write or to fix.
-  assert.deepEqual(fromDefaults.sort(), [
-    'embed-slide',
-    'payoff-slide',
-    'video-slide',
-  ]);
+  // Rung 2: a sample the type refuses. video-slide's leaves `source` blank so a
+  // picker tile loads no live player (D107), and its defaults leave it blank
+  // too since B653, so the worked example is the only description an agent can
+  // copy.
+  assert.deepEqual(fromExamples.sort(), ['video-slide']);
+  // Rung 3: no sample at all (embed-slide for the same reason as D107) and no
+  // prompt examples either. A new entry here is a sample to write or to fix.
+  assert.deepEqual(fromDefaults.sort(), ['embed-slide', 'payoff-slide']);
 });
 
 test('a published DB type validates against its own stored fields', () => {

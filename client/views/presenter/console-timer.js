@@ -7,7 +7,7 @@
  * subtle over-time signal.
  *
  * Pure timing logic + a callback; owns a single 1s interval and cleans it up
- * on destroy. No DOM.
+ * on detach. No DOM.
  *
  * @param {Object} opts
  * @param {(state: TimerState) => void} [opts.onTick] Called ~1×/second and on
@@ -19,7 +19,7 @@
  *   reset: () => void,
  *   setTargetSeconds: (seconds: number|null) => void,
  *   getState: () => TimerState,
- *   destroy: () => void,
+ *   detach: () => void,
  * }}
  *
  * @typedef {Object} TimerState

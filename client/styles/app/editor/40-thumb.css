@@ -2,7 +2,6 @@
 .thumb {
   width: 100%;
   max-width: 100%;
-  box-sizing: border-box;
   border-radius: var(--ps-radius-md);
   overflow: hidden;
   /* Thumbnails read as elevated "objects" floating on the grey stage:

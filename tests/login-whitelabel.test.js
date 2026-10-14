@@ -1,5 +1,5 @@
 /**
- * B432: the sign-in card is white-labelable per instance. The SSO button
+ * The sign-in card is white-labelable per instance (B432). The SSO button
  * says what `SSO_BUTTON_LABEL` says and the header carries `APP_LOGO_URL`,
  * both read from the public `GET /api/auth/config`; unset, the card looks as
  * it always did (the translated "Sign in with SSO", no logo).

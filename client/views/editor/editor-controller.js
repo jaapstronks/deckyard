@@ -27,7 +27,7 @@ import {
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
-import { readFileAsDataUrl } from './image-library-picker.js';
+import { readFileAsDataUrl } from '../../lib/net/file.js';
 import { createImagePickers } from './image-pickers.js';
 import { createFieldRenderers } from './fields/index.js';
 import { setupSlideList } from './slide-list/index.js';
@@ -47,6 +47,7 @@ import {
 import { createEditorTopbar } from './topbar/index.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
+import { createSaveRefusal } from './editor-form/save-refusal.js';
 import { createSaveManager } from './save-manager.js';
 import { createSaveStatus } from './save-status.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
@@ -70,10 +71,9 @@ import { featureEnabled, getFeatures } from '../../lib/state/features.js';
 import { clusterOffSlideTypes } from '../../../shared/slide-types/policy.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { restoreSlideFromServer } from './slide-lock-restore.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { syncSlideIdInUrl } from './slide-url.js';
-import { createCommentsPanel } from './comments-panel.js';
-import { createCommentsApi } from './comments-api.js';
+import { createCommentsPanel, createCommentsApi } from '../comments/index.js';
 import { createEditorTitleController } from './title-controller.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
@@ -368,7 +368,27 @@ export async function createEditorController({
   // sync before that, and the topbar runs its own at mount.
   let syncAnalyticsAvailability = () => {};
 
+  const saveRefusal = createSaveRefusal({
+    getActiveLang: () => normalizeLang(pres.i18n?.active),
+  });
+  cleanup.register('saveRefusal', saveRefusal.detach);
   const saveManager = createSaveManager({
+    onFieldRefusal: (err) => {
+      saveRefusal.set(err);
+      if (!err) return;
+      if (
+        err.details.lang &&
+        normalizeLang(err.details.lang) !== normalizeLang(pres.i18n?.active)
+      ) {
+        bulkEditModal?.close();
+        topbarApi?.revealRefusedVersion(err.details.lang);
+      }
+      setSelectedSlideIdWithLock(err.details.slideId);
+      setInspectorCollapsed(false);
+      rerenderSlideList();
+      rerenderEditor();
+      rerenderPreview();
+    },
     api,
     toast,
     pres,
@@ -739,6 +759,7 @@ export async function createEditorController({
   syncPublishedAltWarning();
 
   const saveStatus = createSaveStatus();
+  cleanup.register('saveStatus', saveStatus.detach);
   shell.append(saveStatus.el);
   setSaveStatus = saveStatus.setStatus;
   setSaveStatus(saveManager.getStatus(), saveManager.getLastError());
@@ -1399,6 +1420,7 @@ export async function createEditorController({
   // Shared between the panel form and the bulk-edit modal (which runs a second
   // createRerenderEditor instance on the `bulk` surface on its own mount).
   const editorFormDeps = {
+    saveRefusal,
     editorMount,
     pres,
     SLIDE_TYPES,

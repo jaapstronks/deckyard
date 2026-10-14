@@ -276,7 +276,6 @@
 
 .comments-input-textarea {
   width: 100%;
-  box-sizing: border-box;
   padding: var(--ps-space-2) var(--ps-space-2-5);
   font-size: var(--ps-text-sm);
   border: 1px solid hsl(var(--app-border-default));
@@ -371,7 +370,7 @@
   top: -4px;
   right: -4px;
   background: hsl(var(--app-danger));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   font-size: var(--ps-text-xs);
   font-weight: 600;
   min-width: 18px;
@@ -401,7 +400,7 @@
   width: 20px;
   height: 20px;
   background: hsl(var(--app-accent-primary));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   font-size: var(--ps-text-xs);
   font-weight: 600;
   border-radius: 50%;
@@ -556,7 +555,7 @@
   height: 15px;
   padding: 0 3px;
   background: hsl(var(--app-danger));
-  color: #fff;
+  color: hsl(var(--app-text-on-solid));
   font-size: 9px;
   font-weight: 700;
   line-height: 15px;

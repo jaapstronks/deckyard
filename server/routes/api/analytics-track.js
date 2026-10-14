@@ -18,7 +18,7 @@ import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations/index.js';
-import { validateShareLink } from '../../storage/share-links/crud.js';
+import { validateShareLink } from '../../storage/share-links/index.js';
 import { getAppSettings, getUserSettings } from '../../storage/settings.js';
 import {
   isValidDeviceId,
@@ -45,7 +45,7 @@ import {
   transitionToSlide,
   endAllSlideViewsForSession,
 } from '../../storage/analytics/index.js';
-import { getFollowStateForPresentation } from '../../storage/live-sessions/follow-state.js';
+import { getFollowStateForPresentation } from '../../storage/live-sessions/index.js';
 import { createLogger } from '../../utils/logger.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 const log = createLogger('analytics-track');
@@ -295,6 +295,10 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   if (!accessValidation.ok) {
     return storageError(res, accessValidation, accessValidation.message);
   }
+  const trackingScope = {
+    repoRoot,
+    organizationId: accessValidation.presentation.organizationId,
+  };
 
   // Check app-level analytics settings
   const appSettings = await getAppSettings(
@@ -348,7 +352,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
     req.headers.get?.('user-agent') || req.headers['user-agent'],
   );
 
-  const result = await createViewSession({
+  const result = await createViewSession(trackingScope, {
     presentationId,
     sourceType,
     sourceId,
@@ -483,7 +487,14 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
   // End any open slide views first
   const session = await getViewSessionByToken(sessionToken);
   if (session?.id) {
-    await endAllSlideViewsForSession(session.id);
+    await endAllSlideViewsForSession(
+      crossOrganizationScope(
+        repoRoot,
+        'anonymous viewer proved session token',
+        { capabilitySessionId: session.id },
+      ),
+      session.id,
+    );
   }
 
   const result = await endViewSession(sessionToken, {
@@ -567,12 +578,17 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   }
 
   // Atomically transition to new slide (ends current and starts new in single transaction)
-  const result = await transitionToSlide({
-    viewSessionId: session.id,
-    presentationId: session.presentationId,
-    slideId,
-    slideIndex,
-  });
+  const result = await transitionToSlide(
+    crossOrganizationScope(repoRoot, 'anonymous viewer proved session token', {
+      capabilitySessionId: session.id,
+    }),
+    {
+      viewSessionId: session.id,
+      presentationId: session.presentationId,
+      slideId,
+      slideIndex,
+    },
+  );
 
   if (!result.ok) {
     return storageError(res, result, 'Failed to record slide view');
@@ -660,9 +676,16 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
 
   // A session with a device id cascades to every session of that device
   // (identity is the scope); one without a device id erases only itself.
+  const eraseScope = crossOrganizationScope(
+    repoRoot,
+    'anonymous viewer proved session token',
+    { capabilitySessionId: session.id },
+  );
   const result = session.deviceId
-    ? await eraseAnalyticsDataForDevice({ deviceId: session.deviceId })
-    : await eraseAnalyticsDataForSession({ sessionId: session.id });
+    ? await eraseAnalyticsDataForDevice(eraseScope, {
+        deviceId: session.deviceId,
+      })
+    : await eraseAnalyticsDataForSession(eraseScope, { sessionId: session.id });
 
   if (!result.ok) {
     return storageError(res, result, 'Failed to erase data');

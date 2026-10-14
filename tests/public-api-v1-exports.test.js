@@ -10,11 +10,11 @@
  *
  * The PPTX success paths are NOT covered: `buildPptxBuffer` renders every slide
  * to a PNG in a headless browser, which the fake-db recipe deliberately does
- * not start (the browser lives in the export smoke test only) — noted as an
- * explicit opt-out in the B40 brief's Opt-out-log. Its gate ladder is shared
- * with the other three variants and pinned there; the permission gate of both
- * pptx routes is pinned here. `pptx-editable` photographs a raster type the
- * same way, so it shares the opt-out.
+ * not start (the browser lives in the export smoke test only) — a recorded,
+ * deliberate opt-out (B40). Its gate ladder is shared with the other three
+ * variants and pinned there; the permission gate of both pptx routes is pinned
+ * here. `pptx-editable` photographs a raster type the same way, so it shares
+ * the opt-out.
  *
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-partial-write.test.js). Negative assertions pin the
@@ -44,7 +44,7 @@ const KEY_ID = 'key-1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleExports } =
   await import('../server/routes/public-api/v1/exports.js');
 

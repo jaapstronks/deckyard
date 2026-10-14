@@ -1,5 +1,5 @@
 /**
- * B481: the write seam refuses a language version under a non-canonical key.
+ * The write seam refuses a language version under a non-canonical key (B481).
  *
  * `normalizeI18n` only visited the keys of `TRANSLATION_LANGS`, so a PUT with
  * `i18n.versions.en` was stored as-is. `pickVersion` reads the canonical key
@@ -32,8 +32,7 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, getPresentation } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations: handleAppPresentations } =
@@ -54,14 +53,13 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
 const slide = (title) => ({
   id: 's1',
   type: 'content-slide',
-  content: { title, body: '' },
+  content: { title, body: 'Body' },
 });
 
 async function seedDeck() {

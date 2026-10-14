@@ -1,5 +1,5 @@
 /**
- * B327 / D162 — the ImageKit copy is provider-agnostic.
+ * The ImageKit copy is provider-agnostic (B327, D162).
  *
  * The companion file (`imagekit-copy-on-pick.test.js`) drives the local
  * provider end to end. The promise the feature makes is stronger than that: a
@@ -18,6 +18,7 @@
  * Run with: node --test tests/imagekit-copy-on-pick-s3.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -44,8 +45,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleMedia } = await import('../server/routes/api/media.js');
 const { initializeMediaProvider, getMediaProvider } =
@@ -116,7 +116,6 @@ test.beforeEach(() => {
 
 test.after(() => {
   globalThis.fetch = savedFetch;
-  __resetStorageForTests();
   __setTestDb(null);
   for (const k of [
     'MEDIA_STORAGE_MODE',
@@ -131,23 +130,6 @@ test.after(() => {
   }
 });
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
-
 async function importImage(body, { as = null } = {}) {
   const payload = JSON.stringify(body);
   const req = {
@@ -158,7 +140,7 @@ async function importImage(body, { as = null } = {}) {
       yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   await handleMedia({
     repoRoot: process.cwd(),
@@ -176,17 +158,17 @@ test('on a bucket install the copy lands in the bucket and the slide gets its UR
 
   assert.equal(res.statusCode, 201);
   assert.ok(
-    res.body.url.startsWith('https://cdn.example.test/uploads/'),
-    `expected a bucket/CDN URL, got ${res.body.url}`,
+    res.json().url.startsWith('https://cdn.example.test/uploads/'),
+    `expected a bucket/CDN URL, got ${res.json().url}`,
   );
   // The host, not a substring of the URL: `…/uploads/imagekit.io-x.jpg` would
   // pass a `includes()` check while still being the wrong kind of assertion.
   assert.equal(
-    new URL(res.body.url).hostname,
+    new URL(res.json().url).hostname,
     'cdn.example.test',
     'the slide must be served by this install, not by the DAM',
   );
-  assert.equal(res.body.sourceUrl, CANONICAL_URL);
+  assert.equal(res.json().sourceUrl, CANONICAL_URL);
 
   assert.equal(putCommands.length, 1, 'exactly one object was written');
   const put = putCommands[0];
@@ -209,7 +191,7 @@ test('a bucket write that fails refuses instead of falling back to the DAM URL',
       `expected a refusal, got ${res.statusCode}`,
     );
     assert.equal(
-      res.body.url,
+      res.json().url,
       undefined,
       'no URL at all on failure — the editor leaves the slide untouched',
     );

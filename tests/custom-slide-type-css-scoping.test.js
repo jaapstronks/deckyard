@@ -2,9 +2,10 @@
  * Author CSS is contained to its own slide (B189).
  *
  * The Settings > Slide Types builder lets a human paste a stylesheet into a
- * deck. Until B189 it was not scoped; the DB path ran `filterCssText` (a *security* filter — no
- * `@import`, no `expression()`) and injected the result raw, so a published
- * custom type could restyle the presenter chrome of every deck in the org.
+ * deck. It used to be unscoped (B189); the DB path ran `filterCssText` (a
+ * *security* filter — no `@import`, no `expression()`) and injected the result
+ * raw, so a published custom type could restyle the presenter chrome of every
+ * deck in the org.
  *
  * These tests pin the containment half for both, and the shared implementation
  * that makes them agree: one `scopeCss`, one meaning of "scoped".

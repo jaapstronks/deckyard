@@ -59,6 +59,7 @@ export async function handlePresentationItem(
     let collaboratorPermission = null;
     if (authedUser?.email) {
       collaboratorPermission = await getCollaboratorPermission(
+        { ...storageScope, organizationId: pres.organizationId },
         id,
         authedUser.email,
       );

@@ -41,14 +41,14 @@ import { getSlideTypeId } from '../shared/slide-types/registry.js';
 import { validateRefinedSlidesStrict } from '../server/utils/ai/validate-slides/strict.js';
 import { validateAndFixRefinedSlides } from '../server/utils/ai/validate-slides/fix.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, updatePresentation, getPresentation } =
   await import('../server/storage/presentations/index.js');
 
@@ -68,7 +68,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -125,7 +124,9 @@ test('facade update: canonical id in → registry key stored → canonical expor
 test('MCP strict: validate accepts the canonical id, facade stores the key, export is canonical', async () => {
   const slides = [{ type: CANONICAL, content: { title: 'Hoi' } }];
   // The strict validator is the MCP-specific seam; it must accept the canonical id.
-  assert.doesNotThrow(() => validateRefinedSlidesStrict(slides));
+  assert.doesNotThrow(() =>
+    validateRefinedSlidesStrict(slides, { slideTypes: SLIDE_TYPES }),
+  );
 
   const stored = await storeSlides(slides);
   assert.equal(stored.slides[0].type, KEY);
@@ -134,9 +135,10 @@ test('MCP strict: validate accepts the canonical id, facade stores the key, expo
 
 // ── Path 5: MCP fix-mode / add_slide / update_slide ────────────────────────
 test('MCP fix: validate-and-fix keeps the canonical id, facade stores the key, export is canonical', async () => {
-  const fixed = validateAndFixRefinedSlides([
-    { type: CANONICAL, content: { title: 'Hoi' } },
-  ]);
+  const fixed = validateAndFixRefinedSlides(
+    [{ type: CANONICAL, content: { title: 'Hoi' } }],
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(fixed.length, 1, 'the slide survives the fix pass');
 
   const stored = await storeSlides(
@@ -148,9 +150,12 @@ test('MCP fix: validate-and-fix keeps the canonical id, facade stores the key, e
 
 // ── Path 6: import + export (pure) ─────────────────────────────────────────
 test('import: canonical id in → registry key parts → canonical exported', () => {
-  const parts = deckToPresentationParts({
-    slides: [{ type: CANONICAL, content: { title: 'Hoi' } }],
-  });
+  const parts = deckToPresentationParts(
+    {
+      slides: [{ type: CANONICAL, content: { title: 'Hoi' } }],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(
     parts.slides[0].type,
     KEY,

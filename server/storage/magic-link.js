@@ -1,11 +1,10 @@
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+import { ensureUserByEmail } from './users.js';
 /**
  * Storage layer for magic link (passwordless login) functionality.
  * Uses shared secure-tokens utility for token generation/hashing.
  */
 
-import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
-import { getUserByEmailGlobal } from './identity.js';
 import {
   nowIso,
   isoAfter,
@@ -18,7 +17,7 @@ import {
   hashToken,
   isValidEmail,
 } from '../utils/secure-tokens.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { ensureMembership } from './login-membership.js';
 
 // ============================================================
@@ -217,29 +216,13 @@ export async function getOrCreateMagicLinkUser(scope, email) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
-    const now = nowIso();
-
-    // Resolved across organizations: a magic link proves an email address, and
-    // that email identifies exactly one person instance-wide. Scoping this
-    // would try to insert a duplicate row for a globally unique email.
-    let user = await getUserByEmailGlobal(normalized);
-
-    if (!user) {
-      // Create new user with magic_link auth source
-      const inserted = await db
-        .insertInto('users')
-        .values({
-          organization_id: orgId,
-          email: normalized,
-          auth_source: 'magic_link',
-          created_at: now,
-          updated_at: now,
-        })
-        .returningAll()
-        .executeTakeFirst();
-      user = inserted;
-    }
+    const result = await ensureUserByEmail(scope, {
+      email: normalized,
+      role: 'user',
+      authSource: 'magic_link',
+    });
+    const user = result?.user;
+    if (!user) return { ok: false, reason: 'unavailable' };
 
     // A token is only issued for an existing `users` row (the request route),
     // so whoever created that row already admitted the person: provisioning is
@@ -247,6 +230,10 @@ export async function getOrCreateMagicLinkUser(scope, email) {
     // Without this, a user holding no membership would be signed in and
     // bounced straight back to /login under MULTI_ORG_ENABLED (B507).
     const membershipResult = await ensureMembership(
+      crossOrganizationScope(
+        null,
+        'verified login membership selection and explicit target provisioning',
+      ),
       db,
       user,
       true,

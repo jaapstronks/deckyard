@@ -14,30 +14,43 @@
 import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
-import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
-import { validateSlideContentStructure } from './validate-slide-structure.js';
+import {
+  getOfferedSlideTypes,
+  getPhase2SlideTypes,
+} from './slide-catalog/index.js';
 import { describeIssue, validateSlideContent } from './schemas/index.js';
 import {
   assertSlideTextLengths,
   SlideTextLengthError,
   validateAndFixSlide,
 } from './validate-slides/index.js';
-import { SLIDE_TYPES } from '../../../shared/slide-types/registry.js';
+import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('refine-slides');
 
 /**
- * Map intent to allowed slide types
+ * Map intent to allowed slide types. Every list derives from the offer
+ * (getOfferedSlideTypes), so phase 2 accepts a core type exactly where the
+ * catalog offered it: an org-disabled type and one whose definition opted out
+ * of agent use are refused alike (B663).
  * @param {string} intent
  * @param {Array} [disabledSlideTypes] - Org-level disabled types to exclude
+ * @param {Array} [customSlideTypes] - The org's published types; the catalog
+ *   offered them for content slides, so a content slide may come back as one
+ *   (B247)
  */
-function getAllowedTypesForIntent(intent, disabledSlideTypes = []) {
+function getAllowedTypesForIntent(
+  intent,
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+) {
   const disabled = new Set(
     Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
   );
-  const filter = (types) => types.filter((t) => !disabled.has(t));
+  const offered = new Set(getOfferedSlideTypes(disabledSlideTypes));
+  const filter = (types) => types.filter((t) => offered.has(t));
 
   switch (intent) {
     case 'opening': {
@@ -56,10 +69,13 @@ function getAllowedTypesForIntent(intent, disabledSlideTypes = []) {
       return filter(['payoff-slide', 'content-slide']);
     case 'content':
     default:
-      // All Phase 2 slide types (excluding org-disabled)
-      return Object.entries(SLIDE_TYPE_CATALOG)
-        .filter(([type, def]) => !def.resolveInPhase1 && !disabled.has(type))
-        .map(([type]) => type);
+      // The phase-2 offer and the org's own published types
+      return [
+        ...getPhase2SlideTypes(disabledSlideTypes),
+        ...(Array.isArray(customSlideTypes) ? customSlideTypes : [])
+          .map(customSlideTypeKey)
+          .filter((type) => !disabled.has(type)),
+      ];
   }
 }
 
@@ -108,11 +124,20 @@ export function buildAdjacentContext(slideGroup, allGroups, groupIndex) {
 
 /**
  * Normalize and validate refined slide output
+ *
+ * @param {Object} slide
+ * @param {Object} originalSlide
+ * @param {{ slideTypes: Record<string, Object>, disabledSlideTypes?: Array, customSlideTypes?: Array }} options
  */
-function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
+function normalizeRefinedSlide(
+  slide,
+  originalSlide,
+  { slideTypes, disabledSlideTypes = [], customSlideTypes = [] },
+) {
   const allowedTypes = getAllowedTypesForIntent(
     originalSlide.intent,
     disabledSlideTypes,
+    customSlideTypes,
   );
   let type = String(slide?.type || 'content-slide').trim();
   const content = slide?.content || {};
@@ -132,23 +157,12 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
     type = allowedTypes[0] || 'content-slide';
   }
 
-  // Validate content structure matches the type (existing validation)
-  const structureIssues = validateSlideContentStructure(
-    type,
-    content,
-    originalSlide.index,
-  );
-  if (structureIssues.length > 0) {
-    log.warn(`Content structure issues for ${type}:`, {
-      originalIndex: originalSlide.index,
-      issues: structureIssues,
-      contentKeys: Object.keys(content),
-    });
-  }
-
   // The content schema derived from the type's fields[] (D87): logged here,
-  // never blocking — refine repairs downstream.
-  const schemaResult = validateSlideContent(SLIDE_TYPES[type], content);
+  // never blocking — refine repairs downstream. It is the only structural
+  // check: the per-type validator table that stood beside it restated
+  // cardinality and per-item fields, and for funnel, cycle and process read a
+  // key the types do not declare (B242).
+  const schemaResult = validateSlideContent(slideTypes[type], content);
   if (!schemaResult.valid && schemaResult.issues.length > 0) {
     log.warn(`Content schema issues for ${type}:`, {
       originalIndex: originalSlide.index,
@@ -273,6 +287,9 @@ function createFallbackSlide(originalSlide) {
  * @param {AbortSignal} [options.signal] - Reaches the provider fetch. A
  *   cancelled call is not a failed call: it propagates instead of retrying
  *   into a fallback slide.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged map (`buildMergedSlideTypes(scope)`); a refined slide is held to the
+ *   limits of the type as the org has it (B247).
  * @returns {Promise<Array>} Refined slides
  */
 export async function refineSlideGroup(
@@ -287,8 +304,14 @@ export async function refineSlideGroup(
     customSlideTypes = [],
     themeContext = null,
     signal = null,
+    slideTypes,
   } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'refineSlideGroup: pass the slide-type map the slides are made in',
+    );
+  }
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
   const { slides, groupId } = slideGroup;
@@ -358,25 +381,25 @@ export async function refineSlideGroup(
             slides.find((s) => s.index === refined?.originalIndex) ||
             slides[pos];
           if (!original) continue;
-          const normalized = normalizeRefinedSlide(
-            refined,
-            original,
+          const normalized = normalizeRefinedSlide(refined, original, {
+            slideTypes,
             disabledSlideTypes,
-          );
-          assertSlideTextLengths(normalized, SLIDE_TYPES[normalized.type]);
+            customSlideTypes,
+          });
+          assertSlideTextLengths(normalized, slideTypes[normalized.type]);
           // A rewrite must supply valid content itself, before structural
           // normalization can fill missing values or repair malformed items.
           if (
             lengthFailure &&
-            !validateSlideContent(SLIDE_TYPES[normalized.type], refined.content)
+            !validateSlideContent(slideTypes[normalized.type], refined.content)
               .valid
           ) {
             throw lengthFailure;
           }
           // Structural repair can expose text that the raw schema cannot see
           // (for example array table rows). Refuse it within the same retry.
-          const fixed = validateAndFixSlide(normalized);
-          assertSlideTextLengths(fixed, SLIDE_TYPES[fixed.type]);
+          const fixed = validateAndFixSlide(normalized, { slideTypes });
+          assertSlideTextLengths(fixed, slideTypes[fixed.type]);
         }
         break;
       }
@@ -465,7 +488,11 @@ export async function refineSlideGroup(
 
     usedOriginalIndexes.add(originalSlide.index);
     refinedSlides.push(
-      normalizeRefinedSlide(refined, originalSlide, disabledSlideTypes),
+      normalizeRefinedSlide(refined, originalSlide, {
+        slideTypes,
+        disabledSlideTypes,
+        customSlideTypes,
+      }),
     );
   }
 
@@ -543,6 +570,8 @@ function getPhase2StatusMessages(lang) {
  * @param {AbortSignal} [options.signal] - Passed to every group call and
  *   checked between batches, so a cancelled caller stops after the batch in
  *   flight instead of working through the remaining groups.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged map, handed to every group call.
  * @returns {Promise<Array>} All refined slides in order
  */
 export async function refineAllSlideGroups(
@@ -559,6 +588,7 @@ export async function refineAllSlideGroups(
     customSlideTypes = [],
     themeContext = null,
     signal = null,
+    slideTypes,
   } = {},
 ) {
   const allRefinedSlides = [];
@@ -607,6 +637,7 @@ export async function refineAllSlideGroups(
           customSlideTypes,
           themeContext,
           signal,
+          slideTypes,
         }).then((refinedSlides) => {
           // Track resolved types for adjacent context
           group.resolvedTypes = refinedSlides.map((s) => s.type);

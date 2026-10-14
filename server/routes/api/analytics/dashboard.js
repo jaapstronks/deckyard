@@ -49,13 +49,33 @@ export async function handleDashboard(ctx) {
   // Fetch all dashboard data in parallel
   const [summary, timeline, topPresentations, sourceBreakdown] =
     await Promise.all([
-      getDashboardSummary(authedUser.email, authedUser.organizationId, opts),
-      getDashboardTimeline(authedUser.email, authedUser.organizationId, opts),
-      getTopPresentations(authedUser.email, authedUser.organizationId, {
-        ...opts,
-        limit: 10,
-      }),
-      getSourceBreakdown(authedUser.email, authedUser.organizationId, opts),
+      getDashboardSummary(
+        ctx.storageScope,
+        authedUser.email,
+        authedUser.organizationId,
+        opts,
+      ),
+      getDashboardTimeline(
+        ctx.storageScope,
+        authedUser.email,
+        authedUser.organizationId,
+        opts,
+      ),
+      getTopPresentations(
+        ctx.storageScope,
+        authedUser.email,
+        authedUser.organizationId,
+        {
+          ...opts,
+          limit: 10,
+        },
+      ),
+      getSourceBreakdown(
+        ctx.storageScope,
+        authedUser.email,
+        authedUser.organizationId,
+        opts,
+      ),
     ]);
 
   return (
@@ -101,6 +121,7 @@ export async function handlePresentationsList(ctx) {
   }
 
   const result = await getPresentationsWithAnalytics(
+    ctx.storageScope,
     authedUser.email,
     authedUser.organizationId,
     { period, sort, limit, offset },

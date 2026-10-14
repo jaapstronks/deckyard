@@ -20,6 +20,7 @@
  * Run with: DATABASE_URL=… npm run test:pg
  */
 
+import { createMockRes } from '../helpers/http-mocks.js';
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -30,7 +31,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -58,31 +58,13 @@ const ADMIN = {
   isAdmin: true,
 };
 
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 async function call(user, method, path, body) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
   );
   req.method = method;
   req.headers = {};
-  const res = mockRes();
+  const res = createMockRes();
   await handleSlideLibrary({
     repoRoot: '/tmp',
     storageScope,
@@ -101,7 +83,7 @@ const list = (user, shelf) => call(user, 'GET', `/api/slide-library/${shelf}`);
 async function flagIn(user, shelf, id) {
   const res = await list(user, shelf);
   assert.equal(res.statusCode, 200);
-  const item = res.payload.items.find((it) => it.id === id);
+  const item = res.json().items.find((it) => it.id === id);
   assert.ok(item, `item ${id} is listed for ${user.email}`);
   return item.favorite;
 }
@@ -129,7 +111,6 @@ pgDescribe(
     });
 
     after(async () => {
-      uninstallFacadeStorage();
       await closeTestDb(db);
     });
 
@@ -171,19 +152,19 @@ pgDescribe(
     it('keeps a star on a personal item across a reload, and keeps clearing it', async () => {
       const res = await star(ALICE, 'personal', alicePersonal.id, true);
       assert.equal(res.statusCode, 200);
-      assert.equal(res.payload.favorite, true);
+      assert.equal(res.json().favorite, true);
       assert.equal(await flagIn(ALICE, 'personal', alicePersonal.id), true);
 
       const off = await star(ALICE, 'personal', alicePersonal.id, false);
       assert.equal(off.statusCode, 200);
-      assert.equal(off.payload.favorite, false);
+      assert.equal(off.json().favorite, false);
       assert.equal(await flagIn(ALICE, 'personal', alicePersonal.id), false);
     });
 
     it('keeps a star on an organization item across a reload', async () => {
       const res = await star(ALICE, 'organization', orgItem.id, true);
       assert.equal(res.statusCode, 200);
-      assert.equal(res.payload.favorite, true);
+      assert.equal(res.json().favorite, true);
       assert.equal(await flagIn(ALICE, 'organization', orgItem.id), true);
     });
 
@@ -199,7 +180,7 @@ pgDescribe(
     it('lets a member who may not edit a shared item star it, for themselves only', async () => {
       const res = await star(BOB, 'organization', orgItem.id, true);
       assert.equal(res.statusCode, 200);
-      assert.equal(res.payload.favorite, true);
+      assert.equal(res.json().favorite, true);
       assert.equal(await flagIn(BOB, 'organization', orgItem.id), true);
       assert.equal(await flagIn(ALICE, 'organization', orgItem.id), false);
       assert.equal(await flagIn(ADMIN, 'organization', orgItem.id), false);
@@ -216,9 +197,9 @@ pgDescribe(
     it('never lists the favorites addresses', async () => {
       await star(BOB, 'organization', orgItem.id, true);
       const res = await list(ALICE, 'organization');
-      const item = res.payload.items.find((it) => it.id === orgItem.id);
+      const item = res.json().items.find((it) => it.id === orgItem.id);
       assert.equal('favorites' in item, false);
-      assert.equal(JSON.stringify(res.payload).includes(BOB.email), false);
+      assert.equal(JSON.stringify(res.json()).includes(BOB.email), false);
     });
 
     // --- selected like every mutation -------------------------------------------
@@ -251,7 +232,7 @@ pgDescribe(
     it('refuses a favorite that is not a boolean', async () => {
       const res = await star(ALICE, 'personal', alicePersonal.id, 'yes');
       assert.equal(res.statusCode, 400);
-      assert.equal(res.payload.details.field, 'favorite');
+      assert.equal(res.json().details.field, 'favorite');
     });
 
     // --- not an edit of the item -----------------------------------------------

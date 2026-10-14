@@ -17,7 +17,7 @@ live with the notification system; this doc covers the sending half.
 
 ## Module map
 
-Transport and senders (`server/integrations/email/`, 7 modules):
+Transport and senders (`server/integrations/email/`):
 
 - `server/integrations/email/index.js` — the barrel; re-exports the transport,
   the template-builder helpers and the three sender families.
@@ -40,7 +40,7 @@ htmlContent, textContent, senderOverride})` (a `POST` to
   `sendExportReadyNotification`. Not re-exported by the barrel; the bulk-export
   worker imports it directly.
 
-Template bodies (`server/integrations/email-templates/`, 7 modules):
+Template bodies (`server/integrations/email-templates/`):
 
 - `server/integrations/email-templates/index.js` — the shared shell:
   `EMAIL_STYLES`, `emailButton`, `emailWrapper`, `troubleClickingFooter`.
@@ -82,7 +82,7 @@ Routes and UI:
 
 - `server/routes/api/email-templates.js` — the admin API under
   `/api/admin/email-templates`.
-- `client/views/settings/email-templates/` (5 modules: `index.js`, `builders.js`,
+- `client/views/settings/email-templates/` (concerns: `index.js`, `builders.js`,
   `state.js`, `actions.js`, `labels.js`) — the admin panel.
 
 Compatibility shim:
@@ -186,7 +186,9 @@ Settings, not env: `settings.emailSender.{email,name}` (admin-set sender
 identity, takes precedence over the env vars) and the instance default locale in
 `email_template_settings` (the language of a mail to anyone without a stored
 preference). Per user, `settings.digest.{enabled, dayOfWeek}`
-controls the weekly digest (`enabled` defaults to true, day defaults to Monday).
+controls the weekly digest. It is opt-in (D330): only an explicit
+`enabled: true` sends, so an account without a stored preference gets none;
+the day defaults to Monday.
 
 There is **no feature flag that disables email as a whole** — the switch is
 whether `BREVO_API_KEY` is set.

@@ -1,6 +1,6 @@
 import { h } from './index.js';
 import { icon } from './icons.js';
-import { reportMisuse } from '../util/dev-runtime.js';
+import { reportMisuse } from '../state/dev-runtime.js';
 import { takeEscape } from './escape.js';
 
 const DEFAULT_DURATION_MS = 3200;

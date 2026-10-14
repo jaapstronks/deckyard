@@ -31,6 +31,7 @@
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { createPresentation } from '../../../services/presentations.js';
+import { assertValidImportedDeck } from '../../../services/slide-field-validation.js';
 import { readRequestBody, serveJson, badRequest } from '../../../utils/http.js';
 import {
   readDeckBundle,
@@ -297,6 +298,9 @@ export async function handlePresentationsImportDeck({
     slideTypes,
     carriedSlideTypes,
   });
+  // The value the editor would refuse, the bundle refuses, before the deck
+  // exists (B693; the same check as the JSON import).
+  assertValidImportedDeck(parts, slideTypes, { lang });
 
   const created = await createPresentation(
     storageScope,

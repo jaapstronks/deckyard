@@ -1,8 +1,7 @@
 import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
 import {
-  getString,
+  getAiParams,
   getOptionalString,
-  getLang,
   getBoolean,
   getOptionalObject,
 } from '../../../utils/request-validators.js';
@@ -14,7 +13,8 @@ import {
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
-import { loadSlideTypeContext } from './shared.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/append-slides — generate slides to append to an existing
@@ -31,10 +31,8 @@ export async function handleAiAppendSlides({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const raw = getString(body, 'raw');
+  const { raw, vendor, lang } = getAiParams(body);
   if (!raw.trim()) return badRequest(res, 'Expected { raw: "..." }');
-  const vendor = getOptionalString(body, 'vendor');
-  const lang = getLang(body);
   const contentOnly = getBoolean(body, 'contentOnly', false);
   const verbatim = getBoolean(body, 'verbatim', false);
   // Revision mode (batch review "Adjust"): prior batch + feedback on it.
@@ -51,7 +49,10 @@ export async function handleAiAppendSlides({
       ? presentationToDeck(presInput)
       : null;
 
-  const slideTypeCtx = await loadSlideTypeContext(authedUser);
+  const slideTypeOffer = await loadSlideTypeOffer(authedUser);
+  // The map the org's types were offered from is the one they are composed and
+  // fixed in (B247).
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   const {
     slides: generatedSlides,
     rationale,
@@ -62,8 +63,7 @@ export async function handleAiAppendSlides({
     vendor,
     contentOnly,
     verbatim,
-    disabledSlideTypes: slideTypeCtx.disabled,
-    customSlideTypes: slideTypeCtx.custom,
+    ...slideTypeOffer,
     priorSlides,
     feedback,
   });
@@ -78,11 +78,12 @@ export async function handleAiAppendSlides({
       storageScope,
     ),
     lang: lang || existingDeck?.lang,
+    slideTypes,
   });
   let slides = Array.isArray(parts?.slides) ? parts.slides : [];
 
   // Validate slides and log any issues (unknown fields, schema mismatches, etc.)
-  slides = validateAndFixRefinedSlides(slides);
+  slides = validateAndFixRefinedSlides(slides, { slideTypes });
 
   // Re-attach per-slide review metadata (normalization strips unknown slide
   // keys). Both arrays map 1:1 by index onto the generated batch.
@@ -92,21 +93,6 @@ export async function handleAiAppendSlides({
     if (meta.why) s._aiReasoning = meta.why;
     if (meta.alternatives?.length) s._aiAlternatives = meta.alternatives;
   });
-
-  // Extra safety: ensure required image URLs are never blank.
-  for (const s of slides) {
-    if (!s || typeof s !== 'object') continue;
-    if (
-      (s.type === 'image-slide' || s.type === 'image-text-slide') &&
-      (!s.content ||
-        typeof s.content !== 'object' ||
-        typeof s.content.image !== 'string' ||
-        !s.content.image.trim())
-    ) {
-      s.content = s.content && typeof s.content === 'object' ? s.content : {};
-      s.content.image = '/assets/images/backgrounds/demo-aurora.jpg';
-    }
-  }
 
   serveJson(res, 200, { slides, rationale });
   return true;

@@ -1,4 +1,4 @@
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import { createFollowInteractionStorage } from './storage.js';
 import { createFollowInteractionLocalCache } from './local-cache.js';
 import { renderLikertSliderUi } from './likert-slider-ui.js';
@@ -95,7 +95,7 @@ export function createFollowInteractionController({
       pendingRenderAfterFeedbackEdit = true;
       return;
     }
-    mountEl.innerHTML = '';
+    mountEl.replaceChildren();
     if (!isActive()) {
       mountEl.style.display = 'none';
       return;
@@ -544,7 +544,7 @@ export function createFollowInteractionController({
     onInteractionStateEvent,
     refreshCurrent,
     detach: () => {
-      if (mountEl) mountEl.innerHTML = '';
+      if (mountEl) mountEl.replaceChildren();
     },
   };
 }

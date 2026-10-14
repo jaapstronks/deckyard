@@ -198,7 +198,7 @@ export function createVisibilitySection({
   }
 
   function render() {
-    optionsWrap.innerHTML = '';
+    optionsWrap.replaceChildren();
     const visibility = String(pres?.visibility || 'private');
     const isOrganization = visibility === 'organization';
     const isViewOnly = pres?.isViewOnly !== false; // default to view-only when unset

@@ -36,7 +36,7 @@ surviving tables are compared against the single expected survivor.
 The **round trip** then catches the other direction — a `down()` that drops
 something its `up()` no longer recreates comes back short on the second pass.
 
-What the round trip does _not_ catch on its own: 32 of the 57 migrations create
+What the round trip does _not_ catch on its own: some migrations create
 with `IF NOT EXISTS`, so a leftover object does not make the second `up()`
 fail. For those, the down-to-empty check is the only thing that notices. The
 second `up()` failing on a still-present object is real, but only for the
@@ -51,10 +51,9 @@ migration landed — the failure mode the double already has.
 It says nothing about whether the resulting schema is _correct_, or whether any
 query the storage layer writes works against it. Conflict targets, `jsonb`
 round-trips, transaction isolation — the classes where the in-memory double can
-disagree with PostgreSQL — are all untouched here. That coverage is option A
-from the same brief (`docs/plans/briefs/postgres-test-infra.md`) and it has
-shipped: see [pg-test-suite.md](pg-test-suite.md) and the `test-postgres` CI
-job. This script is option D: the smallest thing that moves "a broken
+disagree with PostgreSQL — are all untouched here. That coverage has its own
+suite and it has shipped: see [pg-test-suite.md](pg-test-suite.md) and the `test-postgres` CI
+job. This script is the smallest thing that moves "a broken
 migration" out of production and into CI.
 
 It also does not run in `npm test`. The suite has no database, deliberately —
@@ -150,12 +149,12 @@ listed as jsonb, but it is `TEXT[]`, as declared in
 
 ### Why it is not in `npm test`
 
-The brief's option C proposed deriving the schema from the migration _files_, so
+An alternative was to derive the schema from the migration _files_, so
 the check could live in the database-free suite. That means writing a second
 hand-written model of the schema and checking the first against it — and when
 the two parsers disagree, neither is the database.
 
-With a real PostgreSQL already in this job (option D, above), asking the
+With a real PostgreSQL already in this job, asking the
 database is both cheaper and the only answer that cannot itself be wrong. The
 cost is that the check is a CI job rather than a local `npm test`; run it by
 hand the same way:

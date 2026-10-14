@@ -2,9 +2,8 @@ import crypto from 'node:crypto';
 import { parseCookies } from '../utils/cookies.js';
 import { sandboxCookieMaxAgeDays, sandboxEnabled } from '../config/sandbox.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
-import { getDefaultOrganizationId } from '../config/database.js';
-import { withDbGuard } from '../storage/utils/index.js';
-import { nowIso } from '../utils/normalize.js';
+import { createStorageScope } from '../utils/context.js';
+import { ensureUserByEmail } from '../storage/users.js';
 
 const COOKIE_NAME = 'sb_sandbox';
 const GUEST_EMAIL_DOMAIN = 'sandbox.local';
@@ -153,38 +152,11 @@ export async function ensureSandboxUserAsync(req, res) {
  * @returns {Promise<string|null>}
  */
 async function resolveSandboxGuestUserId(email) {
-  return withDbGuard(null, async (db) => {
-    const existing = await db
-      .selectFrom('users')
-      .select('id')
-      .where('email', '=', email)
-      .executeTakeFirst();
-    if (existing?.id) return existing.id;
-
-    const now = nowIso();
-    const inserted = await db
-      .insertInto('users')
-      .values({
-        organization_id: getDefaultOrganizationId(),
-        email,
-        name: 'Guest',
-        role: 'user',
-        // No password: a guest is only ever reached through its cookie.
-        auth_source: 'database',
-        created_at: now,
-        updated_at: now,
-      })
-      // Two parallel first writes from the same guest race here.
-      .onConflict((oc) => oc.column('email').doNothing())
-      .returning('id')
-      .executeTakeFirst();
-    if (inserted?.id) return inserted.id;
-
-    const raced = await db
-      .selectFrom('users')
-      .select('id')
-      .where('email', '=', email)
-      .executeTakeFirst();
-    return raced?.id || null;
+  const result = await ensureUserByEmail(createStorageScope(null), {
+    email: email,
+    name: 'Guest',
+    role: 'user',
+    authSource: 'database',
   });
+  return result?.user?.id || null;
 }

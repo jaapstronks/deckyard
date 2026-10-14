@@ -9,6 +9,10 @@
  * order exactly.
  */
 
+import { rejectIfSsoEnforced } from '../../auth/sso-enforcement.js';
+
+import { crossOrganizationScope } from '../../storage/scope.js';
+
 import {
   authEnabled,
   getUserFromRequestAsync,
@@ -16,6 +20,7 @@ import {
 } from '../../auth/auth.js';
 import {
   badRequest,
+  jsonError,
   requireJsonBody,
   serveJson,
   storageError,
@@ -42,6 +47,11 @@ import {
   hasDatabaseCredentials,
 } from '../../storage/password-reset.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
+
+const authenticationScope = crossOrganizationScope(
+  null,
+  'pre-auth account lookup and instance authentication audit',
+);
 
 /**
  * Answer a failed password validation in the canonical envelope: the reason is
@@ -93,7 +103,10 @@ function buildResetUrl(req, token) {
  * @returns {Promise<boolean>} - True if user exists
  */
 async function userExists(email) {
-  const dbUser = await getUserByEmailGlobal(normalizeEmail(email));
+  const dbUser = await getUserByEmailGlobal(
+    authenticationScope,
+    normalizeEmail(email),
+  );
   return !!dbUser;
 }
 
@@ -110,6 +123,8 @@ function resetCtx(repoRoot) {
 // Request a password reset email
 // ============================================================
 async function handleForgotPassword({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   if (!authEnabled()) {
     return badRequest(
       res,
@@ -138,7 +153,7 @@ async function handleForgotPassword({ repoRoot, req, res }) {
 
   if (rateLimitedByEmail || rateLimitedByIp) {
     // Log rate limit event
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'password_reset_rate_limited',
       email,
       success: false,
@@ -162,7 +177,7 @@ async function handleForgotPassword({ repoRoot, req, res }) {
   const exists = await userExists(email);
 
   // Log the request attempt
-  await logAuthEvent({
+  await logAuthEvent(authenticationScope, {
     type: 'password_reset_request',
     email,
     success: exists,
@@ -243,6 +258,8 @@ async function handleResetPasswordValidate({ res, url }) {
 // Reset password using a token
 // ============================================================
 async function handleResetPassword({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   const ctx = resetCtx(repoRoot);
 
   if (!authEnabled()) {
@@ -275,7 +292,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   const consumeResult = await consumeResetToken(token);
 
   if (!consumeResult.ok) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'password_reset_failed',
       email: null,
       success: false,
@@ -305,7 +322,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   const setResult = await setUserPassword(ctx, email, password);
 
   if (!setResult.ok) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'password_reset_failed',
       email,
       success: false,
@@ -321,7 +338,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   }
 
   // Log successful password reset
-  await logAuthEvent({
+  await logAuthEvent(authenticationScope, {
     type: 'password_reset_success',
     email,
     success: true,
@@ -382,7 +399,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   const email = user.email;
 
   // Verify current password
-  const hasDbCreds = await hasDatabaseCredentials(email);
+  const hasDbCreds = await hasDatabaseCredentials(authenticationScope, email);
   if (!hasDbCreds) {
     return badRequest(
       res,
@@ -393,9 +410,13 @@ async function handleChangePassword({ repoRoot, req, res }) {
     );
   }
 
-  const isCurrentValid = await verifyUserPassword(email, currentPassword);
+  const isCurrentValid = await verifyUserPassword(
+    authenticationScope,
+    email,
+    currentPassword,
+  );
   if (!isCurrentValid) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'password_change_failed',
       email,
       success: false,
@@ -404,9 +425,14 @@ async function handleChangePassword({ repoRoot, req, res }) {
       metadata: { reason: 'invalid_current_password' },
     });
 
-    return badRequest(
+    // A code of its own, so the form branches on it rather than on the
+    // (translated) sentence, and names the field it refuses (B674).
+    return jsonError(
       res,
+      400,
+      'current_password_incorrect',
       t('api.error.currentPasswordIncorrect', 'Current password is incorrect'),
+      { details: { field: 'currentPassword' } },
     );
   }
 
@@ -414,7 +440,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   const setResult = await setUserPassword(ctx, email, newPassword);
 
   if (!setResult.ok) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'password_change_failed',
       email,
       success: false,
@@ -430,7 +456,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   }
 
   // Log successful password change
-  await logAuthEvent({
+  await logAuthEvent(authenticationScope, {
     type: 'password_change_success',
     email,
     success: true,

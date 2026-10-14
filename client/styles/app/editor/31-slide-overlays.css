@@ -42,7 +42,6 @@
   )
   .slide-num {
   flex: 0 0 var(--slide-num-gutter);
-  box-sizing: border-box;
   height: 18px;
   padding-right: var(--ps-space-1);
   display: flex;

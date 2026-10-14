@@ -1,5 +1,5 @@
 /**
- * B521: one deck create under three contracts (A7.4).
+ * One deck create under three contracts (B521, A7.4).
  *
  * The internal route, public v1 and the MCP create tools each made a deck their
  * own way: only the internal route left an activity row, only v1 refused the
@@ -41,8 +41,7 @@ const OTHER = 'other@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { listPresentations } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations: handleAppPresentations } =
@@ -66,7 +65,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

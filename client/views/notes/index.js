@@ -12,7 +12,8 @@ import {
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
-import { clamp, normalizePresentation } from './utils.js';
+import { normalizePresentation } from './utils.js';
+import { clamp } from '../../../shared/number-utils.js';
 import { createNotesEditor } from './notes-editor.js';
 import { createNotesQaController } from './qa.js';
 import { createNotesSessionSse } from './session-sse.js';
@@ -179,7 +180,7 @@ export async function renderNotes(root, sessionId) {
       );
     } else {
       cleanupSlideRuntimes(nextPreviewWrap);
-      nextPreviewWrap.innerHTML = '';
+      nextPreviewWrap.replaceChildren();
       nextPreviewWrap.classList.add('is-empty');
       nextPreviewWrap.append(
         h('div', {
@@ -314,3 +315,6 @@ export async function renderNotes(root, sessionId) {
     qaCtl.detach();
   };
 }
+
+// Public operations shared with the app shell and other features.
+export { renderNotesJoin } from './notes-join.js';

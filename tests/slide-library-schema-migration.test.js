@@ -1,5 +1,5 @@
 /**
- * B286: slide-library items go through the deck schema funnel.
+ * Slide-library items go through the deck schema funnel (B286).
  *
  * A library item is a copy of one slide in its own table, and nothing ran it
  * through `migratePresentation()`: an item saved before v8 kept its numbered

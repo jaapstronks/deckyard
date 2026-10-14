@@ -9,6 +9,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import {
   fetchOrgSettings,
   updateOrgSettings,
@@ -124,7 +125,7 @@ export function createThemesTab({ user }) {
 
   /** Render the default-theme <select> and the visibility checkbox list. */
   function renderWorkspaceControls(defaultThemeId, enabledThemes) {
-    defaultSelect.innerHTML = '';
+    defaultSelect.replaceChildren();
     for (const th of allThemes) {
       defaultSelect.append(
         h('option', { value: th.id, text: th.label || th.id }),
@@ -139,7 +140,7 @@ export function createThemesTab({ user }) {
     );
     const allVisible = allowSet.size === 0;
 
-    visibleList.innerHTML = '';
+    visibleList.replaceChildren();
     visibleCheckboxes = new Map();
     for (const th of allThemes) {
       const isDefault = th.id === defaultSelect.value;
@@ -279,7 +280,7 @@ export function createThemesTab({ user }) {
    * Render the theme list.
    */
   function renderThemeList() {
-    themeList.innerHTML = '';
+    themeList.replaceChildren();
 
     if (themes.length === 0) {
       emptyState.classList.remove('is-hidden');
@@ -561,10 +562,18 @@ export function createThemesTab({ user }) {
     });
     if (!confirmed) return;
 
+    // The delete button lived in the card that is about to go, so focus has to
+    // be put back in the list by hand (B647).
+    const land = planRowRemoval(themeList, {
+      index: themes.findIndex((x) => x.id === theme.id),
+      fallback: createBtn,
+    });
+
     try {
       await api(`/api/themes/${theme.id}`, { method: 'DELETE' });
       invalidateTheme(theme.id);
       await loadThemes();
+      land(t('common.rowRemoved', '{label} removed.', { label: theme.label }));
     } catch (err) {
       toast.error(err);
     }
@@ -592,7 +601,7 @@ export function createThemesTab({ user }) {
     workspaceCard.classList.add('is-hidden');
     themeListSection.classList.add('is-hidden');
     editorSection.classList.remove('is-hidden');
-    editorSection.innerHTML = '';
+    editorSection.replaceChildren();
 
     editorInstance = createThemeEditor({
       theme,
@@ -640,7 +649,7 @@ export function createThemesTab({ user }) {
     editorSection.classList.add('is-hidden');
     workspaceCard.classList.remove('is-hidden');
     themeListSection.classList.remove('is-hidden');
-    editorSection.innerHTML = '';
+    editorSection.replaceChildren();
     editorInstance = null;
   }
 

@@ -86,8 +86,7 @@ The field is `watchUrl` on the video slide ("Watch link for the PDF export" in
 the editor). It is PDF-only: the PNG placeholder shows the still and the title,
 not a link. It is `ai: false` — an agent can't know that a short link exists, let
 alone which one — so it is authored by hand. Automating it (generating the short
-link through a shortener API at export time) is a separate, open item:
-`docs/plans/briefs/video-slide-export-placeholder.md` § B.
+link through a shortener API at export time) is a separate, open item.
 
 ## Known limitation: slide index
 
@@ -105,9 +104,9 @@ every interactive slide type reads, so the PDF placeholder inherits its one
 documented fallback: **English**, not Dutch. See
 [slide-copy-language.md](slide-copy-language.md).
 
-They lived in a `videoPdfCopy()` table of their own until B358, which is how
-they came to fall back to Dutch while the rest of the product fell back to
-English. A second copy table is a second fallback ladder; add a key to the
+They used to live in a `videoPdfCopy()` table of their own, which is how they
+came to fall back to Dutch while the rest of the product fell back to English
+(B358). A second copy table is a second fallback ladder; add a key to the
 shared one instead.
 
 ## Code

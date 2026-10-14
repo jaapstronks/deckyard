@@ -35,7 +35,7 @@ pipeline that file conversion uses, and the pipeline decides the slides. See
 
 ## Module map
 
-The client and parser (`server/utils/notion/`, 5 modules, 772 lines):
+The client and parser (`server/utils/notion/`):
 
 - `server/utils/notion/client.js` — the HTTP client: token, `Notion-Version`
   header, a token-bucket rate limiter, error normalization to
@@ -58,7 +58,7 @@ The conversion step:
   images, format for the AI, run outline → refine → validate, return a deck plus
   a report.
 
-The routes (`server/routes/api/notion/`, 7 modules, ~770 lines) behind one
+The routes (`server/routes/api/notion/`) behind one
 dispatcher:
 
 - `server/routes/api/notion/index.js` — the dispatcher: one table of eight

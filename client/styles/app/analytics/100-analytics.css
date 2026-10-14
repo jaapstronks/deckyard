@@ -509,7 +509,7 @@
 
 .analytics-date-picker-preset.is-active {
   background: hsl(var(--app-accent-primary));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
 }
 
 .analytics-date-picker-preset.is-active::after {

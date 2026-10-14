@@ -33,6 +33,8 @@ import {
   PROGRESS,
   REFINE_CREEP_MS,
 } from '../../../utils/import-progress.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 const log = createLogger('import');
 
 /**
@@ -76,6 +78,11 @@ export async function handleNotionImport({
   // Cancelling is dropping the request: the signal aborts the model calls
   // and the image uploads, and is checked before the presentation is written.
   const signal = clientDisconnectSignal(res);
+  // One map for the AI fix pipeline and the deck import (B247).
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+  // The catalog the model chooses from is the org's, as on every AI path
+  // (B659).
+  const slideTypeOffer = await loadSlideTypeOffer(authedUser);
 
   try {
     // Convert the Notion page
@@ -86,8 +93,9 @@ export async function handleNotionImport({
     } = await convertNotionPage(urlOrId, {
       lang,
       vendor,
-      enableLogging: true,
       signal,
+      slideTypes,
+      ...slideTypeOffer,
     });
 
     if (!deck || report.errors.length > 0) {
@@ -107,6 +115,7 @@ export async function handleNotionImport({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: effectiveLang,
+      slideTypes,
     });
 
     // The write step: no deck is created for a client that already left.
@@ -242,6 +251,10 @@ export async function handleNotionImportStream({
 
     const statusMessages = [];
     let statusMessagesSent = false;
+    // One map for the AI fix pipeline and the deck import (B247).
+    const slideTypes = await buildMergedSlideTypes(storageScope);
+    // The catalog the model chooses from is the org's (B659).
+    const slideTypeOffer = await loadSlideTypeOffer(authedUser);
 
     // Convert with streaming callbacks
     const {
@@ -251,8 +264,9 @@ export async function handleNotionImportStream({
     } = await convertNotionPage(urlOrId, {
       lang,
       vendor,
-      enableLogging: true,
       signal,
+      slideTypes,
+      ...slideTypeOffer,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         // Message only: the bar is owned by the creep until the first section
@@ -357,6 +371,7 @@ export async function handleNotionImportStream({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: effectiveLang,
+      slideTypes,
     });
 
     const created = await createPresentation(

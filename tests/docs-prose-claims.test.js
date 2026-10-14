@@ -5,12 +5,9 @@
  * This is its prose sibling: two claims that are not references at all, but
  * assertions about the tree, and that rot on a schedule.
  *
- * 1. **`(N lines)` after a file path.** The 2026-08-21 docs scan (B108) found 48
- *    of them across eight reference docs and 46 were wrong, drifting an average
- *    of 42 lines in both directions — `analytics-track.js` was documented as 573
- *    lines against a real 739. A line count is the one claim a reference doc can
- *    make that the reader cannot use for anything and that every commit
- *    invalidates. There is no legitimate case, so there is no allowlist.
+ * 1. **Numeric module, file, migration or line counts.** These manual size
+ *    claims drift when the tree changes. Describe responsibilities instead;
+ *    there is no allowlist, including for historical inventories.
  *
  * 2. **An undated `## Implementation status`.** 13 of the 20 status sections
  *    carried no date. Every one that was sampled was *true* — the problem is
@@ -33,9 +30,6 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
-
-/** This file, repo-relative — it quotes both patterns to describe them. */
-const SELF_REL = 'tests/docs-prose-claims.test.js';
 
 /**
  * Every git-tracked `.md`, repo-relative. Tracking is the corpus boundary: it
@@ -80,10 +74,22 @@ function collectMarkdown() {
   return out;
 }
 
-const MARKDOWN_FILES = collectMarkdown().filter((rel) => rel !== SELF_REL);
+const MARKDOWN_FILES = collectMarkdown();
 
 /** @returns {string} the file's text */
 const read = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
+
+test('reference pages do not present completed plan steps as current guidance', () => {
+  const staleMarker = /~~|✅\s*(?:\*\*)?Shipped\b/i;
+  const stale = MARKDOWN_FILES.filter((rel) =>
+    rel.startsWith('docs/reference/'),
+  ).filter((rel) => staleMarker.test(read(rel)));
+  assert.deepEqual(
+    stale,
+    [],
+    'Move completed plan history out of docs/reference/ and describe current behavior',
+  );
+});
 
 test('the prose scan actually sees the docs', () => {
   // A silent zero-file scan would make every assertion below vacuously pass.
@@ -97,22 +103,36 @@ test('the prose scan actually sees the docs', () => {
   );
 });
 
-test('no doc claims a file is (N lines) long', () => {
-  const lineCount = /\((\d+) lines\)/;
+const sizeClaim =
+  /\b\d+(?:[,.]\d+)*\s+(?:modules?|files?|migrations?|lines?)\b/;
+
+test('the size-claim detector covers each unit and common count formats', () => {
+  for (const unit of ['modules', 'files', 'migrations', 'lines']) {
+    for (const count of ['5', '~280', '1.039', '1,039']) {
+      assert.ok(sizeClaim.test(`${count} ${unit}`), `${count} ${unit}`);
+    }
+  }
+  assert.ok(sizeClaim.test('(604 lines)'));
+  assert.ok(sizeClaim.test('57\nmigrations'));
+  assert.ok(sizeClaim.test('1 module'));
+  assert.equal(sizeClaim.test('migration 063'), false);
+  assert.equal(sizeClaim.test('PR #56, migrations 042–045'), false);
+  assert.equal(sizeClaim.test('module responsibilities'), false);
+});
+
+test('no doc carries manual code-size counts', () => {
   const offenders = [];
   for (const rel of MARKDOWN_FILES) {
-    read(rel)
-      .split('\n')
-      .forEach((line, i) => {
-        if (lineCount.test(line))
-          offenders.push(`${rel}:${i + 1}  ${line.trim()}`);
-      });
+    const source = read(rel);
+    for (const match of source.matchAll(new RegExp(sizeClaim.source, 'g'))) {
+      const lineNumber = source.slice(0, match.index).split('\n').length;
+      offenders.push(`${rel}:${lineNumber}  ${match[0]}`);
+    }
   }
   assert.deepEqual(
     offenders,
     [],
-    `a line count next to a file path is stale the moment the file changes, and ` +
-      `a reader cannot act on it. Drop the parenthesis:\n` +
+    `manual code-size counts drift when the tree changes. Describe responsibilities instead:\n` +
       offenders.map((o) => `  - ${o}`).join('\n'),
   );
 });

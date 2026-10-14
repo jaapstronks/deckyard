@@ -1,12 +1,12 @@
 /**
- * B62 vondst 8 — the internal and public-API publish routes converge on one
- * shared core (server/services/publish-presentation.js).
+ * The internal and public-API publish routes converge on one shared core
+ * (server/services/publish-presentation.js; B62, finding 8).
  *
- * Before B62 the v1 route (`POST /api/v1/presentations/:id/publish`)
- * reimplemented a subset of the internal route and had silently dropped two
- * behaviours: the sandbox refusal (a guest could mint an API key and publish
- * onto the public domain) and the `presentation.published` webhook. These
- * tests pin the converged behaviour on both the core and the v1 route:
+ * The v1 route (`POST /api/v1/presentations/:id/publish`) used to reimplement a
+ * subset of the internal route and had silently dropped two behaviours: the
+ * sandbox refusal (a guest could mint an API key and publish onto the public
+ * domain) and the `presentation.published` webhook. These tests pin the
+ * converged behaviour on both the core and the v1 route:
  *
  *   - the core throws a 403 ForbiddenError in sandbox mode, and writes the
  *     entry / deck column / descriptor on the happy path;
@@ -41,7 +41,7 @@ const WEBHOOK_URL = 'http://203.0.114.9/published';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { userIdFor, userRows } = await import('./helpers/identity-fixtures.js');
 const { writeAppSettings } = await import('../server/storage/settings.js');

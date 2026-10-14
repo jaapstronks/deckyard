@@ -4,7 +4,7 @@
  */
 
 import { sql } from 'kysely';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { TIER_LIMITS } from './api-keys.js';
 
 // ============================================================
@@ -230,14 +230,13 @@ export async function checkExportRateLimit(apiKeyId, tier = 'free') {
  * Get rate limit info for response headers.
  * @param {string} apiKeyId - The API key ID
  * @param {string} tier - The key's tier
- * @param {string} limitType - Type of limit (requests, ai, exports)
+ * @param {string} limitType - Type of daily limit (ai, exports)
  * @returns {Promise<Object>} - Rate limit header values
  */
-export async function getRateLimitHeaders(
-  apiKeyId,
-  tier = 'free',
-  limitType = 'requests',
-) {
+export async function getRateLimitHeaders(apiKeyId, tier = 'free', limitType) {
+  if (limitType !== 'ai' && limitType !== 'exports') {
+    throw new TypeError('Only daily AI and export limits belong to storage');
+  }
   const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
   const usage = await getTodayUsage(apiKeyId);
 
@@ -267,10 +266,7 @@ export async function getRateLimitHeaders(
       used = usage.exportCount;
       break;
     default:
-      // For per-minute request limits, we don't track in DB
-      // Return daily totals as informational
-      limit = limits.requestsPerMinute * 60 * 24; // Theoretical daily max
-      used = usage.requestCount;
+      throw new TypeError(`Unknown daily limit type: ${limitType}`);
   }
 
   const remaining = limit < 0 ? -1 : Math.max(0, limit - used);

@@ -1,4 +1,4 @@
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom/index.js';
 import {
@@ -28,7 +28,7 @@ export function createNotesQaController({
   const expanded = new Set();
 
   const renderQuestions = () => {
-    qaBody.innerHTML = '';
+    qaBody.replaceChildren();
     if (!questions.length) {
       qaBody.append(
         h('div', {

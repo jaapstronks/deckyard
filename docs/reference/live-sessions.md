@@ -12,7 +12,7 @@ underneath it.
 
 **Naming.** The code calls the entity a **live session** everywhere
 (`server/storage/live-sessions/`, `LiveSession*` identifiers,
-`/api/live-sessions/…`) since the B41-b sweep. The one exception is the
+`/api/live-sessions/…`) since a naming sweep (B41-b). The one exception is the
 **physical table `present_sessions`** (and its columns/indexes), kept until a
 rename migration is worth doing. Distinguish the entity from the adjective: a
 `follow-state` status value of `'live'` means a session whose presenter pushed
@@ -20,7 +20,7 @@ state recently — a live session can be `ended` or `not_started`.
 
 ## Module map
 
-Storage (`server/storage/live-sessions/`, 10 modules):
+Storage (`server/storage/live-sessions/`):
 
 - `server/storage/live-sessions/index.js` — barrel; the public surface.
 - `server/storage/live-sessions/constants.js` — timing: `TTL_MS` (24 h idle),
@@ -49,9 +49,9 @@ Storage (`server/storage/live-sessions/`, 10 modules):
 
 Routes:
 
-- `server/routes/api/live-sessions.js` (~416 lines) — **presenter** routes,
+- `server/routes/api/live-sessions.js` — **presenter** routes,
   all behind deck-write.
-- `server/routes/api/live-session-audience.js` (~267 lines) — **public**
+- `server/routes/api/live-session-audience.js` — **public**
   capability-based routes (the session id is the authorization).
 - `server/routes/api/follow/` — a seam in `index.js` over `state.js`,
   `events.js`, `presentation.js`, `interactions.js`, `questions.js`,

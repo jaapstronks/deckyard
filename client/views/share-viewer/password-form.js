@@ -15,7 +15,7 @@ import { createInlineError } from '../../lib/dom/inline-error.js';
  * @param {Function} onSuccess - Callback when password is verified
  */
 export function renderPasswordPrompt(shell, token, shareData, onSuccess) {
-  shell.innerHTML = '';
+  shell.replaceChildren();
 
   const card = h('div', { class: 'share-viewer-card' });
   const title = h('h2', {

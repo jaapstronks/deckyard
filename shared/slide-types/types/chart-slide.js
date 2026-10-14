@@ -135,6 +135,9 @@ export default {
         '%',
         { value: 'both', label: 'Both' },
       ],
+      // A stored value outside the options (the pre-1.0 `percent` spelling)
+      // folds to the default in the schema funnel, so no reader keeps an alias.
+      foldUnofferedTo: '%',
       formLayout: 'pair',
       visibleWhen: { field: 'chartType', in: ['pie'] },
     },
@@ -245,8 +248,9 @@ export default {
    * `getSubheadingText()` looks at `subheading` only, and `.chart-subtitle`
    * left the stylesheet in #1049 — so it seeded an inert key on every chart
    * slide born through the language-less path. Dropping it is not a migration:
-   * decks that already carry the key keep it (deck.js preserves unknown keys),
-   * it just stops being handed to new slides. Adding `subheading` and
+   * stored decks that already carry the key keep it until they are exported
+   * and imported again (the import drops undeclared keys, D121 B2); it just
+   * stops being handed to new slides. Adding `subheading` and
    * `bottomSubheading` is render-identical to their absence — both helpers
    * treat `''` and missing the same — and makes this path agree with the
    * per-language ones.
@@ -361,15 +365,12 @@ export default {
       );
     } else if (parsed.kind === 'pie') {
       const pieLabelModeRaw = String(content?.pieLabelMode || '').trim();
-      // Back-compat: older slides may store "percent"
-      const pieLabelModeNormalized =
-        pieLabelModeRaw === 'percent' ? '%' : pieLabelModeRaw;
       // The "Pie labels" control drives this directly (its own "none" option is
       // the off switch), so it is not gated behind "Show values". Default to %.
       const pieLabelMode = ['none', 'value', '%', 'both'].includes(
-        pieLabelModeNormalized,
+        pieLabelModeRaw,
       )
-        ? pieLabelModeNormalized
+        ? pieLabelModeRaw
         : '%';
       svg = renderPieSvg(parsed.dataset, {
         showLegend,

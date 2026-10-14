@@ -55,9 +55,10 @@ import {
 } from '../storage/presentations/index.js';
 import { recordSlideLibraryUsage } from '../storage/slide-library-usage.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
-import { normalizeLang } from '../../shared/i18n-utils.js';
+import { DEFAULT_DECK_LANG, normalizeLang } from '../../shared/i18n-utils.js';
 import {
   belongsInCollection,
+  presentationCommentsEnabled,
   isOwnerOrCreator,
   isUnrestricted,
   resolveActorUserId,
@@ -86,12 +87,14 @@ import {
   recordPresentationCreated,
   recordPresentationDeleted,
 } from './activity-events.js';
+import { assertValidNewDeckSlides } from './slide-field-validation.js';
+import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 
 /**
  * @typedef {import('./actor.js').Actor} Actor
  * @typedef {import('./actor.js').ServiceIdentity} ServiceIdentity
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
- * @typedef {'read'|'write'|'delete'|'manage'|'transfer'|'comment'|'moderate'} PresentationAccess
+ * @typedef {'read'|'write'|'delete'|'manage'|'transfer'|'comment'|'readComments'|'moderate'} PresentationAccess
  */
 
 /**
@@ -124,6 +127,10 @@ const ACTOR_RIGHTS = {
     allows: canActorTransferOwnership,
     refusal: 'Only the presentation owner can transfer ownership',
   },
+  readComments: {
+    allows: async (pres) => presentationCommentsEnabled(pres),
+    refusal: 'Comments are off on sandbox example decks',
+  },
   comment: {
     allows: canActorCommentOnPresentation,
     refusal: 'You may not comment on this presentation',
@@ -146,7 +153,8 @@ const ACTOR_RIGHTS = {
  * @returns {boolean}
  */
 function guestAllows(pres, { guest, shareLink }, access) {
-  if (access === 'read') return shareLink?.presentationId === pres.id;
+  if (access === 'read' || access === 'readComments')
+    return shareLink?.presentationId === pres.id;
   if (access === 'comment') {
     return canGuestComment({ guest, shareLink, presentationId: pres.id });
   }
@@ -166,6 +174,11 @@ function guestAllows(pres, { guest, shareLink }, access) {
 async function refusal(pres, identity, access) {
   const right = ACTOR_RIGHTS[access];
   if (!right) throw new Error(`Unknown presentation access: ${access}`);
+  if (
+    ['readComments', 'comment', 'moderate'].includes(access) &&
+    !presentationCommentsEnabled(pres)
+  )
+    return ACTOR_RIGHTS.readComments.refusal;
   if ('guest' in identity) {
     return guestAllows(pres, identity, access) ? null : right.refusal;
   }
@@ -541,6 +554,54 @@ function usageRefsOf(input) {
 }
 
 /**
+ * The language versions a create's provided slides become, as storage's
+ * factory composes them: a slide's `contentByLang[lang]` where it has one,
+ * its `content` otherwise, with the deck's language always among them. A
+ * malformed `contentByLang` (or language value) reads as absent here, so the
+ * factory's shape refusal is the one the caller sees.
+ *
+ * @param {Array<Object>} slides
+ * @param {string} dominant
+ * @returns {Array<{lang: string, slides: Array<Object>}>}
+ */
+function versionsOfProvidedSlides(slides, dominant) {
+  const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  const byLang = (s) =>
+    isObject(s?.contentByLang)
+      ? Object.fromEntries(
+          Object.entries(s.contentByLang).filter(([, v]) => isObject(v)),
+        )
+      : {};
+  const langs = new Set([dominant]);
+  for (const s of slides) for (const l of Object.keys(byLang(s))) langs.add(l);
+  return [...langs].map((lang) => ({
+    lang,
+    slides: slides.map((s) => ({
+      ...s,
+      content: byLang(s)[lang] ?? s?.content,
+    })),
+  }));
+}
+
+/**
+ * A create that carries slides is held to the declared field rules a save is
+ * (B315, B693): the editor would refuse the same value, so the create does.
+ *
+ * @param {StorageScope} scope
+ * @param {Object} input
+ * @throws {AppError} 400 `invalid`, naming the slide and the field.
+ */
+async function assertValidProvidedSlides(scope, input) {
+  if (!Array.isArray(input?.slides) || input.slides.length === 0) return;
+  const dominant = normalizeLang(input.lang) || DEFAULT_DECK_LANG;
+  assertValidNewDeckSlides(
+    versionsOfProvidedSlides(input.slides, dominant),
+    await buildMergedSlideTypes(scope),
+    { dominant },
+  );
+}
+
+/**
  * Create a deck for an actor, on every contract.
  *
  * The rules of the handling live here, once: the retired field names, an
@@ -548,9 +609,9 @@ function usageRefsOf(input) {
  * the storage result goes through {@link throwStorageFailure} (D254); and the
  * activity row and the slide-library usage are recorded whoever asked. What
  * holds for *every* writer (theme check, slide normalization, sandbox quota,
- * size limits) stays in the storage facade (D252). Validating an agent's slide
- * payload strictly or with fixes is an MCP input step before this call, not a
- * rule of the handling.
+ * size limits) stays in the storage facade (D252). Provided slides meet the
+ * declared field rules a save meets (B693); validating an agent's slide
+ * payload strictly or with fixes is an MCP input step before this call.
  *
  * @param {StorageScope} scope - The caller's storage scope.
  * @param {{ actor: Actor }} identity - The creating actor (D253).
@@ -559,11 +620,13 @@ function usageRefsOf(input) {
  *   `sourceLibraryItemIds` / `sourceCollectionId` for a compose from the
  *   slide library.
  * @returns {Promise<Object>} The created presentation.
- * @throws {AppError} 400 `invalid`: a refused field.
+ * @throws {AppError} 400 `invalid`: a refused field, or a provided slide's
+ *   declared field (`details.lang`, `index`, `slideId`, `field`, `errors`).
  * @throws {AppError} A storage refusal (theme, quota, size).
  */
 export async function createPresentation(scope, { actor }, input = {}) {
   assertCreatableDeckInput(input);
+  await assertValidProvidedSlides(scope, input);
 
   const { sourceLibraryItemIds, sourceCollectionId, ...deck } = input;
   const created = await storeNewPresentation(scope, {

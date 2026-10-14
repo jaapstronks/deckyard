@@ -10,7 +10,7 @@
  */
 
 import { serveJson } from './http.js';
-import { ForbiddenError, isAppError } from './errors.js';
+import { isAppError } from './errors.js';
 import { loadPresentationForActor } from '../services/presentations.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
@@ -54,7 +54,7 @@ export function canManage(authedUser) {
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
  * @param {Object} options.res - HTTP response object
- * @param {'read'|'write'|'delete'|'manage'|'comment'} [options.permission='read'] - Required permission
+ * @param {'read'|'write'|'delete'|'manage'|'comment'|'readComments'} [options.permission='read'] - Required permission
  * @returns {Promise<Object|null>} The presentation if authorized, null if error response was sent
  *
  * @example
@@ -94,63 +94,15 @@ function sendRefusal(res, err) {
 }
 
 /**
- * Get guest info from request cookies if available.
+ * The share-link guest session on this request, from its cookie, or `null`.
+ * Only the share-token routes read it (`routes/api/share-links/`): a guest is
+ * never a fallback identity on a signed-in route (D228).
  * @param {Object} req - HTTP request
- * @returns {Promise<{guest: Object, shareLink: Object}|null>}
+ * @returns {Promise<{guest: Object, shareLink: Object, organizationId: string}|null>}
  */
 export async function getGuestFromRequest(req) {
   const cookies = parseCookies(req.headers?.cookie);
   const sessionToken = cookies.share_guest_session;
   if (!sessionToken) return null;
   return getGuestBySessionToken(sessionToken);
-}
-
-/**
- * Load a presentation for reading, by the signed-in user or — when they may
- * not read it — by the share-link guest session on this request.
- *
- * The account comes first, the guest session is the fallback (D287 (2)): the
- * service decides each identity on its own, never both at once (D253). A
- * refusal is answered in the internal envelope, as in
- * {@link withPresentationAuth}.
- *
- * @param {Object} options
- * @param {import('../storage/scope.js').StorageScope} options.storageScope - The request's storage scope
- * @param {Object} options.req - HTTP request object
- * @param {string} options.id - Presentation ID
- * @param {Object} options.authedUser - Authenticated user object
- * @param {Object} options.res - HTTP response object
- * @returns {Promise<{pres: Object|null, guestInfo: Object|null}>}
- *
- * @example
- * const { pres, guestInfo } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
- * if (!pres) return true; // Response already sent
- */
-export async function withPresentationReadAuth({
-  storageScope,
-  req,
-  id,
-  authedUser,
-  res,
-}) {
-  try {
-    const pres = await loadPresentationForActor(
-      storageScope,
-      { actor: authedUser },
-      id,
-    );
-    return { pres, guestInfo: null };
-  } catch (err) {
-    if (!(err instanceof ForbiddenError)) {
-      return { pres: sendRefusal(res, err), guestInfo: null };
-    }
-    const guestInfo = await getGuestFromRequest(req);
-    if (!guestInfo) return { pres: sendRefusal(res, err), guestInfo: null };
-    try {
-      const pres = await loadPresentationForActor(storageScope, guestInfo, id);
-      return { pres, guestInfo };
-    } catch (guestErr) {
-      return { pres: sendRefusal(res, guestErr), guestInfo: null };
-    }
-  }
 }

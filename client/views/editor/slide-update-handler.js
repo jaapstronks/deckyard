@@ -18,7 +18,7 @@ import { matchesIdentity } from '../../../shared/identity-match.js';
  * @param {Function} deps.rerenderEditor - Rerender the editor form
  * @param {Function} deps.rerenderPreview - Rerender the preview panel
  * @param {Object} deps.saveManager - Save manager (isDirty, isBlockedByConflict)
- * @returns {{ destroy: Function }}
+ * @returns {{ detach: Function }}
  */
 export function createSlideUpdateHandler({
   api,

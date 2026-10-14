@@ -18,6 +18,7 @@ import {
   exportUserAnalyticsData,
   deleteUserAnalyticsData,
 } from '../../../storage/analytics/index.js';
+import { crossOrganizationScope } from '../../../storage/scope.js';
 
 /**
  * GET /api/analytics/my-data - Export user's own analytics data (GDPR).
@@ -47,7 +48,14 @@ export async function handleExportMyData(ctx) {
 
   // Identity is the scope: the export covers this person's sessions on the
   // whole instance, not just the organization they happen to be acting in.
-  const result = await exportUserAnalyticsData({ email: authedUser.email });
+  const result = await exportUserAnalyticsData(
+    crossOrganizationScope(
+      null,
+      'authenticated subject request: instance-wide analytics data',
+      { actorEmail: authedUser.email },
+    ),
+    { email: authedUser.email },
+  );
 
   if (!result.ok) {
     return storageError(res, result, 'Failed to export data');
@@ -84,7 +92,14 @@ export async function handleDeleteMyData(ctx) {
 
   // Identity is the scope — an erasure that stopped at the acting organization
   // would report success while leaving the same person's rows behind.
-  const result = await deleteUserAnalyticsData({ email: authedUser.email });
+  const result = await deleteUserAnalyticsData(
+    crossOrganizationScope(
+      null,
+      'authenticated subject request: instance-wide analytics data',
+      { actorEmail: authedUser.email },
+    ),
+    { email: authedUser.email },
+  );
 
   if (!result.ok) {
     return storageError(res, result, 'Failed to delete data');

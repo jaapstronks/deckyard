@@ -5,7 +5,7 @@
  * parameterised: every dependency arrives through its options object or the
  * module imports below, so it holds no state from the editor-form closure.
  */
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import { duplicateSlides } from '../slide-list/slide-actions.js';
 import { h, installDismissOnOutside } from '../../../lib/dom/index.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
@@ -201,7 +201,6 @@ export function buildHeaderActions({
               t('editor.slide.aiConvert.converting', 'Converting with AI…'),
               {
                 id: 'ai-convert',
-                durationMs: 120000,
                 action: {
                   label: t('editor.slide.aiConvert.cancel', 'Cancel'),
                   onClick: () => controller.abort(),

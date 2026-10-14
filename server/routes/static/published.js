@@ -21,6 +21,7 @@ import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
 import { isFeatureEnabled } from '../../config/flags-snapshot.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { toIsoOrNull } from '../../utils/normalize.js';
+import { createTranslator } from '../../i18n/index.js';
 
 /**
  * Semantic reflowable "reader" view of a published deck (open web, no auth).
@@ -155,6 +156,7 @@ async function servePublishedPage(
   const host = req.headers.host || 'localhost';
   const origin = `${proto}://${host}`;
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
+  const tr = createTranslator(modeLang);
   const projected = projectPresentationForLang(pres, modeLang);
   const canonicalUrl = new URL(
     `${canonicalPath}?lang=${encodeURIComponent(modeLang)}`,
@@ -164,11 +166,16 @@ async function servePublishedPage(
     ? new URL(entry.ogImageUrl, origin).href
     : new URL(getOgImageUrl(), origin).href;
 
-  const title = escapeHtml(projected.title || 'Presentation');
+  const presentationTitle =
+    projected.title || tr('published.untitled', 'Presentation');
+  const title = escapeHtml(presentationTitle);
   const rawDesc =
     typeof pres?.description === 'string' ? pres.description.trim() : '';
   const descriptionRaw =
-    rawDesc || `Bekijk de presentatie “${projected.title || 'Presentation'}”.`;
+    rawDesc ||
+    tr('published.description', 'View the presentation “{title}”.', {
+      title: presentationTitle,
+    });
   const description = escapeHtml(descriptionRaw);
   const sandboxNoindex = sandboxEnabled();
   // The plain <meta name="description"> is emitted by buildStandaloneHtml
@@ -177,16 +184,14 @@ async function servePublishedPage(
 
   // Semantic reader view of this deck (open web, no-JS a11y surface).
   const readerPath = `${canonicalPath}/reader`;
-  const readerLabel = modeLang === 'nl' ? 'Leesweergave' : 'Reading view';
+  const readerLabel = tr('published.readerLink', 'Reading view');
 
   // Structured data: a published deck is a schema.org PresentationDigitalDocument.
-  const ldDescription =
-    rawDesc || `Bekijk de presentatie “${projected.title || 'Presentation'}”.`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'PresentationDigitalDocument',
-    name: projected.title || 'Presentation',
-    description: ldDescription,
+    name: presentationTitle,
+    description: descriptionRaw,
     url: canonicalUrl,
     thumbnailUrl: ogImageAbs,
     inLanguage: modeLang,

@@ -2,7 +2,7 @@
  * In-memory stand-in for the Kysely database used by the storage layer.
  *
  * The storage modules reach PostgreSQL exclusively through `getDb()` behind
- * `isDatabaseAvailable()` (server/storage/utils/db-guard.js). Installing this
+ * `isDatabaseAvailable()` (`withDbGuard` in server/db/client.js). Installing this
  * double with `__setTestDb()` therefore makes those modules exercisable
  * without a live server, which is what lets the identity/auth tests assert
  * real query behaviour instead of grepping source.
@@ -15,6 +15,9 @@
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
  *   updateTable / set / returning / returningAll, deleteFrom / returning,
  *   and `db.fn.count()`.
+ *
+ * Joins support column references only. Callback joins throw immediately;
+ * exercise those query shapes in the PostgreSQL suite.
  *
  * Table references may carry an alias (`selectFrom('presentation_collaborators
  * as c').innerJoin('presentations as p', …)`, the "shared with me" query): the
@@ -680,6 +683,11 @@ export function createFakeDb(seed = {}) {
 
     const builder = {
       innerJoin(joinTable, left, right) {
+        if (typeof left !== 'string' || typeof right !== 'string') {
+          throw new Error(
+            'fake-db: only column-reference joins are supported; callback joins require PostgreSQL',
+          );
+        }
         state.joins.push({
           ...parseTableRef(joinTable),
           left,
@@ -689,6 +697,11 @@ export function createFakeDb(seed = {}) {
         return builder;
       },
       leftJoin(joinTable, left, right) {
+        if (typeof left !== 'string' || typeof right !== 'string') {
+          throw new Error(
+            'fake-db: only column-reference joins are supported; callback joins require PostgreSQL',
+          );
+        }
         state.joins.push({
           ...parseTableRef(joinTable),
           left,

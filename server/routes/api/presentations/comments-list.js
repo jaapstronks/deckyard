@@ -1,6 +1,11 @@
 /**
  * Read-only route handlers for presentation comments.
  * Includes list, get single, counts, and SSE events.
+ *
+ * The signed-in account's routes, behind the login gate: they read as the
+ * account and only the account. A share-link guest lists a deck's comments
+ * through their own route under the share token
+ * (`routes/api/share-links/guest-comments.js`, D228).
  */
 
 import { methodNotAllowed, serveJson, notFound } from '../../../utils/http.js';
@@ -8,18 +13,17 @@ import {
   getComment,
   getOpenCommentCount,
   getCommentCountsBySlide,
-} from '../../../storage/presentations/comments.js';
+} from '../../../storage/presentations/index.js';
 import {
   addClient,
   removeClient,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
-  getGuestFromRequest,
-  withPresentationReadAuth,
-} from '../../../utils/route-middleware.js';
-import { listComments } from '../../../services/comments.js';
-import { ForbiddenError } from '../../../utils/errors.js';
+  commentListInputFromQuery,
+  listComments,
+} from '../../../services/comments.js';
 import { openSseStream, sseWrite } from '../../../utils/sse.js';
 
 /**
@@ -28,9 +32,7 @@ import { openSseStream, sseWrite } from '../../../utils/sse.js';
  * Query params: slideId, status (open|resolved|dismissed|all), commentType
  *
  * The reading rule and the filters are `services/comments.js`; this adapter
- * parses the query and names who is asking: the account when it may read the
- * deck, otherwise the share-link guest session on this deck (the same
- * fallback the create route uses).
+ * parses the query and names who is asking.
  */
 export async function handlePresentationCommentsList(
   { storageScope, req, res, url, authedUser } = {},
@@ -38,23 +40,11 @@ export async function handlePresentationCommentsList(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const input = {
-    presentationId: id,
-    slideId: url.searchParams.get('slideId') || null,
-    status: url.searchParams.get('status') || 'all',
-    commentType: url.searchParams.get('commentType') || null,
-  };
-
-  let listed;
-  try {
-    listed = await listComments(storageScope, { actor: authedUser }, input);
-  } catch (err) {
-    if (!(err instanceof ForbiddenError)) throw err;
-    const guestInfo = await getGuestFromRequest(req);
-    if (!guestInfo) throw err;
-    listed = await listComments(storageScope, guestInfo, input);
-  }
-  const { comments } = listed;
+  const { comments } = await listComments(
+    storageScope,
+    { actor: authedUser },
+    commentListInputFromQuery(id, url.searchParams),
+  );
   const openCount = await getOpenCommentCount(storageScope, id);
 
   // The AI-author address used to ship with the list so the client could
@@ -70,8 +60,7 @@ export async function handlePresentationCommentsList(
 /**
  * Get a single comment.
  * GET /api/presentations/:id/comments/:commentId
- *
- * Supports both authenticated users and verified guests with share link access.
+
  */
 export async function handlePresentationCommentGet(
   { storageScope, req, res, authedUser } = {},
@@ -80,12 +69,12 @@ export async function handlePresentationCommentGet(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({
+  const pres = await withPresentationAuth({
     storageScope,
-    req,
     id,
     authedUser,
     res,
+    permission: 'readComments',
   });
   if (!pres) return true;
 
@@ -102,8 +91,7 @@ export async function handlePresentationCommentGet(
 /**
  * Get comment counts per slide.
  * GET /api/presentations/:id/comments/counts
- *
- * Supports both authenticated users and verified guests with share link access.
+
  */
 export async function handlePresentationCommentCounts(
   { storageScope, req, res, authedUser } = {},
@@ -111,12 +99,12 @@ export async function handlePresentationCommentCounts(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({
+  const pres = await withPresentationAuth({
     storageScope,
-    req,
     id,
     authedUser,
     res,
+    permission: 'readComments',
   });
   if (!pres) return true;
 
@@ -132,7 +120,6 @@ export async function handlePresentationCommentCounts(
  * GET /api/presentations/:id/comments/events
  *
  * Clients connect here to receive instant notifications when comments change.
- * Supports both authenticated users and verified guests with share link access.
  */
 export async function handlePresentationCommentEvents(
   { storageScope, req, res, authedUser } = {},
@@ -140,12 +127,12 @@ export async function handlePresentationCommentEvents(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({
+  const pres = await withPresentationAuth({
     storageScope,
-    req,
     id,
     authedUser,
     res,
+    permission: 'readComments',
   });
   if (!pres) return true;
 

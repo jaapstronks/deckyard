@@ -6,7 +6,7 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 
 /**
  * Access types for logging.

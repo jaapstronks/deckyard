@@ -133,6 +133,10 @@
 
   "comments.aiAuthor": "AI-assistent",
 
+  "published.untitled": "Presentatie",
+  "published.description": "Bekijk de presentatie “{title}”.",
+  "published.readerLink": "Leesweergave",
+
   "qa.anonymous": "Anoniem",
   "qa.noQuestions": "Geen vragen (nog).",
   "qa.expand": "Uitklappen",

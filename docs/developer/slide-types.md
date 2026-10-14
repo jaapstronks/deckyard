@@ -732,11 +732,12 @@ this page showed that in the examples. Declaring it now buys you a **second**
 Background section, and two images competing on the slide. So:
 
 - Declare nothing for a slide-wide photo. It is already there.
-- `bgImage`/`bgAlt` are a read-only render fallback for un-migrated decks.
-  Opening such a slide in the editor folds them onto `slideBgImage`
-  (`shared/slide-types/legacy-bg-image.js`); `node
-scripts/migrate-legacy-bg-image.js` does the same in bulk, on either storage
-  backend and including every language version (`--dry-run` first).
+- `bgImage`/`bgAlt` are not read anywhere. The read funnel folds them onto
+  `slideBgImage` and deletes them (schema v21 -> v22,
+  `shared/slide-types/legacy-bg-image.js`), on every type, so a type that
+  still declared the pair would see its values disappear. `node
+scripts/migrate-legacy-bg-image.js` persists the same fold in bulk, on either
+  storage backend and including every language version (`--dry-run` first).
 - Do declare an `image` field for an image that is _content_ — a portrait, a
   chart, one cell of a grid. That is a different thing from the backdrop.
 
@@ -876,10 +877,10 @@ means. There is exactly one builder for that —
 argument (`resolveSlideTypeName(ref, slideTypes)`,
 `getSlideType(ref, slideTypes)`). Every org-aware path uses it, reads and writes
 alike: the export pipeline, the published and embed viewers, the thumbnail and
-single-slide renderers, and — since B129 — the storage **write seam**
-(`normalizeSlides`), which the presentations facade feeds one org registry per
-write. Before that, the editor let you insert a published custom type and every
-autosave answered `400 Unknown slide type "custom-…"`.
+single-slide renderers, and the storage **write seam** (`normalizeSlides`),
+which the presentations facade feeds one org registry per write. Before the seam
+took the map, the editor let you insert a published custom type and every
+autosave answered `400 Unknown slide type "custom-…"` (B129).
 
 Two rules follow, and both are load-bearing:
 
@@ -890,8 +891,8 @@ Two rules follow, and both are load-bearing:
   default argument is there for callers that genuinely have no organization
   (schema migrations, the shared client bundle), not as a shortcut.
 
-Since B131 the two write surfaces in front of that seam say whose registry they
-mean as well: the public API's per-slide routes (`POST`/`PUT
+The two write surfaces in front of that seam say whose registry they mean as
+well (B131): the public API's per-slide routes (`POST`/`PUT
 …/presentations/:id/slides` and the from-library insert) build the org registry
 and hand it to `resolveSlideTypeName()`, `newSlide()` and `validateSlide()`, and
 the MCP write tools hand it to strict and fix validation. Strict has no
@@ -900,12 +901,17 @@ per-type schema table left to answer for a database row — it derives one from
 core type, and `tests/org-registry-write-surfaces.test.js` reads the sources to
 keep a new call site from quietly taking the global map.
 
-Still on the global map, and the one place left worth naming: the fix pipeline's
-callers on the AI generation path (`server/routes/api/ai/*`, and the deck
-generators under `server/utils/`). That pipeline repairs rather than refuses, so
-a custom type is not rejected there — it simply has none of its declarations
-applied (no `maxLength`, no item bounds). That is B131's leftover, tracked as
-B247.
+The AI generation path reads the same map. The fix pipeline
+(`validateAndFixSlide`, `validateAndFixRefinedSlides`), strict validation and
+phase 2 (`refineSlideGroup`, `refineAllSlideGroups`) take `slideTypes` as a
+required argument and throw without it, so a route cannot fall back to the core
+types by forgetting the map; each AI route builds the org registry once and
+hands it to phase 2, the fix pipeline and `deckToPresentationParts`, and phase 2
+lets a content slide come back as one of the org's own types, as the catalogue
+offered them (B247). The offer is one too: every generating path, imports and
+MCP included, loads it through `loadSlideTypeOffer()` in
+`server/utils/org-slide-types.js` (B659), and so does the analysis, whose
+suggestions propose from that offer and nothing else (B660).
 
 ### Where a slide comes into being
 
@@ -928,7 +934,7 @@ It composes in this order, and the order is the contract:
 3. **`seedAutoBackgroundPreset`** — a type declaring `autoBackgroundPreset`
    takes its `slideBgImage` from `theme.backgroundPresets`. After the merge, so
    a preset is never stacked on a background the caller already brought
-   (including a legacy `bgImage`).
+   (including a legacy `bgImage` the funnel will fold on write).
 4. **`applyInstanceKeyDefaults`** — the keys the type declares as bound to this
    slide instance (`pollId`, `presentationId`). A declaration, so nothing here
    branches on a type name.
@@ -941,7 +947,8 @@ The callers, and what each of them brings:
 | `newPresentation`                                   | the deck's language and loaded theme                                      |
 | public API `POST …/slides`, slide-library insert    | the org registry, the deck's theme, caller content as the patch           |
 | deck import (`normalizeDeckSlide`)                  | a cleaned patch — import _cleans_, the factory _composes_                 |
-| MCP `create_presentation_from_slides`, `add_slide`  | validated content as the patch, after validation; the deck's language     |
+| MCP `create_presentation_from_slides`               | validated content as the patch, after validation; the deck's language     |
+| MCP `add_slide`                                     | the agent's content as the patch, then `validateSlide` like the REST API  |
 
 There used to be three spellings of this composition and one route that skipped
 it, which is why an agent-created poll slide reached storage with no `pollId`
@@ -1623,8 +1630,8 @@ This setup:
 
 ## Raw HTML in a fork type
 
-Core ships no raw-HTML slide: the escape hatch left core in A7.8b, with its
-permission path, so the product grows typed slides instead (the tombstone in
+Core ships no raw-HTML slide: the escape hatch left core with its permission
+path (A7.8b), so the product grows typed slides instead (the tombstone in
 `shared/slide-types/removed.js` records the decision and the revive path). A
 fork that wants one builds it as a `custom/slide-types/` type. What core keeps
 for that:

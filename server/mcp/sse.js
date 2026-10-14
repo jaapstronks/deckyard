@@ -14,6 +14,7 @@
  * Deckyard HTTP server — no separate process needed.
  */
 
+import { jsonError } from '../utils/http.js';
 import { randomUUID } from 'node:crypto';
 import { validateApiKey } from '../storage/api-keys.js';
 import { openSseStream, sseWrite } from '../utils/sse.js';
@@ -202,9 +203,9 @@ export function createSseHandler(server, options = {}) {
     }
 
     // Method not allowed
-    res.writeHead(405, { Allow: 'GET, POST, DELETE, OPTIONS' });
-    res.end(JSON.stringify({ error: 'Method not allowed' }));
-    return true;
+    return jsonError(res, 405, 'method_not_allowed', 'Method not allowed', {
+      headers: { Allow: 'GET, POST, DELETE, OPTIONS' },
+    });
   };
 }
 
@@ -359,28 +360,28 @@ async function handleGet(req, res) {
   const auth = await authenticate(req);
   if (!auth.ok) {
     const status = auth.reason === 'unavailable' ? 503 : 401;
-    res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Unauthorized' }));
-    return true;
+    return jsonError(
+      res,
+      status,
+      status === 503 ? 'unavailable' : 'unauthorized',
+      'Unauthorized',
+    );
   }
 
   // Require session
   const sessionId = req.headers['mcp-session-id'];
   if (!sessionId) {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(
-      JSON.stringify({
-        error:
-          'Missing Mcp-Session-Id header. POST an initialize request first.',
-      }),
+    return jsonError(
+      res,
+      400,
+      'bad_request',
+      'Missing Mcp-Session-Id header. POST an initialize request first.',
     );
-    return true;
   }
 
   const session = getSession(sessionId);
   if (!session) {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Session not found or expired' }));
+    jsonError(res, 404, 'not_found', 'Session not found or expired');
     return true;
   }
 
@@ -425,15 +426,12 @@ async function handleGet(req, res) {
 async function handleDelete(req, res) {
   const auth = await authenticate(req);
   if (!auth.ok) {
-    res.writeHead(401, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Unauthorized' }));
-    return true;
+    return jsonError(res, 401, 'unauthorized', 'Unauthorized');
   }
 
   const sessionId = req.headers['mcp-session-id'];
   if (!sessionId) {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Missing Mcp-Session-Id header' }));
+    jsonError(res, 400, 'bad_request', 'Missing Mcp-Session-Id header');
     return true;
   }
 
@@ -443,8 +441,7 @@ async function handleDelete(req, res) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, message: 'Session closed' }));
   } else {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Session not found' }));
+    jsonError(res, 404, 'not_found', 'Session not found');
   }
 
   return true;

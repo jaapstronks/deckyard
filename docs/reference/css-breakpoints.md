@@ -69,10 +69,10 @@ _Topbar Responsive_. `tests/topbar-fold-ladder.test.js` fails if a rung is
 only half wired.
 
 The lesson worth copying is the ordering: **pick what leaves the row from a
-measured budget, not from taste.** Before B354 each of that bar's rungs had
-been chosen by eye, and the bar overflowed at every width below ~870px and
-again just above each breakpoint — the rungs existed, but nobody had added up
-what was left after them.
+measured budget, not from taste.** Each of that bar's rungs had once been
+chosen by eye, and the bar overflowed at every width below ~870px and again just
+above each breakpoint — the rungs existed, but nobody had added up what was left
+after them (B354).
 
 ## Why not a variable
 

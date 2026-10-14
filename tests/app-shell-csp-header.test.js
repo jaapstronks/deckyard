@@ -4,11 +4,11 @@
  * `tests/served-surface-csp-header.test.js` covers `/p/…` and `/embed/…`;
  * this file covers the third served surface — the shell (`/`, the auth pages,
  * the editor and presenter routes, the share-link viewer), which is where the
- * session cookie lives and which carried no policy at all before B124.
+ * session cookie lives and which used to carry no policy at all.
  *
  * The design decision this file pins: the shell policy is the **document
  * policy plus the analytics origins**, not a second policy source and not a
- * nonce policy. `'unsafe-inline'` is the recorded answer to the B124 design
+ * nonce policy. `'unsafe-inline'` is the recorded answer to that design
  * question — a nonce cannot cover the operator's raw analytics HTML
  * (`ANALYTICS_HEAD_HTML`), and one nonce in `script-src` makes browsers
  * ignore `'unsafe-inline'` for everything else, so a partial nonce breaks

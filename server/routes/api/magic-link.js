@@ -9,6 +9,10 @@
  * order exactly.
  */
 
+import { rejectIfSsoEnforced } from '../../auth/sso-enforcement.js';
+
+import { crossOrganizationScope } from '../../storage/scope.js';
+
 import { authEnabled, setSessionCookie } from '../../auth/auth.js';
 import {
   serveJson,
@@ -33,6 +37,11 @@ import {
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { createLogger } from '../../utils/logger.js';
+
+const authenticationScope = crossOrganizationScope(
+  null,
+  'pre-auth account lookup and instance authentication audit',
+);
 const log = createLogger('magic-link');
 
 /**
@@ -54,7 +63,10 @@ function buildMagicLinkUrl(req, token) {
  * @returns {Promise<{exists: boolean, hasPassword: boolean}>}
  */
 async function getUserInfo(email) {
-  const dbUser = await getUserByEmailGlobal(normalizeEmail(email));
+  const dbUser = await getUserByEmailGlobal(
+    authenticationScope,
+    normalizeEmail(email),
+  );
   return {
     exists: !!dbUser,
     hasPassword: !!dbUser?.password_hash,
@@ -78,6 +90,8 @@ function buildLoginUrl(req) {
 // Request a magic link email
 // ============================================================
 async function handleMagicLinkRequest({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   if (!authEnabled()) {
     return badRequest(
       res,
@@ -106,7 +120,7 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
   const rateLimitedByIp = await isRateLimitedByIp(ipAddress);
 
   if (rateLimitedByEmail || rateLimitedByIp) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'magic_link_rate_limited',
       email,
       success: false,
@@ -130,7 +144,7 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
   const userInfo = await getUserInfo(email);
 
   // Log the request attempt
-  await logAuthEvent({
+  await logAuthEvent(authenticationScope, {
     type: 'magic_link_request',
     email,
     success: true,
@@ -183,6 +197,8 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
 // Verify a magic link token and create session
 // ============================================================
 async function handleMagicLinkVerify({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   const ctx = createStorageScope(null, { repoRoot });
 
   if (!authEnabled()) {
@@ -208,7 +224,7 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
   const consumeResult = await consumeMagicToken(token);
 
   if (!consumeResult.ok) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'magic_link_failed',
       email: null,
       success: false,
@@ -231,7 +247,7 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
   const userResult = await getOrCreateMagicLinkUser(ctx, email);
 
   if (!userResult.ok) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'magic_link_failed',
       email,
       success: false,
@@ -247,7 +263,7 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
   }
 
   // Log successful login
-  await logAuthEvent({
+  await logAuthEvent(authenticationScope, {
     type: 'magic_link_login',
     email,
     success: true,

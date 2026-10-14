@@ -42,7 +42,7 @@ const RAW_KEY = 'dk_live_sse-tenancy-key-00000000000000';
 
 const { createFakeDb } = await import('../helpers/fake-db.js');
 const { __setTestDb } = await import('../../server/db/client.js');
-const { initializeStorage } = await import('../../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../../server/db/lifecycle.js');
 const { hashToken } = await import('../../server/utils/secure-tokens.js');
 const { McpServer } = await import('../../server/mcp/protocol.js');
 const { registerTools } = await import('../../server/mcp/tools.js');
@@ -247,5 +247,68 @@ describe('MCP over SSE — organization scope', () => {
     // The refusal has to be the per-deck one — "not found" from a scope that
     // works — not the scope layer throwing because it had no organization.
     assert.match(text, /Presentation not found/i);
+  });
+});
+
+describe('MCP HTTP error envelopes', () => {
+  it('uses canonical envelopes for GET/DELETE auth, missing session and expired session, and unsupported methods', async () => {
+    const cases = [
+      ['PATCH', {}, 405, 'method_not_allowed', 'Method not allowed'],
+      ['GET', { authorization: '' }, 401, 'unauthorized', 'Unauthorized'],
+      ['DELETE', { authorization: '' }, 401, 'unauthorized', 'Unauthorized'],
+      [
+        'GET',
+        {},
+        400,
+        'bad_request',
+        'Missing Mcp-Session-Id header. POST an initialize request first.',
+      ],
+      ['DELETE', {}, 400, 'bad_request', 'Missing Mcp-Session-Id header'],
+      [
+        'GET',
+        { 'mcp-session-id': 'expired' },
+        404,
+        'not_found',
+        'Session not found or expired',
+      ],
+      [
+        'DELETE',
+        { 'mcp-session-id': 'expired' },
+        404,
+        'not_found',
+        'Session not found',
+      ],
+    ];
+    for (const [method, headers, status, code, message] of cases) {
+      const req = jsonRequest({}, headers);
+      req.method = method;
+      const res = recordingResponse();
+      assert.equal(
+        await handler({ req, res, url: new URL('http://localhost/mcp') }),
+        true,
+      );
+      assert.equal(res.status, status, method);
+      assert.deepEqual(JSON.parse(res.body), {
+        ok: false,
+        error: code,
+        message,
+      });
+      assert.match(res.headers['Content-Type'], /application\/json/);
+      assert.equal(res.headers['Cache-Control'], 'no-store');
+      assert.equal(res.headers['Access-Control-Allow-Origin'], '*');
+      if (method === 'PATCH')
+        assert.equal(res.headers.Allow, 'GET, POST, DELETE, OPTIONS');
+    }
+  });
+
+  it('keeps POST authentication failures in the JSON-RPC envelope', async () => {
+    const result = await post(
+      { id: 1, method: 'initialize' },
+      { authorization: '' },
+    );
+    assert.equal(result.status, 401);
+    assert.equal(result.json.jsonrpc, '2.0');
+    assert.equal(result.json.error.code, -32000);
+    assert.equal('ok' in result.json, false);
   });
 });

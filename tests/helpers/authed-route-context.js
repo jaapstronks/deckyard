@@ -5,7 +5,7 @@
  * isolation use this so they see the same AuthedContext production does, rather
  * than re-implementing the gate (and drifting from it).
  *
- * Mirrors server/routes/api/index.js lines ~142-169 for the non-sandbox path:
+ * Mirrors the non-sandbox post-auth gate in server/routes/api/index.js:
  * resolve the user, enrich with designer capability, then create the storage
  * scope. The designer enrichment fails open, exactly as index.js does.
  *

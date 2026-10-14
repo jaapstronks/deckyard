@@ -92,4 +92,6 @@ test('modal gates its form pane on locked slides and releases it again', () => {
     'back on editable slide: released',
   );
   assert.equal(note.hidden, true, 'banner hidden again');
+  modalApi.close();
+  assert.equal(document.querySelector('.bulk-edit-modal'), null);
 });

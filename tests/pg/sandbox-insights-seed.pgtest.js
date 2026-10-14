@@ -99,6 +99,7 @@ pgDescribe('sandbox insights seed (real PostgreSQL)', () => {
     const deck = JSON.parse(res.body);
 
     const { summary, trend } = await getDashboardSummary(
+      scope(),
       GUEST,
       getDefaultOrganizationId(),
       { period: '30d' },
@@ -110,13 +111,14 @@ pgDescribe('sandbox insights seed (real PostgreSQL)', () => {
     assert.notEqual(trend.direction, 'flat');
 
     const timeline = await getDashboardTimeline(
+      scope(),
       GUEST,
       getDefaultOrganizationId(),
       { period: '7d' },
     );
     assert.ok(timeline.length > 0, 'the last week has a line');
 
-    const overview = await getPresentationAnalyticsOverview(deck.id);
+    const overview = await getPresentationAnalyticsOverview(scope(), deck.id);
     assert.ok(overview.totalViews > 0, 'the deck has its own analytics');
 
     const stray = await db

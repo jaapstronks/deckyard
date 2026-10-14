@@ -28,7 +28,7 @@ import {
   invalidateSettingsCache,
   updateMySettings,
 } from '../../../lib/net/settings.js';
-import { getLangShortLabel } from '../../../lib/format/lang-selector.js';
+import { getLangShortLabel } from '../../../lib/dom/lang-selector.js';
 import { createUserNotificationsSection } from '../sections/index.js';
 import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
@@ -111,7 +111,7 @@ export function createPreferencesTab({ user }) {
   };
 
   const buildLangControl = (supportedList) => {
-    langControlWrap.innerHTML = '';
+    langControlWrap.replaceChildren();
     langButtons = {};
     const langs =
       Array.isArray(supportedList) && supportedList.length > 0
@@ -519,7 +519,7 @@ export function createPreferencesTab({ user }) {
       // Digest settings
       const myDigest =
         my?.digest && typeof my.digest === 'object' ? my.digest : {};
-      digestEnabledCheck.checked = myDigest?.enabled !== false;
+      digestEnabledCheck.checked = myDigest?.enabled === true;
       digestDaySelect.value = String(myDigest?.dayOfWeek ?? 1);
 
       // Highlighter settings
@@ -536,7 +536,7 @@ export function createPreferencesTab({ user }) {
       // UI locale selector options
       const manifest = await fetchUiLocaleManifest();
       const locales = Array.isArray(manifest?.locales) ? manifest.locales : [];
-      uiLocaleSelect.innerHTML = '';
+      uiLocaleSelect.replaceChildren();
       if (!locales.length) {
         uiLocaleSelect.append(
           h('option', {

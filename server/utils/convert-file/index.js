@@ -36,7 +36,6 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  * @param {string} options.mimeType - MIME type (optional, for type detection)
  * @param {string} options.lang - Target language ('nl' or 'en-GB')
  * @param {string} options.vendor - LLM vendor ('openai' or 'anthropic')
- * @param {boolean} options.enableLogging - Enable AI conversation logging (default: true)
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
  * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
  * @param {function} options.onGroupDone - ({ done, total }) => void, called as
@@ -44,6 +43,13 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  * @param {AbortSignal} [options.signal] - Cancels the conversion: it reaches
  *   both model phases and is checked before every image upload, so a caller
  *   whose reader left stops instead of converting for nobody.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map (`buildMergedSlideTypes(scope)`); the AI slides are fixed
+ *   against it (B247).
+ * @param {string[]} [options.disabledSlideTypes] - Types the organization
+ *   may not insert; kept out of the catalog the model chooses from (B659).
+ * @param {Array} [options.customSlideTypes] - The organization's published
+ *   custom types, offered next to the core catalog (B659).
  * @returns {Promise<{deck: object|null, report: object}>}
  */
 export async function convertFile(buffer, options = {}) {
@@ -52,11 +58,13 @@ export async function convertFile(buffer, options = {}) {
     mimeType = '',
     lang = 'auto', // 'auto' = detect from content, otherwise 'nl' or 'en-GB'
     vendor = null,
-    enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
     onGroupDone = null,
     signal = null,
+    slideTypes,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
   } = options;
 
   const report = {
@@ -192,7 +200,6 @@ export async function convertFile(buffer, options = {}) {
       vendor,
       slideCount: regularSlides.length,
       metadata: parseResult.metadata,
-      enableLogging,
       onStatusMessage,
       onOutlineComplete,
       onGroupDone,
@@ -201,6 +208,9 @@ export async function convertFile(buffer, options = {}) {
       aiSlideIndexOffset, // Offset to apply to AI slide indices for correct ordering
       titleSlideCandidate, // Pre-extracted title slide from image-only first slide
       signal,
+      slideTypes,
+      disabledSlideTypes,
+      customSlideTypes,
     });
 
     // Include status messages in report

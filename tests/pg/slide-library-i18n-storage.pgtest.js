@@ -21,7 +21,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -29,6 +28,9 @@ import {
   createPersonalLibraryItem,
   listPersonalLibrary,
   updatePersonalLibraryItem,
+  createOrganizationLibraryItem,
+  listOrganizationLibrary,
+  updateOrganizationLibraryItem,
 } from '../../server/storage/slide-library.js';
 
 const storageScope = testScope();
@@ -55,9 +57,131 @@ pgDescribe(
     });
 
     after(async () => {
-      uninstallFacadeStorage();
       await closeTestDb(db);
     });
+
+    for (const shelf of ['personal', 'organization']) {
+      const create = (input) =>
+        shelf === 'personal'
+          ? createPersonalLibraryItem(storageScope, ALICE, input, {
+              actorEmail: ALICE,
+            })
+          : createOrganizationLibraryItem(storageScope, input, {
+              actorEmail: ALICE,
+            });
+      const list = () =>
+        shelf === 'personal'
+          ? listPersonalLibrary(storageScope, ALICE)
+          : listOrganizationLibrary(storageScope, { userEmail: ALICE });
+
+      it(`${shelf}: optional i18n fields may be omitted`, async () => {
+        for (const i18n of [
+          undefined,
+          {},
+          { dominant: 'nl' },
+          { versions: { nl: {} } },
+        ]) {
+          const result = await create({
+            name: 'Optional',
+            slideType: 'content-slide',
+            i18n,
+          });
+          assert.equal(result.ok, true);
+          assert.deepStrictEqual(result.item.i18n, i18n ?? {});
+        }
+      });
+
+      it(`${shelf}: a bilingual create/read/content-edit keeps translated prose and metadata`, async () => {
+        const i18n = {
+          dominant: 'nl',
+          translatedAt: '2026-10-12',
+          versions: {
+            nl: { content: { title: 'Hallo', author: 'Maker' } },
+            'en-GB': {
+              source: 'human',
+              content: { title: 'Hello', author: 'Maker' },
+            },
+          },
+        };
+        const created = await create({
+          name: 'Bilingual',
+          slideType: 'content-slide',
+          content: i18n.versions.nl.content,
+          i18n,
+        });
+        assert.equal(created.ok, true);
+        assert.deepStrictEqual(created.item.i18n, i18n);
+        const read = (await list()).items.find(
+          (item) => item.id === created.item.id,
+        );
+        assert.deepStrictEqual(read.i18n, i18n);
+        const content = { title: 'Dag', author: 'Maker' };
+        const opts = {
+          actorEmail: ALICE,
+          expectedRevision: read.revision,
+          allowEdit: () => true,
+        };
+        const edited =
+          shelf === 'personal'
+            ? await updatePersonalLibraryItem(
+                storageScope,
+                ALICE,
+                read.id,
+                { content },
+                opts,
+              )
+            : await updateOrganizationLibraryItem(
+                storageScope,
+                read.id,
+                { content },
+                opts,
+              );
+        assert.equal(edited.ok, true);
+        const expected = {
+          ...i18n,
+          versions: { ...i18n.versions, nl: { content } },
+        };
+        assert.deepStrictEqual(edited.item.i18n, expected);
+        assert.deepStrictEqual(
+          (await list()).items.find((item) => item.id === read.id).i18n,
+          expected,
+        );
+      });
+
+      it(`${shelf}: malformed nested language data never inserts a row`, async () => {
+        for (const i18n of [
+          [],
+          'text',
+          null,
+          { versions: [] },
+          { versions: 'text' },
+          { versions: null },
+          { versions: { nl: null } },
+          { versions: { nl: [] } },
+          { versions: { nl: 'text' } },
+          { versions: { 'en-GB': { content: 'text' } } },
+          { versions: { 'en-GB': { content: [] } } },
+          { versions: { 'en-GB': { content: null } } },
+        ]) {
+          const before = await db
+            .selectFrom('slide_library')
+            .selectAll()
+            .execute();
+          await assert.rejects(
+            () =>
+              create({ name: 'Malformed', slideType: 'content-slide', i18n }),
+            (err) =>
+              err.code === 'invalid' &&
+              err.statusCode === 400 &&
+              err.details.field.startsWith('i18n'),
+          );
+          assert.deepStrictEqual(
+            await db.selectFrom('slide_library').selectAll().execute(),
+            before,
+          );
+        }
+      });
+    }
 
     it('keeps both languages through create, read-back and update', async () => {
       const created = await createPersonalLibraryItem(

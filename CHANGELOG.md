@@ -4,6 +4,309 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.67.0](https://github.com/jaapstronks/deckyard/compare/v1.66.0...v1.67.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* deleteOldActivityEvents, cleanupExpiredSlideLocks, listSeedThemes, resolveSeedThemeSlug, installationDefaultThemeId, replaceTagLinks and getUserIdByEmail take a scope first; withDbGuard moved to server/db/client.js, initializeStorage and closeStorage to server/db/lifecycle.js, pendingMigrationsError and strandedFileDataError to server/db/boot-check.js; __resetStorageForTests removed.
+* Fork impact, with no re-export shims at the old paths:
+
+  | Module | Change |
+  | --- | --- |
+  | `server/storage/activity-events.js` | `deleteOldActivityEvents(scope, olderThan)`: instance retention scope only |
+  | `server/storage/slide-locks.js` | `cleanupExpiredSlideLocks(scope)`: instance retention scope only |
+  | `server/storage/themes.js` | `listSeedThemes(scope)`: organization or reasoned instance scope |
+  | `server/storage/settings.js` | `resolveSeedThemeSlug(scope, slug)`, `installationDefaultThemeId(scope)`: organization or reasoned instance scope |
+  | `server/storage/tags.js` | `replaceTagLinks(scope, { linkTable, rowId, tagNames })`: the `orgId` field is removed; the organization comes from the scope |
+  | `server/storage/utils/index.js` | `getUserIdByEmail(scope, db, email)`: the `orgId` argument is removed; the organization comes from the scope |
+  | `server/db/client.js` | `withDbGuard(fallback, fn)` moved from `server/storage/utils/db-guard.js`; no longer exported by `server/storage/utils/index.js` |
+  | `server/db/lifecycle.js` | `initializeStorage()`, `closeStorage()` moved from `server/storage/lifecycle.js` |
+  | `server/db/boot-check.js` | `pendingMigrationsError()`, `strandedFileDataError(repoRoot)` moved from `server/storage/boot-check.js` |
+
+  The no-op `__resetStorageForTests` is removed, and with it `uninstallFacadeStorage()` from `tests/pg/helpers/harness.js`; fork pg tests drop that call (`closeTestDb()` is the whole teardown). See `docs/reference/storage-scope.md`.
+
+### Changed
+
+* finish scope-first storage exports and move DB infrastructure to server/db ([#1639](https://github.com/jaapstronks/deckyard/issues/1639)) ([35b48c3](https://github.com/jaapstronks/deckyard/commit/35b48c3ee18bacff3e8d2a4b7c1bf22bfca46999))
+
+## [1.66.0](https://github.com/jaapstronks/deckyard/compare/v1.65.0...v1.66.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Fork callers of the 42 analytics, live-session, interaction-slide and share-link storage exports listed below (and in docs/reference/storage-scope.md) must insert StorageScope as the first argument; every old argument shifts one position, including explicit database arguments. No legacy overload is supported.
+* Request X-RateLimit-* headers describe the actual per-key budget instead of theoretical daily totals. getRateLimitHeaders in server/storage/api-usage.js accepts only explicit ai or exports limits; request callers use checkRequestRateLimit from server/utils/rate-limit.js. The allowRequestRedis export in server/utils/rate-limit-redis.js becomes allowRequestRedisDetails and returns a decision object; use its .allowed value, or use allowRequest from server/utils/rate-limit.js for boolean admission.
+
+
+The complete changed-export list (paths relative to the repository root):
+
+| Module | Exports receiving a new first `scope` argument |
+| --- | --- |
+| `server/storage/analytics/aggregations.js` | `getCompletionCounts`, `getDetailedSlideEngagement`, `getInteractionHeatmapData`, `getPresentationAnalyticsOverview`, `getViewerJourneyData` |
+| `server/storage/analytics/dashboard.js` | `getDashboardSummary`, `getDashboardTimeline`, `getPresentationsWithAnalytics`, `getSourceBreakdown`, `getTopPresentations` |
+| `server/storage/analytics/slide-views.js` | `deleteOldSlideViews`, `endAllSlideViewsForSession`, `transitionToSlide` |
+| `server/storage/analytics/view-sessions-gdpr.js` | `anonymizeOldIpAddresses`, `deleteUserAnalyticsData`, `eraseAnalyticsDataForDevice`, `eraseAnalyticsDataForSession`, `exportUserAnalyticsData` |
+| `server/storage/analytics/view-sessions.js` | `createViewSession`, `deleteOldViewSessions`, `getActiveViewerCount`, `getViewSessionsForPresentation` |
+| `server/storage/analytics/weekly-summary.js` | `getTeamWeeklyAnalytics`, `getWeeklyAnalyticsForUser` |
+| `server/storage/interaction-slides.js` | `ensureInteractionSlide`, `getInteractionSlide`, `updateInteractionSlide` |
+| `server/storage/live-sessions/close.js` | `closeSession` |
+| `server/storage/live-sessions/db.js` | `countPersistedSessions`, `deletePersistedSession`, `hydrateSession`, `hydrateSessionsForPresentation`, `persistSession`, `schedulePersist`, `sweepExpiredSessions` |
+| `server/storage/live-sessions/sse.js` | `touchSessionSync` |
+| `server/storage/share-links/access-log.js` | `getShareLinkAccessLog`, `logShareLinkAccess` |
+| `server/storage/share-links/crud.js` | `getValidShareLinkById`, `shareLinkCreatorNames` |
+| `server/storage/share-links/guests.js` | `requestGuestVerification` |
+| `server/storage/share-links/index.js` | `cleanupExpiredShareLinks` |
+
+Every previous argument shifts one position, including the database argument in `getCompletionCounts(scope, db, ...)` and `getValidShareLinkById(scope, db, ...)`. Import paths stay unchanged. Pass an organization scope, or a reasoned instance scope for the data-subject, token-capability and retention paths described in docs/reference/storage-scope.md.
+
+### Fixed
+
+* report actual public API request limits ([#1637](https://github.com/jaapstronks/deckyard/issues/1637)) ([57bba34](https://github.com/jaapstronks/deckyard/commit/57bba34772b5d3e316c9c710d000a6e7208fc9b0))
+
+
+### Security
+
+* enforce SSO on local authentication endpoints ([#1634](https://github.com/jaapstronks/deckyard/issues/1634)) ([dcb3b4d](https://github.com/jaapstronks/deckyard/commit/dcb3b4d7c2d9685fbcfef444774b07c5848a6174))
+
+
+### Changed
+
+* make analytics and audience storage scope-first ([#1636](https://github.com/jaapstronks/deckyard/issues/1636)) ([30375e8](https://github.com/jaapstronks/deckyard/commit/30375e8322dfb798fdc263a945a41dc523f1dec4))
+
+## [1.65.0](https://github.com/jaapstronks/deckyard/compare/v1.64.0...v1.65.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Fork callers of the 35 actor/organization/identity storage exports listed in docs/reference/storage-scope.md must insert StorageScope as the first argument. Global login identity, provisioning and instance audit paths require an explicit reasoned cross-organization scope; organization mutations require their target scope. Import paths remain unchanged; old signatures are removed.
+
+
+The complete changed-export list (paths relative to the repository root):
+
+| Module | Exports receiving a new first `scope` argument |
+| --- | --- |
+| `server/storage/collaborators.js` | `addCollaborator`, `getCollaboratorPermission`, `listCollaborators`, `removeCollaborator`, `updateCollaboratorPermission` |
+| `server/storage/display-identity.js` | `resolveDisplayNames`, `resolveNamesForAddresses` |
+| `server/storage/identity-resolver.js` | `resolveIdentity`, `resolveIdentityByEmail` |
+| `server/storage/identity-verification.js` | `verifyIdentityConsistency` |
+| `server/storage/identity.js` | `getUserByEmailGlobal`, `resolveActiveMembership`, `resolveActiveOrganization` |
+| `server/storage/login-membership.js` | `ensureMembership` |
+| `server/storage/password-reset.js` | `cleanupOldAuditLogs`, `getPasswordChangedAt`, `hasDatabaseCredentials`, `logAuthEvent`, `verifyUserPassword` |
+| `server/storage/user-organizations/memberships.js` | `addMember`, `countOrganizationMembers`, `getMembership`, `getMembershipByEmail`, `getOrganizationMember`, `listOrganizationMembers`, `listUserOrganizations`, `removeMember`, `transferOwnership`, `updateMemberDesigner`, `updateMemberRole` |
+| `server/storage/user-organizations/organizations.js` | `createOrganization`, `deleteOrganization`, `getOrganizationById`, `getOrganizationBySlug`, `updateOrganization` |
+
+Every previous argument shifts one position, including the database argument in `ensureMembership(scope, db, ...)`. Import paths stay unchanged. Organization-bound mutations use the target organization scope; pre-authentication, provisioning and instance-wide identity/audit operations require an explicit instance scope with a reason.
+
+### Fixed
+
+* validate declared slide fields on every save path ([#1632](https://github.com/jaapstronks/deckyard/issues/1632)) ([6653b40](https://github.com/jaapstronks/deckyard/commit/6653b40c42a58421cf135e501a9f4e31abd9a0cb))
+
+
+### Changed
+
+* enumerate scope-first upgrade calls for beta release ([75bb258](https://github.com/jaapstronks/deckyard/commit/75bb258066c75c0af3eb30cbb88cb21d879c5fea))
+* require actor and organization storage scopes ([#1631](https://github.com/jaapstronks/deckyard/issues/1631)) ([8ec1b7e](https://github.com/jaapstronks/deckyard/commit/8ec1b7e9fa569cae0fb4137a95c4245458b26abd))
+
+## [1.64.0](https://github.com/jaapstronks/deckyard/compare/v1.63.0...v1.64.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* App CSS source paths move without shims. Paths relative to client/styles/app/:  - `shell/20-editor-layout.css`, `shell/21-editor-skeleton.css`, `shell/107-collab-presence.css` -> Same filenames under `editor/`  - `shell/05-avatar.css`, `shell/99-notification-bell.css` -> Same filenames under `user/`  - `shell/96-activity-feed.css` -> `list/96-activity-feed.css`  - `list/17-deck-grid.css` -> `editor/17-deck-grid.css`  - `settings/103-data-source.css` -> `editor/103-data-source.css`  - `editor/modals/10-modals-base.css` -> `components/10-modals-base.css`; slide-picker and translation variants in `editor/modals/10-modals-editor.css`  - `editor/modals/11-modals-loading.css` -> `components/11-modals-loading.css`  - `editor/106-shortcuts-overlay.css` -> `components/106-shortcuts-overlay.css`  - `components.css` (declarations) -> `components/00-components.css`; `components.css` is now generated  - `editor/modals/13-modals-misc.css` (theme-picker section) -> `theme-select/13-theme-picker.css`  - `shell/110-sandbox-banner.css` (example shelf) -> `list/110-sandbox-examples.css`; the global banner remains in shell  - `share-viewer/75-share-viewer.css` (revocation dialog) -> `editor/modals/19-modals-revoke.css`; viewer styles remain in share-viewer
+
+Shared modal bases now load before all feature styles, and editor layout follows shell utilities. Check fork overrides that rely on source order; selectors and declaration values are preserved.
+
+### Changed
+
+* align app CSS with feature and DOM ownership ([b1646d5](https://github.com/jaapstronks/deckyard/commit/b1646d5814382fe21420cc6e03cb8d03fa1b5f8d))
+* clarify CSS path migration release policy ([b8a4712](https://github.com/jaapstronks/deckyard/commit/b8a47122546d425c596f929c9e0ea2f4fdc7c5ba))
+
+## [1.63.0](https://github.com/jaapstronks/deckyard/compare/v1.62.0...v1.63.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **storage:** `upsertThemeSeeds(db, seeds)` moved from `server/utils/theme-seeds.js` to `server/storage/themes.js` as `upsertThemeSeeds(scope, seeds)`. Fork callers must update the import and pass an explicit instance scope instead of a database handle.
+
+* **storage:** server/storage/presentations/crud/enforce-slide-locks.js exports enforceSlideLocks and enforceSlideWritePolicy now take (scope, opts) instead of ({ctx, ...opts}). Fork callers must pass the organization scope first and remove opts.ctx. Import paths are unchanged.
+
+### Fixed
+
+* **storage:** enforce scope-first slide lock policies and gate ([99fa167](https://github.com/jaapstronks/deckyard/commit/99fa1673e236a96da7088b98067e68cc0ea63616))
+
+## [1.62.0](https://github.com/jaapstronks/deckyard/compare/v1.61.0...v1.62.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* The optional ciiic-translation-rules package is no longer loaded by server/utils/openai/translate.js. Move its terminology and per-target-language style text into Settings > Admin > Translation instructions (/settings#admin), stored as organizations.settings.translationInstructions. There is no automatic migration; remove the obsolete package and its Dockerfile installation after transferring the content.
+* Fork imports of client/views/presenter/step.js must use client/lib/slide-runtime/step.js; imports of client/views/presenter/auto-advance.js must use client/lib/slide-runtime/auto-advance.js. Old paths are removed without shims.
+
+### Added
+
+* add organization translation instructions ([33938c9](https://github.com/jaapstronks/deckyard/commit/33938c91e07b54fe2b1e137d23949420e7597d38))
+
+
+### Security
+
+* isolate remaining sandbox guest sharing channels ([#1621](https://github.com/jaapstronks/deckyard/issues/1621)) ([5d920ed](https://github.com/jaapstronks/deckyard/commit/5d920edaa4375324eb83a0976985f3bffdfb121f))
+
+
+### Changed
+
+* clarify explicit release ownership transfers ([c6ee82c](https://github.com/jaapstronks/deckyard/commit/c6ee82c82141897989d83f0bd077bab73c174460))
+* enforce public client feature seams ([6aee542](https://github.com/jaapstronks/deckyard/commit/6aee54251a0c6cebbc258bdfd05e028fa6ccd9ab))
+
+## [1.61.0](https://github.com/jaapstronks/deckyard/compare/v1.60.0...v1.61.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* Import createTagEditor from client/views/tags/index.js instead of client/views/list/tag-editor.js. No shim remains at the old path. Fork guidance is in docs/reference/fork-setup.md.
+
+### Changed
+
+* clarify beta release override path ([158e435](https://github.com/jaapstronks/deckyard/commit/158e435cb38c769af6e4a341a7a4dbf2dfe7fcbd))
+* expose tag editor through its feature seam ([b0a590f](https://github.com/jaapstronks/deckyard/commit/b0a590f53bd2ad99cb7d732771983fcb5a0b6963))
+
+## [1.60.0](https://github.com/jaapstronks/deckyard/compare/v1.59.1...v1.60.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client:** these core module import paths moved without compatibility shims:
+
+- `client/views/editor/comment-markers.js` → `client/views/comments/comment-markers.js`.
+- `client/views/editor/comments-api.js` → `client/views/comments/comments-api.js`.
+- `client/views/editor/comments-panel.js` → `client/views/comments/comments-panel.js`.
+- `client/views/editor/comments-panel-actions.js` → `client/views/comments/comments-panel-actions.js`.
+- `client/views/editor/comments-panel-renderers.js` → `client/views/comments/comments-panel-renderers.js`.
+- `client/views/editor/comments-panel-sse.js` → `client/views/comments/comments-panel-sse.js`.
+- `client/views/editor/comments-read-state.js` → `client/views/comments/comments-read-state.js`.
+
+Fork callers should import `createCommentMarkers`, `createCommentsApi` and `createCommentsPanel` through `client/views/comments/index.js`. The other moved files are internal feature concerns. No stored-data migration or new configuration is required.
+
+### Fixed
+
+* translate published deck metadata and reader label ([#1610](https://github.com/jaapstronks/deckyard/issues/1610)) ([d5fc1e4](https://github.com/jaapstronks/deckyard/commit/d5fc1e48091e8aada0e143debf0f2f0dd3bc739e))
+
+
+### Changed
+
+* clarify beta release correction verification ([c628a2a](https://github.com/jaapstronks/deckyard/commit/c628a2af6e13227bb9b2101cacd7aabeb32a6a3e))
+* **client:** move comments behind their feature seam ([#1615](https://github.com/jaapstronks/deckyard/issues/1615)) ([43c48a3](https://github.com/jaapstronks/deckyard/commit/43c48a3f73afd21507f44677b96f3d6ec43174fa))
+
+## [1.59.1](https://github.com/jaapstronks/deckyard/compare/v1.59.0...v1.59.1) (2026-10-12)
+
+
+### Fixed
+
+* load live QR renderer in marketing capture ([#1607](https://github.com/jaapstronks/deckyard/issues/1607)) ([6708354](https://github.com/jaapstronks/deckyard/commit/67083546f9481c507458ecdc68fda3dfa68ab6ab))
+* refuse malformed library language versions before storage ([#1601](https://github.com/jaapstronks/deckyard/issues/1601)) ([8815871](https://github.com/jaapstronks/deckyard/commit/881587186e76359c3dc42d3089d21c12a897f314))
+
+## [1.59.0](https://github.com/jaapstronks/deckyard/compare/v1.58.0...v1.59.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client:** Client module import paths moved without compatibility shims. Update fork imports: client/lib/util/clipboard.js -> client/lib/dom/clipboard.js; client/lib/format/lang-selector.js -> client/lib/dom/lang-selector.js; client/lib/util/qr.js -> client/lib/dom/qr.js; client/views/ui-mode-switcher.js -> client/lib/dom/ui-mode-switcher.js; client/lib/util/file.js -> client/lib/net/file.js; client/lib/util/debug.js -> client/lib/state/debug.js; client/lib/util/dev-runtime.js -> client/lib/state/dev-runtime.js; client/lib/util/id.js -> client/lib/state/id.js; client/lib/collab/live-doc-binder.js -> client/views/editor/live-edits/live-doc-binder.js; client/lib/collab/presence-session.js -> client/views/editor/live-edits/presence-session.js; client/lib/collab/textarea-merge.js -> client/views/editor/live-edits/textarea-merge.js; client/views/notes-join.js -> client/views/notes/notes-join.js; client/views/present-window.js -> client/views/presenter/present-window.js; client/views/theme-select.js -> client/views/theme-select/index.js.
+
+### Changed
+
+* **client:** place views and widgets with their owners ([#1600](https://github.com/jaapstronks/deckyard/issues/1600)) ([819d1cd](https://github.com/jaapstronks/deckyard/commit/819d1cd7a1abd844a01f9b31aa8a2fb7acac4784))
+
+## [1.58.0](https://github.com/jaapstronks/deckyard/compare/v1.57.0...v1.58.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* QR helpers renderQrToCanvas and createQrDataUrl move from client/lib/slide-runtime/poll.js to client/lib/util/qr.js. The unused getOrCreateVoterId and mountPollBars exports are removed. The safeSlug export in server/utils/slug.js is removed; use generateSlug from shared/slug.js with fallback presentation where needed. Fork callers must update imports.
+
+### Fixed
+
+* a share-link guest comments through a route under the token (B179) ([#1584](https://github.com/jaapstronks/deckyard/issues/1584)) ([c5c9f68](https://github.com/jaapstronks/deckyard/commit/c5c9f687517277c3b5dfdd37da27dd80e91e4fc6))
+* AI session logs are one instance setting, off in the test suite (B661) ([#1580](https://github.com/jaapstronks/deckyard/issues/1580)) ([70b56fb](https://github.com/jaapstronks/deckyard/commit/70b56fbfc4810e6acfb5c5b72e8f2bf7459b99b0))
+* **auth:** the session token uses the signed-payload seam (B288) ([#1582](https://github.com/jaapstronks/deckyard/issues/1582)) ([838aa89](https://github.com/jaapstronks/deckyard/commit/838aa89ded31debc3ed64ea94f88fe291f0b104f))
+* owner_email is normalised on write, read sites compare bare (B392) ([#1586](https://github.com/jaapstronks/deckyard/issues/1586)) ([806c1dd](https://github.com/jaapstronks/deckyard/commit/806c1dd9f0526d1c52ce5c28b8e497bb8c98e357))
+* phase 2 accepts a slide type exactly where it is offered (B663) ([#1588](https://github.com/jaapstronks/deckyard/issues/1588)) ([8411b95](https://github.com/jaapstronks/deckyard/commit/8411b957a1de073ab90a0967d53ec7d7177c19e5))
+* respect theme heading transform on chart titles ([#1596](https://github.com/jaapstronks/deckyard/issues/1596)) ([ee0e672](https://github.com/jaapstronks/deckyard/commit/ee0e6721026b7d4a452f32097d780a1afd75d556))
+* share slug rules and refuse invalid publish renames ([#1595](https://github.com/jaapstronks/deckyard/issues/1595)) ([db06b00](https://github.com/jaapstronks/deckyard/commit/db06b00c491c9ea1dc1760d1c29d2744bbaef38c))
+* show the complete selected image in inspector previews ([#1597](https://github.com/jaapstronks/deckyard/issues/1597)) ([5d19de9](https://github.com/jaapstronks/deckyard/commit/5d19de9f8d00c9534a641bf35b6cd62da25fd557))
+* the client branches on error codes, refusals are inline (B674) ([#1589](https://github.com/jaapstronks/deckyard/issues/1589)) ([0488bd2](https://github.com/jaapstronks/deckyard/commit/0488bd2277a744b14a04cdefbb275c07c15fbc8e))
+* the schema funnel runs every step, a stamp skips nothing (B239) ([#1583](https://github.com/jaapstronks/deckyard/issues/1583)) ([93ab9bc](https://github.com/jaapstronks/deckyard/commit/93ab9bc01170671ae0110d382cfed2f4c83b3920))
+* the settings page and sidebar read one tab register (B679) ([#1591](https://github.com/jaapstronks/deckyard/issues/1591)) ([92362c2](https://github.com/jaapstronks/deckyard/commit/92362c21e3b6eb3fff0b6cc7e4597bd5cf70979f))
+* the weekly digest sends again and is opt-in (B662) ([#1587](https://github.com/jaapstronks/deckyard/issues/1587)) ([400dffb](https://github.com/jaapstronks/deckyard/commit/400dffbbf24695ee41b79206a5ff67458ce3bd65))
+* unify AI request parameters and imported image placeholders ([#1594](https://github.com/jaapstronks/deckyard/issues/1594)) ([4216ff1](https://github.com/jaapstronks/deckyard/commit/4216ff11a348f78819b94a92a92f23f09ba82d68))
+* unify remaining HTTP error envelopes ([#1593](https://github.com/jaapstronks/deckyard/issues/1593)) ([8554ff5](https://github.com/jaapstronks/deckyard/commit/8554ff5190a80a2cc84ece6f9e0f2a9d6f29a91d))
+* use one slide-type offer for MCP and one-shot AI ([#1592](https://github.com/jaapstronks/deckyard/issues/1592)) ([5b61e99](https://github.com/jaapstronks/deckyard/commit/5b61e9965ec5065a654f7f5125c699abdea5100e))
+
+
+### Changed
+
+* announce removed fork helper imports before release ([fddef11](https://github.com/jaapstronks/deckyard/commit/fddef118f99ca47236704187641530a81c853a4a))
+
+## [1.57.0](https://github.com/jaapstronks/deckyard/compare/v1.56.0...v1.57.0) (2026-10-11)
+
+
+### Added
+
+* configuration can set a slide type's default (B653) ([de4780d](https://github.com/jaapstronks/deckyard/commit/de4780d28233b7db33001a6334bdacaee890f2dd))
+* **export:** the theme template opens on a sample slide per layout (B637) ([#1536](https://github.com/jaapstronks/deckyard/issues/1536)) ([ecd0b3b](https://github.com/jaapstronks/deckyard/commit/ecd0b3b2b63203ca5036a7bb6fa3fd7a18206d54))
+* link previews of the app shell follow the instance branding (B186) ([905ca8c](https://github.com/jaapstronks/deckyard/commit/905ca8c59b673f432b8380fb1a02ce7a925b14d4))
+* **slide-types:** the title-view seam carries the inline descriptor and a view without a ground ([#1530](https://github.com/jaapstronks/deckyard/issues/1530)) ([64f9da4](https://github.com/jaapstronks/deckyard/commit/64f9da42b8cbda276c749167191eb60d27249cbd))
+* **themes:** the PPTX template is downloaded from the theme, not from a deck ([#1537](https://github.com/jaapstronks/deckyard/issues/1537)) ([b1d43db](https://github.com/jaapstronks/deckyard/commit/b1d43db645df6964c0b050bf0b258c924f2131a7))
+
+
+### Fixed
+
+* a background failure stays at the state it describes (B206) ([#1549](https://github.com/jaapstronks/deckyard/issues/1549)) ([b9bf974](https://github.com/jaapstronks/deckyard/commit/b9bf9745130161ec3beaf6addb283dfa54a9bd6f))
+* a Bunny library is configuration, not a default in core (B650) ([#1557](https://github.com/jaapstronks/deckyard/issues/1557)) ([d122c1a](https://github.com/jaapstronks/deckyard/commit/d122c1a594835a4c4244e72621af78bdd1397e8e))
+* a chart binding takes a range and gets a table (B238) ([#1545](https://github.com/jaapstronks/deckyard/issues/1545)) ([6e3e07f](https://github.com/jaapstronks/deckyard/commit/6e3e07f7755bedd4023fa6810d0ca29481f2ed34))
+* a confirmation does not repeat what the screen shows (B643) ([#1552](https://github.com/jaapstronks/deckyard/issues/1552)) ([f5b6dec](https://github.com/jaapstronks/deckyard/commit/f5b6dec08fb46d24c5ac9b57cc95dff2ec7468d9))
+* a failed action shows the server's reason, not generic copy (B205) ([#1546](https://github.com/jaapstronks/deckyard/issues/1546)) ([9b42443](https://github.com/jaapstronks/deckyard/commit/9b424434d0898d4e90add3807c2c81809672bad6))
+* a failed job says why in display text, or not at all (B646) ([#1554](https://github.com/jaapstronks/deckyard/issues/1554)) ([3fe5bfb](https://github.com/jaapstronks/deckyard/commit/3fe5bfb3e4adf87ed9ec3e6eee36c34f5a5d69cb))
+* a prompt example passes its own type's schema (B246) ([#1550](https://github.com/jaapstronks/deckyard/issues/1550)) ([5ca57fd](https://github.com/jaapstronks/deckyard/commit/5ca57fdc8a3a48943039db528f52a0969a737439))
+* a row that disappears hands focus back to its list (B647) ([#1555](https://github.com/jaapstronks/deckyard/issues/1555)) ([06f0c95](https://github.com/jaapstronks/deckyard/commit/06f0c95f2e446e8e4dc28ed843f6f000fcc5b44e))
+* a slide inserted after a child slide joins the child's group (B429) ([#1535](https://github.com/jaapstronks/deckyard/issues/1535)) ([2889d93](https://github.com/jaapstronks/deckyard/commit/2889d9321a881c679c876b834d89fdfb5889ddf5))
+* a slide role has one default, in the token layer (B640) ([#1548](https://github.com/jaapstronks/deckyard/issues/1548)) ([672e45e](https://github.com/jaapstronks/deckyard/commit/672e45ed398365d02b589c7a68f4fd411b5a0cab))
+* **a11y:** analytics screen-reader texts use the plural seam (B626) ([#1515](https://github.com/jaapstronks/deckyard/issues/1515)) ([a0811eb](https://github.com/jaapstronks/deckyard/commit/a0811ebac23e67ed024e7072f478146b5fe6cd3a))
+* **a11y:** restoring from the trash lands focus in the list (B657) ([#1565](https://github.com/jaapstronks/deckyard/issues/1565)) ([9eb59d2](https://github.com/jaapstronks/deckyard/commit/9eb59d2c24b0b9f05f7ba60cf7fca5a3ba404a82))
+* **ai:** the prompt offers each slide type the grounds its picker offers (B244) ([#1531](https://github.com/jaapstronks/deckyard/issues/1531)) ([33fcac2](https://github.com/jaapstronks/deckyard/commit/33fcac2d4a37545e2e51d577e238ca62d5904c03))
+* **ai:** the slide validators know the derived contrast keys (B628) ([#1520](https://github.com/jaapstronks/deckyard/issues/1520)) ([10f401a](https://github.com/jaapstronks/deckyard/commit/10f401ad6a0d3228a740a2ab137a25b4ef7efa1b))
+* **ai:** the translate prompt offers every string in an items entry (B219) ([#1524](https://github.com/jaapstronks/deckyard/issues/1524)) ([826ff9f](https://github.com/jaapstronks/deckyard/commit/826ff9f3b829f176272c5255d4404c18a06b8a94))
+* **analytics:** the views timeline labels each gridline with its own value (B236) ([#1539](https://github.com/jaapstronks/deckyard/issues/1539)) ([8bb45ab](https://github.com/jaapstronks/deckyard/commit/8bb45ab0587dbbf16bcab5db3539d0a9112dcc8a))
+* **api:** a promoted question answers `closed`, `locked` is the slide lock only (B215) ([#1525](https://github.com/jaapstronks/deckyard/issues/1525)) ([620f0d6](https://github.com/jaapstronks/deckyard/commit/620f0d627bc728260d5d52bddb7688e0171af707))
+* **capture:** a bilingual marketing deck is created in its language (B654) ([#1558](https://github.com/jaapstronks/deckyard/issues/1558)) ([d002c83](https://github.com/jaapstronks/deckyard/commit/d002c83c7d9ddc29939fb4395d229e8773ea92de))
+* deck search reads slide text by declaration, in every language (B257 B1-rest) ([#1568](https://github.com/jaapstronks/deckyard/issues/1568)) ([8a1ebe4](https://github.com/jaapstronks/deckyard/commit/8a1ebe489f0bab8ced244725ae05e7b53860bb8e))
+* **embed:** the SDK box grows by the strip under ui=strip (B629) ([#1516](https://github.com/jaapstronks/deckyard/issues/1516)) ([2d2c773](https://github.com/jaapstronks/deckyard/commit/2d2c773d819f865c5809fc115cfdaa76010dbaaf))
+* every box measures its padding inside its width (B230) ([#1571](https://github.com/jaapstronks/deckyard/issues/1571)) ([abad167](https://github.com/jaapstronks/deckyard/commit/abad167ff49f3219aa46c092c75ec9d67899f1ab))
+* every creation route composes from the organization's type map (B655) ([#1566](https://github.com/jaapstronks/deckyard/issues/1566)) ([f484fd6](https://github.com/jaapstronks/deckyard/commit/f484fd61c0014d3cdca580c3bb5e8d3dfd33b56d))
+* fold image-slide's legacy altNl/altEn into alt (B257) ([#1559](https://github.com/jaapstronks/deckyard/issues/1559)) ([9318466](https://github.com/jaapstronks/deckyard/commit/93184665a32af0bbcb0310467b4854bc628b2cbe))
+* fold the image-slide layout enum into fit + bleed (B257-A2) ([#1543](https://github.com/jaapstronks/deckyard/issues/1543)) ([af1a8fe](https://github.com/jaapstronks/deckyard/commit/af1a8fe876a937022d6136001e3d893b126a040e))
+* fold the legacy bgImage/bgAlt background in the read funnel (B257) ([#1560](https://github.com/jaapstronks/deckyard/issues/1560)) ([2ff291e](https://github.com/jaapstronks/deckyard/commit/2ff291e27c1f86f8bcd0ee79d3203f76cca510b7))
+* **i18n:** a dead slideType key fails the suite before it ships (B635) ([#1532](https://github.com/jaapstronks/deckyard/issues/1532)) ([1595004](https://github.com/jaapstronks/deckyard/commit/15950040f6c50a5b7d38d4d6f2a97bbc48729423))
+* imports and MCP offer the model the org's slide types (B659) ([#1578](https://github.com/jaapstronks/deckyard/issues/1578)) ([5e9986e](https://github.com/jaapstronks/deckyard/commit/5e9986e9d764542f638dcb2ca75ef027dc72f708))
+* MCP add/update check agent content instead of repairing it (B257 B4) ([#1564](https://github.com/jaapstronks/deckyard/issues/1564)) ([242823f](https://github.com/jaapstronks/deckyard/commit/242823fd3df6ad6f00df45a09aafe6354a2f5f9b))
+* progress shows at its state, not in a minute-long toast (B645) ([#1553](https://github.com/jaapstronks/deckyard/issues/1553)) ([8523920](https://github.com/jaapstronks/deckyard/commit/8523920a9294eb9f765760f43d4f2a4b866f1bd1))
+* retire dead tolerance (B257-A) ([#1541](https://github.com/jaapstronks/deckyard/issues/1541)) ([dada398](https://github.com/jaapstronks/deckyard/commit/dada398f53a41befdacacea47b806fe87d858cd3))
+* settings keeps its tab through the router, openapi drops the two-meaning locked (B638) ([#1533](https://github.com/jaapstronks/deckyard/issues/1533)) ([df5dbb7](https://github.com/jaapstronks/deckyard/commit/df5dbb76d0da4c1f55fd3ea70d9886733c95765d))
+* **shell:** the plain description tag follows the instance (B630) ([#1522](https://github.com/jaapstronks/deckyard/issues/1522)) ([756f64f](https://github.com/jaapstronks/deckyard/commit/756f64f7fb77401cc60af4996a23a06f08c41d61))
+* **slides:** the KPI deltas clear AA on a dark ground (B631) ([#1526](https://github.com/jaapstronks/deckyard/issues/1526)) ([1aaac9d](https://github.com/jaapstronks/deckyard/commit/1aaac9d52274f77df58ae501f635149142ed104b))
+* **slides:** the KPI deltas take less tone on any dark ground (B633) ([#1527](https://github.com/jaapstronks/deckyard/issues/1527)) ([79f02b9](https://github.com/jaapstronks/deckyard/commit/79f02b923260eb26d8787d41100cf5eb4efe8b8f))
+* **slides:** the KPI tile glass follows the ground, AA on dark (B218) ([#1523](https://github.com/jaapstronks/deckyard/issues/1523)) ([9f1fe7c](https://github.com/jaapstronks/deckyard/commit/9f1fe7c920e177c933019cab9e491410dddcde4e))
+* the AI generation paths fix slides against the org's type map (B247) ([#1576](https://github.com/jaapstronks/deckyard/issues/1576)) ([5f11acf](https://github.com/jaapstronks/deckyard/commit/5f11acfd438cfd098e43703c3126fc0f1f89e4d7))
+* the analysis offers the model the org's slide types (B660) ([#1579](https://github.com/jaapstronks/deckyard/issues/1579)) ([a7c1681](https://github.com/jaapstronks/deckyard/commit/a7c16811e89ef6e045bd12290aeb87c802c278a3))
+* the Bunny player takes its colours from the theme (B648) ([#1556](https://github.com/jaapstronks/deckyard/issues/1556)) ([1eb9359](https://github.com/jaapstronks/deckyard/commit/1eb9359b7ff788154ebc27e87ffb6fc149876fd4))
+* the chart error card and SVG names speak the deck language (B235) ([#1538](https://github.com/jaapstronks/deckyard/issues/1538)) ([e2c760a](https://github.com/jaapstronks/deckyard/commit/e2c760adb7fb34197a96cda8ac27e508cb4782df))
+* the chart error card reads the slide's ground, not a fixed light plate (B639) ([#1540](https://github.com/jaapstronks/deckyard/issues/1540)) ([06e8afb](https://github.com/jaapstronks/deckyard/commit/06e8afbbf2aca6766a5c9ec8f328818957d6c1b9))
+* the deck import drops content keys its type does not declare (B257 B2) ([#1561](https://github.com/jaapstronks/deckyard/issues/1561)) ([4d87957](https://github.com/jaapstronks/deckyard/commit/4d879577eee9fc4ecaeb0ee8ff13da42c54c10fb))
+* the example an agent gets is the type's sample, not its empty defaults (B245) ([#1547](https://github.com/jaapstronks/deckyard/issues/1547)) ([e327ca8](https://github.com/jaapstronks/deckyard/commit/e327ca838d482d8de5afe1b55af98581e30799a9))
+* the live-session close test waits for the delete, not 50 ms (B644) ([#1551](https://github.com/jaapstronks/deckyard/issues/1551)) ([c5c1c59](https://github.com/jaapstronks/deckyard/commit/c5c1c5907c18439d819823cd5bd479d95277c234))
+* the PPTX export paints with the theme, not CIIIC's colours (B656) ([#1563](https://github.com/jaapstronks/deckyard/issues/1563)) ([2f3a7dc](https://github.com/jaapstronks/deckyard/commit/2f3a7dc34130129576dc6fcb45e3f8e962358dc2))
+* the refine phase checks content against fields[] alone (B242) ([#1567](https://github.com/jaapstronks/deckyard/issues/1567)) ([4876397](https://github.com/jaapstronks/deckyard/commit/4876397bb25f23147ca34f43b19db27c6d9876e6))
+* the slide library has its own address and a slide permalink opens the slide (B285) ([#1529](https://github.com/jaapstronks/deckyard/issues/1529)) ([fa270a9](https://github.com/jaapstronks/deckyard/commit/fa270a99003eb037c2a04e42a3b30fbc1833f4a4))
+
 ## [1.56.0](https://github.com/jaapstronks/deckyard/compare/v1.55.0...v1.56.0) (2026-10-09)
 
 

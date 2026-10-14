@@ -1,5 +1,5 @@
 /**
- * B55 — the slide-library tag PUTs take one canonical body shape.
+ * The slide-library tag PUTs take one canonical body shape (B55).
  *
  * `PUT /api/slide-library/{personal,organization}/:id/tags` accepts `{ tags: [...] }`
  * and nothing else. The historical bare-array body (`["a","b"]`) is a 400 from
@@ -10,6 +10,7 @@
  * Run with: node --test tests/slide-library-tag-put-shape.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -18,29 +19,11 @@ import { handleSlideLibrary } from '../server/routes/api/slide-library.js';
 /** A library item id: a `uuid` column, declared so by the route (B399). */
 const ITEM_ID = '5b0c9d1e-2f3a-4b5c-8d6e-7f8091a2b3c4';
 
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 function putCtx(path, rawBody) {
   const req = Readable.from([Buffer.from(rawBody)]);
   req.method = 'PUT';
   req.headers = {};
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {
@@ -62,7 +45,7 @@ for (const shelf of ['personal', 'organization']) {
     );
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
-    assert.equal(res.payload.message, 'Request body must be a JSON object');
+    assert.equal(res.json().message, 'Request body must be a JSON object');
   });
 
   test(`${shelf} tags PUT: a non-array tags field is a 400`, async () => {
@@ -72,7 +55,7 @@ for (const shelf of ['personal', 'organization']) {
     );
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
-    assert.equal(res.payload.message, 'Expected { tags: [...] }');
+    assert.equal(res.json().message, 'Expected { tags: [...] }');
   });
 
   test(`${shelf} tags PUT: a missing tags field is a 400`, async () => {
@@ -82,6 +65,6 @@ for (const shelf of ['personal', 'organization']) {
     );
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
-    assert.equal(res.payload.message, 'Expected { tags: [...] }');
+    assert.equal(res.json().message, 'Expected { tags: [...] }');
   });
 }

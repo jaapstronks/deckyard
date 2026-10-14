@@ -38,7 +38,7 @@ view reads those two (B516); `count` is kept for the record.
 | `countDeckView(surface, pres)`     | `surface:<surface>` plus `slide_type.viewed:<type>` for every type in the deck     |
 | `slideTypeEntries(axis, pres)`     | the distinct slide types of a deck, every language version included                |
 | `readInstanceHealth({ sinceDay })` | the rows from a day on, oldest first, `day` as `YYYY-MM-DD`                        |
-| `readFirstInstanceHealthDay()`     | the first day any row was counted, the start of the D26 term                       |
+| `readFirstInstanceHealthDay()`     | the first day any row was counted, the start of the pruning term (D26)             |
 | `summarizeInstanceHealth(rows)`    | folds rows into days active, last seen and count per key, per axis (pure)          |
 | `pruneInstanceHealth(cutoffDay)`   | deletes the days before the cutoff                                                 |
 
@@ -139,7 +139,7 @@ cross-organization_: it answers counts, never a row, an id or an organization.
 
 ## Implementation status (as of 2026-10-01)
 
-B514 (table, facade, measuring points), B515 (the `api_v1` axis) and B516 (the
-admin view and the census) are in. The pruning gate itself (A7.3, D26: the
-prune list opens three months after the first row on a production instance)
+The table, facade and measuring points, the `api_v1` axis, and the admin view
+with the census are in (B514, B515, B516). The pruning gate itself (A7.3, D26:
+the prune list opens three months after the first row on a production instance)
 is tracked in the planning, not here.

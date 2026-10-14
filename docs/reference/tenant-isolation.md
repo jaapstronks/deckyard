@@ -17,10 +17,7 @@ Deckyard's hosting story has four shapes:
    deploy with its **own process and its own database**. Requested via the
    contact form or as an upgrade path from sandbox/self-host. Available as
    managed hosting: you run it, or we run it for you.
-4. **Multiple organizations on one instance** (`MULTI_ORG_ENABLED`) —
-   **in development**, see below. Isolation is enforced in code (every query is
-   scoped by `organization_id`) rather than by infrastructure, which is what
-   the PostgreSQL storage layer provides.
+4. **Multiple organizations on one instance** (`MULTI_ORG_ENABLED`) — see below. Isolation is enforced in code (every query is scoped by `organization_id`) rather than by infrastructure, which is what the PostgreSQL storage layer provides.
 
 Shapes 1-3 run in the default **single-organization** mode
 (`MULTI_ORG_ENABLED` unset). Their isolation guarantee is
@@ -56,8 +53,7 @@ Concretely, on a dedicated instance:
   authenticated user read access to `visibility: 'organization'` decks
   (`server/utils/presentation-authz/presentations.js`) is intended organization
   sharing, not a leak — the organization _is_ the single tenant.
-- Private decks stay owner-scoped (email-keyed ownership check in the same
-  file), so users on the instance still can't read each other's private decks.
+- Private decks stay owner-scoped (`users.id` ownership check in the same file), so users on the instance still can't read each other's private decks.
 
 ## The storage layer enforces the boundary
 
@@ -110,8 +106,9 @@ organization and which never will:
   adding one is a defect, not diligence. A column that exists but is never
   filtered on is the same defect in another shape: it either becomes real
   (filled from the session, filtered everywhere) or it goes. Reads that cross
-  organizations exist only on the token-authorized paths
-  (`crossOrganizationScope`).
+  organizations require an explicit reasoned instance scope
+  (`crossOrganizationScope`): token-authorized paths, an authenticated person's
+  instance-wide data-subject request, or an enumerated instance operation.
 - **R3 — Instance machinery is instance-global, enumerated by name.** The
   closed list: `app_settings`, `user_settings` (keyed per person — one set of
   preferences however many organizations they join), `email_templates` and its
@@ -150,17 +147,14 @@ Four edge decisions taken with the rules:
    with me" _should_ be organization-scoped is a product question about what that
    list means across organizations, and is the only thing keeping this column
    from being removable outright.
-6. **The share-link access log is addressed by the link, and takes no
-   context.** `share_link_access_log` rows hang off one
-   `presentation_share_links.id`, itself a globally unique uuid, so the link
-   identifies the organization on its own — the same reasoning as decision 5.
-   Both functions in `server/storage/share-links/access-log.js` used to accept
-   a context parameter and ignore it, a check the signature promised and never
-   performed; the parameter is gone rather than made real. Authorization sits
-   with the caller, which is where it already was: the management route
-   authorizes the presentation (`withPresentationAuth`) and then binds the link
-   id to it through the organization-filtered `getShareLinkById`, before any
-   viewer IP or user-agent is read.
+6. **The share-link access log inherits the link's organization.**
+   `share_link_access_log` rows hang off one globally unique
+   `presentation_share_links.id`. The public write follows a validated share
+   token and passes a reasoned instance scope; storage verifies that the link
+   exists. The management read requires an organization scope and joins the
+   parent link to filter by its organization before returning viewer IP or
+   user-agent. The management route also authorizes the presentation and binds
+   the link id through the organization-filtered `getShareLinkById`.
 7. **`view_sessions` carries no organization column, and GDPR self-service is
    scoped by person.** The column existed from migration 014 and was never
    trustworthy: the public tracking route stamped it from
@@ -197,12 +191,7 @@ Sandbox mode is safe to expose publicly. Its isolation rests on four things:
 - **Separate storage roots.** Data and uploads live under `SANDBOX_DATA_DIR` /
   `SANDBOX_UPLOADS_DIR` when set (`server/config/storage-paths.js`), keeping
   sandbox content off any real install's disk.
-- **Per-guest unguessable identity.** Each visitor gets a random UUID in the
-  `sb_sandbox` cookie, mapped to a synthetic email
-  `guest-<uuid>@sandbox.local` (`server/auth/sandbox.js`). A guest's private
-  decks are owned by that email, and the private-visibility authz check is
-  email-keyed, so one guest cannot read another's private decks without knowing
-  their random UUID.
+- **Per-guest unguessable identity.** Each visitor gets a random token in the `sb_sandbox` cookie, mapped to a synthetic email `guest-<digest>@sandbox.local` (`server/auth/sandbox.js`). The guest has a `users.id` resolved from that identity before authorization; private-deck ownership compares that id, so another guest cannot pass the owner check.
 - **Organization decks are intentionally shared, read-only seed content.** In
   sandbox mode `canWritePresentation` returns `false` for organization visibility
   (`server/utils/presentation-authz/presentations.js`), and the sandbox
@@ -219,7 +208,7 @@ No persistent cross-session leak was found: private decks are isolated by an
 unguessable per-guest identity, and the only shared decks are the
 read-only curated seed set.
 
-## In development: shape 4 (multiple organizations on one instance)
+## Shape 4: multiple organizations on one instance
 
 _Operating it — turning it on, creating organizations (`npm run org:create`),
 what stays instance-global — is the runbook
@@ -508,14 +497,7 @@ admin had switched into, is gone. Pinned by
 
 ### What is not done yet
 
-- **Ownership and access control still key on email strings**, not on
-  `users.id`. Every authorization decision in
-  `server/utils/presentation-authz/` compares `pres.ownerEmail` / `pres.createdBy`
-  against the session's email, and the collaborator, comment and lock tables do
-  the same. That is a decoupling epic of its own, not organization work, and it
-  is what stands between the current state and pointing two _unrelated_
-  customers at one instance. The narrow leaks it started from were closed
-  separately (PR #214).
+- **Some collaborator grants still key on email.** Presentation owner and creator checks compare `users.id` to the id stamps on the deck (`shared/identity-match.js`); collaborator lookups still use `user_email` (`server/storage/collaborators.js`). This is a separate identity migration, not an unimplemented owner check.
 - **`AUTH_DEV_BYPASS` and multi-organization do not mix.** The bypass pins
   `organizationId` on the default organization and ignores the session cookie
   (`server/auth/auth.js`), so there is no membership to read a role or a designer
@@ -523,7 +505,4 @@ admin had switched into, is gone. Pinned by
   verify locally; a bypass session in multi-organization mode sees the designer tabs
   disappear.
 
-Shape 4 stays _in development_ on those grounds, not on missing UI: the
-isolation it offers is code-enforced, and the identity epic above is the
-remaining structural gap. Shapes 1-3 are unaffected — their tenant boundary is
-the deploy itself.
+Shape 4 uses code-enforced organization isolation. The remaining limitations above matter when operating a shared instance; shapes 1-3 keep their tenant boundary at the deploy itself.

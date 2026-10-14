@@ -37,8 +37,6 @@ import {
 import { SLIDE_TYPE_CATALOG } from '../../server/utils/ai/slide-catalog/definitions.js';
 import { SLIDE_TYPE_EXAMPLES } from '../../server/utils/ai/slide-catalog/examples.js';
 import { isAgentOptOut } from '../../server/utils/ai/slide-catalog/agent-catalog.js';
-import { STRUCTURE_VALIDATORS } from '../../server/utils/ai/validate-slide-structure.js';
-import { slideStructure } from '../../shared/slide-types/structure.js';
 import { MANUAL_EXAMPLES } from '../../server/utils/openai/slide-types-prompt.js';
 import { SLIDE_TYPE_SCHEMATIC } from '../../client/views/editor/slide-type-schematics.js';
 import { INLINE_DESCRIPTORS } from '../../client/views/editor/inline-edit/descriptors.js';
@@ -109,19 +107,6 @@ const isEditable = () => true;
 
 /** Every type that declares a curation/picker group. */
 const groupedTypes = () => Object.keys(SLIDE_TYPE_GROUP);
-
-/**
- * Types whose primary content is a repeated-item collection — the only shape a
- * structural validator can meaningfully check beyond the flat field schema (see
- * the `structure-validation` companion). `singleton`, `dataset`, `tabular` and
- * `chrome` are validated field-by-field elsewhere and owe no structural case.
- * @param {object} def
- * @returns {boolean}
- */
-const isCollectionShaped = (def) => {
-  const s = slideStructure(def);
-  return s === 'collection' || s === 'fixed-collection';
-};
 
 /**
  * @typedef {Object} Companion
@@ -403,23 +388,6 @@ export const COMPANIONS = [
     appliesTo: isEditable,
     has: (name) => Boolean(SLIDE_TYPE_ELEMENT_TAB[name]),
     keys: () => Object.keys(SLIDE_TYPE_ELEMENT_TAB),
-    exempt: {},
-  },
-  {
-    id: 'structure-validation',
-    label: 'structural validator',
-    where: 'server/utils/ai/validate-slide-structure.js (STRUCTURE_VALIDATORS)',
-    degradesTo:
-      'validateSlideContentStructure() returns no issues, so a collection with ' +
-      'too few items or a missing item field is accepted unvalidated by refine',
-    // Narrower than the derived content schema: this validator earns its keep only on
-    // repeated-item collections, where cardinality and per-item required fields
-    // are invariants the flat field/Zod schema cannot express. Singleton,
-    // dataset, tabular and chrome types are validated field-by-field there and
-    // owe no structural case.
-    appliesTo: (name, def) => !isAgentOptOut(def) && isCollectionShaped(def),
-    has: (name) => Boolean(STRUCTURE_VALIDATORS[name]),
-    keys: () => Object.keys(STRUCTURE_VALIDATORS),
     exempt: {},
   },
 ];

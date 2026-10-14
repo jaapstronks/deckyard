@@ -51,8 +51,10 @@
  * @module storage/display-identity
  */
 
+import { toStorageContext } from './scope.js';
+
 import { displayNameFromEmail } from '../../shared/display-name.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 
 /**
  * A person as a response names them.
@@ -224,11 +226,18 @@ function normalize(email) {
  * the stable id leads, the email-keyed row is the fallback for the rows the
  * migration-067 backfill could not key. Falls back again to `users.name`.
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {Array<{id?: string|null, email?: string|null}>} stamps
  * @returns {Promise<DisplayNameLookup>} Never throws for an empty batch or an
  *   unavailable database: it simply resolves nothing.
  */
-export async function resolveDisplayNames(stamps) {
+export async function resolveDisplayNames(scope, stamps) {
+  toStorageContext(
+    scope,
+    'resolveDisplayNames',
+    {},
+    { allowCrossOrganization: true },
+  );
   const ids = new Set();
   const emails = new Set();
   for (const stamp of stamps || []) {
@@ -334,11 +343,19 @@ export async function resolveDisplayNames(stamps) {
  * the person's id behind the address, which is what
  * {@link toStoredActorIdentity} needs to hand the client an avatar key.
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {Array<string|null|undefined>} emails - The stamped addresses.
  * @returns {Promise<DisplayNameLookup>}
  */
-export function resolveNamesForAddresses(emails) {
+export function resolveNamesForAddresses(scope, emails) {
+  toStorageContext(
+    scope,
+    'resolveNamesForAddresses',
+    {},
+    { allowCrossOrganization: true },
+  );
   return resolveDisplayNames(
+    scope,
     (emails || []).filter(Boolean).map((email) => ({ email })),
   );
 }

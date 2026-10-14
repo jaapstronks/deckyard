@@ -11,10 +11,12 @@
  * organization-scoped".
  */
 
+import { crossOrganizationScope } from '../scope.js';
+
 import crypto from 'node:crypto';
 import { getDb, sql } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
-import { nowIso } from '../../utils/normalize.js';
+import { normalizeEmail, nowIso } from '../../utils/normalize.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
 import {
   resolveDisplayNames,
@@ -59,48 +61,43 @@ const STALE_REVISION_MESSAGE =
   'Conflict: this presentation was updated by someone else. Reload and try again.';
 
 /**
- * List the presentations of the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * List the presentations of the scope's organization.
+ * @param {import('../scope.js').StorageScope} scope
  * @returns {Promise<Array>}
  */
-export async function listPresentations(storageScope) {
-  const ctx = toStorageContext(storageScope, 'listPresentations');
+export async function listPresentations(scope) {
+  const ctx = toStorageContext(scope, 'listPresentations');
   return listPresentationRows(ctx);
 }
 
 /**
- * Fetch one presentation by id, within the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * Fetch one presentation by id, within the scope's organization.
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
-export async function getPresentation(storageScope, id) {
+export async function getPresentation(scope, id) {
   // The single durable read funnel: every stored deck is migrated up to the
   // current schema version in memory here, so callers (editor, exports, the
   // semantic projection) never see a legacy shape. Reads don't write; the
   // upgraded deck is persisted on the next write.
-  const ctx = toStorageContext(
-    storageScope,
-    'getPresentation',
-    {},
-    ALLOW_CROSS_ORG,
-  );
+  const ctx = toStorageContext(scope, 'getPresentation', {}, ALLOW_CROSS_ORG);
   return migratePresentation(await getPresentationRow(id, ctx));
 }
 
 /**
- * Create a presentation in the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * Create a presentation in the scope's organization.
+ * @param {import('../scope.js').StorageScope} scope
  * @param {Object} body
  * @returns {Promise<Object>}
  */
-export async function createPresentation(storageScope, body) {
-  // Validate the storageScope before doing any work: a caller that gave none must fail
+export async function createPresentation(scope, body) {
+  // Validate the scope before doing any work: a caller that gave none must fail
   // here, not after preparing a deck it has nowhere to put.
-  const ctx = toStorageContext(storageScope, 'createPresentation', {
+  const ctx = toStorageContext(scope, 'createPresentation', {
     actorEmail: body?.ownerEmail,
   });
-  const repoRoot = repoRootOf(storageScope);
+  const repoRoot = repoRootOf(scope);
   // Sandbox: refuse the mint (typed 4xx) once the guest is at their storage
   // quota, before preparing anything. Enforced here in the facade; no-op
   // outside sandbox mode.
@@ -111,8 +108,8 @@ export async function createPresentation(storageScope, body) {
   // pass the same write seam, so it gets the same organization registry an
   // update does — see the note on `slideTypes` below.
   const preparedPresentation = await prepareNewPresentation(repoRoot, body, {
-    slideTypes: await buildMergedSlideTypes(storageScope),
-    storageScope,
+    slideTypes: await buildMergedSlideTypes(scope),
+    storageScope: scope,
   });
 
   // Text colour over a background image is settled before the deck is
@@ -120,8 +117,7 @@ export async function createPresentation(storageScope, body) {
   // with a readable title (B627).
   await settleBgTextContrast(preparedPresentation, {
     repoRoot,
-    loadTheme: () =>
-      loadDeckTheme(repoRoot, preparedPresentation.theme, storageScope),
+    loadTheme: () => loadDeckTheme(repoRoot, preparedPresentation.theme, scope),
   });
 
   // Validate size limits before creating
@@ -149,17 +145,17 @@ export async function createPresentation(storageScope, body) {
 }
 
 /**
- * Update a presentation within the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * Update a presentation within the scope's organization.
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} body
  * @param {Object} [opts]
  * @returns {Promise<Object>}
  */
-export async function updatePresentation(storageScope, id, body, opts) {
+export async function updatePresentation(scope, id, body, opts) {
   // Validate up front: the pre-save reads below would otherwise be the first
   // thing to notice a caller that stated no organization.
-  toStorageContext(storageScope, 'updatePresentation', {
+  toStorageContext(scope, 'updatePresentation', {
     actorEmail: opts?.actorEmail,
   });
   // Server-as-collaborator seam: capture the pre-save state first. It is
@@ -169,7 +165,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
     opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
   let collabBase = null;
   if (collabEligible) {
-    collabBase = await getPresentation(storageScope, id).catch(() => null);
+    collabBase = await getPresentation(scope, id).catch(() => null);
   }
 
   // Merge-capable save (editor autosave with If-Match + modified-slide ids)
@@ -182,13 +178,13 @@ export async function updatePresentation(storageScope, id, body, opts) {
     Array.isArray(opts?.modifiedSlideIds)
   ) {
     try {
-      const current = collabBase || (await getPresentation(storageScope, id));
+      const current = collabBase || (await getPresentation(scope, id));
       if (current && Number(current.revision) - expectedRevision > 1) {
-        await createPresentationVersion(storageScope, id, current, {
+        await createPresentationVersion(scope, id, current, {
           actorEmail: opts?.actorEmail || null,
           reason: 'pre_merge',
         });
-        await prunePresentationVersions(storageScope, id);
+        await prunePresentationVersions(scope, id);
       }
     } catch {
       // snapshots are best-effort
@@ -197,7 +193,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
 
   let result;
   try {
-    result = await updatePresentationUncached(storageScope, id, body, opts);
+    result = await updatePresentationUncached(scope, id, body, opts);
   } finally {
     invalidatePresentationCache(id);
   }
@@ -210,7 +206,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
         presentation: result,
         actorEmail: opts.actorEmail,
         merge: result._slideMerge,
-        scope: storageScope,
+        scope,
       }),
       'slide-level merge audit',
     );
@@ -224,8 +220,8 @@ export async function updatePresentation(storageScope, id, body, opts) {
       countInstanceHealth(slideTypeEntries('slide_type.authored', result));
     }
     fireAndForget(
-      import('../live-sessions/sse.js').then((m) =>
-        m.notifyDeckUpdatedForPresentation(storageScope, id),
+      import('../live-sessions/index.js').then((m) =>
+        m.notifyDeckUpdatedForPresentation(scope, id),
       ),
       'live-session deck refresh after save',
     );
@@ -262,7 +258,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
     // no binary exists.
     if (opts?.reason !== 'collab' && !appliedToLiveDoc) {
       fireAndForget(
-        deleteYDocState(storageScope, id),
+        deleteYDocState(scope, id),
         'collab Y.Doc invalidation after save',
       );
     }
@@ -270,8 +266,8 @@ export async function updatePresentation(storageScope, id, body, opts) {
   return result;
 }
 
-async function updatePresentationUncached(storageScope, id, body, opts) {
-  const ctx = toStorageContext(storageScope, 'updatePresentation', {
+async function updatePresentationUncached(scope, id, body, opts) {
+  const ctx = toStorageContext(scope, 'updatePresentation', {
     actorUserId: opts?.actorUserId,
     actorEmail: opts?.actorEmail,
   });
@@ -293,7 +289,7 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
   // indexed SELECT, and only on a write that actually carries slides (B129).
   const touchesSlides = normalized.slides !== undefined || !!normalized.i18n;
   const slideTypes = touchesSlides
-    ? await buildMergedSlideTypes(storageScope)
+    ? await buildMergedSlideTypes(scope)
     : undefined;
   if (normalized.slides !== undefined) {
     // `id` rather than `body.id`: the deck being written is the one the route
@@ -318,8 +314,8 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
 
     const result = migratePresentation(
       await updatePresentationRow(id, normalized, ctx, opts, {
-        repoRoot: repoRootOf(storageScope),
-        storageScope,
+        repoRoot: repoRootOf(scope),
+        storageScope: scope,
       }),
     );
 
@@ -337,20 +333,20 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
   // see a permanent schemaVersion difference and never converge.
   return migratePresentation(
     await updatePresentationRow(id, normalized, ctx, opts, {
-      repoRoot: repoRootOf(storageScope),
-      storageScope,
+      repoRoot: repoRootOf(scope),
+      storageScope: scope,
     }),
   );
 }
 
 /**
  * Move a presentation to the trash.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [opts]
  */
-export async function deletePresentation(storageScope, id, opts) {
-  const ctx = toStorageContext(storageScope, 'deletePresentation', {
+export async function deletePresentation(scope, id, opts) {
+  const ctx = toStorageContext(scope, 'deletePresentation', {
     actorEmail: opts?.actorEmail,
   });
   try {
@@ -360,31 +356,31 @@ export async function deletePresentation(storageScope, id, opts) {
     // Trash/restore round-trips must not resurrect a stale collab doc.
     // Unconditional for the same reason as in updatePresentation.
     fireAndForget(
-      deleteYDocState(storageScope, id),
+      deleteYDocState(scope, id),
       'collab Y.Doc invalidation after delete',
     );
   }
 }
 
 /**
- * List trashed presentations of the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * List trashed presentations of the scope's organization.
+ * @param {import('../scope.js').StorageScope} scope
  */
-export async function listTrashedPresentations(storageScope) {
-  const ctx = toStorageContext(storageScope, 'listTrashedPresentations');
+export async function listTrashedPresentations(scope) {
+  const ctx = toStorageContext(scope, 'listTrashedPresentations');
   return listTrashedPresentationRows(ctx);
 }
 
 /**
  * Restore a presentation out of the trash.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
  *   `not_found` when no trashed deck with that id lives in this organization.
  */
-export async function restorePresentation(storageScope, id) {
+export async function restorePresentation(scope, id) {
   try {
-    const ctx = toStorageContext(storageScope, 'restorePresentation');
+    const ctx = toStorageContext(scope, 'restorePresentation');
     return await restorePresentationRow(id, ctx);
   } finally {
     invalidatePresentationCache(id);
@@ -401,7 +397,7 @@ export async function restorePresentation(storageScope, id) {
  * DELETE additionally requires `trashed_at <= trashedBefore`, so a deck
  * restored and trashed again after a caller picked it keeps its fresh window.
  *
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [options]
  * @param {string} [options.trashedBefore] - ISO timestamp; only delete a deck
@@ -412,12 +408,12 @@ export async function restorePresentation(storageScope, id) {
  *   trashed but after `trashedBefore`.
  */
 export async function deletePresentationRecord(
-  storageScope,
+  scope,
   id,
   { trashedBefore } = {},
 ) {
   try {
-    const ctx = toStorageContext(storageScope, 'deletePresentationRecord');
+    const ctx = toStorageContext(scope, 'deletePresentationRecord');
     return await deletePresentationRecordRow(id, ctx, { trashedBefore });
   } finally {
     invalidatePresentationCache(id);
@@ -430,13 +426,13 @@ export async function deletePresentationRecord(
  * organizations because retention is instance configuration, but every purge
  * it then performs is scoped to the organization the deck came from.
  *
- * @param {import('../scope.js').StorageScope} storageScope - A cross-organization scope.
+ * @param {import('../scope.js').StorageScope} scope - A cross-organization scope.
  * @param {string} cutoffIso - ISO timestamp; decks trashed at or before it are due.
  * @returns {Promise<Array<{id: string, organizationId: string, title: string}>>}
  */
-export async function listTrashedPresentationsBefore(storageScope, cutoffIso) {
+export async function listTrashedPresentationsBefore(scope, cutoffIso) {
   const ctx = toStorageContext(
-    storageScope,
+    scope,
     'listTrashedPresentationsBefore',
     {},
     { allowCrossOrganization: true },
@@ -445,15 +441,15 @@ export async function listTrashedPresentationsBefore(storageScope, cutoffIso) {
 }
 
 /**
- * Duplicate a presentation within the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * Duplicate a presentation within the scope's organization.
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [opts]
  * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
  *   `not_found` when the source deck is not visible in this organization.
  */
-export async function duplicatePresentation(storageScope, id, opts) {
-  const ctx = toStorageContext(storageScope, 'duplicatePresentation', {
+export async function duplicatePresentation(scope, id, opts) {
+  const ctx = toStorageContext(scope, 'duplicatePresentation', {
     actorEmail: opts?.actorEmail,
   });
   // A duplicate mints a new deck, so it counts against the guest's sandbox
@@ -466,16 +462,16 @@ export async function duplicatePresentation(storageScope, id, opts) {
  * Batch-fetch first slides for multiple presentations.
  * Returns a Map of presentationId -> firstSlide object.
  * This avoids N+1 queries when loading shared presentations.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string[]} ids - Array of presentation IDs
  * @returns {Promise<Map<string, Object>>} Map of id -> firstSlide
  */
-export async function getFirstSlidesForIds(storageScope, ids) {
+export async function getFirstSlidesForIds(scope, ids) {
   if (!Array.isArray(ids) || ids.length === 0) {
     return new Map();
   }
 
-  const ctx = toStorageContext(storageScope, 'getFirstSlidesForIds');
+  const ctx = toStorageContext(scope, 'getFirstSlidesForIds');
   // Fetch each presentation and extract its first slide. (There is no batch
   // store query for this; the per-id reads below are the whole implementation.)
   const results = await Promise.all(
@@ -506,40 +502,36 @@ export async function getFirstSlidesForIds(storageScope, ids) {
 // version history rides along with the regular DB backups instead of living on
 // a disk that a redeploy wipes.
 //
-// The (storageScope, presentationId, ...) signature matches the CRUD helpers above:
+// The (scope, presentationId, ...) signature matches the CRUD helpers above:
 // snapshots live in the same organization as the deck they snapshot, so they
-// take the same storageScope.
+// take the same scope.
 
 /**
  * List version snapshots for a presentation (newest first).
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @returns {Promise<Array>}
  */
-export async function listPresentationVersions(storageScope, presentationId) {
-  const ctx = toStorageContext(storageScope, 'listPresentationVersions');
+export async function listPresentationVersions(scope, presentationId) {
+  const ctx = toStorageContext(scope, 'listPresentationVersions');
   return listPresentationVersionRows(presentationId, ctx);
 }
 
 /**
  * Get a single version snapshot (full presentation data included).
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {string} versionId
  * @returns {Promise<Object|null>}
  */
-export async function getPresentationVersion(
-  storageScope,
-  presentationId,
-  versionId,
-) {
-  const ctx = toStorageContext(storageScope, 'getPresentationVersion');
+export async function getPresentationVersion(scope, presentationId, versionId) {
+  const ctx = toStorageContext(scope, 'getPresentationVersion');
   return getPresentationVersionRow(presentationId, versionId, ctx);
 }
 
 /**
  * Create a version snapshot of a presentation.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} pres - Full presentation object to snapshot
  * @param {Object} [opts]
@@ -549,12 +541,12 @@ export async function getPresentationVersion(
  * @returns {Promise<Object|null>}
  */
 export async function createPresentationVersion(
-  storageScope,
+  scope,
   presentationId,
   pres,
   opts = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'createPresentationVersion', {
+  const ctx = toStorageContext(scope, 'createPresentationVersion', {
     actorEmail: opts?.actorEmail,
   });
   // Identity is the living deck's, not the snapshot's: strip it from the
@@ -575,18 +567,18 @@ export async function createPresentationVersion(
 
 /**
  * Prune old version snapshots per the retention policy.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} [opts]
  * @param {number} [opts.keep]
  * @returns {Promise<*>}
  */
 export async function prunePresentationVersions(
-  storageScope,
+  scope,
   presentationId,
   opts = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'prunePresentationVersions');
+  const ctx = toStorageContext(scope, 'prunePresentationVersions');
   return prunePresentationVersionRows(presentationId, ctx, {
     keep: opts?.keep,
   });
@@ -770,6 +762,7 @@ async function listPresentationRows(ctx) {
   // One batched name lookup for the whole page rather than one per card:
   // a 200-deck organization would otherwise issue 200 identical queries.
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.flatMap((row) => [
       { id: row.updatedById, email: row.updatedBy },
       { id: row.createdById, email: row.createdBy },
@@ -852,11 +845,17 @@ async function getPresentationRow(id, ctx) {
  * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
  */
 async function displayNamesFor(row) {
-  return resolveDisplayNames([
-    { id: row?.updated_by_user_id, email: row?.updated_by },
-    { id: row?.created_by_user_id, email: row?.created_by },
-    { id: row?.trashed_by_user_id, email: row?.trashed_by },
-  ]);
+  return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    [
+      { id: row?.updated_by_user_id, email: row?.updated_by },
+      { id: row?.created_by_user_id, email: row?.created_by },
+      { id: row?.trashed_by_user_id, email: row?.trashed_by },
+    ],
+  );
 }
 
 /**
@@ -869,7 +868,9 @@ async function createPresentationRow(data, ctx) {
   const timestamp = nowIso();
 
   const id = data.id || crypto.randomUUID();
-  const ownerEmail = data.ownerEmail || ctx?.actorEmail || null;
+  // D200: `owner_email` (and the creator/last-writer stamps beside it) is
+  // normalised here, on write, so every read compares it bare.
+  const ownerEmail = normalizeEmail(data.ownerEmail || ctx?.actorEmail);
 
   // Dual-key (T10 PR 3): stamp the stable user_id beside each email column.
   // At create the owner is also the creator and last writer, so all three
@@ -878,7 +879,7 @@ async function createPresentationRow(data, ctx) {
   // users row resolves `external` and stays NULL (the pinned legacy path).
   // Reads still key on the email; this only populates the columns a later
   // PR moves the ownership reads onto.
-  const ownerResolution = await resolveIdentityByEmail(ownerEmail);
+  const ownerResolution = await resolveIdentityByEmail(ctx, ownerEmail);
   const ownerUserId = ownerResolution?.userId ?? null;
 
   const row = await db
@@ -1005,14 +1006,13 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   // locked slides are rejected with 423. Runs after the slide-level
   // merge above so stale client copies of other users' slides don't
   // read as edits.
-  await enforceSlideWritePolicy({
+  await enforceSlideWritePolicy(seam.storageScope, {
     existing,
     nextSlides: data.slides,
     nextI18nVersions: data?.i18n?.versions || null,
     user: opts?.user || null,
     actorUserId: ctx?.actorUserId || null,
     bypassLockCheck: !!opts?.bypassLockCheck,
-    ctx,
   });
 
   // Text colour over a background image (B627). After the lock policy, not
@@ -1074,8 +1074,11 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
     revision: sql`revision + 1`,
   };
   if (updatedByEmail) {
-    const updatedByResolution = await resolveIdentityByEmail(updatedByEmail);
-    updateData.updated_by = updatedByEmail;
+    const updatedByResolution = await resolveIdentityByEmail(
+      ctx,
+      updatedByEmail,
+    );
+    updateData.updated_by = normalizeEmail(updatedByEmail);
     updateData.updated_by_user_id = updatedByResolution?.userId ?? null;
   }
   if (data.title !== undefined) updateData.title = data.title;
@@ -1103,7 +1106,7 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   // resolution of the same address, so the paired keys can never diverge —
   // a known owner writes their `users.id`, an external owner writes NULL.
   if (opts?.allowOwnerChange && data.ownerEmail) {
-    const ownerResolution = await resolveIdentityByEmail(data.ownerEmail);
+    const ownerResolution = await resolveIdentityByEmail(ctx, data.ownerEmail);
     if (ownerResolution) {
       updateData.owner_email = ownerResolution.value;
       updateData.owner_user_id = ownerResolution.userId ?? null;
@@ -1154,7 +1157,7 @@ async function deletePresentationRow(id, ctx) {
   // resolves `external` and stays NULL (the pinned legacy path).
   const trashedByEmail = ctx?.actorEmail || null;
   const trashedByResolution = trashedByEmail
-    ? await resolveIdentityByEmail(trashedByEmail)
+    ? await resolveIdentityByEmail(ctx, trashedByEmail)
     : null;
   const result = await db
     .updateTable('presentations')
@@ -1210,6 +1213,7 @@ async function listTrashedPresentationRows(ctx) {
     .execute();
 
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.flatMap((row) => [
       { id: row.updatedById, email: row.updatedBy },
       { id: row.createdById, email: row.createdBy },
@@ -1466,6 +1470,7 @@ async function listPresentationVersionRows(presentationId, ctx) {
     .execute();
 
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.map((row) => ({ id: row.created_by_user_id, email: row.created_by })),
   );
   return rows.map((row) => mapVersionRowSummary(row, displayNames));
@@ -1499,9 +1504,13 @@ async function getPresentationVersionRow(presentationId, versionId, ctx) {
  * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
  */
 async function versionDisplayNames(row) {
-  return resolveDisplayNames([
-    { id: row?.created_by_user_id, email: row?.created_by },
-  ]);
+  return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    [{ id: row?.created_by_user_id, email: row?.created_by }],
+  );
 }
 
 /**
@@ -1528,7 +1537,7 @@ async function createPresentationVersionRow(
   // column — the version list renders `{ id, displayName }` from it (D22).
   const createdByEmail = ctx?.actorEmail || null;
   const createdByResolution = createdByEmail
-    ? await resolveIdentityByEmail(createdByEmail)
+    ? await resolveIdentityByEmail(ctx, createdByEmail)
     : null;
 
   const row = await db
@@ -1594,11 +1603,57 @@ async function prunePresentationVersionRows(presentationId, ctx, opts = {}) {
 // store-layer behaviour the heavier facade path cannot express in isolation —
 // organization-scoping of the raw queries, and the undefined-vs-null partial
 // UPDATE rule — so those primitives are reachable here as one internal bundle.
-// The `__` prefix marks it internal/test-only, like `__setTestDb` /
-// `__resetStorageForTests`; production code calls the exported facade.
+// The `__` prefix marks it internal/test-only, like `__setTestDb`;
+// production code calls the exported facade.
 export const __store = {
   getPresentationRow,
   listPresentationRows,
   createPresentationRow,
   updatePresentationRow,
 };
+
+export { getYDocState, setYDocState } from './ydocs.js';
+
+export { getSandboxTotalBytes, sandboxMaxTotalBytes } from './sandbox-quota.js';
+
+export { getPresentationCached } from './cache.js';
+
+export { updateSlideNotes } from './slide-notes.js';
+
+export {
+  createComment,
+  getComment,
+  resolveComment,
+  markThreadsRead,
+  getOpenCommentCount,
+  getCommentCountsBySlide,
+  getCommentAuthorEmail,
+  getThreadParticipants,
+  listComments,
+  listRecentCommentsOnDecks,
+  updateComment,
+  deleteComment,
+  reopenComment,
+  dismissComment,
+} from './comments.js';
+
+export {
+  getSubscription,
+  setSubscription,
+  SUBSCRIPTION_LEVELS,
+  listSubscriptions,
+} from './subscriptions.js';
+
+export { transferPresentationOwnership } from './ownership.js';
+
+export {
+  normalizeLang,
+  refuseNonCanonicalVersionKeys,
+  TRANSLATION_LANGS,
+} from './i18n.js';
+
+export {
+  getPublishedPresentationIds,
+  getCollaboratorCounts,
+} from './list-metadata.js';
+export { getPopularPresentationRows } from './list-metadata.js';

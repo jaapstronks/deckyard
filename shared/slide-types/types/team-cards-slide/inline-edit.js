@@ -21,8 +21,8 @@ export const inlineEdit = {
       anchors: [{ sel: '.team-cards-group-right', pos: 'prepend' }],
     },
   ],
-  // Dual-model (members[] or legacy card{n}*): canonicalize to members[] on
-  // mount so a first block (and its photo) can be added on the canvas.
+  // Guarantee a members[] array on mount so a first block (and its photo) can
+  // be added on the canvas.
   ensure: ensureMembers,
   itemGhosts: [
     {

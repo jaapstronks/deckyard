@@ -302,7 +302,7 @@ The storage layer additionally runs against a real PostgreSQL in the
 
 The suite has no live database, yet the storage/identity/auth modules reach
 PostgreSQL exclusively through `getDb()` behind `isDatabaseAvailable()`
-(`server/storage/utils/db-guard.js`). To exercise their real query behaviour
+(`withDbGuard` in `server/db/client.js`). To exercise their real query behaviour
 instead of grepping source, install the in-memory double:
 
 ```js
@@ -405,6 +405,6 @@ ESLint gates CI (`npm run lint` runs before the tests) - see
 
 This project is intentionally dependency-light. Before adding a package:
 
-1. Can you write it in < 100 lines?
+1. Can you write it as a small, focused module?
 2. Is it a single-purpose package?
 3. Does it have minimal dependencies itself?

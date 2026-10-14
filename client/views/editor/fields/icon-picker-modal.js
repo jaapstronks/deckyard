@@ -153,7 +153,7 @@ export function openIconPicker({ current = '', onSelect } = {}) {
   };
 
   const renderNames = (names) => {
-    grid.innerHTML = '';
+    grid.replaceChildren();
     cells = names.map(makeCell);
     if (cells.length === 0) {
       grid.append(

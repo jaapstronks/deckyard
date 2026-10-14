@@ -1,3 +1,5 @@
+import { getDb, sql, withDbGuard } from '../db/client.js';
+import { generateSlug, isValidSlug } from '../../shared/slug.js';
 /**
  * Storage layer for custom themes.
  * Handles CRUD operations for organization-scoped themes.
@@ -6,7 +8,7 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
-import { withDbGuard, isValidSlug } from './utils/index.js';
+import { getUserIdByEmail } from './utils/index.js';
 import {
   isValidFont,
   DEFAULT_HEADING_FONT,
@@ -147,8 +149,22 @@ export async function listThemes(scope, { rawConfig = false } = {}) {
   });
 }
 
-/** List globally visible seed records without granting access to organization rows. */
-export async function listSeedThemes() {
+/**
+ * List globally visible seed records without granting access to organization rows.
+ *
+ * Seeds carry no organization (`organization_id IS NULL`): they are
+ * instance-level configuration (storage-scope.md category 3), so an
+ * organization scope and a reasoned instance scope both read the same rows.
+ * @param {import('./scope.js').StorageScope} scope
+ * @returns {Promise<Object[]>}
+ */
+export async function listSeedThemes(scope) {
+  toStorageContext(
+    scope,
+    'listSeedThemes',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard([], async (db) => {
     const rows = await db
       .selectFrom('themes')
@@ -330,7 +346,7 @@ export async function createTheme(scope, data) {
         created_at: now,
         updated_at: now,
         created_by: scope?.actorEmail
-          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          ? await getUserIdByEmail(scope, db, scope.actorEmail)
           : null,
       })
       .returningAll()
@@ -523,19 +539,6 @@ function formatTheme(row, { rawConfig = false } = {}) {
 }
 
 /**
- * Generate a URL-safe slug from a label.
- * @param {string} label - Theme label
- * @returns {string} - URL-safe slug
- */
-function generateSlug(label) {
-  return label
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-}
-
-/**
  * Validate and normalize font configuration.
  * When headingFamilyId or bodyFamilyId is present, skip curated-list validation
  * for that font (it's a managed font, validated by the route handler).
@@ -591,20 +594,28 @@ function validateFonts(fonts) {
   return result;
 }
 
-/**
- * Get user ID by email (for created_by field).
- * @param {Object} db - Database instance
- * @param {string} orgId - Organization ID
- * @param {string} email - User email
- * @returns {Promise<string|null>} - User ID or null
- */
-async function getUserIdByEmail(db, orgId, email) {
-  const user = await db
-    .selectFrom('users')
-    .select('id')
-    .where('organization_id', '=', orgId)
-    .where('email', '=', email)
-    .executeTakeFirst();
-
-  return user?.id || null;
+/** Apply a fully validated seed batch in one transaction. */
+export async function upsertThemeSeeds(scope, seeds) {
+  toStorageContext(
+    scope,
+    'upsertThemeSeeds',
+    {},
+    { allowCrossOrganization: true },
+  );
+  await getDb()
+    .transaction()
+    .execute(async (trx) => {
+      for (const { record, hash } of seeds) {
+        await sql`
+        INSERT INTO themes (organization_id, seed_hash, slug, label, logo_url, logo_small_url, colors, fonts, config)
+        VALUES (NULL, ${hash}, ${record.slug}, ${record.label}, ${record.logoUrl ?? null}, ${record.logoSmallUrl ?? null},
+          ${JSON.stringify(record.colors)}::jsonb, ${JSON.stringify(record.fonts)}::jsonb, ${JSON.stringify(record.config)}::jsonb)
+        ON CONFLICT (slug) WHERE organization_id IS NULL DO UPDATE SET
+          seed_hash = EXCLUDED.seed_hash, label = EXCLUDED.label,
+          logo_url = EXCLUDED.logo_url, logo_small_url = EXCLUDED.logo_small_url,
+          colors = EXCLUDED.colors, fonts = EXCLUDED.fonts, config = EXCLUDED.config, updated_at = now()
+        WHERE themes.seed_hash IS DISTINCT FROM EXCLUDED.seed_hash
+      `.execute(trx);
+      }
+    });
 }

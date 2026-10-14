@@ -1,8 +1,8 @@
 import { h } from '../../lib/dom/index.js';
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createUiModeSwitcher } from '../ui-mode-switcher.js';
-import { createCommentsApi } from '../editor/comments-api.js';
+import { createUiModeSwitcher } from '../../lib/dom/ui-mode-switcher.js';
+import { createCommentsApi } from '../comments/index.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { renderGuestJoinPrompt } from './guest-join.js';
 import { createShareViewerCommentsSection } from './viewer-comments.js';
@@ -71,7 +71,12 @@ export function buildShareViewerTopbar({
   let commentsApi = null;
 
   if (canComment && guestSession?.authenticated) {
-    commentsApi = createCommentsApi({ api, presentationId: presentation.id });
+    // A guest: their comments go through the share-token routes (D228).
+    commentsApi = createCommentsApi({
+      api,
+      presentationId: presentation.id,
+      shareToken: token,
+    });
 
     commentsToggleBtn = h('button', {
       class: 'btn btn-secondary share-viewer-comments-toggle',

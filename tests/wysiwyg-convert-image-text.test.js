@@ -69,7 +69,10 @@ test('content -> image-text: lossless for the pair, image starts empty', () => {
     body: '- punt',
     background: 'mist',
   });
-  const next = convertSlideToType(slide, 'image-text-slide', { lang: 'nl' });
+  const next = convertSlideToType(slide, 'image-text-slide', {
+    slideTypes: SLIDE_TYPES,
+    lang: 'nl',
+  });
 
   assert.equal(next.id, 'slide-1', 'slide id survives (comments/locks/URL)');
   assert.equal(next.notes, 'presenter notes', 'notes survive');
@@ -86,7 +89,10 @@ test('image-text -> content: title/body/notes survive, image area drops', () => 
     body: '- punt',
     background: 'dark',
   });
-  const next = convertSlideToType(slide, 'content-slide', { lang: 'nl' });
+  const next = convertSlideToType(slide, 'content-slide', {
+    slideTypes: SLIDE_TYPES,
+    lang: 'nl',
+  });
 
   assert.equal(next.id, 'slide-2');
   assert.equal(next.notes, 'presenter notes');
@@ -102,7 +108,10 @@ test('global cross-type fields survive the switch', () => {
     slideBgImage: '/bg.png',
     slideLogo: 'top-right',
   });
-  const next = convertSlideToType(slide, 'image-text-slide', { lang: 'nl' });
+  const next = convertSlideToType(slide, 'image-text-slide', {
+    slideTypes: SLIDE_TYPES,
+    lang: 'nl',
+  });
   assert.equal(next.content.slideBgImage, '/bg.png');
   assert.equal(next.content.slideLogo, 'top-right');
 });

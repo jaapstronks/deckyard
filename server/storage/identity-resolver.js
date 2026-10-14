@@ -35,6 +35,8 @@
  * @module storage/identity-resolver
  */
 
+import { toStorageContext } from './scope.js';
+
 import { normalizeEmail } from '../utils/normalize.js';
 import { getUserByEmailGlobal } from './identity.js';
 
@@ -83,6 +85,7 @@ export const IDENTIFIER_KINDS = {
  * resolves `external` — the correct answer when there is no `users` table to
  * key on.
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {{ kind?: string, value?: string }} [identifier] - The identifier to resolve.
  *   `kind` defaults to `EMAIL`. `value` is normalized per kind.
  * @returns {Promise<IdentityResolution|null>} The resolution, or `null` when the
@@ -91,7 +94,13 @@ export const IDENTIFIER_KINDS = {
  *   external: true, userId: null, ... }`.
  * @throws {TypeError} When `kind` is not a supported {@link IDENTIFIER_KINDS} value.
  */
-export async function resolveIdentity(identifier = {}) {
+export async function resolveIdentity(scope, identifier = {}) {
+  toStorageContext(
+    scope,
+    'resolveIdentity',
+    {},
+    { allowCrossOrganization: true },
+  );
   const kind = identifier.kind || IDENTIFIER_KINDS.EMAIL;
 
   if (kind !== IDENTIFIER_KINDS.EMAIL) {
@@ -105,7 +114,7 @@ export async function resolveIdentity(identifier = {}) {
   const value = normalizeEmail(identifier.value);
   if (!value) return null; // structurally absent — nothing to resolve
 
-  const user = await getUserByEmailGlobal(value);
+  const user = await getUserByEmailGlobal(scope, value);
   if (!user) {
     return { userId: null, kind, value, resolved: false, external: true };
   }
@@ -115,13 +124,20 @@ export async function resolveIdentity(identifier = {}) {
 /**
  * Convenience wrapper: resolve an email address to a `users.id`.
  *
- * Equivalent to `resolveIdentity({ kind: IDENTIFIER_KINDS.EMAIL, value: email })`.
+ * Equivalent to `resolveIdentity(scope, { kind: IDENTIFIER_KINDS.EMAIL, value: email })`.
  * The one kind wired today, given a direct name so email call sites read clearly
  * while still going through the multi-identifier contract above.
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} email - The email address to resolve.
  * @returns {Promise<IdentityResolution|null>} See {@link resolveIdentity}.
  */
-export async function resolveIdentityByEmail(email) {
-  return resolveIdentity({ kind: IDENTIFIER_KINDS.EMAIL, value: email });
+export async function resolveIdentityByEmail(scope, email) {
+  toStorageContext(
+    scope,
+    'resolveIdentityByEmail',
+    {},
+    { allowCrossOrganization: true },
+  );
+  return resolveIdentity(scope, { kind: IDENTIFIER_KINDS.EMAIL, value: email });
 }

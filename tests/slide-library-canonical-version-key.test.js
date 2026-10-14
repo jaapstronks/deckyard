@@ -1,12 +1,13 @@
 /**
- * B482: a library create refuses a language version under a non-canonical key.
+ * A library create refuses a language version under a non-canonical key (B482).
  *
- * B481 closed the deck seam; the library had its own. `createSlideLibraryRow`
- * wrote the `i18n` of a POST as-is, so `i18n.versions.en` landed on the shelf
- * where `pickVersion` (which reads the canonical key only) never finds it.
- * Create is the only library write that carries `i18n` (a PATCH derives it
- * from `content`, D170), and it now runs the same check as the deck seam:
- * 400 `invalid`, `details.field` = `i18n.versions`, nothing written.
+ * The deck seam already refused it (B481); the library had its own.
+ * `createSlideLibraryRow` wrote the `i18n` of a POST as-is, so
+ * `i18n.versions.en` landed on the shelf where `pickVersion` (which reads the
+ * canonical key only) never finds it. Create is the only library write that
+ * carries `i18n` (a PATCH derives it from `content`, D170), and it now runs the
+ * same check as the deck seam: 400 `invalid`, `details.field` =
+ * `i18n.versions`, nothing written.
  *
  * The canonical key `en-GB` stored and read back is pinned against real
  * PostgreSQL in tests/pg/slide-library-i18n-storage.pgtest.js (this file's
@@ -30,12 +31,15 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleSlideLibrary } =
   await import('../server/routes/api/slide-library.js');
-const { listPersonalLibrary, listOrganizationLibrary } =
-  await import('../server/storage/slide-library.js');
+const {
+  listPersonalLibrary,
+  listOrganizationLibrary,
+  createPersonalLibraryItem,
+  createOrganizationLibraryItem,
+} = await import('../server/storage/slide-library.js');
 
 test.before(async () => {
   __setTestDb(
@@ -48,7 +52,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -137,3 +140,44 @@ test('a dominant off the axis is refused: a content PATCH would mint it as a key
   assert.equal(res.body.error, 'invalid');
   assert.deepEqual(res.body.details, { field: 'i18n.dominant' });
 });
+
+// B496: exercise both HTTP and direct storage callers. The fake database has
+// no library insert support, so reaching an insert also fails these refusals.
+for (const shelf of ['personal', 'organization']) {
+  for (const value of [[], 'text', null, 42, false]) {
+    for (const field of [
+      'i18n',
+      'i18n.versions',
+      'i18n.versions.nl',
+      'i18n.versions.en-GB.content',
+    ]) {
+      test(`${shelf} refuses ${field} = ${JSON.stringify(value)} before writing`, async () => {
+        const body = bodyWithVersion('en-GB');
+        const path = field.split('.');
+        const key = path.pop();
+        const parent = path.reduce((obj, part) => obj[part], body);
+        parent[key] = value;
+        const before = await shelfItems(shelf);
+        const res = await post(shelf, body);
+        assert.equal(res.statusCode, 400, JSON.stringify(res.body));
+        assert.equal(res.body.error, 'invalid');
+        assert.deepEqual(res.body.details, { field });
+        const create = () =>
+          shelf === 'personal'
+            ? createPersonalLibraryItem(testScope(), OWNER, body, {
+                actorEmail: OWNER,
+              })
+            : createOrganizationLibraryItem(testScope(), body, {
+                actorEmail: OWNER,
+              });
+        await assert.rejects(create, (err) => {
+          assert.equal(err.statusCode, 400);
+          assert.equal(err.code, 'invalid');
+          assert.deepEqual(err.details, { field });
+          return true;
+        });
+        assert.deepEqual(await shelfItems(shelf), before);
+      });
+    }
+  }
+}

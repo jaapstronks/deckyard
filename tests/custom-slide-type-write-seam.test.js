@@ -1,5 +1,6 @@
 /**
- * B129: a deck using an organization's DB-backed custom slide type is saveable.
+ * A deck using an organization's DB-backed custom slide type is saveable
+ * (B129).
  *
  * The Settings → Slide Types builder stores a type in `custom_slide_types` and
  * the editor inserts it as `custom-<slug>`. The storage write seam
@@ -42,7 +43,7 @@ const DECK_ID = 'd0000001-0000-4000-8000-000000000001';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations } =

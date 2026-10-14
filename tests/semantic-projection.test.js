@@ -1317,22 +1317,33 @@ describe('mediaRef — a reference projects as a stand-in, never as an id (D82)'
     assert.ok(html.includes('>Media</p>'), html);
   });
 
-  it('video-slide projects its default Bunny UUID as heading + stand-in', () => {
+  it('video-slide projects a Bunny UUID as heading + stand-in', () => {
     const type = 'video-slide';
     const def = SLIDE_TYPES[type];
-    const slide = { type, content: structuredClone(def.defaults) };
+    // An explicit video, not the defaults: since B650 those name neither a
+    // video nor a library, because both used to be one fork's.
+    const source = '3045cc09-0000-4000-8000-00000000abcd';
+    const libraryId = '123456';
+    const slide = {
+      type,
+      content: {
+        ...structuredClone(def.defaults),
+        source,
+        bunnyLibraryId: libraryId,
+      },
+    };
     const { key: headingKey, text: headingText } = slideHeading(slide, def);
     const html = renderSlideBodySemanticHtml(slide, def, {
       headingKey,
       headingText,
     });
-    // The default deck has no title, so the section heading is the type label.
+    // The slide has no title, so the section heading is the type label.
     assert.equal(headingText, 'Video');
     assert.ok(html.includes('<p class="reader-media"'), html);
     assert.ok(html.includes('>Video</p>'), html);
-    assert.ok(!html.includes(def.defaults.source), html);
+    assert.ok(!html.includes(source), html);
     // The library id was already presentational and stays out.
-    assert.ok(!html.includes('366590'), html);
+    assert.ok(!html.includes(libraryId), html);
   });
 
   it('video-slide projects its transcript as prose under the stand-in (D138)', () => {

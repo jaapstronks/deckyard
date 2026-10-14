@@ -6,9 +6,64 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard, escapeLikePattern } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
+import { escapeLikePattern } from './utils/index.js';
 import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
+import { getUserByEmailGlobal } from './identity.js';
 import { invalidateDisplayNames } from './display-identity.js';
+
+/**
+ * Resolve an instance-wide email identity, creating it in the supplied organization.
+ * Existing identities keep their organization, role and credentials. A concurrent
+ * insert wins unchanged; login-specific updates remain the caller's policy.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {{email: string, role: 'user'|'admin', authSource: string, name?: string,
+ *   passwordHash?: string, passwordChangedAt?: string, autoProvision?: boolean}} options
+ * @returns {Promise<{user: object|null, created: boolean}|null>} null if unavailable
+ */
+export async function ensureUserByEmail(scope, options) {
+  const { organizationId } = toStorageContext(scope, 'ensureUserByEmail');
+  const email = normalizeEmail(options.email);
+  if (
+    !email ||
+    !['user', 'admin'].includes(options.role) ||
+    !options.authSource
+  ) {
+    throw new TypeError(
+      'ensureUserByEmail requires email, role and authSource',
+    );
+  }
+  return withDbGuard(null, async (db) => {
+    const lookup = () => getUserByEmailGlobal(scope, email);
+    const existing = await lookup();
+    if (existing) return { user: existing, created: false };
+    if (options.autoProvision === false) return { user: null, created: false };
+    const now = nowIso();
+    const values = {
+      organization_id: organizationId,
+      email,
+      role: options.role,
+      auth_source: options.authSource,
+      created_at: now,
+      updated_at: now,
+    };
+    if (options.name !== undefined) values.name = options.name || null;
+    if (options.passwordHash !== undefined)
+      values.password_hash = options.passwordHash;
+    if (options.passwordChangedAt !== undefined)
+      values.password_changed_at = options.passwordChangedAt;
+    const inserted = await db
+      .insertInto('users')
+      .values(values)
+      .onConflict((oc) => oc.column('email').doNothing())
+      .returningAll()
+      .executeTakeFirst();
+    return {
+      user: inserted || (await lookup()) || null,
+      created: Boolean(inserted),
+    };
+  });
+}
 
 // ============================================================
 // USER CRUD

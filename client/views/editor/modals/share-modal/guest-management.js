@@ -68,7 +68,7 @@ export function createGuestManagementSection({
     } catch {
       // See collaborators-section.js: the list says so itself, politely.
       const loadError = createInlineError({ live: 'polite' });
-      guestList.innerHTML = '';
+      guestList.replaceChildren();
       guestList.append(loadError.el);
       loadError.show(t('share.guests.loadError', 'Failed to load guests'), {
         focus: false,
@@ -77,7 +77,7 @@ export function createGuestManagementSection({
   }
 
   function renderGuests() {
-    guestList.innerHTML = '';
+    guestList.replaceChildren();
 
     if (guests.length === 0) {
       guestList.append(

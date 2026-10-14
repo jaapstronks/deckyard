@@ -11,102 +11,18 @@ import {
   canSeeMemberList,
   isOrganizationMember,
 } from '../../../shared/organization-role.js';
-import {
-  createAccountTab,
-  createPreferencesTab,
-  createAdminTab,
-  createUsersTab,
-  createOrganizationTab,
-  createEmailTab,
-  createIntegrationsTab,
-  createFontsTab,
-  createThemesTab,
-  createAnalyticsTab,
-  createExportTab,
-  createSlideTypesTab,
-  createApiKeysTab,
-  createHealthTab,
-} from './tabs/index.js';
+import { reachableTabs, resolveTab } from './tab-registry.js';
 import { nav, replaceHash } from '../../lib/state/router.js';
-import { featureEnabled } from '../../lib/state/features.js';
 import { icon } from '../../lib/dom/icons.js';
 
-const DEFAULT_TAB = 'account';
-const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
-// The API keys tab belongs to the public API cluster: on an installation
-// without it the tab is absent and its hash lands on the default (D260).
-const API_KEYS_TAB = 'api-keys';
-// The members tab is no longer one of these. It sits in the Admin group for an
-// admin, but in multi-workspace mode it is also the only screen where a plain
-// member finds their own way out of an organization, so it carries its own,
-// weaker gate — see MEMBERS_TAB below and shared/organization-role.js.
-const ADMIN_TABS = [
-  'admin',
-  API_KEYS_TAB,
-  'email',
-  'integrations',
-  'analytics',
-  'health',
-];
-const MEMBERS_TAB = 'users';
-// The organization's own profile. Like the members tab it is not an admin
-// surface: `GET /api/organizations/:id` answers to any member, so anyone in the
-// organization may read who they are working under — writing it stays behind
-// the role, inside the panel. Multi-workspace only; there is no second
-// organization to describe otherwise.
-const ORGANIZATION_TAB = 'organization';
-
 /**
- * Get the active tab from the URL hash.
- * @param {Object} gates - What this viewer may reach
- * @param {boolean} gates.isAdmin - Whether user is admin
- * @param {boolean} gates.isDesigner - Whether user has designer capability
- * @param {boolean} gates.canSeeMembers - Whether the members tab is reachable
- * @param {boolean} gates.canSeeOrganization - Whether the organization tab is reachable
+ * The tab named in the URL hash, or the default when this viewer may not
+ * reach it.
+ * @param {import('./tab-registry.js').SettingsAccess} access
  * @returns {string} Tab key
  */
-function getTabFromHash({
-  isAdmin,
-  isDesigner,
-  canSeeMembers,
-  canSeeOrganization,
-}) {
-  const hash = location.hash.slice(1); // Remove #
-  if (!hash) return DEFAULT_TAB;
-
-  // Guard designer tabs from non-designer access
-  if (DESIGNER_TABS.includes(hash) && !isDesigner) {
-    return DEFAULT_TAB;
-  }
-
-  // Guard admin tabs from non-admin access
-  if (ADMIN_TABS.includes(hash) && !isAdmin) {
-    return DEFAULT_TAB;
-  }
-
-  if (hash === MEMBERS_TAB && !canSeeMembers) {
-    return DEFAULT_TAB;
-  }
-
-  if (hash === ORGANIZATION_TAB && !canSeeOrganization) {
-    return DEFAULT_TAB;
-  }
-
-  if (hash === API_KEYS_TAB && !featureEnabled('publicApi')) {
-    return DEFAULT_TAB;
-  }
-
-  const validTabs = [
-    'account',
-    'preferences',
-    'export',
-    ...(isDesigner ? DESIGNER_TABS : []),
-    ...(canSeeOrganization ? [ORGANIZATION_TAB] : []),
-    ...(canSeeMembers ? [MEMBERS_TAB] : []),
-    ...(isAdmin ? ADMIN_TABS : []),
-  ];
-
-  return validTabs.includes(hash) ? hash : DEFAULT_TAB;
+function getTabFromHash(access) {
+  return resolveTab(location.hash.slice(1), access);
 }
 
 /**
@@ -128,22 +44,14 @@ export async function renderSettings(root, { user } = {}) {
   // Admin tabs follow the role held in the *active* organization, not the
   // instance-wide flag: switching to an organization where you are a plain
   // member must take the admin surfaces with it. See shared/organization-role.js.
-  const isAdmin = isOrganizationAdmin(user);
-  const isDesigner = Boolean(user?.isDesigner);
-  // Wider than `isAdmin` on purpose: in multi-workspace mode every member may
-  // see who else is in the organization and may leave it, and this is the tab
-  // where both live.
-  const canSeeMembers = canSeeMemberList(user);
-  // Multi-workspace only, and then for everyone in the organization: the
-  // profile is readable by any member on the route, and what may be changed on
-  // it is decided inside the panel.
-  const canSeeOrganization = isOrganizationMember(user);
-  const initialTab = getTabFromHash({
-    isAdmin,
-    isDesigner,
-    canSeeMembers,
-    canSeeOrganization,
-  });
+  const access = {
+    isAdmin: isOrganizationAdmin(user),
+    isDesigner: Boolean(user?.isDesigner),
+    // Wider than `isAdmin` on purpose; see tab-registry.js.
+    canSeeMembers: canSeeMemberList(user),
+    canSeeOrganization: isOrganizationMember(user),
+  };
+  const initialTab = getTabFromHash(access);
 
   const shell = h('div', { class: 'app-shell settings-page' });
 
@@ -190,38 +98,8 @@ export async function renderSettings(root, { user } = {}) {
     if (tab.detach) tabDestroyers.push(tab.detach);
   };
 
-  // Always visible
-  addTab('account', createAccountTab({ user }));
-  addTab('preferences', createPreferencesTab({ user }));
-  addTab('export', createExportTab({ user }));
-
-  // Designer tabs
-  if (isDesigner) {
-    addTab('fonts', createFontsTab({ user }));
-    addTab('themes', createThemesTab({ user }));
-    addTab('slide-types', createSlideTypesTab({ user }));
-  }
-
-  // The organization itself: multi-workspace only, every member
-  if (canSeeOrganization) {
-    addTab(ORGANIZATION_TAB, createOrganizationTab({ user }));
-  }
-
-  // Members: admins in either mode, plus every member in multi-workspace mode
-  if (canSeeMembers) {
-    addTab(MEMBERS_TAB, createUsersTab({ user }));
-  }
-
-  // Admin tabs
-  if (isAdmin) {
-    addTab('admin', createAdminTab({ user }));
-    if (featureEnabled('publicApi')) {
-      addTab(API_KEYS_TAB, createApiKeysTab({ user }));
-    }
-    addTab('email', createEmailTab({ user }));
-    addTab('integrations', createIntegrationsTab({ user }));
-    addTab('analytics', createAnalyticsTab({ user }));
-    addTab('health', createHealthTab());
+  for (const tab of reachableTabs(access)) {
+    addTab(tab.key, tab.create({ user }));
   }
 
   // Current active tab
@@ -229,27 +107,7 @@ export async function renderSettings(root, { user } = {}) {
 
   // Set active tab
   const setActiveTab = (tabKey) => {
-    // Guard designer tabs
-    if (DESIGNER_TABS.includes(tabKey) && !isDesigner) {
-      tabKey = DEFAULT_TAB;
-    }
-    // Guard admin tabs
-    if (ADMIN_TABS.includes(tabKey) && !isAdmin) {
-      tabKey = DEFAULT_TAB;
-    }
-    // Guard the members tab
-    if (tabKey === MEMBERS_TAB && !canSeeMembers) {
-      tabKey = DEFAULT_TAB;
-    }
-    // Guard the organization tab
-    if (tabKey === ORGANIZATION_TAB && !canSeeOrganization) {
-      tabKey = DEFAULT_TAB;
-    }
-    // Guard the API keys tab
-    if (tabKey === API_KEYS_TAB && !featureEnabled('publicApi')) {
-      tabKey = DEFAULT_TAB;
-    }
-
+    tabKey = resolveTab(tabKey, access);
     activeTab = tabKey;
     setTabHash(tabKey);
     sidebar.setActiveTab(tabKey);
@@ -266,10 +124,7 @@ export async function renderSettings(root, { user } = {}) {
 
   // Sidebar
   const sidebar = createSettingsSidebar({
-    isAdmin,
-    isDesigner,
-    canSeeMembers,
-    canSeeOrganization,
+    ...access,
     activeTab: initialTab,
     onTabChange: setActiveTab,
   });
@@ -295,12 +150,7 @@ export async function renderSettings(root, { user } = {}) {
 
   // Handle hash changes
   const handleHashChange = () => {
-    const newTab = getTabFromHash({
-      isAdmin,
-      isDesigner,
-      canSeeMembers,
-      canSeeOrganization,
-    });
+    const newTab = getTabFromHash(access);
     if (newTab !== activeTab) {
       setActiveTab(newTab);
     }

@@ -25,8 +25,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { maybeAttachCollab, shutdownCollab } =
   await import('../server/collab/mount.js');
 const { createPresentation, getPresentation } =
@@ -34,7 +33,7 @@ const { createPresentation, getPresentation } =
 const { getYDocState } =
   await import('../server/storage/presentations/ydocs.js');
 const { createPresenceSession } =
-  await import('../client/lib/collab/presence-session.js');
+  await import('../client/views/editor/live-edits/presence-session.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.
@@ -50,7 +49,6 @@ await initializeStorage();
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
 // not have — drop the adapter singleton instead.
 after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

@@ -10,6 +10,8 @@
  * the old branch order exactly.
  */
 
+import { rejectIfSsoEnforced } from '../../auth/sso-enforcement.js';
+
 import {
   authEnabled,
   clearSessionCookie,
@@ -44,6 +46,11 @@ import { getSsoPublicConfig } from '../../config/sso.js';
 import { getBranding } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
+const authenticationScope = crossOrganizationScope(
+  null,
+  'pre-auth account lookup and instance authentication audit',
+);
+
 /**
  * GET /api/auth/config
  * Public, non-secret auth config for the login page (unauthenticated).
@@ -71,6 +78,8 @@ async function handleDevLogin({ req, res }) {
 
 /** POST /api/auth/login */
 async function handleLogin({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   // Build context for database operations
   const ctx = { repoRoot, req };
 
@@ -89,7 +98,7 @@ async function handleLogin({ repoRoot, req, res }) {
     email: normalizeEmail(email),
   });
   if (!allowed) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'login',
       email: normalizeEmail(email),
       success: false,
@@ -111,7 +120,7 @@ async function handleLogin({ repoRoot, req, res }) {
   const user = await verifyLoginAsync(email, password, ctx);
 
   // Log the authentication attempt
-  await logAuthEvent({
+  await logAuthEvent(authenticationScope, {
     type: 'login',
     email: normalizeEmail(email),
     success: !!user,

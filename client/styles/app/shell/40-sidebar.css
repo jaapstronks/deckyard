@@ -56,7 +56,7 @@
   font-family: inherit;
   font-size: var(--ps-text-sm);
   font-weight: 600;
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   background: hsl(var(--app-accent-primary));
   border: none;
   border-radius: var(--ps-radius-md);
@@ -154,7 +154,7 @@
   font-weight: 700;
   line-height: 1;
   background: hsl(var(--app-danger));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   border-radius: var(--ps-radius-full);
 }
 
@@ -239,7 +239,7 @@
   font-weight: 700;
   line-height: 1;
   background: hsl(var(--app-danger));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   border-radius: var(--ps-radius-full);
   display: flex;
   align-items: center;
@@ -278,7 +278,6 @@
 .sidebar-view {
   display: none;
   width: 100%;
-  box-sizing: border-box;
 }
 
 .sidebar-view.is-active {

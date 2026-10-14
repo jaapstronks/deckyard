@@ -11,7 +11,7 @@ import {
   isoBefore,
   normalizeEmail,
 } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { canComment } from '../../../shared/constants/permissions.js';
 import { generateGuestToken } from './index.js';
 import {
@@ -50,7 +50,18 @@ export function formatGuest(row) {
  * @param {string} [name] - Guest name (optional)
  * @returns {Promise<Object>} - Result with verification token
  */
-export async function requestGuestVerification(shareLinkId, email, name) {
+export async function requestGuestVerification(
+  scope,
+  shareLinkId,
+  email,
+  name,
+) {
+  const context = toStorageContext(
+    scope,
+    'requestGuestVerification',
+    {},
+    { allowCrossOrganization: true },
+  );
   const id = norm(shareLinkId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
@@ -62,14 +73,20 @@ export async function requestGuestVerification(shareLinkId, email, name) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    // Token-authorized path: the anonymous caller has no session to take an
-    // organization from, so the link's own row is the source (same shape as
-    // verifyGuestEmail below).
-    const linkRow = await db
+    // Session callers stay within their organization. A prevalidated public
+    // token may explicitly resolve the organization from the link itself.
+    let linkQuery = db
       .selectFrom('presentation_share_links')
       .select(['organization_id'])
-      .where('id', '=', id)
-      .executeTakeFirst();
+      .where('id', '=', id);
+    if (context.organizationId) {
+      linkQuery = linkQuery.where(
+        'organization_id',
+        '=',
+        context.organizationId,
+      );
+    }
+    const linkRow = await linkQuery.executeTakeFirst();
 
     if (!linkRow) {
       return { ok: false, reason: 'share_link_not_found' };
@@ -77,7 +94,7 @@ export async function requestGuestVerification(shareLinkId, email, name) {
     const orgId = linkRow.organization_id;
 
     // Validate the share link
-    const validation = await getValidShareLinkById(db, id, orgId);
+    const validation = await getValidShareLinkById(scope, db, id, orgId);
     if (!validation.ok) {
       return validation;
     }
@@ -213,6 +230,7 @@ export async function verifyGuestEmail(verificationToken) {
     }
 
     const validation = await getValidShareLinkById(
+      { organizationId: shareLinkRow.organization_id },
       db,
       guest.share_link_id,
       shareLinkRow.organization_id,
@@ -253,7 +271,10 @@ export async function verifyGuestEmail(verificationToken) {
       guest: formatGuest(updated),
       shareLink: formatShareLink(
         shareLink,
-        await shareLinkCreatorNames([shareLink]),
+        await shareLinkCreatorNames(
+          { organizationId: shareLinkRow.organization_id },
+          [shareLink],
+        ),
       ),
       sessionToken,
       sessionExpiresAt: sessionExpires,
@@ -268,7 +289,8 @@ export async function verifyGuestEmail(verificationToken) {
  * Token-authorized: the session token resolves the guest, the guest row
  * carries the organization.
  * @param {string} sessionToken - The session token
- * @returns {Promise<Object|null>} - Guest info or null
+ * @returns {Promise<{guest: Object, shareLink: Object, organizationId: string}|null>}
+ *   Guest info or null
  */
 export async function getGuestBySessionToken(sessionToken) {
   const token = norm(sessionToken);
@@ -299,6 +321,7 @@ export async function getGuestBySessionToken(sessionToken) {
 
     // Verify the share link is still valid
     const validation = await getValidShareLinkById(
+      { organizationId: guest.organization_id },
       db,
       guest.share_link_id,
       guest.organization_id,
@@ -318,8 +341,14 @@ export async function getGuestBySessionToken(sessionToken) {
       guest: formatGuest(guest),
       shareLink: formatShareLink(
         shareLink,
-        await shareLinkCreatorNames([shareLink]),
+        await shareLinkCreatorNames({ organizationId: guest.organization_id }, [
+          shareLink,
+        ]),
       ),
+      // The organization the guest row (and so its link and deck) lives in:
+      // what a write on the guest's behalf is scoped to, since an anonymous
+      // request carries no organization of its own (storage/scope.js).
+      organizationId: guest.organization_id,
     };
   });
 }
@@ -355,7 +384,7 @@ export async function preRegisterGuest(
     const orgId = getOrgId(scope);
 
     // Verify share link exists and belongs to this org
-    const validation = await getValidShareLinkById(db, id, orgId);
+    const validation = await getValidShareLinkById(scope, db, id, orgId);
     if (!validation.ok) {
       return validation;
     }

@@ -70,7 +70,7 @@ the storage return literals and `serveJson` payloads for address-shaped keys
 and bare display stamps. It carries two allowlists, each entry with a reason.
 
 **The address is no longer a key.** `matchesIdentity` (`shared/identity-match.js`)
-compares `users.id` and nothing else since decision D22 (a): a stamp whose id
+compares `users.id` and nothing else (D22 (a)): a stamp whose id
 column is a defined `NULL` — a legacy row, an external collaborator — names
 nobody, and no address is consulted to rescue it. That fallback was the reason
 an address had to travel at all, because the client mirrors could not answer "is

@@ -1,4 +1,5 @@
 import { hexToRgb, getRelativeLuminance } from '../../../color-utils.js';
+import { SLIDE_ACCENT_FALLBACK } from '../../../constants/themes.js';
 
 function shouldUseLightText(bg) {
   const rgb = hexToRgb(bg);
@@ -8,14 +9,14 @@ function shouldUseLightText(bg) {
 
 /**
  * The series palette a theme without `--t-chart-*` gets. Slot 0 is the accent,
- * as in CSS; the accent fallback is the `--slide-accent` default. This list is
+ * as in CSS; the accent fallback is the `--slide-accent` default
+ * (`SLIDE_ACCENT_FALLBACK`). This list is
  * the one source: the `--slide-chart-{1..7}` fallbacks in
  * `client/styles/slides/00-tokens.css` mirror it, pinned by
  * tests/chart-slide-styles.test.js.
  */
-export const CHART_FALLBACK_ACCENT = '#385c5c';
 export const CHART_FALLBACK_PALETTE = Object.freeze([
-  CHART_FALLBACK_ACCENT,
+  SLIDE_ACCENT_FALLBACK,
   '#5d989a',
   '#848f52',
   '#aebd63',
@@ -36,7 +37,7 @@ export function themeChartPalette(theme) {
   }
   if (out.length) return out;
   const accent = String(vars['--t-color-accent'] || '').trim();
-  return [accent || CHART_FALLBACK_ACCENT, ...CHART_FALLBACK_PALETTE.slice(1)];
+  return [accent || SLIDE_ACCENT_FALLBACK, ...CHART_FALLBACK_PALETTE.slice(1)];
 }
 
 export function pieLabelInvertClass(i, palette) {

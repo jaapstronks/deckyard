@@ -92,7 +92,7 @@ hls.js is **vendored, and loaded lazily**:
 `client/lib/slide-runtime/ensure-hls.js` injects
 `/client/vendor/hls/hls.min.js` (promise-cached) only when a non-Safari browser needs
 an HLS stream, so a deck with no such video still fetches nothing. It is an npm
-dependency since D51(a); `scripts/vendor-hls.js` copies the pinned dist into
+dependency (D51(a)); `scripts/vendor-hls.js` copies the pinned dist into
 `client/vendor/hls/` at postinstall, which is what took `cdn.jsdelivr.net` out
 of the render-path CSP. Unrecognized URLs produce an empty embed URL and an
 inline "Unable to embed this stream URL." error panel; fatal hls.js errors show
@@ -129,7 +129,7 @@ getCurrentSlide })`, with `setConfig(pres.settings.liveVideo)` on load and
 - **Share viewer** (`client/views/share-viewer/index.js`) — only created when
   `liveVideo.enabled && streamUrl`.
 
-The **present window** (`client/views/present-window.js`, the projection
+The **present window** (`client/views/presenter/present-window.js`, the projection
 window in two-window mode) does _not_ mount the layer, and the editor canvas
 shows no video.
 

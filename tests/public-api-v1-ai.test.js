@@ -9,13 +9,9 @@
  * 403 without `ai`, 429 with rate-limit headers when the daily budget is
  * spent, 400 for a missing/empty `raw`.
  *
- * The generation success paths are NOT covered: both call the configured LLM
- * vendor and there is no vendor seam to observe without one — noted as an
- * explicit opt-out in the B40 brief's Opt-out-log, like the translation
- * endpoint (same seam). Everything up to that call is pinned, and so is a
- * failing model: a local `openai-compat` endpoint that answers 500 makes both
- * generation endpoints answer through `withV1ErrorHandler`, the one v1 error
- * renderer (B619).
+ * Generation success paths use a stubbed model response and the database
+ * double, asserting imported image placeholders and creation settings. A local
+ * `openai-compat` endpoint answering 500 exercises the v1 error renderer too.
  *
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-partial-write.test.js). Negative assertions pin the
@@ -28,6 +24,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import http from 'node:http';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
   .join('-')
@@ -41,8 +38,10 @@ const KEY_ID = 'key-1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleAi } = await import('../server/routes/public-api/v1/ai.js');
+const { checkRequestRateLimit } =
+  await import('../server/routes/public-api/v1/middleware.js');
 const { getLlmStatus } = await import('../server/utils/llm/config.js');
 
 /**
@@ -54,6 +53,7 @@ const { getLlmStatus } = await import('../server/utils/llm/config.js');
 async function installDb({ aiUsedToday = 0 } = {}) {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    themes: [await brandSeedRow()],
     api_usage_daily: aiUsedToday
       ? [
           {
@@ -201,7 +201,15 @@ test('POST /ai/wizard answers 429 with limit details when the daily AI budget is
 
 test('POST /ai/wizard without raw content answers 400', async () => {
   await installDb();
-  for (const body of [null, {}, { raw: '' }, { raw: '   ' }]) {
+  for (const body of [
+    null,
+    {},
+    { raw: '' },
+    { raw: '   ' },
+    { raw: 42 },
+    { raw: {} },
+    { raw: [] },
+  ]) {
     const ctx = makeCtx('POST', '/api/v1/ai/wizard', { body });
     await handleAi(ctx);
     assert.equal(
@@ -245,7 +253,15 @@ test('POST /ai/append-slides answers 429 when the daily AI budget is spent', asy
 
 test('POST /ai/append-slides without raw content answers 400', async () => {
   await installDb();
-  for (const body of [null, {}, { raw: '' }]) {
+  for (const body of [
+    null,
+    {},
+    { raw: '' },
+    { raw: '   ' },
+    { raw: 42 },
+    { raw: {} },
+    { raw: [] },
+  ]) {
     const ctx = makeCtx('POST', '/api/v1/ai/append-slides', { body });
     await handleAi(ctx);
     assert.equal(
@@ -296,6 +312,7 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
     const ctx = makeCtx('POST', pathname, {
       body: { raw: 'A deck about tests', vendor: 'openai-compat' },
     });
+    assert.equal(await checkRequestRateLimit(ctx), true);
     assert.equal(await handleAi(ctx), true);
 
     assert.equal(ctx.res.statusCode, 502);
@@ -325,3 +342,74 @@ test('a pathname outside the AI surface is not handled', async () => {
   assert.equal(await handleAi(ctx), false);
   assert.equal(ctx.res.statusCode, null, 'no response was written');
 });
+
+for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
+  test(`POST ${pathname}: model output without images uses the declared import placeholders`, async (t) => {
+    await installDb();
+    const savedFetch = globalThis.fetch;
+    const savedModel = process.env.OPENAI_COMPAT_MODEL;
+    const savedEndpoint = process.env.OPENAI_COMPAT_ENDPOINT;
+    process.env.OPENAI_COMPAT_ENDPOINT = 'http://model.test/v1';
+    process.env.OPENAI_COMPAT_MODEL = 'test-model';
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  title: 'Images',
+                  slides: [
+                    { type: 'image-slide', content: { image: '' } },
+                    { type: 'image-text-slide', content: {} },
+                  ],
+                }),
+              },
+            },
+          ],
+        }),
+        { headers: { 'content-type': 'application/json' } },
+      );
+    t.after(() => {
+      globalThis.fetch = savedFetch;
+      if (savedEndpoint === undefined)
+        delete process.env.OPENAI_COMPAT_ENDPOINT;
+      else process.env.OPENAI_COMPAT_ENDPOINT = savedEndpoint;
+      if (savedModel === undefined) delete process.env.OPENAI_COMPAT_MODEL;
+      else process.env.OPENAI_COMPAT_MODEL = savedModel;
+    });
+    const ctx = makeCtx('POST', pathname, {
+      body: {
+        raw: 'Images',
+        vendor: 'openai-compat',
+        settings: { stepParagraphs: true },
+      },
+    });
+    await handleAi(ctx);
+    assert.equal(
+      ctx.res.statusCode,
+      pathname.endsWith('wizard') ? 201 : 200,
+      JSON.stringify(ctx.res.body),
+    );
+    const { DEFAULT_IMAGE_PLACEHOLDER } =
+      await import('../shared/slide-types/image-placeholder.js');
+    if (pathname.endsWith('wizard')) {
+      const { getPresentation } =
+        await import('../server/storage/presentations/index.js');
+      const pres = await getPresentation(
+        ctx.storageScope,
+        ctx.res.body.presentation.id,
+      );
+      assert.equal(
+        pres.settings.stepParagraphs,
+        true,
+        'v1 keeps the settings extracted by the shared validator',
+      );
+      for (const slide of pres.slides)
+        assert.equal(slide.content.image, DEFAULT_IMAGE_PLACEHOLDER);
+    } else {
+      for (const slide of ctx.res.body.slides)
+        assert.equal(slide.content.image, DEFAULT_IMAGE_PLACEHOLDER);
+    }
+  });
+}

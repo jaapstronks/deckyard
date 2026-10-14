@@ -1,0 +1,438 @@
+{
+  "tests/ai-kill-switch.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/ai-paths-org-registry.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/ai-routes-validation.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/analytics-kill-switch.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/analytics-track-owner-opt-out.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/api-body-object-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/app-css-tokens.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/auth-identity-multi-org.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/auth-routes-reset-and-magic-link.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/auth-routes-rest.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/body-size-cap.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/bunny-library-id.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/bunny-player-colors.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/comments-routes-authz.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/create-presentation-service.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/css-one-definition.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/data-source-provider-refusal.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/data-source-refresh-no-sse-broadcast.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/deck-bundle-slide-types.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/deck-bundle-theme.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/deck-card-fields.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/deck-language-axis.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/deck-thumbnail.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/delete-presentation-service.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/docs-paths-resolvable.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/docs-prose-claims.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/duplicate-presentation-service.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/editor-form-surfaces.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/editor-preview-no-scroll-container.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/empty-state-single-vocabulary.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/escape-contract-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/export-worker-theme.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/feature-declarations.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/feature-entries-follow-flags.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/feed-multi-org-gate.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/feed-single-org.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/follow-invite-insertability.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/follow-live-video-payload.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/form-input-size-ladder.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/getstorage-strip-burndown.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/glyph-icon-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/i18n-sync-plan.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/imagekit-browse-upstream-error.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/import-deck.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/inline-ghost-label-keys.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/inline-svg-single-source.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/instance-health-audience.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/instance-health-authoring-export.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/internal-create-lang-refusal.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/job-failure-message.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/json-body-entry-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/json-body-object-guard.test.js": {
+    "http": 1,
+    "walkers": 1
+  },
+  "tests/live-kill-switch.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/live-session-vocabulary.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/llm-app-error.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/managed-font-private.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/mcp/mcp-maintenance-gate.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/media-app-error.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/module-layout.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/nested-surface-contrast.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/notion-datasource-app-error.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/notion-routes-contract.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/notion-upstream-error.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/one-helper-per-concept-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/openai-ai-app-error.test.js": {
+    "http": 0,
+    "walkers": 2
+  },
+  "tests/organization-vocabulary.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/pg/home-aggregation-route.pgtest.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/pg/sandbox-guest-identity.pgtest.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/pg/sandbox-insights-seed.pgtest.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/pg/sandbox-library-seed.pgtest.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/public-api-v1-error-envelope.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/published-embed-first-party-only.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/removed-slide-types.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/route-captures-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/route-dispatch-convert-profile-questions.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/route-dispatch-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/route-dispatch-root-mounts.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/route-error-handlers-no-leak.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/route-field-validation-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/sandbox-analytics-seed.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/sandbox-examples-theme.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/sandbox-playground.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/scripts-reachable-gate.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/security-sse-connection-caps.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/slide-ai-aggregator.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/slide-type-directory-boundary.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/slide-type-groups.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/slide-type-marker-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/sse-attach-sends-catch-up.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/sse-error-event-shape.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/sse-open-stream.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/sse-single-writer-gate.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/sso-oidc-callback.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/static-route-dispatch.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/stock-media-public-api-kill-switch.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/stock-media-upstream-error.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/storage-call-convention.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/storage-caller-convention.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/storage-collab-app-error.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/storage-reason-vocabulary.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/svg-serve-headers.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/theme-allowlist-enforcement.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/theme-font-routes-authz.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/theme-settings-organization-multi-org.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/translate-target-required.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/viewer-email-routes-contract.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/viewer-language-switch.test.js": {
+    "http": 1,
+    "walkers": 0
+  },
+  "tests/visually-hidden-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  },
+  "tests/zod-scope-guard.test.js": {
+    "http": 0,
+    "walkers": 1
+  }
+}

@@ -1,3 +1,4 @@
+import { toStorageContext } from '../scope.js';
 /**
  * Storage layer for token-based share links.
  * Enables external access to presentations without requiring user accounts.
@@ -7,7 +8,7 @@
 
 import crypto from 'node:crypto';
 import { nowIso } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { hashPassword, verifyPassword } from '../../utils/password-hash.js';
 
 // Share-link password protection uses the shared versioned scrypt util (one
@@ -46,7 +47,18 @@ export function generateGuestToken() {
  * Marks expired links as revoked, instance-wide.
  * @returns {Promise<number>} - Number of links cleaned up
  */
-export async function cleanupExpiredShareLinks() {
+export async function cleanupExpiredShareLinks(scope) {
+  const context = toStorageContext(
+    scope,
+    'cleanupExpiredShareLinks',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'cleanupExpiredShareLinks() requires an instance retention scope',
+    );
   return withDbGuard(0, async (db) => {
     const now = nowIso();
 

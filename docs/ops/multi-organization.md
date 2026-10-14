@@ -2,15 +2,10 @@
 
 An operator runbook: what to do, in order, to serve more than one organization
 from one Deckyard instance, and what the organizations then share. The _why_
-behind the isolation (the R1/R2/R3 rules, the supported shapes, what is still
-in development) is in [`../reference/tenant-isolation.md`](../reference/tenant-isolation.md);
+behind the isolation (the R1/R2/R3 rules, the supported shapes and current limitations) is in [`../reference/tenant-isolation.md`](../reference/tenant-isolation.md);
 this page only translates it into settings and steps.
 
-> **Status.** Multi-organization mode (shape 4 in `tenant-isolation.md`) is _in
-> development_: isolation is enforced in code, but ownership still keys on email
-> addresses. Use it for organizations that trust one operator, not for
-> unrelated customers who must never be able to reach each other's data by a
-> bug. Single-organization instances need nothing on this page.
+> **Status.** Multi-organization mode (shape 4 in `tenant-isolation.md`) enforces organization isolation in code. Presentation ownership compares `users.id`; collaborator grants still look up `user_email`. Review the remaining limitations in the reference before operating a shared instance. Single-organization instances need nothing on this page.
 
 ## 1. Turn it on
 

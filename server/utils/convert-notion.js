@@ -38,7 +38,6 @@ const log = createLogger('convert-notion');
  * @param {object} options - Conversion options
  * @param {string} options.lang - Target language ('nl' or 'en-GB' or 'auto')
  * @param {string} options.vendor - LLM vendor ('openai' or 'anthropic')
- * @param {boolean} options.enableLogging - Enable AI conversation logging (default: true)
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
  * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
  * @param {function} options.onGroupDone - ({ done, total }) => void, called as
@@ -46,17 +45,25 @@ const log = createLogger('convert-notion');
  * @param {AbortSignal} [options.signal] - Cancels the import: it reaches both
  *   model phases and is checked before every image re-host, so a caller whose
  *   reader left stops instead of importing for nobody.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map; the AI slides are fixed against it (B247).
+ * @param {string[]} [options.disabledSlideTypes] - Types the organization
+ *   may not insert; kept out of the catalog the model chooses from (B659).
+ * @param {Array} [options.customSlideTypes] - The organization's published
+ *   custom types, offered next to the core catalog (B659).
  * @returns {Promise<{deck: object|null, report: object, pageId: string}>}
  */
 export async function convertNotionPage(urlOrPageId, options = {}) {
   const {
     lang = 'auto',
     vendor = null,
-    enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
     onGroupDone = null,
     signal = null,
+    slideTypes,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
   } = options;
 
   const report = {
@@ -140,13 +147,15 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       vendor,
       sectionCount: richContent.sections.length,
       metadata: report.metadata,
-      enableLogging,
       onStatusMessage,
       onOutlineComplete,
       onGroupDone,
       processedImages,
       richContent, // Pass full content for image/table slide creation
       signal,
+      slideTypes,
+      disabledSlideTypes,
+      customSlideTypes,
     });
 
     // Include status messages in report
@@ -283,17 +292,19 @@ async function convertWithAi(formattedContent, options = {}) {
     vendor = null,
     sectionCount = 0,
     metadata = {},
-    enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
     onGroupDone = null,
     processedImages = [],
     richContent = null,
     signal = null,
+    slideTypes,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
   } = options;
 
   const sessionId = generateSessionId();
-  const logger = enableLogging ? createSessionLogger(sessionId) : null;
+  const logger = createSessionLogger(sessionId);
 
   log.info(`Starting AI conversion session ${sessionId}`);
   log.info(
@@ -309,7 +320,7 @@ async function convertWithAi(formattedContent, options = {}) {
     userName: metadata?.author || '',
     targetLang: lang === 'auto' ? null : lang,
     vendor,
-    onLog: logger ? (data) => logger.logPhase1(data) : null,
+    onLog: (data) => logger.logPhase1(data),
     signal,
   });
 
@@ -354,14 +365,19 @@ async function convertWithAi(formattedContent, options = {}) {
         title: outline.title,
         summary: outline.summary,
       },
-      onLog: logger ? (data) => logger.logPhase2(data) : null,
+      onLog: (data) => logger.logPhase2Call(data),
       onGroupDone,
       signal,
+      disabledSlideTypes,
+      customSlideTypes,
+      slideTypes,
     });
   }
 
   // Validate refined slides
-  const validatedSlides = validateAndFixRefinedSlides(refinedContentSlides);
+  const validatedSlides = validateAndFixRefinedSlides(refinedContentSlides, {
+    slideTypes,
+  });
 
   // Merge structural and content slides, sorted by originalIndex
   const allSlides = [
@@ -434,13 +450,11 @@ async function convertWithAi(formattedContent, options = {}) {
   }
 
   // Finalize logging
-  if (logger) {
-    logger.finalize(deck, {
-      sessionId,
-      totalSlides: deck.slides.length,
-      source: 'notion',
-    });
-  }
+  logger.finalize(deck, {
+    sessionId,
+    totalSlides: deck.slides.length,
+    source: 'notion',
+  });
 
   return deck;
 }

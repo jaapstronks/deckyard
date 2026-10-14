@@ -29,8 +29,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { maybeAttachCollab, shutdownCollab } =
   await import('../server/collab/mount.js');
 const { createPresentation, getPresentation, updatePresentation } =
@@ -38,11 +37,11 @@ const { createPresentation, getPresentation, updatePresentation } =
 const { getYDocState } =
   await import('../server/storage/presentations/ydocs.js');
 const { createPresenceSession } =
-  await import('../client/lib/collab/presence-session.js');
+  await import('../client/views/editor/live-edits/presence-session.js');
 const { Y } = await import('../client/vendor/collab.js');
 const { createDeckYdocCodec } = await import('../shared/collab/deck-ydoc.js');
 const { createLiveDocBinder } =
-  await import('../client/lib/collab/live-doc-binder.js');
+  await import('../client/views/editor/live-edits/live-doc-binder.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.
@@ -78,7 +77,6 @@ function fillNullColumns() {
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
 // not have — drop the adapter singleton instead.
 after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

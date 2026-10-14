@@ -72,7 +72,6 @@
   "dataSource.connected": "Koblet til {provider}",
   "dataSource.disconnect": "Koble fra",
   "dataSource.disconnect.title": "Fjern tilkoblingen til datakilden",
-  "dataSource.error": "Feil: {message}",
   "dataSource.fetching": "Henter data…",
   "dataSource.field.csvUrl": "CSV-URL",
   "dataSource.field.databaseId": "Database-ID eller URL",

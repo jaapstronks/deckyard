@@ -23,13 +23,13 @@
  * Two gates that each refuse exactly whom the other admits. Nothing in the
  * dispatch table says so, and nothing did until this file.
  *
- * Since B365 there is a third endpoint, `GET .../questions/capabilities`, whose
- * whole job is to report those two answers — because the notes companion used
- * to guess them, and guessed `isOrganizationAdmin` for both. The cells at the
- * bottom pin the report against the actions: whatever `capabilities` claims,
- * the matching POST must agree, for the same caller on the same deck. That
- * equality is the thing under test; the individual booleans are just how it is
- * spelled.
+ * There is also a third endpoint (B365), `GET .../questions/capabilities`,
+ * whose whole job is to report those two answers — because the notes companion
+ * used to guess them, and guessed `isOrganizationAdmin` for both. The cells at
+ * the bottom pin the report against the actions: whatever `capabilities`
+ * claims, the matching POST must agree, for the same caller on the same deck.
+ * That equality is the thing under test; the individual booleans are just how
+ * it is spelled.
  *
  * House shape (as in tests/comments-routes-authz.test.js): the exported
  * dispatcher is called with a req/res double over tests/helpers/fake-db.js.
@@ -38,6 +38,7 @@
  * Run with: node --test tests/question-moderation-routes.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -47,8 +48,7 @@ const REPO_ROOT = '/tmp/deckyard-question-moderation-test';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { createPresentation, getPresentation } =
@@ -101,7 +101,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -147,22 +146,6 @@ async function seed({ slides } = {}) {
 
 // --- The request double -----------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /**
@@ -187,7 +170,7 @@ async function call(method, pathname, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handleQuestions({
     repoRoot: REPO_ROOT,
@@ -466,7 +449,7 @@ test('an editor-collaborator is told they may promote — and may', async () => 
   // with `isOrganizationAdmin`, so this person saw no promote button at all
   // while the route below happily accepted their POST.
   const seeded = await seed();
-  const added = await addCollaborator(seeded.pres.id, {
+  const added = await addCollaborator({ organizationId: ORG }, seeded.pres.id, {
     userEmail: EDITOR.email,
     permission: PERMISSIONS.EDIT,
     invitedBy: OWNER.email,
@@ -552,7 +535,7 @@ test('an anonymous caller is refused 401 by the running /api dispatcher', async 
       headers: { host: 'decks.example.test' },
       socket: { remoteAddress: '203.0.113.9' },
     };
-    const res = makeRes();
+    const res = createMockRes();
     await handleApi({
       repoRoot: REPO_ROOT,
       req,

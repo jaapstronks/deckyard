@@ -11,27 +11,7 @@ import { requestChatCompletionContent } from '../llm/index.js';
 import { ValidationError } from '../errors.js';
 import { extractJsonObject } from './json.js';
 import { labelForLang, normalizeLang } from './lang.js';
-
-// Optional: load ciiic-translation-rules if available (CIIIC fork only).
-//
-// The package is deliberately NOT declared in package.json — it ships only in
-// the CIIIC fork, and declaring it would break `npm install` for the OSS repo
-// (AGENTS.md § Optional dependencies match how the code loads them). The
-// `catch` below is the contract: absent is the normal case, and the fallbacks
-// are empty rules. So `no-unresolved` is right about the file and wrong about
-// the intent — this is the one import in the tree that is *supposed* not to
-// resolve upstream.
-let generateTerminologyPrompt = () => '';
-let getGuidelines = () => '';
-try {
-  // eslint-disable-next-line import-x/no-unresolved -- fork-only, see above
-  const rules = await import('ciiic-translation-rules');
-  generateTerminologyPrompt =
-    rules.generateTerminologyPrompt || generateTerminologyPrompt;
-  getGuidelines = rules.getGuidelines || getGuidelines;
-} catch {
-  // ciiic-translation-rules not installed - using empty fallbacks
-}
+import { translationReferenceLines } from './translation-instructions.js';
 
 /**
  * The top-level keys to translate on one stored slide: its type's text fields,
@@ -77,7 +57,14 @@ function itemsFieldsForSlide(slide, ...others) {
 
 export async function translatePresentationStrings(
   presentation,
-  { from, to, existingTarget = null, fillMissing = false, vendor = null } = {},
+  {
+    from,
+    to,
+    existingTarget = null,
+    fillMissing = false,
+    vendor = null,
+    organizationId = null,
+  } = {},
 ) {
   const fromLang = normalizeLang(from);
   const toLang = normalizeLang(to);
@@ -125,11 +112,7 @@ export async function translatePresentationStrings(
     '- Preserve markdown structure in body fields (lists, headings, links).',
     '- Keep array item count and order EXACTLY the same.',
     '',
-    '--- TERMINOLOGY RULES ---',
-    generateTerminologyPrompt(),
-    '',
-    getGuidelines(toLang === 'nl' ? 'nl' : 'en'),
-    '',
+    ...(await translationReferenceLines(organizationId, toLang)),
     'Output format MUST be exactly:',
     '{',
     '  "title": "...",',
@@ -258,7 +241,7 @@ export async function translatePresentationStrings(
 
 export async function translateShortText(
   text,
-  { from, to, vendor = null } = {},
+  { from, to, vendor = null, organizationId = null } = {},
 ) {
   const fromLang = normalizeLang(from);
   const toLang = normalizeLang(to);
@@ -282,11 +265,7 @@ export async function translateShortText(
     '- Keep it as one text (do not add quotes).',
     '- Do not add extra explanations.',
     '',
-    '--- TERMINOLOGY RULES ---',
-    generateTerminologyPrompt(),
-    '',
-    getGuidelines(toLang === 'nl' ? 'nl' : 'en'),
-    '',
+    ...(await translationReferenceLines(organizationId, toLang)),
     'Output format MUST be exactly:',
     '{ "text": "..." }',
   ].join('\n');
@@ -310,7 +289,7 @@ export async function translateShortText(
 
 export async function translateFieldMap(
   fields,
-  { from, to, vendor = null } = {},
+  { from, to, vendor = null, organizationId = null } = {},
 ) {
   const fromLang = normalizeLang(from);
   const toLang = normalizeLang(to);
@@ -339,11 +318,7 @@ export async function translateFieldMap(
     '- Preserve meaning and tone.',
     '- Preserve markdown formatting if present (lists, links).',
     '',
-    '--- TERMINOLOGY RULES ---',
-    generateTerminologyPrompt(),
-    '',
-    getGuidelines(toLang === 'nl' ? 'nl' : 'en'),
-    '',
+    ...(await translationReferenceLines(organizationId, toLang)),
     'Output format MUST be exactly:',
     '{ "translations": { "<key>": "<translated text>", ... } }',
   ].join('\n');
@@ -380,7 +355,7 @@ export async function translateFieldMap(
 
 export async function translatePresentationStringsFillMissing(
   { sourcePresentation, targetPresentation, missing = [] } = {},
-  { from, to, vendor = null } = {},
+  { from, to, vendor = null, organizationId = null } = {},
 ) {
   const fromLang = normalizeLang(from);
   const toLang = normalizeLang(to);
@@ -425,11 +400,7 @@ export async function translatePresentationStringsFillMissing(
     '- Preserve markdown structure in body fields (lists, headings, links).',
     '- Keep array item count and order EXACTLY the same.',
     '',
-    '--- TERMINOLOGY RULES ---',
-    generateTerminologyPrompt(),
-    '',
-    getGuidelines(toLang === 'nl' ? 'nl' : 'en'),
-    '',
+    ...(await translationReferenceLines(organizationId, toLang)),
     'You will receive:',
     '- SOURCE presentation JSON (truth)',
     '- TARGET presentation JSON (some fields may be blank and need filling)',

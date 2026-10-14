@@ -257,7 +257,7 @@ export function createDeckGridView({
       } catch {
         // ignore
       }
-      bigThumb.innerHTML = '';
+      bigThumb.replaceChildren();
       try {
         bigThumb.append(
           renderSlideElement(slide, {
@@ -274,7 +274,7 @@ export function createDeckGridView({
         );
       }
 
-      noteEl.innerHTML = '';
+      noteEl.replaceChildren();
       const note =
         typeof peekNoteFor === 'function' ? peekNoteFor(slide, idx) : null;
       if (note) {
@@ -474,7 +474,7 @@ export function createDeckGridView({
 
   const render = () => {
     detach();
-    el.innerHTML = '';
+    el.replaceChildren();
 
     const slides = (typeof getSlides === 'function' ? getSlides() : []) || [];
     // Drop selections for slides that no longer exist (e.g. after a refresh).

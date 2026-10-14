@@ -17,9 +17,8 @@
  * @module auth/dev-bypass
  */
 
-import { getDefaultOrganizationId } from '../config/database.js';
-import { withDbGuard } from '../storage/utils/index.js';
-import { nowIso } from '../utils/normalize.js';
+import { createStorageScope } from '../utils/context.js';
+import { ensureUserByEmail } from '../storage/users.js';
 
 /**
  * The address the development bypass acts under.
@@ -76,39 +75,11 @@ export function resetDevBypassUserCache() {
  * @returns {Promise<string|null>}
  */
 async function ensureDevBypassUserId() {
-  return withDbGuard(null, async (db) => {
-    const existing = await db
-      .selectFrom('users')
-      .select('id')
-      .where('email', '=', DEV_BYPASS_EMAIL)
-      .executeTakeFirst();
-    if (existing?.id) return existing.id;
-
-    const now = nowIso();
-    const inserted = await db
-      .insertInto('users')
-      .values({
-        organization_id: getDefaultOrganizationId(),
-        email: DEV_BYPASS_EMAIL,
-        name: 'Dev',
-        role: 'admin',
-        // No password: this identity is only ever reached through the bypass,
-        // never through the login form.
-        auth_source: 'database',
-        created_at: now,
-        updated_at: now,
-      })
-      // A second worker may have inserted it between the select and here.
-      .onConflict((oc) => oc.column('email').doNothing())
-      .returning('id')
-      .executeTakeFirst();
-    if (inserted?.id) return inserted.id;
-
-    const raced = await db
-      .selectFrom('users')
-      .select('id')
-      .where('email', '=', DEV_BYPASS_EMAIL)
-      .executeTakeFirst();
-    return raced?.id || null;
+  const result = await ensureUserByEmail(createStorageScope(null), {
+    email: DEV_BYPASS_EMAIL,
+    name: 'Dev',
+    role: 'admin',
+    authSource: 'database',
   });
+  return result?.user?.id || null;
 }

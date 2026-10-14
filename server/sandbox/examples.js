@@ -26,6 +26,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { resolveSeedThemeSlug } from '../storage/settings.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('sandbox-examples');
@@ -78,7 +79,13 @@ export async function listSandboxExamples(repoRoot) {
       const raw = await fs.readFile(path.join(dir, file), 'utf8');
       const { sandbox, ...example } = JSON.parse(raw);
       const id = file.replace(/\.json$/i, '');
-      const theme = await resolveSeedThemeSlug(example?.theme);
+      const theme = await resolveSeedThemeSlug(
+        crossOrganizationScope(
+          repoRoot,
+          'sandbox examples name seed themes, which are instance-level configuration',
+        ),
+        example?.theme,
+      );
       if (!theme) {
         log.warn(`Sandbox example ${id} names no seed theme`, {
           theme: example?.theme,

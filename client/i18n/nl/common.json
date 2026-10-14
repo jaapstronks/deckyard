@@ -135,6 +135,7 @@
   "common.previous": "Vorige slide",
   "common.reload": "Herlaad",
   "common.remove": "Verwijderen",
+  "common.rowRemoved": "{label} verwijderd.",
   "common.save": "Opslaan",
   "common.saveFailed": "Opslaan mislukt",
   "common.saveFailedAborted": "Kon niet opslaan; afgebroken.",

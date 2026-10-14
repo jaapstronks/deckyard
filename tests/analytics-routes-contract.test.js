@@ -51,6 +51,7 @@
  * Run with: node --test tests/analytics-routes-contract.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -61,8 +62,7 @@ const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
@@ -155,7 +155,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -354,22 +353,6 @@ async function seed() {
 // ---------------------------------------------------------------------------
 
 /** A response double capturing the status/headers/body the helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
 
 /**
  * Call an authenticated analytics handler the way `dispatchRoutes` does — the
@@ -399,7 +382,7 @@ async function call(
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handler(
     {
@@ -422,7 +405,7 @@ async function callPublic(method, token) {
     headers: { host: 'decks.example.test' },
     socket: { remoteAddress: '198.51.100.7' },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const handled = await handleAnalyticsReportPublic({
     repoRoot: process.cwd(),
     req,
@@ -448,7 +431,7 @@ test('dashboard refuses an unauthenticated caller with a 401', async () => {
   );
 
   assert.equal(res.statusCode, 401);
-  assert.equal(res.body.error, 'unauthorized');
+  assert.equal(res.json().error, 'unauthorized');
   assert.deepEqual(db.__queryLog, [], 'the 401 is returned before any query');
 });
 
@@ -464,8 +447,8 @@ test('dashboard rejects an unknown period as invalid, naming it', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'invalid');
-  assert.deepEqual(res.body.details, { field: 'period' });
+  assert.equal(res.json().error, 'invalid');
+  assert.deepEqual(res.json().details, { field: 'period' });
 });
 
 test('presentations list refuses an unauthenticated caller with a 401', async () => {
@@ -477,7 +460,7 @@ test('presentations list refuses an unauthenticated caller with a 401', async ()
   );
 
   assert.equal(res.statusCode, 401);
-  assert.equal(res.body.error, 'unauthorized');
+  assert.equal(res.json().error, 'unauthorized');
 });
 
 test('presentations list rejects an unknown period and an unknown sort', async () => {
@@ -491,8 +474,8 @@ test('presentations list rejects an unknown period and an unknown sort', async (
     },
   );
   assert.equal(badPeriod.res.statusCode, 400);
-  assert.equal(badPeriod.res.body.error, 'invalid');
-  assert.deepEqual(badPeriod.res.body.details, { field: 'period' });
+  assert.equal(badPeriod.res.json().error, 'invalid');
+  assert.deepEqual(badPeriod.res.json().details, { field: 'period' });
 
   // `completion` used to be accepted and silently sorted on views (B622).
   for (const sort of ['alphabetical', 'completion']) {
@@ -505,8 +488,8 @@ test('presentations list rejects an unknown period and an unknown sort', async (
       },
     );
     assert.equal(badSort.res.statusCode, 400, sort);
-    assert.equal(badSort.res.body.error, 'invalid', sort);
-    assert.deepEqual(badSort.res.body.details, { field: 'sort' }, sort);
+    assert.equal(badSort.res.json().error, 'invalid', sort);
+    assert.deepEqual(badSort.res.json().details, { field: 'sort' }, sort);
     assert.deepEqual(db.__queryLog, [], `${sort}: refused before any query`);
   }
 });
@@ -519,9 +502,14 @@ test('the list sorts are the orders storage can cut a page on', () => {
 
 test('the storage reader throws on a sort it cannot order on', async () => {
   await assert.rejects(
-    getPresentationsWithAnalytics('owner@example.com', null, {
-      sort: 'completion',
-    }),
+    getPresentationsWithAnalytics(
+      { organizationId: 'org-a' },
+      'owner@example.com',
+      'org-a',
+      {
+        sort: 'completion',
+      },
+    ),
     /Unknown analytics list sort: completion/,
   );
 });
@@ -555,7 +543,7 @@ for (const [name, handler] of READERS) {
     );
 
     assert.equal(res.statusCode, 404);
-    assert.equal(res.body.error, 'not_found');
+    assert.equal(res.json().error, 'not_found');
   });
 
   test(`${name} is a 403 for someone who cannot read the deck`, async () => {
@@ -575,7 +563,7 @@ for (const [name, handler] of READERS) {
       403,
       'a same-org non-collaborator has no read access to a private deck',
     );
-    assert.equal(res.body.error, 'forbidden');
+    assert.equal(res.json().error, 'forbidden');
   });
 }
 
@@ -613,8 +601,8 @@ test('sessions returns the deck’s sessions with the session token stripped', a
   );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.sessions.length, 2);
-  for (const session of res.body.sessions) {
+  assert.equal(res.json().sessions.length, 2);
+  for (const session of res.json().sessions) {
     assert.ok(
       !('sessionToken' in session),
       'the proof-of-possession token never reaches a reader',
@@ -641,15 +629,17 @@ test('list reports returns the deck’s reports for a reader', async () => {
   assert.equal(res.statusCode, 200);
   // deck-owned carries r-1, r-2 and the (public, private-deck) r-priv.
   assert.equal(
-    res.body.total,
+    res.json().total,
     3,
     'every report on this deck is counted, org-scoped',
   );
-  assert.deepEqual(res.body.reports.map((r) => r.id).sort(), [
-    'r-1',
-    'r-2',
-    'r-priv',
-  ]);
+  assert.deepEqual(
+    res
+      .json()
+      .reports.map((r) => r.id)
+      .sort(),
+    ['r-1', 'r-2', 'r-priv'],
+  );
 });
 
 test('list reports is a 403 for someone who cannot read the deck', async () => {
@@ -680,8 +670,8 @@ test('get report returns one report for a reader', async () => {
   );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.id, 'r-1');
-  assert.equal(res.body.presentationId, 'deck-owned');
+  assert.equal(res.json().id, 'r-1');
+  assert.equal(res.json().presentationId, 'deck-owned');
 });
 
 test('get report is a 404 for a report id that does not exist', async () => {
@@ -816,7 +806,7 @@ test('create rejects a body missing required fields with a 400', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'bad_request');
+  assert.equal(res.json().error, 'bad_request');
 });
 
 test('create rejects an unknown report type with a 400', async () => {
@@ -877,7 +867,7 @@ test('create is rate-limited once the expensive-op bucket is spent', async () =>
     429,
     'the call past the burst is refused before validation',
   );
-  assert.equal(res.body.error, 'rate_limited');
+  assert.equal(res.json().error, 'rate_limited');
 });
 
 test('updating a report needs write access', async () => {
@@ -910,7 +900,7 @@ test('update renames a report for a writer', async () => {
   );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(res.json().ok, true);
   assert.equal(reportById('r-1').title, 'Renamed');
 });
 
@@ -968,7 +958,7 @@ test('delete removes a report for a writer', async () => {
   );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(res.json().ok, true);
   assert.equal(reportById('r-1'), undefined, 'the report is gone');
 });
 
@@ -995,8 +985,8 @@ test('regenerate mints a fresh token for a writer', async () => {
   );
 
   assert.equal(res.statusCode, 200);
-  assert.match(res.body.shareToken, /^[a-f0-9]{64}$/);
-  assert.notEqual(res.body.shareToken, before, 'the token actually rotated');
+  assert.match(res.json().shareToken, /^[a-f0-9]{64}$/);
+  assert.notEqual(res.json().shareToken, before, 'the token actually rotated');
 });
 
 // ===========================================================================
@@ -1009,8 +999,8 @@ test('a well-formed token for a live public report returns it', async () => {
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.id, 'r-pub');
-  assert.equal(res.body.shareToken, PUBLIC_TOKEN);
+  assert.equal(res.json().id, 'r-pub');
+  assert.equal(res.json().shareToken, PUBLIC_TOKEN);
 });
 
 test('a malformed token is a 400, not a database lookup', async () => {
@@ -1018,7 +1008,7 @@ test('a malformed token is a 400, not a database lookup', async () => {
   const { res } = await callPublic('GET', 'not-a-real-token');
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'bad_request');
+  assert.equal(res.json().error, 'bad_request');
 });
 
 test('a well-formed but unminted token is a 404', async () => {
@@ -1051,7 +1041,7 @@ test('a public report whose deck went private is a 403', async () => {
     403,
     'a report share-link goes dark when its deck is set private',
   );
-  assert.equal(res.body.error, 'forbidden');
+  assert.equal(res.json().error, 'forbidden');
 });
 
 test('the public report path is rate-limited per IP', async () => {

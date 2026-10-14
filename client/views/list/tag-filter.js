@@ -84,7 +84,7 @@ export function createTagFilter({ api, onFilterChange }) {
 
   // Render the tag list
   function renderTags(filter = '') {
-    tagList.innerHTML = '';
+    tagList.replaceChildren();
     const lowerFilter = filter.toLowerCase();
     const filtered = allTags.filter((tag) =>
       tag.name.toLowerCase().includes(lowerFilter),

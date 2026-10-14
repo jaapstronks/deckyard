@@ -257,7 +257,7 @@ export function createSlideTypePicker({
     { afterSlideId, parentId, onPicked, onSeeAllLibrary } = {},
   ) => {
     teardownObservers();
-    mount.innerHTML = '';
+    mount.replaceChildren();
 
     // A preset (item 15) inserts the base type with content overrides; usage is
     // still bumped against the base type so variants don't fragment the signal.
@@ -332,7 +332,7 @@ export function createSlideTypePicker({
         if (wrap.classList.contains('is-pending')) continue;
         if (!backgroundOptionsFor(type)) continue;
         cleanupSlideRuntimes(wrap);
-        wrap.innerHTML = '';
+        wrap.replaceChildren();
         hydrateThumb(wrap, resizeObserver);
       }
     };
@@ -655,7 +655,7 @@ export function createSlideTypePicker({
       if (surfaceEl) surfaceEl.hidden = mode !== 'preview';
       for (const wrap of typesWrap.querySelectorAll(TYPE_THUMB_SELECTOR)) {
         cleanupSlideRuntimes(wrap);
-        wrap.innerHTML = '';
+        wrap.replaceChildren();
         wrap.classList.remove(
           'is-error',
           'ps-type-thumb-video',
@@ -767,9 +767,8 @@ export function createSlideTypePicker({
 
     mount.append(typesWrap);
 
-    const noResults = h('div', { class: 'ps-picker-no-results', hidden: true });
+    const noResults = h('div', { class: 'empty-note', hidden: true });
     const noResultsText = h('div', {
-      class: 'ps-picker-no-results-text',
       text: t(
         'editor.slideTypePicker.noResults',
         'No slide types match your search.',

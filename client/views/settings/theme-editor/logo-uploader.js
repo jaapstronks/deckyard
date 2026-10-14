@@ -122,7 +122,7 @@ export function createLogoUploader({ value, onChange }) {
 
   // Render state
   function renderState() {
-    preview.innerHTML = '';
+    preview.replaceChildren();
     status.textContent = '';
 
     if (uploading) {
@@ -144,7 +144,7 @@ export function createLogoUploader({ value, onChange }) {
         src: currentUrl,
         alt: t('settings.themes.logoAlt', 'Logo'),
         onerror: () => {
-          preview.innerHTML = '';
+          preview.replaceChildren();
           preview.classList.add('is-empty');
           preview.textContent = t('settings.themes.invalidLogo', 'Invalid URL');
         },

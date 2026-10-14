@@ -12,9 +12,9 @@
  *
  * The success path is NOT covered: it calls the configured LLM vendor
  * (`translatePresentationStrings`), and there is no vendor seam to observe
- * without one — noted as an explicit opt-out in the B40 brief's Opt-out-log,
- * like the collaborator invite e-mail in PR 2. Everything up to that call is
- * pinned here, so the endpoint's contract fails loudly if the ladder changes.
+ * without one — a recorded, deliberate opt-out (B40), like the collaborator
+ * invite e-mail. Everything up to that call is pinned here, so the endpoint's
+ * contract fails loudly if the ladder changes.
  *
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-partial-write.test.js). Negative assertions pin the
@@ -46,7 +46,7 @@ const KEY_ID = 'key-1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleTranslation } =
   await import('../server/routes/public-api/v1/translate.js');
 const { TRANSLATION_LANGS } =

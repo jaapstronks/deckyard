@@ -1,5 +1,5 @@
 /**
- * B570: one deck copy under three contracts (A7.4).
+ * One deck copy under three contracts (B570, A7.4).
  *
  * The internal route, public v1 and the MCP `duplicate_presentation` tool each
  * copied a deck their own way: each loaded and decided beside the copy, MCP
@@ -41,8 +41,7 @@ const ABSENT = '00000000-0000-4000-8000-00000000dead';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, listPresentations } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations: handleAppPresentations } =
@@ -66,7 +65,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

@@ -65,7 +65,7 @@ import { createMarkdownEditModal } from './markdown-modal.js';
 import { createReorderDrag } from './reorder-drag.js';
 import { h } from '../../../lib/dom/index.js';
 import { slideRendered } from '../../../lib/slide-runtime/slide-render.js';
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
 
@@ -421,7 +421,7 @@ export function createInlineEditor({
     ring.classList.add('is-active');
     overlay.reposition();
     // A ghost-spawned field renders only the spawn sentinel; start blank.
-    if (isNew) el.innerHTML = '';
+    if (isNew) el.replaceChildren();
     // "Did the user change anything?" is judged against the serialization of
     // the UNTOUCHED render, not the stored raw: the serializer normalizes
     // (list renumbering, whitespace), so comparing against the raw would make
@@ -1412,11 +1412,10 @@ export function createInlineEditor({
     }
     const target = resolveMediaTarget(photoEl);
     if (!target) return;
-    // Long-lived "Uploading…" toast; dismissed explicitly on completion (there
-    // is no infinite duration, so cap it well past a realistic upload).
-    const uploading = toast(t('imageLibrary.uploading', 'Uploading…'), {
-      durationMs: 60000,
-    });
+    // The upload is a state of this image, so it shows on the image, not in a
+    // toast that outlives it (B645). The rerender on success replaces the
+    // element; the finally clears it when the drop fails.
+    photoEl.setAttribute('aria-busy', 'true');
     try {
       const { url } = await uploadFile(api, file);
       if (!url) {
@@ -1440,7 +1439,7 @@ export function createInlineEditor({
       // generic "failed" in its place (B205).
       toast.error(err);
     } finally {
-      uploading?.dismiss?.();
+      photoEl.removeAttribute('aria-busy');
     }
   }
 

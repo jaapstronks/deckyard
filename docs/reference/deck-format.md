@@ -115,12 +115,32 @@ plus four optional slide keys whose meaning does not depend on the type:
   [Type identity](#type-identity-one-spelling-on-slidestype) above).
 - **`content`** — an object whose shape is defined by that slide type's field
   registry. Absent or `""` fields mean "unset"; the importer fills type defaults
-  and never blanks a required field.
+  and never blanks a required field. A key the type does not declare is
+  dropped on import (`declaredContentKeys()` in
+  `shared/slide-types/declared-keys.js`, the same list strict validation
+  refuses against); a legacy key the read funnel folds is folded first, so it
+  arrives under its current name. A declared value the editor would refuse (a
+  `javascript:` link, a text over its length, a missing required field after
+  defaults) refuses the whole import with 400 `invalid`, naming the language
+  version (`details.lang`), the slide's position (`details.index`) and the
+  field; nothing is dropped and no deck is created.
 
 Portable slides carry **no `id`** — ids are a storage concern and are
 (re)generated on import. A reader must not depend on slide identity across a
 round-trip. For the same reason slide nesting (`parentId`, a reference to
 another slide's id) does not travel.
+
+An **in-deck jump** (a `url`-typed field, at slide level or inside an `items`
+field, that points at another slide) therefore travels in its positional form
+`#N`: the target's 1-based place in this deck's `slides` array. The export
+writes a stored `#slide:<id>` jump as `#N` on the order the deck is exported
+in, after any slide was filtered out; `#N` and web addresses travel as
+written. A jump whose target is not in the exported deck is not written as a
+link: the value becomes `""`, and an item whose required `url` has no target
+(an action button) is left out, in every language version. The importer keeps
+`#N` as written; a stored-shape import whose slides do carry ids has its
+`#slide:<id>` jumps remapped to the new ids. Code: `portableSlideJumps()` and
+`rewriteSlideJumpIds()` in `shared/slide-types/deck.js`.
 
 ### Languages
 
@@ -144,6 +164,8 @@ A deck written in several languages carries its structure **once**. `content`,
 - Everything is optional. A reader that does not know `translations` gets a
   complete deck in one language.
 
+The editor stores a full slide buffer for each language. Its source (`i18n.dominant`) must satisfy declared required fields when changed. Other buffers may be incomplete: a required prose field may be absent or empty, including prose inside `items`, until someone translates it. `shared/slide-types/presentation.js` applies this through the same declared field validator on the editor and v1 saves, the slide writes of v1 and MCP, a create that carries slides (`contentByLang` per language) and the JSON and `.deck` imports (`translations` per language). The converters (PPTX/PDF, Notion, Markdown) still write their slides after an empty create and are not yet covered (B694). Present values still pass their type, length and URL checks, and required structure or machine values remain required. The save manager mirrors structure into every language without copying source-language prose.
+
 Deckyard's importer takes `lang` as the deck's language and refuses a deck
 whose `lang`, or any `translations` tag, is not a language it authors in, and a
 request whose language contradicts the deck's own. That is the implementation's
@@ -162,7 +184,8 @@ source, no hand-synced copy. The schemas are served live and are versioned by
 
 Schemas are **lenient contracts, not gates**: `additionalProperties` is allowed
 so legacy and forward-compatible keys still validate. They document the known
-shape; they do not reject history.
+shape; they do not reject history. The importer is where an undeclared key ends:
+it validates, and is then dropped (see [Round-trip guarantee](#round-trip-guarantee)).
 
 There is **one** published deck schema, and it describes this envelope — what
 the export writes, not what Deckyard's database stores. Storage fields (`id`,
@@ -227,6 +250,13 @@ Deliberate lossy edges (they degrade, they do not crash):
   placeholder.
 - A **missing local asset** keeps its `/uploads/…` ref and imports as a dangling
   reference.
+- A **key the slide type does not declare** is dropped. Nothing reads such a
+  key, so nothing renders differently: it is a retired key a stored deck still
+  carried (the export writes stored content as it is), or one another writer
+  invented. This is part of the one normalization pass the fixpoint allows.
+- An **in-deck jump to a slide that is not exported** is dropped (see
+  [Slides](#slides)); a jump to an exported slide stays on that slide
+  (`tests/deck-export-slide-jumps.test.js`).
 
 ## Evolution rule
 

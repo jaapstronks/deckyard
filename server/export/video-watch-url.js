@@ -23,7 +23,7 @@
  * since only the slides.ciiic.nl fork is live.
  */
 
-import { parseVideoSource } from './video-helpers.js';
+import { parseVideoSource, resolveBunnyLibraryId } from './video-helpers.js';
 import { normalizeAuthoredUrl } from '../../shared/slide-types/helpers.js';
 
 /**
@@ -48,7 +48,10 @@ function buildProviderUrl(parsed, autoplay) {
         : `https://vimeo.com/${encodeURIComponent(parsed.videoId)}`;
     }
     case 'bunny': {
-      const lib = encodeURIComponent(parsed.libraryId || '366590');
+      // No library, no play page: parseVideoSource only reports `bunny` with
+      // one, and inventing a fallback is what B650 removed.
+      if (!parsed.libraryId) return null;
+      const lib = encodeURIComponent(parsed.libraryId);
       const id = encodeURIComponent(parsed.videoId);
       const q = autoplay ? '?autoplay=true' : '';
       return `https://iframe.mediadelivery.net/play/${lib}/${id}${q}`;
@@ -106,7 +109,7 @@ export function resolveVideoWatchUrl(
 
   // Rung 2: provider URL from the video source.
   if (source) {
-    const bunnyLibraryId = String(content?.bunnyLibraryId || '366590').trim();
+    const bunnyLibraryId = resolveBunnyLibraryId(content);
     const parsed = parseVideoSource(source, bunnyLibraryId);
     const url = buildProviderUrl(parsed, autoplay);
     if (url) return { url, kind: 'provider' };

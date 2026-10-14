@@ -23,6 +23,7 @@
  * Run with: node --test tests/thumbnail-warm-on-save.test.js
  */
 
+import { createMockRes, createMockReq } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -57,8 +58,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 
@@ -80,7 +80,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -115,36 +114,6 @@ async function withWarmingEnabled(fn) {
     if (previous === undefined) delete process.env.DECK_THUMBNAIL_WARM_ON_SAVE;
     else process.env.DECK_THUMBNAIL_WARM_ON_SAVE = previous;
   }
-}
-
-function fakeReq({ method = 'PUT', headers = {}, body = null } = {}) {
-  const buf = Buffer.from(body == null ? '' : JSON.stringify(body), 'utf8');
-  return {
-    method,
-    headers,
-    async *[Symbol.asyncIterator]() {
-      yield buf;
-    },
-  };
-}
-
-function fakeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-    json() {
-      return JSON.parse(this.body);
-    },
-  };
 }
 
 // ── The kill switch ─────────────────────────────────────────────────────────
@@ -383,12 +352,13 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
     });
 
     // A save that only touches slide 2.
-    const res1 = fakeRes();
+    const res1 = createMockRes();
     await handlePresentationItem(
       {
         repoRoot,
         storageScope,
-        req: fakeReq({
+        req: createMockReq({
+          method: 'PUT',
           headers: { 'if-match': String(created.revision) },
           // Slide 1 sent back exactly as stored — this is a slide-2-only save.
           body: {
@@ -411,12 +381,13 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
 
     // A save that touches slide 1.
     const current = await getPresentation(storageScope, created.id);
-    const res2 = fakeRes();
+    const res2 = createMockRes();
     await handlePresentationItem(
       {
         repoRoot,
         storageScope,
-        req: fakeReq({
+        req: createMockReq({
+          method: 'PUT',
           headers: { 'if-match': String(current.revision) },
           body: {
             ...current,
@@ -494,7 +465,7 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
 
     // Now the Home load is a plain cache hit: the fresh bytes, tagged with the
     // *fresh* cache key rather than the previous raster's name.
-    const res = fakeRes();
+    const res = createMockRes();
     await handlePresentationThumbnail(
       {
         repoRoot,

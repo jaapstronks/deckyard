@@ -30,7 +30,6 @@ export async function convertWithAi(formattedContent, options = {}) {
     vendor = null,
     slideCount = 0,
     metadata = {},
-    enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
     onGroupDone = null, // ({ done, total }) => void, one tick per finished group
@@ -39,10 +38,13 @@ export async function convertWithAi(formattedContent, options = {}) {
     aiSlideIndexOffset = 0, // Offset to apply to AI slide indices for correct source ordering
     titleSlideCandidate = null, // Pre-extracted title slide from first image-only slide
     signal = null, // Aborts both model phases when the caller's reader left
+    slideTypes, // The organization's merged type map (B247)
+    disabledSlideTypes = [], // Kept out of the offered catalog (B659)
+    customSlideTypes = [], // The org's published types, offered too (B659)
   } = options;
 
   const sessionId = generateSessionId();
-  const logger = enableLogging ? createSessionLogger(sessionId) : null;
+  const logger = createSessionLogger(sessionId);
 
   log.info(`Starting V2 conversion, session ${sessionId}`);
 
@@ -55,7 +57,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     vendor,
     rawFirstSlideTitle:
       titleSlideCandidate?.title || firstSlideContent?.split('\n')[0] || '',
-    onLog: logger ? (data) => logger.logPhase1(data) : null,
+    onLog: (data) => logger.logPhase1(data),
     signal,
   });
 
@@ -98,10 +100,13 @@ export async function convertWithAi(formattedContent, options = {}) {
         title: outline.title,
         summary: outline.summary,
       },
-      onLog: logger ? (data) => logger.logPhase2Call(data) : null,
+      onLog: (data) => logger.logPhase2Call(data),
       onStatusMessage,
       onGroupDone,
       signal,
+      disabledSlideTypes,
+      customSlideTypes,
+      slideTypes,
     });
   }
 
@@ -115,7 +120,9 @@ export async function convertWithAi(formattedContent, options = {}) {
   );
 
   // Validate and fix slides
-  const validatedSlides = validateAndFixRefinedSlides(allSlides);
+  const validatedSlides = validateAndFixRefinedSlides(allSlides, {
+    slideTypes,
+  });
 
   // Assemble the deck
   const deck = {
@@ -232,12 +239,10 @@ export async function convertWithAi(formattedContent, options = {}) {
   deck.lang = deckLang;
 
   // Finalize logging
-  if (logger) {
-    logger.finalize(deck, {
-      source: 'file-convert',
-      originalSlideCount: slideCount,
-    });
-  }
+  logger.finalize(deck, {
+    source: 'file-convert',
+    originalSlideCount: slideCount,
+  });
 
   log.info(`Session ${sessionId} complete, ${deck.slides.length} slides`);
 

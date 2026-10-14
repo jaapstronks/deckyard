@@ -75,7 +75,6 @@
   "dataSource.connected": "Yhdistetty lähteeseen {provider}",
   "dataSource.disconnect": "Katkaise yhteys",
   "dataSource.disconnect.title": "Poista tietolähteen yhteys",
-  "dataSource.error": "Virhe: {message}",
   "dataSource.fetching": "Haetaan tietoja…",
   "dataSource.field.csvUrl": "CSV-tiedoston URL",
   "dataSource.field.databaseId": "Tietokannan tunnus tai URL",

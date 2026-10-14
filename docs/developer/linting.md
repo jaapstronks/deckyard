@@ -82,13 +82,8 @@ What is _not_ covered — the honest boundaries:
   `fs.readFile` argument or a doc is not an import. Docs are covered separately
   by `tests/docs-paths-resolvable.test.js`; the rest is not covered at all.
 
-Two suppressions exist, both with their reason inline:
+One suppression exists, with its reason inline:
 
-- **`server/utils/openai/translate.js`** — `ciiic-translation-rules` is fork-only
-  and deliberately undeclared in `package.json` (see `AGENTS.md` § Optional
-  dependencies), loaded through a gated `await import()` whose `catch` is the
-  contract. It is the one import in the tree that is _supposed_ not to resolve
-  upstream.
 - **`tests/fixtures/fork-slide-types/payoff-slide.js`** — a fork fixture whose
   specifier is written for its _runtime_ home (`custom/slide-types/`, one level
   shallower than where it is tracked). The `test-fork` CI job copies it into
@@ -162,7 +157,7 @@ Scoped to `client/**`, this rule rejects `h` arriving as a **parameter**, as a
 [`client/lib/dom/index.js`](../../client/lib/dom/index.js) — and no shadow implementations.
 Even so it used to reach the rest of the client in three spellings at once:
 positional (`createModal(h, opts)`, 153 call sites), an opt-in option with a
-default (`h = defaultH`, 7 helpers), and ~400 lines of `{ h, … }` pass-through
+default (`h = defaultH`, 7 helpers), and `{ h, … }` pass-through plumbing
 across 167 of 503 client modules. Canonical form and injected form sat at
 parity, so every new modal-shaped helper had to pick which of the three to copy
 (A7.33).
@@ -190,8 +185,7 @@ font providers through
 [`client/lib/theme/font-assets.js`](../../client/lib/theme/font-assets.js).
 
 `h()` from `client/lib/dom/index.js` is the first frontend rule in `AGENTS.md` and was
-the last one with no mechanical backing: `h` imported in 302 files against 26
-surviving `document.createElement` sites in 14 (B150). The survivors were
+the last one with no mechanical backing: widespread `h` imports alongside surviving raw `document.createElement` sites (B150). The survivors were
 largely **one recipe written five times** — create the tag, set a property or
 two, dedupe on an `id`, append to the head — and the copies had drifted on the
 one detail that has to agree, the id. The same Google stylesheet was requested
@@ -272,7 +266,7 @@ Scoped to `client/**`, this rule rejects `nav` arriving as a **parameter**, as a
 `nav` is one export of
 [`client/lib/state/router.js`](../../client/lib/state/router.js) — a module
 singleton that pushes history state and re-renders. Exactly one file imported
-it, `client/app.js`; from there it was threaded as an option through 55 modules
+it, `client/app.js`; from there it was threaded as an option through the client module graph
 to reach 54 call sites, sometimes four levels deep, in four spellings at once:
 `nav?.(x)` (54), `if (typeof nav === 'function') nav(x)` (3), `if (nav) nav(x)`
 (1) and bare `nav(x)` (1). A fifth alias, `onNavigate: (path) => nav?.(path)`,
@@ -308,7 +302,7 @@ destructured binding, a locally owned `new Set()`, anywhere.
 
 The set of "close functions of everything currently open" was the optional 4th
 positional argument of `openModal`/`confirmModal`/`promptModal` and travelled as
-~200 pass-through lines through 55 modules. Being **optional** is what made it
+pass-through plumbing through the client module graph. Being **optional** is what made it
 worse than the `h` thread above: a caller that forgot it still compiled, still
 opened its modal, and silently dropped that overlay out of close-all — nothing
 at the call site showed which half of the tree remembered.
@@ -360,7 +354,7 @@ Accepted forms, all named:
   disposal/teardown form. Runs every disposer best-effort, in order, and
   records each failure through `debugLog` instead of a per-handle empty catch.
 - A catch body that records the failure —
-  [`debugLog(label, err)`](../../client/lib/util/debug.js) on the client — or
+  [`debugLog(label, err)`](../../client/lib/state/debug.js) on the client — or
   handles it, or an inline `eslint-disable` with the reason after `--`.
 - **Not throwing in the first place** — the shared form, and the one that
   retired most of that tree's burndown. `new URL()` is a throwing parser, so
@@ -446,7 +440,7 @@ name is legitimate in every other shape: `{ isAdmin }` destructuring, a jsdoc
 which is always a gate — is rejected.
 
 The rule covers `client/**` **and `shared/**`**: the helper moved to
-`shared/organization-role.js` in B171, and a rule that stopped at the client
+`shared/organization-role.js` (B171), and a rule that stopped at the client
 tree would have left the raw flag freely readable in exactly the place the
 gate now lives. The allowlist is exactly one file:
 `shared/organization-role.js`, where the helper reads the instance flag in
@@ -499,7 +493,7 @@ carry literals, each under one of two reasons: **bilingual chrome** (the paired
 alt-text inputs, the translate modals, the viewer's fixed NL/EN link pair —
 widening those to N languages is a UI design job, tracked separately) and
 **UI-locale axis**. The editor's own NL⇄EN toggle used to head that list; it is
-a language menu over every version the deck has since B182 fase 2.
+now a language menu over every version the deck has (B182, phase 2).
 The list may only shrink: `tests/deck-language-axis.test.js` fails when an entry
 stops matching a real literal, so a cleaned-up file cannot quietly keep its
 exemption. That same test pins the other two gates — one definition site for the
@@ -513,13 +507,13 @@ unreviewable) or downgrade the rules to warnings (no regression protection),
 those existing violations are recorded in
 [`eslint-suppressions.json`](../../eslint-suppressions.json).
 
-The same move recurs when a gate widens: B150 (empty catches + `void` on
-`client/**`, plus the `try {} catch {}` selector everywhere) baselined the
-~490 pre-existing silent catches it surfaced as `no-restricted-syntax`
-suppressions after burning down the presenter teardown cluster. One caveat
-that count carries: suppressions match per file + rule name, so a file with
-suppressed `no-restricted-syntax` entries can absorb that many violations of
-_any_ restricted-syntax selector. The burndown shrinking to zero is what
+The same move recurs when a gate widens: the gate on empty catches and `void`
+in `client/**`, plus the `try {} catch {}` selector everywhere, surfaced ~490
+pre-existing silent catches, and they were baselined as `no-restricted-syntax`
+suppressions after burning down the presenter teardown cluster (B150). One
+caveat that count carries: suppressions match per file + rule name, so a file
+with suppressed `no-restricted-syntax` entries can absorb that many violations
+of _any_ restricted-syntax selector. The burndown shrinking to zero is what
 closes that gap.
 
 What this buys:
@@ -601,7 +595,7 @@ Script: [`scripts/lint-dead-css.js`](../../scripts/lint-dead-css.js). Where
 no source file references — the blind spot that let `.editor-form-header-left`
 survive a header-row removal (#393) unnoticed.
 
-**A gate since B191, and deliberately conservative.** Class names here are
+**A gate, and deliberately conservative** (B191). Class names here are
 _composed_ (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`, `renderHtml`
 template builds), so a naive scanner flags every composed class as dead and is
 worse than nothing. The scanner therefore errs towards **alive**: it harvests
@@ -762,3 +756,5 @@ and the gitignored planning symlink (see `docs/developer/maintaining.md`).
   `no-bitwise` are intentionally **not** enabled (server logging is legitimate),
   and `reportUnusedDisableDirectives` is off so those directives are left in
   place, forward-compatible if either rule is ever switched on.
+
+Route modules import parameter extractors from `server/utils/request-validators.js`. ESLint refuses local function declarations or function-valued variables named `get*Params` under `server/routes/`, so a second extractor cannot quietly diverge from the shared request contract.

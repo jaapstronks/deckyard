@@ -1,12 +1,21 @@
+import { toStorageContext } from '../scope.js';
 /**
  * Dashboard analytics storage for combined insights across all user presentations.
  * Provides aggregated metrics for the user's engagement dashboard.
  */
 
 import { sql } from 'kysely';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
+import { normalizeEmail } from '../../utils/normalize.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 import { completionRate, getCompletionCounts } from './aggregations.js';
+
+function requireDashboardOrganization(scope, organizationId, operation) {
+  const context = toStorageContext(scope, operation);
+  if (context.organizationId !== organizationId) {
+    throw new TypeError(`${operation}() organization does not match its scope`);
+  }
+}
 
 // ============================================================
 // PERIOD HELPERS
@@ -72,10 +81,12 @@ function getPreviousPeriodDateRange(period) {
  * @returns {Promise<Object>}
  */
 export async function getDashboardSummary(
+  scope,
   userEmail,
   organizationId,
   opts = {},
 ) {
+  requireDashboardOrganization(scope, organizationId, 'getDashboardSummary');
   const period = opts.period || '30d';
   const dateRange = getPeriodDateRange(period);
   const previousRange = getPreviousPeriodDateRange(period);
@@ -137,6 +148,7 @@ export async function getDashboardSummary(
       const previousResult = await previousQuery.executeTakeFirst();
 
       const completion = await getCompletionCounts(
+        scope,
         db,
         userPresentations,
         dateRange,
@@ -184,10 +196,12 @@ export async function getDashboardSummary(
  * @returns {Promise<Array<{date: string, views: number, uniqueViewers: number}>>}
  */
 export async function getDashboardTimeline(
+  scope,
   userEmail,
   organizationId,
   opts = {},
 ) {
+  requireDashboardOrganization(scope, organizationId, 'getDashboardTimeline');
   const period = opts.period || '30d';
   const dateRange = getPeriodDateRange(period);
 
@@ -230,10 +244,12 @@ export async function getDashboardTimeline(
  * @returns {Promise<Array>}
  */
 export async function getTopPresentations(
+  scope,
   userEmail,
   organizationId,
   opts = {},
 ) {
+  requireDashboardOrganization(scope, organizationId, 'getTopPresentations');
   const period = opts.period || '30d';
   const limit = opts.limit || 10;
   const dateRange = getPeriodDateRange(period);
@@ -271,6 +287,7 @@ export async function getTopPresentations(
 
     const rows = await query.execute();
     const completion = await getCompletionCounts(
+      scope,
       db,
       rows.map((row) => row.id),
       dateRange,
@@ -294,7 +311,13 @@ export async function getTopPresentations(
  * @param {Object} opts - Query options
  * @returns {Promise<Object>}
  */
-export async function getSourceBreakdown(userEmail, organizationId, opts = {}) {
+export async function getSourceBreakdown(
+  scope,
+  userEmail,
+  organizationId,
+  opts = {},
+) {
+  requireDashboardOrganization(scope, organizationId, 'getSourceBreakdown');
   const period = opts.period || '30d';
   const dateRange = getPeriodDateRange(period);
 
@@ -384,10 +407,16 @@ export const ANALYTICS_LIST_SORTS = Object.freeze(Object.keys(LIST_ORDERS));
  * @returns {Promise<Array>}
  */
 export async function getPresentationsWithAnalytics(
+  scope,
   userEmail,
   organizationId,
   opts = {},
 ) {
+  requireDashboardOrganization(
+    scope,
+    organizationId,
+    'getPresentationsWithAnalytics',
+  );
   const period = opts.period || '30d';
   const sort = opts.sort || 'views';
   const order = LIST_ORDERS[sort];
@@ -447,6 +476,7 @@ export async function getPresentationsWithAnalytics(
 
     const rows = await query.execute();
     const completion = await getCompletionCounts(
+      scope,
       db,
       rows.map((row) => row.id),
       dateRange,
@@ -492,11 +522,17 @@ function deckCompletionRate(completion, id) {
  * @returns {Promise<string[]>}
  */
 async function getUserPresentationIds(db, userEmail, organizationId) {
+  // D200: `owner_email` and `user_email` are normalised on write, so the
+  // caller's address is normalised once here and compared bare below.
+  const email = normalizeEmail(userEmail);
+  if (!email) return [];
+
   // Get presentations where user is owner
   const ownedQuery = db
     .selectFrom('presentations')
     .select('id')
-    .where('owner_email', '=', userEmail.toLowerCase());
+    .where('owner_email', '=', email)
+    .where('organization_id', '=', organizationId);
 
   // Get presentations shared with user (edit or admin access)
   const sharedQuery = db
@@ -507,11 +543,8 @@ async function getUserPresentationIds(db, userEmail, organizationId) {
       'presentation_collaborators.presentation_id',
     )
     .select('presentations.id')
-    .where(
-      'presentation_collaborators.user_email',
-      '=',
-      userEmail.toLowerCase(),
-    )
+    .where('presentation_collaborators.user_email', '=', email)
+    .where('presentations.organization_id', '=', organizationId)
     .where('presentation_collaborators.permission', 'in', ['edit', 'admin']);
 
   const [ownedRows, sharedRows] = await Promise.all([

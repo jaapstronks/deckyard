@@ -38,7 +38,7 @@ import { applyCapabilitiesToStage, showFollowMessage } from './stage-ui.js';
 import { renderFollowSlide } from './render-slide.js';
 import { createVideoLayer } from '../../lib/slide-runtime/video-layer.js';
 import { buildFollowLayout } from './layout.js';
-import { createUiModeSwitcher } from '../ui-mode-switcher.js';
+import { createUiModeSwitcher } from '../../lib/dom/ui-mode-switcher.js';
 import { applyViewerUiLocale } from '../../lib/ui-i18n.js';
 import { setQueryParams } from '../../lib/state/router.js';
 

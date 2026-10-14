@@ -1,5 +1,5 @@
 /**
- * B84 — SSRF guard on the ImageKit re-host path.
+ * SSRF guard on the ImageKit re-host path (B84).
  *
  * `uploadImageKitUrl` fetches an image URL server-side to push it to ImageKit.
  * When importing from Notion that URL can be an attacker-controlled `external`

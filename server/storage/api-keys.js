@@ -11,7 +11,7 @@ import {
   hashToken,
   isValidEmail,
 } from '../utils/secure-tokens.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 
 /**
  * Normalized owner email for the acting user, used to scope key

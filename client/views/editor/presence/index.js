@@ -6,7 +6,7 @@
  * feature flag is on, so flag-off sessions pay nothing.
  */
 
-import { createPresenceSession } from '../../../lib/collab/presence-session.js';
+import { createPresenceSession } from '../live-edits/presence-session.js';
 import { createPresenceUI } from './presence-ui.js';
 
 /**
@@ -22,7 +22,7 @@ import { createPresenceUI } from './presence-ui.js';
  * @param {HTMLElement} opts.thumb - preview slide container
  * @param {HTMLElement} [opts.editorMount] - side-form root
  * @param {Function} opts.getSelectedSlideId
- * @returns {{ setViewSlide: Function, destroy: Function }}
+ * @returns {{ setViewSlide: Function, detach: Function }}
  */
 export function initEditorPresence({
   pres,

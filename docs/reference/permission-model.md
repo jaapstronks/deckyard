@@ -33,7 +33,7 @@ ladder in `shared/constants/permissions.js`, and the deck-level grants in
 
 ## Module map
 
-The deciders (`server/utils/presentation-authz/`, 5 modules, 604 lines), fronted
+The deciders (`server/utils/presentation-authz/`), fronted
 by one barrel:
 
 - `server/utils/presentation-authz/index.js` — the barrel every call site
@@ -81,10 +81,15 @@ Enforcement seam and the routes that hand grants out:
   activity row and the webhook when a deck is opened; B574).
 - `server/utils/route-middleware.js` — `withPresentationAuth` (the internal
   adapter: the service's refusal as a 404/403 response) and
-  `withPresentationReadAuth` (the same, plus a guest-session fallback).
+  `getGuestFromRequest` (the guest session cookie, read only by the
+  share-token routes).
 - `server/routes/api/collaborators.js` — invite, list, revoke and re-level
   collaborators.
 - `server/routes/api/share-links/management.js` — the link-based grants.
+- `server/routes/api/share-links/public.js` and
+  `server/routes/api/share-links/guest-comments.js` — the anonymous
+  share-token surface, including the guest's own comment routes (see
+  _Share-link guests comment under the token_ below).
 
 The client's advisory mirrors — which affordance to show, never whether an
 operation is allowed — are `client/views/comments/comment-authz.js`,
@@ -128,11 +133,12 @@ handed out per deck:
   construction** (`server/storage/presentations/index.js` never rewrites it).
   A creator-inclusive grant is therefore one that nothing can ever take away —
   exactly wrong for a power that is supposed to be transferable, and exactly
-  right for a fact about the past. Before D49 the creator stamp still carried
-  write, delete, visibility and collaborator management, which made the
-  transfer dialog's promise ("you will become a collaborator with edit access")
-  false in the one case where it mattered: a previous owner who declined the
-  collaborator row kept strictly more than the row would have given them.
+  right for a fact about the past. Until this line was drawn (D49), the creator
+  stamp still carried write, delete, visibility and collaborator management,
+  which made the transfer dialog's promise ("you will become a collaborator with
+  edit access") false in the one case where it mattered: a previous owner who
+  declined the collaborator row kept strictly more than the row would have given
+  them.
 
   `getEffectivePermission` sits on the power side because it picks the UI
   (editor vs viewer) and so has to answer the same as `canWritePresentation`;
@@ -168,10 +174,7 @@ Two partial indexes, both `WHERE revoked_at IS NULL`: by `presentation_id`
 (list a deck's collaborators) and by `(user_email, organization_id)` ("shared
 with me").
 
-**Ownership stamps on `presentations`** — `owner_id` / `owner_email`,
-`created_by_id` / `created_by` (migration 063). The id is the key; the address
-beside it is display only, and a row whose id column is a defined NULL names
-nobody.
+**Ownership stamps on `presentations`** — `owner_user_id` / `owner_email`, `created_by_user_id` / `created_by`, and `updated_by_user_id` / `updated_by` (migration 063). The id is the authorization key; the address beside it is display or audit data only, and a row whose id column is NULL names nobody.
 
 **`presentation_share_links`** (migration 004) — token, `permission`,
 `expires_at`, `revoked_at`, `revocation_message`. The token is globally unique
@@ -203,9 +206,42 @@ public API through `getPresentationWithAccess`, MCP through
    the decider reads one). `false` → **403**.
 4. Return the presentation.
 
-`withPresentationReadAuth` is the same with one extra rung: if the
-authenticated checks fail, a verified share-link guest session (cookie
-`share_guest_session`) whose link points at this deck may still read.
+### Share-link guests comment under the token
+
+A share-link guest has no account, so nothing behind the login gate reaches
+them. Their comments have four routes of their own under the share token
+(B179, D228), in `server/routes/api/share-links/guest-comments.js`, mounted
+with the rest of the anonymous `/api/share/*` surface:
+
+| Route                                   | What                                                                             |
+| --------------------------------------- | -------------------------------------------------------------------------------- |
+| `GET /api/share/:token/comments`        | The deck's comments; `slideId`, `status`, `commentType` as on the signed-in list |
+| `POST /api/share/:token/comments`       | Comment or reply; same body as the signed-in create                              |
+| `PUT /api/share/:token/comments/:id`    | Edit the guest's own comment (`canGuestEditComment`)                             |
+| `DELETE /api/share/:token/comments/:id` | Delete the guest's own comment (`canGuestDeleteComment`)                         |
+
+A guest never resolves, reopens or dismisses; there is no route for it. The
+signed-in comment routes (`/api/presentations/:id/comments…`) take the account
+and only the account: a guest cookie beside it is no fallback. One path per
+kind of commenter.
+
+The token addresses the deck, the guest session cookie names who is asking,
+and `canGuestComment` is the guard on all four. Refusals, in the internal
+envelope:
+
+| Case                                        | Status | `error`        |
+| ------------------------------------------- | ------ | -------------- |
+| Link revoked                                | 410    | `revoked`      |
+| Link expired                                | 410    | `expired`      |
+| Unknown token                               | 404    | `not_found`    |
+| No verified guest session for this link     | 401    | `unauthorized` |
+| Link is view-only (no `comment` permission) | 403    | `forbidden`    |
+| Edit/delete of a comment that is not theirs | 403    | `forbidden`    |
+| Comment not on the link's deck              | 404    | `not_found`    |
+
+A link's use limit is not checked: it counts opens (`verify`), and a guest
+who comments already opened the link. Writes are scoped to the organization
+of the guest row.
 
 ### 2. The deciders, in order
 
@@ -245,20 +281,16 @@ Where the deciders differ from that shape, they differ deliberately:
   `changeVisibility` loads with `read` and asks it on top
   (`canActorChangeVisibility`), so read is its floor like every other deck
   right, and an admin cannot change a deck they cannot read (B574). The
-  view-only flag is `isPresentationAuthor`'s (`canActorSetViewOnly`): it is
-  the deck-wide author lock, the same mark as a slide lock, so under D49 it
-  stays with the author pair rather than moving to the owner alone (decided
-  at the B574 review).
+  view-only flag is `isPresentationAuthor`'s (`canActorSetViewOnly`): it is the
+  deck-wide author lock, the same mark as a slide lock, so under the
+  creator-stamp rule above it stays with the author pair rather than moving to
+  the owner alone (D49, decided at the B574 review).
   It does not read sandbox mode: where sharing is declared off (sandbox,
   D181) the service refuses `→ organization` before the decider runs, for
   everyone.
   `organization → private` is admin-only. "Admin" here is the **organization**
   admin — see _Admin means admin of the organization you are in_ below.
-- **`getEffectivePermission`** is the client's answer, not a gate: it returns
-  `edit | comment | view` for the editor to pick a UI, and is delivered as
-  `_userPermission` on `GET /api/presentations/:id`. A view-only organization deck
-  resolves to `comment`; anything unmatched falls back to the collaborator
-  level, or `view`.
+- **`getEffectivePermission`** is the client's answer, not a gate: it returns `edit | comment | view` for the editor to pick a UI, and is delivered as `_userPermission` on `GET /api/presentations/:id`. A view-only organization deck resolves to `comment`; sandbox organization examples resolve to `view` and their comment surfaces are closed (`presentationCommentsEnabled`, B406). Anything unmatched falls back to the collaborator level, or `view`.
 
 ### 3. Identity: which key decides
 
@@ -338,7 +370,7 @@ every authorized request, so it is cached:
 | `PERMISSION_CACHE_MAX_SIZE`    | Max entries in the in-memory fallback, default `10000`.                                                                                                                                             |
 | `REDIS_URL`                    | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)).            |
 | `AUTH_ENABLED=false`           | Produces the single `unrestricted` operator; every ownership-scoped check grants.                                                                                                                   |
-| `AUTH_DEV_BYPASS`              | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback.                                                                                             |
+| `AUTH_DEV_BYPASS`              | Auto-login in development. The bypass resolves `dev@local.test` to a `users.id` before ownership checks.                                                                                            |
 | `MULTI_ORG_ENABLED`            | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything.                                                                                 |
 | `SANDBOX_MODE`                 | Organization decks become read-only for guests, and sharing is declared off (D181): the routes refuse `→ organization` visibility, invites and transfers. See [`sandbox-mode.md`](sandbox-mode.md). |
 
@@ -411,10 +443,9 @@ Normative target: **one ladder, one decider per question, keyed on
   (`shared/constants/permissions.js`), four predicates, and every decider goes
   through them. Share links use a subset of the same vocabulary rather than a
   parallel one.
-- **Ownership decisions key on `users.id`** with the email as the defined
-  fallback, on both sides of the wire, since T10 PR A/C (#638, #640). The
-  client mirrors import the same module, so client and server cannot drift on
-  who an owner is.
+- **Ownership decisions key on `users.id`** without an email fallback, on both sides of the wire (T10 PR A/C, #638, #640). The client
+  mirrors import the same module, so client and server cannot drift on who an
+  owner is.
 - **Collaborator grants still key on the email.** `user_id` exists on
   `presentation_collaborators` and is populated on every write (migration 062),
   but no read consults it: `getCollaboratorPermission`, the cache key, the
@@ -436,8 +467,8 @@ Normative target: **one ladder, one decider per question, keyed on
   passes a scope back in. It survives only because "shared with me" needs it.
 - **Revocation is asymmetric with invitation**: revoking or re-levelling writes
   no notification and no activity event, and `revocation_message` is stored but
-  never delivered, while share links do surface theirs. Open, tracked as
-  TODO B44 — an asymmetry, not a decision.
+  never delivered, while share links do surface theirs. That is an open
+  asymmetry, not a decision (B44).
 
 Pinned by `tests/authz-matrix-pin.test.js` (the whole matrix, unchanged across
 the identity rebuild), `tests/authz-identity-key.test.js`,

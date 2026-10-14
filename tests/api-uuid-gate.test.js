@@ -1,10 +1,10 @@
 /**
- * B399 — every `/api/*` row that captures a uuid declares it, so a non-uuid
- * answers 404 instead of reaching a Postgres `uuid` column as a 500.
+ * Every `/api/*` row that captures a uuid declares it, so a non-uuid
+ * answers 404 instead of reaching a Postgres `uuid` column as a 500 (B399).
  *
- * B360 put the declaration (`captures`) on three tables; B399 carried it to
- * the rest of `server/routes/api/` and then to the public v1 API, which
- * answers the same 404 in its own envelope. The export routes are the case the
+ * The declaration (`captures`) started on three tables (B360) and now covers
+ * the rest of `server/routes/api/` and the public v1 API, which answers the
+ * same 404 in its own envelope. The export routes are the case the
  * naloop named: `GET /api/presentations/foo/export/json` left the uuid parser as
  * `500 internal_error` (22P02). They used to match their own paths inside
  * `server/export/pipeline.js`; they are now rows of the export `ROUTES` table

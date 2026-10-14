@@ -1,6 +1,6 @@
 import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
-import { copyToClipboardWithPromptFallback } from '../../lib/util/clipboard.js';
+import { copyToClipboardWithPromptFallback } from '../../lib/dom/clipboard.js';
 
 /**
  * The presenter's follow-along codes pill: shows "/go + code" for the active

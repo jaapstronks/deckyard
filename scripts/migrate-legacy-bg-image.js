@@ -6,9 +6,11 @@
  * Folds every stored slide's legacy `bgImage`/`bgAlt` into the canonical
  * `slideBgImage`, reproducing the old `.has-bg` look via the generic controls
  * (slideBgText: 'light' + slideBgOverlay: 'gradient-bottom'). Uses the SAME
- * authority as migrate-on-edit (`ensureSlideBgImage`), so a deck migrated by
- * this script is byte-identical to one migrated by opening it in the editor.
- * Idempotent — safe to run repeatedly.
+ * authority as the read funnel (`ensureSlideBgImage`, schema v21 -> v22), so
+ * a deck migrated by this script is byte-identical to one the funnel folded on
+ * read. The funnel folds in memory on every read and write; this script is how
+ * an install persists the fold at once, including the surfaces the funnel
+ * never passes (see below). Idempotent — safe to run repeatedly.
  *
  * Scope: every slide type, not just the core `title-slide` this script started
  * out on. The pair is a content legacy any type could declare — the contributor
@@ -45,12 +47,12 @@
  * rename is lossless, so there is nothing to weigh against doing it
  * everywhere. This fold is **not** lossless — it drops `bgAlt` and writes
  * `slideBgText`/`slideBgOverlay` the author never picked. A snapshot is a
- * record of what the deck was, and legacy content still renders correctly
- * through the read-only fallback in `resolveSlideBgImage`, folding on the first
- * edit after a restore. So history stays as it was, and `--include-versions` is
- * there for installs that would rather have one shape everywhere. Comment
- * snapshots stay out entirely: they are frozen quotes of a slide at comment
- * time, rendered read-only, and the fallback covers them.
+ * record of what the deck was, and the read funnel folds a snapshot whenever
+ * it is opened or restored. So history stays as it was, and
+ * `--include-versions` is there for installs that would rather have one shape
+ * everywhere. Comment snapshots stay out entirely: they are frozen quotes of a
+ * slide at comment time, rendered read-only; since the render fallback went
+ * (B1-bg) a legacy background in one renders as no background.
  *
  * Usage:
  *   node scripts/migrate-legacy-bg-image.js --dry-run
@@ -76,15 +78,15 @@ import { isCli } from './lib/is-cli.js';
 import { rewriteJsonColumns } from './lib/pg-json-rewrite.js';
 import { loadDotEnv } from '../server/config/env.js';
 import { dataDir } from '../server/config/storage-paths.js';
-import { ensureSlideBgImage } from '../shared/slide-types/legacy-bg-image.js';
+import {
+  ensureSlideBgImage,
+  LEGACY_KEYS,
+} from '../shared/slide-types/legacy-bg-image.js';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-
-/** The two keys that carry the legacy pair; either one marks slide content. */
-const LEGACY_KEYS = ['bgImage', 'bgAlt'];
 
 /**
  * Fold every legacy background in a parsed JSON value, returning a new value

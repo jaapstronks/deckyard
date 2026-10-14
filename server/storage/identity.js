@@ -18,8 +18,10 @@
  * membership is. See docs/reference/tenant-isolation.md.
  */
 
+import { toStorageContext } from './scope.js';
+
 import { normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { listUserOrganizations } from './user-organizations/index.js';
@@ -32,10 +34,17 @@ import { listUserOrganizations } from './user-organizations/index.js';
  * whose home organization was not the default one) resolve to null and get a
  * 401 on every request.
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} email - The person's email address
  * @returns {Promise<Object|null>} - Raw `users` row, or null
  */
-export async function getUserByEmailGlobal(email) {
+export async function getUserByEmailGlobal(scope, email) {
+  toStorageContext(
+    scope,
+    'getUserByEmailGlobal',
+    {},
+    { allowCrossOrganization: true },
+  );
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
 
@@ -72,6 +81,7 @@ export async function getUserByEmailGlobal(email) {
  * free: the membership list is already read here, so no caller has to look the
  * same row up a second time (see utils/designer.js).
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} userId - `users.id` of the resolved person
  * @param {string} [requestedOrganizationId] - Organization from the session
  * @returns {Promise<{organizationId: string|null, role: string|null, isDesigner: boolean|null}>} -
@@ -81,7 +91,21 @@ export async function getUserByEmailGlobal(email) {
  *   null in single-organization mode, where memberships are not consulted and the
  *   instance-wide role is the only one there is.
  */
-export async function resolveActiveMembership(userId, requestedOrganizationId) {
+export async function resolveActiveMembership(
+  scope,
+  userId,
+  requestedOrganizationId,
+) {
+  const context = toStorageContext(
+    scope,
+    'resolveActiveMembership',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (!context.crossOrganization || context.organizationId)
+    throw new TypeError(
+      'resolveActiveMembership() requires an explicit global identity or provisioning scope',
+    );
   if (!isMultiOrgEnabled())
     return {
       organizationId: getDefaultOrganizationId(),
@@ -91,7 +115,7 @@ export async function resolveActiveMembership(userId, requestedOrganizationId) {
   if (!userId) return { organizationId: null, role: null, isDesigner: null };
 
   // Ordered by joined_at ascending, so the fallback is deterministic.
-  const memberships = await listUserOrganizations(userId);
+  const memberships = await listUserOrganizations(scope, userId);
   if (!memberships.length)
     return { organizationId: null, role: null, isDesigner: null };
 
@@ -113,16 +137,25 @@ export async function resolveActiveMembership(userId, requestedOrganizationId) {
  * Thin wrapper over {@link resolveActiveMembership} for callers that only need
  * the organization.
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} userId - `users.id` of the resolved person
  * @param {string} [requestedOrganizationId] - Organization from the session
  * @returns {Promise<string|null>} - Organization to act in, or null when the
  *   person holds no membership at all (the caller must refuse the request)
  */
 export async function resolveActiveOrganization(
+  scope,
   userId,
   requestedOrganizationId,
 ) {
+  toStorageContext(
+    scope,
+    'resolveActiveOrganization',
+    {},
+    { allowCrossOrganization: true },
+  );
   const { organizationId } = await resolveActiveMembership(
+    scope,
     userId,
     requestedOrganizationId,
   );

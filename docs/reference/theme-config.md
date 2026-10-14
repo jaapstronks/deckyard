@@ -15,11 +15,12 @@ surface, slide-type curation.
 core themes and the four CIIIC-fork themes is written as a record in
 `tests/fixtures/theme-records/`, and `tests/theme-record-parity.test.js` pins
 that each renders the same `--t-*` tokens as its file form. The only file
-fields a record does not carry are the ones D208 retired: the
-`{en, nl}` background labels, `embedFonts` (fork fonts are managed families,
-bound by name), `hiddenSlideTypes` (use `slideTypes.exclude`), `slides.*` and
-`sampleEmbedUrl`. The rule for what becomes a field: **when every theme sets
-it, it is a field; when one theme sets it, it is a `cssVarOverrides` entry.**
+fields a record does not carry are the ones the move to records retired
+(D208): the `{en, nl}` background labels, `embedFonts` (fork fonts are managed
+families, bound by name), `hiddenSlideTypes` (use `slideTypes.exclude`),
+`slides.*` and `sampleEmbedUrl`. The rule for what becomes a field: **when
+every theme sets it, it is a field; when one theme sets it, it is a
+`cssVarOverrides` entry.**
 
 Most of this shape is editable in **Settings → Themes**, alongside the colours
 and fonts: surfaces, heading treatment, background images, named background
@@ -411,7 +412,7 @@ the control they would guard.
 
 ## The PPTX template
 
-A theme hands back a `.pptx` (`server/export/pptx-theme.js`): its three layouts, and one sample slide on each. Its promise is deliberately the smaller one: ground, fonts, text colours and logo come from the theme and are applied per slide; it is not a master that restyles an existing deck. That wording is the promise, not a hedge — see D106 in `docs/plans/done/decisions.md` for the decision and the measurement behind it.
+A theme hands back a `.pptx` (`server/export/pptx-theme.js`): its three layouts, and one sample slide on each. Its promise is deliberately the smaller one: ground, fonts, text colours and logo come from the theme and are applied per slide; it is not a master that restyles an existing deck. That wording is the promise, not a hedge (D106); the measurement behind it follows.
 
 The reason is the library. pptxgenjs 4.0.1's `defineSlideMaster` does not write an OOXML master at all; it writes a _layout_, and a placeholder's options are copied into the run properties of every slide built on it rather than inherited from it. Editing the layout afterwards therefore moves nothing that already exists — precisely the handling most people mean by "template". A genuinely restyling template means writing `slideMaster1.xml` by hand alongside pptxgenjs, and is its own piece of work. The word "master" belongs in this file only where it names the layout.
 
@@ -433,4 +434,4 @@ The pixel-perfect PPTX does not use these layouts; the editable one puts each sl
 
 Two routes, both addressed by theme because the bytes depend on the theme alone (B274): `GET /api/themes/:id/template.pptx` for the session — the **Download PPTX template** item on a theme card in Settings → Themes — and `GET /api/v1/themes/{id}/template.pptx` for an API key, which spends the export right and the export limit like any other v1 export. Both resolve the theme through `loadThemeAssets`, so a theme the caller cannot see answers the same 404 as one that does not exist, and both build through `prepareThemeTemplate` (`server/services/exports.js`), which is where the `pptx-template` count on the instance-health `export` axis happens.
 
-Until B274 the template hung off a deck (`GET /api/presentations/:id/export/pptx-template`, a row in the editor's export menu), because the deck was what named the theme. That route is gone: one artifact, one address.
+The template used to hang off a deck (`GET /api/presentations/:id/export/pptx-template`, a row in the editor's export menu), because the deck was what named the theme. That route is gone (B274): one artifact, one address.

@@ -1,0 +1,699 @@
+/* 3-column editor layout (editor route only): slides | canvas | inspector.
+   Two rows (Option A): row 1 is the full-width slide bar spanning the canvas +
+   inspector columns; row 2 holds the canvas and inspector. The slides column
+   spans both rows (it keeps its own "Slides" header). */
+.is-editor .layout {
+  display: grid;
+  /* The slide canvas is the primary editing surface (inline WYSIWYG), so it
+     gets all the flexible space. The inspector column on the right has a
+     fixed, user-resizable width (--inspector-width, set via the drag handle)
+     and the slides column uses --slides-panel-width (also drag-resizable). */
+  grid-template-columns:
+    var(--slides-panel-width, var(--ps-slides-expanded-width))
+    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - var(--ps-topbar-height));
+  height: calc(100dvh - var(--ps-topbar-height));
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Grid placement (Option A). Column templates change per collapse state below;
+   these row/column spans stay put. */
+.is-editor .layout > .slides-panel {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+.is-editor .layout > .slide-bar {
+  grid-column: 2 / 4;
+  grid-row: 1;
+}
+.is-editor .layout > .preview-panel {
+  grid-column: 2;
+  grid-row: 2;
+}
+.is-editor .layout > .inspector-panel {
+  grid-column: 3;
+  grid-row: 2;
+}
+/* Rail dismissed: the grid drops to two columns, so the bar spans only the
+   canvas column (openers stay pinned at its right - above where the rail was).
+   Scoped to the desktop layout on purpose: this selector is more specific than
+   the area assignments in the ≤1024 block, so unscoped it would survive into
+   the narrow layouts and force a phantom second column out of a single-column
+   template. */
+@media (min-width: 1025px) {
+  .is-editor.is-inspector-collapsed .layout > .slide-bar {
+    grid-column: 2 / 3;
+  }
+}
+
+.is-editor .layout > * {
+  /* Critical: allow grid items to shrink so internal .panel-scroll areas can scroll
+     instead of being clipped by the grid container. */
+  min-height: 0;
+  min-width: 0;
+}
+
+.is-editor.is-slides-collapsed .layout {
+  grid-template-columns:
+    var(--ps-slides-collapsed-width)
+    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
+}
+
+/* Dismissed inspector rail: the panel leaves the grid entirely and the
+   canvas gets all the space (the topbar "i" toggle brings it back). */
+.is-editor.is-inspector-collapsed .layout {
+  grid-template-columns:
+    var(--slides-panel-width, var(--ps-slides-expanded-width))
+    minmax(320px, 1fr);
+}
+
+.is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
+  grid-template-columns: var(--ps-slides-collapsed-width) minmax(320px, 1fr);
+}
+
+.is-editor.is-inspector-collapsed .inspector-panel {
+  display: none;
+}
+
+/* Editor panels (columns) */
+.is-editor .panel {
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--app-bg-elevated));
+  border-right: 1px solid hsl(var(--app-border-default));
+  overflow: hidden;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  /* Same as above, but defensive: this ensures the panel itself can be constrained
+     by the grid, enabling its .panel-scroll child to take up remaining space. */
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Inspector submenus: JS positions them with position:fixed to escape
+   overflow clipping from .panel-scroll. High z-index ensures visibility. */
+.is-editor
+  .inspector-panel
+  .dropdown-submenu
+  > .dropdown-menu.dropdown-submenu-menu {
+  z-index: var(--z-overlay);
+}
+.is-editor .panel:last-child {
+  border-right: none;
+}
+
+.is-editor .slides-panel {
+  background: hsl(var(--app-bg-base));
+  position: relative;
+  z-index: 1;
+}
+
+/* Resize handle for slides panel - PowerPoint/Keynote style drag-to-resize */
+.is-editor .slides-panel-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background var(--ps-transition-fast);
+}
+
+.is-editor .slides-panel-resize-handle:hover,
+.is-editor .slides-panel-resize-handle.is-resizing {
+  background: hsl(var(--app-accent-primary) / 0.3);
+}
+
+.is-editor .slides-panel-resize-handle.is-resizing {
+  background: hsl(var(--app-accent-primary) / 0.5);
+}
+
+/* Hide resize handle when panel is collapsed */
+.is-editor.is-slides-collapsed .slides-panel-resize-handle {
+  display: none;
+}
+
+/* Hide resize handle on tablet/mobile where sidebar is a drawer */
+@media (max-width: 1024px) {
+  .is-editor .slides-panel-resize-handle {
+    display: none;
+  }
+}
+
+/* Resize handle between the slide canvas and the inspector (same pattern as
+   the slides handle): the inspector sits on the right, so the handle lives on
+   its LEFT edge; drag to trade inspector width for canvas width. */
+.is-editor .inspector-resize-handle {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background var(--ps-transition-fast);
+}
+
+.is-editor .inspector-resize-handle:hover,
+.is-editor .inspector-resize-handle.is-resizing {
+  background: hsl(var(--app-accent-primary) / 0.3);
+}
+
+.is-editor .inspector-resize-handle.is-resizing {
+  background: hsl(var(--app-accent-primary) / 0.5);
+}
+
+.is-editor.is-inspector-collapsed .inspector-resize-handle {
+  display: none;
+}
+
+/* Inspector panes: one rail, swappable panes (settings now, comments in
+   phase 4). Exactly one pane is active; each pane is a full-height flex
+   column so its .panel-scroll child can take the remaining space. */
+.is-editor .inspector-pane {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.is-editor .inspector-pane.is-active {
+  display: flex;
+}
+
+.is-editor .slides-panel-header {
+  padding: var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.is-editor .slides-search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.is-editor .slides-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.is-editor .slides-search-clear {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: var(--ps-text-base);
+  line-height: 1;
+}
+
+.is-editor .slides-search-clear[hidden] {
+  display: none;
+}
+
+/* A slow save floats in the corner opposite the toasts, so the editor does not
+   shift while you type; a failure is a banner in the flow, because it stays
+   until the save recovers (B645). */
+.is-editor .editor-save-status:not([hidden]) {
+  position: fixed;
+  left: calc(var(--ps-space-3) + env(safe-area-inset-left, 0px));
+  bottom: calc(var(--ps-space-3) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-header);
+  padding: var(--ps-space-1) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-full);
+  box-shadow: var(--app-shadow-md);
+}
+
+.is-editor .editor-save-status.is-failure:not([hidden]) {
+  position: static;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: inherit;
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-danger) / 0.1);
+  border: 0;
+  border-bottom: 1px solid hsl(var(--app-danger) / 0.4);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.is-editor .slides-search-stats {
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+  font-variant-numeric: tabular-nums;
+}
+
+.is-editor .slides-search-stats:empty {
+  display: none;
+}
+
+.is-editor .slides-bulk-action-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  background: hsl(var(--app-accent-primary) / 0.08);
+  border-bottom: 1px solid hsl(var(--app-accent-primary) / 0.2);
+}
+
+.is-editor .slides-bulk-action-bar[hidden] {
+  display: none;
+}
+
+.is-editor .slides-bulk-count {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-primary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.is-editor.is-slides-collapsed .slides-search-row {
+  display: none;
+}
+
+.is-editor.is-slides-collapsed .slides-bulk-action-bar {
+  display: none;
+}
+
+.is-editor .slides-paste-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  background: hsl(var(--app-bg-elevated));
+  border-bottom: 1px solid hsl(var(--app-border-default));
+}
+
+.is-editor .slides-paste-bar[hidden] {
+  display: none;
+}
+
+.is-editor .slides-paste-count {
+  flex: 1;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+.is-editor.is-slides-collapsed .slides-paste-bar {
+  display: none;
+}
+
+.is-editor .slides-panel-header h2 {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: var(--ps-text-base);
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.is-editor .slides-collapse-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: var(--ps-text-xs);
+}
+
+.is-editor .slides-add-btn {
+  font-size: var(--ps-text-xs);
+}
+
+.is-editor .inspector-panel {
+  background: hsl(var(--app-bg-elevated));
+  border-left: 1px solid hsl(var(--app-border-subtle));
+  /* Positioning context for the drag-to-resize handle on its left edge. */
+  position: relative;
+}
+
+.is-editor .inspector-panel .panel-scroll {
+  padding: var(--ps-space-5);
+  /* Extra bottom room so the last section (e.g. the collapsed "Accessibility"
+     toggle) can always be scrolled fully into view. The panel sits flush with
+     the viewport bottom, so a classic (space-consuming) horizontal scrollbar -
+     which appears at narrow widths - would otherwise overlap the final ~15px
+     of content and leave it unreachable. */
+  padding-bottom: var(--ps-space-12);
+  scroll-padding-bottom: var(--ps-space-12);
+}
+
+.is-editor .preview-panel {
+  background: hsl(var(--app-bg-base));
+  border-left: 1px solid hsl(var(--app-border-default));
+  /* The generic .panel border would draw a hairline right under the slide
+     bar; bar and canvas are one surface (B614). */
+  border-top: none;
+}
+
+/* Slide bar (Option A): the bar above the working area, scoped to the current
+   slide (B614). The topbar is the deck's chrome: elevated, white, carrying the
+   one hairline. This bar belongs to the slide instead, so it shares the
+   canvas's surface - the same base tone, no line between them, and less room
+   below than above, so it sits with the slide rather than with the topbar.
+   Layout: everything slide-scoped on the left, the openers pinned alone on the
+   right (see 20-preview.css). */
+.is-editor .slide-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3) var(--ps-space-4) var(--ps-space-1);
+  background: hsl(var(--app-bg-base));
+  min-width: 0;
+}
+
+.is-editor .preview-panel-body {
+  padding: var(--ps-space-4);
+}
+
+.is-editor .panel > h2 {
+  flex-shrink: 0;
+  padding: var(--ps-space-4);
+  font-size: var(--ps-text-base);
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.is-editor .panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Reserve consistent space for scrollbar so thumbnails don't shift when scrollbar appears */
+.is-editor .slides-panel .panel-scroll {
+  scrollbar-gutter: stable;
+}
+
+/* Editor desktop behavior: lock document scroll; panels scroll instead. */
+@media (min-width: 769px) {
+  .is-editor,
+  .is-editor body {
+    height: 100%;
+    overflow: hidden;
+  }
+  .is-editor #app {
+    height: 100vh;
+  }
+  .is-editor .editor-shell {
+    height: 100vh;
+  }
+}
+
+/* Note: the desktop grid (>1024px) is fully expressed by the base rules above.
+   The canvas always gets the flexible space; the inspector width is the
+   resizable --inspector-width. */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Compact (≤1024px): 2 columns - slides | canvas, inspector BELOW the canvas.
+   Three columns get too cramped here (the canvas dips under a usable width
+   once slides + a 320px inspector are paid for); the settings-only inspector
+   is short enough to live as a bottom row instead. One converged model from
+   here down: narrower widths only change how the slides column presents
+   (rail at 769-1024, drawer ≤768).
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  /* Every desktop column-variant collapses into the same area model. */
+  .is-editor .layout {
+    grid-template-columns:
+      var(--slides-panel-width, var(--ps-slides-expanded-width))
+      minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(200px, 38vh);
+    grid-template-areas:
+      'slides bar'
+      'slides canvas'
+      'slides inspector';
+  }
+
+  .is-editor.is-slides-collapsed .layout {
+    grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
+  }
+
+  /* Dismissed rail: the canvas gets the full height. */
+  .is-editor.is-inspector-collapsed .layout,
+  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'slides bar'
+      'slides canvas';
+  }
+
+  /* These must out-specify the desktop line-based placement at the top of the
+     file (`.is-editor .layout > .preview-panel { grid-column: 2 }` and
+     friends), which is a child selector and therefore beat the plain
+     `.is-editor .preview-panel` form these rules used to have. The areas
+     silently did nothing, so below 1100px the canvas and inspector stayed in
+     desktop columns, a phantom third column appeared, and the slide bar's
+     `grid-column: 2 / 4` stretched row 1 into a tall empty band. */
+  .is-editor .layout > .slides-panel {
+    grid-area: slides;
+  }
+
+  .is-editor .layout > .slide-bar {
+    grid-area: bar;
+  }
+
+  .is-editor .layout > .preview-panel {
+    grid-area: canvas;
+  }
+
+  .is-editor .layout > .inspector-panel {
+    grid-area: inspector;
+    border-left: none;
+    border-top: 1px solid hsl(var(--app-border-subtle));
+  }
+
+  /* Width is the full column now; the drag handle only makes sense as a
+     side-by-side divider. (A row-height handle can come later if needed.) */
+  .is-editor .inspector-resize-handle {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Tablet Landscape (769-1024px): Auto-collapse slides to rail
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .is-editor:not(.is-slides-expanded-override) .layout {
+    grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
+  }
+
+  /* Apply collapsed styling automatically at this width */
+  .is-editor:not(.is-slides-expanded-override) .slides-panel-header h2,
+  .is-editor:not(.is-slides-expanded-override)
+    .slides-add-btn
+    span:not(.slides-add-icon) {
+    display: none;
+  }
+
+  /* Hide thumbnails and show only numbers in collapsed/auto-collapsed mode */
+  .is-editor:not(.is-slides-expanded-override) .slide-item .thumb.thumb-mini {
+    display: none;
+  }
+
+  .is-editor:not(.is-slides-expanded-override) .slide-num-collapsed {
+    display: flex;
+  }
+
+  .is-editor:not(.is-slides-expanded-override) .slide-search-meta {
+    display: none;
+  }
+
+  .is-editor:not(.is-slides-expanded-override) .slides-search-row {
+    display: none;
+  }
+
+  .is-editor:not(.is-slides-expanded-override) .slides-bulk-action-bar {
+    display: none;
+  }
+
+  .is-editor:not(.is-slides-expanded-override) .slides-panel-header {
+    padding: 8px 6px;
+  }
+
+  .is-editor:not(.is-slides-expanded-override) .slides-panel-header > .row {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .is-editor:not(.is-slides-expanded-override) .slides-collapse-btn,
+  .is-editor:not(.is-slides-expanded-override) .slides-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Tablet Portrait & Mobile (≤768px): slides drawer + the same stacked
+   canvas/inspector model as ≤1024, minus the slides column. The old model
+   (form as main column, canvas squeezed into a 92px rail, bottom sheet on
+   phones) predates the settings-only inspector; the canvas is the primary
+   editing surface at every width now.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Mirror the ≤1024 combo selectors so this later block wins the tie. */
+  .is-editor .layout,
+  .is-editor.is-slides-collapsed .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(200px, 42vh);
+    grid-template-areas:
+      'bar'
+      'canvas'
+      'inspector';
+    position: relative;
+  }
+
+  .is-editor.is-inspector-collapsed .layout,
+  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
+    /* Repeat the columns: the desktop dismissed-rail rule (slides + canvas)
+       outranks the plain ≤768 rule above, and the slides column is a fixed
+       drawer here - without this the canvas would sit in a 200px column. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'bar'
+      'canvas';
+  }
+
+  /* Slides panel becomes a slide-over drawer */
+  .is-editor .slides-panel {
+    position: fixed;
+    top: var(--ps-topbar-height);
+    left: 0;
+    bottom: 0;
+    width: var(--ps-slides-drawer-width);
+    z-index: var(--z-drawer);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease-out;
+    box-shadow: var(--app-shadow-xl);
+    border-right: 1px solid hsl(var(--app-border-default));
+  }
+
+  .is-editor.is-slides-drawer-open .slides-panel {
+    transform: translateX(0);
+  }
+
+  /* Backdrop when drawer is open */
+  .slides-drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    top: var(--ps-topbar-height);
+    background: hsl(0 0% 0% / 0.4);
+    z-index: var(--z-drawer-backdrop);
+  }
+
+  .is-editor.is-slides-drawer-open .slides-drawer-backdrop {
+    display: block;
+  }
+
+  /* Floating toggle button to open slides drawer */
+  .slides-drawer-toggle {
+    display: flex;
+    position: fixed;
+    bottom: var(--ps-space-4);
+    left: var(--ps-space-4);
+    z-index: var(--z-header);
+    width: 48px;
+    height: 48px;
+    border-radius: var(--ps-radius-full);
+    background: hsl(var(--app-accent-primary));
+    color: hsl(var(--app-text-on-solid));
+    box-shadow: var(--app-shadow-lg);
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    font-size: var(--ps-text-xl);
+    transition: background 0.15s ease;
+  }
+
+  .slides-drawer-toggle:hover {
+    background: hsl(var(--app-accent-primary-hover));
+  }
+
+  .slides-drawer-toggle:focus-visible {
+    outline: none;
+    box-shadow:
+      var(--app-shadow-lg),
+      0 0 0 3px hsl(var(--app-accent-primary) / 0.3);
+  }
+
+  .is-editor .inspector-panel {
+    border-right: none;
+    border-left: none;
+  }
+}
+
+/* Hide the slides drawer toggle on desktop */
+@media (min-width: 769px) {
+  .slides-drawer-toggle {
+    display: none !important;
+  }
+  .slides-drawer-backdrop {
+    display: none !important;
+  }
+}
+
+/* --- Touch targets ---------------------------------------------------------
+   The editor's chrome is built for a mouse: icon buttons sit at 24-28px, well
+   under the ~44px a thumb needs. This doesn't try to make the editor a
+   touch-first app — the goal is a quick edit on a phone or an iPad, so the
+   controls you'd reach for need to be hittable. Keyed off pointer capability
+   rather than width, so an iPad in landscape (1366px) is covered too. */
+@media (hover: none) {
+  /* Height for everything clickable: a narrow-but-tall button (28x44) is a
+     fine thumb target, a short one is not. Width is left alone so labelled
+     controls don't stretch into their neighbours' space. */
+  .is-editor .btn,
+  .is-editor .notes-strip-toggle,
+  .is-editor .sb-segmented-btn,
+  .is-editor .bg-picker-trigger {
+    min-height: 44px;
+  }
+
+  /* Two exceptions, both sized by their own container rather than by text:
+     growing them to 44px would make them overhang it. The insert "+" sits in
+     a short row between two slide rows — an overhanging, now-clickable button
+     would swallow taps meant for the slides either side (the very overhang the
+     top of 40-insert-and-collapsed.css warns about). The collapsed rail's add
+     button is a fixed square in a 64px rail. */
+  .is-editor .slide-insert-btn,
+  .is-editor.is-slides-collapsed .slides-add-btn {
+    min-height: 0;
+  }
+
+  /* Square icon buttons need both dimensions — these are the ones that were
+     genuinely too small to hit (24x24 and 36x36). */
+  .is-editor .ghost-icon-btn,
+  .is-editor .notification-bell-btn,
+  .is-editor .ie-coach-dismiss {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Not the inline-edit ghost chips (.ie-ghost): those sit on the scaled
+     slide canvas, where a 44px floor would break the slide's own layout
+     rather than the chrome around it. */
+}

@@ -224,7 +224,7 @@ export function openManageMembersModal({
   const status = h('div', { class: 'help modal-status', text: '' });
 
   const renderList = () => {
-    listWrap.innerHTML = '';
+    listWrap.replaceChildren();
     if (!order.length) {
       listWrap.append(
         h('div', {

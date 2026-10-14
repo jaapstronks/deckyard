@@ -75,7 +75,7 @@ export function createUserAutocomplete({
   });
 
   function renderChips() {
-    chipsContainer.innerHTML = '';
+    chipsContainer.replaceChildren();
     for (const user of selected) {
       const chip = h('div', { class: 'user-autocomplete-chip' }, [
         h('span', {
@@ -102,7 +102,7 @@ export function createUserAutocomplete({
   }
 
   function renderDropdown() {
-    dropdown.innerHTML = '';
+    dropdown.replaceChildren();
 
     if (isLoading) {
       dropdown.append(

@@ -6,13 +6,13 @@ import { deepClone } from './editor-utils.js';
 import { newSlide } from '../../../shared/slide-types/presentation.js';
 import { migrateLibraryItem } from '../../../shared/slide-types/schema-version.js';
 import { t } from '../../lib/ui-i18n.js';
-import { newId } from '../../lib/util/id.js';
+import { newId } from '../../lib/state/id.js';
 import {
   createSlideLibraryPicker,
   sortByPinnedThenName,
 } from '../slide-library/index.js';
 import { toast } from '../../lib/dom/toast.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { isInsertableSlideType } from '../../../shared/slide-types/policy.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
@@ -159,7 +159,7 @@ export function createSlidesPanel({
 
   // Debounce only the per-keystroke input path. Each `rerenderSlideList()`
   // rebuilds every thumbnail from scratch (`slide-list/index.js`,
-  // `slideListEl.innerHTML = ''`), so typing an 8-char query used to trigger 8
+  // `slideListEl.replaceChildren()`), so typing an 8-char query used to trigger 8
   // full rebuilds — ~137 ms of blocked main thread on an 80-slide deck. The
   // timer resets on each keystroke, so a word typed at fluent cadence
   // (~120–180 ms between keys) collapses into a single rebuild that fires once

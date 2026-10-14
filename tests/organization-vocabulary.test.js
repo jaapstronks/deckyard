@@ -25,10 +25,8 @@
  *
  * **Doc prose (B88).** The rule covers docs too, so `docs/reference/**.md` is
  * scanned for the tenant entity spelled "workspace" outside the label rule.
- * Three exemptions, each for its own reason: `vocabulary.md` is the register
- * and must name the loser spelling to forbid it; `collab-research.md` is a
- * deliberately frozen phase-0 snapshot (the same allowlist reason
- * `tests/docs-paths-resolvable.test.js` carries); and `notion-import.md`
+ * Two exemptions: `vocabulary.md` is the register and must name the loser
+ * spelling to forbid it; `notion-import.md`
  * describes *Notion's* workspace, a third-party product's own concept rather
  * than ours. Capitalized "Workspace" as the UI label stays legal in prose,
  * exactly as it does in code.
@@ -175,9 +173,6 @@ const DOC_DIR = path.join('docs', 'reference');
 const DOC_EXEMPT = new Set([
   // The register itself: it names the loser spelling in order to forbid it.
   'vocabulary.md',
-  // A deliberately frozen phase-0 snapshot, allowlisted the same way in
-  // tests/docs-paths-resolvable.test.js.
-  'collab-research.md',
   // Notion's own workspace concept, not ours.
   'notion-import.md',
 ]);

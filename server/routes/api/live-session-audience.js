@@ -28,7 +28,7 @@ import {
 import { sendInteractionCatchUp } from './interaction-catch-up.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { customThemeConfig } from '../../utils/themes.js';
-import { updateSlideNotes } from '../../storage/presentations/slide-notes.js';
+import { updateSlideNotes } from '../../storage/presentations/index.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import {
   badRequest,

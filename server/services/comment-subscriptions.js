@@ -24,8 +24,8 @@ import { listCollaborators } from '../storage/collaborators.js';
 import {
   getCommentAuthorEmail,
   getThreadParticipants,
-} from '../storage/presentations/comments.js';
-import { listSubscriptions } from '../storage/presentations/subscriptions.js';
+} from '../storage/presentations/index.js';
+import { listSubscriptions } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import { getUserByEmail } from '../storage/users.js';
 import { crossOrganizationScope } from '../storage/scope.js';
@@ -163,7 +163,12 @@ export async function resolveCommentRecipients({
   // check below filters them straight out again.
   let collaborators = [];
   try {
-    collaborators = (await listCollaborators(presentation?.id))
+    collaborators = (
+      await listCollaborators(
+        { ...scope, organizationId: presentation.organizationId },
+        presentation?.id,
+      )
+    )
       .map((c) => c?.userEmail)
       .filter(Boolean);
   } catch {

@@ -44,6 +44,7 @@ import {
   sweepExpiredSessions,
 } from '../../server/storage/live-sessions/db.js';
 import { TTL_MS } from '../../server/storage/live-sessions/constants.js';
+import crypto from 'node:crypto';
 
 /** Drop everything this process holds: the state a fresh worker starts from. */
 function coldStart() {
@@ -118,6 +119,72 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     assert.equal(session.clients.size, 0, 'its SSE clients stay process-local');
   });
 
+  it('keeps an actor in another organization out of stored and cached sessions', async () => {
+    const otherOrg = crypto.randomUUID();
+    await db
+      .insertInto('organizations')
+      .values({ id: otherOrg, name: 'Other', slug: `other-${otherOrg}` })
+      .execute();
+    const otherDeck = await seedPresentation(db, { organizationId: otherOrg });
+    const otherScope = { organizationId: otherOrg };
+    const { sessionId } = await createLiveSession(otherScope, {
+      presentationId: otherDeck,
+    });
+
+    assert.equal(
+      await getLiveSession(testScope(), sessionId),
+      null,
+      'local cache does not bypass organization scope',
+    );
+    assert.equal(closeSession(testScope(), sessionId), false);
+    assert.equal(
+      await findMostRecentSessionForPresentation(testScope(), otherDeck),
+      null,
+    );
+    assert.equal(
+      (await getFollowStateForPresentation(testScope(), otherDeck)).sessionId,
+      '',
+    );
+    assert.equal(
+      (
+        await getLiveSession(
+          { crossOrganization: 'holder of audience session id' },
+          sessionId,
+        )
+      )?.sessionId,
+      sessionId,
+    );
+
+    await persistSession(testScope(), {
+      sessionId,
+      presentationId,
+      state: { slideId: 'forged' },
+      lastActivityAt: Date.now() + 1000,
+    });
+    const row = await db
+      .selectFrom('present_sessions')
+      .select(['presentation_id', 'state'])
+      .where('session_id', '=', sessionId)
+      .executeTakeFirstOrThrow();
+    assert.equal(row.presentation_id, otherDeck);
+    assert.notEqual(
+      row.state.slideId,
+      'forged',
+      'a guessed session id cannot overwrite another organization',
+    );
+
+    coldStart();
+    assert.equal(
+      await getLiveSession(testScope(), sessionId),
+      null,
+      'persisted row is also filtered',
+    );
+    assert.equal(
+      (await getLiveSession(otherScope, sessionId))?.sessionId,
+      sessionId,
+    );
+  });
+
   it('carries live slide state across a restart', async () => {
     const created = await createLiveSession(testScope(), { presentationId });
     await updateLiveSessionState(testScope(), created.sessionId, {
@@ -129,7 +196,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
       updatedAt: Date.now(),
     });
     // The write is debounced; flush it the way the process would.
-    await persistSession(sessions.get(created.sessionId));
+    await persistSession(testScope(), sessions.get(created.sessionId));
     coldStart();
 
     const session = await getLiveSession(testScope(), created.sessionId);
@@ -143,7 +210,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   it('carries the remote-control flag across a restart', async () => {
     const created = await createLiveSession(testScope(), { presentationId });
     setLiveSessionControlEnabled(testScope(), created.sessionId, true);
-    await persistSession(sessions.get(created.sessionId));
+    await persistSession(testScope(), sessions.get(created.sessionId));
     coldStart();
 
     const session = await getLiveSession(testScope(), created.sessionId);
@@ -157,7 +224,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
       slideIndex: 1,
       updatedAt: Date.now(),
     });
-    await persistSession(sessions.get(created.sessionId));
+    await persistSession(testScope(), sessions.get(created.sessionId));
     coldStart();
 
     const state = await getFollowStateForPresentation(
@@ -234,7 +301,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
 
   it('deletes the row when the session closes', async () => {
     const created = await createLiveSession(testScope(), { presentationId });
-    assert.equal(closeSession(created.sessionId, 'closed'), true);
+    assert.equal(closeSession(testScope(), created.sessionId, 'closed'), true);
     // The delete is fire-and-forget, so wait for the row to go rather than for
     // a fixed turn: 50 ms was too short on a slow runner (B644). The bound is
     // generous because only a delete that never lands should fail here.
@@ -279,7 +346,12 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
       .where('session_id', '=', stale.sessionId)
       .execute();
 
-    assert.equal(await sweepExpiredSessions(), 1);
+    assert.equal(
+      await sweepExpiredSessions({
+        crossOrganization: 'test instance retention',
+      }),
+      1,
+    );
 
     const rows = await db
       .selectFrom('present_sessions')

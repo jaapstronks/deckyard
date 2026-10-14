@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { prepareNewPresentation } from '../server/storage/presentations/crud/factory.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -29,27 +30,39 @@ const titleSlideTitle = (pres) => {
 };
 
 test('nl: the title slide title is the deck title, unprefixed', async () => {
-  const pres = await prepareNewPresentation(REPO_ROOT, {
-    title: 'Kwartaalcijfers Q3',
-    lang: 'nl',
-  });
+  const pres = await prepareNewPresentation(
+    REPO_ROOT,
+    {
+      title: 'Kwartaalcijfers Q3',
+      lang: 'nl',
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(titleSlideTitle(pres), 'Kwartaalcijfers Q3');
 });
 
 test('en-GB: the title slide title is the deck title, unprefixed', async () => {
-  const pres = await prepareNewPresentation(REPO_ROOT, {
-    title: 'Quarterly numbers Q3',
-    lang: 'en-GB',
-  });
+  const pres = await prepareNewPresentation(
+    REPO_ROOT,
+    {
+      title: 'Quarterly numbers Q3',
+      lang: 'en-GB',
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(titleSlideTitle(pres), 'Quarterly numbers Q3');
 });
 
 test('an over-long deck title is trimmed to the schema max length', async () => {
   const long = 'A'.repeat(200);
-  const pres = await prepareNewPresentation(REPO_ROOT, {
-    title: long,
-    lang: 'nl',
-  });
+  const pres = await prepareNewPresentation(
+    REPO_ROOT,
+    {
+      title: long,
+      lang: 'nl',
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   const t = titleSlideTitle(pres);
   assert.ok(t.length <= 120, `expected <= 120 chars, got ${t.length}`);
   assert.ok(
@@ -60,20 +73,28 @@ test('an over-long deck title is trimmed to the schema max length', async () => 
 
 test('a title that exactly fits is left alone', async () => {
   const exact = 'B'.repeat(120);
-  const pres = await prepareNewPresentation(REPO_ROOT, {
-    title: exact,
-    lang: 'nl',
-  });
+  const pres = await prepareNewPresentation(
+    REPO_ROOT,
+    {
+      title: exact,
+      lang: 'nl',
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(titleSlideTitle(pres), exact);
 });
 
 test('slides supplied by the caller keep their own title', async () => {
-  const pres = await prepareNewPresentation(REPO_ROOT, {
-    title: 'Composed deck',
-    lang: 'nl',
-    slides: [
-      { type: 'title-slide', content: { title: 'From the slide library' } },
-    ],
-  });
+  const pres = await prepareNewPresentation(
+    REPO_ROOT,
+    {
+      title: 'Composed deck',
+      lang: 'nl',
+      slides: [
+        { type: 'title-slide', content: { title: 'From the slide library' } },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(titleSlideTitle(pres), 'From the slide library');
 });

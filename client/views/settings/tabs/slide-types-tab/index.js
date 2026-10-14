@@ -9,7 +9,8 @@ import { api } from '../../../../lib/api.js';
 import { toast } from '../../../../lib/dom/toast.js';
 import { downloadBlob } from '../../../../lib/dom/download.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
-import { readFileAsText } from '../../../../lib/util/file.js';
+import { planRowRemoval } from '../../../../lib/dom/row-removal.js';
+import { readFileAsText } from '../../../../lib/net/file.js';
 import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
 import { createEmptyState } from '../../../../lib/dom/empty-state.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
@@ -19,10 +20,7 @@ import {
   deriveUniqueSlug,
 } from '../../slide-type-editor/io.js';
 import { loadThemeById } from '../../../../lib/theme/theme.js';
-import {
-  computeDrop,
-  resolveMove,
-} from '../../../editor/inline-edit/reorder-geometry.js';
+import { computeDrop, resolveMove } from '../../../editor/index.js';
 import { getCategories, CATEGORY_LABELS } from './categories.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
 import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
@@ -66,7 +64,7 @@ export function createSlideTypesTab({ user } = {}) {
   });
 
   const load = async () => {
-    el.innerHTML = '';
+    el.replaceChildren();
 
     el.append(
       h('h2', { text: t('settings.slideTypes.title', 'Slide Types') }),
@@ -131,7 +129,7 @@ export function createSlideTypesTab({ user } = {}) {
   // ============================================================
 
   function renderCustomTypesSection() {
-    customTypesSection.innerHTML = '';
+    customTypesSection.replaceChildren();
 
     const sectionHeader = h('div', {
       class: 'themes-list-header row is-between is-center',
@@ -614,11 +612,22 @@ export function createSlideTypesTab({ user } = {}) {
    */
   async function deleteCustomType(ct, { force }) {
     const query = force ? '?force=true' : '';
+    // The delete item lived in the card that is about to go, so focus has to be
+    // put back in the list by hand (B647). The section is rebuilt per render,
+    // hence the getters.
+    const land = planRowRemoval(
+      () => customTypesSection.querySelector('.custom-types-grid'),
+      {
+        index: customTypes.findIndex((x) => x.id === ct.id),
+        fallback: () => customTypesSection.querySelector('.btn-primary'),
+      },
+    );
     try {
       await api(`/api/custom-slide-types/${ct.id}${query}`, {
         method: 'DELETE',
       });
       await reloadCustomTypes();
+      land(t('common.rowRemoved', '{label} removed.', { label: ct.label }));
     } catch (err) {
       if (err?.code === 'in_use' && err.details?.usage && !force) {
         await confirmDeleteInUse(ct, err.details.usage);
@@ -668,7 +677,7 @@ export function createSlideTypesTab({ user } = {}) {
     customTypesSection.classList.add('is-hidden');
     curationSection.classList.add('is-hidden');
     editorSection.classList.remove('is-hidden');
-    editorSection.innerHTML = '';
+    editorSection.replaceChildren();
 
     const editor = createSlideTypeEditor({
       slideType,
@@ -704,7 +713,7 @@ export function createSlideTypesTab({ user } = {}) {
 
   function closeEditor() {
     editorSection.classList.add('is-hidden');
-    editorSection.innerHTML = '';
+    editorSection.replaceChildren();
     customTypesSection.classList.remove('is-hidden');
     curationSection.classList.remove('is-hidden');
   }
@@ -733,7 +742,7 @@ export function createSlideTypesTab({ user } = {}) {
   };
 
   const renderCatalog = () => {
-    curationSection.innerHTML = '';
+    curationSection.replaceChildren();
 
     curationSection.append(
       h('h3', {

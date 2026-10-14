@@ -27,10 +27,7 @@
 
 import { loadDotEnv } from '../../server/config/env.js';
 import { repoRoot } from '../../server/config/paths.js';
-import {
-  initializeStorage,
-  closeStorage,
-} from '../../server/storage/lifecycle.js';
+import { initializeStorage, closeStorage } from '../../server/db/lifecycle.js';
 import {
   createComment,
   resolveComment,

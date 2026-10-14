@@ -74,7 +74,7 @@ For text-blocks, each row has an optional heading above its blocks, including th
 ## The inspector rail
 
 The editor is a 3-column grid, slides | canvas | inspector
-(`client/styles/app/shell/20-editor-layout.css`). The inspector column
+(`client/styles/app/editor/20-editor-layout.css`). The inspector column
 sits on the **right**, has a drag-resizable width on its left edge
 (`client/views/editor/inspector-resize.js`, `--inspector-width`, min 320px,
 default 340px), and is a **toggleable rail with swappable panes**
@@ -267,8 +267,9 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   has one, the 3x3 focus grid as the precise fallback to the canvas drag, and
   per-item metadata like a LinkedIn URL); image-set keeps its own per-image
   manager (Images section) plus role + layout; icon-card-grid → just the
-  selected card's icon + link. image-text has no entry of its own: since D100 it
-  carries one flat image, which the shared card covers in full.
+  selected card's icon + link. image-text has no entry of its own: since its
+  plural layouts left (D100) it carries one flat image, which the shared card
+  covers in full.
 - **Scope:** every image type carries a "This image" tab - image-slide,
   image-text, image-set, gallery, team-cards, content-columns (per selected
   column), logo-wall, quote portraits - plus icon-cards. The shared card is

@@ -52,7 +52,6 @@ about twice that; half are JSDoc type annotations like
 | `bullmq`                                              | `server/jobs/queue/connection.js`         | same gate, paired                                                                                         |
 | `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | `server/media/s3.js`                      | `isS3Configured()`; `s3.js` itself is loaded dynamically from `server/media/index.js` for the same reason |
 | `@hocuspocus/server`, `crossws/adapters/node`         | `server/collab/mount.js`                  | `isCollabEnabled()` — a disabled install never loads the collab dependency tree                           |
-| `ciiic-translation-rules`                             | `server/utils/openai/translate.js`        | fork-only, deliberately **not** in `package.json`, falls back to empty rules                              |
 | `dompurify`, `jsdom`                                  | `shared/sanitize.js`                      | server-side sanitization path only                                                                        |
 
 A package that is imported **statically** anywhere stays a hard `dependency`
@@ -75,7 +74,7 @@ and mandatory in another.
 
 ### Storage lifecycle loading
 
-`server/storage/lifecycle.js` loads `server/db/client.js` (and through it kysely
+`server/db/lifecycle.js` loads `server/db/client.js` (and through it kysely
 and pg) lazily inside `initializeStorage()` / `closeStorage()`, keeping the
 database driver out of the module graph of scripts that never touch storage. The
 scope-to-context reduction (`toStorageContext`) lives in
@@ -115,12 +114,6 @@ untangling as a design change, never as a find-and-replace.
   `@hocuspocus/server` + `crossws` (live collaboration). A package that is
   _statically_ imported (e.g. `openid-client`) stays a hard `dependency` even
   if its feature is off, because loading the module pulls it in regardless.
-- **`ciiic-translation-rules` is fork-only** and deliberately **not declared**
-  in `package.json`: it's a private package that ships only in the CIIIC fork,
-  loaded through an optional `await import()` in
-  `server/utils/openai/translate.js` that falls back to empty rules when it's
-  absent. Adding it to `package.json` would break `npm install` for the OSS
-  repo, so it stays undeclared by design.
 
 ## Why this is written down
 
@@ -131,7 +124,4 @@ that is exactly the state the codebase was in before the cleanup: 77 runtime
 sites, of which about a dozen were gratuitous and another dozen contradicted
 themselves about whether a dependency was optional.
 
-The ESLint gate (`npm run lint`, see
-[`docs/developer/linting.md`](../developer/linting.md)) catches unresolved
-imports and unused ones, but it does not judge lazy-versus-static. That judgment
-is this document plus review.
+The ESLint gate (`npm run lint`, see [`docs/developer/linting.md`](../developer/linting.md)) catches unresolved and unused imports. `tests/optional-dependencies-gate.test.js` checks every declared optional package against runtime imports: static imports and re-exports are refused, dynamic imports need an awaited catch boundary in the same function or an earlier feature-off return, and unused optional declarations fail. It also recognizes dependency-injected import thunks awaited inside a catch boundary, including awaited `Promise.all` groups. Deferred callbacks and unawaited promises do not inherit an enclosing catch. This is a structural check; review still verifies that the feature check and missing-package message make sense, and judges dynamic imports of hard dependencies and internal modules.

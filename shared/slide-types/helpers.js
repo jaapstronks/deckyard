@@ -1,5 +1,6 @@
 // Shared helpers used by slide type registry + renderers.
 
+import { clamp } from '../number-utils.js';
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
 import { sharedOption } from '../ui-i18n-keys.js';
 import { hostMatches, hostMatchesAny, parseUrl } from '../url-host.js';
@@ -538,12 +539,25 @@ export function appendQuery(url, params) {
   return raw.includes('?') ? `${raw}&${qs}` : `${raw}?${qs}`;
 }
 
-export function bunnyEmbedUrlFromInput(input, { libraryId = '366590' } = {}) {
+/**
+ * The Bunny embed URL for what an author pasted into `source`.
+ *
+ * A pasted play or embed URL carries its own library, so it needs no
+ * configuration. A bare video UUID is a shorthand that only means something
+ * against a library, and that library is instance configuration (B650) — so
+ * without one this returns `''` and the slide shows its empty state, rather
+ * than pointing at whichever library happened to be written down in core.
+ *
+ * @param {*} input - What the author pasted: a UUID, a play URL or an embed URL.
+ * @param {{libraryId?: string}} [options] - The configured Bunny library.
+ * @returns {string} The embed URL, or `''` when there is nothing to embed.
+ */
+export function bunnyEmbedUrlFromInput(input, { libraryId = '' } = {}) {
   const raw = String(input || '').trim();
   if (!raw) return '';
 
   // If user pasted the Bunny "play" URL, convert it to an embed URL.
-  // Example: https://iframe.mediadelivery.net/play/366590/<uuid>
+  // Example: https://iframe.mediadelivery.net/play/<libraryId>/<uuid>
   if (/iframe\.mediadelivery\.net\/play\//i.test(raw)) {
     const u = parseUrl(raw);
     const m = u?.pathname.match(/\/play\/(\d+)\/([0-9a-f-]{36})/i);
@@ -560,19 +574,14 @@ export function bunnyEmbedUrlFromInput(input, { libraryId = '366590' } = {}) {
     return normalizeUrl(raw);
   }
   if (looksLikeUuid(raw)) {
+    const lib = String(libraryId || '').trim();
+    if (!lib) return '';
     return `https://iframe.mediadelivery.net/embed/${encodeURIComponent(
-      libraryId,
+      lib,
     )}/${encodeURIComponent(raw)}`;
   }
   return '';
 }
-
-export const BUNNY_PLAYER_COLORS = {
-  // Brand palette (hex without #) for Bunny Stream embeds.
-  primaryColor: 'dbff00',
-  controlsColor: 'dbff00',
-  accentColor: '375c5d',
-};
 
 export function curlyQuote(raw) {
   // Wrap in curly double quotes, but avoid double-wrapping if the user already typed quotes.
@@ -657,10 +666,6 @@ function mulberry32(seed) {
     // eslint-disable-next-line no-bitwise
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
 }
 
 function pct(n) {

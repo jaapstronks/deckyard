@@ -16,6 +16,7 @@
  * Run with: DATABASE_URL=… npm run test:pg
  */
 
+import { createMockRes } from '../helpers/http-mocks.js';
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -26,7 +27,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -45,31 +45,13 @@ const BOB = {
   email: 'bob@example.com',
 };
 
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 async function call(user, method, path, body) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
   );
   req.method = method;
   req.headers = {};
-  const res = mockRes();
+  const res = createMockRes();
   await handleSlideLibrary({
     repoRoot: '/tmp',
     storageScope,
@@ -95,7 +77,6 @@ pgDescribe(
     });
 
     after(async () => {
-      uninstallFacadeStorage();
       await closeTestDb(db);
     });
 
@@ -124,7 +105,7 @@ pgDescribe(
         NEW_ITEM,
       );
       assert.equal(res.statusCode, 201);
-      assert.equal(res.payload.canEdit, true);
+      assert.equal(res.json().canEdit, true);
     });
 
     it('an organization create answers the verdict the list gives', async () => {
@@ -135,11 +116,11 @@ pgDescribe(
         NEW_ITEM,
       );
       assert.equal(res.statusCode, 201);
-      assert.equal(res.payload.canEdit, true, 'the creator may edit');
+      assert.equal(res.json().canEdit, true, 'the creator may edit');
 
       for (const user of [ALICE, BOB]) {
         const list = await call(user, 'GET', '/api/slide-library/organization');
-        const listed = list.payload.items.find((i) => i.id === res.payload.id);
+        const listed = list.json().items.find((i) => i.id === res.json().id);
         assert.equal(
           listed.canEdit,
           user === ALICE,

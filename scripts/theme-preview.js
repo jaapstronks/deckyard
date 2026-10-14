@@ -46,10 +46,7 @@ import { isInsertableSlideType } from '../shared/slide-types/policy.js';
 import { renderSlideToPngBuffer } from '../server/render/png.js';
 import { loadThemeAssets } from '../server/utils/themes.js';
 import { listThemes } from '../server/storage/themes.js';
-import {
-  initializeStorage,
-  closeStorage,
-} from '../server/storage/lifecycle.js';
+import { initializeStorage, closeStorage } from '../server/db/lifecycle.js';
 import { singleOrganizationScope } from '../server/storage/scope.js';
 import { initializeThemeSeeds } from '../server/utils/theme-seeds.js';
 import { closePuppeteerBrowser } from '../server/utils/puppeteer-browser.js';

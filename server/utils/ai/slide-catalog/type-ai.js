@@ -97,7 +97,10 @@ import {
   aiExamples as timelineSlideAiExamples,
 } from '../../../../shared/slide-types/types/timeline-slide/ai.js';
 import { ai as titleSlideAi } from '../../../../shared/slide-types/types/title-slide/ai.js';
-import { ai as videoSlideAi } from '../../../../shared/slide-types/types/video-slide/ai.js';
+import {
+  ai as videoSlideAi,
+  aiExamples as videoSlideAiExamples,
+} from '../../../../shared/slide-types/types/video-slide/ai.js';
 
 /**
  * The agent-facing editorial copy per slide type — description, bestFor,
@@ -181,4 +184,5 @@ export const SLIDE_TYPE_AI_EXAMPLES = Object.freeze({
   'team-cards-slide': teamCardsSlideAiExamples,
   'text-blocks-slide': textBlocksSlideAiExamples,
   'timeline-slide': timelineSlideAiExamples,
+  'video-slide': videoSlideAiExamples,
 });

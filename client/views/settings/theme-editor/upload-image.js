@@ -9,16 +9,7 @@
  */
 
 import { api } from '../../../lib/api.js';
-
-/** Read a File as a data URL. */
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+import { readFileAsDataUrl } from '../../../lib/net/file.js';
 
 /**
  * Upload an image and return its public URL.

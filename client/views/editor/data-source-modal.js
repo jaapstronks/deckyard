@@ -13,6 +13,7 @@ import {
   validateDataSource,
 } from '../../../shared/data-source.js';
 import { h } from '../../lib/dom/index.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 import { icon } from '../../lib/dom/icons.js';
 
 // `hintKey`/`labelKey` carry the i18n key and the sibling string the English
@@ -127,8 +128,14 @@ export function openDataSourceConfigModal({
     class: 'data-source-section data-source-bindings',
   });
 
-  // Status area
-  const statusEl = h('div', { class: 'data-source-modal-status' });
+  // Status area: progress only ("Fetching data…"). A refusal, of the preview
+  // or of Connect, is a state of the form and goes through the inline helper
+  // (docs/reference/feedback-surfaces.md).
+  const statusEl = h('div', {
+    class: 'data-source-modal-status',
+    role: 'status',
+  });
+  const refusal = createInlineError({ callout: true });
 
   // Actions
   const actionsRow = h('div', { class: 'row is-end is-mt-8' });
@@ -145,7 +152,7 @@ export function openDataSourceConfigModal({
   actionsRow.append(previewBtn, connectBtn);
 
   function renderConfigFields() {
-    configSection.innerHTML = '';
+    configSection.replaceChildren();
     const providerOpt = PROVIDER_OPTIONS.find(
       (p) => p.value === selectedProvider,
     );
@@ -186,7 +193,7 @@ export function openDataSourceConfigModal({
   }
 
   function renderPreviewData(data) {
-    previewSection.innerHTML = '';
+    previewSection.replaceChildren();
     if (!data) return;
 
     const heading = h('div', {
@@ -251,7 +258,7 @@ export function openDataSourceConfigModal({
   }
 
   function renderBindings() {
-    bindingSection.innerHTML = '';
+    bindingSection.replaceChildren();
     if (!previewData || !bindableInfo) return;
 
     const heading = h('div', {
@@ -311,13 +318,14 @@ export function openDataSourceConfigModal({
     configValues = {};
     previewData = null;
     renderConfigFields();
-    previewSection.innerHTML = '';
-    bindingSection.innerHTML = '';
+    previewSection.replaceChildren();
+    bindingSection.replaceChildren();
     updateActionStates();
   });
 
   previewBtn.addEventListener('click', async () => {
     previewBtn.disabled = true;
+    refusal.clear();
     statusEl.textContent = t('dataSource.fetching', 'Fetching data…');
     try {
       const result = await api('/api/data-sources/preview', {
@@ -330,11 +338,11 @@ export function openDataSourceConfigModal({
       renderBindings();
       updateActionStates();
     } catch (err) {
-      statusEl.textContent = t('dataSource.error', 'Error: {message}', {
-        message:
-          err.message ||
+      statusEl.textContent = '';
+      refusal.show(
+        err.message ||
           t('editor.dataSource.fetchFailed', 'Failed to fetch data'),
-      });
+      );
     } finally {
       previewBtn.disabled = false;
     }
@@ -352,9 +360,10 @@ export function openDataSourceConfigModal({
       lastSync: new Date().toISOString(),
     };
 
+    refusal.clear();
     const validation = validateDataSource(dataSource);
     if (!validation.valid) {
-      statusEl.textContent = validation.error;
+      refusal.show(validation.error);
       return;
     }
 
@@ -371,6 +380,7 @@ export function openDataSourceConfigModal({
     previewSection,
     bindingSection,
     statusEl,
+    refusal.el,
     actionsRow,
   );
 

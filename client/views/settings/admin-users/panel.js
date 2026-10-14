@@ -65,7 +65,7 @@ export function renderAdminUsersPanel({ user }) {
         renderUsersList(usersList, users, user, handleEdit, loadUsers);
       },
       () => {
-        usersList.innerHTML = '';
+        usersList.replaceChildren();
         usersList.append(
           h('div', {
             class: 'help',

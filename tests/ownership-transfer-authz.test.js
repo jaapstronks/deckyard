@@ -11,7 +11,7 @@
  * the owner stamp and the unrestricted operator, and to nobody else — not the
  * creator (D43: the grant has to be one the hand-over can take away), and no
  * collaborator rung reaches it, not even `admin`. An instance admin is not a
- * grant either; that is the same design B114 pinned on the guest surface:
+ * grant either; that is the same design pinned on the guest surface (B114):
  * `isAdmin` is a flag on the actor, `isUnrestricted` is the operator bypass,
  * and only the second one opens ownership-scoped gates.
  *
@@ -20,9 +20,10 @@
  * one that offers the handling (no v1 or MCP transfer), so this file is the
  * test per contract.
  *
- * The endpoint is singular. The B115 item speaks of "transfer/claim endpoints";
- * there is no claim endpoint — `POST /api/presentations/:id/transfer-ownership`
- * is the whole ownership surface (see the PR description).
+ * The endpoint is singular. There is no claim endpoint (the item this came from
+ * spoke of "transfer/claim endpoints", B115) —
+ * `POST /api/presentations/:id/transfer-ownership` is the whole ownership
+ * surface (see the PR description).
  *
  * Every refusal is asserted against the store, not read off the status code:
  * after a refused transfer the deck must still name the old owner, on both keys
@@ -37,6 +38,7 @@
  * Run with: node --test tests/ownership-transfer-authz.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -46,8 +48,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { createPresentation, getPresentation } =
@@ -121,7 +122,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -172,22 +172,6 @@ async function seed() {
 
 // --- The request double -----------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /**
@@ -214,7 +198,7 @@ async function call(method, pathname, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handlePresentations({
     repoRoot: process.cwd(),
@@ -282,7 +266,7 @@ test('the previous owner is kept on as an edit collaborator by default', async (
   });
   assert.equal(jsonBody(res).previousOwnerKeptAsCollaborator, true);
 
-  const rows = await listCollaborators(pres.id);
+  const rows = await listCollaborators({ organizationId: ORG }, pres.id);
   const old = rows.find((r) => r.userEmail === OWNER.email);
   assert.ok(old, 'the previous owner is on the deck');
   assert.equal(old.permission, 'edit', 'and holds edit, not admin');
@@ -296,7 +280,7 @@ test('keepAsCollaborator:false hands the deck over completely', async () => {
   });
   assert.equal(jsonBody(res).previousOwnerKeptAsCollaborator, false);
 
-  const rows = await listCollaborators(pres.id);
+  const rows = await listCollaborators({ organizationId: ORG }, pres.id);
   assert.equal(
     rows.find((r) => r.userEmail === OWNER.email),
     undefined,
@@ -314,7 +298,7 @@ test('a new owner who was a collaborator loses the now-redundant row', async () 
   });
 
   await assertStillOwnedBy(pres.id, EDITOR, 'the editor now owns the deck');
-  const rows = await listCollaborators(pres.id);
+  const rows = await listCollaborators({ organizationId: ORG }, pres.id);
   assert.equal(
     rows.find((r) => r.userEmail === EDITOR.email),
     undefined,

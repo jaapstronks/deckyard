@@ -1,0 +1,28 @@
+# App CSS ownership
+
+Put a feature's CSS under its matching `client/styles/app/` directory. Shared DOM widgets live in `client/styles/app/components/`; their JS owner is `client/lib/dom/`. The shared shell also maps to that JS layer. Declare sheets in `APP_FEATURE_LAYER` or `APP_COMPONENT_LAYER` in `scripts/generate-slide-css-aggregators.js`, then run `npm run gen:slide-css`. The generated aggregators load shared widgets before viewer and feature chrome, so features can specialize the shared modal structure.
+
+`tests/css-ownership.test.js` scans every nested app stylesheet, including new files. The existing aggregator gate checks that each file is declared exactly once and that feature folders name real views. The ownership gate parses CSS with Prettier's installed CSS/selector parser and JS with Acorn. Each selector class needs a string reference within the owning JS directory. Comments and import paths do not count; nested CSS, pseudo-class arguments and escaped selectors are parsed as selectors. Dynamic classes require both a local composition prefix and a local value, using the existing dead-CSS evidence rules.
+
+This checks static references, not which component creates a DOM node. A query selector or other executable string can provide evidence. Imported renderers, shared classes and ancestor scopes can lack local evidence even when their CSS is intentional. Those cases and existing misplaced styles are recorded as exact file/class pairs in `tests/fixtures/css-ownership-debt.json`. The baseline may only shrink: new pairs fail, and stale pairs must be removed. Do not add dummy JS strings or extend the baseline to satisfy the gate. The initial migration reduces the measured population from 716 to 490 pairs; the remaining list includes shell topbars, the creation view, editor field widgets, shared schematic output and contextual selectors. It is not a claim that all remaining pairs require moving CSS.
+
+## Fork path migration
+
+CSS source-path moves carry a breaking release note with the old/new mapping, following the fork import-path policy in [versioning](versioning.md). Selectors and declaration values are preserved. Forks that import or patch individual source files must update these paths; there are no old-path shims. Paths below are relative to `client/styles/app/`.
+
+| Previous path                                                                                 | Current path                                                                                                   |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `shell/20-editor-layout.css`, `shell/21-editor-skeleton.css`, `shell/107-collab-presence.css` | Same filenames under `editor/`                                                                                 |
+| `shell/05-avatar.css`, `shell/99-notification-bell.css`                                       | Same filenames under `user/`                                                                                   |
+| `shell/96-activity-feed.css`                                                                  | `list/96-activity-feed.css`                                                                                    |
+| `list/17-deck-grid.css`                                                                       | `editor/17-deck-grid.css`                                                                                      |
+| `settings/103-data-source.css`                                                                | `editor/103-data-source.css`                                                                                   |
+| `editor/modals/10-modals-base.css`                                                            | `components/10-modals-base.css`; slide-picker and translation variants in `editor/modals/10-modals-editor.css` |
+| `editor/modals/11-modals-loading.css`                                                         | `components/11-modals-loading.css`                                                                             |
+| `editor/106-shortcuts-overlay.css`                                                            | `components/106-shortcuts-overlay.css`                                                                         |
+| `components.css` (declarations)                                                               | `components/00-components.css`; `components.css` is now generated                                              |
+| `editor/modals/13-modals-misc.css` (theme-picker section)                                     | `theme-select/13-theme-picker.css`                                                                             |
+| `shell/110-sandbox-banner.css` (example shelf)                                                | `list/110-sandbox-examples.css`; the global banner remains in shell                                            |
+| `share-viewer/75-share-viewer.css` (revocation dialog)                                        | `editor/modals/19-modals-revoke.css`; viewer styles remain in share-viewer                                     |
+
+Moving a sheet changes its position in the cascade. In particular, modal bases now precede all feature styles, and editor layout follows shell utilities. Verify fork overrides that rely on source order, even when their selectors have not changed. Existing path-based spacing budgets move with their declarations without increasing the total budget.

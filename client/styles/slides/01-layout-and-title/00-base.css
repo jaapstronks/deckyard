@@ -4,10 +4,17 @@
    Foundation styles for all slides. Uses design tokens from 00-tokens.css.
    ============================================================================ */
 
+/* Every box in a slide measures its padding and border inside its width
+   (B230). The app bundles get the same rule from `shared/primitives.css`; it
+   is repeated here because the slide chain also loads on its own (the MCP
+   preview), and a slide must lay out the same wherever it renders. */
+:where(.slide, .slide *, .slide *::before, .slide *::after) {
+  box-sizing: border-box;
+}
+
 .slide {
   width: 100%;
   height: 100%;
-  box-sizing: border-box;
   padding: var(--slide-padding);
   color: var(--slide-on-surface);
   background: var(--slide-bg, var(--slide-surface));

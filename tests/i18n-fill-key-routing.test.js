@@ -9,9 +9,10 @@
  *
  * It drifted, the way a hand-kept table does. `organization` was never added,
  * so a new `organization.*` key routed to `common.json` while `en/` files its
- * 81 existing organization keys in `settings.json` — the same misfiling B137
- * fixed for existing keys, reappearing one level up for new ones. Three rows
- * (`cookies`, `export`, `shareViewer`) named prefixes with no `en/` key at all.
+ * 81 existing organization keys in `settings.json` — the same misfiling already
+ * fixed for existing keys (B137), reappearing one level up for new ones. Three
+ * rows (`cookies`, `export`, `shareViewer`) named prefixes with no `en/` key at
+ * all.
  *
  * The table is gone: the fallback is derived from where `en/`'s keys under that
  * prefix already live. This pins the two properties that makes it worth having

@@ -65,9 +65,8 @@ export default {
     },
     // Background image is the generic, type-agnostic `slideBgImage` field
     // (added by withGlobalSlideFields, rendered by injectSlideBackground). The
-    // title type used to carry its own `bgImage`/`bgAlt` pair — now a read-only
-    // render fallback for un-migrated decks, folded into `slideBgImage` on edit
-    // (see ../legacy-bg-image.js).
+    // title type used to carry its own `bgImage`/`bgAlt` pair; the read funnel
+    // folds it into `slideBgImage` (schema v21 -> v22, ../legacy-bg-image.js).
     //
     // Background colour and logo corner are two compact controls that read as
     // one "chrome" choice, so they share a form row (see form-layout.js). The

@@ -2,8 +2,8 @@
  * `createComment` in `server/services/comments.js` — the one comment-create
  * flow under the internal route, the public v1 API and MCP (A7.4, B518).
  *
- * Before B518 each contract carried its own copy, and three things had
- * drifted. This file pins each of them at the service, so no contract can
+ * Each contract used to carry its own copy, and three things had drifted
+ * (B518). This file pins each of them at the service, so no contract can
  * drift again by keeping a copy:
  *
  *   1. **the slide snapshot** — the internal route stored none; now every
@@ -15,8 +15,9 @@
  *      mailed nobody; now the subscription resolver decides for every
  *      contract, and a comment from an actor without a request mails too.
  *
- * Plus the internal contract's two-credential rule: the account comments when
- * it may, otherwise the guest session on the deck does.
+ * Plus the signed-in route's one-credential rule (D228): the account comments
+ * or is refused; a guest session cookie beside it is no fallback, because a
+ * guest comments through their own route under the share token.
  *
  * Run with: node --test tests/comment-service.test.js
  */
@@ -35,8 +36,7 @@ const OTHER_DECK = 'deck-other';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
@@ -45,6 +45,8 @@ const { AppError } = await import('../server/utils/errors.js');
 const { withErrorHandler } = await import('../server/utils/http.js');
 const { handlePresentationCommentsCreate } =
   await import('../server/routes/api/presentations/comments.js');
+const { getGuestBySessionToken } =
+  await import('../server/storage/share-links/index.js');
 
 const OWNER = {
   id: 'user-owner',
@@ -93,7 +95,6 @@ test.after(() => {
   globalThis.fetch = realFetch;
   delete process.env.BREVO_API_KEY;
   delete process.env.APP_URL;
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -417,7 +418,7 @@ test('an empty or too-long body is refused with 400', async () => {
   );
 });
 
-test('a signed-in account without the right falls back to its guest session', async () => {
+test('a signed-in account without the right is 403, a guest session beside it notwithstanding', async () => {
   await seed();
   const res = responseDouble();
   await withErrorHandler('test', handlePresentationCommentsCreate)(
@@ -433,8 +434,18 @@ test('a signed-in account without the right falls back to its guest session', as
     },
     PRIVATE_DECK,
   );
-  assert.equal(res.statusCode, 201);
-  const row = stored(res.body.comment.id);
+  assert.equal(res.statusCode, 403, 'one path per kind of commenter (D228)');
+});
+
+test('a share-link guest comments through the service under their guest row, with a snapshot', async () => {
+  await seed();
+  const guestInfo = await getGuestBySessionToken(GUEST.sessionToken);
+  const { comment } = await createComment(
+    { repoRoot: null, organizationId: guestInfo.organizationId },
+    { guest: guestInfo.guest, shareLink: guestInfo.shareLink },
+    { presentationId: PRIVATE_DECK, body: 'Via the share link', slideId: 's1' },
+  );
+  const row = stored(comment.id);
   assert.equal(row.author_guest_id, GUEST.id);
   assert.equal(row.author_user_id, null);
   assert.equal(row.slide_snapshot?.id, 's1', 'the guest path snapshots too');

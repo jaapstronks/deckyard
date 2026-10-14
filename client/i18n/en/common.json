@@ -135,6 +135,7 @@
   "common.previous": "Previous slide",
   "common.reload": "Reload",
   "common.remove": "Remove",
+  "common.rowRemoved": "{label} removed.",
   "common.save": "Save",
   "common.saveFailed": "Save failed",
   "common.saveFailedAborted": "Could not save; aborted.",

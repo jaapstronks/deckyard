@@ -41,7 +41,7 @@ const DECK_ID = 'd0000003-0000-4000-8000-000000000003';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleSlides } =
   await import('../server/routes/public-api/v1/slides.js');
 const { __store } = await import('../server/storage/presentations/index.js');
@@ -482,6 +482,8 @@ test('an explicit null still clears the column', async () => {
     DECK_ID,
     { description: null, settings: null, i18n: null, published: null },
     { organizationId: ORG, actorEmail: OWNER },
+    {},
+    { storageScope: { organizationId: ORG, actorEmail: OWNER } },
   );
 
   const row = storedDeck(db);
@@ -499,6 +501,8 @@ test('a body that mentions nothing but the title moves nothing but the title', a
     DECK_ID,
     { title: 'Andere titel' },
     { organizationId: ORG, actorEmail: OWNER },
+    {},
+    { storageScope: { organizationId: ORG, actorEmail: OWNER } },
   );
 
   const row = storedDeck(db);

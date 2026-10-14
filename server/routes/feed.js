@@ -57,7 +57,7 @@ export async function handleFeed({ repoRoot, req, res, url }) {
   const orgId = getDefaultOrganizationId();
   let org;
   try {
-    org = await getOrganizationById(orgId);
+    org = await getOrganizationById({ repoRoot, organizationId: orgId }, orgId);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');

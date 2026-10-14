@@ -178,14 +178,15 @@ function validateTagNames(tagNames) {
  * lookup lowercases through PostgreSQL and the list is deduplicated on the tag
  * it resolved to, never on a JavaScript approximation of `lower()` (B370).
  *
+ * @param {import('./scope.js').StorageScope} scope - The row's organization
  * @param {object} params
  * @param {'presentation_tags'|'slide_library_tags'} params.linkTable
  * @param {string} params.rowId - The presentation or library item
- * @param {string} params.orgId
  * @param {string[]} params.tagNames
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
-export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
+export async function replaceTagLinks(scope, { linkTable, rowId, tagNames }) {
+  const orgId = getOrgId(resolveScope(scope, 'replaceTagLinks'));
   const link = LINK_TABLES[linkTable];
   // Reaching this with another table is a caller bug, not an input error.
   if (!link) {
@@ -239,12 +240,12 @@ export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
 }
 
 /**
- * List all tags of the storageScope's organization.
- * @param {import('./scope.js').StorageScope} storageScope
+ * List all tags of the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<Array<{id: string, name: string, count: number}>>}
  */
-export async function listTags(storageScope) {
-  const ctx = resolveScope(storageScope, 'listTags');
+export async function listTags(scope) {
+  const ctx = resolveScope(scope, 'listTags');
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -270,12 +271,12 @@ export async function listTags(storageScope) {
 
 /**
  * Get tags for a specific presentation.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} presentationId - Presentation ID
  * @returns {Promise<Array<{id: string, name: string}>>}
  */
-export async function getTagsForPresentation(storageScope, presentationId) {
-  const ctx = resolveScope(storageScope, 'getTagsForPresentation');
+export async function getTagsForPresentation(scope, presentationId) {
+  const ctx = resolveScope(scope, 'getTagsForPresentation');
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -296,12 +297,12 @@ export async function getTagsForPresentation(storageScope, presentationId) {
 
 /**
  * Get tags for multiple presentations at once (for list views).
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string[]} presentationIds - Array of presentation IDs
  * @returns {Promise<Map<string, Array<{id: string, name: string}>>>}
  */
-export async function getTagsForPresentations(storageScope, presentationIds) {
-  const ctx = resolveScope(storageScope, 'getTagsForPresentations');
+export async function getTagsForPresentations(scope, presentationIds) {
+  const ctx = resolveScope(scope, 'getTagsForPresentations');
   if (!presentationIds || presentationIds.length === 0) {
     return new Map();
   }
@@ -340,27 +341,21 @@ export async function getTagsForPresentations(storageScope, presentationIds) {
  * Set tags for a presentation (replaces existing tags).
  * Creates new tags if they don't exist. Atomic: see {@link replaceTagLinks}.
  * A deck outside the scope's organization is `not_found`.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} presentationId - Presentation ID
  * @param {string[]} tagNames - Array of tag names
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
-export async function setTagsForPresentation(
-  storageScope,
-  presentationId,
-  tagNames,
-) {
-  const ctx = resolveScope(storageScope, 'setTagsForPresentation');
-  return replaceTagLinks({
+export async function setTagsForPresentation(scope, presentationId, tagNames) {
+  return replaceTagLinks(scope, {
     linkTable: 'presentation_tags',
     rowId: presentationId,
-    orgId: getOrgId(ctx),
     tagNames,
   });
 }
 
 /**
- * Create a new tag in the storageScope's organization (if it doesn't exist).
+ * Create a new tag in the scope's organization (if it doesn't exist).
  *
  * Takes the same name contract as a tag write ({@link replaceTagLinks}) — one
  * answer to "what may a tag be called", not one per entry point — and creates
@@ -369,12 +364,12 @@ export async function setTagsForPresentation(
  * vocabulary rather than a thrown 400, so both surfaces answer in the one
  * envelope `storageError()` writes.
  *
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} name - Tag name
  * @returns {Promise<{ok: true, tag: {id: string, name: string}}|{ok: false, reason: 'invalid', field: 'name', fieldProblem: object, message: string}>}
  */
-export async function createTag(storageScope, name) {
-  const ctx = resolveScope(storageScope, 'createTag');
+export async function createTag(scope, name) {
+  const ctx = resolveScope(scope, 'createTag');
 
   // The name is judged before the database is reached: a refusal is the
   // caller's input, and it needs nothing looked up to say so.
@@ -401,13 +396,13 @@ export async function createTag(storageScope, name) {
 }
 
 /**
- * Delete a tag from the storageScope's organization (and all its associations).
- * @param {import('./scope.js').StorageScope} storageScope
+ * Delete a tag from the scope's organization (and all its associations).
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} tagId - Tag ID
  * @returns {Promise<boolean>}
  */
-export async function deleteTag(storageScope, tagId) {
-  const ctx = resolveScope(storageScope, 'deleteTag');
+export async function deleteTag(scope, tagId) {
+  const ctx = resolveScope(scope, 'deleteTag');
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -436,19 +431,19 @@ export async function deleteTag(storageScope, tagId) {
  * The prefix is escaped, so a typed `%`, `_` or `\` is a letter to match and
  * not a wildcard.
  *
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} prefix - Search prefix
  * @param {number} [limit=10] - Max results
  * @returns {Promise<Array<{id: string, name: string, count: number}>>}
  */
-export async function searchTags(storageScope, prefix, limit = 10) {
-  const ctx = resolveScope(storageScope, 'searchTags');
+export async function searchTags(scope, prefix, limit = 10) {
+  const ctx = resolveScope(scope, 'searchTags');
   const db = getDb();
   const orgId = getOrgId(ctx);
 
   const searchTerm = String(prefix || '').trim();
   if (!searchTerm) {
-    return listTags(storageScope);
+    return listTags(scope);
   }
   const pattern = `${escapeLikePattern(searchTerm)}%`;
 

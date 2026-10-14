@@ -1,0 +1,4720 @@
+{
+  "measuredAt": "2026-10-13",
+  "base": "108237429d162267f19be42e97d9274d646b7a14",
+  "callerRoots": ["server", "client", "shared", "scripts", "tests", "capture"],
+  "excludedDirectories": ["vendor", "fixtures"],
+  "violations": [
+    "server/storage/activity-events.js :: deleteOldActivityEvents :: scope-first",
+    "server/storage/analytics/aggregations.js :: getCompletionCounts :: scope-first",
+    "server/storage/analytics/aggregations.js :: getDetailedSlideEngagement :: scope-first",
+    "server/storage/analytics/aggregations.js :: getInteractionHeatmapData :: scope-first",
+    "server/storage/analytics/aggregations.js :: getPresentationAnalyticsOverview :: scope-first",
+    "server/storage/analytics/aggregations.js :: getViewerJourneyData :: scope-first",
+    "server/storage/analytics/dashboard.js :: getDashboardSummary :: scope-first",
+    "server/storage/analytics/dashboard.js :: getDashboardTimeline :: scope-first",
+    "server/storage/analytics/dashboard.js :: getPresentationsWithAnalytics :: scope-first",
+    "server/storage/analytics/dashboard.js :: getSourceBreakdown :: scope-first",
+    "server/storage/analytics/dashboard.js :: getTopPresentations :: scope-first",
+    "server/storage/analytics/slide-views.js :: deleteOldSlideViews :: scope-first",
+    "server/storage/analytics/slide-views.js :: endAllSlideViewsForSession :: scope-first",
+    "server/storage/analytics/slide-views.js :: transitionToSlide :: scope-first",
+    "server/storage/analytics/view-sessions-gdpr.js :: anonymizeOldIpAddresses :: scope-first",
+    "server/storage/analytics/view-sessions-gdpr.js :: deleteUserAnalyticsData :: scope-first",
+    "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForDevice :: scope-first",
+    "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForSession :: scope-first",
+    "server/storage/analytics/view-sessions-gdpr.js :: exportUserAnalyticsData :: scope-first",
+    "server/storage/analytics/view-sessions.js :: createViewSession :: scope-first",
+    "server/storage/analytics/view-sessions.js :: deleteOldViewSessions :: scope-first",
+    "server/storage/analytics/view-sessions.js :: getActiveViewerCount :: scope-first",
+    "server/storage/analytics/view-sessions.js :: getViewSessionsForPresentation :: scope-first",
+    "server/storage/analytics/weekly-summary.js :: getTeamWeeklyAnalytics :: scope-first",
+    "server/storage/analytics/weekly-summary.js :: getWeeklyAnalyticsForUser :: scope-first",
+    "server/storage/boot-check.js :: pendingMigrationsError :: scope-first",
+    "server/storage/boot-check.js :: strandedFileDataError :: scope-first",
+    "server/storage/collaborators.js :: addCollaborator :: scope-first",
+    "server/storage/collaborators.js :: getCollaboratorPermission :: scope-first",
+    "server/storage/collaborators.js :: listCollaborators :: scope-first",
+    "server/storage/collaborators.js :: removeCollaborator :: scope-first",
+    "server/storage/collaborators.js :: updateCollaboratorPermission :: scope-first",
+    "server/storage/collections.js :: createOrganizationCollection :: scope-first",
+    "server/storage/collections.js :: createPersonalCollection :: scope-first",
+    "server/storage/collections.js :: deleteOrganizationCollection :: scope-first",
+    "server/storage/collections.js :: deletePersonalCollection :: scope-first",
+    "server/storage/collections.js :: getOrganizationCollection :: scope-first",
+    "server/storage/collections.js :: getPersonalCollection :: scope-first",
+    "server/storage/collections.js :: listOrganizationCollections :: scope-first",
+    "server/storage/collections.js :: listPersonalCollections :: scope-first",
+    "server/storage/collections.js :: updateOrganizationCollection :: scope-first",
+    "server/storage/collections.js :: updatePersonalCollection :: scope-first",
+    "server/storage/display-identity.js :: resolveDisplayNames :: scope-first",
+    "server/storage/display-identity.js :: resolveNamesForAddresses :: scope-first",
+    "server/storage/identity-resolver.js :: resolveIdentity :: scope-first",
+    "server/storage/identity-resolver.js :: resolveIdentityByEmail :: scope-first",
+    "server/storage/identity-verification.js :: verifyIdentityConsistency :: scope-first",
+    "server/storage/identity.js :: getUserByEmailGlobal :: scope-first",
+    "server/storage/identity.js :: resolveActiveMembership :: scope-first",
+    "server/storage/identity.js :: resolveActiveOrganization :: scope-first",
+    "server/storage/image-library-usage.js :: getImageLibraryUsage :: scope-first",
+    "server/storage/image-library.js :: createImageLibraryItem :: scope-first",
+    "server/storage/image-library.js :: deleteImageLibraryItem :: scope-first",
+    "server/storage/image-library.js :: getImageFavorites :: scope-first",
+    "server/storage/image-library.js :: getImageLibraryItem :: scope-first",
+    "server/storage/image-library.js :: isImageFavorite :: scope-first",
+    "server/storage/image-library.js :: listImageLibrary :: scope-first",
+    "server/storage/image-library.js :: stampFavorites :: scope-first",
+    "server/storage/image-library.js :: toggleImageFavorite :: scope-first",
+    "server/storage/image-library.js :: updateImageLibraryItem :: scope-first",
+    "server/storage/interaction-slides.js :: ensureInteractionSlide :: scope-first",
+    "server/storage/interaction-slides.js :: getInteractionSlide :: scope-first",
+    "server/storage/interaction-slides.js :: updateInteractionSlide :: scope-first",
+    "server/storage/lifecycle.js :: closeStorage :: scope-first",
+    "server/storage/lifecycle.js :: initializeStorage :: scope-first",
+    "server/storage/live-sessions/close.js :: closeSession :: scope-first",
+    "server/storage/live-sessions/db.js :: countPersistedSessions :: scope-first",
+    "server/storage/live-sessions/db.js :: deletePersistedSession :: scope-first",
+    "server/storage/live-sessions/db.js :: hydrateSession :: scope-first",
+    "server/storage/live-sessions/db.js :: hydrateSessionsForPresentation :: scope-first",
+    "server/storage/live-sessions/db.js :: persistSession :: scope-first",
+    "server/storage/live-sessions/db.js :: schedulePersist :: scope-first",
+    "server/storage/live-sessions/db.js :: sweepExpiredSessions :: scope-first",
+    "server/storage/live-sessions/sse.js :: touchSessionSync :: scope-first",
+    "server/storage/login-membership.js :: ensureMembership :: scope-first",
+    "server/storage/password-reset.js :: cleanupOldAuditLogs :: scope-first",
+    "server/storage/password-reset.js :: getPasswordChangedAt :: scope-first",
+    "server/storage/password-reset.js :: hasDatabaseCredentials :: scope-first",
+    "server/storage/password-reset.js :: logAuthEvent :: scope-first",
+    "server/storage/password-reset.js :: verifyUserPassword :: scope-first",
+    "server/storage/presentations/cache.js :: getPresentationCached :: scope-first",
+    "server/storage/presentations/index.js :: createPresentation :: scope-first",
+    "server/storage/presentations/index.js :: createPresentationVersion :: scope-first",
+    "server/storage/presentations/index.js :: deletePresentation :: scope-first",
+    "server/storage/presentations/index.js :: deletePresentationRecord :: scope-first",
+    "server/storage/presentations/index.js :: duplicatePresentation :: scope-first",
+    "server/storage/presentations/index.js :: getFirstSlidesForIds :: scope-first",
+    "server/storage/presentations/index.js :: getPresentation :: scope-first",
+    "server/storage/presentations/index.js :: getPresentationVersion :: scope-first",
+    "server/storage/presentations/index.js :: listPresentationVersions :: scope-first",
+    "server/storage/presentations/index.js :: listPresentations :: scope-first",
+    "server/storage/presentations/index.js :: listTrashedPresentations :: scope-first",
+    "server/storage/presentations/index.js :: listTrashedPresentationsBefore :: scope-first",
+    "server/storage/presentations/index.js :: prunePresentationVersions :: scope-first",
+    "server/storage/presentations/index.js :: restorePresentation :: scope-first",
+    "server/storage/presentations/index.js :: updatePresentation :: scope-first",
+    "server/storage/presentations/slide-notes.js :: updateSlideNotes :: scope-first",
+    "server/storage/presentations/ydocs.js :: deleteYDocState :: scope-first",
+    "server/storage/presentations/ydocs.js :: getYDocState :: scope-first",
+    "server/storage/presentations/ydocs.js :: setYDocState :: scope-first",
+    "server/storage/published.js :: getPublishedById :: scope-first",
+    "server/storage/published.js :: getPublishedIndex :: scope-first",
+    "server/storage/published.js :: listPublishedForFeed :: scope-first",
+    "server/storage/published.js :: removePublishedEntry :: scope-first",
+    "server/storage/published.js :: updatePublishedSlug :: scope-first",
+    "server/storage/published.js :: upsertPublishedEntry :: scope-first",
+    "server/storage/settings.js :: installationDefaultThemeId :: scope-first",
+    "server/storage/settings.js :: resolveSeedThemeSlug :: scope-first",
+    "server/storage/share-links/access-log.js :: getShareLinkAccessLog :: scope-first",
+    "server/storage/share-links/access-log.js :: logShareLinkAccess :: scope-first",
+    "server/storage/share-links/crud.js :: getValidShareLinkById :: scope-first",
+    "server/storage/share-links/crud.js :: shareLinkCreatorNames :: scope-first",
+    "server/storage/share-links/guests.js :: requestGuestVerification :: scope-first",
+    "server/storage/share-links/index.js :: cleanupExpiredShareLinks :: scope-first",
+    "server/storage/slide-library-usage.js :: listSlideLibraryUsage :: scope-first",
+    "server/storage/slide-library-usage.js :: recordSlideLibraryUsage :: scope-first",
+    "server/storage/slide-library.js :: createOrganizationLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: createPersonalLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: deleteOrganizationLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: deletePersonalLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: getOrganizationLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: getTagsForSlideLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: getTagsForSlideLibraryItems :: scope-first",
+    "server/storage/slide-library.js :: listOrganizationLibrary :: scope-first",
+    "server/storage/slide-library.js :: listPersonalLibrary :: scope-first",
+    "server/storage/slide-library.js :: setTagsForSlideLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: updateOrganizationLibraryItem :: scope-first",
+    "server/storage/slide-library.js :: updatePersonalLibraryItem :: scope-first",
+    "server/storage/slide-locks.js :: cleanupExpiredSlideLocks :: scope-first",
+    "server/storage/tags.js :: createTag :: scope-first",
+    "server/storage/tags.js :: deleteTag :: scope-first",
+    "server/storage/tags.js :: getTagsForPresentation :: scope-first",
+    "server/storage/tags.js :: getTagsForPresentations :: scope-first",
+    "server/storage/tags.js :: listTags :: scope-first",
+    "server/storage/tags.js :: replaceTagLinks :: scope-first",
+    "server/storage/tags.js :: searchTags :: scope-first",
+    "server/storage/tags.js :: setTagsForPresentation :: scope-first",
+    "server/storage/themes.js :: listSeedThemes :: scope-first",
+    "server/storage/user-organizations/memberships.js :: addMember :: scope-first",
+    "server/storage/user-organizations/memberships.js :: countOrganizationMembers :: scope-first",
+    "server/storage/user-organizations/memberships.js :: getMembership :: scope-first",
+    "server/storage/user-organizations/memberships.js :: getMembershipByEmail :: scope-first",
+    "server/storage/user-organizations/memberships.js :: getOrganizationMember :: scope-first",
+    "server/storage/user-organizations/memberships.js :: listOrganizationMembers :: scope-first",
+    "server/storage/user-organizations/memberships.js :: listUserOrganizations :: scope-first",
+    "server/storage/user-organizations/memberships.js :: removeMember :: scope-first",
+    "server/storage/user-organizations/memberships.js :: transferOwnership :: scope-first",
+    "server/storage/user-organizations/memberships.js :: updateMemberDesigner :: scope-first",
+    "server/storage/user-organizations/memberships.js :: updateMemberRole :: scope-first",
+    "server/storage/user-organizations/organizations.js :: createOrganization :: scope-first",
+    "server/storage/user-organizations/organizations.js :: deleteOrganization :: scope-first",
+    "server/storage/user-organizations/organizations.js :: getOrganizationById :: scope-first",
+    "server/storage/user-organizations/organizations.js :: getOrganizationBySlug :: scope-first",
+    "server/storage/user-organizations/organizations.js :: updateOrganization :: scope-first",
+    "server/storage/utils/db-guard.js :: withDbGuard :: scope-first",
+    "server/storage/utils/helpers.js :: getUserIdByEmail :: scope-first"
+  ],
+  "exports": [
+    {
+      "key": "server/storage/access-attempts.js :: logAccessAttempt",
+      "line": 31,
+      "params": ["scope", "data"],
+      "exception": null,
+      "callers": ["server/services/access-notifications.js:48"]
+    },
+    {
+      "key": "server/storage/access-attempts.js :: markAuthorNotified",
+      "line": 119,
+      "params": ["scope", "attemptId"],
+      "exception": null,
+      "callers": ["server/services/access-notifications.js:102"]
+    },
+    {
+      "key": "server/storage/access-attempts.js :: shouldNotifyAuthor",
+      "line": 70,
+      "params": ["scope", "presentationId", "accessorEmail", "accessorIp"],
+      "exception": null,
+      "callers": ["server/services/access-notifications.js:61"]
+    },
+    {
+      "key": "server/storage/activity-events.js :: createActivityEvent",
+      "line": 61,
+      "params": ["scope", "data"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/collaborators.js:260",
+        "server/routes/api/collaborators.js:416",
+        "server/routes/api/collaborators.js:477",
+        "server/services/activity-events.js:112",
+        "server/services/activity-events.js:139",
+        "server/services/activity-events.js:162",
+        "server/services/activity-events.js:188",
+        "server/services/activity-events.js:22",
+        "server/services/activity-events.js:220",
+        "server/services/activity-events.js:247",
+        "server/services/activity-events.js:46",
+        "server/services/activity-events.js:85",
+        "server/services/ownership.js:52",
+        "tests/pg/user-event-reads.pgtest.js:42"
+      ]
+    },
+    {
+      "key": "server/storage/activity-events.js :: deleteOldActivityEvents",
+      "line": 190,
+      "params": ["olderThan"],
+      "exception": null,
+      "callers": ["server/jobs/retention-cleanup.js:149"]
+    },
+    {
+      "key": "server/storage/activity-events.js :: getUnreadEventCountsByPresentation",
+      "line": 271,
+      "params": ["scope", "userEmail"],
+      "exception": null,
+      "callers": ["server/routes/api/activity.js:60"]
+    },
+    {
+      "key": "server/storage/activity-events.js :: listActivityEvents",
+      "line": 106,
+      "params": ["scope", "opts"],
+      "exception": null,
+      "callers": ["server/routes/api/activity.js:158"]
+    },
+    {
+      "key": "server/storage/activity-events.js :: updateUserEventRead",
+      "line": 235,
+      "params": ["scope", "userEmail", "eventId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/activity.js:91",
+        "tests/pg/user-event-reads.pgtest.js:102",
+        "tests/pg/user-event-reads.pgtest.js:79",
+        "tests/pg/user-event-reads.pgtest.js:90",
+        "tests/pg/user-event-reads.pgtest.js:91"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/aggregations.js :: getCompletionCounts",
+      "line": 30,
+      "params": ["db", "presentationIds", "opts"],
+      "exception": null,
+      "callers": [
+        "server/storage/analytics/aggregations.js:172",
+        "server/storage/analytics/aggregations.js:406",
+        "server/storage/analytics/dashboard.js:140",
+        "server/storage/analytics/dashboard.js:274",
+        "server/storage/analytics/dashboard.js:450"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/aggregations.js :: getDetailedSlideEngagement",
+      "line": 202,
+      "params": ["presentationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/metrics.js:67",
+        "server/routes/api/analytics/reports.js:53"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/aggregations.js :: getInteractionHeatmapData",
+      "line": 285,
+      "params": ["presentationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/metrics.js:91",
+        "server/routes/api/analytics/reports.js:57"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/aggregations.js :: getPresentationAnalyticsOverview",
+      "line": 105,
+      "params": ["presentationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/metrics.js:40",
+        "server/routes/api/analytics/reports.js:39",
+        "tests/pg/analytics-completion-rate.pgtest.js:147",
+        "tests/pg/analytics-completion-rate.pgtest.js:153",
+        "tests/pg/analytics-completion-rate.pgtest.js:159",
+        "tests/pg/sandbox-insights-seed.pgtest.js:119"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/aggregations.js :: getViewerJourneyData",
+      "line": 343,
+      "params": ["presentationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/metrics.js:115",
+        "server/routes/api/analytics/reports.js:40",
+        "tests/pg/analytics-completion-rate.pgtest.js:148"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/dashboard.js :: getDashboardSummary",
+      "line": 75,
+      "params": ["userEmail", "organizationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/dashboard.js:52",
+        "tests/pg/analytics-completion-rate.pgtest.js:116",
+        "tests/pg/sandbox-insights-seed.pgtest.js:101"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/dashboard.js :: getDashboardTimeline",
+      "line": 187,
+      "params": ["userEmail", "organizationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/dashboard.js:53",
+        "tests/pg/sandbox-insights-seed.pgtest.js:112"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/dashboard.js :: getPresentationsWithAnalytics",
+      "line": 387,
+      "params": ["userEmail", "organizationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/dashboard.js:103",
+        "tests/pg/analytics-completion-rate.pgtest.js:134",
+        "tests/pg/presentation-email-normalized.pgtest.js:170"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/dashboard.js :: getSourceBreakdown",
+      "line": 298,
+      "params": ["userEmail", "organizationId", "opts"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/dashboard.js:58"]
+    },
+    {
+      "key": "server/storage/analytics/dashboard.js :: getTopPresentations",
+      "line": 233,
+      "params": ["userEmail", "organizationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/dashboard.js:54",
+        "tests/pg/analytics-completion-rate.pgtest.js:126"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/reports.js :: createAnalyticsReport",
+      "line": 47,
+      "params": ["scope", "data"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/reports.js:172"]
+    },
+    {
+      "key": "server/storage/analytics/reports.js :: deleteAnalyticsReport",
+      "line": 304,
+      "params": ["scope", "reportId"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/reports.js:285"]
+    },
+    {
+      "key": "server/storage/analytics/reports.js :: getAnalyticsReport",
+      "line": 113,
+      "params": ["scope", "reportId"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/reports.js:203"]
+    },
+    {
+      "key": "server/storage/analytics/reports.js :: getAnalyticsReportByToken",
+      "line": 159,
+      "params": ["shareToken"],
+      "exception": "token: resolves the globally unique analytics-report share token",
+      "callers": ["server/routes/api/analytics/public.js:61"]
+    },
+    {
+      "key": "server/storage/analytics/reports.js :: listAnalyticsReports",
+      "line": 198,
+      "params": ["scope", "presentationId", "opts"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/reports.js:98"]
+    },
+    {
+      "key": "server/storage/analytics/reports.js :: regenerateShareToken",
+      "line": 330,
+      "params": ["scope", "reportId"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/reports.js:312"]
+    },
+    {
+      "key": "server/storage/analytics/reports.js :: updateAnalyticsReport",
+      "line": 244,
+      "params": ["scope", "reportId", "updates"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/reports.js:258"]
+    },
+    {
+      "key": "server/storage/analytics/seeded-sessions.js :: insertSeededViewSessions",
+      "line": 27,
+      "params": ["scope", "presentationId", "sessions"],
+      "exception": null,
+      "callers": [
+        "server/sandbox/analytics.js:198",
+        "tests/pg/sandbox-insights-seed.pgtest.js:160"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/slide-views.js :: deleteOldSlideViews",
+      "line": 128,
+      "params": ["olderThan"],
+      "exception": null,
+      "callers": ["server/jobs/analytics-cleanup.js:64"]
+    },
+    {
+      "key": "server/storage/analytics/slide-views.js :: endAllSlideViewsForSession",
+      "line": 20,
+      "params": ["viewSessionId"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics-track.js:486"]
+    },
+    {
+      "key": "server/storage/analytics/slide-views.js :: transitionToSlide",
+      "line": 54,
+      "params": ["data"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics-track.js:570"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions-gdpr.js :: anonymizeOldIpAddresses",
+      "line": 251,
+      "params": ["olderThan"],
+      "exception": null,
+      "callers": ["server/jobs/analytics-cleanup.js:60"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions-gdpr.js :: deleteUserAnalyticsData",
+      "line": 129,
+      "params": [null],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/gdpr.js:87"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForDevice",
+      "line": 168,
+      "params": [null],
+      "exception": null,
+      "callers": ["server/routes/api/analytics-track.js:664"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForSession",
+      "line": 199,
+      "params": [null],
+      "exception": null,
+      "callers": ["server/routes/api/analytics-track.js:665"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions-gdpr.js :: exportUserAnalyticsData",
+      "line": 49,
+      "params": [null],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/gdpr.js:50"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: countAnalyticsRows",
+      "line": 306,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/jobs/analytics-cleanup.js:121"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: createViewSession",
+      "line": 48,
+      "params": ["data"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics-track.js:351"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: deleteOldViewSessions",
+      "line": 287,
+      "params": ["olderThan"],
+      "exception": null,
+      "callers": ["server/jobs/analytics-cleanup.js:68"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: endViewSession",
+      "line": 144,
+      "params": ["sessionToken", "exitData"],
+      "exception": "token: ends the anonymous session identified by its capability",
+      "callers": ["server/routes/api/analytics-track.js:489"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: getActiveViewerCount",
+      "line": 261,
+      "params": ["presentationId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics/realtime.js:45",
+        "server/routes/api/analytics/realtime.js:53"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: getViewSessionByToken",
+      "line": 186,
+      "params": ["sessionToken"],
+      "exception": "token: resolves an anonymous viewer session capability",
+      "callers": [
+        "server/routes/api/analytics-track.js:484",
+        "server/routes/api/analytics-track.js:564",
+        "server/routes/api/analytics-track.js:649"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: getViewSessionsForPresentation",
+      "line": 216,
+      "params": ["presentationId", "opts"],
+      "exception": null,
+      "callers": ["server/routes/api/analytics/metrics.js:151"]
+    },
+    {
+      "key": "server/storage/analytics/view-sessions.js :: updateViewSession",
+      "line": 100,
+      "params": ["sessionToken", "updates"],
+      "exception": "token: updates the anonymous session identified by its capability",
+      "callers": [
+        "server/routes/api/analytics-track.js:431",
+        "server/routes/api/analytics-track.js:582"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/weekly-summary.js :: getTeamWeeklyAnalytics",
+      "line": 291,
+      "params": ["organizationId"],
+      "exception": null,
+      "callers": [
+        "server/jobs/digest-email.js:179",
+        "tests/pg/presentation-email-normalized.pgtest.js:190"
+      ]
+    },
+    {
+      "key": "server/storage/analytics/weekly-summary.js :: getWeeklyAnalyticsForUser",
+      "line": 63,
+      "params": ["userId", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/jobs/digest-email.js:131",
+        "tests/pg/presentation-email-normalized.pgtest.js:183"
+      ]
+    },
+    {
+      "key": "server/storage/api-keys.js :: countActiveApiKeys",
+      "line": 168,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/jobs/mcp-session-sweep.js:39"]
+    },
+    {
+      "key": "server/storage/api-keys.js :: createApiKey",
+      "line": 106,
+      "params": ["scope", null],
+      "exception": null,
+      "callers": [
+        "scripts/create-api-key.js:49",
+        "server/routes/api/api-keys.js:55"
+      ]
+    },
+    {
+      "key": "server/storage/api-keys.js :: getApiKeyById",
+      "line": 350,
+      "params": ["scope", "keyId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/api-keys.js:139",
+        "server/routes/api/api-keys.js:99"
+      ]
+    },
+    {
+      "key": "server/storage/api-keys.js :: listApiKeys",
+      "line": 285,
+      "params": ["scope", "options"],
+      "exception": null,
+      "callers": ["server/routes/api/api-keys.js:34"]
+    },
+    {
+      "key": "server/storage/api-keys.js :: revokeApiKey",
+      "line": 249,
+      "params": ["scope", "keyId", "revokerEmail"],
+      "exception": null,
+      "callers": ["server/routes/api/api-keys.js:161"]
+    },
+    {
+      "key": "server/storage/api-keys.js :: validateApiKey",
+      "line": 191,
+      "params": ["rawKey"],
+      "exception": "token: resolves the presented API key before a request scope exists",
+      "callers": [
+        "server/mcp/sse.js:120",
+        "server/routes/public-api/v1/middleware.js:75"
+      ]
+    },
+    {
+      "key": "server/storage/api-usage.js :: checkAiRateLimit",
+      "line": 173,
+      "params": ["apiKeyId", "tier"],
+      "exception": "telemetry: instance API-key quota counters, no organization-owned records",
+      "callers": [
+        "server/mcp/authorization.js:143",
+        "server/routes/public-api/v1/middleware.js:291"
+      ]
+    },
+    {
+      "key": "server/storage/api-usage.js :: checkExportRateLimit",
+      "line": 204,
+      "params": ["apiKeyId", "tier"],
+      "exception": "telemetry: instance API-key quota counters, no organization-owned records",
+      "callers": [
+        "server/mcp/authorization.js:161",
+        "server/routes/public-api/v1/middleware.js:326"
+      ]
+    },
+    {
+      "key": "server/storage/api-usage.js :: cleanupOldUsage",
+      "line": 293,
+      "params": [],
+      "exception": "telemetry: instance API-key quota counters, no organization-owned records",
+      "callers": ["server/jobs/retention-cleanup.js:138"]
+    },
+    {
+      "key": "server/storage/api-usage.js :: getRateLimitHeaders",
+      "line": 236,
+      "params": ["apiKeyId", "tier", "limitType"],
+      "exception": "telemetry: instance API-key quota counters, no organization-owned records",
+      "callers": [
+        "server/routes/public-api/v1/exports.js:74",
+        "server/routes/public-api/v1/middleware.js:300",
+        "server/routes/public-api/v1/middleware.js:335",
+        "server/routes/public-api/v1/middleware.js:404",
+        "server/routes/public-api/v1/middleware.js:536"
+      ]
+    },
+    {
+      "key": "server/storage/api-usage.js :: getTodayUsage",
+      "line": 83,
+      "params": ["apiKeyId"],
+      "exception": "telemetry: instance API-key quota counters, no organization-owned records",
+      "callers": [
+        "server/routes/api/api-keys.js:114",
+        "server/storage/api-usage.js:181",
+        "server/storage/api-usage.js:212",
+        "server/storage/api-usage.js:242",
+        "tests/pg/api-usage.pgtest.js:87"
+      ]
+    },
+    {
+      "key": "server/storage/api-usage.js :: getUsageHistory",
+      "line": 115,
+      "params": ["apiKeyId", "options"],
+      "exception": "telemetry: instance API-key quota counters, no organization-owned records",
+      "callers": ["server/routes/api/api-keys.js:108"]
+    },
+    {
+      "key": "server/storage/api-usage.js :: incrementUsage",
+      "line": 31,
+      "params": ["apiKeyId", "counters"],
+      "exception": "telemetry: instance API-key quota counters, no organization-owned records",
+      "callers": [
+        "server/mcp/authorization.js:85",
+        "server/routes/public-api/v1/middleware.js:365",
+        "server/routes/public-api/v1/middleware.js:374",
+        "server/routes/public-api/v1/middleware.js:383",
+        "tests/pg/api-usage.pgtest.js:68",
+        "tests/pg/api-usage.pgtest.js:77",
+        "tests/pg/api-usage.pgtest.js:78",
+        "tests/pg/api-usage.pgtest.js:94",
+        "tests/pg/api-usage.pgtest.js:95",
+        "tests/pg/api-usage.pgtest.js:96"
+      ]
+    },
+    {
+      "key": "server/storage/boot-check.js :: pendingMigrationsError",
+      "line": 57,
+      "params": [],
+      "exception": null,
+      "callers": [
+        "server/mcp/index.js:97",
+        "server/server.js:308",
+        "tests/storage-boot-check.test.js:205",
+        "tests/storage-boot-check.test.js:225",
+        "tests/storage-boot-check.test.js:235",
+        "tests/storage-boot-check.test.js:242",
+        "tests/storage-boot-check.test.js:248"
+      ]
+    },
+    {
+      "key": "server/storage/boot-check.js :: strandedFileDataError",
+      "line": 121,
+      "params": ["repoRoot"],
+      "exception": null,
+      "callers": [
+        "server/mcp/index.js:106",
+        "server/server.js:326",
+        "tests/storage-boot-check.test.js:103",
+        "tests/storage-boot-check.test.js:112",
+        "tests/storage-boot-check.test.js:121",
+        "tests/storage-boot-check.test.js:130",
+        "tests/storage-boot-check.test.js:139",
+        "tests/storage-boot-check.test.js:153",
+        "tests/storage-boot-check.test.js:75"
+      ]
+    },
+    {
+      "key": "server/storage/collaborators.js :: addCollaborator",
+      "line": 91,
+      "params": ["presentationId", "options"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/collaborators.js:190",
+        "server/storage/presentations/ownership.js:84",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:110",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:129",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:139",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:155",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:193",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:207",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:235",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:265",
+        "tests/pg/collaborator-user-id.pgtest.js:118",
+        "tests/pg/collaborator-user-id.pgtest.js:128",
+        "tests/pg/collaborator-user-id.pgtest.js:137",
+        "tests/pg/collaborator-user-id.pgtest.js:148",
+        "tests/pg/collaborator-user-id.pgtest.js:161",
+        "tests/pg/collaborator-user-id.pgtest.js:180"
+      ]
+    },
+    {
+      "key": "server/storage/collaborators.js :: getCollaboratorPermission",
+      "line": 422,
+      "params": ["presentationId", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/popular.js:96",
+        "server/routes/api/presentations/presentation.js:61",
+        "server/utils/presentation-authz/actor-access.js:139",
+        "server/utils/presentation-authz/actor-access.js:239",
+        "server/utils/presentation-authz/actor-access.js:304",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:116",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:122",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:130",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:134",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:141",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:189",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:273"
+      ]
+    },
+    {
+      "key": "server/storage/collaborators.js :: listCollaborators",
+      "line": 299,
+      "params": ["presentationId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/collaborators.js:358",
+        "server/services/comment-subscriptions.js:166",
+        "server/services/deck-activity-notifications.js:149"
+      ]
+    },
+    {
+      "key": "server/storage/collaborators.js :: listPresentationsSharedWithUser",
+      "line": 333,
+      "params": ["scope", "userEmail"],
+      "exception": null,
+      "callers": ["server/services/presentations.js:357"]
+    },
+    {
+      "key": "server/storage/collaborators.js :: removeCollaborator",
+      "line": 198,
+      "params": ["presentationId", "userEmail", "revokedBy", "options"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/collaborators.js:398",
+        "server/storage/presentations/ownership.js:71",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:132",
+        "tests/pg/collaborator-user-id.pgtest.js:140",
+        "tests/pg/collaborator-user-id.pgtest.js:164"
+      ]
+    },
+    {
+      "key": "server/storage/collaborators.js :: updateCollaboratorPermission",
+      "line": 251,
+      "params": ["presentationId", "userEmail", "permission"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/collaborators.js:464",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:140"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: createOrganizationCollection",
+      "line": 477,
+      "params": ["storageScope", "input", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:167",
+        "tests/pg/home-aggregation-route.pgtest.js:77",
+        "tests/pg/slide-collections-storage.pgtest.js:220",
+        "tests/pg/slide-collections-storage.pgtest.js:241",
+        "tests/pg/trash-library-user-id.pgtest.js:252"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: createPersonalCollection",
+      "line": 380,
+      "params": ["storageScope", "userEmail", "input", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:94",
+        "tests/pg/collection-membership-atomicity.pgtest.js:93",
+        "tests/pg/slide-collections-storage.pgtest.js:116",
+        "tests/pg/slide-collections-storage.pgtest.js:127",
+        "tests/pg/slide-collections-storage.pgtest.js:149",
+        "tests/pg/slide-collections-storage.pgtest.js:162",
+        "tests/pg/slide-collections-storage.pgtest.js:199",
+        "tests/pg/slide-collections-storage.pgtest.js:90"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: deleteOrganizationCollection",
+      "line": 520,
+      "params": ["storageScope", "id", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:204",
+        "tests/pg/slide-collections-storage.pgtest.js:275"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: deletePersonalCollection",
+      "line": 431,
+      "params": ["storageScope", "userEmail", "id"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:133",
+        "tests/pg/slide-collections-storage.pgtest.js:190",
+        "tests/pg/slide-collections-storage.pgtest.js:205"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: getOrganizationCollection",
+      "line": 464,
+      "params": ["storageScope", "id", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:177",
+        "tests/pg/trash-library-user-id.pgtest.js:270"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: getPersonalCollection",
+      "line": 369,
+      "params": ["storageScope", "userEmail", "id"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:104",
+        "tests/pg/collection-membership-atomicity.pgtest.js:124",
+        "tests/pg/slide-collections-storage.pgtest.js:106",
+        "tests/pg/slide-collections-storage.pgtest.js:178",
+        "tests/pg/slide-collections-storage.pgtest.js:212"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: listOrganizationCollections",
+      "line": 453,
+      "params": ["storageScope", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/home.js:118",
+        "server/routes/api/slide-collections.js:145",
+        "tests/pg/sandbox-library-seed.pgtest.js:99",
+        "tests/pg/slide-collections-storage.pgtest.js:231"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: listPersonalCollections",
+      "line": 358,
+      "params": ["storageScope", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/home.js:117",
+        "server/routes/api/slide-collections.js:79",
+        "tests/pg/slide-collections-storage.pgtest.js:102",
+        "tests/pg/slide-collections-storage.pgtest.js:170"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: updateOrganizationCollection",
+      "line": 499,
+      "params": ["storageScope", "id", "patch", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:193",
+        "tests/pg/slide-collections-storage.pgtest.js:256",
+        "tests/pg/slide-collections-storage.pgtest.js:266"
+      ]
+    },
+    {
+      "key": "server/storage/collections.js :: updatePersonalCollection",
+      "line": 405,
+      "params": ["storageScope", "userEmail", "id", "patch", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-collections.js:123",
+        "tests/pg/collection-membership-atomicity.pgtest.js:131",
+        "tests/pg/collection-membership-atomicity.pgtest.js:153",
+        "tests/pg/collection-membership-atomicity.pgtest.js:185",
+        "tests/pg/collection-membership-atomicity.pgtest.js:208",
+        "tests/pg/collection-membership-atomicity.pgtest.js:226",
+        "tests/pg/slide-collections-storage.pgtest.js:133",
+        "tests/pg/slide-collections-storage.pgtest.js:181"
+      ]
+    },
+    {
+      "key": "server/storage/custom-slide-types.js :: createCustomSlideType",
+      "line": 139,
+      "params": ["scope", "data", null],
+      "exception": null,
+      "callers": [
+        "server/export/deck-slide-types.js:158",
+        "server/routes/api/custom-slide-types.js:130",
+        "server/routes/api/custom-slide-types.js:201"
+      ]
+    },
+    {
+      "key": "server/storage/custom-slide-types.js :: deleteCustomSlideType",
+      "line": 410,
+      "params": ["scope", "typeId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/custom-slide-types.js:260",
+        "tests/pg/custom-slide-type-delete-usage.pgtest.js:157",
+        "tests/pg/custom-slide-type-delete-usage.pgtest.js:182",
+        "tests/pg/custom-slide-type-delete-usage.pgtest.js:197",
+        "tests/pg/custom-slide-type-delete-usage.pgtest.js:213",
+        "tests/pg/custom-slide-type-delete-usage.pgtest.js:98"
+      ]
+    },
+    {
+      "key": "server/storage/custom-slide-types.js :: getCustomSlideType",
+      "line": 110,
+      "params": ["scope", "typeId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/custom-slide-types.js:175",
+        "server/routes/api/custom-slide-types.js:224"
+      ]
+    },
+    {
+      "key": "server/storage/custom-slide-types.js :: listCustomSlideTypes",
+      "line": 63,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/custom-slide-types.js:113",
+        "server/storage/custom-slide-types.js:391"
+      ]
+    },
+    {
+      "key": "server/storage/custom-slide-types.js :: listPublishedCustomSlideTypes",
+      "line": 86,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/export/deck-slide-types.js:122",
+        "server/export/deck-slide-types.js:84",
+        "server/routes/api/slide-types.js:199",
+        "server/utils/custom-slide-type-runtime.js:136",
+        "server/utils/org-slide-types.js:69"
+      ]
+    },
+    {
+      "key": "server/storage/custom-slide-types.js :: reorderCustomSlideTypes",
+      "line": 357,
+      "params": ["scope", "orderedIds"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/custom-slide-types.js:154",
+        "tests/custom-slide-types-reorder.test.js:28",
+        "tests/custom-slide-types-reorder.test.js:36",
+        "tests/custom-slide-types-reorder.test.js:43"
+      ]
+    },
+    {
+      "key": "server/storage/custom-slide-types.js :: updateCustomSlideType",
+      "line": 234,
+      "params": ["scope", "typeId", "updates"],
+      "exception": null,
+      "callers": ["server/routes/api/custom-slide-types.js:243"]
+    },
+    {
+      "key": "server/storage/display-identity.js :: resolveDisplayNames",
+      "line": 231,
+      "params": ["stamps"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/popular.js:122",
+        "server/storage/activity-events.js:340",
+        "server/storage/collaborators.js:369",
+        "server/storage/collections.js:546",
+        "server/storage/display-identity.js:341",
+        "server/storage/notifications.js:521",
+        "server/storage/presentations/comments.js:50",
+        "server/storage/presentations/index.js:1214",
+        "server/storage/presentations/index.js:1470",
+        "server/storage/presentations/index.js:1504",
+        "server/storage/presentations/index.js:772",
+        "server/storage/presentations/index.js:855",
+        "server/storage/slide-library.js:837",
+        "server/storage/slide-locks.js:57",
+        "tests/display-identity.test.js:164",
+        "tests/display-identity.test.js:171",
+        "tests/display-identity.test.js:192",
+        "tests/display-identity.test.js:209",
+        "tests/display-identity.test.js:226",
+        "tests/display-identity.test.js:240",
+        "tests/display-identity.test.js:246"
+      ]
+    },
+    {
+      "key": "server/storage/display-identity.js :: resolveNamesForAddresses",
+      "line": 340,
+      "params": ["emails"],
+      "exception": null,
+      "callers": [
+        "server/storage/analytics/reports.js:391",
+        "server/storage/custom-slide-types.js:569",
+        "server/storage/font-families.js:613",
+        "server/storage/share-links/crud.js:55"
+      ]
+    },
+    {
+      "key": "server/storage/email-templates.js :: deleteEmailTemplate",
+      "line": 233,
+      "params": ["scope", "type", "locale"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/email-templates.js:162",
+        "tests/pg/email-templates.pgtest.js:130"
+      ]
+    },
+    {
+      "key": "server/storage/email-templates.js :: getEmailDefaultLocale",
+      "line": 312,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/integrations/email/recipient-locale.js:58",
+        "tests/pg/email-templates.pgtest.js:153",
+        "tests/pg/email-templates.pgtest.js:164",
+        "tests/pg/email-templates.pgtest.js:53"
+      ]
+    },
+    {
+      "key": "server/storage/email-templates.js :: getEmailTemplateOverride",
+      "line": 287,
+      "params": ["scope", "type", "locale"],
+      "exception": null,
+      "callers": [
+        "server/integrations/email-template-resolver.js:259",
+        "server/integrations/email-template-resolver.js:306",
+        "tests/pg/email-templates.pgtest.js:112",
+        "tests/pg/email-templates.pgtest.js:121",
+        "tests/pg/email-templates.pgtest.js:137",
+        "tests/pg/email-templates.pgtest.js:55",
+        "tests/pg/email-templates.pgtest.js:69",
+        "tests/pg/email-templates.pgtest.js:91"
+      ]
+    },
+    {
+      "key": "server/storage/email-templates.js :: getEmailTemplates",
+      "line": 121,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/integrations/email-template-resolver.js:335",
+        "server/storage/email-templates.js:221",
+        "server/storage/email-templates.js:249",
+        "server/storage/email-templates.js:276",
+        "tests/pg/email-templates.pgtest.js:172",
+        "tests/pg/email-templates.pgtest.js:51",
+        "tests/pg/email-templates.pgtest.js:76"
+      ]
+    },
+    {
+      "key": "server/storage/email-templates.js :: updateDefaultLocale",
+      "line": 259,
+      "params": ["scope", "locale"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/email-templates.js:90",
+        "tests/pg/email-templates.pgtest.js:152",
+        "tests/pg/email-templates.pgtest.js:158",
+        "tests/pg/email-templates.pgtest.js:189"
+      ]
+    },
+    {
+      "key": "server/storage/email-templates.js :: writeEmailTemplate",
+      "line": 185,
+      "params": ["scope", "type", "locale", "fields"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/email-templates.js:132",
+        "tests/pg/email-templates.pgtest.js:108",
+        "tests/pg/email-templates.pgtest.js:117",
+        "tests/pg/email-templates.pgtest.js:127",
+        "tests/pg/email-templates.pgtest.js:178",
+        "tests/pg/email-templates.pgtest.js:183",
+        "tests/pg/email-templates.pgtest.js:61",
+        "tests/pg/email-templates.pgtest.js:83",
+        "tests/pg/email-templates.pgtest.js:86"
+      ]
+    },
+    {
+      "key": "server/storage/feedback.js :: ensureFeedbackForSlide",
+      "line": 143,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:123",
+        "server/routes/api/live-sessions.js:193",
+        "server/routes/api/live-sessions.js:256",
+        "server/storage/live-sessions/control.js:158",
+        "tests/pg/live-interactions.pgtest.js:619",
+        "tests/pg/live-interactions.pgtest.js:658",
+        "tests/pg/live-interactions.pgtest.js:937",
+        "tests/pg/live-interactions.pgtest.js:953"
+      ]
+    },
+    {
+      "key": "server/storage/feedback.js :: getFeedbackAggregate",
+      "line": 176,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:152",
+        "server/routes/api/follow/interactions.js:254",
+        "tests/pg/live-interactions.pgtest.js:650"
+      ]
+    },
+    {
+      "key": "server/storage/feedback.js :: listFeedbackEntries",
+      "line": 345,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:353",
+        "tests/pg/live-interactions.pgtest.js:573",
+        "tests/pg/live-interactions.pgtest.js:596",
+        "tests/pg/live-interactions.pgtest.js:646"
+      ]
+    },
+    {
+      "key": "server/storage/feedback.js :: resetFeedback",
+      "line": 314,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:274",
+        "tests/pg/live-interactions.pgtest.js:640",
+        "tests/pg/live-interactions.pgtest.js:948"
+      ]
+    },
+    {
+      "key": "server/storage/feedback.js :: setFeedbackStatus",
+      "line": 291,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:293",
+        "tests/pg/live-interactions.pgtest.js:620",
+        "tests/pg/live-interactions.pgtest.js:944",
+        "tests/pg/live-interactions.pgtest.js:958"
+      ]
+    },
+    {
+      "key": "server/storage/feedback.js :: submitFeedback",
+      "line": 208,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:415",
+        "tests/pg/instance-health.pgtest.js:144",
+        "tests/pg/live-interactions.pgtest.js:548",
+        "tests/pg/live-interactions.pgtest.js:553",
+        "tests/pg/live-interactions.pgtest.js:560",
+        "tests/pg/live-interactions.pgtest.js:588",
+        "tests/pg/live-interactions.pgtest.js:611",
+        "tests/pg/live-interactions.pgtest.js:625",
+        "tests/pg/live-interactions.pgtest.js:635",
+        "tests/pg/live-interactions.pgtest.js:682",
+        "tests/pg/live-interactions.pgtest.js:714",
+        "tests/pg/live-interactions.pgtest.js:765",
+        "tests/pg/live-interactions.pgtest.js:914"
+      ]
+    },
+    {
+      "key": "server/storage/follow-codes.js :: cleanupExpiredCodes",
+      "line": 146,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/jobs/live-session-cleanup.js:51",
+        "tests/pg/follow-codes.pgtest.js:125",
+        "tests/pg/follow-codes.pgtest.js:133"
+      ]
+    },
+    {
+      "key": "server/storage/follow-codes.js :: createFollowCode",
+      "line": 70,
+      "params": ["scope", "followUrl"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow-codes.js:80",
+        "server/storage/live-sessions/sessions.js:72",
+        "tests/pg/follow-codes.pgtest.js:117",
+        "tests/pg/follow-codes.pgtest.js:118",
+        "tests/pg/follow-codes.pgtest.js:51",
+        "tests/pg/follow-codes.pgtest.js:70",
+        "tests/pg/follow-codes.pgtest.js:82",
+        "tests/pg/follow-codes.pgtest.js:83",
+        "tests/pg/follow-codes.pgtest.js:99"
+      ]
+    },
+    {
+      "key": "server/storage/follow-codes.js :: resolveFollowCode",
+      "line": 105,
+      "params": ["scope", "code"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow-codes.js:111",
+        "tests/pg/follow-codes.pgtest.js:106",
+        "tests/pg/follow-codes.pgtest.js:66",
+        "tests/pg/follow-codes.pgtest.js:75",
+        "tests/pg/follow-codes.pgtest.js:78",
+        "tests/pg/follow-codes.pgtest.js:89",
+        "tests/pg/follow-codes.pgtest.js:93"
+      ]
+    },
+    {
+      "key": "server/storage/font-families.js :: addFontVariant",
+      "line": 407,
+      "params": ["scope", "familyId", "variantData"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/font-families.js:189",
+        "server/routes/api/font-families.js:270",
+        "tests/pg/font-variant-private-key.pgtest.js:77",
+        "tests/pg/font-variant-private-key.pgtest.js:89"
+      ]
+    },
+    {
+      "key": "server/storage/font-families.js :: createFontFamily",
+      "line": 133,
+      "params": ["scope", "data"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/font-families.js:115",
+        "server/routes/api/font-families.js:175",
+        "tests/pg/font-variant-private-key.pgtest.js:70"
+      ]
+    },
+    {
+      "key": "server/storage/font-families.js :: deleteFontFamily",
+      "line": 317,
+      "params": ["scope", "familyId"],
+      "exception": null,
+      "callers": ["server/routes/api/font-families.js:359"]
+    },
+    {
+      "key": "server/storage/font-families.js :: getFontFamily",
+      "line": 100,
+      "params": ["scope", "familyId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/font-families.js:198",
+        "server/routes/api/font-families.js:211",
+        "server/routes/api/font-families.js:324",
+        "tests/pg/font-variant-private-key.pgtest.js:98"
+      ]
+    },
+    {
+      "key": "server/storage/font-families.js :: listAllFontFamiliesWithVariants",
+      "line": 540,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/export/deck-theme.js:218",
+        "server/export/deck-theme.js:337",
+        "server/routes/api/font-families.js:103",
+        "server/routes/api/themes.js:241",
+        "server/routes/api/themes.js:357",
+        "server/utils/themes.js:227"
+      ]
+    },
+    {
+      "key": "server/storage/font-families.js :: removeFontVariant",
+      "line": 491,
+      "params": ["scope", "variantId"],
+      "exception": null,
+      "callers": ["server/routes/api/font-families.js:296"]
+    },
+    {
+      "key": "server/storage/font-families.js :: updateFontFamily",
+      "line": 214,
+      "params": ["scope", "familyId", "updates"],
+      "exception": null,
+      "callers": ["server/routes/api/font-families.js:343"]
+    },
+    {
+      "key": "server/storage/identity-resolver.js :: resolveIdentity",
+      "line": 94,
+      "params": ["identifier"],
+      "exception": null,
+      "callers": [
+        "server/storage/identity-resolver.js:126",
+        "tests/identity-resolver.test.js:107",
+        "tests/identity-resolver.test.js:108",
+        "tests/identity-resolver.test.js:113",
+        "tests/identity-resolver.test.js:87"
+      ]
+    },
+    {
+      "key": "server/storage/identity-resolver.js :: resolveIdentityByEmail",
+      "line": 125,
+      "params": ["email"],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:217",
+        "server/routes/public-api/v1/middleware.js:96",
+        "server/services/slides.js:28",
+        "server/storage/collaborators.js:118",
+        "server/storage/collections.js:241",
+        "server/storage/collections.js:317",
+        "server/storage/presentations/comments.js:480",
+        "server/storage/presentations/index.js:1079",
+        "server/storage/presentations/index.js:1108",
+        "server/storage/presentations/index.js:1159",
+        "server/storage/presentations/index.js:1533",
+        "server/storage/presentations/index.js:883",
+        "server/storage/settings.js:99",
+        "server/storage/slide-library.js:276",
+        "server/storage/slide-library.js:483",
+        "server/utils/presentation-authz/actor-access.js:123",
+        "tests/identity-resolver.test.js:104",
+        "tests/identity-resolver.test.js:105",
+        "tests/identity-resolver.test.js:106",
+        "tests/identity-resolver.test.js:125",
+        "tests/identity-resolver.test.js:136",
+        "tests/identity-resolver.test.js:65",
+        "tests/identity-resolver.test.js:76",
+        "tests/identity-resolver.test.js:93",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:285",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:294",
+        "tests/pg/collaborator-authz-resolution.pgtest.js:301"
+      ]
+    },
+    {
+      "key": "server/storage/identity-verification.js :: verifyIdentityConsistency",
+      "line": 260,
+      "params": [],
+      "exception": null,
+      "callers": [
+        "scripts/verify-identity-migration.js:45",
+        "tests/pg/identity-verification.pgtest.js:454",
+        "tests/pg/identity-verification.pgtest.js:509",
+        "tests/pg/identity-verification.pgtest.js:536",
+        "tests/pg/identity-verification.pgtest.js:564",
+        "tests/pg/identity-verification.pgtest.js:586",
+        "tests/pg/identity-verification.pgtest.js:596",
+        "tests/pg/identity-verification.pgtest.js:615",
+        "tests/pg/identity-verification.pgtest.js:616"
+      ]
+    },
+    {
+      "key": "server/storage/identity.js :: getUserByEmailGlobal",
+      "line": 38,
+      "params": ["email"],
+      "exception": null,
+      "callers": [
+        "scripts/org-create.js:133",
+        "server/auth/auth.js:364",
+        "server/auth/auth.js:530",
+        "server/routes/api/magic-link.js:57",
+        "server/routes/api/organization-members.js:104",
+        "server/routes/api/organization-members.js:183",
+        "server/routes/api/organizations.js:356",
+        "server/routes/api/password-reset.js:97",
+        "server/storage/identity-resolver.js:108",
+        "server/storage/password-reset.js:248",
+        "server/storage/password-reset.js:307",
+        "server/storage/password-reset.js:320",
+        "server/storage/users.js:36"
+      ]
+    },
+    {
+      "key": "server/storage/identity.js :: resolveActiveMembership",
+      "line": 84,
+      "params": ["userId", "requestedOrganizationId"],
+      "exception": null,
+      "callers": ["server/auth/auth.js:379", "server/storage/identity.js:125"]
+    },
+    {
+      "key": "server/storage/identity.js :: resolveActiveOrganization",
+      "line": 121,
+      "params": ["userId", "requestedOrganizationId"],
+      "exception": null,
+      "callers": []
+    },
+    {
+      "key": "server/storage/image-library-usage.js :: getImageLibraryUsage",
+      "line": 83,
+      "params": ["storageScope", "url"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/image-library.js:119",
+        "tests/pg/image-library-usage.pgtest.js:152",
+        "tests/pg/image-library-usage.pgtest.js:163",
+        "tests/pg/image-library-usage.pgtest.js:177",
+        "tests/pg/image-library-usage.pgtest.js:185",
+        "tests/pg/image-library-usage.pgtest.js:189",
+        "tests/pg/image-library-usage.pgtest.js:195",
+        "tests/pg/image-library-usage.pgtest.js:196",
+        "tests/pg/image-library-usage.pgtest.js:197",
+        "tests/pg/image-library-usage.pgtest.js:201",
+        "tests/pg/image-library-usage.pgtest.js:219"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: createImageLibraryItem",
+      "line": 265,
+      "params": ["storageScope", "input"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/image-library.js:80",
+        "server/routes/api/stock-media.js:154",
+        "server/routes/api/stock-media.js:242",
+        "tests/pg/storage-mutation-shapes.pgtest.js:155",
+        "tests/pg/storage-mutation-shapes.pgtest.js:168"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: deleteImageLibraryItem",
+      "line": 290,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/image-library.js:255",
+        "tests/pg/storage-mutation-shapes.pgtest.js:172",
+        "tests/pg/storage-mutation-shapes.pgtest.js:176"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: getImageFavorites",
+      "line": 301,
+      "params": ["storageScope", "userEmail"],
+      "exception": null,
+      "callers": [
+        "tests/pg/image-favorites.pgtest.js:114",
+        "tests/pg/image-favorites.pgtest.js:118",
+        "tests/pg/image-favorites.pgtest.js:123",
+        "tests/pg/image-favorites.pgtest.js:129",
+        "tests/pg/image-favorites.pgtest.js:331",
+        "tests/pg/image-favorites.pgtest.js:94"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: getImageLibraryItem",
+      "line": 254,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/image-library.js:117",
+        "server/routes/api/image-library.js:137",
+        "server/routes/api/image-library.js:166",
+        "server/routes/api/image-library.js:201",
+        "server/routes/api/image-library.js:215",
+        "tests/pg/storage-mutation-shapes.pgtest.js:175"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: isImageFavorite",
+      "line": 337,
+      "params": ["storageScope", "imageId", "userEmail"],
+      "exception": null,
+      "callers": ["server/routes/api/image-library.js:44"]
+    },
+    {
+      "key": "server/storage/image-library.js :: listImageLibrary",
+      "line": 243,
+      "params": ["storageScope"],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:287",
+        "server/routes/api/image-library.js:51"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: stampFavorites",
+      "line": 322,
+      "params": ["storageScope", "items", "viewerEmail"],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:285",
+        "server/routes/api/image-library.js:59"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: toggleImageFavorite",
+      "line": 349,
+      "params": ["storageScope", "imageId", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/image-library.js:204",
+        "tests/pg/image-favorites.pgtest.js:103",
+        "tests/pg/image-favorites.pgtest.js:111",
+        "tests/pg/image-favorites.pgtest.js:122",
+        "tests/pg/image-favorites.pgtest.js:126",
+        "tests/pg/image-favorites.pgtest.js:134",
+        "tests/pg/image-favorites.pgtest.js:400",
+        "tests/pg/image-favorites.pgtest.js:92",
+        "tests/pg/image-favorites.pgtest.js:99"
+      ]
+    },
+    {
+      "key": "server/storage/image-library.js :: updateImageLibraryItem",
+      "line": 278,
+      "params": ["storageScope", "id", "patch"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/image-library.js:184",
+        "server/routes/api/image-library.js:233",
+        "tests/pg/storage-mutation-shapes.pgtest.js:146",
+        "tests/pg/storage-mutation-shapes.pgtest.js:159"
+      ]
+    },
+    {
+      "key": "server/storage/instance-census.js :: readChangedSettingsKeys",
+      "line": 138,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/routes/api/instance-health.js:125"]
+    },
+    {
+      "key": "server/storage/instance-census.js :: readCustomTypeCensus",
+      "line": 101,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/routes/api/instance-health.js:124"]
+    },
+    {
+      "key": "server/storage/instance-census.js :: readSlideTypeCensus",
+      "line": 58,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/routes/api/instance-health.js:123"]
+    },
+    {
+      "key": "server/storage/instance-health.js :: countDeckView",
+      "line": 236,
+      "params": ["surface", "pres"],
+      "exception": "telemetry: instance usage counters, no person/deck/organization in stored rows",
+      "callers": [
+        "server/routes/api/follow/presentation.js:118",
+        "server/routes/static/embed.js:69",
+        "server/routes/static/published.js:151",
+        "server/routes/static/published.js:74",
+        "server/routes/static/share-viewer.js:42"
+      ]
+    },
+    {
+      "key": "server/storage/instance-health.js :: countInstanceHealth",
+      "line": 198,
+      "params": ["entries"],
+      "exception": "telemetry: instance usage counters, no person/deck/organization in stored rows",
+      "callers": [
+        "server/mcp/protocol.js:315",
+        "server/routes/api/bulk-export.js:52",
+        "server/services/exports.js:146",
+        "server/services/exports.js:200",
+        "server/storage/feedback.js:276",
+        "server/storage/follow-codes.js:133",
+        "server/storage/instance-health.js:237",
+        "server/storage/interactions.js:280",
+        "server/storage/interactions.js:417",
+        "server/storage/live-sessions/sessions.js:150",
+        "server/storage/live-sessions/sessions.js:183",
+        "server/storage/presentations/index.js:224",
+        "server/storage/presentations/index.js:918",
+        "server/storage/questions.js:336",
+        "server/utils/router.js:171"
+      ]
+    },
+    {
+      "key": "server/storage/instance-health.js :: pruneInstanceHealth",
+      "line": 346,
+      "params": ["cutoffDay"],
+      "exception": "telemetry: instance usage counters, no person/deck/organization in stored rows",
+      "callers": [
+        "server/jobs/retention-cleanup.js:141",
+        "tests/pg/instance-health.pgtest.js:113"
+      ]
+    },
+    {
+      "key": "server/storage/instance-health.js :: readFirstInstanceHealthDay",
+      "line": 276,
+      "params": [],
+      "exception": "telemetry: instance usage counters, no person/deck/organization in stored rows",
+      "callers": ["server/routes/api/instance-health.js:127"]
+    },
+    {
+      "key": "server/storage/instance-health.js :: readInstanceHealth",
+      "line": 250,
+      "params": [null],
+      "exception": "telemetry: instance usage counters, no person/deck/organization in stored rows",
+      "callers": [
+        "server/routes/api/instance-health.js:126",
+        "tests/pg/instance-health.pgtest.js:115",
+        "tests/pg/instance-health.pgtest.js:99"
+      ]
+    },
+    {
+      "key": "server/storage/instance-health.js :: recordInstanceHealth",
+      "line": 161,
+      "params": ["entries"],
+      "exception": "telemetry: instance usage counters, no person/deck/organization in stored rows",
+      "callers": [
+        "server/storage/instance-health.js:199",
+        "tests/pg/instance-health.pgtest.js:92",
+        "tests/pg/instance-health.pgtest.js:97"
+      ]
+    },
+    {
+      "key": "server/storage/interaction-slides.js :: ensureInteractionSlide",
+      "line": 136,
+      "params": [null],
+      "exception": null,
+      "callers": [
+        "server/storage/feedback.js:154",
+        "server/storage/feedback.js:231",
+        "server/storage/interactions.js:272",
+        "server/storage/interactions.js:370",
+        "tests/pg/live-interactions.pgtest.js:784",
+        "tests/pg/live-interactions.pgtest.js:791",
+        "tests/pg/live-interactions.pgtest.js:801",
+        "tests/pg/live-interactions.pgtest.js:827"
+      ]
+    },
+    {
+      "key": "server/storage/interaction-slides.js :: getInteractionSlide",
+      "line": 186,
+      "params": [null],
+      "exception": null,
+      "callers": [
+        "server/storage/feedback.js:187",
+        "server/storage/interactions.js:219",
+        "server/storage/interactions.js:322",
+        "server/storage/interactions.js:438"
+      ]
+    },
+    {
+      "key": "server/storage/interaction-slides.js :: updateInteractionSlide",
+      "line": 220,
+      "params": [null],
+      "exception": null,
+      "callers": [
+        "server/storage/feedback.js:261",
+        "server/storage/feedback.js:297",
+        "server/storage/feedback.js:316",
+        "server/storage/interactions.js:328",
+        "server/storage/interactions.js:412",
+        "server/storage/interactions.js:441",
+        "server/storage/interactions.js:490",
+        "tests/pg/live-interactions.pgtest.js:813",
+        "tests/pg/live-interactions.pgtest.js:818",
+        "tests/pg/live-interactions.pgtest.js:833"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: ensureLikertInteractionForSlide",
+      "line": 555,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:131",
+        "server/routes/api/live-sessions.js:200",
+        "server/routes/api/live-sessions.js:260",
+        "server/storage/live-sessions/control.js:166",
+        "tests/pg/instance-health.pgtest.js:137"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: ensurePollInteractionForSlide",
+      "line": 519,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:140",
+        "server/routes/api/live-sessions.js:205",
+        "server/routes/api/live-sessions.js:265",
+        "server/storage/live-sessions/control.js:172",
+        "tests/pg/instance-health.pgtest.js:128",
+        "tests/pg/live-interactions.pgtest.js:313",
+        "tests/pg/live-interactions.pgtest.js:363",
+        "tests/pg/live-interactions.pgtest.js:417",
+        "tests/pg/live-interactions.pgtest.js:855",
+        "tests/pg/live-interactions.pgtest.js:922"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: getInteractionAggregate",
+      "line": 311,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:161",
+        "server/routes/api/follow/interactions.js:263",
+        "server/routes/api/interaction-catch-up.js:42",
+        "tests/pg/live-interactions.pgtest.js:325",
+        "tests/pg/live-interactions.pgtest.js:337",
+        "tests/pg/live-interactions.pgtest.js:343",
+        "tests/pg/live-interactions.pgtest.js:381",
+        "tests/pg/live-interactions.pgtest.js:466",
+        "tests/pg/live-interactions.pgtest.js:520"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: resetLikertInteraction",
+      "line": 587,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:276",
+        "tests/pg/live-interactions.pgtest.js:874"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: resetPollInteraction",
+      "line": 548,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:280",
+        "tests/pg/live-interactions.pgtest.js:488",
+        "tests/pg/live-interactions.pgtest.js:870"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: setLikertInteractionStatus",
+      "line": 582,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:298",
+        "tests/pg/live-interactions.pgtest.js:883"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: setPollInteractionStatus",
+      "line": 543,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:303",
+        "tests/pg/live-interactions.pgtest.js:421",
+        "tests/pg/live-interactions.pgtest.js:438",
+        "tests/pg/live-interactions.pgtest.js:878",
+        "tests/pg/live-interactions.pgtest.js:926"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: voteLikertInteraction",
+      "line": 572,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:337",
+        "tests/pg/instance-health.pgtest.js:138",
+        "tests/pg/live-interactions.pgtest.js:504",
+        "tests/pg/live-interactions.pgtest.js:530"
+      ]
+    },
+    {
+      "key": "server/storage/interactions.js :: votePollInteraction",
+      "line": 533,
+      "params": ["scope", "sessionId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:347",
+        "tests/pg/instance-health.pgtest.js:129",
+        "tests/pg/live-interactions.pgtest.js:317",
+        "tests/pg/live-interactions.pgtest.js:367",
+        "tests/pg/live-interactions.pgtest.js:373",
+        "tests/pg/live-interactions.pgtest.js:393",
+        "tests/pg/live-interactions.pgtest.js:399",
+        "tests/pg/live-interactions.pgtest.js:429",
+        "tests/pg/live-interactions.pgtest.js:442",
+        "tests/pg/live-interactions.pgtest.js:452",
+        "tests/pg/live-interactions.pgtest.js:458",
+        "tests/pg/live-interactions.pgtest.js:482",
+        "tests/pg/live-interactions.pgtest.js:676",
+        "tests/pg/live-interactions.pgtest.js:708",
+        "tests/pg/live-interactions.pgtest.js:756",
+        "tests/pg/live-interactions.pgtest.js:902"
+      ]
+    },
+    {
+      "key": "server/storage/lifecycle.js :: closeStorage",
+      "line": 43,
+      "params": [],
+      "exception": null,
+      "callers": [
+        "capture/lib/comments-seed.js:151",
+        "scripts/create-api-key.js:80",
+        "scripts/org-create.js:238",
+        "scripts/theme-preview.js:374",
+        "server/server.js:311",
+        "server/server.js:329",
+        "server/server.js:403"
+      ]
+    },
+    {
+      "key": "server/storage/lifecycle.js :: initializeStorage",
+      "line": 34,
+      "params": [],
+      "exception": null,
+      "callers": [
+        "capture/lib/comments-seed.js:58",
+        "scripts/create-api-key.js:44",
+        "scripts/org-create.js:208",
+        "scripts/theme-preview.js:365",
+        "server/mcp/index.js:96",
+        "server/server.js:294",
+        "tests/app-settings-default-theme.test.js:55",
+        "tests/export-worker-theme.test.js:50",
+        "tests/pg/helpers/harness.js:157",
+        "tests/theme-default-setting-record.test.js:47",
+        "tests/theme-runtime-records.test.js:60",
+        "tests/theme-settings-organization.test.js:72"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/close.js :: closeSession",
+      "line": 20,
+      "params": ["sessionId", "reason"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/sessions.js:101",
+        "server/storage/live-sessions/sessions.js:132",
+        "tests/pg/live-interactions.pgtest.js:688",
+        "tests/pg/live-sessions.pgtest.js:237"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/control.js :: sendLiveSessionControlCommand",
+      "line": 86,
+      "params": ["scope", "sessionId", "cmd"],
+      "exception": null,
+      "callers": ["server/routes/api/live-sessions.js:448"]
+    },
+    {
+      "key": "server/storage/live-sessions/control.js :: setLiveSessionControlEnabled",
+      "line": 68,
+      "params": ["scope", "sessionId", "enabled"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:405",
+        "server/routes/api/live-sessions.js:425",
+        "tests/pg/live-sessions.pgtest.js:145",
+        "tests/pg/live-sessions.pgtest.js:370",
+        "tests/pg/live-sessions.pgtest.js:381",
+        "tests/pg/live-sessions.pgtest.js:388"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/db.js :: countPersistedSessions",
+      "line": 310,
+      "params": [],
+      "exception": null,
+      "callers": ["server/jobs/live-session-cleanup.js:114"]
+    },
+    {
+      "key": "server/storage/live-sessions/db.js :: deletePersistedSession",
+      "line": 270,
+      "params": ["sessionId"],
+      "exception": null,
+      "callers": ["server/storage/live-sessions/close.js:39"]
+    },
+    {
+      "key": "server/storage/live-sessions/db.js :: hydrateSession",
+      "line": 223,
+      "params": ["sessionId"],
+      "exception": null,
+      "callers": ["server/storage/live-sessions/sessions.js:207"]
+    },
+    {
+      "key": "server/storage/live-sessions/db.js :: hydrateSessionsForPresentation",
+      "line": 248,
+      "params": ["presentationId"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/follow-state.js:38",
+        "server/storage/live-sessions/sessions.js:125",
+        "server/storage/live-sessions/sessions.js:226"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/db.js :: persistSession",
+      "line": 169,
+      "params": ["s"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/db.js:213",
+        "server/storage/live-sessions/sessions.js:182",
+        "tests/pg/live-sessions.pgtest.js:132",
+        "tests/pg/live-sessions.pgtest.js:146",
+        "tests/pg/live-sessions.pgtest.js:160"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/db.js :: schedulePersist",
+      "line": 208,
+      "params": ["s"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/sessions.js:149",
+        "server/storage/live-sessions/sessions.js:259",
+        "server/storage/live-sessions/sse.js:218",
+        "server/storage/live-sessions/sse.js:234"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/db.js :: sweepExpiredSessions",
+      "line": 290,
+      "params": [],
+      "exception": null,
+      "callers": [
+        "server/jobs/live-session-cleanup.js:50",
+        "tests/pg/live-sessions.pgtest.js:282"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/follow-state.js :: getFollowStateForPresentation",
+      "line": 14,
+      "params": ["scope", "presentationId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics-track.js:156",
+        "server/routes/api/follow/interactions.js:213",
+        "server/routes/api/follow/interactions.js:288",
+        "server/routes/api/follow/interactions.js:385",
+        "server/routes/api/follow/interactions.js:50",
+        "server/routes/api/follow/presentation.js:54",
+        "server/routes/api/follow/questions.js:132",
+        "server/routes/api/follow/questions.js:176",
+        "server/routes/api/follow/questions.js:36",
+        "server/routes/api/follow/questions.js:77",
+        "server/routes/api/follow/render-slide.js:31",
+        "server/routes/api/follow/state.js:14",
+        "server/routes/api/follow/status-ticker.js:31",
+        "server/routes/api/questions.js:130",
+        "server/routes/api/questions.js:173",
+        "tests/pg/live-sessions.pgtest.js:163",
+        "tests/pg/live-sessions.pgtest.js:304"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sessions.js :: createLiveSession",
+      "line": 117,
+      "params": ["scope", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:116",
+        "tests/live-sessions-deck-updated.test.js:40",
+        "tests/live-sessions-deck-updated.test.js:80",
+        "tests/pg/instance-health.pgtest.js:123",
+        "tests/pg/live-interactions.pgtest.js:109",
+        "tests/pg/live-sessions.pgtest.js:112",
+        "tests/pg/live-sessions.pgtest.js:122",
+        "tests/pg/live-sessions.pgtest.js:144",
+        "tests/pg/live-sessions.pgtest.js:154",
+        "tests/pg/live-sessions.pgtest.js:180",
+        "tests/pg/live-sessions.pgtest.js:183",
+        "tests/pg/live-sessions.pgtest.js:198",
+        "tests/pg/live-sessions.pgtest.js:236",
+        "tests/pg/live-sessions.pgtest.js:254",
+        "tests/pg/live-sessions.pgtest.js:271",
+        "tests/pg/live-sessions.pgtest.js:273",
+        "tests/pg/live-sessions.pgtest.js:295",
+        "tests/pg/live-sessions.pgtest.js:319",
+        "tests/pg/live-sessions.pgtest.js:328",
+        "tests/pg/live-sessions.pgtest.js:341",
+        "tests/pg/live-sessions.pgtest.js:357",
+        "tests/pg/live-sessions.pgtest.js:379",
+        "tests/pg/live-sessions.pgtest.js:85"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sessions.js :: findMostRecentSessionForPresentation",
+      "line": 214,
+      "params": ["scope", "presentationId"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/sse.js:153",
+        "tests/pg/live-sessions.pgtest.js:172"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sessions.js :: getLiveSession",
+      "line": 200,
+      "params": ["scope", "sessionId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-session-audience.js:110",
+        "server/routes/api/live-session-audience.js:131",
+        "server/routes/api/live-session-audience.js:92",
+        "server/routes/api/live-sessions.js:137",
+        "server/routes/api/live-sessions.js:230",
+        "server/routes/api/live-sessions.js:338",
+        "server/routes/api/live-sessions.js:396",
+        "server/routes/api/live-sessions.js:416",
+        "server/routes/api/live-sessions.js:436",
+        "server/storage/live-sessions/sessions.js:256",
+        "tests/live-sessions-deck-updated.test.js:45",
+        "tests/pg/live-sessions.pgtest.js:115",
+        "tests/pg/live-sessions.pgtest.js:135",
+        "tests/pg/live-sessions.pgtest.js:149",
+        "tests/pg/live-sessions.pgtest.js:213",
+        "tests/pg/live-sessions.pgtest.js:230",
+        "tests/pg/live-sessions.pgtest.js:250",
+        "tests/pg/live-sessions.pgtest.js:267",
+        "tests/pg/live-sessions.pgtest.js:303"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sessions.js :: touchLiveSession",
+      "line": 249,
+      "params": ["scope", "sessionId"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/sse.js:196",
+        "server/storage/live-sessions/sse.js:31",
+        "tests/pg/live-sessions.pgtest.js:334",
+        "tests/pg/live-sessions.pgtest.js:342"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: attachSessionSseClient",
+      "line": 24,
+      "params": ["scope", "sessionId", "res"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/events.js:43",
+        "server/routes/api/live-session-audience.js:136"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: broadcast",
+      "line": 67,
+      "params": ["scope", "sessionId", "event", "data"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/control.js:108",
+        "server/storage/live-sessions/control.js:77",
+        "server/storage/live-sessions/sse.js:101",
+        "server/storage/live-sessions/sse.js:129",
+        "server/storage/live-sessions/sse.js:179",
+        "server/storage/live-sessions/sse.js:220"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: broadcastBranch",
+      "line": 163,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": ["server/routes/api/live-sessions.js:318"]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: notifyDeckUpdatedForPresentation",
+      "line": 140,
+      "params": ["scope", "presentationId", null],
+      "exception": null,
+      "callers": [
+        "server/storage/presentations/index.js:228",
+        "tests/live-sessions-deck-updated.test.js:49",
+        "tests/live-sessions-deck-updated.test.js:69",
+        "tests/live-sessions-deck-updated.test.js:82"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: notifyLiveSessionDeckUpdated",
+      "line": 109,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/questions.js:286",
+        "server/storage/live-sessions/sse.js:156"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: notifyLiveSessionInteractionState",
+      "line": 88,
+      "params": ["scope", "sessionId", "interactionState"],
+      "exception": null,
+      "callers": [
+        "server/storage/feedback.js:121",
+        "server/storage/interactions.js:163"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: touchSessionSync",
+      "line": 231,
+      "params": ["s"],
+      "exception": null,
+      "callers": [
+        "server/storage/live-sessions/control.js:75",
+        "server/storage/live-sessions/control.js:91",
+        "server/storage/live-sessions/sse.js:71"
+      ]
+    },
+    {
+      "key": "server/storage/live-sessions/sse.js :: updateLiveSessionState",
+      "line": 193,
+      "params": ["scope", "sessionId", "nextState"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/live-sessions.js:169",
+        "server/storage/live-sessions/control.js:140",
+        "tests/pg/live-sessions.pgtest.js:123",
+        "tests/pg/live-sessions.pgtest.js:155",
+        "tests/pg/live-sessions.pgtest.js:349",
+        "tests/pg/live-sessions.pgtest.js:358"
+      ]
+    },
+    {
+      "key": "server/storage/login-membership.js :: ensureMembership",
+      "line": 36,
+      "params": ["db", "user", "autoProvision", "targetOrgId", "role"],
+      "exception": null,
+      "callers": [
+        "server/storage/magic-link.js:232",
+        "server/storage/sso.js:100"
+      ]
+    },
+    {
+      "key": "server/storage/magic-link.js :: cleanupExpiredTokens",
+      "line": 265,
+      "params": [],
+      "exception": "token: expires only rows of this capability lifecycle",
+      "callers": ["server/jobs/auth-cleanup.js:41"]
+    },
+    {
+      "key": "server/storage/magic-link.js :: consumeMagicToken",
+      "line": 167,
+      "params": ["rawToken"],
+      "exception": "token: atomically consumes the presented capability",
+      "callers": ["server/routes/api/magic-link.js:208"]
+    },
+    {
+      "key": "server/storage/magic-link.js :: createMagicToken",
+      "line": 92,
+      "params": ["email", "info"],
+      "exception": "token: issues a pre-auth capability for delivery to the verified mailbox",
+      "callers": ["server/routes/api/magic-link.js:147"]
+    },
+    {
+      "key": "server/storage/magic-link.js :: getOrCreateMagicLinkUser",
+      "line": 211,
+      "params": ["scope", "email"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/magic-link.js:231",
+        "tests/pg/ensure-user.pgtest.js:93",
+        "tests/pg/ensure-user.pgtest.js:94"
+      ]
+    },
+    {
+      "key": "server/storage/magic-link.js :: isRateLimitedByEmail",
+      "line": 40,
+      "params": ["email"],
+      "exception": "token: abuse limit on pre-auth token issuance",
+      "callers": ["server/routes/api/magic-link.js:105"]
+    },
+    {
+      "key": "server/storage/magic-link.js :: isRateLimitedByIp",
+      "line": 63,
+      "params": ["ipAddress"],
+      "exception": "token: abuse limit on pre-auth token issuance",
+      "callers": ["server/routes/api/magic-link.js:106"]
+    },
+    {
+      "key": "server/storage/magic-link.js :: validateMagicToken",
+      "line": 129,
+      "params": ["rawToken"],
+      "exception": "token: validates the presented capability",
+      "callers": []
+    },
+    {
+      "key": "server/storage/notifications.js :: archiveAllNotifications",
+      "line": 274,
+      "params": ["scope", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/notifications.js:149",
+        "tests/notification-inbox.test.js:55",
+        "tests/notification-inbox.test.js:63"
+      ]
+    },
+    {
+      "key": "server/storage/notifications.js :: archiveNotification",
+      "line": 241,
+      "params": ["scope", "notificationId", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/notifications.js:162",
+        "tests/notification-inbox.test.js:35",
+        "tests/notification-inbox.test.js:39",
+        "tests/notification-inbox.test.js:46"
+      ]
+    },
+    {
+      "key": "server/storage/notifications.js :: archiveThreadNotifications",
+      "line": 314,
+      "params": ["scope", "userEmail", "presentationId", "threadId"],
+      "exception": null,
+      "callers": [
+        "server/services/comment-notifications.js:405",
+        "tests/notification-inbox.test.js:73",
+        "tests/notification-inbox.test.js:77",
+        "tests/notification-inbox.test.js:81",
+        "tests/notification-inbox.test.js:88"
+      ]
+    },
+    {
+      "key": "server/storage/notifications.js :: createNotification",
+      "line": 36,
+      "params": ["scope", "data"],
+      "exception": null,
+      "callers": [
+        "server/jobs/queue/workers/bulk-export-worker.js:163",
+        "server/routes/api/collaborators.js:230",
+        "server/services/access-notifications.js:80",
+        "server/services/comment-notifications.js:446",
+        "server/services/deck-activity-notifications.js:259",
+        "server/services/ownership.js:72"
+      ]
+    },
+    {
+      "key": "server/storage/notifications.js :: findUnreadDeckActivityNotification",
+      "line": 372,
+      "params": [
+        "scope",
+        "userEmail",
+        "presentationId",
+        "actorEmail",
+        "sinceIso"
+      ],
+      "exception": null,
+      "callers": [
+        "server/services/deck-activity-notifications.js:234",
+        "tests/deck-activity-notifications.test.js:145",
+        "tests/deck-activity-notifications.test.js:156"
+      ]
+    },
+    {
+      "key": "server/storage/notifications.js :: getUnreadCount",
+      "line": 136,
+      "params": ["scope", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/notifications.js:193",
+        "server/routes/api/notifications.js:79",
+        "server/routes/api/notifications.js:92",
+        "server/services/comment-notifications.js:412",
+        "server/services/deck-activity-notifications.js:272",
+        "tests/notification-inbox.test.js:108",
+        "tests/notification-inbox.test.js:109",
+        "tests/notification-inbox.test.js:28",
+        "tests/notification-inbox.test.js:29"
+      ]
+    },
+    {
+      "key": "server/storage/notifications.js :: listNotifications",
+      "line": 88,
+      "params": ["scope", "userEmail", "options"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/notifications.js:192",
+        "tests/notification-inbox.test.js:102",
+        "tests/notification-inbox.test.js:96",
+        "tests/notification-inbox.test.js:98"
+      ]
+    },
+    {
+      "key": "server/storage/notifications.js :: markAllAsRead",
+      "line": 208,
+      "params": ["scope", "userEmail"],
+      "exception": null,
+      "callers": ["server/routes/api/notifications.js:112"]
+    },
+    {
+      "key": "server/storage/notifications.js :: markAsRead",
+      "line": 169,
+      "params": ["scope", "notificationId", "userEmail"],
+      "exception": null,
+      "callers": ["server/routes/api/notifications.js:126"]
+    },
+    {
+      "key": "server/storage/notifications.js :: refreshDeckActivityNotification",
+      "line": 420,
+      "params": ["scope", "notificationId", "userEmail", "updates"],
+      "exception": null,
+      "callers": [
+        "server/services/deck-activity-notifications.js:251",
+        "tests/deck-activity-notifications.test.js:168",
+        "tests/deck-activity-notifications.test.js:171"
+      ]
+    },
+    {
+      "key": "server/storage/password-reset.js :: cleanupExpiredTokens",
+      "line": 365,
+      "params": [],
+      "exception": "token: expires only rows of this capability lifecycle",
+      "callers": ["server/jobs/auth-cleanup.js:45"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: cleanupOldAuditLogs",
+      "line": 382,
+      "params": [],
+      "exception": null,
+      "callers": ["server/jobs/auth-cleanup.js:49"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: consumeResetToken",
+      "line": 207,
+      "params": ["rawToken"],
+      "exception": "token: atomically consumes the presented capability",
+      "callers": ["server/routes/api/password-reset.js:276"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: createResetToken",
+      "line": 124,
+      "params": ["email", "info"],
+      "exception": "token: issues a pre-auth capability for delivery to the verified mailbox",
+      "callers": ["server/routes/api/password-reset.js:176"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: getPasswordChangedAt",
+      "line": 319,
+      "params": ["email"],
+      "exception": null,
+      "callers": []
+    },
+    {
+      "key": "server/storage/password-reset.js :: hasDatabaseCredentials",
+      "line": 247,
+      "params": ["email"],
+      "exception": null,
+      "callers": ["server/routes/api/password-reset.js:386"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: isRateLimitedByEmail",
+      "line": 72,
+      "params": ["email"],
+      "exception": "token: abuse limit on pre-auth token issuance",
+      "callers": ["server/routes/api/password-reset.js:137"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: isRateLimitedByIp",
+      "line": 95,
+      "params": ["ipAddress"],
+      "exception": "token: abuse limit on pre-auth token issuance",
+      "callers": ["server/routes/api/password-reset.js:138"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: logAuthEvent",
+      "line": 340,
+      "params": ["event"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/admin-users.js:192",
+        "server/routes/api/admin-users.js:329",
+        "server/routes/api/auth.js:114",
+        "server/routes/api/auth.js:92",
+        "server/routes/api/magic-link.js:109",
+        "server/routes/api/magic-link.js:133",
+        "server/routes/api/magic-link.js:211",
+        "server/routes/api/magic-link.js:234",
+        "server/routes/api/magic-link.js:250",
+        "server/routes/api/password-reset.js:142",
+        "server/routes/api/password-reset.js:166",
+        "server/routes/api/password-reset.js:279",
+        "server/routes/api/password-reset.js:309",
+        "server/routes/api/password-reset.js:325",
+        "server/routes/api/password-reset.js:399",
+        "server/routes/api/password-reset.js:423",
+        "server/routes/api/password-reset.js:439",
+        "server/routes/api/sso.js:160",
+        "server/routes/api/sso.js:198",
+        "server/routes/api/sso.js:218",
+        "server/routes/api/sso.js:235"
+      ]
+    },
+    {
+      "key": "server/storage/password-reset.js :: setUserPassword",
+      "line": 260,
+      "params": ["scope", "email", "password"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/password-reset.js:306",
+        "server/routes/api/password-reset.js:420",
+        "tests/pg/ensure-user.pgtest.js:103",
+        "tests/pg/ensure-user.pgtest.js:104",
+        "tests/pg/ensure-user.pgtest.js:124"
+      ]
+    },
+    {
+      "key": "server/storage/password-reset.js :: validateResetToken",
+      "line": 161,
+      "params": ["rawToken"],
+      "exception": "token: validates the presented capability",
+      "callers": ["server/routes/api/password-reset.js:224"]
+    },
+    {
+      "key": "server/storage/password-reset.js :: verifyUserPassword",
+      "line": 306,
+      "params": ["email", "password"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/password-reset.js:397",
+        "tests/pg/ensure-user.pgtest.js:107"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/cache.js :: getPresentationCached",
+      "line": 57,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:217",
+        "server/routes/api/follow/interactions.js:295",
+        "server/routes/api/follow/interactions.js:392",
+        "server/routes/api/follow/interactions.js:54",
+        "server/routes/api/follow/state.js:18",
+        "server/routes/api/follow/status-ticker.js:35"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: createComment",
+      "line": 461,
+      "params": ["scope", "presentationId", "data"],
+      "exception": null,
+      "callers": [
+        "capture/lib/comments-seed.js:113",
+        "capture/lib/comments-seed.js:99",
+        "server/routes/api/presentations/analyze.js:124",
+        "server/services/comments.js:192",
+        "tests/pg/comment-thread-reads.pgtest.js:114",
+        "tests/pg/comment-thread-reads.pgtest.js:42"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: deleteComment",
+      "line": 701,
+      "params": ["scope", "commentId"],
+      "exception": null,
+      "callers": ["server/services/comments.js:351"]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: dismissComment",
+      "line": 665,
+      "params": ["scope", "commentId", null],
+      "exception": null,
+      "callers": ["server/services/comments.js:388"]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: getComment",
+      "line": 423,
+      "params": ["scope", "commentId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/comments-actions.js:106",
+        "server/routes/api/presentations/comments-list.js:81",
+        "server/services/comments.js:303",
+        "server/services/comments.js:709",
+        "server/services/comments.js:751",
+        "server/services/comments.js:759"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: getCommentAuthorEmail",
+      "line": 405,
+      "params": ["scope", "commentId"],
+      "exception": null,
+      "callers": [
+        "server/services/comment-notifications.js:64",
+        "server/services/comment-subscriptions.js:177",
+        "server/services/comments.js:316"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: getCommentCountsBySlide",
+      "line": 748,
+      "params": ["scope", "presentationId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/comments-list.js:111",
+        "server/routes/api/presentations/comments-list.js:152",
+        "server/services/comments.js:661"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: getOpenCommentCount",
+      "line": 723,
+      "params": ["scope", "presentationId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/comments-list.js:112",
+        "server/routes/api/presentations/comments-list.js:153",
+        "server/routes/api/presentations/comments-list.js:48",
+        "server/routes/api/share-links/guest-comments.js:115",
+        "server/services/comments.js:662"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: getThreadParticipants",
+      "line": 233,
+      "params": ["scope", "commentId"],
+      "exception": null,
+      "callers": ["server/services/comment-subscriptions.js:144"]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: listComments",
+      "line": 71,
+      "params": ["scope", "presentationId", "opts"],
+      "exception": null,
+      "callers": ["server/services/comments.js:576"]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: listRecentCommentsOnDecks",
+      "line": 345,
+      "params": ["scope", "decks", "opts"],
+      "exception": null,
+      "callers": ["server/services/comments.js:627"]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: markThreadsRead",
+      "line": 277,
+      "params": ["scope", "presentationId", "commentIds"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/comments-actions.js:230",
+        "tests/comment-read-state.test.js:132",
+        "tests/comment-read-state.test.js:143",
+        "tests/comment-read-state.test.js:150",
+        "tests/comment-read-state.test.js:155",
+        "tests/comment-read-state.test.js:161",
+        "tests/pg/comment-thread-reads.pgtest.js:122",
+        "tests/pg/comment-thread-reads.pgtest.js:133",
+        "tests/pg/comment-thread-reads.pgtest.js:75",
+        "tests/pg/comment-thread-reads.pgtest.js:86",
+        "tests/pg/comment-thread-reads.pgtest.js:98"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: reopenComment",
+      "line": 630,
+      "params": ["scope", "commentId"],
+      "exception": null,
+      "callers": ["server/services/comments.js:382"]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: resolveComment",
+      "line": 595,
+      "params": ["scope", "commentId", null],
+      "exception": null,
+      "callers": [
+        "capture/lib/comments-seed.js:130",
+        "server/routes/api/presentations/comments-actions.js:174",
+        "server/services/comments.js:377"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/comments.js :: updateComment",
+      "line": 557,
+      "params": ["scope", "commentId", "data"],
+      "exception": null,
+      "callers": ["server/services/comments.js:295"]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: createPresentation",
+      "line": 97,
+      "params": ["storageScope", "body"],
+      "exception": null,
+      "callers": [
+        "server/services/presentations.js:580",
+        "tests/pg/authz-read-user-id.pgtest.js:114",
+        "tests/pg/authz-read-user-id.pgtest.js:135",
+        "tests/pg/authz-read-user-id.pgtest.js:149",
+        "tests/pg/authz-read-user-id.pgtest.js:172",
+        "tests/pg/authz-read-user-id.pgtest.js:198",
+        "tests/pg/authz-read-user-id.pgtest.js:98",
+        "tests/pg/presentation-owner-user-id.pgtest.js:126",
+        "tests/pg/presentation-owner-user-id.pgtest.js:141",
+        "tests/pg/presentation-owner-user-id.pgtest.js:155",
+        "tests/pg/presentation-owner-user-id.pgtest.js:179",
+        "tests/pg/presentation-owner-user-id.pgtest.js:209",
+        "tests/pg/presentation-owner-user-id.pgtest.js:239",
+        "tests/pg/presentation-owner-user-id.pgtest.js:264",
+        "tests/pg/sandbox-guest-identity.pgtest.js:128",
+        "tests/pg/storage-mutation-shapes.pgtest.js:107",
+        "tests/pg/storage-mutation-shapes.pgtest.js:130",
+        "tests/pg/storage-mutation-shapes.pgtest.js:197",
+        "tests/pg/storage-mutation-shapes.pgtest.js:96",
+        "tests/pg/theme-reference-migration.pgtest.js:169",
+        "tests/pg/trash-library-user-id.pgtest.js:120",
+        "tests/pg/trash-library-user-id.pgtest.js:142",
+        "tests/pg/trash-library-user-id.pgtest.js:158",
+        "tests/pg/trash-library-user-id.pgtest.js:174"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: createPresentationVersion",
+      "line": 551,
+      "params": ["storageScope", "presentationId", "pres", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/restore.js:42",
+        "server/routes/api/presentations/versions.js:276",
+        "server/routes/api/presentations/versions.js:52",
+        "server/storage/presentations/index.js:187",
+        "tests/pg/presentation-extensions.pgtest.js:48",
+        "tests/pg/version-history.pgtest.js:72",
+        "tests/pg/version-snapshot-identity.pgtest.js:171",
+        "tests/pg/version-snapshot-identity.pgtest.js:197",
+        "tests/pg/version-snapshot-identity.pgtest.js:237",
+        "tests/pg/version-snapshot-identity.pgtest.js:271",
+        "tests/pg/version-snapshot-identity.pgtest.js:352",
+        "tests/pg/version-snapshot-identity.pgtest.js:395"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: deletePresentation",
+      "line": 352,
+      "params": ["storageScope", "id", "opts"],
+      "exception": null,
+      "callers": [
+        "server/services/presentations.js:675",
+        "tests/pg/storage-mutation-shapes.pgtest.js:111",
+        "tests/pg/trash-library-user-id.pgtest.js:124",
+        "tests/pg/trash-library-user-id.pgtest.js:146",
+        "tests/pg/trash-library-user-id.pgtest.js:162",
+        "tests/pg/trash-library-user-id.pgtest.js:178"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: deletePresentationRecord",
+      "line": 414,
+      "params": ["storageScope", "id", null],
+      "exception": null,
+      "callers": ["server/services/permanent-delete.js:46"]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: duplicatePresentation",
+      "line": 455,
+      "params": ["storageScope", "id", "opts"],
+      "exception": null,
+      "callers": [
+        "server/services/presentations.js:633",
+        "tests/pg/presentation-extensions.pgtest.js:55",
+        "tests/pg/storage-mutation-shapes.pgtest.js:121",
+        "tests/pg/storage-mutation-shapes.pgtest.js:134"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: getFirstSlidesForIds",
+      "line": 473,
+      "params": ["storageScope", "ids"],
+      "exception": null,
+      "callers": ["server/routes/api/collaborators.js:96"]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: getPresentation",
+      "line": 77,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:227",
+        "server/routes/api/analytics-track.js:85",
+        "server/routes/api/follow/presentation.js:66",
+        "server/routes/api/follow/questions.js:138",
+        "server/routes/api/follow/questions.js:182",
+        "server/routes/api/follow/questions.js:40",
+        "server/routes/api/follow/questions.js:83",
+        "server/routes/api/follow/render-slide.js:41",
+        "server/routes/api/live-session-audience.js:94",
+        "server/routes/api/presentations/comments-actions.js:127",
+        "server/routes/api/share-links/public.js:241",
+        "server/routes/api/share-links/public.js:337",
+        "server/routes/api/share-links/public.js:403",
+        "server/routes/api/share-links/public.js:91",
+        "server/routes/static/embed.js:42",
+        "server/routes/static/published.js:128",
+        "server/routes/static/published.js:51",
+        "server/routes/static/share-viewer.js:34",
+        "server/services/comments.js:644",
+        "server/services/exports.js:170",
+        "server/services/presentations.js:217",
+        "server/services/presentations.js:377",
+        "server/services/presentations.js:692",
+        "server/services/translate.js:413",
+        "server/storage/live-sessions/control.js:116",
+        "server/storage/live-sessions/sessions.js:69",
+        "server/storage/presentations/cache.js:65",
+        "server/storage/presentations/index.js:172",
+        "server/storage/presentations/index.js:185",
+        "server/storage/presentations/ownership.js:40",
+        "server/storage/published.js:338",
+        "tests/pg/authz-read-user-id.pgtest.js:102",
+        "tests/pg/authz-read-user-id.pgtest.js:118",
+        "tests/pg/authz-read-user-id.pgtest.js:139",
+        "tests/pg/authz-read-user-id.pgtest.js:153",
+        "tests/pg/authz-read-user-id.pgtest.js:176",
+        "tests/pg/presentation-extensions.pgtest.js:40",
+        "tests/pg/sandbox-guest-identity.pgtest.js:132",
+        "tests/pg/trash-library-user-id.pgtest.js:165",
+        "tests/pg/version-snapshot-identity.pgtest.js:168",
+        "tests/pg/version-snapshot-identity.pgtest.js:196",
+        "tests/pg/version-snapshot-identity.pgtest.js:236",
+        "tests/pg/version-snapshot-identity.pgtest.js:270",
+        "tests/pg/version-snapshot-identity.pgtest.js:280",
+        "tests/pg/version-snapshot-identity.pgtest.js:296",
+        "tests/pg/version-snapshot-identity.pgtest.js:312",
+        "tests/pg/version-snapshot-identity.pgtest.js:320",
+        "tests/pg/version-snapshot-identity.pgtest.js:351",
+        "tests/pg/version-snapshot-identity.pgtest.js:370",
+        "tests/pg/version-snapshot-identity.pgtest.js:378",
+        "tests/pg/version-snapshot-identity.pgtest.js:394"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: getPresentationVersion",
+      "line": 531,
+      "params": ["storageScope", "presentationId", "versionId"],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:258",
+        "server/routes/api/presentations/restore.js:36",
+        "server/routes/api/presentations/versions.js:136",
+        "server/routes/api/presentations/versions.js:204",
+        "server/routes/api/presentations/versions.js:98",
+        "tests/pg/presentation-extensions.pgtest.js:49",
+        "tests/pg/version-history.pgtest.js:104",
+        "tests/pg/version-snapshot-identity.pgtest.js:301",
+        "tests/pg/version-snapshot-identity.pgtest.js:365",
+        "tests/pg/version-snapshot-identity.pgtest.js:405"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: listPresentations",
+      "line": 66,
+      "params": ["storageScope"],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:219",
+        "server/services/presentations.js:352",
+        "tests/pg/authz-read-user-id.pgtest.js:202"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: listPresentationVersions",
+      "line": 519,
+      "params": ["storageScope", "presentationId"],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:255",
+        "server/routes/api/presentations/versions.js:262",
+        "server/routes/api/presentations/versions.js:42",
+        "tests/pg/version-history.pgtest.js:119",
+        "tests/pg/version-history.pgtest.js:95",
+        "tests/pg/version-snapshot-identity.pgtest.js:213",
+        "tests/pg/version-snapshot-identity.pgtest.js:247"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: listTrashedPresentations",
+      "line": 373,
+      "params": ["storageScope"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/trash.js:41",
+        "tests/pg/trash-library-user-id.pgtest.js:136",
+        "tests/pg/trash-library-user-id.pgtest.js:179"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: listTrashedPresentationsBefore",
+      "line": 437,
+      "params": ["storageScope", "cutoffIso"],
+      "exception": null,
+      "callers": ["server/jobs/retention-cleanup.js:87"]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: prunePresentationVersions",
+      "line": 584,
+      "params": ["storageScope", "presentationId", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/versions.js:281",
+        "server/storage/presentations/index.js:191",
+        "tests/pg/version-history.pgtest.js:118"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: restorePresentation",
+      "line": 385,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "server/services/presentations.js:709",
+        "tests/pg/storage-mutation-shapes.pgtest.js:100",
+        "tests/pg/storage-mutation-shapes.pgtest.js:113",
+        "tests/pg/storage-mutation-shapes.pgtest.js:90",
+        "tests/pg/trash-library-user-id.pgtest.js:163"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/index.js :: updatePresentation",
+      "line": 159,
+      "params": ["storageScope", "id", "body", "opts"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/convert.js:170",
+        "server/routes/api/convert.js:510",
+        "server/routes/api/notion/import.js:139",
+        "server/routes/api/notion/import.js:392",
+        "server/routes/api/presentations/comments-actions.js:171",
+        "server/routes/api/presentations/import-deck.js:327",
+        "server/routes/api/presentations/import-markdown.js:118",
+        "server/routes/api/presentations/import-slides-as-images.js:250",
+        "server/routes/api/presentations/restore.js:54",
+        "server/routes/api/publish.js:179",
+        "server/routes/api/publish.js:99",
+        "server/routes/api/questions.js:272",
+        "server/services/import-json.js:85",
+        "server/services/publish-presentation.js:229",
+        "server/services/publish-presentation.js:289",
+        "server/services/save-presentation.js:290",
+        "server/services/slides.js:77",
+        "server/services/theme.js:184",
+        "server/services/translate.js:235",
+        "server/services/visibility.js:165",
+        "server/storage/presentations/ownership.js:52",
+        "server/storage/presentations/slide-notes.js:77",
+        "tests/pg/presentation-extensions.pgtest.js:43",
+        "tests/pg/presentation-extensions.pgtest.js:45",
+        "tests/pg/presentation-extensions.pgtest.js:51",
+        "tests/pg/presentation-extensions.pgtest.js:52",
+        "tests/pg/presentation-owner-user-id.pgtest.js:161",
+        "tests/pg/presentation-owner-user-id.pgtest.js:184",
+        "tests/pg/presentation-owner-user-id.pgtest.js:271",
+        "tests/pg/version-snapshot-identity.pgtest.js:313",
+        "tests/pg/version-snapshot-identity.pgtest.js:371"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/list-metadata.js :: getCollaboratorCounts",
+      "line": 26,
+      "params": ["scope", "presentationIds"],
+      "exception": null,
+      "callers": ["server/routes/api/presentations/list.js:37"]
+    },
+    {
+      "key": "server/storage/presentations/list-metadata.js :: getPopularPresentationRows",
+      "line": 52,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/routes/api/presentations/popular.js:57"]
+    },
+    {
+      "key": "server/storage/presentations/list-metadata.js :: getPublishedPresentationIds",
+      "line": 8,
+      "params": ["scope", "presentationIds"],
+      "exception": null,
+      "callers": ["server/routes/api/presentations/list.js:33"]
+    },
+    {
+      "key": "server/storage/presentations/ownership.js :: transferPresentationOwnership",
+      "line": 24,
+      "params": ["scope", "presentationId", "options"],
+      "exception": null,
+      "callers": [
+        "server/services/ownership.js:144",
+        "tests/pg/presentation-owner-user-id.pgtest.js:214",
+        "tests/pg/presentation-owner-user-id.pgtest.js:244",
+        "tests/pg/version-snapshot-identity.pgtest.js:289",
+        "tests/pg/version-snapshot-identity.pgtest.js:359"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/sandbox-quota.js :: assertSandboxQuotaForCreate",
+      "line": 136,
+      "params": ["scope", "ownerEmail"],
+      "exception": null,
+      "callers": [
+        "server/storage/presentations/index.js:107",
+        "server/storage/presentations/index.js:461",
+        "tests/pg/sandbox.pgtest.js:233",
+        "tests/pg/sandbox.pgtest.js:239",
+        "tests/pg/sandbox.pgtest.js:259",
+        "tests/pg/sandbox.pgtest.js:276",
+        "tests/pg/sandbox.pgtest.js:277",
+        "tests/pg/sandbox.pgtest.js:281"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/sandbox-quota.js :: getSandboxTotalBytes",
+      "line": 116,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/jobs/sandbox-cleanup.js:49",
+        "tests/pg/sandbox.pgtest.js:221"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/sandbox-quota.js :: getSandboxUsageForOwner",
+      "line": 88,
+      "params": ["scope", "ownerEmail"],
+      "exception": null,
+      "callers": [
+        "server/storage/presentations/sandbox-quota.js:143",
+        "tests/pg/presentation-email-normalized.pgtest.js:161",
+        "tests/pg/sandbox.pgtest.js:214",
+        "tests/pg/sandbox.pgtest.js:218"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/slide-notes.js :: updateSlideNotes",
+      "line": 42,
+      "params": ["storageScope", "presentation", null],
+      "exception": null,
+      "callers": ["server/routes/api/live-session-audience.js:268"]
+    },
+    {
+      "key": "server/storage/presentations/subscriptions.js :: getSubscription",
+      "line": 24,
+      "params": ["scope", "presentationId", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/subscription.js:50",
+        "tests/comment-subscriptions.test.js:165",
+        "tests/comment-subscriptions.test.js:166",
+        "tests/comment-subscriptions.test.js:167",
+        "tests/pg/presentation-subscriptions.pgtest.js:68",
+        "tests/pg/presentation-subscriptions.pgtest.js:79",
+        "tests/pg/presentation-subscriptions.pgtest.js:90"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/subscriptions.js :: listSubscriptions",
+      "line": 91,
+      "params": ["scope", "presentationId"],
+      "exception": null,
+      "callers": [
+        "server/services/comment-subscriptions.js:153",
+        "server/services/deck-activity-notifications.js:165",
+        "tests/comment-subscriptions.test.js:181",
+        "tests/pg/presentation-subscriptions.pgtest.js:106"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/subscriptions.js :: setSubscription",
+      "line": 46,
+      "params": ["scope", "presentationId", "userEmail", "level"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/subscription.js:71",
+        "tests/comment-subscriptions.test.js:171",
+        "tests/comment-subscriptions.test.js:176",
+        "tests/pg/presentation-subscriptions.pgtest.js:103",
+        "tests/pg/presentation-subscriptions.pgtest.js:104",
+        "tests/pg/presentation-subscriptions.pgtest.js:64",
+        "tests/pg/presentation-subscriptions.pgtest.js:74",
+        "tests/pg/presentation-subscriptions.pgtest.js:75",
+        "tests/pg/presentation-subscriptions.pgtest.js:85",
+        "tests/pg/presentation-subscriptions.pgtest.js:86",
+        "tests/pg/presentation-subscriptions.pgtest.js:95"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/ydocs.js :: deleteYDocState",
+      "line": 81,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "server/storage/presentations/index.js:265",
+        "server/storage/presentations/index.js:363",
+        "tests/pg/presentation-ydocs.pgtest.js:94"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/ydocs.js :: getYDocState",
+      "line": 27,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "tests/pg/presentation-ydocs.pgtest.js:71",
+        "tests/pg/presentation-ydocs.pgtest.js:78",
+        "tests/pg/presentation-ydocs.pgtest.js:87",
+        "tests/pg/presentation-ydocs.pgtest.js:96"
+      ]
+    },
+    {
+      "key": "server/storage/presentations/ydocs.js :: setYDocState",
+      "line": 50,
+      "params": ["storageScope", "id", "state"],
+      "exception": null,
+      "callers": [
+        "tests/pg/presentation-ydocs.pgtest.js:76",
+        "tests/pg/presentation-ydocs.pgtest.js:84",
+        "tests/pg/presentation-ydocs.pgtest.js:85",
+        "tests/pg/presentation-ydocs.pgtest.js:93"
+      ]
+    },
+    {
+      "key": "server/storage/published.js :: getPublishedById",
+      "line": 194,
+      "params": ["storageScope", "publishId"],
+      "exception": null,
+      "callers": [
+        "server/routes/static/embed.js:30",
+        "server/routes/static/published.js:116",
+        "server/routes/static/published.js:39"
+      ]
+    },
+    {
+      "key": "server/storage/published.js :: getPublishedIndex",
+      "line": 164,
+      "params": ["storageScope"],
+      "exception": null,
+      "callers": [
+        "server/storage/image-library-usage.js:88",
+        "server/storage/published.js:324"
+      ]
+    },
+    {
+      "key": "server/storage/published.js :: listPublishedForFeed",
+      "line": 319,
+      "params": ["storageScope", "opts"],
+      "exception": null,
+      "callers": ["server/routes/feed.js:91"]
+    },
+    {
+      "key": "server/storage/published.js :: removePublishedEntry",
+      "line": 257,
+      "params": ["storageScope", "publishId"],
+      "exception": null,
+      "callers": [
+        "server/services/publish-presentation.js:287",
+        "tests/pg/storage-mutation-shapes.pgtest.js:185",
+        "tests/pg/storage-mutation-shapes.pgtest.js:190",
+        "tests/pg/storage-mutation-shapes.pgtest.js:206"
+      ]
+    },
+    {
+      "key": "server/storage/published.js :: updatePublishedSlug",
+      "line": 273,
+      "params": ["storageScope", "publishId", "nextSlug"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/publish.js:86",
+        "tests/published-slug.test.js:36",
+        "tests/published-slug.test.js:45"
+      ]
+    },
+    {
+      "key": "server/storage/published.js :: upsertPublishedEntry",
+      "line": 218,
+      "params": ["storageScope", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/publish.js:162",
+        "server/services/publish-presentation.js:210",
+        "tests/pg/image-library-usage.pgtest.js:213",
+        "tests/pg/storage-mutation-shapes.pgtest.js:201"
+      ]
+    },
+    {
+      "key": "server/storage/questions.js :: attachQuestionsSseClient",
+      "line": 543,
+      "params": ["scope", "sessionId", "res"],
+      "exception": null,
+      "callers": ["server/routes/api/follow/questions-events.js:50"]
+    },
+    {
+      "key": "server/storage/questions.js :: cancelQuestion",
+      "line": 424,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/questions.js:188",
+        "tests/pg/live-interactions.pgtest.js:242",
+        "tests/pg/live-interactions.pgtest.js:283",
+        "tests/pg/live-interactions.pgtest.js:290"
+      ]
+    },
+    {
+      "key": "server/storage/questions.js :: createQuestion",
+      "line": 290,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/questions.js:95",
+        "tests/pg/live-interactions.pgtest.js:115",
+        "tests/pg/live-interactions.pgtest.js:134",
+        "tests/pg/live-interactions.pgtest.js:163",
+        "tests/pg/live-interactions.pgtest.js:178",
+        "tests/pg/live-interactions.pgtest.js:184",
+        "tests/pg/live-interactions.pgtest.js:190",
+        "tests/pg/live-interactions.pgtest.js:222",
+        "tests/pg/live-interactions.pgtest.js:270",
+        "tests/pg/live-interactions.pgtest.js:276",
+        "tests/pg/live-interactions.pgtest.js:672",
+        "tests/pg/live-interactions.pgtest.js:704",
+        "tests/pg/live-interactions.pgtest.js:748"
+      ]
+    },
+    {
+      "key": "server/storage/questions.js :: getQuestion",
+      "line": 233,
+      "params": ["scope", "sessionId", "questionId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/questions.js:181",
+        "server/storage/questions.js:368",
+        "server/storage/questions.js:441",
+        "server/storage/questions.js:476",
+        "server/storage/questions.js:514",
+        "tests/pg/live-interactions.pgtest.js:350"
+      ]
+    },
+    {
+      "key": "server/storage/questions.js :: listQuestions",
+      "line": 258,
+      "params": ["scope", "sessionId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/questions.js:64",
+        "server/storage/questions.js:212",
+        "server/storage/questions.js:561",
+        "tests/pg/live-interactions.pgtest.js:124",
+        "tests/pg/live-interactions.pgtest.js:210",
+        "tests/pg/live-interactions.pgtest.js:305"
+      ]
+    },
+    {
+      "key": "server/storage/questions.js :: promoteQuestion",
+      "line": 504,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/questions.js:281",
+        "tests/pg/live-interactions.pgtest.js:204",
+        "tests/pg/live-interactions.pgtest.js:226",
+        "tests/pg/live-interactions.pgtest.js:260"
+      ]
+    },
+    {
+      "key": "server/storage/questions.js :: removeQuestion",
+      "line": 466,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/questions.js:139",
+        "tests/pg/live-interactions.pgtest.js:251",
+        "tests/pg/live-interactions.pgtest.js:297"
+      ]
+    },
+    {
+      "key": "server/storage/questions.js :: upvoteQuestion",
+      "line": 351,
+      "params": ["scope", "sessionId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/questions.js:144",
+        "tests/pg/live-interactions.pgtest.js:140",
+        "tests/pg/live-interactions.pgtest.js:147",
+        "tests/pg/live-interactions.pgtest.js:168",
+        "tests/pg/live-interactions.pgtest.js:196",
+        "tests/pg/live-interactions.pgtest.js:200",
+        "tests/pg/live-interactions.pgtest.js:233",
+        "tests/pg/live-interactions.pgtest.js:352"
+      ]
+    },
+    {
+      "key": "server/storage/sandbox-cleanup.js :: deleteExpiredSandboxDecks",
+      "line": 9,
+      "params": ["scope", "cutoff"],
+      "exception": null,
+      "callers": ["server/jobs/sandbox-cleanup.js:40"]
+    },
+    {
+      "key": "server/storage/sandbox-cleanup.js :: deleteExpiredSandboxGuests",
+      "line": 27,
+      "params": ["scope", "cutoff"],
+      "exception": null,
+      "callers": ["server/jobs/sandbox-cleanup.js:82"]
+    },
+    {
+      "key": "server/storage/settings.js :: getAiIdentity",
+      "line": 1146,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/analyze.js:76",
+        "server/storage/presentations/comments.js:58"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: getAnalyticsRetention",
+      "line": 1272,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/jobs/analytics-cleanup.js:36"]
+    },
+    {
+      "key": "server/storage/settings.js :: getAppSettings",
+      "line": 356,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/jobs/digest-email.js:50",
+        "server/routes/api/analytics-track.js:300",
+        "server/routes/api/settings.js:203",
+        "server/routes/api/settings.js:70",
+        "server/routes/api/stock-media.js:46",
+        "server/routes/static/app-shell.js:144",
+        "server/services/comment-notifications.js:103",
+        "server/services/comment-notifications.js:265",
+        "server/storage/instance-census.js:145",
+        "server/storage/settings.js:1153",
+        "server/storage/settings.js:1173",
+        "server/storage/settings.js:1279",
+        "server/storage/settings.js:509",
+        "server/utils/webhooks.js:280",
+        "server/utils/webhooks.js:346",
+        "tests/pg/settings.pgtest.js:142",
+        "tests/pg/settings.pgtest.js:220",
+        "tests/pg/settings.pgtest.js:242",
+        "tests/pg/settings.pgtest.js:258",
+        "tests/pg/settings.pgtest.js:290",
+        "tests/pg/settings.pgtest.js:60",
+        "tests/pg/settings.pgtest.js:65",
+        "tests/pg/settings.pgtest.js:69",
+        "tests/pg/settings.pgtest.js:84"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: getDefaultThemeId",
+      "line": 1232,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/export/deck-theme.js:183",
+        "server/routes/api/themes.js:162",
+        "server/routes/api/themes.js:295",
+        "server/routes/public-api/v1/resources.js:35",
+        "server/utils/themes.js:144",
+        "tests/pg/settings.pgtest.js:123",
+        "tests/pg/settings.pgtest.js:124",
+        "tests/pg/settings.pgtest.js:136",
+        "tests/pg/settings.pgtest.js:176",
+        "tests/pg/settings.pgtest.js:183",
+        "tests/theme-default-setting-record.test.js:48",
+        "tests/theme-settings-organization.test.js:203",
+        "tests/theme-settings-organization.test.js:204",
+        "tests/theme-settings-organization.test.js:223",
+        "tests/theme-settings-organization.test.js:85",
+        "tests/theme-settings-organization.test.js:86",
+        "tests/theme-settings-organization.test.js:98",
+        "tests/theme-settings-organization.test.js:99"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: getEmailSender",
+      "line": 1166,
+      "params": ["scope"],
+      "exception": null,
+      "callers": ["server/integrations/email/core.js:29"]
+    },
+    {
+      "key": "server/storage/settings.js :: getEnabledThemeIds",
+      "line": 1246,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/themes.js:161",
+        "tests/pg/settings.pgtest.js:125",
+        "tests/pg/settings.pgtest.js:137",
+        "tests/pg/settings.pgtest.js:179",
+        "tests/pg/settings.pgtest.js:184",
+        "tests/theme-settings-organization.test.js:128"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: getStoredUiLocale",
+      "line": 779,
+      "params": ["scope", "email"],
+      "exception": null,
+      "callers": ["server/integrations/email/recipient-locale.js:56"]
+    },
+    {
+      "key": "server/storage/settings.js :: getUserSettings",
+      "line": 755,
+      "params": ["scope", "email"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/analytics-track.js:319",
+        "server/routes/api/auth.js:165",
+        "server/routes/api/presentations/subscription.js:51",
+        "server/routes/api/settings.js:268",
+        "server/services/comment-notifications.js:127",
+        "server/services/comment-notifications.js:275",
+        "server/services/comment-subscriptions.js:200",
+        "server/services/deck-activity-notifications.js:175",
+        "server/services/publish-presentation.js:91",
+        "server/utils/webhooks.js:300",
+        "tests/pg/identity-verification.pgtest.js:323",
+        "tests/pg/settings.pgtest.js:320",
+        "tests/pg/settings.pgtest.js:343",
+        "tests/pg/settings.pgtest.js:355",
+        "tests/pg/settings.pgtest.js:378",
+        "tests/pg/settings.pgtest.js:382",
+        "tests/pg/settings.pgtest.js:401",
+        "tests/pg/settings.pgtest.js:417",
+        "tests/pg/settings.pgtest.js:431",
+        "tests/pg/user-settings-user-id.pgtest.js:117",
+        "tests/pg/user-settings-user-id.pgtest.js:131",
+        "tests/pg/user-settings-user-id.pgtest.js:150",
+        "tests/pg/user-settings-user-id.pgtest.js:167",
+        "tests/pg/user-settings-user-id.pgtest.js:177",
+        "tests/pg/user-settings-user-id.pgtest.js:186",
+        "tests/pg/user-settings-user-id.pgtest.js:202",
+        "tests/pg/user-settings-user-id.pgtest.js:216",
+        "tests/pg/user-settings-user-id.pgtest.js:261"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: installationDefaultThemeId",
+      "line": 1224,
+      "params": [],
+      "exception": null,
+      "callers": [
+        "server/storage/settings.js:1242",
+        "server/utils/themes.js:41"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: listDigestRecipients",
+      "line": 912,
+      "params": ["scope", "dayOfWeek"],
+      "exception": null,
+      "callers": [
+        "server/jobs/digest-email.js:68",
+        "tests/pg/digest-recipients.pgtest.js:170",
+        "tests/pg/digest-recipients.pgtest.js:89"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: resolveSeedThemeSlug",
+      "line": 1209,
+      "params": ["slug"],
+      "exception": null,
+      "callers": [
+        "server/sandbox/examples.js:81",
+        "server/sandbox/library.js:140",
+        "server/storage/settings.js:1226",
+        "server/utils/themes.js:114"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: writeAppSettings",
+      "line": 506,
+      "params": ["scope", "next"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/settings.js:91",
+        "tests/pg/cleanup-jobs.pgtest.js:85",
+        "tests/pg/instance-health-view.pgtest.js:167",
+        "tests/pg/settings.pgtest.js:141",
+        "tests/pg/settings.pgtest.js:197",
+        "tests/pg/settings.pgtest.js:226",
+        "tests/pg/settings.pgtest.js:246",
+        "tests/pg/settings.pgtest.js:250",
+        "tests/pg/settings.pgtest.js:296",
+        "tests/pg/settings.pgtest.js:64",
+        "tests/pg/settings.pgtest.js:68",
+        "tests/pg/settings.pgtest.js:79",
+        "tests/pg/settings.pgtest.js:80"
+      ]
+    },
+    {
+      "key": "server/storage/settings.js :: writeUserSettings",
+      "line": 967,
+      "params": ["scope", "email", "next"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/profile.js:110",
+        "server/routes/api/profile.js:138",
+        "server/routes/api/profile.js:222",
+        "server/routes/api/profile.js:241",
+        "server/routes/api/settings.js:276",
+        "tests/pg/digest-recipients.pgtest.js:141",
+        "tests/pg/digest-recipients.pgtest.js:150",
+        "tests/pg/digest-recipients.pgtest.js:160",
+        "tests/pg/digest-recipients.pgtest.js:95",
+        "tests/pg/identity-verification.pgtest.js:285",
+        "tests/pg/identity-verification.pgtest.js:304",
+        "tests/pg/identity-verification.pgtest.js:339",
+        "tests/pg/identity-verification.pgtest.js:360",
+        "tests/pg/identity-verification.pgtest.js:370",
+        "tests/pg/identity-verification.pgtest.js:452",
+        "tests/pg/identity-verification.pgtest.js:507",
+        "tests/pg/identity-verification.pgtest.js:579",
+        "tests/pg/identity-verification.pgtest.js:594",
+        "tests/pg/settings.pgtest.js:326",
+        "tests/pg/settings.pgtest.js:349",
+        "tests/pg/settings.pgtest.js:374",
+        "tests/pg/settings.pgtest.js:375",
+        "tests/pg/settings.pgtest.js:394",
+        "tests/pg/settings.pgtest.js:399",
+        "tests/pg/settings.pgtest.js:410",
+        "tests/pg/settings.pgtest.js:413",
+        "tests/pg/settings.pgtest.js:424",
+        "tests/pg/settings.pgtest.js:427",
+        "tests/pg/user-settings-user-id.pgtest.js:113",
+        "tests/pg/user-settings-user-id.pgtest.js:123",
+        "tests/pg/user-settings-user-id.pgtest.js:138",
+        "tests/pg/user-settings-user-id.pgtest.js:140",
+        "tests/pg/user-settings-user-id.pgtest.js:160",
+        "tests/pg/user-settings-user-id.pgtest.js:162",
+        "tests/pg/user-settings-user-id.pgtest.js:173",
+        "tests/pg/user-settings-user-id.pgtest.js:183",
+        "tests/pg/user-settings-user-id.pgtest.js:207",
+        "tests/pg/user-settings-user-id.pgtest.js:226",
+        "tests/pg/user-settings-user-id.pgtest.js:227",
+        "tests/pg/user-settings-user-id.pgtest.js:228",
+        "tests/pg/user-settings-user-id.pgtest.js:229",
+        "tests/pg/user-settings-user-id.pgtest.js:254"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/access-log.js :: getShareLinkAccessLog",
+      "line": 54,
+      "params": ["shareLinkId", "options"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/management.js:295"]
+    },
+    {
+      "key": "server/storage/share-links/access-log.js :: logShareLinkAccess",
+      "line": 30,
+      "params": ["shareLinkId", "info"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/public.js:236"]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: createShareLink",
+      "line": 71,
+      "params": ["scope", "presentationId", "options"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/management.js:97"]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: getShareLinkById",
+      "line": 174,
+      "params": ["scope", "linkId"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/management.js:67"]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: getShareLinkByToken",
+      "line": 130,
+      "params": ["scope", "token"],
+      "exception": null,
+      "callers": ["server/routes/static/share-viewer.js:26"]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: getValidShareLinkById",
+      "line": 204,
+      "params": ["db", "shareLinkId", "orgId"],
+      "exception": null,
+      "callers": [
+        "server/storage/share-links/guests.js:215",
+        "server/storage/share-links/guests.js:302",
+        "server/storage/share-links/guests.js:363",
+        "server/storage/share-links/guests.js:80"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: listShareLinks",
+      "line": 354,
+      "params": ["scope", "presentationId", "options"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/share-links/guests.js:175",
+        "server/routes/api/share-links/guests.js:69",
+        "server/routes/api/share-links/management.js:138"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: revokeAllShareLinks",
+      "line": 478,
+      "params": ["scope", "presentationId", "revokedBy"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/management.js:169"]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: revokeShareLink",
+      "line": 438,
+      "params": ["scope", "linkId", "revokedBy", "options"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/management.js:211"]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: shareLinkCreatorNames",
+      "line": 54,
+      "params": ["rows"],
+      "exception": null,
+      "callers": [
+        "server/storage/share-links/crud.js:118",
+        "server/storage/share-links/crud.js:157",
+        "server/storage/share-links/crud.js:190",
+        "server/storage/share-links/crud.js:279",
+        "server/storage/share-links/crud.js:374",
+        "server/storage/share-links/crud.js:424",
+        "server/storage/share-links/guests.js:256",
+        "server/storage/share-links/guests.js:322"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: updateShareLink",
+      "line": 390,
+      "params": ["scope", "linkId", "updates"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/management.js:253"]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: validateShareLink",
+      "line": 239,
+      "params": ["token"],
+      "exception": "token: validates the presented public share token",
+      "callers": [
+        "server/routes/api/analytics-track.js:121",
+        "server/routes/api/share-links/guest-comments.js:75",
+        "server/routes/api/share-links/public.js:213",
+        "server/routes/api/share-links/public.js:318",
+        "server/routes/api/share-links/public.js:357",
+        "server/routes/api/share-links/public.js:485",
+        "server/routes/api/share-links/public.js:82",
+        "server/storage/share-links/crud.js:294"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/crud.js :: verifyShareLinkAccess",
+      "line": 293,
+      "params": ["token", "password"],
+      "exception": "token: checks the presented share token and password",
+      "callers": ["server/routes/api/share-links/public.js:226"]
+    },
+    {
+      "key": "server/storage/share-links/guests.js :: getGuestBySessionToken",
+      "line": 274,
+      "params": ["sessionToken"],
+      "exception": "token: resolves the presented guest session capability",
+      "callers": [
+        "server/routes/api/share-links/public.js:504",
+        "server/utils/route-middleware.js:107"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/guests.js :: listGuestsForShareLink",
+      "line": 430,
+      "params": ["scope", "shareLinkId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/share-links/guests.js:121",
+        "server/routes/api/share-links/guests.js:168"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/guests.js :: markInvitationSent",
+      "line": 485,
+      "params": ["scope", "guestId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/share-links/guests.js:198",
+        "server/routes/api/share-links/guests.js:88"
+      ]
+    },
+    {
+      "key": "server/storage/share-links/guests.js :: preRegisterGuest",
+      "line": 342,
+      "params": ["scope", "shareLinkId", "guestData", "invitedBy"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/guests.js:55"]
+    },
+    {
+      "key": "server/storage/share-links/guests.js :: removeGuest",
+      "line": 456,
+      "params": ["scope", "guestId"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/guests.js:142"]
+    },
+    {
+      "key": "server/storage/share-links/guests.js :: requestGuestVerification",
+      "line": 53,
+      "params": ["shareLinkId", "email", "name"],
+      "exception": null,
+      "callers": ["server/routes/api/share-links/public.js:381"]
+    },
+    {
+      "key": "server/storage/share-links/guests.js :: verifyGuestEmail",
+      "line": 178,
+      "params": ["verificationToken"],
+      "exception": "token: consumes the emailed guest verification capability",
+      "callers": ["server/routes/api/share-links/public.js:442"]
+    },
+    {
+      "key": "server/storage/share-links/index.js :: cleanupExpiredShareLinks",
+      "line": 49,
+      "params": [],
+      "exception": null,
+      "callers": ["server/jobs/retention-cleanup.js:146"]
+    },
+    {
+      "key": "server/storage/slide-library-usage.js :: listSlideLibraryUsage",
+      "line": 55,
+      "params": ["storageScope", "userEmail"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/home.js:124",
+        "server/routes/api/slide-library.js:137",
+        "tests/pg/slide-library-usage-storage.pgtest.js:102",
+        "tests/pg/slide-library-usage-storage.pgtest.js:143",
+        "tests/pg/slide-library-usage-storage.pgtest.js:48",
+        "tests/pg/slide-library-usage-storage.pgtest.js:83",
+        "tests/pg/slide-library-usage-storage.pgtest.js:93"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library-usage.js :: recordSlideLibraryUsage",
+      "line": 98,
+      "params": ["storageScope", "userEmail", "items"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:148",
+        "server/services/presentations.js:600",
+        "tests/pg/home-aggregation-route.pgtest.js:82",
+        "tests/pg/slide-library-usage-storage.pgtest.js:113",
+        "tests/pg/slide-library-usage-storage.pgtest.js:124",
+        "tests/pg/slide-library-usage-storage.pgtest.js:132",
+        "tests/pg/slide-library-usage-storage.pgtest.js:65",
+        "tests/pg/slide-library-usage-storage.pgtest.js:79",
+        "tests/pg/slide-library-usage-storage.pgtest.js:90",
+        "tests/pg/slide-library-usage-storage.pgtest.js:98"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: createOrganizationLibraryItem",
+      "line": 621,
+      "params": ["storageScope", "input", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:270",
+        "tests/pg/home-aggregation-route.pgtest.js:72",
+        "tests/pg/slide-library-favorites.pgtest.js:161",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:71",
+        "tests/pg/slide-library-save-contract.pgtest.js:89",
+        "tests/pg/slide-library-tags-acl.pgtest.js:158",
+        "tests/pg/trash-library-user-id.pgtest.js:197",
+        "tests/pg/trash-library-user-id.pgtest.js:219",
+        "tests/pg/trash-library-user-id.pgtest.js:231"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: createPersonalLibraryItem",
+      "line": 529,
+      "params": ["storageScope", "userEmail", "input", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:187",
+        "tests/pg/slide-library-favorites.pgtest.js:153",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:189",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:231",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:68",
+        "tests/pg/slide-library-save-contract.pgtest.js:265",
+        "tests/pg/slide-library-save-contract.pgtest.js:78",
+        "tests/pg/slide-library-tags-acl.pgtest.js:150",
+        "tests/pg/tag-name-contract.pgtest.js:83",
+        "tests/pg/tag-replacement-atomicity.pgtest.js:81"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: deleteOrganizationLibraryItem",
+      "line": 667,
+      "params": ["storageScope", "id", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:350",
+        "tests/pg/organization-library-guard-uncapped.pgtest.js:128",
+        "tests/pg/organization-library-guard-uncapped.pgtest.js:159",
+        "tests/pg/organization-library-guard-uncapped.pgtest.js:178",
+        "tests/pg/slide-library-save-contract.pgtest.js:147"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: deletePersonalLibraryItem",
+      "line": 579,
+      "params": ["storageScope", "userEmail", "id"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:217",
+        "tests/pg/slide-library-save-contract.pgtest.js:116",
+        "tests/pg/slide-library-save-contract.pgtest.js:134"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: getOrganizationLibraryItem",
+      "line": 608,
+      "params": ["storageScope", "id", null],
+      "exception": null,
+      "callers": [
+        "server/routes/public-api/v1/slide-library.js:119",
+        "server/routes/public-api/v1/slide-library.js:163",
+        "tests/pg/trash-library-user-id.pgtest.js:239"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: getTagsForSlideLibraryItem",
+      "line": 714,
+      "params": ["storageScope", "target", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:368",
+        "server/routes/public-api/v1/slide-library.js:128"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: getTagsForSlideLibraryItems",
+      "line": 744,
+      "params": ["storageScope", "ids", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:167",
+        "server/routes/api/slide-library.js:243",
+        "server/routes/public-api/v1/slide-library.js:90"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: listOrganizationLibrary",
+      "line": 594,
+      "params": ["storageScope", null],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:321",
+        "server/routes/api/home.js:121",
+        "server/routes/api/slide-library.js:233",
+        "server/routes/public-api/v1/slide-library.js:74",
+        "tests/pg/organization-library-guard-uncapped.pgtest.js:97",
+        "tests/pg/sandbox-library-seed.pgtest.js:86",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:77"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: listPersonalLibrary",
+      "line": 513,
+      "params": ["storageScope", "userEmail", null],
+      "exception": null,
+      "callers": [
+        "server/export/bulk-export.js:310",
+        "server/routes/api/slide-library.js:161",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:207",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:222",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:76",
+        "tests/pg/slide-library-save-contract.pgtest.js:298"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: setTagsForSlideLibraryItem",
+      "line": 802,
+      "params": ["storageScope", "target", "tagNames", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:396",
+        "tests/pg/slide-library-tags-acl.pgtest.js:165",
+        "tests/pg/tag-name-contract.pgtest.js:157",
+        "tests/pg/tag-name-contract.pgtest.js:168",
+        "tests/pg/tag-replacement-atomicity.pgtest.js:136",
+        "tests/pg/tag-replacement-atomicity.pgtest.js:174",
+        "tests/pg/tag-replacement-atomicity.pgtest.js:94"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: updateOrganizationLibraryItem",
+      "line": 651,
+      "params": ["storageScope", "id", "patch", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:334",
+        "tests/pg/organization-library-guard-uncapped.pgtest.js:110",
+        "tests/pg/organization-library-guard-uncapped.pgtest.js:143",
+        "tests/pg/sandbox-library-seed.pgtest.js:176",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:135",
+        "tests/pg/slide-library-save-contract.pgtest.js:140",
+        "tests/pg/slide-library-save-contract.pgtest.js:156",
+        "tests/pg/slide-library-save-contract.pgtest.js:174",
+        "tests/pg/slide-library-save-contract.pgtest.js:221",
+        "tests/pg/slide-library-save-contract.pgtest.js:229"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: updatePersonalLibraryItem",
+      "line": 560,
+      "params": ["storageScope", "userEmail", "id", "patch", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/slide-library.js:206",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:128",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:211",
+        "tests/pg/slide-library-i18n-storage.pgtest.js:248",
+        "tests/pg/slide-library-save-contract.pgtest.js:103",
+        "tests/pg/slide-library-save-contract.pgtest.js:126",
+        "tests/pg/slide-library-save-contract.pgtest.js:190",
+        "tests/pg/slide-library-save-contract.pgtest.js:199",
+        "tests/pg/slide-library-save-contract.pgtest.js:252",
+        "tests/pg/slide-library-save-contract.pgtest.js:282"
+      ]
+    },
+    {
+      "key": "server/storage/slide-library.js :: upsertSandboxLibrarySeed",
+      "line": 849,
+      "params": ["scope", null],
+      "exception": null,
+      "callers": ["server/sandbox/library.js:145"]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: acquireSlideLock",
+      "line": 166,
+      "params": ["scope", "presentationId", "slideId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/slide-locks.js:169",
+        "tests/pg/lock-holder-user-id.pgtest.js:118",
+        "tests/pg/lock-holder-user-id.pgtest.js:128",
+        "tests/pg/lock-holder-user-id.pgtest.js:158",
+        "tests/pg/lock-holder-user-id.pgtest.js:169",
+        "tests/pg/lock-holder-user-id.pgtest.js:184",
+        "tests/pg/lock-holder-user-id.pgtest.js:186",
+        "tests/pg/lock-holder-user-id.pgtest.js:203",
+        "tests/pg/lock-holder-user-id.pgtest.js:214",
+        "tests/pg/lock-holder-user-id.pgtest.js:215",
+        "tests/pg/lock-holder-user-id.pgtest.js:232",
+        "tests/pg/slide-locks.pgtest.js:100",
+        "tests/pg/slide-locks.pgtest.js:116",
+        "tests/pg/slide-locks.pgtest.js:122",
+        "tests/pg/slide-locks.pgtest.js:152",
+        "tests/pg/slide-locks.pgtest.js:195",
+        "tests/pg/slide-locks.pgtest.js:86",
+        "tests/pg/slide-locks.pgtest.js:97"
+      ]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: cleanupExpiredSlideLocks",
+      "line": 490,
+      "params": [],
+      "exception": null,
+      "callers": ["server/jobs/retention-cleanup.js:154"]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: getLockedByOthers",
+      "line": 511,
+      "params": ["scope", "presentationId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/slide-locks.js:111",
+        "tests/pg/lock-holder-user-id.pgtest.js:174",
+        "tests/pg/lock-holder-user-id.pgtest.js:178",
+        "tests/pg/lock-holder-user-id.pgtest.js:209"
+      ]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: getSlideLock",
+      "line": 133,
+      "params": ["scope", "presentationId", "slideId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/slide-locks.js:141",
+        "tests/pg/lock-holder-user-id.pgtest.js:123",
+        "tests/pg/lock-holder-user-id.pgtest.js:196",
+        "tests/pg/lock-holder-user-id.pgtest.js:206",
+        "tests/pg/lock-holder-user-id.pgtest.js:235",
+        "tests/pg/slide-locks.pgtest.js:128",
+        "tests/pg/slide-locks.pgtest.js:156",
+        "tests/pg/slide-locks.pgtest.js:200",
+        "tests/pg/slide-locks.pgtest.js:92"
+      ]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: getSlideLocks",
+      "line": 100,
+      "params": ["scope", "presentationId"],
+      "exception": null,
+      "callers": ["server/routes/api/presentations/slide-locks.js:107"]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: refreshSlideLock",
+      "line": 282,
+      "params": ["scope", "presentationId", "slideId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/slide-locks.js:208",
+        "tests/pg/lock-holder-user-id.pgtest.js:133"
+      ]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: releaseAllUserSlideLocks",
+      "line": 443,
+      "params": ["scope", "presentationId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/slide-locks.js:278",
+        "tests/pg/lock-holder-user-id.pgtest.js:218"
+      ]
+    },
+    {
+      "key": "server/storage/slide-locks.js :: releaseSlideLock",
+      "line": 370,
+      "params": ["scope", "presentationId", "slideId", null],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/slide-locks.js:239",
+        "tests/pg/lock-holder-user-id.pgtest.js:145",
+        "tests/pg/lock-holder-user-id.pgtest.js:191",
+        "tests/pg/slide-locks.pgtest.js:180",
+        "tests/pg/slide-locks.pgtest.js:197"
+      ]
+    },
+    {
+      "key": "server/storage/sso.js :: getOrCreateSsoUser",
+      "line": 59,
+      "params": ["scope", "identity", "opts"],
+      "exception": null,
+      "callers": ["server/routes/api/sso.js:210"]
+    },
+    {
+      "key": "server/storage/tags.js :: createTag",
+      "line": 376,
+      "params": ["storageScope", "name"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/tags.js:65",
+        "tests/pg/tag-insert-race.pgtest.js:204",
+        "tests/pg/tag-name-contract.pgtest.js:183",
+        "tests/pg/tag-name-contract.pgtest.js:190",
+        "tests/pg/tag-name-contract.pgtest.js:194",
+        "tests/pg/tag-replacement-atomicity.pgtest.js:92",
+        "tests/pg/tags-storage.pgtest.js:160",
+        "tests/pg/tags-storage.pgtest.js:175",
+        "tests/pg/tags-storage.pgtest.js:191"
+      ]
+    },
+    {
+      "key": "server/storage/tags.js :: deleteTag",
+      "line": 409,
+      "params": ["storageScope", "tagId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/tags.js:74",
+        "tests/pg/tags-storage.pgtest.js:213",
+        "tests/pg/tags-storage.pgtest.js:225"
+      ]
+    },
+    {
+      "key": "server/storage/tags.js :: getTagsForPresentation",
+      "line": 277,
+      "params": ["storageScope", "presentationId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/presentation.js:73",
+        "server/routes/api/tags.js:145",
+        "server/routes/public-api/v1/presentations.js:178",
+        "server/routes/public-api/v1/presentations.js:194",
+        "server/routes/public-api/v1/presentations.js:221",
+        "server/routes/public-api/v1/presentations.js:257",
+        "tests/pg/tag-insert-race.pgtest.js:189",
+        "tests/pg/tag-name-contract.pgtest.js:101",
+        "tests/pg/tag-name-contract.pgtest.js:116",
+        "tests/pg/tag-name-contract.pgtest.js:148",
+        "tests/pg/tags-storage.pgtest.js:104",
+        "tests/pg/tags-storage.pgtest.js:114",
+        "tests/pg/tags-storage.pgtest.js:115",
+        "tests/pg/tags-storage.pgtest.js:144",
+        "tests/pg/tags-storage.pgtest.js:156",
+        "tests/pg/tags-storage.pgtest.js:210",
+        "tests/pg/tags-storage.pgtest.js:216",
+        "tests/pg/tags-storage.pgtest.js:220",
+        "tests/pg/tags-storage.pgtest.js:76"
+      ]
+    },
+    {
+      "key": "server/storage/tags.js :: getTagsForPresentations",
+      "line": 303,
+      "params": ["storageScope", "presentationIds"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/presentations/list.js:28",
+        "server/routes/api/presentations/popular.js:118",
+        "server/routes/public-api/v1/presentations.js:138",
+        "tests/pg/tags-storage.pgtest.js:122",
+        "tests/pg/tags-storage.pgtest.js:79"
+      ]
+    },
+    {
+      "key": "server/storage/tags.js :: listTags",
+      "line": 246,
+      "params": ["storageScope"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/tags.js:37",
+        "server/storage/tags.js:451",
+        "tests/pg/tag-insert-race.pgtest.js:196",
+        "tests/pg/tag-insert-race.pgtest.js:209",
+        "tests/pg/tag-insert-race.pgtest.js:230",
+        "tests/pg/tag-insert-race.pgtest.js:264",
+        "tests/pg/tag-name-contract.pgtest.js:122",
+        "tests/pg/tags-storage.pgtest.js:135",
+        "tests/pg/tags-storage.pgtest.js:150",
+        "tests/pg/tags-storage.pgtest.js:223",
+        "tests/pg/tags-storage.pgtest.js:74"
+      ]
+    },
+    {
+      "key": "server/storage/tags.js :: replaceTagLinks",
+      "line": 188,
+      "params": [null],
+      "exception": null,
+      "callers": [
+        "server/storage/slide-library.js:823",
+        "server/storage/tags.js:354",
+        "tests/pg/presentation-tags-authz.pgtest.js:237",
+        "tests/pg/presentation-tags-authz.pgtest.js:245"
+      ]
+    },
+    {
+      "key": "server/storage/tags.js :: searchTags",
+      "line": 444,
+      "params": ["storageScope", "prefix", "limit"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/tags.js:50",
+        "tests/pg/tags-storage.pgtest.js:163",
+        "tests/pg/tags-storage.pgtest.js:177",
+        "tests/pg/tags-storage.pgtest.js:182",
+        "tests/pg/tags-storage.pgtest.js:185",
+        "tests/pg/tags-storage.pgtest.js:194",
+        "tests/pg/tags-storage.pgtest.js:197",
+        "tests/pg/tags-storage.pgtest.js:202"
+      ]
+    },
+    {
+      "key": "server/storage/tags.js :: setTagsForPresentation",
+      "line": 348,
+      "params": ["storageScope", "presentationId", "tagNames"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/tags.js:156",
+        "tests/pg/presentation-tags-authz.pgtest.js:174",
+        "tests/pg/presentation-tags-authz.pgtest.js:224",
+        "tests/pg/tag-insert-race.pgtest.js:174",
+        "tests/pg/tag-insert-race.pgtest.js:218",
+        "tests/pg/tag-insert-race.pgtest.js:246",
+        "tests/pg/tag-name-contract.pgtest.js:110",
+        "tests/pg/tag-name-contract.pgtest.js:129",
+        "tests/pg/tag-name-contract.pgtest.js:139",
+        "tests/pg/tag-name-contract.pgtest.js:140",
+        "tests/pg/tag-name-contract.pgtest.js:94",
+        "tests/pg/tag-replacement-atomicity.pgtest.js:100",
+        "tests/pg/tag-replacement-atomicity.pgtest.js:159",
+        "tests/pg/tags-storage.pgtest.js:113",
+        "tests/pg/tags-storage.pgtest.js:143",
+        "tests/pg/tags-storage.pgtest.js:155",
+        "tests/pg/tags-storage.pgtest.js:209",
+        "tests/pg/tags-storage.pgtest.js:85",
+        "tests/pg/tags-storage.pgtest.js:95"
+      ]
+    },
+    {
+      "key": "server/storage/themes.js :: createTheme",
+      "line": 252,
+      "params": ["scope", "data"],
+      "exception": null,
+      "callers": [
+        "server/export/deck-theme.js:415",
+        "server/routes/api/themes.js:276",
+        "tests/pg/theme-seeds.pgtest.js:218",
+        "tests/pg/theme-seeds.pgtest.js:231",
+        "tests/pg/theme-seeds.pgtest.js:232",
+        "tests/pg/theme-seeds.pgtest.js:249",
+        "tests/pg/theme-seeds.pgtest.js:262",
+        "tests/pg/theme-seeds.pgtest.js:285",
+        "tests/pg/theme-seeds.pgtest.js:295",
+        "tests/theme-seeds.test.js:52",
+        "tests/theme-seeds.test.js:99"
+      ]
+    },
+    {
+      "key": "server/storage/themes.js :: deleteTheme",
+      "line": 474,
+      "params": ["scope", "themeId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/themes.js:331",
+        "tests/pg/theme-seeds.pgtest.js:244"
+      ]
+    },
+    {
+      "key": "server/storage/themes.js :: getThemeRecord",
+      "line": 189,
+      "params": ["scope", "themeId", null],
+      "exception": null,
+      "callers": [
+        "server/export/deck-theme.js:188",
+        "server/routes/api/settings.js:166",
+        "server/routes/api/settings.js:179",
+        "server/routes/api/themes.js:291",
+        "server/routes/api/themes.js:347",
+        "server/storage/settings.js:1239",
+        "server/utils/themes.js:217",
+        "tests/export-worker-theme.test.js:62",
+        "tests/pg/theme-seeds.pgtest.js:238",
+        "tests/pg/theme-seeds.pgtest.js:239",
+        "tests/pg/theme-seeds.pgtest.js:271",
+        "tests/pg/theme-seeds.pgtest.js:290",
+        "tests/pg/theme-seeds.pgtest.js:309"
+      ]
+    },
+    {
+      "key": "server/storage/themes.js :: listSeedThemes",
+      "line": 153,
+      "params": [],
+      "exception": null,
+      "callers": [
+        "server/export/deck-theme.js:184",
+        "server/storage/settings.js:1212",
+        "server/utils/themes.js:331",
+        "server/utils/themes.js:341",
+        "tests/export-worker-theme.test.js:74",
+        "tests/pg/settings.pgtest.js:149",
+        "tests/pg/settings.pgtest.js:96"
+      ]
+    },
+    {
+      "key": "server/storage/themes.js :: listThemes",
+      "line": 119,
+      "params": ["scope", null],
+      "exception": null,
+      "callers": [
+        "scripts/theme-preview.js:183",
+        "server/export/bulk-export.js:347",
+        "server/export/deck-theme.js:288",
+        "server/mcp/tools.js:1023",
+        "server/routes/api/themes.js:137",
+        "server/routes/public-api/v1/resources.js:34",
+        "server/utils/themes.js:330",
+        "tests/pg/theme-seeds.pgtest.js:216",
+        "tests/pg/theme-seeds.pgtest.js:236",
+        "tests/pg/theme-seeds.pgtest.js:237"
+      ]
+    },
+    {
+      "key": "server/storage/themes.js :: updateTheme",
+      "line": 355,
+      "params": ["scope", "themeId", "updates"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/themes.js:311",
+        "tests/pg/theme-seeds.pgtest.js:241",
+        "tests/pg/theme-seeds.pgtest.js:267",
+        "tests/pg/theme-seeds.pgtest.js:300"
+      ]
+    },
+    {
+      "key": "server/storage/themes.js :: upsertThemeSeeds",
+      "line": 602,
+      "params": ["scope", "seeds"],
+      "exception": null,
+      "callers": [
+        "server/utils/theme-seeds.js:170",
+        "tests/pg/theme-seeds.pgtest.js:78"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: addMember",
+      "line": 309,
+      "params": ["data"],
+      "exception": null,
+      "callers": [
+        "scripts/org-create.js:168",
+        "server/routes/api/admin-users.js:292",
+        "server/routes/api/organization-members.js:203"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: countOrganizationMembers",
+      "line": 288,
+      "params": ["organizationId"],
+      "exception": null,
+      "callers": [
+        "scripts/org-create.js:162",
+        "server/routes/api/organization-members.js:129"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: getMembership",
+      "line": 86,
+      "params": ["userId", "organizationId"],
+      "exception": null,
+      "callers": [
+        "scripts/org-create.js:147",
+        "server/routes/api/organization-members.js:111",
+        "server/routes/api/organizations.js:131",
+        "server/routes/api/organizations.js:162",
+        "server/routes/api/organizations.js:239",
+        "server/routes/api/organizations.js:262"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: getMembershipByEmail",
+      "line": 116,
+      "params": ["email", "organizationId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/admin-users.js:139",
+        "server/routes/api/admin-users.js:288",
+        "server/routes/api/admin-users.js:297",
+        "server/routes/api/organization-members.js:175",
+        "server/routes/api/settings.js:57",
+        "server/utils/designer.js:59"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: getOrganizationMember",
+      "line": 252,
+      "params": ["organizationId", "identifier"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/organization-members.js:288",
+        "server/routes/api/organization-members.js:369"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: listOrganizationMembers",
+      "line": 203,
+      "params": ["organizationId", "options"],
+      "exception": null,
+      "callers": ["server/routes/api/organization-members.js:125"]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: listUserOrganizations",
+      "line": 151,
+      "params": ["userId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/organizations.js:70",
+        "server/storage/identity.js:94",
+        "server/storage/login-membership.js:54"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: removeMember",
+      "line": 414,
+      "params": ["membershipId"],
+      "exception": null,
+      "callers": ["server/routes/api/organization-members.js:407"]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: transferOwnership",
+      "line": 458,
+      "params": ["organizationId", "currentOwnerUserId", "newOwnerUserId"],
+      "exception": null,
+      "callers": ["server/routes/api/organization-members.js:326"]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: updateMemberDesigner",
+      "line": 52,
+      "params": ["membershipId", "isDesigner"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/admin-users.js:301",
+        "server/routes/api/organization-members.js:351"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/memberships.js :: updateMemberRole",
+      "line": 354,
+      "params": ["membershipId", "newRole"],
+      "exception": null,
+      "callers": ["server/routes/api/organization-members.js:341"]
+    },
+    {
+      "key": "server/storage/user-organizations/organizations.js :: createOrganization",
+      "line": 77,
+      "params": ["data"],
+      "exception": null,
+      "callers": [
+        "scripts/org-create.js:119",
+        "server/routes/api/organizations.js:109"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/organizations.js :: deleteOrganization",
+      "line": 221,
+      "params": ["organizationId"],
+      "exception": null,
+      "callers": ["server/routes/api/organizations.js:248"]
+    },
+    {
+      "key": "server/storage/user-organizations/organizations.js :: getOrganizationById",
+      "line": 33,
+      "params": ["organizationId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/admin-users.js:132",
+        "server/routes/api/organizations.js:136",
+        "server/routes/api/organizations.js:267",
+        "server/routes/api/settings.js:105",
+        "server/routes/api/settings.js:149",
+        "server/routes/feed.js:60",
+        "server/routes/static/app-shell.js:209",
+        "server/utils/designer.js:67",
+        "server/utils/openai/translation-instructions.js:15",
+        "server/utils/org-slide-types.js:37"
+      ]
+    },
+    {
+      "key": "server/storage/user-organizations/organizations.js :: getOrganizationBySlug",
+      "line": 50,
+      "params": ["slug"],
+      "exception": null,
+      "callers": ["scripts/org-create.js:105"]
+    },
+    {
+      "key": "server/storage/user-organizations/organizations.js :: updateOrganization",
+      "line": 153,
+      "params": ["organizationId", "updates"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/organizations.js:223",
+        "server/routes/api/settings.js:251"
+      ]
+    },
+    {
+      "key": "server/storage/users.js :: createUser",
+      "line": 214,
+      "params": ["scope", "userData"],
+      "exception": null,
+      "callers": [
+        "scripts/org-create.js:139",
+        "server/routes/api/admin-users.js:185",
+        "server/routes/api/organization-members.js:188"
+      ]
+    },
+    {
+      "key": "server/storage/users.js :: deleteUser",
+      "line": 354,
+      "params": ["scope", "userId"],
+      "exception": null,
+      "callers": ["server/routes/api/admin-users.js:322"]
+    },
+    {
+      "key": "server/storage/users.js :: ensureUserByEmail",
+      "line": 23,
+      "params": ["scope", "options"],
+      "exception": null,
+      "callers": [
+        "server/auth/dev-bypass.js:78",
+        "server/auth/sandbox.js:155",
+        "server/storage/magic-link.js:219",
+        "server/storage/password-reset.js:275",
+        "server/storage/sso.js:83",
+        "tests/pg/ensure-user.pgtest.js:142",
+        "tests/pg/ensure-user.pgtest.js:144",
+        "tests/pg/ensure-user.pgtest.js:40",
+        "tests/pg/ensure-user.pgtest.js:51",
+        "tests/pg/ensure-user.pgtest.js:62",
+        "tests/pg/ensure-user.pgtest.js:82"
+      ]
+    },
+    {
+      "key": "server/storage/users.js :: getPublicProfilesByIds",
+      "line": 529,
+      "params": ["scope", "userIds"],
+      "exception": null,
+      "callers": ["server/routes/api/users.js:81"]
+    },
+    {
+      "key": "server/storage/users.js :: getUserByEmail",
+      "line": 178,
+      "params": ["scope", "email"],
+      "exception": null,
+      "callers": [
+        "server/services/comment-notifications.js:243",
+        "server/services/comment-subscriptions.js:192",
+        "server/services/ownership.js:136"
+      ]
+    },
+    {
+      "key": "server/storage/users.js :: getUserById",
+      "line": 148,
+      "params": ["scope", "userId"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/admin-users.js:242",
+        "server/routes/api/admin-users.js:282",
+        "server/routes/api/admin-users.js:317",
+        "server/routes/api/admin-users.js:353"
+      ]
+    },
+    {
+      "key": "server/storage/users.js :: listUsers",
+      "line": 76,
+      "params": ["scope"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/admin-users.js:128",
+        "server/routes/api/collaborators.js:166",
+        "server/routes/api/collaborators.js:361"
+      ]
+    },
+    {
+      "key": "server/storage/users.js :: resendInvitation",
+      "line": 390,
+      "params": ["scope", "userId"],
+      "exception": null,
+      "callers": ["server/routes/api/admin-users.js:347"]
+    },
+    {
+      "key": "server/storage/users.js :: searchUsers",
+      "line": 464,
+      "params": ["scope", "query", "options"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/users.js:42",
+        "tests/pg/user-search-matching.pgtest.js:107",
+        "tests/pg/user-search-matching.pgtest.js:112",
+        "tests/pg/user-search-matching.pgtest.js:78",
+        "tests/pg/user-search-matching.pgtest.js:85",
+        "tests/pg/user-search-matching.pgtest.js:93",
+        "tests/pg/user-search-matching.pgtest.js:99"
+      ]
+    },
+    {
+      "key": "server/storage/users.js :: updateUser",
+      "line": 288,
+      "params": ["scope", "userId", "updates"],
+      "exception": null,
+      "callers": ["server/routes/api/admin-users.js:273"]
+    },
+    {
+      "key": "server/storage/utils/db-guard.js :: withDbGuard",
+      "line": 31,
+      "params": ["fallback", "fn"],
+      "exception": null,
+      "callers": [
+        "server/storage/access-attempts.js:126",
+        "server/storage/access-attempts.js:38",
+        "server/storage/access-attempts.js:82",
+        "server/storage/activity-events.js:107",
+        "server/storage/activity-events.js:191",
+        "server/storage/activity-events.js:212",
+        "server/storage/activity-events.js:240",
+        "server/storage/activity-events.js:276",
+        "server/storage/activity-events.js:72",
+        "server/storage/analytics/aggregations.js:121",
+        "server/storage/analytics/aggregations.js:206",
+        "server/storage/analytics/aggregations.js:289",
+        "server/storage/analytics/aggregations.js:353",
+        "server/storage/analytics/dashboard.js:195",
+        "server/storage/analytics/dashboard.js:242",
+        "server/storage/analytics/dashboard.js:302",
+        "server/storage/analytics/dashboard.js:400",
+        "server/storage/analytics/dashboard.js:84",
+        "server/storage/analytics/reports.js:118",
+        "server/storage/analytics/reports.js:163",
+        "server/storage/analytics/reports.js:203",
+        "server/storage/analytics/reports.js:249",
+        "server/storage/analytics/reports.js:309",
+        "server/storage/analytics/reports.js:335",
+        "server/storage/analytics/reports.js:67",
+        "server/storage/analytics/seeded-sessions.js:38",
+        "server/storage/analytics/slide-views.js:129",
+        "server/storage/analytics/slide-views.js:24",
+        "server/storage/analytics/slide-views.js:69",
+        "server/storage/analytics/view-sessions-gdpr.js:136",
+        "server/storage/analytics/view-sessions-gdpr.js:174",
+        "server/storage/analytics/view-sessions-gdpr.js:205",
+        "server/storage/analytics/view-sessions-gdpr.js:252",
+        "server/storage/analytics/view-sessions-gdpr.js:56",
+        "server/storage/analytics/view-sessions.js:104",
+        "server/storage/analytics/view-sessions.js:148",
+        "server/storage/analytics/view-sessions.js:190",
+        "server/storage/analytics/view-sessions.js:223",
+        "server/storage/analytics/view-sessions.js:265",
+        "server/storage/analytics/view-sessions.js:288",
+        "server/storage/analytics/view-sessions.js:313",
+        "server/storage/analytics/view-sessions.js:56",
+        "server/storage/analytics/weekly-summary.js:295",
+        "server/storage/analytics/weekly-summary.js:67",
+        "server/storage/api-keys.js:131",
+        "server/storage/api-keys.js:175",
+        "server/storage/api-keys.js:198",
+        "server/storage/api-keys.js:255",
+        "server/storage/api-keys.js:287",
+        "server/storage/api-keys.js:356",
+        "server/storage/api-usage.js:122",
+        "server/storage/api-usage.js:294",
+        "server/storage/api-usage.js:38",
+        "server/storage/api-usage.js:88",
+        "server/storage/collaborators.js:107",
+        "server/storage/collaborators.js:216",
+        "server/storage/collaborators.js:270",
+        "server/storage/collaborators.js:303",
+        "server/storage/collaborators.js:338",
+        "server/storage/collaborators.js:434",
+        "server/storage/custom-slide-types.js:114",
+        "server/storage/custom-slide-types.js:177",
+        "server/storage/custom-slide-types.js:240",
+        "server/storage/custom-slide-types.js:367",
+        "server/storage/custom-slide-types.js:420",
+        "server/storage/custom-slide-types.js:64",
+        "server/storage/custom-slide-types.js:87",
+        "server/storage/display-identity.js:263",
+        "server/storage/email-templates.js:128",
+        "server/storage/email-templates.js:197",
+        "server/storage/email-templates.js:243",
+        "server/storage/email-templates.js:266",
+        "server/storage/email-templates.js:294",
+        "server/storage/email-templates.js:319",
+        "server/storage/feedback.js:243",
+        "server/storage/feedback.js:320",
+        "server/storage/feedback.js:355",
+        "server/storage/feedback.js:79",
+        "server/storage/follow-codes.js:116",
+        "server/storage/follow-codes.js:155",
+        "server/storage/follow-codes.js:73",
+        "server/storage/font-families.js:104",
+        "server/storage/font-families.js:158",
+        "server/storage/font-families.js:220",
+        "server/storage/font-families.js:323",
+        "server/storage/font-families.js:428",
+        "server/storage/font-families.js:497",
+        "server/storage/font-families.js:541",
+        "server/storage/identity-verification.js:261",
+        "server/storage/identity.js:42",
+        "server/storage/instance-census.js:108",
+        "server/storage/instance-census.js:65",
+        "server/storage/instance-health.js:178",
+        "server/storage/instance-health.js:251",
+        "server/storage/instance-health.js:277",
+        "server/storage/instance-health.js:347",
+        "server/storage/interaction-slides.js:147",
+        "server/storage/interaction-slides.js:191",
+        "server/storage/interaction-slides.js:237",
+        "server/storage/interactions.js:124",
+        "server/storage/interactions.js:393",
+        "server/storage/interactions.js:498",
+        "server/storage/interactions.js:89",
+        "server/storage/live-sessions/db.js:172",
+        "server/storage/live-sessions/db.js:227",
+        "server/storage/live-sessions/db.js:252",
+        "server/storage/live-sessions/db.js:273",
+        "server/storage/live-sessions/db.js:294",
+        "server/storage/live-sessions/db.js:311",
+        "server/storage/magic-link.js:135",
+        "server/storage/magic-link.js:173",
+        "server/storage/magic-link.js:218",
+        "server/storage/magic-link.js:266",
+        "server/storage/magic-link.js:44",
+        "server/storage/magic-link.js:66",
+        "server/storage/magic-link.js:98",
+        "server/storage/notifications.js:141",
+        "server/storage/notifications.js:176",
+        "server/storage/notifications.js:215",
+        "server/storage/notifications.js:248",
+        "server/storage/notifications.js:281",
+        "server/storage/notifications.js:328",
+        "server/storage/notifications.js:385",
+        "server/storage/notifications.js:43",
+        "server/storage/notifications.js:432",
+        "server/storage/notifications.js:93",
+        "server/storage/password-reset.js:130",
+        "server/storage/password-reset.js:167",
+        "server/storage/password-reset.js:213",
+        "server/storage/password-reset.js:272",
+        "server/storage/password-reset.js:341",
+        "server/storage/password-reset.js:366",
+        "server/storage/password-reset.js:383",
+        "server/storage/password-reset.js:76",
+        "server/storage/password-reset.js:98",
+        "server/storage/presentations/comments.js:238",
+        "server/storage/presentations/comments.js:289",
+        "server/storage/presentations/comments.js:361",
+        "server/storage/presentations/comments.js:409",
+        "server/storage/presentations/comments.js:425",
+        "server/storage/presentations/comments.js:482",
+        "server/storage/presentations/comments.js:564",
+        "server/storage/presentations/comments.js:597",
+        "server/storage/presentations/comments.js:632",
+        "server/storage/presentations/comments.js:667",
+        "server/storage/presentations/comments.js:703",
+        "server/storage/presentations/comments.js:728",
+        "server/storage/presentations/comments.js:753",
+        "server/storage/presentations/comments.js:76",
+        "server/storage/presentations/list-metadata.js:12",
+        "server/storage/presentations/list-metadata.js:30",
+        "server/storage/presentations/list-metadata.js:54",
+        "server/storage/presentations/subscriptions.js:30",
+        "server/storage/presentations/subscriptions.js:55",
+        "server/storage/presentations/subscriptions.js:96",
+        "server/storage/questions.js:239",
+        "server/storage/questions.js:268",
+        "server/storage/questions.js:310",
+        "server/storage/questions.js:375",
+        "server/storage/questions.js:402",
+        "server/storage/settings.js:1062",
+        "server/storage/settings.js:1187",
+        "server/storage/settings.js:363",
+        "server/storage/settings.js:664",
+        "server/storage/settings.js:802",
+        "server/storage/settings.js:919",
+        "server/storage/share-links/access-log.js:34",
+        "server/storage/share-links/access-log.js:58",
+        "server/storage/share-links/crud.js:142",
+        "server/storage/share-links/crud.js:179",
+        "server/storage/share-links/crud.js:245",
+        "server/storage/share-links/crud.js:359",
+        "server/storage/share-links/crud.js:406",
+        "server/storage/share-links/crud.js:447",
+        "server/storage/share-links/crud.js:485",
+        "server/storage/share-links/crud.js:89",
+        "server/storage/share-links/guests.js:184",
+        "server/storage/share-links/guests.js:278",
+        "server/storage/share-links/guests.js:359",
+        "server/storage/share-links/guests.js:435",
+        "server/storage/share-links/guests.js:463",
+        "server/storage/share-links/guests.js:492",
+        "server/storage/share-links/guests.js:64",
+        "server/storage/share-links/index.js:50",
+        "server/storage/slide-locks.js:105",
+        "server/storage/slide-locks.js:139",
+        "server/storage/slide-locks.js:187",
+        "server/storage/slide-locks.js:298",
+        "server/storage/slide-locks.js:386",
+        "server/storage/slide-locks.js:460",
+        "server/storage/slide-locks.js:491",
+        "server/storage/slide-locks.js:521",
+        "server/storage/sso.js:70",
+        "server/storage/themes.js:120",
+        "server/storage/themes.js:154",
+        "server/storage/themes.js:204",
+        "server/storage/themes.js:298",
+        "server/storage/themes.js:363",
+        "server/storage/themes.js:480",
+        "server/storage/user-organizations/memberships.js:120",
+        "server/storage/user-organizations/memberships.js:152",
+        "server/storage/user-organizations/memberships.js:204",
+        "server/storage/user-organizations/memberships.js:255",
+        "server/storage/user-organizations/memberships.js:289",
+        "server/storage/user-organizations/memberships.js:312",
+        "server/storage/user-organizations/memberships.js:359",
+        "server/storage/user-organizations/memberships.js:415",
+        "server/storage/user-organizations/memberships.js:463",
+        "server/storage/user-organizations/memberships.js:53",
+        "server/storage/user-organizations/memberships.js:87",
+        "server/storage/user-organizations/organizations.js:154",
+        "server/storage/user-organizations/organizations.js:222",
+        "server/storage/user-organizations/organizations.js:34",
+        "server/storage/user-organizations/organizations.js:51",
+        "server/storage/user-organizations/organizations.js:78",
+        "server/storage/users.js:150",
+        "server/storage/users.js:183",
+        "server/storage/users.js:221",
+        "server/storage/users.js:290",
+        "server/storage/users.js:35",
+        "server/storage/users.js:356",
+        "server/storage/users.js:392",
+        "server/storage/users.js:470",
+        "server/storage/users.js:534",
+        "server/storage/users.js:77"
+      ]
+    },
+    {
+      "key": "server/storage/utils/helpers.js :: getUserIdByEmail",
+      "line": 16,
+      "params": ["db", "orgId", "email"],
+      "exception": null,
+      "callers": [
+        "server/storage/custom-slide-types.js:214",
+        "server/storage/font-families.js:192"
+      ]
+    }
+  ]
+}

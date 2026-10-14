@@ -37,9 +37,10 @@
  * holds across the whole table.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { sql } from 'kysely';
-import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { invalidateDisplayNames } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import {
@@ -56,7 +57,7 @@ import {
 import { DEFAULT_THEME_SLUG } from '../../shared/constants/themes.js';
 import { getThemeRecord, listSeedThemes } from './themes.js';
 import { UUID_RE } from '../utils/uuid.js';
-import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
+import { SUBSCRIPTION_LEVELS } from './presentations/index.js';
 import {
   isEmbeddableUrl,
   normalizeProviderId,
@@ -96,7 +97,13 @@ function userEmailKey(email) {
  */
 async function resolveSettingsUserId(key) {
   if (!key || key === ANONYMOUS_KEY) return null;
-  const resolution = await resolveIdentityByEmail(key);
+  const resolution = await resolveIdentityByEmail(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    key,
+  );
   return resolution?.userId ?? null;
 }
 
@@ -338,16 +345,17 @@ function normalizeDayOfWeek(v) {
 }
 
 /**
- * Normalize a stored `digest` preference: on unless explicitly switched off,
- * on the stored day (0 = Sunday) or Monday when none is stored. The one place
- * the digest shape is read, for the settings API and the digest job alike.
+ * Normalize a stored `digest` preference: off unless explicitly switched on
+ * (`enabled: true`; the digest is opt-in, D330), on the stored day
+ * (0 = Sunday) or Monday when none is stored. The one place the digest shape
+ * is read, for the settings API and the digest job alike.
  * @param {*} v - The raw `digest` object from a `user_settings` bag.
  * @returns {{enabled: boolean, dayOfWeek: number}}
  */
 function normalizeDigestPreference(v) {
   const obj = v && typeof v === 'object' ? v : {};
   return {
-    enabled: obj.enabled !== false,
+    enabled: obj.enabled === true,
     dayOfWeek: normalizeDayOfWeek(obj.dayOfWeek),
   };
 }
@@ -708,7 +716,7 @@ export function defaultUserSettings() {
     },
     // Weekly engagement digest settings
     digest: {
-      enabled: true, // Receive weekly engagement digest
+      enabled: false, // Opt-in to the weekly engagement digest (D330)
       dayOfWeek: 1, // 0=Sunday, 1=Monday, etc.
     },
     // Presenter highlighter / laser pointer settings
@@ -900,8 +908,8 @@ async function loadUserSettings(key, userId) {
  *
  * Each `users` row is matched to its settings row the way
  * {@link loadUserSettings} does: by `users.id` first, by e-mail for a row
- * that has no id yet. A user with no settings row gets the defaults (on,
- * Monday). A background job reads this, so it takes a cross-organization
+ * that has no id yet. A user with no settings row gets the defaults (off,
+ * Monday), so only an account that switched the digest on receives it. A background job reads this, so it takes a cross-organization
  * scope.
  *
  * @param {import('./scope.js').StorageScope} scope
@@ -1022,13 +1030,10 @@ export async function writeUserSettings(scope, email, next) {
   // Digest settings
   const nextDigest =
     next?.digest && typeof next.digest === 'object' ? next.digest : null;
+  // Absent keys inherit from the stored preference, like the other bags; the
+  // one normaliser decides what the merged shape means (off unless `true`).
   const digest = nextDigest
-    ? {
-        enabled: nextDigest?.enabled !== false,
-        dayOfWeek: normalizeDayOfWeek(
-          nextDigest?.dayOfWeek ?? prev.digest?.dayOfWeek,
-        ),
-      }
+    ? normalizeDigestPreference({ ...prev.digest, ...nextDigest })
     : prev.digest;
 
   // Highlighter settings
@@ -1204,14 +1209,25 @@ async function themeOrganizationSettings(scope, operation) {
  * `SANDBOX_DEFAULT_THEME`, the sandbox example decks) names a seed by its
  * slug, and only by its slug (D237): a record UUID differs per installation,
  * so it can never be written into an env file ahead of time. This is the one
- * place that spelling is resolved; nothing past it sees a slug.
+ * place that spelling is resolved; nothing past it sees a slug. Seeds are
+ * instance-level configuration, so an organization scope or a reasoned
+ * instance scope both work (see {@link listSeedThemes}).
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} slug
  * @returns {Promise<string|null>}
  */
-export async function resolveSeedThemeSlug(slug) {
+export async function resolveSeedThemeSlug(scope, slug) {
+  toStorageContext(
+    scope,
+    'resolveSeedThemeSlug',
+    {},
+    { allowCrossOrganization: true },
+  );
   const handle = String(slug || '').trim();
   if (!handle) return null;
-  const seed = (await listSeedThemes()).find((theme) => theme.slug === handle);
+  const seed = (await listSeedThemes(scope)).find(
+    (theme) => theme.slug === handle,
+  );
   return seed?.id || null;
 }
 
@@ -1220,12 +1236,13 @@ export async function resolveSeedThemeSlug(slug) {
  * names, else the core default seed. A `DEFAULT_THEME` that names no seed is a
  * configuration error and refuses, rather than quietly rendering every
  * default deck in another theme.
+ * @param {import('./scope.js').StorageScope} scope - Organization or reasoned instance scope
  * @returns {Promise<string>}
  * @throws {Error} when the configured (or core) seed does not exist
  */
-export async function installationDefaultThemeId() {
+export async function installationDefaultThemeId(scope) {
   const slug = envStr('DEFAULT_THEME') || DEFAULT_THEME_SLUG;
-  const id = await resolveSeedThemeSlug(slug);
+  const id = await resolveSeedThemeSlug(scope, slug);
   if (!id) throw new Error(`Default theme seed not found: ${slug}`);
   return id;
 }
@@ -1241,7 +1258,7 @@ export async function getDefaultThemeId(scope) {
     const record = await getThemeRecord(scope, configured);
     if (record) return record.id;
   }
-  return installationDefaultThemeId();
+  return installationDefaultThemeId(scope);
 }
 
 /** Resolve the organization's canonical picker allowlist. Empty means all. */
@@ -1256,7 +1273,9 @@ export async function getEnabledThemeIds(scope) {
         typeof id === 'string' && UUID_RE.test(id) && id === id.toLowerCase(),
     );
   const handles = envStr('ENABLED_THEMES').split(',');
-  const ids = await Promise.all(handles.map(resolveSeedThemeSlug));
+  const ids = await Promise.all(
+    handles.map((handle) => resolveSeedThemeSlug(scope, handle)),
+  );
   return [...new Set(ids.filter(Boolean))];
 }
 

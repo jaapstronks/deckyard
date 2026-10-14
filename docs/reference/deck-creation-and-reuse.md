@@ -123,7 +123,7 @@ Two themes stay in the response regardless of the allowlist:
 - the theme named by **`?current=<id>`**. Pickers editing a deck pass the theme
   it is on, so a deck that predates a withdrawal keeps rendering and keeps
   showing its own selection. The two picker helpers in
-  `client/views/theme-select.js` add the parameter automatically.
+  `client/views/theme-select/index.js` add the parameter automatically.
 
 `?all=1` returns the unfiltered list and is honoured only for users who may
 manage themes. It exists for one caller: the Themes settings tab, which cannot
@@ -158,6 +158,10 @@ no multilingual content falls back to a single version.
 Pinned by `tests/slide-library-compose-i18n.test.js` (both halves of the
 round-trip) and `tests/pg/slide-library-i18n-storage.pgtest.js` (create and
 read-back against real PostgreSQL, and a PATCH that cannot overwrite `i18n`).
+
+### Library create validates language data
+
+Both personal and organization library creates validate `i18n` before any database write. When supplied, `i18n`, `i18n.versions`, each version record and its `content` must be objects, never arrays, strings or null. Omitted `i18n` becomes `{}`; `versions` and version `content` may be omitted. Version keys must be canonical deck languages. A malformed value raises HTTP 400 `invalid` with `details.field` naming its path, for example `i18n.versions.en-GB.content`. Extra metadata on valid objects is preserved. Content edits derive the versions through the library save contract; callers cannot PATCH `i18n` directly.
 
 ### The deck's language follows its slides
 

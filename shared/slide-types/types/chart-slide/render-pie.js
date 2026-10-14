@@ -29,7 +29,7 @@ export function pieEntriesFromDataset({ labels, values }) {
 
 export function renderPieSvg(
   { labels, values },
-  { showLegend = true, pieLabelMode = 'percent', palette = null, lang } = {},
+  { showLegend = true, pieLabelMode = '%', palette = null, lang } = {},
 ) {
   void showLegend;
 

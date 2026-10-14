@@ -77,14 +77,14 @@ rule exists to stop exactly this.
 
 ### alt 🚩
 
-| Type                             | Level          | Field(s)                                  | Render precedence                                                                                         |
-| -------------------------------- | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| image-slide                      | S              | `alt` (+`altNl`/`altEn`)                  | `content` (`image-slide.js:242-252`)                                                                      |
-| image-text                       | S (since D100) | `alt`                                     | `resolveImageTextImage`; the vestigial `altNl`/`altEn` were folded and dropped by the schema funnel (v15) |
-| image-set                        | **I** ✅       | item `alt` canonical                      | item (translated as an itemKey)                                                                           |
-| content-columns                  | N              | `col{n}Alt`                               | per column                                                                                                |
-| gallery / team-cards / logo-wall | I              | `images[i]`/`members[i]`/`logos[i]`.`alt` | item (the numbered mirrors went with schema v7 -> v8)                                                     |
-| quote                            | **I** ✅       | `quotes[i].authorImage{n}Alt`             | item; every quote, the first included, lives in `quotes[]` (D314, schema v17)                             |
+| Type                             | Level          | Field(s)                                  | Render precedence                                                                                                                      |
+| -------------------------------- | -------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| image-slide                      | S              | `alt`                                     | `imageSlideAltText` (`image-slide/image.js`); a legacy `altNl`/`altEn` is folded into `alt` and deleted by the read funnel (v20 → v21) |
+| image-text                       | S (since D100) | `alt`                                     | `resolveImageTextImage`; the vestigial `altNl`/`altEn` were folded and dropped by the schema funnel (v15)                              |
+| image-set                        | **I** ✅       | item `alt` canonical                      | item (translated as an itemKey)                                                                                                        |
+| content-columns                  | N              | `col{n}Alt`                               | per column                                                                                                                             |
+| gallery / team-cards / logo-wall | I              | `images[i]`/`members[i]`/`logos[i]`.`alt` | item (the numbered mirrors went with schema v7 -> v8)                                                                                  |
+| quote                            | **I** ✅       | `quotes[i].authorImage{n}Alt`             | item; every quote, the first included, lives in `quotes[]` (D314, schema v17)                                                          |
 
 ### role, background, structural layout, media collection
 
@@ -109,7 +109,8 @@ the keys — array canonical, with nothing left to sync (`ensureMembers` /
 inline editor).
 `text-blocks` went the same way at **schema v1 -> v2**: the step folds the
 numbered `row{N}…`/`arrow{N}` fields into `rows[]` (up to 4 rows) and drops
-them (D216), and since B452 nothing else reads or declares the numbered shape.
+them (D216), and nothing else reads or declares the numbered shape any more
+(B452).
 `content-columns` is the exception: **numbered-only, no array**. Since step 4
 that duality is resolved the ImageRef way rather than by a storage rewrite:
 the numbered keys stay the storage shape, but every column's image _resolves_
@@ -223,12 +224,12 @@ imageDefaults = {
 > nothing in between. Step 2b's fold in `ensureImageTextImages` deliberately
 > dropped a stored base fit that equalled the default instead of stamping it
 > onto the items — exactly to preserve the empty/explicit signal described
-> above; the funnel deletes the plural keys outright since D100, so no fold is
-> left to run. `focus` was already live as a type default.
+> above; since image-text split into a one-image type and `image-set`, the
+> funnel deletes the plural keys outright, so no fold is left to run (D100).
+> `focus` was already live as a type default.
 
 ### The fit/bleed split (part of `ImageRef`)
 
-> ✅ **Shipped — step 3, PR #185 (2026-07-20).** Everything below is live:
 > `resolveImageSlideImage` resolves own `fit`/`bleed` →
 > `IMAGE_SLIDE_IMAGE_DEFAULTS`; the renderer emits orthogonal
 > `is-fit-*`/`is-bleed` classes; `contain + bleed` renders. The stored
@@ -269,11 +270,12 @@ fit values for image-slide, two for the rest) we set out to remove. A correct
 version would need a two-axis codec over one field — at which point migrating
 the field is cheaper.
 
-### Conversion becomes lossless
+### Conversion declares its loss
 
-> ✅ **Shipped with step 3 (PR #185).** The image-slide → image-text seam
+> The image-slide → image-text seam
 > resolves fit through `resolveImageSlideImage`. It carried `bleed` on
-> `images[0]` until D100 (2026-09-09), which now **drops** it: image-text
+> `images[0]` until image-text split into a one-image type and `image-set`
+> (D100, 2026-09-09); the conversion now **drops** it: image-text
 > renders no edge-to-edge frame, and a carried-but-unrendered key is a hidden
 > field. The drop is declared in `CONSUMED_SOURCE_KEYS`
 > (`shared/slide-types/convert.js`), so it is a deliberate loss the confirm
@@ -282,83 +284,10 @@ the field is cheaper.
 
 Before the split, conversion demoted both `full` and `bleed` to `cover`; the
 edge-to-edge distinction was lost. It is still lost — but declared rather than
-silent, which is the difference D100 was after. The reverse direction
-(image-text → image-slide, currently not offered) becomes worth building — there
-is nothing left to guess.
+silent, which is the difference the split was after (D100). The reverse
+direction (image-text → image-slide, currently not offered) becomes worth
+building — there is nothing left to guess.
 
-## Migration path (tracked in planning)
+## Current image contract
 
-Ordered so the highest-risk, data-losing item comes before the cosmetic one.
-The matrix above is what fixes the ordering: `image-slide`'s naming is a design
-blemish, but image-text's S+I duplication is the one with silent data loss. All
-steps converge on the `ImageRef` shape above — migrate the shape, not each
-property.
-
-1. ~~**Centralize precedence.**~~ ✅ **Shipped — PR #182 (2026-07-20).** One
-   `resolveImageTextCell(content, idx)` was the single read authority (render +
-   canvas drag + inspector). Pure refactor, render byte-identical. D100 split
-   the type in two and the authority with it: `resolveImageTextImage(content)`
-   (`types/image-text-slide/image.js`) for the one flat image, and
-   `resolveImageSetCell(content, idx)`
-   (`types/image-set-slide/images.js`) for the 2–3 of a set.
-2. ~~**De-duplicate image-text S + I → `ImageRef` (focus + alt).**~~ ✅ **Shipped
-   — datamodel step 2, PR #183 merged (2026-07-20).** `ensureImageTextImages` folds the
-   slide-level `alt`/`focusX`/`focusY` into `images[0]` and clears them; the
-   inspector now reads the canonical per-image focus, so the focus grid shows the
-   real crop start — the **display-baseline bug is fixed**. The slide-level focus
-   picker is gone (focus is per-image). `altNl`/`altEn` stay as a read fallback.
-   Guarded by a generic write → render round-trip harness over the ImageRef
-   (`tests/image-ref-round-trip.test.js`). **`fit` was deliberately _left out_ of
-   this step** — see step 2b below for why.
-   2b. ~~**Unify the fit CSS mechanisms, then move `fit` onto the `ImageRef`.**~~
-   ✅ **Shipped — PR #184 (2026-07-20).** Fit could not migrate with focus/alt
-   because slide-level `imageFit` and per-image `fit` rendered through two
-   different CSS mechanisms (`.media` padding 0.65× vs `.frame` padding 0.35×)
-   that coincided for multi-cell but not single-cell layouts. Landed in the
-   planned order: (a) the class-level fit snapshots in the round-trip harness
-   were the guard; (b) the CSS unified onto **one frame-based mechanism** —
-   every frame carries its effective `is-fit-*` class, the container fit class
-   is gone, so the HTML no longer betrays the record level. Padding unified on
-   **0.35×** after rendering both candidates on the real single-cell contain
-   slides in the browser (0.35 shows the contained image larger with ample
-   margin, and matches what multi-cell + per-image fit already used); (c) the
-   then-render-neutral fold in `ensureImageTextImages` fans a _deviating_ base
-   fit out to the items and simply drops a default-equal one, and the
-   slide-level fit control is retired (images manager owns fit, silent-default
-   UX). Legacy `imageFit` stayed a read-only render fallback for un-migrated
-   decks until D100; the v14 → v15 funnel step
-   (`cutImageTextPluralLayouts`) deletes it — along with `images`,
-   `textColumns`, `altNl` and `altEn` — from every image-text slide, so it is
-   no longer read anywhere.
-3. ~~**Split image-slide `layout` → `ImageRef.fit` + `bleed`.**~~ ✅ **Shipped —
-   PR #185 (2026-07-20).** `resolveImageSlideImage` (own value →
-   `IMAGE_SLIDE_IMAGE_DEFAULTS`) is the single read authority; the read
-   funnel folds `layout` and deletes it (v19 → v20, B257-A2; default-equal
-   values dropped, not stamped); the renderer emits orthogonal `is-fit-*`/`is-bleed`
-   classes (CSS restructured per axis); `contain + bleed` is expressible and
-   renders; conversion to image-text carries the ImageRef (`bleed` travelled on
-   it until D100 dropped it — see "Conversion becomes lossless" above).
-   `validateSlide` gained a boolean field type for `bleed`.
-4. ~~**Normalize content-columns `col{n}*` → `ImageRef`.**~~ ✅ **Shipped —
-   PR #186 (2026-07-20).** `resolveContentColumnImage(content, n)` is the
-   single read authority (own value → `CONTENT_COLUMNS_IMAGE_DEFAULTS`); the
-   type declares `imageDefaults` as config and **no longer stamps** fit/focus
-   into every new deck (the old defaults wrote `cover` + 50/50 onto all seven
-   columns); `ensureContentColumnsImages` drops the historically stamped
-   default-equal values on edit (deviating user choices stay); the editor fit
-   controls got the silent-default UX and the shared element card derives its
-   empty-option label from the type's `imageDefaults`; conversion writes fit
-   only when it deviates.
-
-**The track is complete**: every image-bearing surface reads fit/focus/alt
-through a per-type resolve authority, every default is lookupable in the type
-definition, and the remaining record-level differences are storage shapes, not
-semantics. What deliberately remains outside this track: the `team-cards`
-`imageFocusX/Y` naming divergence and quote's portrait S+I split. The third
-item on this list used to be image-text not _rendering_ `bleed` while carrying
-it; D100 closed that the other way, by dropping `bleed` at the conversion and
-storing it on neither type.
-
-The editing-surface UI work (`docs/reference/editing-surfaces.md`) sits on top of
-step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split
-is mechanical.
+Image-bearing types resolve fit, focus and alt through the per-type authorities described above. `image-slide` stores `bleed` separately from `fit`; conversion to `image-text-slide` drops `bleed` because that type has no edge-to-edge frame. The drop is declared in `CONSUMED_SOURCE_KEYS` in `shared/slide-types/convert.js`. The completed migration history is recorded in the changelog and planning archive.

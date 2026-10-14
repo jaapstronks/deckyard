@@ -40,8 +40,7 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createTheme, listThemes, getThemeRecord } =
   await import('../server/storage/themes.js');
 const { createFontFamily } = await import('../server/storage/font-families.js');
@@ -98,7 +97,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
   for (const dir of [tmpUploads, repoRoot]) {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -271,8 +269,10 @@ test('two organizations export their own effective default without changing the 
     colors: { primary: '#119955' },
   });
   assert.equal(second.ok, true);
-  await updateOrganization(SENDER, { settings: { defaultThemeId: first.id } });
-  await updateOrganization(RECEIVER, {
+  await updateOrganization({ organizationId: SENDER }, SENDER, {
+    settings: { defaultThemeId: first.id },
+  });
+  await updateOrganization({ organizationId: RECEIVER }, RECEIVER, {
     settings: { defaultThemeId: second.theme.id },
   });
   try {
@@ -288,8 +288,12 @@ test('two organizations export their own effective default without changing the 
     assert.equal(source.theme, 'default');
     assert.equal(sender.deck.theme, undefined);
   } finally {
-    await updateOrganization(SENDER, { settings: { defaultThemeId: '' } });
-    await updateOrganization(RECEIVER, { settings: { defaultThemeId: '' } });
+    await updateOrganization({ organizationId: SENDER }, SENDER, {
+      settings: { defaultThemeId: '' },
+    });
+    await updateOrganization({ organizationId: RECEIVER }, RECEIVER, {
+      settings: { defaultThemeId: '' },
+    });
   }
 });
 
@@ -485,7 +489,7 @@ test('a non-installed bundled theme follows a changed workspace default at rende
   assert.equal(second.ok, true);
 
   try {
-    await updateOrganization(RECEIVER, {
+    await updateOrganization({ organizationId: RECEIVER }, RECEIVER, {
       settings: { defaultThemeId: first.theme.id },
     });
     const { body } = await importInto(receiverScope(), bundle);
@@ -502,7 +506,7 @@ test('a non-installed bundled theme follows a changed workspace default at rende
       first.theme.id,
     );
 
-    await updateOrganization(RECEIVER, {
+    await updateOrganization({ organizationId: RECEIVER }, RECEIVER, {
       settings: { defaultThemeId: second.theme.id },
     });
     const changed = await loadThemeAssets(
@@ -512,7 +516,9 @@ test('a non-installed bundled theme follows a changed workspace default at rende
     );
     assert.equal(changed.id, second.theme.id);
   } finally {
-    await updateOrganization(RECEIVER, { settings: { defaultThemeId: '' } });
+    await updateOrganization({ organizationId: RECEIVER }, RECEIVER, {
+      settings: { defaultThemeId: '' },
+    });
   }
 });
 

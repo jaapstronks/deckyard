@@ -18,7 +18,7 @@
  *   1. The script refuses to run at all unless PostgreSQL is reachable AND the
  *      `presentations` table holds data for every deck JSON still on disk —
  *      the same signal as the boot-time migration guard
- *      (server/storage/boot-check.js). On an install whose decks never reached
+ *      (server/db/boot-check.js). On an install whose decks never reached
  *      the database it refuses outright: there is no importer left to run.
  *   2. The default mode is a dry run: it prints what would be removed and
  *      exits. Deleting requires the explicit `--delete` flag.

@@ -3,11 +3,12 @@
  * Handles CRUD operations for in-app notifications.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { sql } from 'kysely';
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import {
   resolveDisplayNames,
   toStoredActorIdentity,
@@ -518,5 +519,11 @@ async function actorDisplayNames(rows) {
     .filter((row) => row?.actor_email)
     .map((row) => ({ email: row.actor_email }));
   if (!stamps.length) return NO_DISPLAY_NAMES;
-  return resolveDisplayNames(stamps);
+  return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    stamps,
+  );
 }

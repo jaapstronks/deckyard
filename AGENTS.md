@@ -15,7 +15,10 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 - **`server/`**: Node server; persistence lives in Postgres behind `server/storage/`.
   - `server/routes/`: HTTP handlers (API + static).
   - `server/storage/`: facades over the database adapter plus uploads on disk; every function takes a `StorageScope` first (`docs/reference/storage-scope.md`).
-  - `server/utils/`: exports (HTML/PDF/PNG/PPTX/print), rendering helpers, openai helpers, etc.
+  - `server/services/`: shared domain operations for internal API, public v1 and MCP; see `docs/reference/services-layer.md`.
+  - `server/export/`: export builders (HTML/PDF/PNG/PPTX/print) and format-specific helpers.
+  - `server/render/`: browser-backed rendering and screenshot support.
+  - `server/utils/`: HTTP, authorization, validation and other shared server helpers.
 - **`themes/`**: theme JSON files resolved at runtime into CSS variables (don’t brand the app chrome).
 - **`assets/`**: fonts/images used by slides and UI.
 
@@ -31,43 +34,32 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 - **No bundler; keep it readable**
   - Small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`; no new dependency without a strong reason.
 
-- **Formatting is Prettier's job, not a review topic**
-  - Prettier on its defaults plus `singleQuote: true`: `npm run format` writes,
-    `npm run format:check` gates in CI next to `npm run lint`. Don't hand-format,
-    don't argue style; a `// prettier-ignore` needs a reason. Generators, the
-    blame-ignore commit (`git config blame.ignoreRevsFile .git-blame-ignore-revs`
-    once per clone): `docs/developer/linting.md` § Formatting.
+- **Formatting: Prettier.** For formatting, ignores and generators, read `docs/developer/linting.md` § Formatting (commands and rules).
 
-- **Optional dependencies match how the code loads them**
-  - A package reached only through a gated `await import()` lives in
-    `optionalDependencies`; a statically imported one stays a hard `dependency`
-    even if its feature is off. `ciiic-translation-rules` is fork-only and
-    deliberately undeclared. Current set and rationale:
-    `docs/reference/dynamic-imports.md` § Which packages are optional.
+- **Dependencies**: before changing package declarations or gated imports, read `docs/reference/dynamic-imports.md` § Which packages are optional. It defines hard, optional and fork-only dependencies.
 
-- **Module layout: one folder = one seam**
-  - A decomposed unit is a folder `X/` whose `index.js` is the sole public
-    seam; consumers import `X/index.js`, never a concern file. No eponymous
-    wrapper beside the folder (`X.js` next to `X/`), no role suffix on the
-    folder, and no re-export shim at a moved path (one bounded exception). In
-    `server/storage/` a bare `X.js` is one module, `X/index.js` a seam.
-    `tests/module-layout.test.js` enforces it, no allowlist. The full rule, the
-    shim exception and the client/storage specifics:
-    `docs/developer/architecture.md` § One folder = one seam.
+- **Module layout: one folder = one seam.** Before decomposing modules or moving imports, read `docs/developer/architecture.md` § One folder = one seam for public entries, naming, storage/client boundaries and the single shim exception.
 
 - **Client layers: `lib/` is a layer, `views/` is a feature** (D263, D264)
-  - `client/lib/` holds what owns no product feature: the DOM primitives
-    (`dom/`, with `h()`), transport (`net/`, `api.js`), state and routing
-    (`state/`), formatting and i18n (`format/`), the theme runtime (`theme/`),
-    the slide pipeline (`slide-runtime/`, `slide-authoring/`) and a
-    client-side service layer without DOM (`qa/`: model + feed + mutations,
-    the views render).
+  - `client/lib/` holds what owns no product feature: the DOM primitives and
+    shared widgets (`dom/`, with `h()`), transport and file reading (`net/`,
+    `api.js`), state and routing (`state/`, `storage.js`), formatting and i18n
+    (`format/`, `ui-i18n.js`), the theme runtime (`theme/`), the slide pipeline
+    (`slide-runtime/`, `slide-authoring/`) and a client-side service layer
+    without DOM (`qa/`: model + feed + mutations, the views render).
+    `permission-labels.js` is the remaining root-level pure label seam.
+    `tests/client-layer-direction.test.js` pins this closed list.
   - Feature UI lives under `client/views/`: a module that **fetches a
     feature's records and renders them is a view**, however many pages use
     it. One owner → it lives inside that view; two or more → its own
     `views/<feature>/` with an `index.js` seam and no route (the shape
     `views/comments/`, `views/slide-library/` and `views/user/` have).
   - The direction is one way: **`lib/` never imports from `views/`.**
+  - Across feature boundaries, import only `views/<feature>/index.js`.
+    Imports within that feature may address its concern modules directly.
+    `tests/client-layer-direction.test.js` parses all non-vendor client modules
+    to enforce this for static imports, re-exports and literal dynamic imports,
+    without an allowlist (B671).
   - Feature-less shared UI has **one address: `lib/dom/`** — banners,
     empty states, a field wrapper. No `views/shared/`, no
     components or features folder, no third place.
@@ -79,7 +71,7 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).
   - **Client runtime behavior**: attach behavior to rendered markup in `client/lib/*` or view controllers (and ensure cleanup).
-  - **Server**: persistence and endpoints in `server/storage/*` + `server/routes/*`; export logic in `server/utils/*`.
+  - **Server**: HTTP adapters in `server/routes/`, shared domain operations in `server/services/`, persistence in `server/storage/`, and export builders in `server/export/`.
 
 - **Theming & styling boundaries**
   - Theme variables are scoped to `.slide` to keep **application UI** theme-independent; the `--t-*` → slide-variable layer is `client/styles/slides/00-theme.css`, loaded by `client/styles/slides.css` right after the tokens and nowhere else (D268).
@@ -88,6 +80,7 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
   - The presenter chrome around the deck (topbar, stage, console, progress, start curtain, present window) is the viewer layer, `client/styles/viewer/`, aggregated into `client/styles/viewer.css` and loaded by `app.css` and `export.css` before `slides.css`; not by the embed or the MCP preview (D267).
   - Four app CSS layers load in order: tokens (`client/styles/app/tokens.css`), primitives (`client/styles/shared/primitives.css` and `client/styles/app/components.css`), viewer chrome (`client/styles/viewer.css`), then feature chrome. Feature CSS lives in `client/styles/app/<feature>/`, named after its folder in `client/views/` (`shell/` is the shared frame); `app/<feature>.css` aggregates each map. A new sheet goes in its feature folder and in the manifest, never loose in `app/`.
   - The `slides.css`, `viewer.css`, slide-tier, and per-feature app aggregators are generated by `scripts/generate-slide-css-aggregators.js` and guarded by `tests/css-aggregators.test.js`.
+  - Shared DOM widget CSS lives in `client/styles/app/components/`, with a generated `components.css` aggregator. `tests/css-ownership.test.js` requires a JS string reference in the matching feature (or `lib/dom` for components/shell), with an exact shrinking debt list. Ownership, limitations and moved fork paths: `docs/reference/css-ownership.md`.
   - Don’t hardcode brand colors/fonts inside slide templates. Prefer CSS vars (`--t-*` theme vars → `.slide` vars → component CSS).
   - Width-based `@media` queries sit on the shared breakpoint ladder (**`docs/reference/css-breakpoints.md`**, `tests/css-breakpoints.test.js`).
 
@@ -106,7 +99,9 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
   - Where an error is shown is decided by its kind (see _Feedback_ under
     Frontend patterns). SSE `error` events are not the envelope: they carry
     `{ message }`, no `ok`, no `error` key (`docs/reference/api-error-format.md`
-    § SSE error events).
+    § SSE error events), and neither is a failed background job: it carries
+    `message` only when the failure left a sentence for the caller (§ Failed
+    background jobs).
 
 - **Safety: HTML escaping and markdown**
   - User text into HTML goes through `escapeHtml()` (`shared/slide-types/helpers.js`)

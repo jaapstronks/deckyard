@@ -90,14 +90,14 @@ export function openVersionsModal({
 
   const load = async () => {
     setStatus(t('common.loading', 'Loading…'));
-    listEl.innerHTML = '';
+    listEl.replaceChildren();
     try {
       const versions = await api(`/api/presentations/${id}/versions`);
       const arr = Array.isArray(versions) ? versions : [];
       if (!arr.length) {
         listEl.append(
           h('div', {
-            class: 'help',
+            class: 'empty-note',
             text: t('editor.versions.empty', 'No versions yet.'),
           }),
         );

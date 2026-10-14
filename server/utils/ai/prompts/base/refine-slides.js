@@ -11,6 +11,7 @@
  */
 
 import { SLIDE_TYPES } from '../../../../../shared/slide-types/registry.js';
+import { customSlideTypeKey } from '../../../../../shared/slide-types/custom-type-runtime.js';
 import { allowedEnumValues } from '../../../../../shared/slide-types/field-types.js';
 import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
 
@@ -272,6 +273,6 @@ function buildBackgroundOffers(themeContext, disabled = [], custom = []) {
 function offeredTypeDefs(disabled = [], custom = []) {
   return [
     ...Object.entries(SLIDE_TYPES),
-    ...custom.map((ct) => [`custom-${ct.slug}`, ct]),
+    ...custom.map((ct) => [customSlideTypeKey(ct), ct]),
   ].filter(([type]) => !disabled.includes(type));
 }

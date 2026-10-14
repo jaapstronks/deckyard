@@ -67,7 +67,10 @@ test(
 
     const off = [];
     for (const type of Object.keys(SLIDE_TYPES)) {
-      const html = await buildSlidePngHtml(repoRoot, newSlide({ type }));
+      const html = await buildSlidePngHtml(
+        repoRoot,
+        newSlide({ slideTypes: SLIDE_TYPES, type }),
+      );
       await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
       const measured = await page.evaluate(() => {

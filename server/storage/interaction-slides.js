@@ -1,3 +1,4 @@
+import { toStorageContext } from './scope.js';
 /**
  * The per-slide lifecycle of a live interaction, on PostgreSQL.
  *
@@ -22,7 +23,32 @@
  * can never outlive its session (the cascade collects it).
  */
 
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
+
+async function sessionInScope(db, scope, sessionId) {
+  const context = toStorageContext(
+    scope,
+    'sessionInScope',
+    {},
+    { allowCrossOrganization: true },
+  );
+  let query = db
+    .selectFrom('present_sessions')
+    .innerJoin(
+      'presentations',
+      'presentations.id',
+      'present_sessions.presentation_id',
+    )
+    .select('present_sessions.session_id')
+    .where('present_sessions.session_id', '=', sessionId);
+  if (context.organizationId)
+    query = query.where(
+      'presentations.organization_id',
+      '=',
+      context.organizationId,
+    );
+  return !!(await query.executeTakeFirst());
+}
 
 /** Hard ceiling on authored options, matching the file format's clamp. */
 export const MAX_OPTIONS = 10;
@@ -133,18 +159,23 @@ const SLIDE_COLUMNS = [
  *   `invalid` for a blank id or type, `not_found` when the session is gone,
  *   `unavailable` when the pool is down.
  */
-export async function ensureInteractionSlide({
-  sessionId,
-  slideId,
-  type,
-  optionCount = 0,
-  defaultStatus = 'open',
-}) {
+export async function ensureInteractionSlide(
+  scope,
+  { sessionId, slideId, type, optionCount = 0, defaultStatus = 'open' },
+) {
+  toStorageContext(
+    scope,
+    'ensureInteractionSlide',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();
   if (!sid || !slide || !type) return { ok: false, reason: 'invalid' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    if (!(await sessionInScope(db, scope, sid)))
+      return { ok: false, reason: 'not_found' };
     const values = {
       session_id: sid,
       slide_id: slide,
@@ -183,12 +214,19 @@ export async function ensureInteractionSlide({
  * @param {string} opts.slideId
  * @returns {Promise<InteractionSlide|null>}
  */
-export async function getInteractionSlide({ sessionId, slideId }) {
+export async function getInteractionSlide(scope, { sessionId, slideId }) {
+  toStorageContext(
+    scope,
+    'getInteractionSlide',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();
   if (!sid || !slide) return null;
 
   return withDbGuard(null, async (db) => {
+    if (!(await sessionInScope(db, scope, sid))) return null;
     const row = await db
       .selectFrom('interactions')
       .select(SLIDE_COLUMNS)
@@ -217,12 +255,16 @@ export async function getInteractionSlide({ sessionId, slideId }) {
  *   `invalid` for a blank id, `not_found` when no such interaction exists,
  *   `unavailable` when the pool is down.
  */
-export async function updateInteractionSlide({
-  sessionId,
-  slideId,
-  status,
-  optionCount,
-}) {
+export async function updateInteractionSlide(
+  scope,
+  { sessionId, slideId, status, optionCount },
+) {
+  toStorageContext(
+    scope,
+    'updateInteractionSlide',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();
   if (!sid || !slide) return { ok: false, reason: 'invalid' };
@@ -235,6 +277,8 @@ export async function updateInteractionSlide({
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    if (!(await sessionInScope(db, scope, sid)))
+      return { ok: false, reason: 'not_found' };
     const row = await db
       .updateTable('interactions')
       .set(set)

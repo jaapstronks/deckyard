@@ -4,7 +4,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { getSupportedLangs } from '../../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 
 /** Slide aspect ratio (16:9) */
 const SLIDE_ASPECT_RATIO = 16 / 9;
@@ -46,19 +46,6 @@ export async function getRecommendedImageFit(url) {
   const shouldContain = mismatch > ASPECT_MISMATCH_THRESHOLD;
   return { shouldContain, width, height, mismatch };
 }
-
-/**
- * Read a file as a data URL
- * @param {File} file - File to read
- * @returns {Promise<string>} Data URL
- */
-export const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
 
 /**
  * Check if an item matches a search query
@@ -144,7 +131,7 @@ export function installTagsAutocomplete(inputEl, datalistEl, getTagsFn) {
       ? all.filter((t0) => String(t0).toLowerCase().startsWith(q))
       : all;
 
-    datalistEl.innerHTML = '';
+    datalistEl.replaceChildren();
     for (const tg of filtered.slice(0, 30)) {
       const opt = h('option');
       opt.value = tg;

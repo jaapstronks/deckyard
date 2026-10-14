@@ -1,5 +1,5 @@
 /**
- * B160 / D88: a theme declares the ground its slides start on.
+ * A theme declares the ground its slides start on (B160, D88).
  *
  * A slide type writes `defaults.background` theme-agnostically — it cannot know
  * which theme will carry it — so a theme whose whole design stands on another
@@ -30,6 +30,7 @@ import { convertSlideToType } from '../shared/slide-types/convert.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
 import { validateThemeConfig } from '../shared/theme-config-schema.js';
 import { buildThemeConfig } from '../server/utils/theme-builder.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 /** A theme that stands on mist. `content-slide` defaults to lime without it. */
 const MIST = { defaultBackground: 'mist' };
@@ -41,7 +42,8 @@ const VARIANT = {
 };
 
 function backgroundOf(type, theme, opts = {}) {
-  return newSlide({ type, theme, ...opts }).content.background;
+  return newSlide({ slideTypes: SLIDE_TYPES, type, theme, ...opts }).content
+    .background;
 }
 
 // ── the rule ────────────────────────────────────────────────────────────────
@@ -77,7 +79,8 @@ test('a type without a background field gets no background key', () => {
   assert.equal(backgroundOf('quote-slide', MIST), undefined);
   assert.ok(
     !Object.prototype.hasOwnProperty.call(
-      newSlide({ type: 'quote-slide', theme: MIST }).content,
+      newSlide({ slideTypes: SLIDE_TYPES, type: 'quote-slide', theme: MIST })
+        .content,
       'background',
     ),
   );
@@ -101,7 +104,7 @@ test('the ground is a default: content the caller brings wins over it', () => {
 test('the import route seeds the theme ground, and a variant survives it', () => {
   const [mist] = deckToPresentationParts(
     { slides: [{ type: 'content-slide', content: {} }] },
-    { theme: MIST, lang: 'nl' },
+    { slideTypes: SLIDE_TYPES, theme: MIST, lang: 'nl' },
   ).slides;
   assert.equal(mist.content.background, 'mist');
 
@@ -109,14 +112,14 @@ test('the import route seeds the theme ground, and a variant survives it', () =>
   // so a variant id is not reset to the type's first option on the way in.
   const [variant] = deckToPresentationParts(
     { slides: [{ type: 'content-slide', content: {} }] },
-    { theme: VARIANT, lang: 'nl' },
+    { slideTypes: SLIDE_TYPES, theme: VARIANT, lang: 'nl' },
   ).slides;
   assert.equal(variant.content.background, 'seaweed');
 
   // An imported slide that names its own background still keeps it.
   const [named] = deckToPresentationParts(
     { slides: [{ type: 'content-slide', content: { background: 'lime' } }] },
-    { theme: MIST, lang: 'nl' },
+    { slideTypes: SLIDE_TYPES, theme: MIST, lang: 'nl' },
   ).slides;
   assert.equal(named.content.background, 'lime');
 });
@@ -130,7 +133,10 @@ test('a converted slide lands on the theme ground of its new type', () => {
     type: 'list-slide',
     content: { title: 'Punten', items: ['een'] },
   };
-  const converted = convertSlideToType(list, 'content-slide', { theme: MIST });
+  const converted = convertSlideToType(list, 'content-slide', {
+    slideTypes: SLIDE_TYPES,
+    theme: MIST,
+  });
   assert.equal(converted.content.background, 'mist');
 });
 
@@ -196,8 +202,11 @@ test('a DB theme can declare it too', () => {
   });
   assert.equal(built.defaultBackground, 'mist');
   assert.equal(
-    newSlide({ type: 'content-slide', theme: normalizeTheme(built) }).content
-      .background,
+    newSlide({
+      slideTypes: SLIDE_TYPES,
+      type: 'content-slide',
+      theme: normalizeTheme(built),
+    }).content.background,
     'mist',
   );
   // A row that says nothing keeps every type on its own default.
@@ -216,8 +225,11 @@ test('a DB theme can declare it too', () => {
   });
   assert.equal(plain.defaultBackground, undefined);
   assert.equal(
-    newSlide({ type: 'content-slide', theme: normalizeTheme(plain) }).content
-      .background,
+    newSlide({
+      slideTypes: SLIDE_TYPES,
+      type: 'content-slide',
+      theme: normalizeTheme(plain),
+    }).content.background,
     'lime',
   );
 });
@@ -245,7 +257,7 @@ const THEME_ID = '99999999-1111-4222-8333-444444444444';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { userRows } = await import('./helpers/identity-fixtures.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
 const { registerTools } = await import('../server/mcp/tools.js');
 

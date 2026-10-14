@@ -9,7 +9,6 @@ import {
   SCHEMA_MIGRATIONS,
   eachSlide,
   migratePresentation,
-  schemaVersionOf,
 } from '../shared/slide-types/schema-version.js';
 import { REMOVED_SLIDE_TYPES } from '../shared/slide-types/removed.js';
 import {
@@ -17,6 +16,8 @@ import {
   validatePresentation,
 } from '../shared/slide-types/presentation.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
+import { slideTypeSample } from '../shared/slide-types/authoring-companions.js';
+import { SLIDE_TYPE_AI_EXAMPLES } from '../server/utils/ai/slide-catalog/type-ai.js';
 
 /** A minimal pre-versioning deck (no schemaVersion stamp). */
 function legacyDeck() {
@@ -49,17 +50,100 @@ test('the migrations array has exactly one step per version bump', () => {
 });
 
 test('newPresentation() stamps the current schema version', () => {
-  const pres = newPresentation({});
+  const pres = newPresentation({ slideTypes: SLIDE_TYPES });
   assert.equal(pres.schemaVersion, CURRENT_SCHEMA_VERSION);
 });
 
-test('schemaVersionOf treats missing/garbage stamps as version 0', () => {
-  assert.equal(schemaVersionOf(null), 0);
-  assert.equal(schemaVersionOf({}), 0);
-  assert.equal(schemaVersionOf({ schemaVersion: 'nope' }), 0);
-  assert.equal(schemaVersionOf({ schemaVersion: -3 }), 0);
-  assert.equal(schemaVersionOf({ schemaVersion: 1 }), 1);
-  assert.equal(schemaVersionOf({ schemaVersion: '1' }), 1);
+test('a stamp skips no step: every stamp still runs the whole chain (D85)', () => {
+  // The stamp is "went through the funnel of this build", never "these steps
+  // already ran": a stamped object that carries a retired shape is folded all
+  // the same, whatever the stamp says.
+  for (const stamp of [
+    undefined,
+    'nope',
+    -3,
+    1,
+    '1',
+    CURRENT_SCHEMA_VERSION,
+    String(CURRENT_SCHEMA_VERSION),
+  ]) {
+    const deck = {
+      id: randomUUID(),
+      schemaVersion: stamp,
+      slides: [
+        {
+          id: 's1',
+          type: 'text-blocks-slide',
+          content: {
+            rows: [{ blocks: [{ title: 'Kept' }] }],
+            row1Block1Title: 'Old mirror',
+          },
+        },
+      ],
+    };
+    const out = migratePresentation(deck);
+    assert.equal(out.schemaVersion, CURRENT_SCHEMA_VERSION, String(stamp));
+    assert.deepEqual(out.slides[0].content, {
+      rows: [{ blocks: [{ title: 'Kept' }] }],
+    });
+  }
+});
+
+/**
+ * Every content shape a registered type itself calls valid: its `defaults`,
+ * each `defaultsByLang` entry, its `authoring.sample` and each `aiExamples`
+ * item. What the current writers produce starts from one of these.
+ * @returns {Array<[string, string, object]>} `[type, label, content]`
+ */
+function registeredTypeContents() {
+  const out = [];
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    if (def?.defaults && typeof def.defaults === 'object')
+      out.push([name, 'defaults', def.defaults]);
+    for (const [lang, d] of Object.entries(def?.defaultsByLang || {}))
+      if (d && typeof d === 'object') out.push([name, `defaults[${lang}]`, d]);
+    const sample = slideTypeSample(name, def);
+    if (sample && typeof sample === 'object')
+      out.push([name, 'authoring.sample', sample]);
+    (SLIDE_TYPE_AI_EXAMPLES[name] || []).forEach((ex, i) => {
+      if (ex?.content && typeof ex.content === 'object')
+        out.push([name, `aiExamples[${i}]`, ex.content]);
+    });
+  }
+  return out;
+}
+
+test('the funnel is a no-op on every registered type its own content describes (D85)', () => {
+  // The step contract: a step keys on a shape valid current content cannot
+  // have, so it never touches what the current writers produce. A step that
+  // does rewrites decks that were never old - the reverted chart-header step
+  // broke exactly the `Quarter\t2023\t2024` example in chart-slide's
+  // aiExamples (B239). Each content runs as its own one-slide deck, both
+  // unstamped and stamped current: a stamp skips nothing, so both must hold.
+  const contents = registeredTypeContents();
+  assert.ok(contents.length > Object.keys(SLIDE_TYPES).length);
+  const rewritten = [];
+  for (const [type, label, content] of contents) {
+    for (const stamp of [undefined, CURRENT_SCHEMA_VERSION]) {
+      const deck = {
+        id: 'deck',
+        title: 'Guard',
+        lang: 'nl',
+        ...(stamp === undefined ? {} : { schemaVersion: stamp }),
+        slides: [{ id: 's1', type, content: structuredClone(content) }],
+      };
+      const before = structuredClone(deck);
+      const { schemaVersion, ...after } = migratePresentation(deck);
+      const { schemaVersion: _stamp, ...expected } = before;
+      assert.equal(schemaVersion, CURRENT_SCHEMA_VERSION);
+      try {
+        assert.deepEqual(after, expected);
+      } catch {
+        rewritten.push(`${type} ${label} (stamp ${stamp ?? 'none'})`);
+      }
+    }
+  }
+  assert.deepEqual(rewritten, []);
 });
 
 test('migrating a legacy deck stamps it current without touching content', () => {
@@ -495,8 +579,7 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
   process.env.DEFAULT_ORGANIZATION_ID = ORG;
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { __setTestDb } = await import('../server/db/client.js');
-  const { initializeStorage, __resetStorageForTests } =
-    await import('../server/storage/lifecycle.js');
+  const { initializeStorage } = await import('../server/db/lifecycle.js');
   const legacy = legacyDeck();
   __setTestDb(
     createFakeDb({
@@ -534,14 +617,13 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
     const missing = await getPresentation(storageScope, randomUUID());
     assert.equal(missing, null);
   } finally {
-    __resetStorageForTests();
     __setTestDb(null);
   }
 });
 
 test('validatePresentation accepts a freshly stamped deck', () => {
   const { ok, errors } = validatePresentation(
-    newPresentation({ theme: randomUUID() }),
+    newPresentation({ slideTypes: SLIDE_TYPES, theme: randomUUID() }),
   );
   assert.equal(ok, true, `unexpected errors: ${errors.join(', ')}`);
 });
@@ -989,15 +1071,18 @@ test('the import seam folds a pre-v10 export off the old `subtitle` spelling', a
   // unreachable `subtitle` and render no subheading at all.
   const { deckToPresentationParts } =
     await import('../shared/slide-types/deck.js');
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [
-      {
-        type: 'eu.deckyard.slide.title',
-        content: { title: 'Kickoff', subtitle: 'welkom' },
-      },
-    ],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [
+        {
+          type: 'eu.deckyard.slide.title',
+          content: { title: 'Kickoff', subtitle: 'welkom' },
+        },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   const content = parts.slides[0].content;
   assert.equal(content.subheading, 'welkom');
   assert.equal('subtitle' in content, false);
@@ -1081,7 +1166,7 @@ test('gate: no slide type carries a numbered slot family beside its canonical ar
 });
 
 test('validatePresentation rejects an out-of-range schemaVersion', () => {
-  const base = newPresentation({});
+  const base = newPresentation({ slideTypes: SLIDE_TYPES });
 
   const negative = validatePresentation({ ...base, schemaVersion: -1 });
   assert.equal(negative.ok, false);
@@ -1106,25 +1191,32 @@ test('the import seam runs the funnel: a pre-fold export keeps its cards', async
   // content with placeholders.
   const { deckToPresentationParts } =
     await import('../shared/slide-types/deck.js');
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [
-      {
-        // The published spelling: canonical reverse-DNS ids, folded to the
-        // registry key by the v3 -> v4 step before v7 -> v8 matches on it.
-        type: 'eu.deckyard.slide.icon-card-grid',
-        content: { cardCount: '2', card1Title: 'Real one', card2Title: 'Two' },
-      },
-      {
-        type: 'team-cards-slide',
-        content: { cardCount: '1', card1Name: 'Ada', card1Byline: 'Eng' },
-      },
-      {
-        type: 'logo-wall-slide',
-        content: { logoCount: '1', logo1Name: 'Acme', logo1Image: '/a.png' },
-      },
-    ],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [
+        {
+          // The published spelling: canonical reverse-DNS ids, folded to the
+          // registry key by the v3 -> v4 step before v7 -> v8 matches on it.
+          type: 'eu.deckyard.slide.icon-card-grid',
+          content: {
+            cardCount: '2',
+            card1Title: 'Real one',
+            card2Title: 'Two',
+          },
+        },
+        {
+          type: 'team-cards-slide',
+          content: { cardCount: '1', card1Name: 'Ada', card1Byline: 'Eng' },
+        },
+        {
+          type: 'logo-wall-slide',
+          content: { logoCount: '1', logo1Name: 'Acme', logo1Image: '/a.png' },
+        },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   const [grid, team, wall] = parts.slides.map((s) => s.content);
   assert.deepEqual(
     grid.items.map((c) => c.title),
@@ -1148,19 +1240,27 @@ test('the import seam folds a pre-v9 poll export into options[]', async () => {
   // answers beside its real, unreachable `option1..4`.
   const { deckToPresentationParts } =
     await import('../shared/slide-types/deck.js');
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [
-      {
-        type: 'eu.deckyard.slide.poll',
-        content: { question: 'Pick', option1: 'A', option2: 'B', option3: '' },
-      },
-      {
-        type: 'likert-slide',
-        content: { question: 'Agree?', option1: 'No', option2: 'Yes' },
-      },
-    ],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [
+        {
+          type: 'eu.deckyard.slide.poll',
+          content: {
+            question: 'Pick',
+            option1: 'A',
+            option2: 'B',
+            option3: '',
+          },
+        },
+        {
+          type: 'likert-slide',
+          content: { question: 'Agree?', option1: 'No', option2: 'Yes' },
+        },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   const [poll, likert] = parts.slides.map((s) => s.content);
   assert.deepEqual(
     poll.options.map((o) => o.text),
@@ -1864,7 +1964,7 @@ test('the full funnel takes an unstamped duo slide all the way to image-set', ()
   const migrated = migratePresentation(deck);
 
   assert.equal(
-    schemaVersionOf(migrated),
+    migrated.schemaVersion,
     CURRENT_SCHEMA_VERSION,
     'the deck ran the whole chain',
   );

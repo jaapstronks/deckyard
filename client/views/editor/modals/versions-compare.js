@@ -137,7 +137,7 @@ export function openVersionCompareModal({
       if (result?.ok && Array.isArray(result.insights)) {
         // Clear any existing insights
         for (const container of insightContainers.values()) {
-          container.innerHTML = '';
+          container.replaceChildren();
           container.style.display = 'none';
         }
 
@@ -212,7 +212,7 @@ export function openVersionCompareModal({
       const diff = computeSlideDiff(currentSlides, snapshotSlides);
 
       // Update summary
-      summary.innerHTML = '';
+      summary.replaceChildren();
       summary.append(
         h('div', { class: 'summary-stat' }, [
           h('span', {
@@ -362,7 +362,9 @@ export function openVersionCompareModal({
           }
           currentCell.append(thumb);
         } else {
-          currentCell.append(h('div', { class: 'compare-empty', text: '—' }));
+          currentCell.append(
+            h('div', { class: 'empty-note compare-placeholder', text: '—' }),
+          );
         }
 
         // Category indicator
@@ -414,7 +416,9 @@ export function openVersionCompareModal({
           }
           snapshotCell.append(thumb);
         } else {
-          snapshotCell.append(h('div', { class: 'compare-empty', text: '—' }));
+          snapshotCell.append(
+            h('div', { class: 'empty-note compare-placeholder', text: '—' }),
+          );
         }
 
         row.append(currentCell, indicator, snapshotCell);

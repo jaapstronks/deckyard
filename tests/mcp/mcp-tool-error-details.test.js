@@ -1,5 +1,5 @@
 /**
- * B621: a tool error carries the reasons, not just the sentence.
+ * A tool error carries the reasons, not just the sentence (B621).
  *
  * A service refusal is an `AppError` with a machine code and `details`; v1
  * renders it as the envelope `{ error, message, details }`. The MCP tool error
@@ -7,7 +7,7 @@
  * `update_slide` read `Invalid slide data` without saying which field. The
  * renderer now puts the same envelope below the human line, for every tool.
  *
- * B624: and like v1 it keeps an unexpected failure's message to the log.
+ * And like v1 it keeps an unexpected failure's message to the log (B624).
  *
  * Run with: node --test tests/mcp/mcp-tool-error-details.test.js
  */
@@ -30,7 +30,7 @@ const SLIDE_ID = '11111111-2222-4333-8444-555555555555';
 
 const { createFakeDb } = await import('../helpers/fake-db.js');
 const { __setTestDb } = await import('../../server/db/client.js');
-const { initializeStorage } = await import('../../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../../server/db/lifecycle.js');
 const { McpServer } = await import('../../server/mcp/protocol.js');
 const { registerTools } = await import('../../server/mcp/tools.js');
 const { NotFoundError } = await import('../../server/utils/errors.js');
@@ -105,11 +105,15 @@ test('update_slide with an invalid slide names the failing fields', async () => 
       content: { title: '' },
     }),
   );
-  assert.equal(line, 'Error: Invalid slide data');
+  assert.equal(line, 'Error: Slide.content.title is required');
   assert.deepEqual(envelope, {
-    error: 'bad_request',
-    message: 'Invalid slide data',
-    details: { errors: ['Slide.content.title is required'] },
+    error: 'invalid',
+    message: 'Slide.content.title is required',
+    details: {
+      field: 'title',
+      slideId: SLIDE_ID,
+      errors: ['Slide.content.title is required'],
+    },
   });
 });
 

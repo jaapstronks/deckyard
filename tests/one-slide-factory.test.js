@@ -1,5 +1,5 @@
 /**
- * B243: one factory where a slide comes into being.
+ * One factory where a slide comes into being (B243).
  *
  * Four routes used to create a slide, with three different compositions
  * between them and one that skipped composition entirely:
@@ -15,7 +15,7 @@
  *   slide reached storage with no `pollId` at all.
  *
  * Every hook that has to hold "on both creation paths" — the preset seed, the
- * instance keys, and next the theme ground of B160 — therefore had to be
+ * instance keys, and next the theme ground (B160) — therefore had to be
  * written three times and still missed the fourth. `newSlide()` is now the one
  * composition and every route hands it what it knows.
  *
@@ -26,12 +26,13 @@
  * Run with: node --test tests/one-slide-factory.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { walkJsFiles, callArguments } from './helpers/call-sites.js';
+import { callArguments } from './helpers/call-sites.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { newSlide } from '../shared/slide-types/presentation.js';
 import { deckToPresentationParts } from '../shared/slide-types/deck.js';
@@ -57,7 +58,7 @@ function withoutInstanceIds(content) {
 
 // ── the routes agree ────────────────────────────────────────────────────────
 
-test('creating and importing a slide of the same type yield the same content', () => {
+test('import composes defaults and declared import values through the slide factory', () => {
   // The editor insert (the factory, with the registry the editor holds) and a
   // deck import of a bare `{ type }` slide. The import path builds a patch and
   // hands it to the same factory, so on every key neither route was given they
@@ -81,11 +82,18 @@ test('creating and importing a slide of the same type yield the same content', (
         theme: THEME,
         lang,
         presentationId: 'deck-1',
+        // Import supplies its declared placeholders as a patch; insertion
+        // without that patch keeps the ordinary empty image defaults.
+        content: Object.fromEntries(
+          SLIDE_TYPES[type].fields
+            .filter((f) => f.type === 'image' && f.importPlaceholder)
+            .map((f) => [f.key, f.importPlaceholder]),
+        ),
       }).content,
     );
     const [importedSlide] = deckToPresentationParts(
       { slides: [{ type, content: {} }] },
-      { theme: THEME, lang },
+      { slideTypes: SLIDE_TYPES, theme: THEME, lang },
     ).slides;
     const imported = withoutInstanceIds(importedSlide.content);
     const funnelSeeded = new Set(
@@ -128,21 +136,24 @@ test("a theme background is the type's declaration, on every route (D92)", () =>
   // routes alike.
   assert.equal(SLIDE_TYPES['title-slide'].autoBackgroundPreset, true);
   assert.equal(
-    newSlide({ type: 'title-slide', theme: THEME }).content.slideBgImage,
+    newSlide({ slideTypes: SLIDE_TYPES, type: 'title-slide', theme: THEME })
+      .content.slideBgImage,
     THEME.backgroundPresets[0],
     'insert',
   );
   assert.equal(
     deckToPresentationParts(
       { slides: [{ type: 'title-slide', content: {} }] },
-      { theme: THEME },
+      { slideTypes: SLIDE_TYPES, theme: THEME },
     ).slides[0].content.slideBgImage,
     THEME.backgroundPresets[0],
     'import',
   );
   assert.equal(
-    convertSlideToType(chapter, 'title-slide', { theme: THEME }).content
-      .slideBgImage,
+    convertSlideToType(chapter, 'title-slide', {
+      slideTypes: SLIDE_TYPES,
+      theme: THEME,
+    }).content.slideBgImage,
     THEME.backgroundPresets[0],
     'convert',
   );
@@ -181,7 +192,7 @@ test("a theme background is the type's declaration, on every route (D92)", () =>
     convertSlideToType(
       { ...chapter, content: { ...chapter.content, slideBgImage: '/own.jpg' } },
       'title-slide',
-      { theme: THEME },
+      { slideTypes: SLIDE_TYPES, theme: THEME },
     ).content.slideBgImage,
     '/own.jpg',
   );
@@ -192,20 +203,24 @@ test('a type declaring instance keys gets them on every route', () => {
   // agent-created poll slide reached storage without the id its live state is
   // addressed by. The declaration is applied by the factory, so every route
   // that composes gets it.
-  const created = newSlide({ type: 'poll-slide' });
+  const created = newSlide({ slideTypes: SLIDE_TYPES, type: 'poll-slide' });
   assert.match(
     created.content.pollId,
     /^[0-9a-f-]{36}$/,
     'a created poll slide carries a fresh pollId',
   );
 
-  const [imported] = deckToPresentationParts({
-    slides: [{ type: 'poll-slide', content: { question: 'Hm?' } }],
-  }).slides;
+  const [imported] = deckToPresentationParts(
+    {
+      slides: [{ type: 'poll-slide', content: { question: 'Hm?' } }],
+    },
+    { slideTypes: SLIDE_TYPES },
+  ).slides;
   assert.match(imported.content.pollId, /^[0-9a-f-]{36}$/);
   assert.notEqual(imported.content.pollId, created.content.pollId);
 
   const withDeck = newSlide({
+    slideTypes: SLIDE_TYPES,
     type: 'follow-invite-slide',
     presentationId: 'deck-7',
   });
@@ -216,8 +231,9 @@ test('content handed to the factory is a patch over the defaults', () => {
   // What "don't blank a required field on import" means once the factory owns
   // the defaults: an omitted key keeps the default, a present one wins.
   const def = SLIDE_TYPES['content-slide'];
-  const bare = newSlide({ type: 'content-slide' });
+  const bare = newSlide({ slideTypes: SLIDE_TYPES, type: 'content-slide' });
   const patched = newSlide({
+    slideTypes: SLIDE_TYPES,
     type: 'content-slide',
     content: { title: 'Mine' },
   });
@@ -265,15 +281,18 @@ test('an imported enum value the theme adds is kept, not reset', () => {
   // `background` is not closed by the definition alone.
   const [imported] = deckToPresentationParts(
     { slides: [{ type: 'content-slide', content: { background: 'seaweed' } }] },
-    { theme: THEME },
+    { slideTypes: SLIDE_TYPES, theme: THEME },
   ).slides;
   assert.equal(imported.content.background, 'seaweed');
 
   // Without the theme the variant is not on offer, so the key falls back to the
   // type's default rather than importing an unrenderable value.
-  const [noTheme] = deckToPresentationParts({
-    slides: [{ type: 'content-slide', content: { background: 'seaweed' } }],
-  }).slides;
+  const [noTheme] = deckToPresentationParts(
+    {
+      slides: [{ type: 'content-slide', content: { background: 'seaweed' } }],
+    },
+    { slideTypes: SLIDE_TYPES },
+  ).slides;
   assert.equal(
     noTheme.content.background,
     SLIDE_TYPES['content-slide'].defaults.background,
@@ -302,7 +321,9 @@ const CLONE_ALLOWED = new Set([
 test('only the shared resolver composes a slide from a type default', () => {
   const offenders = [];
   for (const dir of ['client', 'server', 'shared']) {
-    for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
+    for (const file of walkFiles(path.join(process.cwd(), dir), {
+      extensions: ['.js'],
+    })) {
       const rel = path.relative(process.cwd(), file);
       if (CLONE_ALLOWED.has(rel)) continue;
       const source = withoutComments(fs.readFileSync(file, 'utf8'));
@@ -331,17 +352,26 @@ function withoutComments(source) {
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 }
 
-test('every deck normalization is given a theme and a language', () => {
+test('every deck normalization is given a theme, a language and a type map', () => {
   // A slide composes against the theme (background presets, slide-background
-  // variants) and the deck language (`defaultsByLang`). Twelve of the thirteen
-  // call sites used to pass no theme, and none passed a language, so an
-  // imported or AI-generated slide came out different from an inserted one.
+  // variants), the deck language (`defaultsByLang`) and the organization's
+  // type map (its own types, the installation's `configDefaults`). Twelve of
+  // the thirteen call sites used to pass no theme, none passed a language, and
+  // twelve passed no map (B655), so an imported or AI-generated slide came out
+  // different from an inserted one. The seam throws without a map; this pins
+  // the call sites no test drives.
   const offenders = [];
   for (const dir of ['server', 'shared', 'client']) {
-    for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
+    for (const file of walkFiles(path.join(process.cwd(), dir), {
+      extensions: ['.js'],
+    })) {
       const source = withoutComments(fs.readFileSync(file, 'utf8'));
       for (const args of callArguments(source, 'deckToPresentationParts')) {
-        if (!args[1]?.includes('theme') || !args[1]?.includes('lang')) {
+        if (
+          !args[1]?.includes('theme') ||
+          !args[1]?.includes('lang') ||
+          !args[1]?.includes('slideTypes')
+        ) {
           offenders.push(
             `${path.relative(process.cwd(), file)}: deckToPresentationParts(${args.join(', ')})`,
           );
@@ -352,11 +382,11 @@ test('every deck normalization is given a theme and a language', () => {
   assert.deepEqual(
     offenders,
     [],
-    `these call sites normalize a deck without a theme or a language:\n${offenders.join('\n')}`,
+    `these call sites normalize a deck without a theme, a language or a type map:\n${offenders.join('\n')}`,
   );
 });
 
-test('every slide composition and conversion is given a theme', () => {
+test('every slide composition and conversion is given a theme and a type map', () => {
   // The factory and the converter both re-seed a slide for its type, and that
   // seed reads the theme: the ground (`defaultBackground`, B160), the
   // background presets, the variants a type may carry. A call site without
@@ -365,23 +395,29 @@ test('every slide composition and conversion is given a theme', () => {
   // two such routes.
   const offenders = [];
   for (const dir of ['server', 'shared', 'client']) {
-    for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
+    for (const file of walkFiles(path.join(process.cwd(), dir), {
+      extensions: ['.js'],
+    })) {
       const rel = path.relative(process.cwd(), file);
       const source = withoutComments(fs.readFileSync(file, 'utf8'));
       for (const args of callArguments(source, '\\bnewSlide')) {
-        if (!args[0]?.includes('theme'))
+        if (!args[0]?.includes('theme') || !args[0]?.includes('slideTypes'))
           offenders.push(`${rel}: newSlide(${args.join(', ')})`);
       }
       for (const args of callArguments(source, '\\bconvertSlideToType')) {
-        if (!args[2]?.includes('theme'))
+        if (!args[2]?.includes('theme') || !args[2]?.includes('slideTypes'))
           offenders.push(`${rel}: convertSlideToType(${args.join(', ')})`);
+      }
+      for (const args of callArguments(source, '\\bnewPresentation')) {
+        if (!args[0]?.includes('slideTypes'))
+          offenders.push(`${rel}: newPresentation(${args.join(', ')})`);
       }
     }
   }
   assert.deepEqual(
     offenders,
     [],
-    `these call sites compose or convert a slide without a theme:\n${offenders.join('\n')}`,
+    `these call sites compose or convert a slide without a theme or a type map:\n${offenders.join('\n')}`,
   );
 });
 
@@ -437,7 +473,9 @@ test('no route builds a new slide as a bare literal (B272)', () => {
   // defaults, no instance keys, no notes or visibility, no theme ground. A new
   // slide under `server/routes/` is made by `newSlide()`.
   const offenders = [];
-  for (const file of walkJsFiles(path.join(process.cwd(), 'server/routes'))) {
+  for (const file of walkFiles(path.join(process.cwd(), 'server/routes'), {
+    extensions: ['.js'],
+  })) {
     const rel = path.relative(process.cwd(), file);
     if (SLIDE_LITERAL_ALLOWED.has(rel)) continue;
     const source = withoutComments(fs.readFileSync(file, 'utf8'));

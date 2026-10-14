@@ -1,10 +1,10 @@
 /**
  * Guard: the follow-along invite declares itself; no module knows her name.
  *
- * B401 showed the form that holds: `library: false` on the type, read by one
- * predicate, instead of `slide.type === 'follow-invite-slide'` in the editor
- * and the library routes. B413 is the sweep over the dozen branches that were
- * still asking by name. Each now asks a facet of the declaration:
+ * The form that holds is `library: false` on the type, read by one predicate,
+ * instead of `slide.type === 'follow-invite-slide'` in the editor and the
+ * library routes (B401). This file pins the sweep over the dozen branches that
+ * were still asking by name (B413). Each now asks a facet of the declaration:
  *
  *   - `liveOnly: true` (`isLiveOnlySlideType`, `firstPublicSlide`) — every
  *     output that outlives the session: strip, exports, preview image.
@@ -22,6 +22,7 @@
  * Run with: node --test tests/follow-invite-declares-itself.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -51,7 +52,6 @@ const repoRoot = path.join(here, '..');
 
 const INVITE = 'follow-invite-slide';
 const SOURCE_TREES = ['client', 'server', 'shared'];
-const SKIP_DIRS = new Set(['vendor', 'node_modules']);
 
 /**
  * Where the name may still be spelled out, and why:
@@ -77,19 +77,6 @@ const ALLOWED = [
   'client/views/settings/tabs/slide-types-tab/categories.js',
 ];
 
-function walk(dir, out = []) {
-  if (!fs.existsSync(dir)) return out;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      walk(path.join(dir, entry.name), out);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      out.push(path.join(dir, entry.name));
-    }
-  }
-  return out;
-}
-
 /** Drop block and line comments; a `//` after a `:` is a URL, not a comment. */
 function stripComments(src) {
   return src
@@ -104,7 +91,11 @@ function isAllowed(rel) {
 test('outside the definition, the registries and the bespoke form, no code names the invite', () => {
   const offenders = [];
   for (const tree of SOURCE_TREES) {
-    for (const file of walk(path.join(repoRoot, tree))) {
+    for (const file of walkFiles(path.join(repoRoot, tree), {
+      extensions: ['.js'],
+      skipDirs: ['vendor', 'node_modules'],
+      missingOk: true,
+    })) {
       const rel = path.relative(repoRoot, file).split(path.sep).join('/');
       if (isAllowed(rel)) continue;
       const code = stripComments(fs.readFileSync(file, 'utf8'));

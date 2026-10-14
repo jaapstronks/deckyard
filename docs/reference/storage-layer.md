@@ -29,14 +29,19 @@ each path resolves.
   reduces a caller scope to a `StorageContext` via `toStorageContext()`; the
   tenancy gate (see _Authz & tenancy_). Every facade calls this once, then
   passes the context down to its queries.
-- `server/storage/lifecycle.js` — the storage lifecycle
-  (`initializeStorage` / `closeStorage`), thin wrappers over `db/client.js`'s
-  idempotent `initializeDatabase()` / `closeDatabase()`.
 - `server/db/client.js` — the single Kysely handle. Every facade reaches
   PostgreSQL through `getDb()` directly (there is no adapter class; B79/D34
-  stripped it), which throws before init so a premature query fails loud.
-- `server/storage/boot-check.js` — refuses to start on an empty DB while legacy
-  on-disk data still exists.
+  stripped it), which throws before init so a premature query fails loud. It
+  also holds `withDbGuard(fallback, fn)`, the availability guard every store
+  wraps its queries in.
+- `server/db/lifecycle.js` — the database lifecycle for consumers outside the
+  storage layer (`initializeStorage` / `closeStorage`), thin lazy wrappers over
+  `client.js`'s idempotent `initializeDatabase()` / `closeDatabase()`.
+- `server/db/boot-check.js` — refuses to start while migrations are pending, or
+  on an empty DB while legacy on-disk data still exists.
+
+The three database-layer modules act for no organization, so they live in
+`server/db/`, outside the storage scope convention (B665).
 
 **Domain subdirectories** (each takes a scope as first arg):
 
@@ -55,8 +60,8 @@ each path resolves.
   storage (incl. the GDPR view-session path), behind an `index.js` barrel.
 - `server/storage/cache/` — `permission-cache.js`.
 - `server/storage/utils/` — not a store: the cross-store helpers behind one
-  `index.js` seam (`withDbGuard` from `db-guard.js`, `parseJson` /
-  `generateSlug` / `isValidSlug` / `getUserIdByEmail` from `helpers.js`).
+  `index.js` seam (`parseJson`, `escapeLikePattern` and the scope-first
+  `getUserIdByEmail(scope, db, email)` from `helpers.js`). Slug generation and validation live in `shared/slug.js`, shared with the browser.
 - `server/storage/identity-resolver.js` /
   `server/storage/identity-verification.js` — map an external identifier to a
   stable `users.id`, and check that every dual key still agrees (see
@@ -155,19 +160,20 @@ that one has no id beside it yet.
   `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
   makes `grep -r crossOrganization` a complete census of every unscoped path.
 - **A list read.** The list facades (`listPresentations`,
-  `listTrashedPresentations`, `listPresentationVersions`, `listOrganizationLibrary`/
-  `listPersonalLibrary`, `getPublishedIndex`, `listImageLibrary`) return the
-  **full organization-scoped set**, ordered but unpaginated. Pagination is the
-  caller's concern: the public-api v1 routes slice `{limit, offset}` over the
-  full list in-memory and report a truthful `total`, and bulk-export/search/MCP
-  consume the whole set. There is deliberately no row cap — B79 had inherited
-  `applyPagination()`'s old default 100 as a literal `.limit(100)`, which
-  silently dropped the tail for any org past 100 items (corrupting API totals,
-  truncating backups, and — sharpest — making the organization-shelf
-  trash/delete authz guard resolve through the capped list and return a false `not_found` for
-  an item outside the newest page). B85 removed the cap and moved the guard to
-  resolve its target directly by id. Pushing `limit`/`offset` into SQL is a
-  future deliberate feature, not an accidental default; when it lands it is one
+  `listTrashedPresentations`, `listPresentationVersions`,
+  `listOrganizationLibrary`/`listPersonalLibrary`, `getPublishedIndex`,
+  `listImageLibrary`) return the **full organization-scoped set**, ordered but
+  unpaginated. Pagination is the caller's concern: the public-api v1 routes
+  slice `{limit, offset}` over the full list in-memory and report a truthful
+  `total`, and bulk-export/search/MCP consume the whole set. There is
+  deliberately no row cap. When the adapter class went, its facades inherited
+  `applyPagination()`'s old default 100 as a literal `.limit(100)` (B79), which
+  silently dropped the tail for any org past 100 items: it corrupted API totals,
+  truncated backups and — sharpest — made the organization-shelf trash/delete
+  authz guard resolve through the capped list and return a false `not_found` for
+  an item outside the newest page. The cap is gone and the guard resolves its
+  target directly by id (B85). Pushing `limit`/`offset` into SQL is a future
+  deliberate feature, not an accidental default; when it lands it is one
   canonical shape across all six facades, not a per-site parameter.
   **Decided 2026-08-19 (parked with a trigger):** DB-level pagination is
   built when either a list read on a production instance returns more than
@@ -175,10 +181,10 @@ that one has no id beside it yet.
   starts — whichever comes first — and then as a keyset cursor inside that
   service layer, never as a per-endpoint parameter. Until then the twelve
   in-memory slicers over `parsePaginationParams` are the intended shape.
-- **Storage boot.** `initializeStorage()` (server/storage/lifecycle.js) opens
+- **Storage boot.** `initializeStorage()` (server/db/lifecycle.js) opens
   the shared Kysely pool via `initializeDatabase()`; it is idempotent, and
   `getDb()` throws `"Database not initialized"` before it has run.
-- **Boot safety.** `boot-check.js` aborts startup if the DB is empty but legacy
+- **Boot safety.** `server/db/boot-check.js` aborts startup if the DB is empty but legacy
   file data still sits on disk, so an accidental empty-DB boot cannot silently
   shadow real data.
 
@@ -266,7 +272,7 @@ that disagrees, a register entry nobody mints, and any `getErrorStatus(reason,
 infrastructure failures raise. `toStorageContext()` throwing on an absent scope
 is the canonical case. A caller is not expected to catch these; they are bugs
 or outages, not outcomes. The one softened edge is `withDbGuard(fallback, fn)`
-(`server/storage/utils/db-guard.js`), which returns `fallback` instead of
+(`server/db/client.js`), which returns `fallback` instead of
 throwing when the pool is down — pass `null`/`[]` from a read and
 `{ ok: false, reason: 'unavailable' }` from a mutation, so the guard hands back
 that call kind's own failure shape.
@@ -295,8 +301,8 @@ per-route message maps (the `INVITE_FAILURE_MESSAGES` pattern in
 Both are gated in `tests/storage-reason-vocabulary.test.js`: `badRequest` at a
 hard zero, the ladders against a documented exception list plus a shrink-only
 burndown that is now **empty** — the last entry, the public `/api/v1` comments
-route, went in D52(b): it reads `getErrorStatus()` and the openapi op grew the
-`'500'` response that made the move honest.
+route, has gone too: it reads `getErrorStatus()` and the openapi op grew the
+`'500'` response that made the move honest (D52).
 
 **The synonyms collapsed last** (B104 PR 3, D48; finished in D52). Seven codes
 left the register first: `slug_taken` was a spelling of `slug_exists` and
@@ -308,11 +314,11 @@ the suffix carried — a client reads `details.field` instead of parsing a code 
 and `invalid_params` guarded several arguments at once, so it said nothing
 `invalid` does not.
 
-D48 stopped there, on the argument that the remaining `invalid_<thing>` codes
-"name a domain concept a UI acts on". **D52 measured that argument and it did
-not hold**: not one route or client branched on a status per code, and the
-display copy that keyed on them moved to the same `field` map the first four
-already used. So the other 21 — `invalid_email`, `invalid_slug`,
+The first collapse stopped there, on the argument that the remaining
+`invalid_<thing>` codes "name a domain concept a UI acts on" (D48). **Measured,
+that argument did not hold** (D52): not one route or client branched on a status
+per code, and the display copy that keyed on them moved to the same `field` map
+the first four already used. So the other 21 — `invalid_email`, `invalid_slug`,
 `invalid_permission` and their kin — collapsed too. **`invalid` is now the only
 code for "your input is bad", and it always carries a `field`.**
 
@@ -420,10 +426,10 @@ here.
 ## Implementation status (as of 2026-08-21)
 
 Postgres is the **only** backend today. The file/JSON backend was removed during
-1.x, and B79/D34 then removed the adapter class that had abstracted over the two:
-every facade now reaches PostgreSQL through direct Kysely on `getDb()`, and
-`STORAGE_MODE` accepts only `postgres`. This is the beta stance — one canonical
-backend, one canonical way to reach it, no compatibility shim for the old
-on-disk store and no abstract base kept alive for a second backend that does not
-exist. If one is ever reintroduced it would grow its own seam then; nothing in
-the tree carries that weight today.
+1.x, and the adapter class that had abstracted over the two went after it (B79,
+D34): every facade now reaches PostgreSQL through direct Kysely on `getDb()`,
+and `STORAGE_MODE` accepts only `postgres`. This is the beta stance — one
+canonical backend, one canonical way to reach it, no compatibility shim for the
+old on-disk store and no abstract base kept alive for a second backend that does
+not exist. If one is ever reintroduced it would grow its own seam then; nothing
+in the tree carries that weight today.

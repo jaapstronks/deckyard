@@ -1,3 +1,4 @@
+import { DEFAULT_IMAGE_PLACEHOLDER } from '../image-placeholder.js';
 import {
   bgClass,
   escapeHtml,
@@ -176,7 +177,7 @@ export default {
       layout: 'grid',
       images: [
         {
-          src: '/assets/images/backgrounds/demo-aurora.jpg',
+          src: DEFAULT_IMAGE_PLACEHOLDER,
           caption: '',
           alt: '',
         },
@@ -205,7 +206,7 @@ export default {
       layout: 'grid',
       images: [
         {
-          src: '/assets/images/backgrounds/demo-aurora.jpg',
+          src: DEFAULT_IMAGE_PLACEHOLDER,
           caption: '',
           alt: '',
         },
@@ -237,7 +238,7 @@ export default {
     layout: 'grid',
     images: [
       {
-        src: '/assets/images/backgrounds/demo-aurora.jpg',
+        src: DEFAULT_IMAGE_PLACEHOLDER,
         caption: '',
         alt: '',
       },

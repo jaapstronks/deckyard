@@ -8,16 +8,17 @@
  *
  * `userEmail` stays a separate argument where it appears: it names the *subject*
  * of a personal-library operation, which is not the same question as who the
- * storageScope attributes the write to (`actorEmail`).
+ * scope attributes the write to (`actorEmail`).
  *
  * Queries run directly through Kysely (B79/D34 removed the adapter
  * indirection); getDb() throws on an uninitialized database.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
-import { toStorageContext } from './scope.js';
 import {
   resolveDisplayNames,
   toDisplayIdentity,
@@ -33,7 +34,7 @@ import {
   normalizeLang,
   refuseNonCanonicalVersionKeys,
   TRANSLATION_LANGS,
-} from './presentations/i18n.js';
+} from './presentations/index.js';
 
 /**
  * The refusal of a change to a shared item by someone who is neither its
@@ -217,15 +218,26 @@ async function getSlideLibraryRow(id, ctx) {
  * off the axis is refused, because `mergeLibraryI18n` writes
  * `versions[dominant]` on every content PATCH and would mint that key there.
  *
+ * Omitted i18n, versions and version content are allowed. Present values must
+ * be objects, including each version record; null is not omission.
+ *
  * @param {unknown} i18n
  * @returns {object}
- * @throws {AppError} 400 `invalid`, `details.field` = `i18n.versions` or
- *   `i18n.dominant`
+ * @throws {AppError} 400 `invalid`, `details.field` names the refused path
  */
 function canonicalCreateI18n(i18n) {
-  if (!isPlainObject(i18n)) return {};
-  if (isPlainObject(i18n.versions)) {
+  if (i18n === undefined) return {};
+  requireI18nObject(i18n, 'i18n');
+  if ('versions' in i18n) {
+    requireI18nObject(i18n.versions, 'i18n.versions');
     refuseNonCanonicalVersionKeys(i18n.versions);
+    for (const [lang, version] of Object.entries(i18n.versions)) {
+      const field = `i18n.versions.${lang}`;
+      requireI18nObject(version, field);
+      if ('content' in version) {
+        requireI18nObject(version.content, `${field}.content`);
+      }
+    }
   }
   if (i18n.dominant === undefined) return i18n;
   const dominant = normalizeLang(i18n.dominant);
@@ -238,6 +250,13 @@ function canonicalCreateI18n(i18n) {
     );
   }
   return { ...i18n, dominant };
+}
+
+/** Refuse malformed language data before any create writes to the database. */
+function requireI18nObject(value, field) {
+  if (!isPlainObject(value)) {
+    throw new AppError(`${field} must be an object`, 400, { field }, 'invalid');
+  }
 }
 
 /**
@@ -255,7 +274,7 @@ async function createSlideLibraryRow(data, ctx) {
   // organization-library authz guard can match on the stable id.
   const actorEmail = ctx?.actorEmail || null;
   const actorResolution = actorEmail
-    ? await resolveIdentityByEmail(actorEmail)
+    ? await resolveIdentityByEmail(ctx, actorEmail)
     : null;
   const actorUserId = actorResolution?.userId ?? null;
 
@@ -462,7 +481,7 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
   // only when there is an actor to stamp, so an actor-less write never nulls
   // the id half while the e-mail half keeps the previous writer.
   if (changesItem && ctx?.actorEmail) {
-    const actorResolution = await resolveIdentityByEmail(ctx.actorEmail);
+    const actorResolution = await resolveIdentityByEmail(ctx, ctx.actorEmail);
     updateData.updated_by = ctx.actorEmail;
     updateData.updated_by_user_id = actorResolution?.userId ?? null;
   }
@@ -493,11 +512,11 @@ async function deleteLibraryItem(ctx, target) {
 // Personal library functions
 
 export async function listPersonalLibrary(
-  storageScope,
+  scope,
   userEmail,
   { themeId = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'listPersonalLibrary', {
+  const ctx = toStorageContext(scope, 'listPersonalLibrary', {
     userEmail,
   });
   const items = await listSlideLibraryRows(ctx, {
@@ -509,12 +528,12 @@ export async function listPersonalLibrary(
 }
 
 export async function createPersonalLibraryItem(
-  storageScope,
+  scope,
   userEmail,
   input,
   { actorEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'createPersonalLibraryItem', {
+  const ctx = toStorageContext(scope, 'createPersonalLibraryItem', {
     userEmail,
     actorEmail,
   });
@@ -540,13 +559,13 @@ export async function createPersonalLibraryItem(
  * organization item, is `not_found`. See `patchLibraryItem` for the contract.
  */
 export async function updatePersonalLibraryItem(
-  storageScope,
+  scope,
   userEmail,
   id,
   patch,
   { actorEmail, expectedRevision = null } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'updatePersonalLibraryItem', {
+  const ctx = toStorageContext(scope, 'updatePersonalLibraryItem', {
     userEmail,
     actorEmail,
   });
@@ -558,8 +577,8 @@ export async function updatePersonalLibraryItem(
   );
 }
 
-export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
-  const ctx = toStorageContext(storageScope, 'deletePersonalLibraryItem', {
+export async function deletePersonalLibraryItem(scope, userEmail, id) {
+  const ctx = toStorageContext(scope, 'deletePersonalLibraryItem', {
     userEmail,
   });
   const deleted = await deleteLibraryItem(ctx, {
@@ -574,10 +593,10 @@ export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
 // Organization-shelf library functions
 
 export async function listOrganizationLibrary(
-  storageScope,
+  scope,
   { themeId = '', userEmail = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'listOrganizationLibrary', {
+  const ctx = toStorageContext(scope, 'listOrganizationLibrary', {
     userEmail,
   });
   const items = await listSlideLibraryRows(ctx, {
@@ -588,11 +607,11 @@ export async function listOrganizationLibrary(
 }
 
 export async function getOrganizationLibraryItem(
-  storageScope,
+  scope,
   id,
   { userEmail = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'getOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'getOrganizationLibraryItem', {
     userEmail,
   });
   const item = await getSlideLibraryRow(id, ctx);
@@ -601,11 +620,11 @@ export async function getOrganizationLibraryItem(
 }
 
 export async function createOrganizationLibraryItem(
-  storageScope,
+  scope,
   input,
   { actorEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'createOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'createOrganizationLibraryItem', {
     actorEmail,
   });
   const name = typeof input?.name === 'string' ? input.name.trim() : '';
@@ -631,12 +650,12 @@ export async function createOrganizationLibraryItem(
  * `not_found`. See `patchLibraryItem` for the contract.
  */
 export async function updateOrganizationLibraryItem(
-  storageScope,
+  scope,
   id,
   patch,
   { actorEmail, expectedRevision = null, allowEdit } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'updateOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'updateOrganizationLibraryItem', {
     actorEmail,
   });
   return patchLibraryItem(ctx, { id, shelf: 'organization' }, patch, {
@@ -647,11 +666,11 @@ export async function updateOrganizationLibraryItem(
 }
 
 export async function deleteOrganizationLibraryItem(
-  storageScope,
+  scope,
   id,
   { actorEmail, allowDelete } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'deleteOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'deleteOrganizationLibraryItem', {
     actorEmail,
   });
   // Resolve the guard's target directly by id, never through the org list
@@ -685,7 +704,7 @@ export async function deleteOrganizationLibraryItem(
 /**
  * Read the tags of one library item, selected like every mutation selects it.
  *
- * @param {object} storageScope
+ * @param {object} scope
  * @param {object} target
  * @param {string} target.id
  * @param {'personal'|'organization'} target.shelf
@@ -694,11 +713,11 @@ export async function deleteOrganizationLibraryItem(
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}>}
  */
 export async function getTagsForSlideLibraryItem(
-  storageScope,
+  scope,
   target,
   { userEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItem', {
+  const ctx = toStorageContext(scope, 'getTagsForSlideLibraryItem', {
     userEmail,
   });
   const existing = await readItem(ctx, {
@@ -724,11 +743,11 @@ export async function getTagsForSlideLibraryItem(
 }
 
 export async function getTagsForSlideLibraryItems(
-  storageScope,
+  scope,
   ids,
   { userEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItems', {
+  const ctx = toStorageContext(scope, 'getTagsForSlideLibraryItems', {
     userEmail,
   });
   if (!ids || ids.length === 0) {
@@ -773,7 +792,7 @@ export async function getTagsForSlideLibraryItems(
  * `forbidden`. The replacement itself is `replaceTagLinks`, the one
  * tag-replacement path, and is atomic (B343, D184).
  *
- * @param {object} storageScope
+ * @param {object} scope
  * @param {object} target - `{ id, shelf }`, as `getTagsForSlideLibraryItem`
  * @param {string[]} tagNames
  * @param {object} [opts]
@@ -782,12 +801,12 @@ export async function getTagsForSlideLibraryItems(
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'|'forbidden'|'invalid'}>}
  */
 export async function setTagsForSlideLibraryItem(
-  storageScope,
+  scope,
   target,
   tagNames,
   { actorEmail, allowEdit } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'setTagsForSlideLibraryItem', {
+  const ctx = toStorageContext(scope, 'setTagsForSlideLibraryItem', {
     actorEmail,
   });
   const existing = await readItem(ctx, {
@@ -802,10 +821,9 @@ export async function setTagsForSlideLibraryItem(
     if (!allowed) return { ...NOT_EDITABLE };
   }
   // A refused tag name is already an `invalid` result; it travels as it is.
-  return replaceTagLinks({
+  return replaceTagLinks(scope, {
     linkTable: 'slide_library_tags',
     rowId: existing.id,
-    orgId: getOrgId(ctx),
     tagNames,
   });
 }
@@ -817,6 +835,10 @@ export async function setTagsForSlideLibraryItem(
  */
 async function libraryDisplayNames(rows) {
   return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
     (rows || [])
       .filter(Boolean)
       .flatMap((row) => [
@@ -825,4 +847,69 @@ async function libraryDisplayNames(rows) {
         { email: row.trashed_by },
       ]),
   );
+}
+
+/** Write validated sandbox library seeds in one transaction, preserving stable IDs. */
+export async function upsertSandboxLibrarySeed(
+  scope,
+  { owner, slides, collections },
+) {
+  const { organizationId: orgId } = toStorageContext(
+    scope,
+    'upsertSandboxLibrarySeed',
+  );
+  const slideIds = new Map(slides.map((slide) => [slide.key, slide.id]));
+  await getDb()
+    .transaction()
+    .execute(async (trx) => {
+      for (const slide of slides) {
+        await sql`
+          INSERT INTO slide_library (id, organization_id, owner_email, shelf, name, description,
+            slide_type, theme_id, content, i18n, favorites, created_by, updated_by)
+          VALUES (${slide.id}, ${orgId}, ${owner}, 'organization',
+            ${slide.name}, ${slide.description || null}, ${slide.slideType},
+            ${slide.themeId}, ${JSON.stringify(slide.content)}::jsonb,
+            ${JSON.stringify({ dominant: slide.lang })}::jsonb,
+            '{}'::text[], ${owner}, ${owner})
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name, description = EXCLUDED.description,
+            slide_type = EXCLUDED.slide_type, theme_id = EXCLUDED.theme_id,
+            content = EXCLUDED.content, i18n = EXCLUDED.i18n, trashed_at = NULL, trashed_by = NULL,
+            updated_at = now()
+          WHERE (slide_library.name, slide_library.description, slide_library.slide_type,
+              slide_library.theme_id, slide_library.content, slide_library.i18n,
+              slide_library.trashed_at)
+            IS DISTINCT FROM
+            (EXCLUDED.name, EXCLUDED.description, EXCLUDED.slide_type,
+              EXCLUDED.theme_id, EXCLUDED.content, EXCLUDED.i18n, NULL::timestamptz)
+        `.execute(trx);
+      }
+      for (const collection of collections) {
+        const id = collection.id;
+        await sql`
+          INSERT INTO slide_collections (id, organization_id, owner_email, shelf, name, description,
+            created_by, updated_by)
+          VALUES (${id}, ${orgId}, ${owner}, 'organization', ${collection.name},
+            ${collection.description || null}, ${owner}, ${owner})
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name, description = EXCLUDED.description, updated_at = now()
+          WHERE (slide_collections.name, slide_collections.description)
+            IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.description)
+        `.execute(trx);
+        await trx
+          .deleteFrom('slide_collection_items')
+          .where('collection_id', '=', id)
+          .execute();
+        await trx
+          .insertInto('slide_collection_items')
+          .values(
+            collection.slides.map((key, position) => ({
+              collection_id: id,
+              slide_library_id: slideIds.get(key),
+              position,
+            })),
+          )
+          .execute();
+      }
+    });
 }

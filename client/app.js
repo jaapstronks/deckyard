@@ -23,17 +23,21 @@ import {
 import { refreshMaintenanceState } from './lib/state/maintenance.js';
 import { setDocumentTitle } from './lib/theme/branding.js';
 import { renderList } from './views/list/index.js';
-import { renderEditor } from './views/editor/index.js';
-import { renderPresenter } from './views/presenter/index.js';
-import { renderPresentWindow } from './views/present-window.js';
+import {
+  renderEditor,
+  showEditorLoadingSkeleton,
+} from './views/editor/index.js';
+import {
+  renderPresenter,
+  renderPresentWindow,
+} from './views/presenter/index.js';
 import {
   renderLogin,
   renderForgotPassword,
   renderResetPassword,
   renderMagicLogin,
 } from './views/auth/index.js';
-import { renderNotes } from './views/notes/index.js';
-import { renderNotesJoin } from './views/notes-join.js';
+import { renderNotes, renderNotesJoin } from './views/notes/index.js';
 import { renderFollow } from './views/follow/index.js';
 import { renderShareViewer } from './views/share-viewer/index.js';
 import { renderSettings } from './views/settings/index.js';
@@ -53,7 +57,6 @@ import {
   t,
 } from './lib/ui-i18n.js';
 import { escapeHtml } from '../shared/slide-types/helpers.js';
-import { showEditorLoadingSkeleton } from './views/editor/loading-skeleton.js';
 
 let cachedMe = null;
 let cachedMeAt = 0;
@@ -155,7 +158,7 @@ async function render() {
   }
   cleanup = null;
 
-  root.innerHTML = '';
+  root.replaceChildren();
 
   // The editor route fetches auth/settings/presentation before it can mount;
   // show its layout skeleton right away so the page never sits blank.

@@ -30,8 +30,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, deletePresentation } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentationsList } =
@@ -69,7 +68,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -152,7 +150,7 @@ test('shared-with-me ships thumbBg', async () => {
     testScope(),
     deckFor('Shared deck', { visibility: 'private' }),
   );
-  const invited = await addCollaborator(created.id, {
+  const invited = await addCollaborator({ organizationId: ORG }, created.id, {
     userEmail: PARTNER,
     permission: 'edit',
     invitedBy: OWNER,

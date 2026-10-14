@@ -7,14 +7,14 @@
  * membership role (`owner` / `admin` / `member`) in the organization it is
  * currently acting in (server/auth/auth.js → resolveActiveMembership).
  *
- * B144 (#965) made the UI read both, so an instance admin who is a plain
+ * The UI reads both (#965), so an instance admin who is a plain
  * member of the workspace they switched into stops being shown the admin
  * affordances. That left the client stricter than the server: six server-side
  * checks still read the bare `isAdmin`, so the button was hidden and the
  * request behind it still succeeded. This file pins the server half.
  *
  * The rule, in `shared/organization-role.js` — one declaration for both
- * halves of the stack since B171, so there is nothing left to drift:
+ * halves of the stack (B171), so there is nothing left to drift:
  *
  *   1. instance admin stays **necessary** — an organization owner who is not
  *      an instance admin gains nothing;
@@ -39,6 +39,7 @@
  * Run with: node --test tests/organization-admin-gates.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -49,8 +50,7 @@ const REPO_ROOT = '/tmp/deckyard-org-admin-gates-test';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { createPresentation } =
@@ -128,7 +128,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -209,22 +208,6 @@ test('there is one gate, and both halves read that one', async () => {
 // Mirror 1 — the question moderator hatch (routes/api/questions.js)
 // ===========================================================================
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 /**
  * Drive one request through an exported route dispatcher, so the capture
  * groups and the table order are part of what is under test.
@@ -242,7 +225,7 @@ async function call(handler, method, pathname, { as = null } = {}) {
     socket: { remoteAddress: '203.0.113.9' },
     async *[Symbol.asyncIterator]() {},
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handler({
     repoRoot: REPO_ROOT,
@@ -498,13 +481,15 @@ const unlockAttempt = [
 
 /** @param {Object|null} user */
 function unlockAs(user) {
-  return enforceSlideWritePolicy({
-    existing: lockedDeck,
-    nextSlides: unlockAttempt,
-    user,
-    ctx: { repoRoot: REPO_ROOT, organizationId: ORG },
-    loadSlideLocks: async () => [],
-  });
+  return enforceSlideWritePolicy(
+    { repoRoot: REPO_ROOT, organizationId: ORG },
+    {
+      existing: lockedDeck,
+      nextSlides: unlockAttempt,
+      user,
+      loadSlideLocks: async () => [],
+    },
+  );
 }
 
 test('slide locks: an admin who is a plain member here is not an author', async () => {

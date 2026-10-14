@@ -25,6 +25,7 @@
 }
 .slide-chart .chart-title {
   font-family: var(--font-heading);
+  text-transform: var(--heading-transform, none);
   font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
@@ -39,7 +40,6 @@
   background: transparent;
   border: 0;
   padding: var(--slide-space-2) var(--slide-space-1);
-  box-sizing: border-box;
   overflow: hidden;
 }
 .slide-chart[data-chart-type='bar'] .chart-area {
@@ -231,7 +231,6 @@
 .slide-chart .chart-error {
   width: 100%;
   height: 100%;
-  box-sizing: border-box;
   border-radius: var(--slide-radius-md);
   padding: var(--slide-space-5);
   /* The card takes the ground's text colour and tints its edge and plane from

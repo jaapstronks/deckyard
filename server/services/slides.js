@@ -1,5 +1,7 @@
 /** Slide mutations shared by the public API and MCP (B572, B611). */
 
+import { crossOrganizationScope } from '../storage/scope.js';
+
 import { updatePresentation } from '../storage/presentations/index.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
@@ -18,6 +20,7 @@ import {
   ValidationError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import { assertValidSlideFields } from './slide-field-validation.js';
 import { dominantSlidesBody } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
@@ -25,13 +28,24 @@ async function writeOptions({ actor }) {
   if (actor?.unrestricted) return { bypassLockCheck: true };
   const actorUserId =
     actor?.id ||
-    (actor?.email ? (await resolveIdentityByEmail(actor.email))?.userId : null);
+    (actor?.email
+      ? (
+          await resolveIdentityByEmail(
+            crossOrganizationScope(
+              null,
+              'global identity display and stable user identifier lookup',
+            ),
+            actor.email,
+          )
+        )?.userId
+      : null);
   return { actorEmail: actor?.email || null, actorUserId: actorUserId || null };
 }
 
 function assertValidSlide(slide, slideTypes) {
   const errors = validateSlide(slide, { slideTypes });
   if (errors.length) {
+    assertValidSlideFields(slide, slideTypes);
     throw new ValidationError('Invalid slide data', { errors });
   }
 }
@@ -95,8 +109,9 @@ async function persistSlides(scope, identity, pres, slides) {
 
 /**
  * Update one slide. `contentMode` describes the contract's input (v1 replaces,
- * MCP patches); `normalizeContent` is MCP's optional fix-mode input step. Every
- * resulting slide then passes the same strict validation before storage.
+ * MCP patches); the resulting slide passes the same `validateSlide` on both
+ * contracts before storage, so what an agent sends is checked, not repaired
+ * (D121 B4).
  */
 export async function updateSlide(scope, identity, input) {
   const {
@@ -109,7 +124,6 @@ export async function updateSlide(scope, identity, input) {
     conversion = 'mapped',
     notes,
     visibility,
-    normalizeContent,
   } = input;
   const pres = await loadPresentationForActor(scope, identity, presentationId, {
     access: 'write',
@@ -136,18 +150,12 @@ export async function updateSlide(scope, identity, input) {
       throw err;
     }
   }
-  let nextContent =
+  const nextContent =
     content === undefined
       ? converted.content || {}
       : contentMode === 'merge'
         ? { ...converted.content, ...content }
         : content;
-  if (normalizeContent) {
-    nextContent = normalizeContent(
-      { type: slideType, content: nextContent },
-      slideTypes,
-    );
-  }
   const slide = {
     ...existing,
     type: slideType,

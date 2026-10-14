@@ -327,7 +327,7 @@ function openTableEditorModal({
   const gridHost = h('div', { class: 'table-editor-modal-grid' });
 
   const rebuild = ({ focusCell = null } = {}) => {
-    gridHost.innerHTML = '';
+    gridHost.replaceChildren();
     gridHost.append(
       buildTableGrid({
         slide,

@@ -45,27 +45,41 @@
 
 import {
   getComment,
+  getCommentAuthorEmail,
   listComments as storeListComments,
   listRecentCommentsOnDecks,
   createComment as storeComment,
+  updateComment as storeCommentBody,
+  deleteComment as storeDeleteComment,
   resolveComment,
   reopenComment,
   dismissComment,
   getOpenCommentCount,
   getCommentCountsBySlide,
-} from '../storage/presentations/comments.js';
+} from '../storage/presentations/index.js';
 import { getPresentation } from '../storage/presentations/index.js';
 import { repoRootOf } from '../storage/scope.js';
 import {
   AppError,
+  ForbiddenError,
   NotFoundError,
   ValidationError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import {
+  presentationCommentsEnabled,
+  canDeleteComment,
+  canEditComment,
+  canGuestDeleteComment,
+  canGuestEditComment,
+} from '../utils/presentation-authz/index.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import { createLogger } from '../utils/logger.js';
 import { buildSlideSnapshot } from './comment-slide-context.js';
-import { notifyCommentCreated } from './comment-notifications.js';
+import {
+  notifyCommentCreated,
+  notifyMentionsAdded,
+} from './comment-notifications.js';
 import {
   recordCommentCreated,
   recordCommentResolved,
@@ -91,11 +105,51 @@ export const MAX_COMMENT_LENGTH = 5000;
  */
 
 /**
+ * The create input an internal `/api` request body names: the signed-in route
+ * (`POST /api/presentations/:id/comments`) and the share-link guest route
+ * (`POST /api/share/:token/comments`) take the same body, so they read it the
+ * same way. Validation is {@link createComment}'s.
+ *
+ * @param {string} presentationId - The deck the route resolved.
+ * @param {Object} body - Parsed JSON body.
+ * @returns {Parameters<typeof createComment>[2]}
+ */
+export function commentInputFromBody(presentationId, body) {
+  return {
+    presentationId,
+    body: body?.body,
+    slideId: body?.slideId || null,
+    parentId: body?.parentId || null,
+    positionX: body?.positionX,
+    positionY: body?.positionY,
+  };
+}
+
+/**
+ * The list input an internal `/api` request's query names, shared by the
+ * signed-in route (`GET /api/presentations/:id/comments`) and the share-link
+ * guest route (`GET /api/share/:token/comments`). Filter validation is
+ * {@link listComments}'s.
+ *
+ * @param {string} presentationId - The deck the route resolved.
+ * @param {URLSearchParams} searchParams
+ * @returns {Parameters<typeof listComments>[2]}
+ */
+export function commentListInputFromQuery(presentationId, searchParams) {
+  return {
+    presentationId,
+    slideId: searchParams.get('slideId') || null,
+    status: searchParams.get('status') || 'all',
+    commentType: searchParams.get('commentType') || null,
+  };
+}
+
+/**
  * Create a comment, or a reply when `parentId` is given.
  *
  * @param {StorageScope} scope - The caller's storage scope.
  * @param {ServiceIdentity} identity - `{ actor }`, or `{ guest, shareLink }`
- *   for a share-link guest (internal contract only).
+ *   for a share-link guest (the share-token route only, D228).
  * @param {Object} input
  * @param {string} input.presentationId
  * @param {*} input.body - The comment text; trimmed here.
@@ -160,6 +214,154 @@ export async function createComment(
   });
 
   return { comment: result.comment, presentation: pres };
+}
+
+/**
+ * Who may rewrite or remove a comment, per kind of identity. An actor edits
+ * their own (or, as an organization admin, anyone's) and deletes their own or,
+ * as the deck's owner or creator, moderates; a share-link guest edits and
+ * deletes only the comments keyed on their guest row (migration 079). Neither
+ * kind moderates more than that here: resolving stays {@link setCommentStatus},
+ * which a guest never reaches.
+ */
+const COMMENT_AUTHORSHIP = Object.freeze({
+  edit: {
+    actor: ({ actor, comment }) => canEditComment({ user: actor, comment }),
+    guest: ({ guest, comment }) => canGuestEditComment({ guest, comment }),
+  },
+  delete: {
+    actor: ({ actor, pres, comment }) =>
+      canDeleteComment({ user: actor, pres, comment }),
+    guest: ({ guest, comment }) => canGuestDeleteComment({ guest, comment }),
+  },
+});
+
+/**
+ * Load the deck for reading, the comment on it, and decide whether the
+ * identity may `right` it.
+ *
+ * @param {StorageScope} scope
+ * @param {ServiceIdentity} identity
+ * @param {{ presentationId: string, commentId: string }} input
+ * @param {'edit'|'delete'} right
+ * @returns {Promise<{ pres: Object, comment: Object }>}
+ * @throws {import('../utils/errors.js').AppError}
+ */
+async function authoredComment(scope, identity, input, right) {
+  const pres = await loadPresentationForActor(
+    scope,
+    identity,
+    input.presentationId,
+    { access: 'readComments' },
+  );
+  const comment = await commentOn(scope, pres.id, input.commentId);
+  const decide = COMMENT_AUTHORSHIP[right];
+  const allowed =
+    'guest' in identity
+      ? decide.guest({ guest: identity.guest, comment })
+      : decide.actor({ actor: identity.actor, pres, comment });
+  if (!allowed) throw new ForbiddenError();
+  return { pres, comment };
+}
+
+/**
+ * Rewrite a comment's body: its author (an actor or a share-link guest), or an
+ * organization admin. A mention the edit adds notifies like a fresh mention
+ * (diffed against the pre-edit list, so re-saving never re-notifies), and the
+ * deck hears the update live.
+ *
+ * @param {StorageScope} scope
+ * @param {ServiceIdentity} identity
+ * @param {{ presentationId: string, commentId: string, body: * }} input
+ * @returns {Promise<Object>} The storage result, `{ ok: true, comment }`.
+ * @throws {import('../utils/errors.js').AppError}
+ */
+export async function editComment(scope, identity, input) {
+  const { pres, comment } = await authoredComment(
+    scope,
+    identity,
+    input,
+    'edit',
+  );
+
+  const body = typeof input.body === 'string' ? input.body : '';
+  if (!body.trim()) throw new ValidationError('Comment body is required');
+  if (body.length > MAX_COMMENT_LENGTH) {
+    throw new ValidationError(
+      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
+    );
+  }
+
+  const result = await storeCommentBody(scope, comment.id, { body });
+  if (!result.ok) {
+    throwStorageFailure(result, `Could not update comment: ${result.reason}`);
+  }
+
+  fireAndForget(
+    (async () => {
+      const parentComment = result.comment?.parentId
+        ? await getComment(scope, result.comment.parentId)
+        : null;
+      await notifyMentionsAdded(repoRootOf(scope), {
+        presentation: pres,
+        comment: result.comment,
+        previousMentions: comment.mentions,
+        parentComment,
+        // A guest editing their own comment: the notification actor is them.
+        // A comment names its author and carries no address (D22), so the
+        // address comes from the row, server-side.
+        actor:
+          'guest' in identity
+            ? {
+                email: await getCommentAuthorEmail(scope, comment.id),
+                name: comment.author?.displayName || '',
+              }
+            : identity.actor,
+        scope,
+      });
+    })(),
+    'mention-on-edit notification fan-out',
+  );
+
+  broadcastToPresentation(pres.id, CommentEventTypes.UPDATED, {
+    comment: result.comment,
+  });
+  return result;
+}
+
+/**
+ * Delete a comment: its author (an actor or a share-link guest), an
+ * organization admin, or the deck's owner or creator. The deck hears the
+ * deletion and the new counts live.
+ *
+ * @param {StorageScope} scope
+ * @param {ServiceIdentity} identity
+ * @param {{ presentationId: string, commentId: string }} input
+ * @returns {Promise<Object>} The storage result.
+ * @throws {import('../utils/errors.js').AppError}
+ */
+export async function removeComment(scope, identity, input) {
+  const { pres, comment } = await authoredComment(
+    scope,
+    identity,
+    input,
+    'delete',
+  );
+
+  const result = await storeDeleteComment(scope, comment.id);
+  if (!result.ok) {
+    throwStorageFailure(result, `Could not delete comment: ${result.reason}`);
+  }
+
+  broadcastToPresentation(pres.id, CommentEventTypes.DELETED, {
+    commentId: comment.id,
+    slideId: comment.slideId,
+  });
+  fireAndForget(
+    broadcastCommentCounts(pres.id, scope),
+    'broadcast comment counts',
+  );
+  return result;
 }
 
 /**
@@ -331,8 +533,8 @@ function sinceOf(since) {
 /**
  * List the comments on one deck, newest first, on every contract (B575).
  *
- * Whoever may read the deck reads its comments: an actor, or (internal
- * contract only) a share-link guest. The filters mean the same whoever asks;
+ * Whoever may read the deck reads its comments: an actor, or (the share-token
+ * route only, D228) a share-link guest. The filters mean the same whoever asks;
  * a value outside a filter's vocabulary is refused instead of read as "all".
  *
  * @param {StorageScope} scope - The caller's storage scope.
@@ -369,6 +571,7 @@ export async function listComments(
     scope,
     identity,
     presentationId,
+    { access: 'readComments' },
   );
   const comments = await storeListComments(scope, presentation.id, {
     status: status === 'all' ? undefined : status,
@@ -421,12 +624,16 @@ export async function listRecentComments(
     identity,
     { ownership },
   );
-  const { comments, total } = await listRecentCommentsOnDecks(scope, listed, {
-    authorEmail: authorEmail || null,
-    status,
-    since: sinceIso,
-    limit,
-  });
+  const { comments, total } = await listRecentCommentsOnDecks(
+    scope,
+    listed.filter(presentationCommentsEnabled),
+    {
+      authorEmail: authorEmail || null,
+      status,
+      since: sinceIso,
+      limit,
+    },
+  );
 
   // Each deck once: the comments already come from decks the user can see.
   const decks = new Map();

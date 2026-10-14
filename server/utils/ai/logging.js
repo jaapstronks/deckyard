@@ -4,14 +4,16 @@
  * Logs LLM conversations for debugging and finetuning.
  * Logs are written to server/logs/ai/ directory with timestamps.
  *
- * NOTE: Logging is disabled in production (NODE_ENV=production) to avoid
- * filling up disk space on the VPS.
+ * Whether an instance logs is one setting, `AI_SESSION_LOGS`, read here and
+ * nowhere else (see aiSessionLogsEnabled). No route or generator carries a
+ * switch of its own.
  */
 
 import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { envBool } from '../../config/utils.js';
 import { nowIso } from '../normalize.js';
 import { createLogger } from '../logger.js';
 
@@ -23,8 +25,16 @@ const __dirname = path.dirname(__filename);
 // Log directory - relative to server root
 const LOG_DIR = path.resolve(__dirname, '../../logs/ai');
 
-// Check if we're in production - skip file logging on VPS
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+/**
+ * Whether this instance writes AI session logs. `AI_SESSION_LOGS` decides;
+ * unset, only a development checkout (`NODE_ENV=development`) logs, so
+ * production, CI and the test suite leave `server/logs/ai/` alone. Read per
+ * call, like the other env flags, so the setting is never snapshotted.
+ * @returns {boolean}
+ */
+export function aiSessionLogsEnabled() {
+  return envBool('AI_SESSION_LOGS', process.env.NODE_ENV === 'development');
+}
 
 // Ensure log directory exists
 function ensureLogDir() {
@@ -63,8 +73,7 @@ export function logLlmConversation({
   rawResponse,
   metadata = {},
 }) {
-  // Skip file logging in production
-  if (IS_PRODUCTION) {
+  if (!aiSessionLogsEnabled()) {
     return null;
   }
 
@@ -115,8 +124,7 @@ export function logDeckGenerationSession({
   finalDeck,
   metadata = {},
 }) {
-  // Skip file logging in production
-  if (IS_PRODUCTION) {
+  if (!aiSessionLogsEnabled()) {
     return null;
   }
 
@@ -168,7 +176,10 @@ function countSlideTypes(slides) {
 }
 
 /**
- * Create a logger instance for a specific session
+ * Create a logger instance for a specific session. Callers always get one;
+ * whether anything reaches disk is decided by the two writers above
+ * (aiSessionLogsEnabled), never by the caller.
+ * @param {string} sessionId
  */
 export function createSessionLogger(sessionId) {
   const logs = {

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { createStorageScope } from '../server/utils/context.js';
+import { crossOrganizationScope } from '../server/storage/scope.js';
 
 /**
  * Create an organization on a multi-organization instance, without the UI.
@@ -22,23 +24,21 @@
  * Runbook: docs/ops/multi-organization.md.
  */
 
+import { isValidSlug } from '../shared/slug.js';
+
 import { parseArgs } from 'node:util';
 
 import { isCli } from './lib/is-cli.js';
 import { loadDotEnv } from '../server/config/env.js';
 import { repoRoot } from '../server/config/paths.js';
 import { isMultiOrgEnabled } from '../server/config/features.js';
-import {
-  initializeStorage,
-  closeStorage,
-} from '../server/storage/lifecycle.js';
+import { initializeStorage, closeStorage } from '../server/db/lifecycle.js';
 import {
   addMember,
   countOrganizationMembers,
   createOrganization,
   getMembership,
   getOrganizationBySlug,
-  isValidOrganizationSlug,
 } from '../server/storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../server/storage/identity.js';
 import { createUser } from '../server/storage/users.js';
@@ -86,7 +86,7 @@ export async function provisionOrganization(input) {
   const externalId = input.externalId?.trim() || null;
   const ownerEmail = input.ownerEmail ? normalizeEmail(input.ownerEmail) : null;
 
-  if (!isValidOrganizationSlug(slug)) {
+  if (!isValidSlug(slug, { minLength: 2, maxLength: 63 })) {
     return refuse(
       'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens',
     );
@@ -101,7 +101,10 @@ export async function provisionOrganization(input) {
     return refuse(`Not an email address: ${input.ownerEmail}`);
   }
 
-  let organization = await getOrganizationBySlug(slug);
+  let organization = await getOrganizationBySlug(
+    crossOrganizationScope(null, 'operator organization provisioning'),
+    slug,
+  );
   let created = false;
   if (organization) {
     if (organization.name !== name) {
@@ -115,7 +118,10 @@ export async function provisionOrganization(input) {
       );
     }
   } else {
-    const result = await createOrganization({ name, slug, externalId });
+    const result = await createOrganization(
+      crossOrganizationScope(null, 'operator organization provisioning'),
+      { name, slug, externalId },
+    );
     if (!result.ok) {
       return refuse(
         result.reason === 'external_id_exists'
@@ -129,12 +135,18 @@ export async function provisionOrganization(input) {
 
   if (!ownerEmail) return { ok: true, organization, created, owner: null };
 
-  let user = await getUserByEmailGlobal(ownerEmail);
+  const scope = createStorageScope(
+    { email: ownerEmail },
+    { repoRoot, organizationId: organization.id },
+  );
+  let user = await getUserByEmailGlobal(
+    crossOrganizationScope(null, 'operator organization provisioning'),
+    ownerEmail,
+  );
   let accountCreated = false;
   if (!user) {
     // The organization being provisioned is the one this act happens in, so
     // the new account is homed there.
-    const scope = { repoRoot, organizationId: organization.id };
     const result = await createUser(scope, { email: ownerEmail, role: 'user' });
     if (!result.ok) {
       return refuse(`Could not create the owner's account: ${result.reason}`);
@@ -143,7 +155,7 @@ export async function provisionOrganization(input) {
     accountCreated = true;
   }
 
-  const membership = await getMembership(user.id, organization.id);
+  const membership = await getMembership(scope, user.id, organization.id);
   if (membership) {
     if (membership.role !== 'owner') {
       return refuse(
@@ -158,13 +170,13 @@ export async function provisionOrganization(input) {
     };
   }
 
-  if ((await countOrganizationMembers(organization.id)) > 0) {
+  if ((await countOrganizationMembers(scope, organization.id)) > 0) {
     return refuse(
       `"${slug}" already has members; invite ${ownerEmail} from the organization's member settings instead.`,
     );
   }
 
-  const added = await addMember({
+  const added = await addMember(scope, {
     userId: user.id,
     organizationId: organization.id,
     role: 'owner',

@@ -59,7 +59,7 @@ falls back, so the test reads the resolved face via
 What it deliberately does **not** guard is exact rendering: no pixel baselines.
 35 types × 6 themes is 210 binary files nobody reviews, the expected flake is
 10-25%, and the ubuntu runner rasterises differently from a Mac. That was
-weighed and rejected — `docs/plans/briefs/export-structural-metrics.md`.
+weighed and rejected in favour of these structural metrics.
 
 After an intentional layout or theme change, regenerate:
 

@@ -92,7 +92,10 @@ function roundTrip(stored) {
   const deck = presentationToDeck(stored);
   const resolved = deckImportLang(deck);
   assert.ok(resolved.ok, resolved.message);
-  const parts = deckToPresentationParts(deck, { lang: resolved.lang });
+  const parts = deckToPresentationParts(deck, {
+    slideTypes: SLIDE_TYPES,
+    lang: resolved.lang,
+  });
   return storedFromParts(parts, resolved.lang);
 }
 
@@ -191,7 +194,10 @@ test('a deck in one language exports without translations', () => {
   });
   assert.equal(deck.translations, undefined);
   assert.equal(deck.slides[0].translations, undefined);
-  const parts = deckToPresentationParts(deck, { lang: 'nl' });
+  const parts = deckToPresentationParts(deck, {
+    slideTypes: SLIDE_TYPES,
+    lang: 'nl',
+  });
   assert.deepEqual(parts.translations, {});
 });
 

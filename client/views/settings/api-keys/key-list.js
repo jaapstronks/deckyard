@@ -202,7 +202,7 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
  * @param {Function} callbacks.onViewUsage - Called when usage is clicked
  */
 export function renderKeyList(container, keys, { onRevoke, onViewUsage }) {
-  container.innerHTML = '';
+  container.replaceChildren();
 
   if (!keys || keys.length === 0) {
     container.append(renderEmptyState());

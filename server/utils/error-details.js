@@ -65,11 +65,14 @@ export const LOCATION_KEYS = Object.freeze([
  * @type {Readonly<Record<string, readonly string[]>>}
  */
 export const PAYLOAD_KEYS = Object.freeze({
+  translation_instructions_invalid: Object.freeze(['field']),
   // Strict slide validation groups field errors under one named list (B572).
   bad_request: Object.freeze(['errors']),
+  // The change-password form names the input it refuses (B674).
+  current_password_incorrect: Object.freeze(['field']),
   // A storage reason too (field, index, …); `use` names the field a retired
   // spelling became (B446, B521).
-  invalid: Object.freeze(['use']),
+  invalid: Object.freeze(['use', 'slideId', 'lang', 'errors']),
   held: Object.freeze(['lock']),
   conflict: Object.freeze([
     'id',

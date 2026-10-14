@@ -92,8 +92,7 @@ before(async () => {
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { brandSeedRow } = await import('./helpers/theme-seed.js');
   const { __setTestDb } = await import('../server/db/client.js');
-  const { initializeStorage, __resetStorageForTests } =
-    await import('../server/storage/lifecycle.js');
+  const { initializeStorage } = await import('../server/db/lifecycle.js');
   const { createPresentation } =
     await import('../server/storage/presentations/index.js');
   const { testScope } = await import('./helpers/storage-scope.js');
@@ -166,7 +165,6 @@ before(async () => {
     server,
     browsers,
     deck,
-    __resetStorageForTests,
     __setTestDb,
   };
 });
@@ -177,7 +175,6 @@ after(async () => {
     await shutDownBrowser(browser);
   }
   await new Promise((resolve) => ctx.server.close(resolve));
-  ctx.__resetStorageForTests();
   ctx.__setTestDb(null);
 });
 

@@ -8,7 +8,9 @@ import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
-import { loadSlideTypeContext, createDeckFromParts } from './shared.js';
+import { createDeckFromParts } from './shared.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/wizard — generate a deck from raw input and create a new presentation.
@@ -44,16 +46,19 @@ export async function handleAiWizard({
   );
 
   const userName = getDisplayNameForUser(authedUser);
-  const slideTypeCtx = await loadSlideTypeContext(authedUser);
+  const slideTypeOffer = await loadSlideTypeOffer(authedUser);
   const deck = await generateDeckJsonFromRawContent(raw, {
     userName,
     targetLang: lang,
     vendor,
-    disabledSlideTypes: slideTypeCtx.disabled,
-    customSlideTypes: slideTypeCtx.custom,
+    ...slideTypeOffer,
   });
   // Settled before normalizing: the slides compose against this theme.
-  const parts = deckToPresentationParts(deck, { theme, lang });
+  const parts = deckToPresentationParts(deck, {
+    theme,
+    lang,
+    slideTypes: await buildMergedSlideTypes(storageScope),
+  });
 
   const updated = await createDeckFromParts(storageScope, {
     parts,

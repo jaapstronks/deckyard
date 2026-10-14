@@ -6,8 +6,8 @@
  * lives in `export-chrome-smoke.test.js` and is skipped on machines without a
  * browser. A `video-slide` never takes that path — an unrecognised or
  * YouTube/Vimeo source composes a placeholder from shapes and text, no render
- * and no network — so a deck of video slides exercises the parts B255 is about
- * (the notes part and `docProps/core.xml`) everywhere the suite runs.
+ * and no network — so a deck of video slides exercises the parts this file pins
+ * (the notes part and `docProps/core.xml`; B255) everywhere the suite runs.
  *
  * The raster branch is covered in `export-chrome-smoke.test.js`; both branches
  * attach notes through the same call site in `server/export/pptx.js`.

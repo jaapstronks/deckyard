@@ -18,12 +18,12 @@ import {
   renderSlideElement,
 } from '../../lib/slide-runtime/slide-render.js';
 import { createPresenterAnimator } from './animations.js';
-import { STEP_DEPS } from './step.js';
+import { STEP_DEPS } from '../../lib/slide-runtime/step.js';
 import { startPresenterSession } from './session.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import { setDocumentTitle } from '../../lib/theme/branding.js';
-import { copyToClipboardWithPromptFallback } from '../../lib/util/clipboard.js';
+import { copyToClipboardWithPromptFallback } from '../../lib/dom/clipboard.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { attachStageScale } from './stage-scale.js';
 import { createEdgeHint } from './edge-hint.js';
@@ -782,3 +782,6 @@ export async function renderPresenter(root, id) {
     keepAliveTid,
   });
 }
+
+// Public operations shared with the app shell and other features.
+export { renderPresentWindow } from './present-window.js';

@@ -1,5 +1,5 @@
 /**
- * B627: text contrast over a background image is settled on the server too.
+ * Text contrast over a background image is settled on the server too (B627).
  *
  * The editor used to be the only place that sampled a slide's background image
  * and stored which theme text colour reads over it. A deck that never met the
@@ -41,8 +41,7 @@ const COLORS = { light: '#ffffff', dark: '#212121' };
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { getPresentation } =
   await import('../server/storage/presentations/index.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
@@ -67,7 +66,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -250,7 +248,7 @@ test('the validators and the background lock read the one declaration of the der
   for (const key of DERIVED_SLIDE_CONTENT_KEYS) {
     assert.ok(LOCKED_CONTENT_KEYS.background.includes(key), key);
   }
-  assert.deepEqual(getUnknownFields('title-slide', SETTLED), []);
+  assert.deepEqual(getUnknownFields(SLIDE_TYPES['title-slide'], SETTLED), []);
   assert.equal(
     validateSlideContent(SLIDE_TYPES['content-slide'], {
       ...SETTLED,

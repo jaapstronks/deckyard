@@ -199,7 +199,7 @@ export function createPresenterConsole({ theme, presentationId, lang } = {}) {
       });
     } else {
       cleanupSlideRuntimes(nextThumb);
-      nextThumb.innerHTML = '';
+      nextThumb.replaceChildren();
       nextThumb.classList.add('is-empty');
       nextThumb.append(
         h('div', {

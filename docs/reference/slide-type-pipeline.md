@@ -24,8 +24,8 @@ it touches slide types; `AGENTS.md` § Slide types points here.
   [`docs/reference/slide-type-companions.md`](slide-type-companions.md)
   (what each companion is and what breaks without it) before adding or moving a
   type.
-- **Two shapes coexist.** The A7.1 rollout is converting definitions from the
-  flat `types/<type>.js` into `types/<type>/index.js`, one type at a time, so
+- **Two shapes coexist.** A rollout is converting definitions from the flat
+  `types/<type>.js` into `types/<type>/index.js`, one type at a time (A7.1), so
   both forms are live and the registry imports both. Anything that counts or
   globs type files must accept `<name>.js` **and** `<name>/index.js`; a bare
   `grep '\.js$'` over that directory counts companions as types.
@@ -37,8 +37,9 @@ it touches slide types; `AGENTS.md` § Slide types points here.
   single place that knows the legacy mapping. Do not re-derive it anywhere else,
   and never add a surface that accepts a non-canonical spelling without
   normalizing through it, nor one that emits the bare key across the boundary.
-  Stored `slides[].type` still holds the bare key until the v3→v4 migration
-  lands (see `docs/plans/briefs/one-spelling.md`). See
+  Stored `slides[].type` holds the bare key: the v3→v4 step in
+  `shared/slide-types/schema-version.js` folds any other stored spelling
+  to it at read time. See
   [`docs/reference/deck-format.md`](deck-format.md) and the beta
   stance in [`docs/reference/versioning.md`](versioning.md).
 
@@ -60,7 +61,7 @@ it touches slide types; `AGENTS.md` § Slide types points here.
 
 ### Presenter stepping (“Tekst stap voor stap”)
 
-- Step mode is DOM-driven in `client/views/presenter/step.js`.
+- Step mode is DOM-driven in `client/lib/slide-runtime/step.js`.
 - If you want a new slide type to be step-able, follow existing DOM conventions (preferred) instead of one-off hacks:
   - Body stepping looks for `.slide-content .body` or `.slide-image-text .copy .body`
   - Card stepping looks for known card containers
@@ -143,6 +144,16 @@ it touches slide types; `AGENTS.md` § Slide types points here.
   with `instanceKeys` so every copy path (duplicate, paste, library insert)
   re-derives it. Vocabulary: `shared/slide-types/instance-keys.js`.
 
+- If a default belongs to **this installation** rather than to core (an account
+  id, a library, a tenant), declare it with `configDefaults` instead of writing
+  a value core cannot own. Configuration then seeds the authoring default where
+  the slide is created, the slide stores it like any other content, and every
+  surface keeps reading the same key. Vocabulary:
+  `shared/slide-types/config-defaults.js`; the env half is
+  `server/config/slide-defaults.js`. Never read `process.env` from `shared/` —
+  these modules run in the browser too, so only half the surfaces would honour
+  it.
+
 ### 4) Ensure the editor UX fits the patterns
 
 - If generic field rendering is enough: you’re done.
@@ -183,3 +194,7 @@ If the slide is an audience interaction:
   - follow-along (if applicable)
   - exported HTML/print/PDF/PNG/PPTX (if applicable)
 - If it should **not** appear in public outputs, add a single centralized filter (see `stripLiveOnlySlidesFromPresentation()`).
+
+## Image placeholders on import
+
+An `image` field may declare `importPlaceholder`, a nonempty image URL used when an imported value is missing, blank or not a string. `deckToPresentationParts()` applies it once, after composing the slide; this covers AI wizard output, append output and ordinary deck imports. Real URLs and configured type defaults win. Editor insertion keeps the type's ordinary defaults. The core image and image-text types declare `DEFAULT_IMAGE_PLACEHOLDER` from `shared/slide-types/image-placeholder.js`; types without the declaration keep their existing defaults.

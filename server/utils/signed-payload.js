@@ -2,8 +2,9 @@
  * A small expiring payload signed with HMAC-SHA256: `<base64url JSON>.<sig>`.
  *
  * For state the server hands out and must recognise later without storing it:
- * the OIDC flow's state cookie (`routes/api/sso.js`) and the share-link render
- * grant (`routes/api/share-links/public.js`). The payload is readable by whoever
+ * the session cookie (`auth/auth.js`), the OIDC flow's state cookie
+ * (`routes/api/sso.js`) and the share-link render grant
+ * (`routes/api/share-links/public.js`). The payload is readable by whoever
  * holds it; the signature only proves the server minted it and nothing changed.
  *
  * Every payload carries `exp` (epoch ms). {@link readSignedPayload} refuses one

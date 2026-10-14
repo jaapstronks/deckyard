@@ -20,7 +20,7 @@
  *     `bad_slideIndex`), and prose in `reason` reaches the wire as the
  *     machine-readable `error` code that clients branch on.
  *   - **kind/status agreement** — `kind: 'ours'` means 5xx and `kind: 'caller'`
- *     means 4xx. The pair is the whole point of B104: 65 codes used to fall
+ *     means 4xx. The pair is the whole point of the gate: 65 codes used to fall
  *     through to a `400` default, so a failed insert reported as the caller's
  *     malformed request and never reached a dashboard watching 5xx.
  *   - **liveness** — every code in the register is actually minted somewhere
@@ -335,6 +335,10 @@ const REASON_BRANCH_EXCEPTIONS = new Map([
   [
     'server/routes/api/share-links/public.js :: revoked',
     'adds the presentation id to the payload; the status is unaffected',
+  ],
+  [
+    'server/routes/api/share-links/guest-comments.js :: max_uses_exceeded',
+    'the guest comment routes (B179) let a link opened to its use limit through: the limit counts opens (verify), not comments; every refusal it does answer takes its status from the register',
   ],
   [
     'server/routes/api/presentations/slide-locks.js :: unavailable',

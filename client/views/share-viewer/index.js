@@ -157,7 +157,7 @@ export async function renderShareViewer(root, token) {
    */
   async function renderDeck(deck) {
     if (deck) await applyViewerUiLocale({ deckLang: resolveDeckLang(deck) });
-    shell.innerHTML = '';
+    shell.replaceChildren();
 
     const loading = h('div', { class: 'share-viewer-loading' }, [
       spinner('lg'),
@@ -196,10 +196,10 @@ export async function renderShareViewer(root, token) {
         analyticsTracker.start();
       }
 
-      shell.innerHTML = '';
+      shell.replaceChildren();
       renderViewer();
     } catch (err) {
-      shell.innerHTML = '';
+      shell.replaceChildren();
       renderError(
         shell,
         err.message ||
@@ -395,7 +395,7 @@ export async function renderShareViewer(root, token) {
     const slide = slides[currentSlideIndex];
 
     if (!slide) {
-      slideWrap.innerHTML = '';
+      slideWrap.replaceChildren();
       slideWrap.append(
         createEmptyState({
           icon: null,
@@ -414,7 +414,7 @@ export async function renderShareViewer(root, token) {
     }
 
     cleanupSlideRuntimes(slideWrap);
-    slideWrap.innerHTML = '';
+    slideWrap.replaceChildren();
 
     const slideEl = renderSlideElement(slide, {
       mode: 'thumb',

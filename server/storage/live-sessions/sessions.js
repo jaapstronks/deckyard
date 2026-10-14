@@ -98,7 +98,7 @@ function ensureCleanupTimer() {
       const last = Number(s.lastActivityAt || 0) || 0;
       if (now - last <= TTL_MS) continue;
       try {
-        closeSession(id, 'expired');
+        closeSession({ organizationId: s.organizationId }, id, 'expired');
       } catch {
         sessions.delete(id);
       }
@@ -115,21 +115,24 @@ function ensureCleanupTimer() {
  * @returns {Promise<{ok: true, sessionId: string, joinPath: string, followCodes: Object<string, string>}|{ok: false, reason: string}>}
  */
 export async function createLiveSession(scope, { presentationId }) {
-  toStorageContext(scope, 'createLiveSession');
+  const { organizationId } = toStorageContext(scope, 'createLiveSession');
   ensureCleanupTimer();
   const presId = String(presentationId || '').trim();
   if (!presId) return { ok: false, reason: 'invalid' };
+  if (!(await getPresentation(scope, presId)))
+    return { ok: false, reason: 'not_found' };
 
   // Adopt whatever is stored for this deck first, so a session another process
   // (or this one before a restart) started is reused rather than duplicated.
-  await hydrateSessionsForPresentation(presId);
+  await hydrateSessionsForPresentation(scope, presId);
 
   // Reuse existing session for this deck if still active.
   for (const s of sessions.values()) {
     if (s?.presentationId !== presId) continue;
+    if (s.organizationId !== organizationId) continue;
     if (isExpired(s)) {
       try {
-        closeSession(s.sessionId, 'expired');
+        closeSession(scope, s.sessionId, 'expired');
       } catch {}
       continue;
     }
@@ -146,7 +149,7 @@ export async function createLiveSession(scope, { presentationId }) {
     }
 
     s.lastActivityAt = Date.now();
-    schedulePersist(s);
+    schedulePersist(scope, s);
     countInstanceHealth([{ axis: 'interaction', key: 'live_session' }]);
     return {
       ok: true,
@@ -163,6 +166,7 @@ export async function createLiveSession(scope, { presentationId }) {
   const s = {
     sessionId,
     presentationId: presId,
+    organizationId,
     state: {
       slideId: '',
       slideIndex: 0,
@@ -179,7 +183,7 @@ export async function createLiveSession(scope, { presentationId }) {
   sessions.set(sessionId, s);
   // Awaited, not debounced: the row is what makes the session findable from
   // another process, and the presenter's very next request may land there.
-  await persistSession(s);
+  await persistSession(scope, s);
   countInstanceHealth([{ axis: 'interaction', key: 'live_session' }]);
   return {
     ok: true,
@@ -204,7 +208,7 @@ export async function getLiveSession(scope, sessionId) {
     {},
     { allowCrossOrganization: true },
   );
-  return hydrateSession(sessionId);
+  return hydrateSession(scope, sessionId);
 }
 
 /**
@@ -223,11 +227,13 @@ export async function findMostRecentSessionForPresentation(
   );
   const pid = String(presentationId || '').trim();
   if (!pid) return null;
-  await hydrateSessionsForPresentation(pid);
+  await hydrateSessionsForPresentation(scope, pid);
   let best = null;
   let bestTs = -1;
   for (const s of sessions.values()) {
     if (!s || s.presentationId !== pid) continue;
+    if (scope.organizationId && s.organizationId !== scope.organizationId)
+      continue;
     const ts =
       Number(s?.state?.updatedAt || 0) || Number(s?.createdAt || 0) || 0;
     if (ts > bestTs) {
@@ -256,6 +262,6 @@ export async function touchLiveSession(scope, sessionId) {
   const s = await getLiveSession(scope, sessionId);
   if (!s) return { ok: false, reason: 'not_found' };
   s.lastActivityAt = Date.now();
-  schedulePersist(s);
+  schedulePersist(scope, s);
   return { ok: true, session: s };
 }

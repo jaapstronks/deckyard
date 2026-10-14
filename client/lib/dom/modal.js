@@ -458,7 +458,7 @@ export function createModal(options = {}) {
     if (overlay.isOpen()) return;
 
     // Build modal structure
-    modal.innerHTML = '';
+    modal.replaceChildren();
     if (header) modal.append(header);
     if (hint) modal.append(hint);
     modal.append(content);

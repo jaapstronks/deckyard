@@ -17,6 +17,7 @@
  * Run with: node --test tests/live-session-notes-write.test.js
  */
 
+import { createMockRes, createMockReq } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
@@ -28,8 +29,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 const { createLiveSession, getLiveSession } =
@@ -56,7 +56,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -67,33 +66,6 @@ test.beforeEach(() => {
 });
 
 /** A request whose body streams `body` as JSON. */
-function fakeReq({ method = 'PUT', headers = {}, body = null } = {}) {
-  const buf = Buffer.from(body == null ? '' : JSON.stringify(body), 'utf8');
-  return {
-    method,
-    headers,
-    socket: {},
-    async *[Symbol.asyncIterator]() {
-      yield buf;
-    },
-  };
-}
-
-function fakeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
 
 function fakeSseClient() {
   const chunks = [];
@@ -116,10 +88,10 @@ function jsonBody(res) {
 
 /** Drive the public dispatcher for one request. */
 async function call({ method, path, body }) {
-  const res = fakeRes();
+  const res = createMockRes();
   const handled = await handleLiveSessionsPublic({
     repoRoot: REPO_ROOT,
-    req: fakeReq({ method, body }),
+    req: createMockReq({ method, body }),
     res,
     url: new URL(path, 'http://localhost'),
   });

@@ -4,10 +4,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import {
-  createLiveSession,
-  getLiveSession,
-} from '../server/storage/live-sessions/sessions.js';
+import { sessions } from '../server/storage/live-sessions/state.js';
 import { notifyDeckUpdatedForPresentation } from '../server/storage/live-sessions/sse.js';
 
 /** The presenter scope the routes would pass (see server/storage/scope.js). */
@@ -33,16 +30,27 @@ function fakeSseClient() {
   };
 }
 
+function seedSession(sessionId, presentationId, repoRoot) {
+  const s = {
+    sessionId,
+    presentationId,
+    organizationId: testScope(repoRoot).organizationId,
+    state: { slideId: '', slideIndex: 0, updatedAt: Date.now() },
+    clients: new Set(),
+    createdAt: Date.now(),
+    lastActivityAt: Date.now(),
+  };
+  sessions.set(sessionId, s);
+  return s;
+}
+
+test.afterEach(() => sessions.clear());
+
 test('notifyDeckUpdatedForPresentation broadcasts deckUpdated to session clients', async () => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
   const presentationId = 'pres-deck-updated-test';
 
-  const created = await createLiveSession(testScope(repoRoot), {
-    presentationId,
-  });
-  assert.ok(created?.sessionId, 'session should be created');
-
-  const session = await getLiveSession(testScope(repoRoot), created.sessionId);
+  const session = seedSession('deck-updated-session', presentationId, repoRoot);
   const client = fakeSseClient();
   session.clients.add(client);
 
@@ -77,7 +85,7 @@ test('notifyDeckUpdatedForPresentation is a no-op without a live session', async
 test('notifyDeckUpdatedForPresentation ignores sessions without clients', async () => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
   const presentationId = 'pres-no-clients-test';
-  await createLiveSession(testScope(repoRoot), { presentationId });
+  seedSession('no-clients-session', presentationId, repoRoot);
 
   const result = await notifyDeckUpdatedForPresentation(
     testScope(repoRoot),

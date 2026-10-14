@@ -30,6 +30,7 @@
  * Run with: node --test tests/default-org-fallback-guard.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -58,32 +59,8 @@ const ALLOWLIST = [
     reason: 'single-organization identity fallback (no membership row to read)',
   },
   {
-    file: 'server/jobs/sandbox-cleanup.js',
-    reason: 'the sandbox is single-org by definition',
-  },
-  {
-    file: 'server/sandbox/library.js',
-    reason:
-      'the sandbox library seed runs at boot, before any session; the ' +
-      'sandbox is single-org by definition',
-  },
-  {
     file: 'server/auth/auth.js',
     reason: 'auth-disabled and dev-bypass synthetic users (no session org)',
-  },
-  {
-    file: 'server/auth/dev-bypass.js',
-    reason:
-      'the dev-bypass users row is created in the default organization; the ' +
-      'bypass has no session to read one from and refuses to run outside ' +
-      'development',
-  },
-  {
-    file: 'server/auth/sandbox.js',
-    reason:
-      'a sandbox guest users row is created in the default organization; ' +
-      'the sandbox is single-org by definition and a guest has no session ' +
-      'to read one from',
   },
   {
     file: 'server/utils/context.js',
@@ -107,15 +84,6 @@ const ALLOWLIST = [
 // has no following `(`, so imports never trip the guard.
 const CALL = /getDefaultOrganizationId\s*\(/;
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
 function callSites(file) {
   const rel = path.relative(repoRoot, file).split(path.sep).join('/');
   const lines = fs.readFileSync(file, 'utf8').split('\n');
@@ -134,7 +102,9 @@ test('getDefaultOrganizationId() is only called from the sanctioned allowlist', 
   const callers = new Set();
   const violations = [];
 
-  for (const file of walk(path.join(repoRoot, TARGET_DIR))) {
+  for (const file of walkFiles(path.join(repoRoot, TARGET_DIR), {
+    extensions: ['.js'],
+  })) {
     const { rel, hits } = callSites(file);
     if (hits.length === 0) continue;
     callers.add(rel);

@@ -603,6 +603,7 @@ export function createEditorTopbar({
     presenceSlot,
     setPresenceNames,
     syncLangUi: languageMode.syncLangUi,
+    revealRefusedVersion: languageMode.revealRefusedVersion,
     syncUndoButtons,
     syncAnalyticsAvailability,
     openNotesQr,

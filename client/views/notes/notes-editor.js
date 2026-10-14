@@ -36,7 +36,7 @@ const AUTOSAVE_DELAY_MS = 1200;
  *   setSlide: (slide: Object|null) => void,
  *   isDirty: () => boolean,
  *   flush: () => Promise<void>,
- *   destroy: () => void,
+ *   detach: () => void,
  * }}
  */
 export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {

@@ -147,6 +147,20 @@ how you know you picked the wrong one.
   on a keyboard dismissal so the tab position is not lost.
 - An inline refusal _does_ move focus, to where the fix is. That is the whole
   point of naming the field.
+- **A row that disappears hands focus back to its list.** "The result is on
+  screen, so no toast" is only true for the eye: the control that was clicked
+  lived in the row, the confirm dialog hands focus back to it, and the
+  re-render leaves focus on `<body>` — out of the list, position lost, nothing
+  said. So a confirmed removal lands focus on whatever took that row's place —
+  the next row, the list's own empty note, or, when nothing is left, the "new"
+  button or heading the caller names — and says one polite sentence with the
+  label, through `planRowRemoval()`
+  (`client/lib/dom/row-removal.js`, B647). One shared sentence,
+  `common.rowRemoved`: a success key per site would bring back the
+  confirmations that only repeat what the screen shows, which were taken out
+  (B643).
+  Removing a row by navigating away (a deck moved to trash) needs neither —
+  the route places focus.
 
 ## Stacking: toasts above modals
 
@@ -168,31 +182,30 @@ open dialog. Decided rather than inherited, for these reasons:
 
 Misusing a primitive (a DOM node passed as a toast message, an empty inline
 error, an unknown toast kind) is a programming error. `reportMisuse()` in
-[`client/lib/util/dev-runtime.js`](../../client/lib/util/dev-runtime.js)
+[`client/lib/state/dev-runtime.js`](../../client/lib/state/dev-runtime.js)
 throws when the host is localhost or absent (development, jsdom) and logs in
 production — the client's counterpart to the server's
 `NODE_ENV !== 'production'` guard. Every UI primitive draws the line there,
 not in a copy of its own.
 
-## Implementation status (2026-10-10)
+## Implementation status (2026-10-11)
 
-The primitive and the helper meet the rules above. One row of call sites does
-not yet:
+The primitive, the helper and every call site meet the rules above:
 
-| Burndown                                                               | Count   | Item |
-| ---------------------------------------------------------------------- | ------- | ---- |
-| Refusals of the form on screen reported in a `toast.error`             | 0       | B204 |
-| Hand-rolled inline error classes (message idioms)                      | 0 files | B204 |
-| `catch` blocks that discard the server sentence for generic `t()` copy | 0       | B205 |
-| Background failures that expire in a toast                             | 5       | B206 |
+| Burndown                                                               | Count |
+| ---------------------------------------------------------------------- | ----- |
+| Refusals of the form on screen reported in a `toast.error`             | 0     |
+| Hand-rolled inline error classes (message idioms)                      | None  |
+| `catch` blocks that discard the server sentence for generic `t()` copy | 0     |
+| Background failures that expire in a toast                             | 0     |
 
-B205 is done too: a `catch` that has the caught error hands it over, and a
-bulk action puts the first failure's sentence after its count. What is still
-translated client copy has no server sentence behind it (a guard with no
-request, a browser failure, a 200 that reports a partial outcome) or is copy
-looked up on the status.
+No `catch` discards the server sentence any more: one that has the caught
+error hands it over, and a bulk action puts the first failure's sentence after
+its count (B205). What is still translated client copy has no server sentence
+behind it (a guard with no request, a browser failure, a 200 that reports a
+partial outcome) or is copy looked up on the status.
 
-B204 is done. No refusal of a form on screen is toasted any more — the 16 local
+No refusal of a form on screen is toasted any more (B204) — the 16 local
 validations went to the helper in PR 1, the 13 API refusals caught in a save
 handler in PR 2 — and no file spells the message element by hand any more: the
 last nineteen moved to `createInlineError()` in PR 3. A `*-error` class name
@@ -200,8 +213,8 @@ now means exactly one thing, so the pages that were never messages were renamed
 after what they are: `dashboard-alert-banner`, and — for the four views that
 each drew their own whole-page dead end — `access-notice-*`,
 `analytics-unavailable`, `shared-report-unavailable`, `share-viewer-card-icon`.
-Four spellings of one thing is the same drift one level up, so B213 folded them
-into one factory: `createPageUnavailable()` in
+Four spellings of one thing is the same drift one level up, so they were folded
+into one factory (B213): `createPageUnavailable()` in
 [`client/lib/dom/page-unavailable.js`](../../client/lib/dom/page-unavailable.js),
 class family `.page-unavailable*`. **A whole-page state is not a sixth kind** —
 there is no message here, only a page saying what it is; the table above is
@@ -212,8 +225,8 @@ there is a form to refuse.
 The `toast.error` calls left in the refuse-and-return allowlist are a different
 shape: a modal that refuses to open, a menu item, a card action, a file dropped
 on the canvas — an action with no form on screen, whose carrier _is_
-`toast.error`. There is no `toast.warning`: no kind maps to it, so B309
-removed the helper and its style, and every caller that had reached for it
+`toast.error`. There is no `toast.warning`: no kind maps to it, so the helper and
+its style were removed (B309), and every caller that had reached for it
 turned out to be one of the five — the slide-lock notice is a status change
 from outside (`toast.info`), a Transfer with nobody to transfer to is the
 failure of an action (`toast.error`), and a partly failed invite is a refusal
@@ -226,9 +239,16 @@ file input or textarea, cleared at the next attempt. The footer status line of
 the creation view only carries progress.
 
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
-item lowers them and the test refuses a rise. Alongside: `toast.info` used as a
-progress indicator with a 60–120 s lifetime (4 sites) is a status chip in
-disguise and folds into the items above.
+item lowers them and the test refuses a rise.
+
+Progress is a state, not a message (B645). A toast held open for a minute
+("Saving changes…", "Uploading…") is a status chip in disguise, so progress
+shows where the state lives: the editor's save status line says "Saving
+changes…" once a save runs longer than 1.5 s (a quick autosave stays quiet and
+ends in "Saved"), and an image that a dropped file is uploading into carries
+`aria-busy` and dims. A toast with an action ("Converting with AI…" + Cancel)
+never expires, so it needs no duration. Guard 4 refuses a literal `durationMs`
+of 30 s or more anywhere in `client/`.
 
 A confirmation that only repeats what the screen already shows is gone (B643):
 a row that appears or disappears, a badge that flips, an avatar that changes, a
@@ -247,7 +267,8 @@ below the top bar (`aria-live="polite"`) and
 `client/lib/dom/maintenance-banner.js` (`role="alert"`). **Settings has no
 panel-wide carrier, deliberately** (B206, revising D124): its two background
 failures are a stale list and a failed export, and both belong at the thing
-they describe rather than in the panel header. D124 chose a chip because the
-editor had one; B498 replaced that chip with a banner, so honouring D124's
-wording would have introduced the second form for one concept that D124 exists
-to prevent.
+they describe rather than in the panel header. The earlier decision to give
+Settings a status chip followed the editor, which had one at the time; the
+editor has since replaced that chip with a banner (B498), so following the old
+wording would have introduced a second form for the one concept that decision
+existed to keep single.

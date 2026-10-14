@@ -39,13 +39,13 @@ import {
   warnApiKeysWhileOff,
 } from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
-import { initializeStorage, closeStorage } from './storage/lifecycle.js';
+import { initializeStorage, closeStorage } from './db/lifecycle.js';
 import { initializeThemeSeeds } from './utils/theme-seeds.js';
 import { seedSandboxLibrary } from './sandbox/library.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
-} from './storage/boot-check.js';
+} from './db/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
 import { warnUnbackedFidelityClaims } from './export/pptx.js';
 import {
@@ -171,7 +171,7 @@ async function handleRequest(req, res) {
   } catch (err) {
     const status = Number(err?.statusCode || 500);
     // Unexpected 500s are server bugs — the client only ever sees a generic
-    // "server_error" envelope, so without this the failure is invisible during
+    // "internal_error" envelope, so without this the failure is invisible during
     // a self-install. Log method + path + stack so it's diagnosable.
     if (status >= 500) {
       const method = req?.method || '?';

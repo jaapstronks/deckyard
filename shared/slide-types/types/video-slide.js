@@ -1,7 +1,6 @@
 import {
   appendQuery,
   bgClass,
-  BUNNY_PLAYER_COLORS,
   bunnyEmbedUrlFromInput,
   cryptoUuid,
   escapeHtml,
@@ -10,6 +9,7 @@ import {
   youtubeEmbedUrl,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { bunnyPlayerColors } from './video-slide/player-colors.js';
 
 export default {
   structure: 'singleton',
@@ -22,6 +22,14 @@ export default {
   // goes in as real embedded media, so it still plays in PowerPoint. A picture
   // of a video is not a video, which is why this one earned a mapper first.
   fidelity: { pptx: 'native' },
+  // The Bunny library a bare video UUID embeds against belongs to whoever
+  // owns the Bunny account, so core cannot name one — but an installation
+  // that owns one should not have to type it on every slide either. The
+  // declaration is the route: configuration seeds the authoring default, the
+  // slide stores it, and every surface keeps reading `content.bunnyLibraryId`
+  // as it already did. Vocabulary and rationale in
+  // shared/slide-types/config-defaults.js (B653).
+  configDefaults: { bunnyLibraryId: 'bunny-library-id' },
   label: 'Video',
   fields: [
     {
@@ -99,6 +107,8 @@ export default {
       type: 'string',
       required: false,
       maxLength: 20,
+      helpText:
+        'The video library in your own Bunny Stream account (Stream > Video Library). A pasted Bunny play or embed URL already carries one; a bare video UUID needs this.',
       // Infrastructure, not content: the id belongs to whoever owns the Bunny
       // account, and an invented one silently yields an empty player. Agents
       // supply `source` and inherit the configured library.
@@ -112,11 +122,20 @@ export default {
     title: '',
     watchUrl: '',
     transcript: '',
-    // Default Bunny video: "Ride the immersive wave"
-    source: '3045cc09-605c-40d9-aa76-9ace93e7f637',
+    // No video: a new video slide is an empty one, and the only video core
+    // could write here was one fork's (B650 left it as an inert UUID; B653
+    // took it out, because an instance that configures its own library would
+    // suddenly have resolved that stranger's id against it). The slide shows
+    // its own "paste a link" state until the author pastes one. What an *agent*
+    // gets offered as a worked example is `aiExamples` in ./video-slide/ai.js,
+    // which is a separate question from what the editor pre-fills.
+    source: '',
     background: 'mist',
     autoplay: 'off',
-    bunnyLibraryId: '366590',
+    // Empty in core and seeded from configuration where there is any: see
+    // `configDefaults` above. Without a library the bare-UUID form of `source`
+    // embeds nothing, which is the honest answer rather than a guess.
+    bunnyLibraryId: '',
   },
   renderHtml: (content, slide, ctx) => {
     const bg = bgClass(content?.background || 'mist');
@@ -128,16 +147,14 @@ export default {
         : '';
 
     const sourceRaw = String(content?.source || '').trim();
-    const libId =
-      typeof content?.bunnyLibraryId === 'string' &&
-      content.bunnyLibraryId.trim()
-        ? content.bunnyLibraryId.trim()
-        : '366590';
 
     const yt = youtubeEmbedUrl(sourceRaw);
     const vm = vimeoEmbedUrl(sourceRaw);
+    // The field goes through as authored: the helper owns what a library id
+    // has to be, and there is no fallback to fill in, because a library is
+    // instance configuration and core owns none (B650).
     const bunny = bunnyEmbedUrlFromInput(sourceRaw, {
-      libraryId: libId,
+      libraryId: content?.bunnyLibraryId,
     });
 
     let embed = '';
@@ -161,6 +178,9 @@ export default {
       embedAutoplay = appendQuery(vm, { autoplay: 1, muted: 1 });
     } else if (bunny) {
       provider = 'bunny';
+      // Slide chrome, so the player reads the theme like every other slide
+      // colour; a theme that names none keeps Bunny's own default (B648).
+      const playerColors = bunnyPlayerColors(ctx?.theme);
       embedNoAutoplay = appendQuery(bunny, {
         // Thumbnails must never produce sound (or autoplay).
         ...(isThumb
@@ -168,7 +188,7 @@ export default {
           : { autoplay: 'false' }),
         preload: 'true',
         responsive: 'true',
-        ...BUNNY_PLAYER_COLORS,
+        ...playerColors,
       });
       embedAutoplay = appendQuery(bunny, {
         autoplay: 'true',
@@ -176,7 +196,7 @@ export default {
         muted: 'true',
         preload: 'true',
         responsive: 'true',
-        ...BUNNY_PLAYER_COLORS,
+        ...playerColors,
       });
       needsPlayerJs = !isThumb;
     }

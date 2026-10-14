@@ -1,3 +1,4 @@
+import { toStorageContext } from '../scope.js';
 import { sseWrite } from '../../utils/sse.js';
 import { closeQuestionsClients } from '../questions.js';
 import { sessions } from './state.js';
@@ -17,9 +18,17 @@ import { fireAndForget } from '../../utils/fire-and-forget.js';
  * @param {string} [reason] - Sent to clients as the close reason.
  * @returns {boolean} Whether a session was held here to close.
  */
-export function closeSession(sessionId, reason = 'closed') {
+export function closeSession(scope, sessionId, reason = 'closed') {
+  const context = toStorageContext(
+    scope,
+    'closeSession',
+    {},
+    { allowCrossOrganization: true },
+  );
   const s = sessions.get(String(sessionId || '')) || null;
   if (!s) return false;
+  if (context.organizationId && s.organizationId !== context.organizationId)
+    return false;
   closeQuestionsClients(sessionId, reason);
   for (const res of Array.from(s.clients)) {
     try {
@@ -36,7 +45,7 @@ export function closeSession(sessionId, reason = 'closed') {
   }
   sessions.delete(sessionId);
   fireAndForget(
-    deletePersistedSession(sessionId),
+    deletePersistedSession(scope, sessionId),
     'live-session persisted-row delete',
   );
   return true;

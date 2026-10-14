@@ -78,7 +78,6 @@ test('a locked background strips the whole background group', () => {
     title: 'Keep me',
     background: 'dark',
     bgCustomColor: '#ff0000',
-    bgImage: '/a.jpg',
     slideBgImage: '/b.jpg',
     slideBgFit: 'cover',
     slideBgFocusX: 20,

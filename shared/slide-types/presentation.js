@@ -17,6 +17,7 @@ import { SLIDE_TYPES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
+import { isTextField } from './text-fields.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import { renderUnresolvedSlideHtml } from './unresolved.js';
 import { resolveThemeLogo } from '../theme-logo.js';
@@ -35,7 +36,18 @@ export function newPresentation({
   // The loaded theme object, when the caller has one. `theme` above is just the
   // id that gets stored on the deck; this is what supplies background presets.
   themeConfig = null,
+  // The map the title slide composes from, required: the organization's
+  // (`buildMergedSlideTypes`), which carries the installation's configured
+  // defaults (B653) and its database types. A theme may name any registered
+  // type as `defaultTitleSlide`, so the module-wide registry is no fallback
+  // (B655).
+  slideTypes,
 } = {}) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'newPresentation: pass the slide-type map the deck is created in',
+    );
+  }
   const now = new Date().toISOString();
   // Use the provided default title slide, falling back to 'title-slide' if invalid.
   const titleSlideType =
@@ -92,6 +104,7 @@ export function newPresentation({
         type: titleSlideType,
         theme: themeConfig,
         lang: normalizeLang(lang) || DEFAULT_DECK_LANG,
+        slideTypes,
       }),
     ],
   };
@@ -141,9 +154,11 @@ export function newPresentation({
  *   in. What a `presentation-id` instance key resolves against; without it
  *   such a key is left alone (see `applyInstanceKeyDefaults`), and the
  *   server's save seam repairs it on first write.
- * @param {Record<string, Object>} [opts.slideTypes] - the registry the type is
- *   looked up in. Defaults to the process-wide map; an org-aware caller passes
- *   `buildMergedSlideTypes(scope)` so a DB-backed `custom-<slug>` can be
+ * @param {Record<string, Object>} opts.slideTypes - the registry the type is
+ *   looked up in, required (B655): the process-wide map knows neither the
+ *   installation's configured defaults (B653) nor the organization's types.
+ *   A server caller passes `buildMergedSlideTypes(scope)` so a DB-backed
+ *   `custom-<slug>` can be
  *   created too, and the editor passes the `/api/slide-types` metadata it
  *   already holds. `type` is a registry key here, not a spelling to resolve —
  *   callers fold spellings down with `resolveSlideTypeName()` first.
@@ -155,9 +170,14 @@ export function newSlide({
   lang = null,
   content = null,
   presentationId = '',
-  slideTypes = SLIDE_TYPES,
+  slideTypes,
 }) {
-  const def = slideTypes?.[type];
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'newSlide: pass the slide-type map the slide is made in',
+    );
+  }
+  const def = slideTypes[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   const composed = resolveTypeDefaults(def, normalizeLang(lang), theme);
   if (content && typeof content === 'object') Object.assign(composed, content);
@@ -580,14 +600,44 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
   const def = getSlideType(slide.type, slideTypes);
   if (!def) return errors;
 
-  // Per-field validation is delegated to the single declared field-type
-  // vocabulary (shared/slide-types/field-types.js), which owns the required +
-  // value checks for every type. This replaces the hand-synced type switch that
-  // had drifted from the editor and docs (datamodel-purity move 1a). Unknown
-  // field types are guarded by tests/field-types.test.js, not here.
-  for (const field of def.fields) {
-    const val = slide.content[field.key];
-    for (const e of validateFieldValue(val, field)) errors.push(e);
+  for (const problem of validateSlideFields(slide, { slideTypes })) {
+    errors.push(...problem.errors);
   }
   return errors;
+}
+
+/**
+ * Validate declared content fields, preserving their key for inline feedback.
+ * Item-field checks remain owned by validateFieldValue, at every write surface.
+ * @param {Object} slide
+ * @param {{slideTypes?: Record<string, Object>, allowMissingTranslationText?: boolean}} [opts]
+ * @returns {Array<{field: string, errors: string[]}>}
+ */
+export function validateSlideFields(
+  slide,
+  { slideTypes = SLIDE_TYPES, allowMissingTranslationText = false } = {},
+) {
+  const def = getSlideType(slide?.type, slideTypes);
+  if (!def) return [];
+  return def.fields.flatMap((field) => {
+    // An untranslated version is allowed to have gaps in prose, including
+    // nested item prose. Its present values still pass the same type and
+    // safety checks, and structural/non-prose requirements remain intact.
+    const definition = allowMissingTranslationText
+      ? translationFieldDefinition(field)
+      : field;
+    const errors = validateFieldValue(slide?.content?.[field.key], definition);
+    return errors.length ? [{ field: field.key, errors }] : [];
+  });
+}
+
+function translationFieldDefinition(field) {
+  const itemFields = Array.isArray(field.itemFields)
+    ? field.itemFields.map(translationFieldDefinition)
+    : field.itemFields;
+  return {
+    ...field,
+    ...(isTextField(field) ? { required: false } : {}),
+    ...(itemFields ? { itemFields } : {}),
+  };
 }

@@ -1,4 +1,3 @@
-import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { api as defaultApi } from '../../lib/api.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import {
@@ -32,7 +31,7 @@ export async function loadEditorModel({
       loadThemeById(pres?.theme),
       // Load slide type meta from server so the editor UI can't get out of
       // sync with validation.
-      loadSlideTypes({ api, LOCAL_SLIDE_TYPES }),
+      loadSlideTypes({ api }),
       loadEditorAssets({ api }),
     ]);
 

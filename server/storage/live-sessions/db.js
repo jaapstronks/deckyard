@@ -1,3 +1,4 @@
+import { toStorageContext } from '../scope.js';
 /**
  * Present-session persistence, on PostgreSQL.
  *
@@ -27,8 +28,37 @@
 
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
+
+function sessionMatchesScope(scope, session) {
+  const context = toStorageContext(
+    scope,
+    'sessionMatchesScope',
+    {},
+    { allowCrossOrganization: true },
+  );
+  return (
+    !!context.crossOrganization ||
+    session?.organizationId === context.organizationId
+  );
+}
+
+async function presentationInScope(db, scope, presentationId) {
+  const context = toStorageContext(
+    scope,
+    'presentationInScope',
+    {},
+    { allowCrossOrganization: true },
+  );
+  let query = db
+    .selectFrom('presentations')
+    .select('organization_id')
+    .where('id', '=', presentationId);
+  if (context.organizationId)
+    query = query.where('organization_id', '=', context.organizationId);
+  return await query.executeTakeFirst();
+}
 
 /** Debounce window for persisting a mutated session. */
 const PERSIST_DEBOUNCE_MS = 600;
@@ -101,6 +131,7 @@ function rowToSession(row) {
   return {
     sessionId: String(row.session_id),
     presentationId: String(row.presentation_id),
+    organizationId: row.organization_id,
     state: normalizeState(row.state),
     controlEnabled: !!row.control_enabled,
     followCodes:
@@ -139,6 +170,7 @@ function mergeRow(row) {
 
   if (incoming.lastActivityAt > (Number(existing.lastActivityAt) || 0)) {
     existing.presentationId = incoming.presentationId;
+    existing.organizationId = incoming.organizationId;
     existing.state = incoming.state;
     existing.controlEnabled = incoming.controlEnabled;
     existing.followCodes = incoming.followCodes;
@@ -158,6 +190,7 @@ const SESSION_COLUMNS = [
   'follow_codes_created_at',
   'created_at',
   'last_activity_at',
+  'organization_id',
 ];
 
 /**
@@ -166,10 +199,17 @@ const SESSION_COLUMNS = [
  * @param {object} s - Live session.
  * @returns {Promise<void>}
  */
-export async function persistSession(s) {
+export async function persistSession(scope, s) {
+  toStorageContext(
+    scope,
+    'persistSession',
+    {},
+    { allowCrossOrganization: true },
+  );
   if (!s?.sessionId || !s?.presentationId) return;
   const data = serializeSession(s);
   await withDbGuard(undefined, async (db) => {
+    if (!(await presentationInScope(db, scope, s.presentationId))) return;
     const values = {
       session_id: data.sessionId,
       presentation_id: data.presentationId,
@@ -186,13 +226,16 @@ export async function persistSession(s) {
       .insertInto('present_sessions')
       .values(values)
       .onConflict((oc) =>
-        oc.column('session_id').doUpdateSet({
-          state: values.state,
-          control_enabled: values.control_enabled,
-          follow_codes: values.follow_codes,
-          follow_codes_created_at: values.follow_codes_created_at,
-          last_activity_at: values.last_activity_at,
-        }),
+        oc
+          .column('session_id')
+          .doUpdateSet({
+            state: values.state,
+            control_enabled: values.control_enabled,
+            follow_codes: values.follow_codes,
+            follow_codes_created_at: values.follow_codes_created_at,
+            last_activity_at: values.last_activity_at,
+          })
+          .where('present_sessions.presentation_id', '=', data.presentationId),
       )
       .execute();
   });
@@ -205,12 +248,18 @@ export async function persistSession(s) {
  * @param {object} s - Live session.
  * @returns {void}
  */
-export function schedulePersist(s) {
+export function schedulePersist(scope, s) {
+  toStorageContext(
+    scope,
+    'schedulePersist',
+    {},
+    { allowCrossOrganization: true },
+  );
   if (!s) return;
   if (s.persistTimer) clearTimeout(s.persistTimer);
   s.persistTimer = setTimeout(() => {
     s.persistTimer = null;
-    fireAndForget(persistSession(s), 'live-session persist');
+    fireAndForget(persistSession(scope, s), 'live-session persist');
   }, PERSIST_DEBOUNCE_MS);
   s.persistTimer.unref?.();
 }
@@ -220,22 +269,48 @@ export function schedulePersist(s) {
  * @param {string} sessionId
  * @returns {Promise<object|null>} The live session, or null if unknown/expired.
  */
-export async function hydrateSession(sessionId) {
+export async function hydrateSession(scope, sessionId) {
+  toStorageContext(
+    scope,
+    'hydrateSession',
+    {},
+    { allowCrossOrganization: true },
+  );
   const id = String(sessionId || '');
   if (!id) return null;
 
-  const row = await withDbGuard(null, async (db) =>
-    db
+  const row = await withDbGuard(null, async (db) => {
+    let query = db
       .selectFrom('present_sessions')
-      .select(SESSION_COLUMNS)
-      .where('session_id', '=', id)
-      .executeTakeFirst(),
-  );
+      .innerJoin(
+        'presentations',
+        'presentations.id',
+        'present_sessions.presentation_id',
+      )
+      .select(
+        SESSION_COLUMNS.map((column) =>
+          column === 'organization_id'
+            ? 'presentations.organization_id'
+            : `present_sessions.${column}`,
+        ),
+      )
+      .where('present_sessions.session_id', '=', id);
+    if (scope.organizationId)
+      query = query.where(
+        'presentations.organization_id',
+        '=',
+        scope.organizationId,
+      );
+    return query.executeTakeFirst();
+  });
 
   // No row: either the database is unavailable, or the session was created in
   // this process microseconds ago and the debounced write has not landed yet.
   // The local copy stays authoritative in both cases.
-  if (!row) return sessions.get(id) || null;
+  if (!row) {
+    const local = sessions.get(id) || null;
+    return local && sessionMatchesScope(scope, local) ? local : null;
+  }
   return mergeRow(row);
 }
 
@@ -245,17 +320,40 @@ export async function hydrateSession(sessionId) {
  * @param {string} presentationId
  * @returns {Promise<void>}
  */
-export async function hydrateSessionsForPresentation(presentationId) {
+export async function hydrateSessionsForPresentation(scope, presentationId) {
+  toStorageContext(
+    scope,
+    'hydrateSessionsForPresentation',
+    {},
+    { allowCrossOrganization: true },
+  );
   const pid = String(presentationId || '').trim();
   if (!pid) return;
 
-  const rows = await withDbGuard([], async (db) =>
-    db
+  const rows = await withDbGuard([], async (db) => {
+    let query = db
       .selectFrom('present_sessions')
-      .select(SESSION_COLUMNS)
-      .where('presentation_id', '=', pid)
-      .execute(),
-  );
+      .innerJoin(
+        'presentations',
+        'presentations.id',
+        'present_sessions.presentation_id',
+      )
+      .select(
+        SESSION_COLUMNS.map((column) =>
+          column === 'organization_id'
+            ? 'presentations.organization_id'
+            : `present_sessions.${column}`,
+        ),
+      )
+      .where('present_sessions.presentation_id', '=', pid);
+    if (scope.organizationId)
+      query = query.where(
+        'presentations.organization_id',
+        '=',
+        scope.organizationId,
+      );
+    return query.execute();
+  });
 
   for (const row of rows) mergeRow(row);
 }
@@ -267,10 +365,23 @@ export async function hydrateSessionsForPresentation(presentationId) {
  * @param {string} sessionId
  * @returns {Promise<void>}
  */
-export async function deletePersistedSession(sessionId) {
+export async function deletePersistedSession(scope, sessionId) {
+  toStorageContext(
+    scope,
+    'deletePersistedSession',
+    {},
+    { allowCrossOrganization: true },
+  );
   const id = String(sessionId || '');
   if (!id) return;
   await withDbGuard(undefined, async (db) => {
+    const row = await db
+      .selectFrom('present_sessions')
+      .select('presentation_id')
+      .where('session_id', '=', id)
+      .executeTakeFirst();
+    if (!row || !(await presentationInScope(db, scope, row.presentation_id)))
+      return;
     await db
       .deleteFrom('present_sessions')
       .where('session_id', '=', id)
@@ -287,7 +398,18 @@ export async function deletePersistedSession(sessionId) {
  *
  * @returns {Promise<number>} How many sessions were removed.
  */
-export async function sweepExpiredSessions() {
+export async function sweepExpiredSessions(scope) {
+  const context = toStorageContext(
+    scope,
+    'sweepExpiredSessions',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'sweepExpiredSessions() requires an instance retention scope',
+    );
   // TTL_MS stays the single source of the window; only the comparison lives in
   // SQL. Same shape as the sandbox sweep (jobs/sandbox-cleanup.js).
   const cutoff = new Date(Date.now() - TTL_MS).toISOString();
@@ -307,7 +429,18 @@ export async function sweepExpiredSessions() {
  *
  * @returns {Promise<number>} Zero without a database.
  */
-export async function countPersistedSessions() {
+export async function countPersistedSessions(scope) {
+  const context = toStorageContext(
+    scope,
+    'countPersistedSessions',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'countPersistedSessions() requires an instance count scope',
+    );
   return withDbGuard(0, async (db) => {
     const row = await db
       .selectFrom('present_sessions')

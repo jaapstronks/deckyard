@@ -15,8 +15,11 @@
  * exists where external identities *can* appear.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
+import { generateSlug, isValidSlug } from '../../shared/slug.js';
+
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { managedFontUrl } from '../media/managed-fonts.js';
 import {
@@ -24,13 +27,8 @@ import {
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
-import {
-  withDbGuard,
-  parseJson,
-  generateSlug,
-  isValidSlug,
-  getUserIdByEmail,
-} from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
+import { parseJson, getUserIdByEmail } from './utils/index.js';
 
 const VALID_SOURCES = ['upload', 'adobe', 'monotype', 'google'];
 const VALID_CATEGORIES = ['sans-serif', 'serif', 'display', 'monospace'];
@@ -193,7 +191,7 @@ export async function createFontFamily(scope, data) {
         created_at: now,
         updated_at: now,
         created_by: scope?.actorEmail
-          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          ? await getUserIdByEmail(scope, db, scope.actorEmail)
           : null,
       })
       .returningAll()
@@ -614,7 +612,13 @@ function formatFamily(row, lookup = NO_DISPLAY_NAMES) {
  * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
  */
 function creatorNames(rows) {
-  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
+  return resolveNamesForAddresses(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    (rows || []).map((row) => row?.created_by),
+  );
 }
 
 function formatVariant(row) {

@@ -138,6 +138,8 @@ so the move is something it has to change on upgrade. It carries a breaking note
 shim at the old path (`AGENTS.md` § _Module layout_), and during beta the Release
 PR gets the `Release-As: 1.<next>.0` override below (D276).
 
+The same review applies to removed helper exports: replacing `safeSlug` with `generateSlug`, or moving QR helpers to a new module, changes a fork's imports even when upstream callers are already updated. Name the old and new paths in the breaking-change note.
+
 ### Wire changes are never titled `refactor:`
 
 The changelog is generated from commit titles (release-please), and
@@ -227,9 +229,15 @@ is what release-please reads — keep it a valid Conventional Commit.
    `vX.Y.Z`, and publishes a **GitHub Release**. You never pick the number by
    hand — it's derived from what's in the PR.
 
-The [`merge-housekeeping`](../../.claude/skills/merge-housekeeping/SKILL.md) skill
-nudges (phone push) when the accumulated merges warrant cutting a release, so the
-Release PR doesn't sit open and forgotten. It never cuts the release itself.
+### Agent-managed release cadence
+
+The maintainer delegates release timing and execution to agents (2026-10-12). After substantive merges, evaluate the unreleased changes and release-dependent briefings. Schedule a separate release-cut review-and-merge session when a security fix, breaking change or concrete release blocker warrants it; otherwise use about fifteen user-facing changes or roughly a week with worthwhile unreleased changes as a guideline. These are judgment calls, not a mandatory calendar: internal churn alone does not warrant a release, and an urgent fix can ship sooner.
+
+The closing `/handoff` announces that release review, its Release PR and resolved model. It is an announcement under the standing mandate, not a request for a new timing decision. The maintainer can override or cancel it. Check the shared queue and claims so only one lane schedules the same release. Preserve pending feature reviews and audits explicitly in the queue; the release review hands back to them afterward. An unready Release PR keeps its concrete blocker visible while other useful work continues.
+
+The receiving session independently reviews the current release scope, version, changelog, migrations, configuration and CI before merging the release-please PR. A routine release gets tier `workhorse`; escalate substantive unresolved risks according to the item tiers. Do not bypass required checks or hand-bump a version. After merging, verify the tag and GitHub Release, deliver the website notes and sandbox upgrade using the upstream recipes below, and register evidence for briefings whose release condition was actually met. A tag alone does not complete downstream fork, capture or deployment verification.
+
+The [`merge-housekeeping`](../../.claude/skills/merge-housekeeping/SKILL.md) skill evaluates this cadence and records scheduling in the maintainer's private release ledger. It schedules the separate reviewer; it does not cut a release as a side effect of a feature merge.
 
 ## Correcting a version
 
@@ -252,6 +260,11 @@ On the next push, release-please rewrites the open Release PR to that version �
 title, `package.json`, tag, changelog heading. The generated changelog _body_
 still reflects the commits (a `⚠ BREAKING CHANGES` section stays), which is
 correct: the note was accurate, only the digit was wrong.
+
+Keep the override commit focused: put `Release-As:` in its own final paragraph and verify the bot actually updates every version file. A trailer buried in a long squash body is not proof that the override was applied. Likewise, check that generated breaking notes retain the complete old/new import-path list; restore omitted details in the Release PR before merging.
+The override commit can be documentation-only; let release-please update the generated version files instead of editing them by hand.
+
+During a lane handoff, a release claim may be transferred explicitly by the maintainer. Record the new owner in the shared queue before continuing the release review and its deployment steps.
 
 Use this sparingly. It is the release equivalent of a manual override — every
 use means the commit convention failed upstream, so fix that too (in this case:

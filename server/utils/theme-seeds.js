@@ -2,16 +2,16 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { sql } from 'kysely';
 import { repoRoot } from '../config/paths.js';
 import { customDirFor } from '../../shared/custom-root.js';
-import { getDb } from '../db/client.js';
+import { crossOrganizationScope } from '../storage/scope.js';
+import { upsertThemeSeeds } from '../storage/themes.js';
 import { curatedFontFaces, isValidFont } from '../../shared/theme-fonts.js';
 import {
   checkThemeConfig,
   validateThemeColors,
 } from '../../shared/theme-config-schema.js';
-import { isValidSlug } from '../storage/utils/index.js';
+import { isValidSlug } from '../../shared/slug.js';
 
 const RECORD_FIELDS = [
   'slug',
@@ -167,23 +167,8 @@ export async function readThemeSeeds(root = repoRoot) {
 /** Refresh all seeds in one transaction, preserving IDs and skipping unchanged rows. */
 export async function initializeThemeSeeds(root = repoRoot) {
   const seeds = await readThemeSeeds(root);
-  await upsertThemeSeeds(getDb(), seeds);
-}
-
-/** Apply a fully validated seed batch in one transaction. */
-export async function upsertThemeSeeds(db, seeds) {
-  await db.transaction().execute(async (trx) => {
-    for (const { record, hash } of seeds) {
-      await sql`
-        INSERT INTO themes (organization_id, seed_hash, slug, label, logo_url, logo_small_url, colors, fonts, config)
-        VALUES (NULL, ${hash}, ${record.slug}, ${record.label}, ${record.logoUrl ?? null}, ${record.logoSmallUrl ?? null},
-          ${JSON.stringify(record.colors)}::jsonb, ${JSON.stringify(record.fonts)}::jsonb, ${JSON.stringify(record.config)}::jsonb)
-        ON CONFLICT (slug) WHERE organization_id IS NULL DO UPDATE SET
-          seed_hash = EXCLUDED.seed_hash, label = EXCLUDED.label,
-          logo_url = EXCLUDED.logo_url, logo_small_url = EXCLUDED.logo_small_url,
-          colors = EXCLUDED.colors, fonts = EXCLUDED.fonts, config = EXCLUDED.config, updated_at = now()
-        WHERE themes.seed_hash IS DISTINCT FROM EXCLUDED.seed_hash
-      `.execute(trx);
-    }
-  });
+  await upsertThemeSeeds(
+    crossOrganizationScope(root, 'Installed theme seeds are instance-wide'),
+    seeds,
+  );
 }

@@ -19,7 +19,7 @@
 
 import crypto from 'node:crypto';
 import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { countInstanceHealth } from './instance-health.js';
 
 // Follow codes are guessable live-session handles: a valid one resolves to a

@@ -89,7 +89,7 @@ export function createImageKitPanel({
   let tagsExpanded = false;
 
   const renderTagBar = () => {
-    tagBar.innerHTML = '';
+    tagBar.replaceChildren();
     if (!allTags.length) {
       tagBar.style.display = 'none';
       return;
@@ -224,12 +224,12 @@ export function createImageKitPanel({
   const detail = h('div', { class: 'imagekit-detail' });
 
   const renderGrid = () => {
-    grid.innerHTML = '';
+    grid.replaceChildren();
     const list = Array.isArray(items) ? items : [];
     if (!list.length) {
       grid.append(
         h('div', {
-          class: 'help',
+          class: 'empty-note',
           text: t('imagekit.noResults', 'No results.'),
         }),
       );
@@ -300,7 +300,7 @@ export function createImageKitPanel({
   };
 
   const renderDetail = () => {
-    detail.innerHTML = '';
+    detail.replaceChildren();
     if (!selected) {
       detail.append(
         h('div', {

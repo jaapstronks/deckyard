@@ -41,7 +41,7 @@ const LIMIT_KEY = 'dk_live_limit-key-000000000000000000';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { hashToken } = await import('../server/utils/secure-tokens.js');
 const { handlePublicApiV1 } =
   await import('../server/routes/public-api/v1/index.js');
@@ -384,7 +384,7 @@ test('authentication stamps last_used_at on the key row', async () => {
 // Per-minute request limiter
 // ---------------------------------------------------------------------------
 
-test('the 61st request within a minute is refused with 429 and Retry-After', async () => {
+test('request headers count down to the same 429 decision', async () => {
   await installDb();
 
   // Free tier: 60 requests/minute. The limiter is keyed on the api key id and
@@ -392,22 +392,27 @@ test('the 61st request within a minute is refused with 429 and Retry-After', asy
   // from interfering with the other tests.
   let last = null;
   for (let i = 0; i < 61; i++) {
-    last = makeCtx('GET', '/api/v1/never-a-route', { bearer: LIMIT_KEY });
+    last = makeCtx('GET', '/api/v1/slide-types', { bearer: LIMIT_KEY });
     await handlePublicApiV1(last);
     if (i < 60) {
       assert.equal(
         last.res.statusCode,
-        404,
+        200,
         `request ${i + 1} passes the limiter`,
+      );
+      assert.equal(last.res.headers['X-RateLimit-Limit'], '60');
+      assert.equal(last.res.headers['X-RateLimit-Remaining'], String(59 - i));
+      assert.ok(
+        Number(last.res.headers['X-RateLimit-Reset']) > Date.now() / 1000,
       );
     }
   }
 
   assertV1Error(last.res, 429, 'rate_limited');
-  assert.ok(
-    last.res.headers['Retry-After'],
-    'the limiter names a retry moment',
-  );
+  assert.equal(last.res.headers['X-RateLimit-Limit'], '60');
+  assert.equal(last.res.headers['X-RateLimit-Remaining'], '0');
+  assert.ok(Number(last.res.headers['X-RateLimit-Reset']) > Date.now() / 1000);
+  assert.ok(Number(last.res.headers['Retry-After']) > 0);
 });
 
 // ---------------------------------------------------------------------------

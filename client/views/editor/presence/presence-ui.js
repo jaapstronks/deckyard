@@ -2,7 +2,7 @@
  * Presence UI for the editor: avatar stack (topbar), per-slide indicators in
  * the slide list, and field-focus outlines on the preview canvas.
  *
- * Pure view layer over a presence session (client/lib/collab/presence-session.js).
+ * Pure view layer over a presence session (client/views/editor/live-edits/presence-session.js).
  * Slide-list items and the preview slide are re-rendered destructively by the
  * editor, so decorations are (re)applied from the current peer list via
  * MutationObservers — never stored in the DOM as the source of truth.
@@ -49,7 +49,7 @@ function uniqueByEmail(peers) {
  * @param {HTMLElement} [opts.editorMount] - side-form root (re-applies form
  *   field decorations after the form re-renders)
  * @param {Function} opts.getSelectedSlideId - () => current slide id
- * @returns {{ destroy: Function }}
+ * @returns {{ detach: Function }}
  */
 export function createPresenceUI({
   session,

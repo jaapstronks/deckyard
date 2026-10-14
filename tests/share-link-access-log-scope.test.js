@@ -1,46 +1,7 @@
-/**
- * What scopes the share-link access log (A1(a), the org-scoping defects).
- *
- * `share_link_access_log` holds viewer PII — IP address and user agent, one row
- * per opened share link. Both functions over it
- * (`server/storage/share-links/access-log.js`) used to take a context object
- * and ignore it completely: a signature that promised an organization check
- * nobody performed. The org-scoping brief listed that as a defect under every
- * outcome of the decision.
- *
- * The chosen form is the one migration 064 / #626 settled for collaborator
- * rows: **the identifier is the scope**. A `presentation_share_links.id` is a
- * globally unique uuid and every log row hangs off exactly one of them, so an
- * organization in the filter cannot narrow the answer — only be wrong when the
- * two disagree. The context parameter is therefore gone rather than made real,
- * and authorization stays with the caller, which is where it already was.
- *
- * That leaves two things worth pinning, and this file is both halves:
- *
- *   1. **Behaviour** — the read answers for exactly one link, and answers with
- *      nothing when handed a link id that names no link. It is addressed, not
- *      searched.
- *   2. **Containment** — the route that exposes the log first authorizes the
- *      presentation and then binds the link id to it through
- *      `getShareLinkById`, which *is* organization-filtered. A link belonging
- *      to another organization does not resolve there, so it never reaches the
- *      log. `tests/security-resource-authz-and-ssrf.test.js` (MH2) pins the deck half of
- *      that gate; this file pins the organization half, and a source-level guard
- *      refuses any call site that passes a scope to the access log again.
- *
- * House shape: storage functions called directly over
- * `tests/helpers/fake-db.js`, no HTTP server.
- *
- * Run with: node --test tests/share-link-access-log-scope.test.js
- */
+/** Share-link access logs require a scope and enforce the link's organization. */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { callArguments, walkJsFiles } from './helpers/call-sites.js';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -129,7 +90,11 @@ test('the log answers for exactly the link it is asked about', async () => {
     logRow({ id: 'b1', linkId: LINK_IN_B, ip: '198.51.100.9' }),
   ]);
 
-  const entries = await getShareLinkAccessLog(LINK_IN_A, {});
+  const entries = await getShareLinkAccessLog(
+    { organizationId: ORG_A },
+    LINK_IN_A,
+    {},
+  );
 
   assert.deepEqual(
     entries.map((e) => e.id).sort(),
@@ -146,12 +111,24 @@ test('the log answers for exactly the link it is asked about', async () => {
 test('an unknown or empty link id yields nothing', async () => {
   const db = seed([logRow({ id: 'a1', linkId: LINK_IN_A })]);
 
-  assert.deepEqual(await getShareLinkAccessLog('no-such-link', {}), []);
-  assert.deepEqual(await getShareLinkAccessLog('', {}), []);
-  assert.deepEqual(await getShareLinkAccessLog(null, {}), []);
+  assert.deepEqual(
+    await getShareLinkAccessLog({ organizationId: ORG_A }, 'no-such-link', {}),
+    [],
+  );
+  assert.deepEqual(
+    await getShareLinkAccessLog({ organizationId: ORG_A }, '', {}),
+    [],
+  );
+  assert.deepEqual(
+    await getShareLinkAccessLog({ organizationId: ORG_A }, null, {}),
+    [],
+  );
   assert.deepEqual(
     db.__queryLog,
-    [{ op: 'select', table: 'share_link_access_log' }],
+    [
+      { op: 'select', table: 'share_link_access_log' },
+      { op: 'join', table: 'presentation_share_links' },
+    ],
     'only the one real lookup reaches the database; a blank id short-circuits',
   );
 });
@@ -159,11 +136,13 @@ test('an unknown or empty link id yields nothing', async () => {
 test('writing a row needs the link and the access info, nothing else', async () => {
   const db = seed();
 
-  await logShareLinkAccess(LINK_IN_A, {
+  await logShareLinkAccess({ organizationId: ORG_A }, LINK_IN_A, {
     ipAddress: '203.0.113.5',
     userAgent: 'UA/2.0',
   });
-  await logShareLinkAccess('', { ipAddress: '203.0.113.6' });
+  await logShareLinkAccess({ organizationId: ORG_A }, '', {
+    ipAddress: '203.0.113.6',
+  });
 
   const rows = db.__tables.share_link_access_log || [];
   assert.equal(rows.length, 1, 'the blank link id wrote nothing');
@@ -205,61 +184,26 @@ test('resolving a link with no organization to act in refuses rather than guessi
   );
 });
 
-// ---------------------------------------------------------------------------
-// The structural half: no call site can re-introduce a scope
-// ---------------------------------------------------------------------------
-
-const here = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.join(here, '..');
-
-/** Both access-log functions, and how many arguments each may be handed. */
-const CONTRACTS = [
-  {
-    fn: 'logShareLinkAccess',
-    maxArgs: 2,
-    takes: 'a link id and the access info',
-  },
-  {
-    fn: 'getShareLinkAccessLog',
-    maxArgs: 2,
-    takes: 'a link id and pagination options',
-  },
-];
-
-test('no access-log call site passes a scope', () => {
-  const offenders = [];
-
-  for (const file of walkJsFiles(path.join(repoRoot, 'server'))) {
-    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
-    const source = fs.readFileSync(file, 'utf8');
-    for (const { fn, maxArgs } of CONTRACTS) {
-      for (const args of callArguments(source, fn)) {
-        if (args.length > maxArgs)
-          offenders.push(`${rel}  ${fn}(${args.length} arguments)`);
-      }
-    }
-  }
-
+test('a scope for another organization cannot read or write this link log', async () => {
+  const db = seed([logRow({ id: 'a1', linkId: LINK_IN_A })]);
   assert.deepEqual(
-    offenders,
+    await getShareLinkAccessLog({ organizationId: ORG_B }, LINK_IN_A, {}),
     [],
-    'the share link is the scope: ' +
-      CONTRACTS.map((c) => `${c.fn} takes ${c.takes}`).join(', ') +
-      '. A further argument is the context that used to be ignored, creeping back:\n  ' +
-      offenders.join('\n  '),
   );
+  await logShareLinkAccess({ organizationId: ORG_B }, LINK_IN_A, {
+    ipAddress: '203.0.113.8',
+  });
+  assert.equal(db.__tables.share_link_access_log.length, 1);
 });
 
-test('the guard would catch a re-introduced scope argument', () => {
-  const planted =
-    'await getShareLinkAccessLog(linkId, { limit, offset }, ctx);';
-  assert.equal(callArguments(planted, 'getShareLinkAccessLog')[0].length, 3);
-  assert.equal(
-    callArguments(
-      'await getShareLinkAccessLog(linkId, { limit, offset });',
-      'getShareLinkAccessLog',
-    )[0].length,
-    2,
-    'and exactly two on the canonical form',
+test('access-log calls refuse missing scope', async () => {
+  seed();
+  await assert.rejects(
+    () => getShareLinkAccessLog(undefined, LINK_IN_A, {}),
+    /storage scope/,
+  );
+  await assert.rejects(
+    () => logShareLinkAccess(undefined, LINK_IN_A, {}),
+    /storage scope/,
   );
 });

@@ -7,6 +7,8 @@
  * @see server/storage/magic-link.js
  */
 
+import { toStorageContext } from './scope.js';
+
 import { nowIso } from '../utils/normalize.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { listUserOrganizations } from './user-organizations/index.js';
@@ -22,6 +24,7 @@ import { listUserOrganizations } from './user-organizations/index.js';
  * including concurrent first logins. Recheck the user's memberships after
  * acquiring it: another login may have provisioned the same person meanwhile.
  *
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {import('kysely').Kysely<any>} db
  * @param {object} user - Raw `users` row: freshly inserted, or as found
  *   before this login's update (a refusal must not have written it)
@@ -34,12 +37,23 @@ import { listUserOrganizations } from './user-organizations/index.js';
  *   | { ok: false, reason: string }>}
  */
 export async function ensureMembership(
+  scope,
   db,
   user,
   autoProvision,
   targetOrgId,
   role,
 ) {
+  const context = toStorageContext(
+    scope,
+    'ensureMembership',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (!context.crossOrganization || context.organizationId)
+    throw new TypeError(
+      'ensureMembership() requires an explicit global identity or provisioning scope',
+    );
   if (!isMultiOrgEnabled()) return { ok: true, membership: null };
 
   if (targetOrgId) {
@@ -51,7 +65,7 @@ export async function ensureMembership(
       .executeTakeFirst();
     if (existing) return { ok: true, membership: null };
   } else {
-    const held = await listUserOrganizations(user.id);
+    const held = await listUserOrganizations(scope, user.id);
     if (held.length) return { ok: true, membership: null };
   }
   if (!autoProvision) return { ok: false, reason: 'no_membership' };

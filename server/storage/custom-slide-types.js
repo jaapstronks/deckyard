@@ -15,22 +15,19 @@
  * exists where external identities *can* appear.
  */
 
-import { sql } from '../db/client.js';
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
+import { generateSlug, isValidSlug } from '../../shared/slug.js';
+
+import { sql, withDbGuard } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import {
   NO_DISPLAY_NAMES,
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
-import {
-  withDbGuard,
-  parseJson,
-  generateSlug,
-  isValidSlug,
-  getUserIdByEmail,
-} from './utils/index.js';
+import { parseJson, getUserIdByEmail } from './utils/index.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
 import { customSlideTypeKey } from '../../shared/slide-types/custom-type-runtime.js';
 import { validateCustomFieldDefinitions } from '../../shared/slide-types/custom-field-definitions.js';
@@ -215,7 +212,7 @@ export async function createCustomSlideType(
         created_at: now,
         updated_at: now,
         created_by: scope?.actorEmail
-          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          ? await getUserIdByEmail(scope, db, scope.actorEmail)
           : null,
       })
       .returningAll()
@@ -570,7 +567,13 @@ function formatRow(row, lookup = NO_DISPLAY_NAMES) {
  * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
  */
 function creatorNames(rows) {
-  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
+  return resolveNamesForAddresses(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    (rows || []).map((row) => row?.created_by),
+  );
 }
 
 /**

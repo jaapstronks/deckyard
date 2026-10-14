@@ -1,8 +1,10 @@
-# Collaborator presence (realtime, phase 1)
+# Collaborator presence (realtime)
 
-_How the live-presence layer works. Design rationale in
-[ADR 001](../adr/001-realtime-collaboration.md); this phase ships awareness
-only — no shared document edits yet (that's phase 2)._
+How the live-presence layer works. Design rationale is in
+[ADR 001](../adr/001-realtime-collaboration.md). With `COLLAB_ENABLED=true`,
+awareness is available. `COLLAB_LIVE_EDITS=true` also enables shared document
+edits over the same connection; see
+[collab-editor-binder.md](collab-editor-binder.md).
 
 ## What the user sees
 
@@ -53,7 +55,7 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
   `getCollaboratorPermission` + `canRead/canWritePresentation` pair the REST
   routes use; non-writers (viewers, guests) get read-only connections.
   `server/collab/auth.js`.
-- **Client session**: `client/lib/collab/presence-session.js` wraps
+- **Client session**: `client/views/editor/live-edits/presence-session.js` wraps
   `HocuspocusProvider` (from the vendored bundle) and exposes
   `setViewSlide`, `setFocusField`, `getPeers`, `onPeersChange`. Awareness
   state shape:
@@ -94,18 +96,15 @@ in. Regenerate after dependency bumps with:
 npm run vendor:collab
 ```
 
-## Phase 1 boundaries (deliberate)
+## Presence-only mode
 
-- The Y.Doc content is unused; nothing is persisted server-side. Slide edits
-  still flow through the normal save path (autosave PUT + slide-level merge),
-  and the existing slide-lock system remains the edit-exclusivity mechanism.
-  (With `COLLAB_LIVE_EDITS` also on — phase 2 — the lock system is retired
-  in favour of CRDT merging; see
-  [collab-editor-binder.md](collab-editor-binder.md).)
+- When `COLLAB_LIVE_EDITS` is off, Y.Doc content is unused and nothing is
+  persisted server-side. Slide edits use autosave PUT plus slide-level merge,
+  and slide locks remain the edit-exclusivity mechanism. With live edits on,
+  CRDT merging replaces those locks; see
+  [collab-editor-binder.md](collab-editor-binder.md).
 - Multi-instance deployments would need cross-node awareness fan-out (Redis);
   all Deckyard realtime is process-local today, so presence follows suit.
-- Phase 2 (live CRDT edits through the same connection) is specced in
-  [ADR 001](../adr/001-realtime-collaboration.md).
 
 ## Testing
 

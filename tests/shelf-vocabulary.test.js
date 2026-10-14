@@ -2,7 +2,7 @@
  * Guard: the slide-library / slide-collections axis that says *where a saved
  * slide or collection lives* — a person's private shelf or the shared
  * organization shelf — is `shelf`, values `'personal' | 'organization'`
- * (B53 sweep (b), D27; register in docs/reference/vocabulary.md).
+ * (D27; register in docs/reference/vocabulary.md; B53).
  *
  * Before the sweep this axis was a third spelling of `scope`, colliding with
  * the storage-scope concept (`server/storage/scope.js`) — the two even shared a
@@ -36,22 +36,23 @@
  *
  * Two files are exempt, for opposite reasons: `vocabulary.md` is the register
  * itself and must be able to name the loser spelling to forbid it, and
- * `collab-research.md` is a deliberately frozen phase-0 snapshot (the same
- * allowlist reason `tests/docs-paths-resolvable.test.js` carries).
+ * Historical collaboration research now lives in `docs/adr/`.
  *
- * **Identifiers (B90).** B53 renamed the field, the values and the route segment
- * but not the function names; B90 closed that remainder — the storage exports,
+ * **Identifiers (B90).** The first sweep renamed the field, the values and the
+ * route segment but not the function names; a second closed that remainder —
+ * the storage exports,
  * the route handlers and the bulk-export ZIP entry all say *organization* now.
  * `CODE_IDENTIFIERS` below pins the loser spelling to zero across `server/`,
  * `client/` and `tests/` so it cannot creep back. The tenant axis (a *team* as
  * an organization: `getTeamWeeklyAnalytics`, `buildTeamDigestEmail`) is a
  * different concept and stays.
  *
- * **Webhook surface (B92).** B90 left one remainder: the settings key
- * `slideAddedToTeamLibraryUrl` and the event `slide.added_to_team_library`,
- * held back because they are stored operator settings plus a public payload
- * contract. B92 renamed both to *…OrganizationLibrary…* and moved the stored
- * key with migration 077, so `CODE_IDENTIFIERS` pins the old spellings too.
+ * **Webhook surface (B92).** The identifier sweep left one remainder: the
+ * settings key `slideAddedToTeamLibraryUrl` and the event
+ * `slide.added_to_team_library`, held back because they are stored operator
+ * settings plus a public payload contract. Both are now
+ * *…OrganizationLibrary…*, and the stored key moved with migration 077, so
+ * `CODE_IDENTIFIERS` pins the old spellings too.
  *
  * Run with: node --test tests/shelf-vocabulary.test.js
  */
@@ -222,9 +223,6 @@ const DOC_PROSE = {
   exempt: new Set([
     // The register itself: it names the loser spelling in order to forbid it.
     'vocabulary.md',
-    // A deliberately frozen phase-0 snapshot, allowlisted the same way in
-    // tests/docs-paths-resolvable.test.js.
-    'collab-research.md',
   ]),
   forbidden: [
     {

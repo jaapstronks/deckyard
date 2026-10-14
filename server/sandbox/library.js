@@ -28,11 +28,12 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { getDb, sql } from '../db/client.js';
-import { getDefaultOrganizationId } from '../config/database.js';
+import { upsertSandboxLibrarySeed } from '../storage/slide-library.js';
+import { createStorageScope } from '../utils/context.js';
 import { sandboxEnabled } from '../config/sandbox.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import { resolveSeedThemeSlug } from '../storage/settings.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 
 /** Who the seeded items name as their maker: rendered as "Deckyard". */
 export const SANDBOX_LIBRARY_OWNER = 'deckyard@sandbox.local';
@@ -137,65 +138,28 @@ export async function seedSandboxLibrary(repoRoot) {
   const themeIds = new Map();
   for (const slide of slides) {
     if (themeIds.has(slide.theme)) continue;
-    const id = await resolveSeedThemeSlug(slide.theme);
+    const id = await resolveSeedThemeSlug(
+      crossOrganizationScope(
+        repoRoot,
+        'the sandbox library seed names seed themes, which are instance-level configuration',
+      ),
+      slide.theme,
+    );
     if (!id) refuse(slide.file, `theme (${slide.theme} names no seed)`);
     themeIds.set(slide.theme, id);
   }
 
-  const orgId = getDefaultOrganizationId();
-  const owner = SANDBOX_LIBRARY_OWNER;
-  await getDb()
-    .transaction()
-    .execute(async (trx) => {
-      for (const slide of slides) {
-        await sql`
-          INSERT INTO slide_library (id, organization_id, owner_email, shelf, name, description,
-            slide_type, theme_id, content, i18n, favorites, created_by, updated_by)
-          VALUES (${seedRowId('slide', slide.key)}, ${orgId}, ${owner}, 'organization',
-            ${slide.name}, ${slide.description || null}, ${slide.slideType},
-            ${themeIds.get(slide.theme)}, ${JSON.stringify(slide.content)}::jsonb,
-            ${JSON.stringify({ dominant: slide.lang })}::jsonb,
-            '{}'::text[], ${owner}, ${owner})
-          ON CONFLICT (id) DO UPDATE SET
-            name = EXCLUDED.name, description = EXCLUDED.description,
-            slide_type = EXCLUDED.slide_type, theme_id = EXCLUDED.theme_id,
-            content = EXCLUDED.content, i18n = EXCLUDED.i18n, trashed_at = NULL, trashed_by = NULL,
-            updated_at = now()
-          WHERE (slide_library.name, slide_library.description, slide_library.slide_type,
-              slide_library.theme_id, slide_library.content, slide_library.i18n,
-              slide_library.trashed_at)
-            IS DISTINCT FROM
-            (EXCLUDED.name, EXCLUDED.description, EXCLUDED.slide_type,
-              EXCLUDED.theme_id, EXCLUDED.content, EXCLUDED.i18n, NULL::timestamptz)
-        `.execute(trx);
-      }
-      for (const collection of collections) {
-        const id = seedRowId('collection', collection.key);
-        await sql`
-          INSERT INTO slide_collections (id, organization_id, owner_email, shelf, name, description,
-            created_by, updated_by)
-          VALUES (${id}, ${orgId}, ${owner}, 'organization', ${collection.name},
-            ${collection.description || null}, ${owner}, ${owner})
-          ON CONFLICT (id) DO UPDATE SET
-            name = EXCLUDED.name, description = EXCLUDED.description, updated_at = now()
-          WHERE (slide_collections.name, slide_collections.description)
-            IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.description)
-        `.execute(trx);
-        await trx
-          .deleteFrom('slide_collection_items')
-          .where('collection_id', '=', id)
-          .execute();
-        await trx
-          .insertInto('slide_collection_items')
-          .values(
-            collection.slides.map((key, position) => ({
-              collection_id: id,
-              slide_library_id: seedRowId('slide', key),
-              position,
-            })),
-          )
-          .execute();
-      }
-    });
+  await upsertSandboxLibrarySeed(createStorageScope(null), {
+    owner: SANDBOX_LIBRARY_OWNER,
+    slides: slides.map((slide) => ({
+      ...slide,
+      id: seedRowId('slide', slide.key),
+      themeId: themeIds.get(slide.theme),
+    })),
+    collections: collections.map((collection) => ({
+      ...collection,
+      id: seedRowId('collection', collection.key),
+    })),
+  });
   return { slides: slides.length, collections: collections.length };
 }

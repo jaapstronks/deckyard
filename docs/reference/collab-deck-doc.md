@@ -70,7 +70,7 @@ load, so a deck edited only through collab can still hold such a field as one
 plain string. The binder handles that on the first local edit: it seeds every
 language from the value it finds before patching the active one, so the
 non-dominant version is never blanked (`writeTextField` in
-`client/lib/collab/live-doc-binder.js`). Any non-collab save drops the binary
+`client/views/editor/live-edits/live-doc-binder.js`). Any non-collab save drops the binary
 and re-bootstraps under the current rule.
 
 **There is no third kind of field.** The one concrete case that raised the
@@ -80,8 +80,7 @@ resolved by removing the stored copy, not by annotating it. The invite's
 language is the language of the version it renders in, which the render context
 already knows (`ctx.lang`); `normalizeFollowInviteSlides()` strips the keys on
 save. A per-language annotation will be added when a field turns up that
-legitimately differs per language, with the case in hand. Decision:
-`docs/plans/briefs/collab-codec-per-language-fields.md`; locked by
+legitimately differs per language, with the case in hand. Locked by
 `tests/follow-invite-lang-derivation.test.js`.
 
 ## Bootstrap policy (JSON → doc)
@@ -102,8 +101,8 @@ Matches the editor's existing language-sync semantics:
   projection does not invent an `i18n` block for them.
 
 Nested item texts (e.g. `text-blocks-slide` `rows[].blocks[].title/body`) are
-per-language in the doc — and, since B164, in the editor sync and the translate
-pipeline too: `mapItemTexts` in `shared/slide-types/text-fields.js` is the one
+per-language in the doc, and in the editor sync and the translate pipeline too
+(B164): `mapItemTexts` in `shared/slide-types/text-fields.js` is the one
 recursion all of them walk, so the codec and the JSON pipeline no longer
 disagree about how deep a text field can sit.
 

@@ -9,7 +9,11 @@ import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { getAppName } from '../config/branding.js';
 import { createLogger } from '../utils/logger.js';
 import { slideHeading } from '../../shared/slide-types/semantic-projection.js';
-import { applyThemeToPptx, createWidePptx } from './pptx-theme.js';
+import {
+  applyThemeToPptx,
+  createWidePptx,
+  resolveGroundColors,
+} from './pptx-theme.js';
 import {
   composeGenericSlide,
   layerZeroCovers,
@@ -29,6 +33,7 @@ import {
   buildBunnyMp4Url,
   fetchVideoBuffer,
   getBunnyConfig,
+  resolveBunnyLibraryId,
 } from './video-helpers.js';
 import { IMAGE_SLIDES_HEADER } from '../../shared/export-headers.js';
 
@@ -410,6 +415,8 @@ function addSpeakerNotes(pptxSlide, slide) {
  * @param {number} ctx.slideWidth - Slide width in inches.
  * @param {number} ctx.slideHeight - Slide height in inches.
  * @param {string} [ctx.docLang] - The deck's document language.
+ * @param {object|null} [ctx.theme] - The active theme; the slide's ground and
+ *   the text on it are read from it.
  * @returns {Promise<{ pptxSlide: object, warnings: string[] }>}
  */
 async function handleVideoSlide(pptx, slide, ctx) {
@@ -422,19 +429,22 @@ async function handleVideoSlide(pptx, slide, ctx) {
 async function composeVideo(
   pptxSlide,
   slide,
-  { slideNum, slideWidth, slideHeight, docLang = '' },
+  { slideNum, slideWidth, slideHeight, docLang = '', theme = null },
 ) {
   const content = slide?.content || {};
   const source = String(content.source || '').trim();
   const title = String(content.title || '').trim();
-  const bunnyLibraryId = String(content.bunnyLibraryId || '366590').trim();
-  const background = content.background === 'lime' ? 'DBFF00' : 'E8F0F0'; // lime or mist
+  const bunnyLibraryId = resolveBunnyLibraryId(content);
+  // The slide's own ground under the deck's theme, read the way the theme
+  // master reads its own (B656); `mist` is the type's default, as in
+  // renderHtml.
+  const ground = resolveGroundColors(theme, content.background || 'mist');
   const copy = getSlideCopy(docLang);
 
   const parsed = parseVideoSource(source, bunnyLibraryId);
 
   // Set background color
-  pptxSlide.background = { color: background };
+  pptxSlide.background = { color: ground.background };
 
   // For Bunny videos, try to embed the MP4
   if (parsed.provider === 'bunny' && parsed.videoId) {
@@ -443,6 +453,7 @@ async function composeVideo(
     if (!bunnyConfig.configured) {
       // No pull zone configured - create placeholder with warning
       addVideoPlaceholder(pptxSlide, {
+        ground,
         title,
         slideWidth,
         slideHeight,
@@ -484,7 +495,7 @@ async function composeVideo(
             h: 0.6,
             fontSize: 28,
             bold: true,
-            color: '1a1a1a',
+            color: ground.text,
           });
         }
 
@@ -492,6 +503,7 @@ async function composeVideo(
       } catch (err) {
         // Failed to add media - fall back to placeholder
         addVideoPlaceholder(pptxSlide, {
+          ground,
           title,
           slideWidth,
           slideHeight,
@@ -510,6 +522,7 @@ async function composeVideo(
     } else {
       // Failed to fetch - create placeholder with error
       addVideoPlaceholder(pptxSlide, {
+        ground,
         title,
         slideWidth,
         slideHeight,
@@ -529,6 +542,7 @@ async function composeVideo(
   if (parsed.provider === 'youtube' && parsed.videoId) {
     const youtubeUrl = `https://www.youtube.com/watch?v=${parsed.videoId}`;
     addVideoPlaceholder(pptxSlide, {
+      ground,
       title,
       slideWidth,
       slideHeight,
@@ -549,6 +563,7 @@ async function composeVideo(
   if (parsed.provider === 'vimeo' && parsed.videoId) {
     const vimeoUrl = `https://vimeo.com/${parsed.videoId}`;
     addVideoPlaceholder(pptxSlide, {
+      ground,
       title,
       slideWidth,
       slideHeight,
@@ -566,6 +581,7 @@ async function composeVideo(
 
   // Unknown provider or empty source
   addVideoPlaceholder(pptxSlide, {
+    ground,
     title,
     slideWidth,
     slideHeight,
@@ -583,10 +599,23 @@ async function composeVideo(
 
 /**
  * Add a video placeholder slide with instructions.
+ *
+ * The text sits on the slide's ground, so it takes that ground's text colours
+ * (`ground`, from {@link resolveGroundColors}), the link included; the
+ * dashed box is its own neutral plate.
  */
 function addVideoPlaceholder(
   pptxSlide,
-  { title, slideWidth, slideHeight, message, detail, instruction, videoUrl },
+  {
+    ground,
+    title,
+    slideWidth,
+    slideHeight,
+    message,
+    detail,
+    instruction,
+    videoUrl,
+  },
 ) {
   let yPos = 0.5;
 
@@ -599,7 +628,7 @@ function addVideoPlaceholder(
       h: 0.6,
       fontSize: 28,
       bold: true,
-      color: '1a1a1a',
+      color: ground.text,
     });
     yPos += 0.8;
   }
@@ -639,7 +668,7 @@ function addVideoPlaceholder(
     h: 0.4,
     fontSize: 16,
     bold: true,
-    color: '333333',
+    color: ground.text,
   });
   yPos += 0.45;
 
@@ -651,7 +680,7 @@ function addVideoPlaceholder(
       w: slideWidth - 1,
       h: 0.35,
       fontSize: 12,
-      color: '666666',
+      color: ground.textMuted,
     });
     yPos += 0.4;
   }
@@ -664,7 +693,7 @@ function addVideoPlaceholder(
       w: slideWidth - 1,
       h: 0.5,
       fontSize: 11,
-      color: '888888',
+      color: ground.textMuted,
       italic: true,
     });
     yPos += 0.5;
@@ -678,7 +707,7 @@ function addVideoPlaceholder(
           text: videoUrl,
           options: {
             hyperlink: { url: videoUrl },
-            color: '0066cc',
+            color: ground.text,
             fontSize: 10,
           },
         },

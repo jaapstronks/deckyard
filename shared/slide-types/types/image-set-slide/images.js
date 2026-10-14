@@ -16,6 +16,8 @@
  * docs/reference/image-property-ownership.md.
  */
 
+import { clamp } from '../../../number-utils.js';
+
 /**
  * Type-level image config for image-set (the ImageRef defaults, right-hand side
  * of `images[i].fit ?? imageDefaults.fit`). Looked up, not stored: an empty
@@ -39,10 +41,6 @@ export const IMAGE_SET_MAX_IMAGES = 3;
 
 /** The fewest: two images are what makes this a set rather than an image-text slide. */
 export const IMAGE_SET_MIN_IMAGES = 2;
-
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
 
 /**
  * Sanitize one images[] item to the canonical ImageRef shape.

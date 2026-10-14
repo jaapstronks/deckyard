@@ -65,10 +65,17 @@ export async function attachSessionSseClient(scope, sessionId, res) {
  * @returns {Promise<boolean>} Whether a local session was found to broadcast to.
  */
 export async function broadcast(scope, sessionId, event, data) {
-  toStorageContext(scope, 'broadcast', {}, { allowCrossOrganization: true });
+  const context = toStorageContext(
+    scope,
+    'broadcast',
+    {},
+    { allowCrossOrganization: true },
+  );
   const s = getSessionSync(sessionId);
   if (!s) return false;
-  touchSessionSync(s);
+  if (context.organizationId && s.organizationId !== context.organizationId)
+    return false;
+  touchSessionSync(scope, s);
   // Serialize once for all clients; sseWrite passes strings through as-is.
   const payload =
     data == null || typeof data === 'string' ? data : JSON.stringify(data);
@@ -215,7 +222,7 @@ export async function updateLiveSessionState(scope, sessionId, nextState) {
     stepParagraphs,
     updatedAt,
   };
-  schedulePersist(s);
+  schedulePersist(scope, s);
   fireAndForget(
     broadcast(scope, sessionId, 'state', s.state),
     'live-session state broadcast',
@@ -228,8 +235,16 @@ export function getSessionSync(sessionId) {
   return sessions.get(String(sessionId || '')) || null;
 }
 
-export function touchSessionSync(s) {
+export function touchSessionSync(scope, s) {
+  const context = toStorageContext(
+    scope,
+    'touchSessionSync',
+    {},
+    { allowCrossOrganization: true },
+  );
   if (!s) return;
+  if (context.organizationId && s.organizationId !== context.organizationId)
+    return;
   s.lastActivityAt = Date.now();
-  schedulePersist(s);
+  schedulePersist(scope, s);
 }

@@ -91,13 +91,7 @@ Apply [the beta doctrine](beta-doctrine.md) when picking work, reviewing PRs, wr
   (`feat:`, `fix:`, `security:`, `feat!:` for breaking, …) — release-please reads
   the **squash-merge PR title** to compute the next version and changelog. Full
   prefix→bump table in `docs/reference/versioning.md`.
-- **Releases**: `release-please` keeps one Release PR open; cutting a release
-  is merging it, never a hand bump, and forks sync on tags. No MAJOR while in
-  beta (override a proposed `2.x` with `Release-As: 1.<next>.0`). Whoever merges
-  it writes the release notes on `deckyard-website` (hub → spoke) and moves the
-  sandbox to the new tag, in the same session. The full recipes, including the
-  integration-branch history: `docs/reference/versioning.md` § Upstream release
-  recipes.
+- **Releases**: read `docs/reference/versioning.md` § Agent-managed release cadence and § Upstream release recipes before scheduling or cutting a release. They govern beta versions, the Release PR, fork tags, website notes and the sandbox upgrade in the releasing session.
 - **After merging a delegated PR**: run the **`merge-housekeeping`** skill as
   the tail of the merge, before you stop (branch cleanup, TODO tick-off, drift
   scan; at the threshold your closing hand-off becomes the reorg-audit). It is

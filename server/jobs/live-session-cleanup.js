@@ -31,7 +31,7 @@ import { crossOrganizationScope } from '../storage/scope.js';
 import {
   countPersistedSessions,
   sweepExpiredSessions,
-} from '../storage/live-sessions/db.js';
+} from '../storage/live-sessions/index.js';
 import { createLogger } from '../utils/logger.js';
 import { createIntervalJob } from './interval-job.js';
 
@@ -47,7 +47,12 @@ const log = createLogger('live-session-cleanup');
  * @returns {Promise<{ sessions: number, followCodes: number }>}
  */
 export async function sweepExpiredLiveSessions() {
-  const sessions = await sweepExpiredSessions();
+  const sessions = await sweepExpiredSessions(
+    crossOrganizationScope(
+      null,
+      'live-session retention: instance-wide cleanup',
+    ),
+  );
   const followCodes = await cleanupExpiredCodes(
     crossOrganizationScope(
       null,
@@ -111,7 +116,12 @@ export function scheduleLiveSessionCleanup({
  * @returns {Promise<void>}
  */
 export async function warnLiveSessionsWhileOff() {
-  const sessions = await countPersistedSessions();
+  const sessions = await countPersistedSessions(
+    crossOrganizationScope(
+      null,
+      'live-session retention: instance-wide cleanup',
+    ),
+  );
   if (sessions === 0) return;
   log.warn(
     `LIVE_ENABLED=false, but ${sessions} live session(s) are still stored. ` +

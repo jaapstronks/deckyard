@@ -66,6 +66,45 @@ export const PLAN_CODE = /\b(?:A\d+(?:\.(?:\d+|R))?|[BDT]\d{1,4}|C\d{1,2})\b/;
 const B_CODE = /\bB\d{1,4}\b/;
 
 /**
+ * The text outside parentheses. D63 allows a planning code only as origin in
+ * parentheses behind a sentence that stands on its own (`…, because no shared
+ * ladder was chosen (A7.9)`); a code outside them is one the sentence leans
+ * on. Depth resets at a blank line, so a stray `1)` in a list cannot swallow
+ * the rest of the file.
+ * @param {string} text
+ * @returns {string}
+ */
+export function outsideParens(text) {
+  return text
+    .split(/\n[ \t]*\n/)
+    .map((paragraph) => {
+      let depth = 0;
+      let out = '';
+      for (const ch of paragraph) {
+        if (ch === '(') depth++;
+        else if (ch === ')' && depth > 0) depth--;
+        else if (depth === 0) out += ch;
+      }
+      return out;
+    })
+    .join('\n\n');
+}
+
+/**
+ * How often `code` occurs outside parentheses in `text`. An inline code span
+ * is a literal, not prose: a spreadsheet cell such as `A2` has the shape of a
+ * planning code and is not one, so spans are dropped before counting.
+ * @param {string} text
+ * @param {RegExp} code  a non-global pattern
+ * @returns {number}
+ */
+export function bareCodes(text, code = PLAN_CODE) {
+  const global = new RegExp(code.source, 'g');
+  const prose = text.replace(/`[^`\n]*`/g, '');
+  return (outsideParens(prose).match(global) || []).length;
+}
+
+/**
  * The header of a test file: the leading JSDoc block, or the leading run of
  * `//` lines when there is none.
  * @param {string} src
@@ -106,7 +145,7 @@ export const COUNTERS = {
   'plan-codes': {
     describe:
       'public docs carrying a planning code; test files citing a B-number; ' +
-      'links from public docs into docs/plans/',
+      'links from public docs into docs/plans/; codes outside parentheses',
     count: () => {
       const docs = publicDocs();
       const tests = tracked('tests/*.test.js');
@@ -114,7 +153,9 @@ export const COUNTERS = {
       return {
         docs: docs.filter((f) => PLAN_CODE.test(read(f))).length,
         publicDocs: docs.length,
+        bareDocCodes: docs.reduce((n, f) => n + bareCodes(read(f)), 0),
         testHeaders: headers.filter((h) => B_CODE.test(h)).length,
+        bareTestCodes: headers.reduce((n, h) => n + bareCodes(h, B_CODE), 0),
         testFilesAnywhere: tests.filter((f) => B_CODE.test(read(f))).length,
         testFiles: tests.length,
         planLinks: docs.reduce(

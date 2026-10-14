@@ -1,5 +1,6 @@
 /**
- * B135 — one list of deck translation targets, everything else derives from it.
+ * One list of deck translation targets, everything else derives from it
+ * (B135).
  *
  * `shared/i18n-utils.js` owns `TRANSLATION_LANGS` and `TRANSLATION_LANG_LABELS`.
  * Four places used to spell that list out by hand (the shared normalizer set, the

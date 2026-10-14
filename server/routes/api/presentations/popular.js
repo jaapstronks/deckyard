@@ -5,7 +5,7 @@
 
 import { getOrgId } from '../../../utils/context.js';
 import { serveJson, unauthorized } from '../../../utils/http.js';
-import { withDbGuard } from '../../../storage/utils/index.js';
+import { getPopularPresentationRows } from '../../../storage/presentations/index.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
 import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
@@ -54,115 +54,8 @@ export async function handlePopularPresentations({
  * @returns {Promise<object[]>}
  */
 export async function getPopularPresentations(ctx) {
-  return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
-
-    // Get presentations with recent activity (last 30 days)
-    // Prioritize presentations with more recent activity
-    const thirtyDaysAgo = new Date(
-      Date.now() - 30 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-
-    // Query: Find presentations with activity events, sorted by most recent
-    // Filter to organization visibility OR published presentations
-    const rows = await db
-      .selectFrom('presentations as p')
-      .leftJoin('activity_events as ae', (join) =>
-        join
-          .onRef('ae.presentation_id', '=', 'p.id')
-          .on('ae.organization_id', '=', orgId)
-          .on('ae.created_at', '>=', thirtyDaysAgo),
-      )
-      .leftJoin('published_presentations as pub', 'pub.presentation_id', 'p.id')
-      .select([
-        'p.id',
-        'p.title',
-        'p.theme',
-        'p.visibility',
-        'p.owner_user_id',
-        'p.owner_email',
-        'p.created_by_user_id',
-        'p.created_by',
-        'p.updated_by_user_id',
-        'p.updated_by',
-        'p.created_at',
-        'p.modified_at',
-        'p.slides',
-      ])
-      .select((eb) => eb.fn.count('ae.id').as('activity_count'))
-      .select((eb) => eb.fn.max('ae.created_at').as('last_activity'))
-      .where('p.organization_id', '=', orgId)
-      .where('p.trashed_at', 'is', null)
-      .where((eb) =>
-        eb.or([
-          eb('p.visibility', '=', 'organization'),
-          eb('pub.id', 'is not', null),
-        ]),
-      )
-      .groupBy([
-        'p.id',
-        'p.title',
-        'p.theme',
-        'p.visibility',
-        'p.owner_user_id',
-        'p.owner_email',
-        'p.created_by_user_id',
-        'p.created_by',
-        'p.updated_by_user_id',
-        'p.updated_by',
-        'p.created_at',
-        'p.modified_at',
-        'p.slides',
-      ])
-      .having((eb) => eb.fn.count('ae.id'), '>', 0)
-      .orderBy('last_activity', 'desc')
-      .limit(10)
-      .execute();
-
-    // If no presentations with activity, fall back to recently modified organization-visible presentations
-    if (rows.length === 0) {
-      const fallbackRows = await db
-        .selectFrom('presentations as p')
-        .leftJoin(
-          'published_presentations as pub',
-          'pub.presentation_id',
-          'p.id',
-        )
-        .select([
-          'p.id',
-          'p.title',
-          'p.theme',
-          'p.visibility',
-          'p.owner_user_id',
-          'p.owner_email',
-          'p.created_by_user_id',
-          'p.created_by',
-          'p.updated_by_user_id',
-          'p.updated_by',
-          'p.created_at',
-          'p.modified_at',
-          'p.slides',
-        ])
-        .where('p.organization_id', '=', orgId)
-        .where('p.trashed_at', 'is', null)
-        .where((eb) =>
-          eb.or([
-            eb('p.visibility', '=', 'organization'),
-            eb('pub.id', 'is not', null),
-          ]),
-        )
-        .orderBy('p.modified_at', 'desc')
-        .limit(10)
-        .execute();
-
-      return formatPresentations(
-        await filterReadableRows(fallbackRows, ctx),
-        ctx,
-      );
-    }
-
-    return formatPresentations(await filterReadableRows(rows, ctx), ctx);
-  });
+  const rows = await getPopularPresentationRows(ctx);
+  return formatPresentations(await filterReadableRows(rows, ctx), ctx);
 }
 
 /**
@@ -201,6 +94,7 @@ async function filterReadableRows(rows, ctx) {
     }
     try {
       collaboratorPermission = await getCollaboratorPermission(
+        ctx,
         row.id,
         user?.email,
       );
@@ -227,6 +121,7 @@ async function formatPresentations(rows, ctx) {
   // One batched lookup for the whole board (D22); see
   // server/storage/display-identity.js.
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.flatMap((row) => [
       { id: row.updated_by_user_id, email: row.updated_by },
       { id: row.created_by_user_id, email: row.created_by },

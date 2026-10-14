@@ -96,7 +96,7 @@ export function createUnsplashSearch({ api, onSelect, setStatus, setBusy }) {
 
       if (page === 1) {
         results = data.results || [];
-        grid.innerHTML = '';
+        grid.replaceChildren();
       } else {
         results = [...results, ...(data.results || [])];
       }
@@ -124,7 +124,7 @@ export function createUnsplashSearch({ api, onSelect, setStatus, setBusy }) {
 
   // Render results
   const renderResults = () => {
-    grid.innerHTML = '';
+    grid.replaceChildren();
 
     for (const photo of results) {
       const item = h('div', { class: 'stock-media-item', 'data-id': photo.id });

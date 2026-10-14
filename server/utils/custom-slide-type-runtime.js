@@ -38,6 +38,7 @@ import {
   customSlideTypeRootClass,
 } from '../../shared/slide-types/custom-type-runtime.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
+import { instanceSlideTypes } from '../config/slide-defaults.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('custom-slide-type-runtime');
@@ -125,7 +126,11 @@ export function toRuntimeSlideType(ct) {
  * @returns {Promise<Object>} Merged slide types map
  */
 export async function buildMergedSlideTypes(ctx) {
-  const merged = { ...SLIDE_TYPES };
+  // Installation configuration first: a type that declares `configDefaults`
+  // gets this install's value in its defaults before anything resolves them,
+  // so every server-side path that composes a slide through this map inherits
+  // it (B653). Returns `SLIDE_TYPES` itself where nothing applies.
+  const merged = { ...instanceSlideTypes(SLIDE_TYPES) };
 
   try {
     const customTypes = await listPublishedCustomSlideTypes(ctx);

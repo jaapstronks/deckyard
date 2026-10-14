@@ -6,6 +6,7 @@
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
+import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { icon } from '../../../lib/dom/icons.js';
@@ -155,37 +156,24 @@ export function createUploadPanel({
       const ext = file.name.split('.').pop().toLowerCase();
       const format = ext === 'woff' ? 'woff' : 'woff2';
 
-      // Read as data URL
-      const reader = new FileReader();
-      reader.onerror = () => {
-        console.error('Failed to read font file');
-      };
-      reader.onload = async () => {
-        try {
-          const result = await api(
-            `/api/font-families/${familyId}/upload-variant`,
-            {
-              method: 'POST',
-              body: {
-                dataUrl: reader.result,
-                weight,
-                style,
-                format,
-              },
-            },
-          );
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const result = await api(
+          `/api/font-families/${familyId}/upload-variant`,
+          {
+            method: 'POST',
+            body: { dataUrl, weight, style, format },
+          },
+        );
 
-          currentVariants.push(result);
-          renderGrid();
-          if (onVariantChange) onVariantChange(currentVariants);
-        } catch (err) {
-          toast.error(
-            err.message ||
-              t('fonts.uploadError', 'Failed to upload font file.'),
-          );
-        }
-      };
-      reader.readAsDataURL(file);
+        currentVariants.push(result);
+        renderGrid();
+        if (onVariantChange) onVariantChange(currentVariants);
+      } catch (err) {
+        toast.error(
+          err.message || t('fonts.uploadError', 'Failed to upload font file.'),
+        );
+      }
     };
     input.click();
   }

@@ -1,8 +1,8 @@
 /**
- * B601: a comment's slide context and the deck-compression prompt name an
- * org-owned slide type by its own declared heading.
+ * A comment's slide context and the deck-compression prompt name an
+ * org-owned slide type by its own declared heading (B601).
  *
- * B597 put every server reader on `slideTitle()`, but two of them looked the
+ * Every server reader is on `slideTitle()` (B597), but two of them looked the
  * type up in the core registry only, so an org's custom type (one that lives
  * in `custom_slide_types`, not in `shared/`) fell through to no heading at
  * all. Both readers now take the org's merged registry from their caller, the
@@ -30,7 +30,7 @@ const SLIDE_ID = 'a0000000-0000-4000-8000-000000000601';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
 const { registerTools } = await import('../server/mcp/tools.js');
 const { buildMergedSlideTypes } =

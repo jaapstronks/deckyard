@@ -21,6 +21,7 @@ import { tryParseTypeId } from './type-id.js';
 import { unresolvedSlideAsMarkdown } from './unresolved.js';
 import { DECK_FORMAT_ID } from './deck-format-id.js';
 import { migratePresentation } from './schema-version.js';
+import { declaredContentKeys } from './declared-keys.js';
 import { extensionNames } from '../extension-provenance.js';
 
 // --------
@@ -149,17 +150,31 @@ export function presentationToDeck(pres, { slideTypes = SLIDE_TYPES } = {}) {
         })
     : [];
 
+  const positions = new Map();
+  base.slides.forEach((s, i) => {
+    if (typeof s?.id === 'string' && s.id) positions.set(s.id, `#${i + 1}`);
+  });
+
   const slides = base.slides.map((s, index) => {
+    const { content, droppedItems } = portableSlideJumps(
+      s?.content,
+      slideTypes?.[s?.type],
+      positions,
+    );
     const entry = {
       type: canonicalSlideType(s?.type),
-      content: s?.content || {},
+      content,
     };
     const spec = textFieldSpecForType(s?.type, slideTypes);
     const translations = {};
     for (const { lang: l, version, byId } of others) {
       const match = matchingSlide(s, index, version.slides, byId);
       if (!match) continue;
-      const tr = contentTranslation(spec, s?.content, match.content);
+      const tr = contentTranslation(
+        spec,
+        content,
+        withoutItems(match.content, droppedItems),
+      );
       if (typeof match.notes === 'string' && match.notes)
         tr.notes = match.notes;
       if (Object.keys(tr).length) translations[l] = tr;
@@ -188,6 +203,109 @@ export function presentationToDeck(pres, { slideTypes = SLIDE_TYPES } = {}) {
   deck.extensions = extensionNames(pres?.extensions ?? []);
   deck.slides = slides;
   return deck;
+}
+
+/**
+ * A slide's content with its in-deck jumps in the portable form (B494).
+ *
+ * The portable deck carries no slide ids, so a `#slide:<id>` jump in a
+ * `url`-typed field (at slide level or inside an `items` field's
+ * `itemFields`, via the declaration) is written as the existing positional
+ * jump `#N`: the target's 1-based place in the exported `slides` array, the
+ * order the deck travels in after any filtering. `#N` and web addresses
+ * travel as written.
+ *
+ * A jump whose target is not in the export (filtered out, or deleted while
+ * the link stayed) is not carried as a link the reader cannot follow: the
+ * value becomes `''`, and where the field is a required item field (an
+ * action button's `url`) the item goes, since an item without its link is
+ * one the validator refuses. The removed item indices come back so every
+ * language version of the slide drops the same items.
+ *
+ * @param {Object} content - the stored slide content (not mutated)
+ * @param {Object|undefined} def - the slide's type definition
+ * @param {Map<string, string>} positions - slide id -> `#N` in the export
+ * @returns {{content: Object, droppedItems: Map<string, Set<number>>}}
+ */
+function portableSlideJumps(content, def, positions) {
+  if (!isPlainObject(content))
+    return { content: content || {}, droppedItems: new Map() };
+  const out = structuredClone(content);
+  const droppedItems = forEachUrlValue(
+    def,
+    out,
+    (value, { item, required }) => {
+      const jump = slideJumpTarget(value);
+      if (!jump || !('id' in jump)) return value;
+      const position = positions.get(jump.id);
+      if (position) return position;
+      return item && required ? DROP_ITEM : '';
+    },
+  );
+  return { content: out, droppedItems };
+}
+
+/** A copy of `content` without the items `portableSlideJumps` dropped. */
+function withoutItems(content, droppedItems) {
+  if (!droppedItems.size || !isPlainObject(content)) return content;
+  const out = { ...content };
+  for (const [key, indices] of droppedItems) {
+    if (Array.isArray(out[key]))
+      out[key] = out[key].filter((_, i) => !indices.has(i));
+  }
+  return out;
+}
+
+const DROP_ITEM = Symbol('drop item');
+
+/**
+ * Walk every `url`-typed value of a slide's content by its declaration - a
+ * slide-level `url` field, or a `url` item field inside an `items` field - and
+ * replace it with what `rewrite` returns. `rewrite` may return `DROP_ITEM`
+ * for a value inside an item, which removes that item. Mutates `content`;
+ * returns the removed item indices per `items` key.
+ *
+ * @param {Object|undefined} def
+ * @param {Object} content
+ * @param {(value: string, at: {item: boolean, required: boolean}) => *} rewrite
+ * @returns {Map<string, Set<number>>}
+ */
+function forEachUrlValue(def, content, rewrite) {
+  const dropped = new Map();
+  if (!def || !Array.isArray(def.fields) || !isPlainObject(content))
+    return dropped;
+  for (const field of def.fields) {
+    if (field.type === 'url') {
+      if (typeof content[field.key] === 'string') {
+        content[field.key] = rewrite(content[field.key], {
+          item: false,
+          required: !!field.required,
+        });
+      }
+      continue;
+    }
+    if (field.type !== 'items' || !Array.isArray(content[field.key])) continue;
+    const urlFields = (field.itemFields || []).filter((f) => f?.type === 'url');
+    if (!urlFields.length) continue;
+    const indices = new Set();
+    content[field.key].forEach((item, i) => {
+      if (!isPlainObject(item)) return;
+      for (const f of urlFields) {
+        if (typeof item[f.key] !== 'string') continue;
+        const next = rewrite(item[f.key], {
+          item: true,
+          required: !!f.required,
+        });
+        if (next === DROP_ITEM) indices.add(i);
+        else item[f.key] = next;
+      }
+    });
+    if (indices.size) {
+      content[field.key] = content[field.key].filter((_, i) => !indices.has(i));
+      dropped.set(field.key, indices);
+    }
+  }
+  return dropped;
 }
 
 /**
@@ -305,12 +423,13 @@ function importedSlideType(type, slideTypes, carriedSlideTypes) {
  *
  * Every slide is composed by `newSlide()` — import cleans the input into a
  * patch and hands it over — so a caller passes what the factory reads: the
- * loaded theme and the deck's language. Both are the caller's to know (the
- * route loads the theme, the request or manifest names the language); a guard
- * test pins that no call site leaves either out.
+ * loaded theme, the deck's language and the slide-type map. All three are the
+ * caller's to know (the route loads the theme and the organization's map, the
+ * request or manifest names the language); a guard test pins that no call site
+ * leaves one out.
  *
  * @param {Object|Array} input - a deck object, or a bare slides array
- * @param {Object} [opts]
+ * @param {Object} opts
  * @param {Object} [opts.theme] - the loaded theme. Types declaring
  *   `autoBackgroundPreset` take a background from `theme.backgroundPresets`,
  *   and a theme's slide-background variants are on offer for `background`.
@@ -318,9 +437,12 @@ function importedSlideType(type, slideTypes, carriedSlideTypes) {
  *   `defaultsByLang` composes from that variant, exactly as an editor insert.
  *   It is also the base language `translations` are read against; without it
  *   the deck's own `lang` is.
- * @param {Object} [opts.slideTypes] - the registry slide types resolve against:
- *   the importing organization's (`buildMergedSlideTypes`), so a database type
- *   it has imports as itself rather than as the placeholder
+ * @param {Object} opts.slideTypes - the registry slide types resolve against,
+ *   required: the importing organization's (`buildMergedSlideTypes`), so a
+ *   database type it has imports as itself rather than as the placeholder, and
+ *   a type's configured defaults (`configDefaults`, B653) seed its slides. The
+ *   module-wide `SLIDE_TYPES` knows neither, which is why there is no default
+ *   to fall back on (B655).
  * @param {Map<string, string|null>} [opts.carriedSlideTypes] - for each type
  *   key a `.deck` bundle carries the definition of (D91): the key it landed on
  *   in `slideTypes`, or `null` when it was not installed, in which case its
@@ -334,10 +456,15 @@ export function deckToPresentationParts(
   {
     theme: themeConfig = null,
     lang = null,
-    slideTypes = SLIDE_TYPES,
+    slideTypes,
     carriedSlideTypes = new Map(),
   } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'deckToPresentationParts: pass the slide-type map the deck imports into',
+    );
+  }
   // Accept either the full object or a raw slides array (super simple use-case).
   // An imported deck is a read of unknown vintage, so it goes through the same
   // migration funnel as a stored one. The portable format carries no
@@ -394,11 +521,12 @@ export function deckToPresentationParts(
  * otherwise point nowhere. Build the old→new map positionally (`slidesRaw`
  * and `slides` share order and length by construction) and rewrite in place,
  * mutating `slides` before `deckTranslations` reads it so a translated
- * version inherits the same, already-correct target. The portable `.deck`
- * format carries no per-slide `id` (deck.js top-of-file note), so a `.deck`
- * import contributes nothing to the map and rewrites nothing - correct,
- * since there is no old id to resolve from. A jump to an id outside this
- * deck (or with no entry in the map) is left exactly as written.
+ * version inherits the same, already-correct target. The portable deck
+ * carries no per-slide `id` (deck.js top-of-file note) and its export writes
+ * every in-deck jump as the positional `#N` (`portableSlideJumps`, B494), so
+ * a portable import contributes nothing to the map and its jumps travel as
+ * written. A jump to an id outside this deck (or with no entry in the map)
+ * is left exactly as written.
  *
  * @param {Object[]} slidesRaw
  * @param {Object[]} slides
@@ -414,43 +542,12 @@ function rewriteSlideJumpIds(slidesRaw, slides, slideTypes) {
   if (!idMap.size) return;
 
   for (const slide of slides) {
-    const def = slideTypes?.[slide.type];
-    if (!def || !Array.isArray(def.fields) || !slide.content) continue;
-    for (const field of def.fields) {
-      if (field.type === 'url') {
-        if (field.key in slide.content) {
-          slide.content[field.key] = rewriteSlideJumpValue(
-            slide.content[field.key],
-            idMap,
-          );
-        }
-        continue;
-      }
-      if (field.type === 'items' && Array.isArray(slide.content[field.key])) {
-        const urlKeys = (field.itemFields || [])
-          .filter((f) => f?.type === 'url')
-          .map((f) => f.key);
-        if (!urlKeys.length) continue;
-        for (const item of slide.content[field.key]) {
-          if (!item || typeof item !== 'object') continue;
-          for (const key of urlKeys) {
-            if (key in item)
-              item[key] = rewriteSlideJumpValue(item[key], idMap);
-          }
-        }
-      }
-    }
+    forEachUrlValue(slideTypes?.[slide.type], slide.content, (value) => {
+      const jump = slideJumpTarget(value);
+      const newId = jump && 'id' in jump ? idMap.get(jump.id) : null;
+      return newId ? `#slide:${newId}` : value;
+    });
   }
-}
-
-/** Rewrite one `url` value's `#slide:<id>` jump via `idMap`; anything else
- * (a web address, `#N`, an id the map does not carry) is returned unchanged. */
-function rewriteSlideJumpValue(value, idMap) {
-  if (typeof value !== 'string') return value;
-  const jump = slideJumpTarget(value);
-  if (!jump || !('id' in jump)) return value;
-  const newId = idMap.get(jump.id);
-  return newId ? `#slide:${newId}` : value;
 }
 
 /**
@@ -552,10 +649,17 @@ function normalizeDeckSlide(
   const patch = {};
 
   const fieldByKey = new Map((def.fields || []).map((f) => [f.key, f]));
+  const declared = declaredContentKeys(def);
   for (const [k, v] of Object.entries(contentIn)) {
+    // A key the type does not declare is dropped (D121 B2). Letting it through
+    // "forward-compatible" is what kept every retired key alive in every deck
+    // that once carried it. Legacy shapes are not lost here: the funnel above
+    // already folded them into their declared keys.
+    if (!declared.has(k)) continue;
     const field = fieldByKey.get(k);
     if (!field) {
-      // Allow unknown keys (forward-compatible), but ignore explicit null/undefined.
+      // Declared without a field (instance, global, derived and style keys):
+      // kept as written, but ignore explicit null/undefined.
       if (v != null) patch[k] = v;
       continue;
     }
@@ -625,6 +729,20 @@ function normalizeDeckSlide(
     content: patch,
     slideTypes: { [localName]: def },
   });
+
+  // One import fallback, after composition so a configured type default is
+  // also a real image. Insertion keeps the ordinary defaults; imports and AI
+  // output fill only an image that is still empty, from its declaration.
+  for (const field of def.fields) {
+    if (
+      field.type === 'image' &&
+      field.importPlaceholder &&
+      (typeof slide.content[field.key] !== 'string' ||
+        !slide.content[field.key].trim())
+    ) {
+      slide.content[field.key] = field.importPlaceholder;
+    }
+  }
 
   return withSlideKeys(
     { id: slide.id, type: localName, content: slide.content },

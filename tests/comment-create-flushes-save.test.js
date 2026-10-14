@@ -1,5 +1,5 @@
 /**
- * B567: a comment on a slide added a moment ago is stored, not refused.
+ * A comment on a slide added a moment ago is stored, not refused (B567).
  *
  * The service refuses a `slideId` the stored deck does not hold (404
  * `slide_not_found`, D287), and the editor's autosave runs a debounce behind
@@ -25,10 +25,9 @@ globalThis.EventSource = class {
 
 const { createSaveManager } =
   await import('../client/views/editor/save-manager.js');
-const { createCommentsApi } =
-  await import('../client/views/editor/comments-api.js');
+const { createCommentsApi } = await import('../client/views/comments/index.js');
 const { createCommentsPanel } =
-  await import('../client/views/editor/comments-panel.js');
+  await import('../client/views/comments/index.js');
 
 function makeDeck() {
   return {

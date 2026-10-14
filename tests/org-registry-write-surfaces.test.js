@@ -1,9 +1,10 @@
 /**
- * B131: the per-slide public API and the MCP write tools know the org registry.
+ * The per-slide public API and the MCP write tools know the org registry
+ * (B131).
  *
- * B129 taught the storage write seam (`normalizeSlides`) to resolve a slide
- * type against the organization's registry rather than the process-wide
- * `SLIDE_TYPES` map, which cannot hold a per-organization DB row. Two write
+ * The storage write seam (`normalizeSlides`) resolves a slide type against
+ * the organization's registry rather than the process-wide `SLIDE_TYPES`
+ * map, which cannot hold a per-organization DB row (B129). Two write
  * surfaces in front of that seam still resolved against the global map, so a
  * type the Settings → Slide Types builder had published was refused before its
  * content was ever read:
@@ -28,6 +29,7 @@
  * Run with: node --test tests/org-registry-write-surfaces.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -35,7 +37,7 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
-import { walkJsFiles, callArguments } from './helpers/call-sites.js';
+import { callArguments } from './helpers/call-sites.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'b131']
@@ -57,7 +59,7 @@ const SLIDE_ID = '11111111-2222-4333-8444-555555555555';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleSlides } =
   await import('../server/routes/public-api/v1/slides.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
@@ -347,10 +349,11 @@ test("the fix branch refuses text past the custom type's own cap", async () => {
  * each: a positional second argument, or a `slideTypes` key in the options
  * object. `newSlide` takes one options object, so the registry rides in that.
  *
- * The fix pipeline's own entry points are listed for `server/mcp` only. The
- * three `server/routes/api/ai` callers still read the global map; that is
- * B247, and unlike the seams here it degrades (no declarations applied) rather
- * than refusing, so it is not what B131 pinned.
+ * The fix pipeline's entry points take the map as a required argument since
+ * B247 and throw without it; the guard names them for `server/routes` too, so
+ * the AI routes are read here as well as at run time
+ * (`tests/ai-paths-org-registry.test.js`). `deckToPresentationParts` is pinned
+ * in `tests/one-slide-factory.test.js`.
  */
 const SEAMS = [
   { fn: 'resolveSlideTypeName', dirs: ['routes', 'mcp'], at: 1 },
@@ -358,7 +361,7 @@ const SEAMS = [
   { fn: 'validateSlide', dirs: ['routes', 'mcp'], at: 1 },
   { fn: 'newSlide', dirs: ['routes', 'mcp'], at: 0 },
   { fn: 'validateRefinedSlidesStrict', dirs: ['mcp'], at: 1 },
-  { fn: 'validateAndFixRefinedSlides', dirs: ['mcp'], at: 1 },
+  { fn: 'validateAndFixRefinedSlides', dirs: ['routes', 'mcp'], at: 1 },
 ];
 
 test('no write surface resolves a slide type against the global registry', () => {
@@ -366,7 +369,7 @@ test('no write surface resolves a slide type against the global registry', () =>
   for (const { fn, dirs, at } of SEAMS) {
     for (const dir of dirs) {
       const root = path.join(process.cwd(), 'server', dir);
-      for (const file of walkJsFiles(root)) {
+      for (const file of walkFiles(root, { extensions: ['.js'] })) {
         const source = fs.readFileSync(file, 'utf8');
         for (const args of callArguments(source, fn)) {
           const arg = args[at];

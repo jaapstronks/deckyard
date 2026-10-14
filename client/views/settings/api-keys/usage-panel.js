@@ -38,13 +38,13 @@ export async function showUsagePanel(key) {
   const result = await fetchKeyUsage(key.id, 30);
 
   if (result.error) {
-    content.innerHTML = '';
+    content.replaceChildren();
     content.append(h('div', { class: 'help', text: result.error }));
     return;
   }
 
   const usage = result.usage;
-  content.innerHTML = '';
+  content.replaceChildren();
 
   // Today's stats
   const todaySection = h('div', { class: 'api-key-usage-section' });

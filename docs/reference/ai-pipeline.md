@@ -20,7 +20,7 @@ is [`../developer/slide-types.md`](../developer/slide-types.md).
 
 ## Module map
 
-Transport (`server/utils/llm/`, 13 modules):
+Transport (`server/utils/llm/`):
 
 - `server/utils/llm/index.js` — `requestChatCompletionContent({vendor, apiKey,
 model, temperature, responseFormat, maxTokens, messages})`, the single call
@@ -40,7 +40,7 @@ role})`, `getLlmStatus()`. Resolves vendor + model + key, including the
 - `server/utils/llm/alt-text.js` — `generateImageAltTexts()`, used by the image
   library (see [`media-library.md`](media-library.md)).
 
-Pipeline (`server/utils/ai/`, 42 modules). The top level:
+Pipeline (`server/utils/ai/`). The top level:
 
 - `server/utils/ai/index.js` — the barrel.
 - `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
@@ -68,17 +68,15 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
   slide.
 - `server/utils/ai/compare-versions.js` — human-readable diff
   summaries between two deck versions.
-- `server/utils/ai/validate-slides/` (an `index.js` barrel over 8 modules) —
+- `server/utils/ai/validate-slides/` (an `index.js` barrel over concern modules) —
   the repair stage: `checks.js`, `constants.js` (which types get their item
   count repaired — a behaviour choice, not a constraint), `fields.js`
   (valid/unknown field keys), `fix.js` (the structural repair pipeline),
   `fixers.js` (per-type repairs), `strict.js` (throwing validation for raw
   output), `lengths.js`, `logging.js`.
-- `server/utils/ai/validate-slide-structure.js` — structural check of
-  one slide's content against its type.
 - `server/utils/ai/slide-type-catalog.js` — a 21-line compatibility re-export of
   `slide-catalog/`.
-- `server/utils/ai/slide-catalog/` (9 modules) — what the model is allowed to
+- `server/utils/ai/slide-catalog/` — what the model is allowed to
   author: `definitions.js` (the catalogue + editorial "when to pick this"),
   `type-ai.js` (**generated** — `node scripts/generate-slide-ai-aggregator.js`,
   sourced from each `shared/slide-types/types/<name>/ai.js`), `examples.js`
@@ -99,11 +97,12 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
   what `get_slide_types` offers as a type's example is what
   `create_presentation_from_slides` accepts.
 - `server/utils/ai/logging.js` — full LLM conversation logs for
-  debugging/finetuning, written under `server/logs/ai/`; off in production.
+  debugging/finetuning, written under `server/logs/ai/` when the instance
+  setting `AI_SESSION_LOGS` allows it (see Config & flags).
 - `server/utils/ai/validation-logging.js` — small, production-safe
   validation-event logs (unknown fields, schema issues) plus the admin readers.
 
-Legacy single-prompt path (`server/utils/openai/`, 8 modules): call sites
+Legacy single-prompt path (`server/utils/openai/`): call sites
 import `openai/deck.js` (`wizard`), `openai/append.js`, `openai/translate.js`
 and `openai/convert-slide.js` directly; `openai/json.js`, `lang.js`,
 `prompt.js` and `slide-types-prompt.js` support them. This is the **v1** generation route — one prompt, no outline phase — still
@@ -114,13 +113,12 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 - `server/routes/api/ai/index.js` — the seam: a declarative exact-path table;
   every route is a fixed method + pathname.
 - `server/routes/api/ai/shared.js` — the `AiContext` typedef and the
-  shared helpers: `loadSlideTypeContext` (org disabled + custom types),
-  `loadAiThemeContext` (backgrounds, brand colours, presets),
+  shared helpers: `loadAiThemeContext` (backgrounds, brand colours, presets),
   `reattachAiMeta`, `createDeckFromParts`.
 - `wizard.js` (50) — `POST /api/ai/wizard`, the v1 one-shot path.
 - `wizard-v2-stream.js` (257) — `POST /api/ai/wizard-v2/stream`, the two-phase
   path. The one wizard-v2 route: the non-streaming `wizard-v2` and
-  `wizard-v2/outline` siblings were retired in B97.
+  `wizard-v2/outline` siblings were retired (B97).
 - `append-slides.js` (90), `refine-section.js` (75), `convert-slide.js` (34),
   `compress-deck.js` (47), `iterate.js` (62) — the per-feature routes.
 - `vendors.js` (11) — `GET /api/ai/vendors`, the configured-vendor list.
@@ -128,7 +126,7 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 Outside `/api/ai/*`: `server/routes/api/presentations/analyze.js` (AI analysis
 into comments), `server/routes/api/presentations/versions.js` (AI version
 compare), `server/routes/api/convert.js` (deck conversion), and
-`server/routes/api/admin-ai-logs.js` (102 lines, the admin validation-log
+`server/routes/api/admin-ai-logs.js` (the admin validation-log
 reader).
 
 ## Data model
@@ -147,7 +145,8 @@ analysis feature delivers its output as comments, and an actionable suggestion
 carries the slide JSON it proposes.
 
 Everything else is files on disk: conversation logs under `server/logs/ai/`
-(development only) and validation-event logs alongside them.
+(`AI_SESSION_LOGS`, by default a development checkout only) and
+validation-event logs alongside them.
 
 ## Flows
 
@@ -196,7 +195,7 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 | `DEEPSEEK_API` + `DEEPSEEK_MODEL`                                      | idem                             | Default `deepseek-chat`.                                                                                                                               |
 | `OPENAI_COMPAT_ENDPOINT` + `OPENAI_COMPAT_MODEL` + `OPENAI_COMPAT_API` | idem                             | Any OpenAI-compatible endpoint; the key is optional (local servers).                                                                                   |
 | `AI_VALIDATION_LOGGING`                                                | `utils/ai/validation-logging.js` | On unless set to `false`.                                                                                                                              |
-| `NODE_ENV`                                                             | `utils/ai/logging.js`            | Full conversation logging is disabled in production.                                                                                                   |
+| `AI_SESSION_LOGS`                                                      | `utils/ai/logging.js`            | Conversation logs in `server/logs/ai/`. Unset: on only with `NODE_ENV=development`. No route or request has its own switch.                            |
 
 Feature flags (`server/config/flags-snapshot.js`): `enableAi` — off with
 `AI_ENABLED=false`, **demo mode** or **sandbox mode**. When it is false, **every
@@ -241,10 +240,16 @@ point of the seam.
   analyze, version-compare) resolve the deck through the presentation authz
   middleware first, so AI cannot reach a deck the caller could not open. The
   generation verbs create a _new_ deck in the caller's scope.
-- **Org context flows into the prompt**: `loadSlideTypeContext(authedUser)` reads
-  the caller's organization's disabled and custom slide types, so a model never
-  offers a type that organization turned off. Theme context comes from the deck's
-  resolved theme.
+- **Org context flows into the prompt**: `loadSlideTypeOffer(ctx)`
+  (`server/utils/org-slide-types.js`) reads the caller's organization's
+  disabled and published custom slide types as
+  `{ disabledSlideTypes, customSlideTypes }`, so a model never offers a type
+  that organization turned off and can choose one it published. Every
+  generating path spreads that one offer into its options: the `/api/ai/*`
+  routes, the file convert and the Notion import, the MCP tools and the public
+  v1 API; so does the analysis (`/api/presentations/:id/analyze` and MCP
+  `analyze_presentation`), whose `proposedSlide` is accepted exactly when its
+  type was offered. Theme context comes from the deck's resolved theme.
 - Persistence goes through the ordinary scoped presentation store; the pipeline
   itself holds no organization id. General rules:
   [`tenant-isolation.md`](tenant-isolation.md).

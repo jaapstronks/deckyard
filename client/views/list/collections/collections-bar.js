@@ -10,6 +10,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createCollectionsApi } from './api.js';
 import {
@@ -63,7 +64,7 @@ export function createCollectionsBar({ api, root }) {
   };
 
   const renderHeader = () => {
-    headerRow.innerHTML = '';
+    headerRow.replaceChildren();
     headerRow.append(
       h('h3', {
         class: 'collections-bar-title',
@@ -183,9 +184,20 @@ export function createCollectionsBar({ api, root }) {
               danger: true,
             });
             if (!ok) return;
+            // The X is in the chip that is about to go, so the bar says where
+            // focus lands and what a screen reader hears (B647).
+            const land = planRowRemoval(listWrap, {
+              index: Array.from(listWrap.children).indexOf(chip),
+              fallback: () => headerRow.querySelector('button'),
+            });
             try {
               await collectionsApi.remove(col.shelf, col.id);
-              afterChange();
+              await afterChange();
+              land(
+                t('common.rowRemoved', '{label} removed.', {
+                  label: col.name || '',
+                }),
+              );
             } catch (e) {
               toast.error(e);
             }
@@ -200,7 +212,7 @@ export function createCollectionsBar({ api, root }) {
   };
 
   const renderList = () => {
-    listWrap.innerHTML = '';
+    listWrap.replaceChildren();
     const all = [
       ...(collections.personal || []),
       ...(collections.organization || []),

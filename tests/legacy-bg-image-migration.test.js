@@ -4,7 +4,7 @@
  *
  * The fold itself (`ensureSlideBgImage`) is pinned in
  * tests/legacy-bg-image.test.js. What is proven here is the migration around
- * it, which is where B175 found the two holes:
+ * it, which is where the two holes were found (B175):
  *
  * 1. The walk reaches **every shape a slide is stored in** — a deck's
  *    `slides`, an `i18n.versions[lang].slides` entry (the surface that held

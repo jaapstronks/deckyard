@@ -206,7 +206,10 @@ export async function injectFeedDiscovery(html, repoRoot) {
   try {
     if (isRssFeedEnabled() && !isMultiOrgEnabled()) {
       const feedOrgId = getDefaultOrganizationId();
-      const feedOrg = await getOrganizationById(feedOrgId);
+      const feedOrg = await getOrganizationById(
+        { repoRoot, organizationId: feedOrgId },
+        feedOrgId,
+      );
       const feedSettings = getOrgSettings(feedOrg);
       if (feedSettings.rss?.enabled) {
         const feedLinks = [

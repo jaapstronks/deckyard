@@ -471,6 +471,16 @@ export function createLanguageMode({
 
     // Only `active` moves: the source version the counts are measured from is
     // whatever the server just handed back in `refreshed.i18n.dominant` (D74).
+    showVersionInView(next, prevSelectedSlideId);
+    // Live-edit mode: the switch itself (a just-created version) must reach the
+    // shared doc — the autosave path that used to persist it is inert with the
+    // flag on.
+    if (collabLanguage) markDirty?.();
+    return true;
+  };
+
+  /** Apply a version already in memory to the editor's view and URL. */
+  const showVersionInView = (next, prevSelectedSlideId) => {
     pres.i18n.active = next;
     pres.i18n.versions[next].title = pres.title;
     pres.i18n.versions[next].slides = pres.slides;
@@ -488,10 +498,21 @@ export function createLanguageMode({
     setUrlLangParam(next);
     editorState.refreshAll();
     syncLangUi();
-    // Live-edit mode: the switch itself (a just-created version) must reach the
-    // shared doc — the autosave path that used to persist it is inert with the
-    // flag on.
-    if (collabLanguage) markDirty?.();
+  };
+
+  /** Show a refused off-screen buffer without asking the failing save again. */
+  const revealRefusedVersion = (lang) => {
+    const next = normalizeLang(lang);
+    const version = next && pres.i18n?.versions?.[next];
+    if (!version) return false;
+    if (next === activeLang()) return true;
+    const current = activeLang();
+    const selected = getSelectedSlideId?.();
+    pres.i18n.versions[current].title = pres.title;
+    pres.i18n.versions[current].slides = pres.slides;
+    pres.title = version.title;
+    pres.slides = version.slides;
+    showVersionInView(next, selected);
     return true;
   };
 
@@ -902,6 +923,7 @@ export function createLanguageMode({
   return {
     el: langMenuWrapper,
     syncLangUi,
+    revealRefusedVersion,
     detach: () => {
       translateInvite?.hide();
       langMenu.detach();

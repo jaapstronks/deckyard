@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { buildSlideTypesPrompt } from '../server/utils/openai/slide-types-prompt.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
+import { getOfferedSlideTypes } from '../server/utils/ai/slide-catalog/index.js';
 
 /**
  * The "Content schema:" lines of one type's section in the generator prompt.
@@ -45,4 +46,12 @@ test('B453: an essential list is marked for its first entry', () => {
 
 test('B453: the prompt tells the generator to fill essential fields', () => {
   assert.match(buildSlideTypesPrompt(), /Fill every field marked "essential"/);
+});
+
+test('one-shot prompts use exactly the core types in the offered catalog', () => {
+  const disabledSlideTypes = ['quote-slide'];
+  const prompt = buildSlideTypesPrompt({ disabledSlideTypes });
+  const offered = [...prompt.matchAll(/^=== ([\w-]+) - /gm)].map((m) => m[1]);
+  assert.deepEqual(offered, getOfferedSlideTypes(disabledSlideTypes));
+  assert.ok(!offered.includes('follow-invite-slide'));
 });

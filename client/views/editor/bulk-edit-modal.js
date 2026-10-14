@@ -31,7 +31,7 @@ import { h } from '../../lib/dom/index.js';
  *   this modal lives on document.body, so it mirrors that gating itself
  *   (prev/next can land on a locked slide).
  * @param {Function} [opts.onClosed] - called after close (resync main form)
- * @returns {{ open: Function }}
+ * @returns {{ open: Function, close: Function }}
  */
 export function createBulkEditModal({
   pres,
@@ -42,6 +42,7 @@ export function createBulkEditModal({
   getSlideLockKind,
   onClosed,
 } = {}) {
+  let activeModal = null;
   function open() {
     let detachScale = null;
     let previewRaf = 0;
@@ -50,12 +51,14 @@ export function createBulkEditModal({
       modalClass: 'bulk-edit-modal',
       fill: true,
       onClose: () => {
+        activeModal = null;
         if (previewRaf) cancelAnimationFrame(previewRaf);
         previewRaf = 0;
         detachScale?.();
         onClosed?.();
       },
     });
+    activeModal = modal;
 
     // ---- Layout: form pane (left) + live preview pane (right) ----
     const formMount = h('div', { class: 'bulk-edit-form' });
@@ -179,5 +182,5 @@ export function createBulkEditModal({
     refresh();
   }
 
-  return { open };
+  return { open, close: () => activeModal?.close() };
 }

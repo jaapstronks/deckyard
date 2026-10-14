@@ -1,10 +1,12 @@
+import { toStorageContext } from '../scope.js';
 /**
  * Weekly analytics summary for digest emails.
  * Aggregates engagement data for the past week.
  */
 
 import { sql } from 'kysely';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
+import { normalizeEmail } from '../../utils/normalize.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 
 // ============================================================
@@ -59,7 +61,11 @@ function getPreviousWeekDateRange() {
  * @param {string} userEmail - The user's email
  * @returns {Promise<Object>}
  */
-export async function getWeeklyAnalyticsForUser(userId, userEmail) {
+export async function getWeeklyAnalyticsForUser(scope, userId, userEmail) {
+  const { organizationId } = toStorageContext(
+    scope,
+    'getWeeklyAnalyticsForUser',
+  );
   const dateRange = getWeekDateRange();
   const previousRange = getPreviousWeekDateRange();
 
@@ -93,17 +99,23 @@ export async function getWeeklyAnalyticsForUser(userId, userEmail) {
       hasActivity: false,
     },
     async (db) => {
-      // Get user info
+      // Get user info. The display name is `users.name`; there is no
+      // `users.display_name` column, and asking for one failed the whole
+      // summary (B662).
       const user = await db
         .selectFrom('users')
-        .select(['id', 'email', 'display_name'])
+        .select(['id', 'email', 'name'])
         .where('id', '=', userId)
         .executeTakeFirst();
 
-      const userName = user?.display_name || userEmail.split('@')[0];
+      const userName = user?.name || userEmail.split('@')[0];
 
       // Get user's presentations
-      const userPresentations = await getUserPresentationIds(db, userEmail);
+      const userPresentations = await getUserPresentationIds(
+        db,
+        userEmail,
+        organizationId,
+      );
       if (!userPresentations.length) {
         return {
           userName,
@@ -285,7 +297,13 @@ export async function getWeeklyAnalyticsForUser(userId, userEmail) {
  * @param {string} organizationId - The organization ID
  * @returns {Promise<Object>}
  */
-export async function getTeamWeeklyAnalytics(organizationId) {
+export async function getTeamWeeklyAnalytics(scope, organizationId) {
+  const context = toStorageContext(scope, 'getTeamWeeklyAnalytics');
+  if (context.organizationId !== organizationId) {
+    throw new TypeError(
+      'getTeamWeeklyAnalytics() organization does not match its scope',
+    );
+  }
   const dateRange = getWeekDateRange();
   const previousRange = getPreviousWeekDateRange();
 
@@ -396,7 +414,7 @@ export async function getTeamWeeklyAnalytics(organizationId) {
         .leftJoin('users', 'users.email', 'presentations.owner_email')
         .select([
           'presentations.owner_email',
-          sql`COALESCE(users.display_name, split_part(presentations.owner_email, '@', 1))`.as(
+          sql`COALESCE(users.name, split_part(presentations.owner_email, '@', 1))`.as(
             'presenter_name',
           ),
           (eb) => eb.fn.count('view_sessions.id').as('total_views'),
@@ -405,7 +423,7 @@ export async function getTeamWeeklyAnalytics(organizationId) {
           ),
         ])
         .where('view_sessions.presentation_id', 'in', presentationIds)
-        .groupBy(['presentations.owner_email', 'users.display_name'])
+        .groupBy(['presentations.owner_email', 'users.name'])
         .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
         .limit(5);
       topPresentersQuery = applyDateFilters(
@@ -585,12 +603,18 @@ async function getWeeklyInsights(db, presentationIds, dateRange) {
  * @param {string} userEmail - The user's email
  * @returns {Promise<string[]>}
  */
-async function getUserPresentationIds(db, userEmail) {
+async function getUserPresentationIds(db, userEmail, organizationId) {
+  // D200: `owner_email` and `user_email` are normalised on write, so the
+  // caller's address is normalised once here and compared bare below.
+  const email = normalizeEmail(userEmail);
+  if (!email) return [];
+
   // Get presentations where user is owner
   const ownedQuery = db
     .selectFrom('presentations')
     .select('id')
-    .where('owner_email', '=', userEmail.toLowerCase());
+    .where('owner_email', '=', email)
+    .where('organization_id', '=', organizationId);
 
   // Get presentations shared with user (edit or admin access)
   const sharedQuery = db
@@ -601,11 +625,8 @@ async function getUserPresentationIds(db, userEmail) {
       'presentation_collaborators.presentation_id',
     )
     .select('presentations.id')
-    .where(
-      'presentation_collaborators.user_email',
-      '=',
-      userEmail.toLowerCase(),
-    )
+    .where('presentation_collaborators.user_email', '=', email)
+    .where('presentations.organization_id', '=', organizationId)
     .where('presentation_collaborators.permission', 'in', ['edit', 'admin']);
 
   const [ownedRows, sharedRows] = await Promise.all([

@@ -42,10 +42,9 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-// `__resetStorageForTests` rather than `closeStorage`: the double is not a real
-// Kysely handle, so closing it would call a `destroy()` it does not have.
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+// Teardown uninstalls the double rather than calling `closeStorage`: it is not
+// a real Kysely handle, so closing it would call a `destroy()` it does not have.
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleLiveSessions } =
   await import('../server/routes/api/live-sessions.js');
 const { createStorageScope } = await import('../server/utils/context.js');
@@ -80,7 +79,6 @@ test.beforeEach(async () => {
 });
 
 test.afterEach(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -164,6 +162,7 @@ function seedSession(root, sessionId, presentationId, extra = {}) {
   const s = {
     sessionId,
     presentationId,
+    organizationId: ORG,
     state: {
       slideId: '',
       slideIndex: 0,

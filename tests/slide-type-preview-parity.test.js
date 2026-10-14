@@ -1,8 +1,8 @@
 /**
  * The Settings preview and the deck render the same definition the same way (B192).
  *
- * Until B192 `client/views/settings/slide-type-editor/preview.js` carried a
- * regex mini-implementation of the template language and injected the author
+ * `client/views/settings/slide-type-editor/preview.js` used to carry a regex
+ * mini-implementation of the template language and inject the author
  * CSS unscoped into its iframe head, while the real path compiles through
  * `compileTemplate` and scopes the CSS under the slide root (B189). Two
  * renderers for one meaning: a maker could get `{{#if}}`, `{{#each}}` or a
@@ -130,4 +130,17 @@ test('an empty {{#each}} renders the same nothing on both sides', () => {
 
   assert.equal(previewHtml(empty), deckHtml(empty, empty.defaults));
   assert.doesNotMatch(previewHtml(empty), /<li/);
+});
+
+test('preview refuses invalid draft slugs before they can become HTML or CSS', () => {
+  for (const slug of [
+    '',
+    'Two Words',
+    'x" onmouseover="alert(1)',
+    '</style><img src=x onerror=alert(1)>',
+    'x, body',
+    'a'.repeat(81),
+  ]) {
+    assert.throws(() => previewHtml({ ...DEFINITION, slug }), /Invalid slug/);
+  }
 });

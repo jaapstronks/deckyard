@@ -97,7 +97,7 @@ export async function getSandboxUsageForOwner(scope, ownerEmail) {
       coalesce(sum(pg_column_size(slides) + pg_column_size(i18n)), 0)::bigint AS total_bytes
     FROM presentations
     WHERE organization_id = ${orgId}
-      AND lower(owner_email) = ${owner}
+      AND owner_email = ${owner}
   `.execute(db);
 
   const row = rows[0] || {};

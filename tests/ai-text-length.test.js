@@ -58,9 +58,17 @@ async function withReplies(t, replies, run) {
 
 test('validation refuses overlong text without modifying it; boundary remains unchanged', () => {
   const input = response('x'.repeat(cap + 1)).slides;
-  assert.throws(() => validateAndFixRefinedSlides(input), SlideTextLengthError);
+  assert.throws(
+    () => validateAndFixRefinedSlides(input, { slideTypes: SLIDE_TYPES }),
+    SlideTextLengthError,
+  );
   assert.equal(input[0].content.body.length, cap + 1);
-  const [valid] = validateAndFixRefinedSlides(response('x'.repeat(cap)).slides);
+  const [valid] = validateAndFixRefinedSlides(
+    response('x'.repeat(cap)).slides,
+    {
+      slideTypes: SLIDE_TYPES,
+    },
+  );
   assert.equal(valid.content.body, 'x'.repeat(cap));
 });
 
@@ -103,7 +111,10 @@ test('refinement sends the rejected response and exact violation to the model fo
     t,
     [response('x'.repeat(cap + 1)), response('A complete short sentence.')],
     async (requests) => {
-      const slides = await refineSlideGroup(group, { vendor: 'openai' });
+      const slides = await refineSlideGroup(group, {
+        vendor: 'openai',
+        slideTypes: SLIDE_TYPES,
+      });
       assert.equal(slides[0].content.body, 'A complete short sentence.');
       assert.equal(requests.length, 2);
       assert.equal(requests[1].messages.at(-2).role, 'assistant');
@@ -121,7 +132,7 @@ test('exhausted length repair rejects rather than returning a fallback', async (
     [response('x'.repeat(cap + 1)), response('x'.repeat(cap + 2))],
     async (requests) => {
       await assert.rejects(
-        refineSlideGroup(group, { vendor: 'openai' }),
+        refineSlideGroup(group, { vendor: 'openai', slideTypes: SLIDE_TYPES }),
         SlideTextLengthError,
       );
       assert.equal(requests.length, 2);
@@ -132,7 +143,7 @@ test('exhausted length repair rejects rather than returning a fallback', async (
 test('a malformed repair cannot evade the earlier length refusal', async (t) => {
   await withReplies(t, [response('x'.repeat(cap + 1)), {}], async () => {
     await assert.rejects(
-      refineSlideGroup(group, { vendor: 'openai' }),
+      refineSlideGroup(group, { vendor: 'openai', slideTypes: SLIDE_TYPES }),
       SlideTextLengthError,
     );
   });
@@ -165,7 +176,10 @@ for (const [label, type, content] of [
       [response('x'.repeat(cap + 1)), repair],
       async (requests) => {
         await assert.rejects(
-          refineSlideGroup(group, { vendor: 'openai' }),
+          refineSlideGroup(group, {
+            vendor: 'openai',
+            slideTypes: SLIDE_TYPES,
+          }),
           SlideTextLengthError,
         );
         assert.equal(requests.length, 2);
@@ -228,7 +242,7 @@ test('a repair cannot drop the rejected slide and trigger a fallback', async (t)
       await assert.rejects(
         refineSlideGroup(
           { groupId: 'g', slides: [original, other] },
-          { vendor: 'openai' },
+          { vendor: 'openai', slideTypes: SLIDE_TYPES },
         ),
         SlideTextLengthError,
       );
@@ -274,7 +288,11 @@ const longTable = () =>
 
 async function refineAndValidate() {
   return validateAndFixRefinedSlides(
-    await refineSlideGroup(group, { vendor: 'openai' }),
+    await refineSlideGroup(group, {
+      vendor: 'openai',
+      slideTypes: SLIDE_TYPES,
+    }),
+    { slideTypes: SLIDE_TYPES },
   );
 }
 

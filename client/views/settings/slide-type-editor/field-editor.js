@@ -83,7 +83,7 @@ export function createFieldListEditor({
   }
 
   function render() {
-    el.innerHTML = '';
+    el.replaceChildren();
     refreshers = [];
 
     if (currentFields.length === 0) {
@@ -867,7 +867,7 @@ function syncOptions(select, options, value) {
   const next = options.map((o) => o.value).join('\u0000');
   if (select.dataset.options === next && select.value === value) return;
   select.dataset.options = next;
-  select.innerHTML = '';
+  select.replaceChildren();
   for (const option of options) {
     select.append(
       h('option', {

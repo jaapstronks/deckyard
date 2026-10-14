@@ -24,14 +24,14 @@ import assert from 'node:assert/strict';
 
 import { testScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb, getDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, getPresentation } =
   await import('../server/storage/presentations/index.js');
 const { deckToPresentationParts } =
@@ -53,7 +53,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -153,10 +152,13 @@ test('a translation left on the retired type reads back as a timeline', async ()
 test('an imported deck on the retired type arrives converted', () => {
   // The seam no migration and no `scripts/` one-off can cover: an export handed
   // to this install was never in any store either could be pointed at.
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [{ id: 's1', type: RETIRED, content: legacyContent('Timeline') }],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [{ id: 's1', type: RETIRED, content: legacyContent('Timeline') }],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
 
   assert.equal(parts.slides[0].type, 'timeline-slide');
   assert.deepEqual(

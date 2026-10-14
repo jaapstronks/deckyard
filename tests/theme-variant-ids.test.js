@@ -10,23 +10,22 @@
  * Run with: node --test tests/theme-variant-ids.test.js
  */
 
+import { generateSlug } from '../shared/slug.js';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  slugifyVariantId,
-  variantIdProblem,
-} from '../client/views/settings/theme-editor/variants-section.js';
+import { variantIdProblem } from '../client/views/settings/theme-editor/variants-section.js';
 import {
   normalizeSlideBackgrounds,
   RESERVED_SLIDE_BG_IDS,
 } from '../shared/theme-slide-backgrounds.js';
 
 test('a human name becomes a css-class-safe id', () => {
-  assert.equal(slugifyVariantId('Calm'), 'calm');
-  assert.equal(slugifyVariantId('Soft Sage'), 'soft-sage');
-  assert.equal(slugifyVariantId('  Deep   Blue  '), 'deep-blue');
-  assert.equal(slugifyVariantId('Café Crème'), 'caf-cr-me');
-  assert.equal(slugifyVariantId('2024 brand'), '2024-brand');
+  assert.equal(generateSlug('Calm', { maxLength: 32 }), 'calm');
+  assert.equal(generateSlug('Soft Sage', { maxLength: 32 }), 'soft-sage');
+  assert.equal(generateSlug('  Deep   Blue  ', { maxLength: 32 }), 'deep-blue');
+  assert.equal(generateSlug('Café Crème', { maxLength: 32 }), 'cafe-creme');
+  assert.equal(generateSlug('2024 brand', { maxLength: 32 }), '2024-brand');
 });
 
 test('slugify never produces an id the normalizer would reject', () => {
@@ -39,7 +38,7 @@ test('slugify never produces an id the normalizer would reject', () => {
     '2024',
   ];
   for (const name of names) {
-    const id = slugifyVariantId(name);
+    const id = generateSlug(name, { maxLength: 32 });
     if (!id) continue;
     const kept = normalizeSlideBackgrounds([
       { id, label: name, value: '#e8f0ee' },
@@ -50,7 +49,7 @@ test('slugify never produces an id the normalizer would reject', () => {
 
 test('a name with nothing usable in it is rejected, not silently dropped', () => {
   for (const name of ['', '   ', '///', '???']) {
-    const id = slugifyVariantId(name);
+    const id = generateSlug(name, { maxLength: 32 });
     assert.ok(variantIdProblem(id, []), `"${name}" should be rejected`);
     // And the normalizer would indeed have dropped it.
     assert.deepEqual(

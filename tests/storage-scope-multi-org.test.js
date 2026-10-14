@@ -50,7 +50,7 @@ const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { crossOrganizationScope, singleOrganizationScope } =
   await import('../server/storage/scope.js');
 const facade = await import('../server/storage/presentations/index.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 
 test.before(async () => {
   assert.equal(

@@ -1,6 +1,6 @@
 /**
- * B289 (D126) — an uploaded font family names the font as a desktop app knows
- * it, and the PPTX export writes that name instead of the CSS alias.
+ * An uploaded font family names the font as a desktop app knows it, and the
+ * PPTX export writes that name instead of the CSS alias (B289, D126).
  *
  * The chain, end to end without a database:
  *
@@ -26,8 +26,7 @@ const repoRoot = process.cwd();
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { createFontFamily, updateFontFamily } =
   await import('../server/storage/font-families.js');
@@ -55,7 +54,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

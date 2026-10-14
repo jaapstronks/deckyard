@@ -140,7 +140,6 @@ test('renderTitleView escapes every string in the view', () => {
     meta: evil,
     classes: [`x"><script>`],
     styleVars: { '--fork-x': `1"><script>` },
-    bgImage: { src: `/a.jpg"><script>`, alt: evil },
     logo: { src: `/l.svg" onerror="x`, alt: evil },
   };
   const html = renderTitleView(view);
@@ -152,8 +151,8 @@ test('renderTitleView escapes every string in the view', () => {
   assert.equal(
     html.match(/&lt;script&gt;alert\(1\)&lt;\/script&gt;&quot;&#039;&amp;/g)
       ?.length,
-    5,
-    'title, subtitle, meta, background alt and logo alt, all escaped',
+    4,
+    'title, subtitle, meta and logo alt, all escaped',
   );
 });
 

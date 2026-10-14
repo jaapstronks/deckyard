@@ -1,4 +1,4 @@
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { normalizeLang } from '../../../lib/format/i18n.js';
@@ -121,6 +121,7 @@ export function createRenderField({
   // inline grid (the grid belongs on a wide surface, editing-surfaces §4.3).
   onEditData = null,
   getSelectedSlideId,
+  saveRefusal,
 } = {}) {
   const {
     fieldText,
@@ -254,7 +255,6 @@ export function createRenderField({
       });
       const isAltField =
         field.key === 'alt' ||
-        field.key === 'bgAlt' ||
         String(field.key || '')
           .toLowerCase()
           .endsWith('alt');
@@ -554,6 +554,7 @@ export function createRenderField({
     // collaborators (see presence/presence-ui.js). Inert without collab.
     if (el instanceof HTMLElement && field?.key) {
       el.setAttribute('data-collab-field-key', String(field.key));
+      saveRefusal?.decorate(el, slide, field);
     }
     return el;
   };

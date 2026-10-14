@@ -1,5 +1,6 @@
 /**
- * B67 — payload-contract tests for outgoing webhooks (server/utils/webhooks.js).
+ * Payload-contract tests for outgoing webhooks (server/utils/webhooks.js;
+ * B67).
  *
  * docs/reference/webhooks.md calls the payload shapes "the contract" an
  * external integrator writes against, but until now no test pinned them: the

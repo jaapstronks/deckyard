@@ -1,0 +1,352 @@
+/* ============================================
+   Base Modal Styles
+   ============================================ */
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: hsl(0 0% 0% / 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: var(--z-overlay);
+}
+
+.modal {
+  width: min(720px, 100%);
+  border-radius: var(--ps-radius-xl);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: var(--app-shadow-xl);
+  padding: var(--ps-space-5);
+}
+
+/* The dialog's content region, built by `createModal`. It is the base layer's
+   own structure, so it belongs here: putting it in a late-loading feature file
+   made every earlier single-class override lose on load order. */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: var(--ps-space-2);
+}
+
+/* `createModal({ fill: true })`: the dialog owns its own height and the content
+   region fills what the header leaves.
+
+   The default above is right for a form or a confirmation — as tall as its
+   content, capped, scrolling. It is wrong for a grid, an editor or an iframe:
+   the flex chain stops at the wrapper and the cap bites two levels above the
+   thing that should be growing. Eleven dialogs used to undo it themselves, in
+   ten stylesheets and about as many spellings, and a fork that built the same
+   kind of dialog hit both halves of it in one evening (ciiic-slides #133,
+   #134).
+
+   Deliberately no height and no clipping: how tall a dialog is, and whether it
+   clips, belong to that dialog and differ (90vh, 86vh, min(920px, 100vh - 64px);
+   the deck grid lets a tile's menu escape, the share dialog does not). This
+   rule only says who does the growing. A body that scrolls itself rather than
+   handing the scrolling to its children says `overflow-y: auto` in its own
+   stylesheet. */
+.modal.is-fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.is-fill > .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+/* Confirm/prompt action rows live inside .modal-content, which reserves a
+   scrollbar gutter via padding-right. That inset pushes the footer buttons
+   ~8px left of the header's Close button; cancel it with the same token so the
+   footer lines up flush against the modal edge. */
+.modal-content > .modal-actions {
+  margin-right: calc(-1 * var(--ps-space-2));
+}
+
+.modal.ps-modal {
+  width: min(860px, 100%);
+  padding: 0;
+  overflow: hidden;
+  /* Keep ps-modals within the viewport; modal body can scroll. */
+  max-height: min(92vh, 900px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* `.ps-modal-header` / `.ps-modal-body` are modifiers on createModal's own
+   structure — the header row and `.modal-content` — not a second dialog
+   vocabulary. They exist because a ps-modal puts its padding on those two
+   parts instead of on `.modal`, so the header can stay put while the body
+   scrolls. */
+.ps-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ps-space-4) var(--ps-space-5);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.ps-modal-header h2 {
+  margin: 0;
+  font-size: var(--ps-text-xl);
+  font-weight: 800;
+  color: hsl(var(--app-text-primary));
+  letter-spacing: -0.01em;
+}
+
+.ps-modal-body {
+  padding: var(--ps-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+  /* Allow the content to scroll inside the modal (critical on small screens). */
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  /* The plain-dialog 70vh cap gives way: inside a ps-modal the modal box owns
+     the height and this body owns the scroll. */
+  max-height: none;
+}
+
+.ps-modal-close.btn-icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: var(--ps-radius-md);
+}
+
+/* The close X is a masked span painted with currentColor (icon()), so slide CSS
+   that injects global SVG rules can no longer reach it — the !important
+   stroke/fill patch that used to guard it is gone with the inline <svg>. */
+.ps-modal-close {
+  color: hsl(var(--app-text-secondary));
+}
+.ps-modal-close.btn-secondary {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.ps-modal-close.btn-secondary:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-default));
+  color: hsl(var(--app-text-primary));
+}
+
+.modal h2 {
+  margin: 8px 0 10px;
+}
+
+/* Form groups inside modals */
+.modal .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.modal .form-group > label {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+}
+
+.modal .form-group-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.modal .form-group-checkbox > label {
+  font-weight: 500;
+  color: hsl(var(--app-text-primary));
+}
+
+.modal-hint {
+  margin-bottom: 8px;
+}
+
+.modal-status {
+  min-height: 18px;
+  opacity: 0.85;
+  margin-top: 8px;
+}
+
+/* Stacked form inside a dialog: tighter than the 16px default of .stack. */
+.modal-form {
+  gap: var(--ps-space-3);
+}
+
+.modal-hint-lg {
+  margin-bottom: 10px;
+}
+
+.modal-actions {
+  margin-top: 10px;
+}
+
+.modal-actions-lg {
+  margin-top: 14px;
+}
+
+/* Modal content helpers (used outside the editor too; keep conservative) */
+.modal-field-narrow {
+  max-width: 320px;
+}
+
+.modal-lang-fixed {
+  width: 220px;
+  margin-top: 6px;
+}
+
+/* Larger modal variant for file converter */
+.modal.modal-lg {
+  width: min(800px, 100%);
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-3);
+}
+
+/* Report styling for file converter */
+.modal-report {
+  background: hsl(var(--app-bg-hover));
+  border-radius: var(--ps-radius-md);
+  padding: var(--ps-space-3);
+  margin-top: var(--ps-space-3);
+}
+
+.modal-warnings,
+.modal-issues {
+  margin-top: var(--ps-space-2);
+}
+
+.modal-warnings .field-label,
+.modal-issues .field-label {
+  font-size: var(--ps-text-sm);
+  margin-bottom: var(--ps-space-1);
+}
+
+.help.is-warning {
+  color: hsl(35 80% 40%);
+}
+
+/* ============================================================
+   MODAL MOBILE RESPONSIVENESS
+   ============================================================ */
+
+@media (max-width: 640px) {
+  /* Full-screen modals on mobile */
+  .modal-backdrop {
+    padding: 0;
+    /* Account for iOS safe areas */
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    border-radius: 0;
+    padding: var(--ps-space-4);
+  }
+
+  .modal.ps-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .modal.modal-lg {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Touch-friendly close button */
+  .ps-modal-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Ensure scrollable content */
+  .ps-modal-body {
+    padding: var(--ps-space-4);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* The desktop rule caps `.modal-content` at 70vh; on a full-screen mobile
+     modal the content region is the flexible middle instead, so it grows and
+     scrolls. Same reason the generic rule itself lives here: this is
+     `createModal`'s own structure, not any one feature's. */
+  .modal-content {
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* A callout inside the content region — tighter padding on a narrow screen. */
+  .modal-content .editor-callout {
+    padding: var(--ps-space-3);
+  }
+
+  /* Touch-friendly input sizes */
+  .modal .form-input,
+  .modal select,
+  .modal input[type='text'],
+  .modal input[type='email'],
+  .modal input[type='password'] {
+    min-height: 44px;
+    font-size: var(--ps-text-lg); /* Prevents zoom on iOS */
+  }
+
+  .modal textarea.form-input {
+    min-height: 80px;
+    font-size: var(--ps-text-lg);
+  }
+
+  /* Stack modal actions on mobile */
+  .modal-actions,
+  .modal-actions-lg {
+    flex-direction: column;
+    gap: var(--ps-space-2);
+  }
+
+  .modal-actions .btn,
+  .modal-actions-lg .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .modal {
+    padding: var(--ps-space-3);
+  }
+
+  .modal-content .editor-callout {
+    padding: var(--ps-space-2);
+  }
+
+  .ps-modal-header {
+    padding: var(--ps-space-3);
+  }
+
+  .ps-modal-body {
+    padding: var(--ps-space-3);
+  }
+}

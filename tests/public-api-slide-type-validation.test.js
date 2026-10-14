@@ -1,7 +1,7 @@
 /**
  * The public API validates and normalizes `slides[].type` in Postgres mode.
  *
- * B26: before the shared write-seam, no write path validated the slide type in
+ * Before the shared write-seam (B26), no write path validated the slide type in
  * Postgres mode — the file backend had `validatePresentation`, the Postgres
  * adapter had nothing, and the whole-deck PUT let any string reach storage. Now
  * every write funnels through `normalizeSlides`, so an unknown type is a 400 and
@@ -38,7 +38,7 @@ const DECK_ID = 'd0000004-0000-4000-8000-000000000004';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleSlides } =
   await import('../server/routes/public-api/v1/slides.js');
 const { handlePresentations } =

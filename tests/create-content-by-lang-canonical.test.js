@@ -1,6 +1,6 @@
 /**
- * B483: a create refuses a `contentByLang` key that is not a canonical deck
- * language.
+ * A create refuses a `contentByLang` key that is not a canonical deck
+ * language (B483).
  *
  * `prepareNewPresentation` turns each `slides[].contentByLang` key into an
  * `i18n.versions` key, but it looked the languages up through
@@ -9,7 +9,7 @@
  * runs the check the version keys pass (B481): 400 `invalid`,
  * `details.field` = `slides`, nothing written. Not dropped, not renamed.
  *
- * B485: the same refusal covers the map's shape. A `contentByLang` that is not
+ * The same refusal covers the map's shape (B485). A `contentByLang` that is not
  * an object was ignored, and a language value that is not an object fell back
  * to the flat `content` without that version appearing; both are refused now.
  *
@@ -36,8 +36,7 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { listPresentations } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations: handleAppPresentations } =
@@ -56,7 +55,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -66,10 +64,10 @@ function bodyWithMap(contentByLang) {
     title: 'Dek',
     lang: 'nl',
     slides: [
-      { type: 'content-slide', content: { title: 'Eerste', body: '' } },
+      { type: 'content-slide', content: { title: 'Eerste', body: 'Tekst' } },
       {
         type: 'content-slide',
-        content: { title: 'Hallo', body: '' },
+        content: { title: 'Hallo', body: 'Tekst' },
         contentByLang,
       },
     ],
@@ -79,8 +77,8 @@ function bodyWithMap(contentByLang) {
 /** A create body whose second slide carries its English under `key`. */
 function bodyWith(key) {
   return bodyWithMap({
-    nl: { title: 'Hallo', body: '' },
-    [key]: { title: 'Hello', body: '' },
+    nl: { title: 'Hallo', body: 'Tekst' },
+    [key]: { title: 'Hello', body: 'Text' },
   });
 }
 
@@ -227,7 +225,7 @@ test('a contentByLang language value that is not an object is refused', async ()
   for (const value of ['Hello', null, [{ title: 'Hello' }]]) {
     for (const send of [appPost, v1Post]) {
       const res = await send(
-        bodyWithMap({ nl: { title: 'Hallo', body: '' }, 'en-GB': value }),
+        bodyWithMap({ nl: { title: 'Hallo', body: 'Tekst' }, 'en-GB': value }),
       );
       assert.equal(res.statusCode, 400, JSON.stringify(res.body));
       assert.equal(res.body.error, 'invalid');

@@ -1,3 +1,4 @@
+import { toStorageContext } from '../scope.js';
 /**
  * GDPR Data Access Functions for View Sessions
  *
@@ -37,7 +38,7 @@
  * looks it up from the possessed token and hands it here.
  */
 
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 
 /**
  * Export all analytics data for one person (GDPR right of access).
@@ -46,11 +47,26 @@ import { withDbGuard } from '../utils/index.js';
  * @param {string} identifier.email - The data subject's email address
  * @returns {Promise<{ok: boolean, data?: Object, reason?: string}>}
  */
-export async function exportUserAnalyticsData({ email }) {
-  const normalizedEmail = email?.toLowerCase()?.trim();
+export async function exportUserAnalyticsData(scope, { email }) {
+  const context = toStorageContext(
+    scope,
+    'exportUserAnalyticsData',
+    {},
+    { allowCrossOrganization: true },
+  );
 
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'exportUserAnalyticsData() requires an instance data-subject scope',
+    );
+  const normalizedEmail = email?.toLowerCase()?.trim();
   if (!normalizedEmail) {
     return { ok: false, reason: 'invalid' };
+  }
+  if (normalizedEmail !== scope.actorEmail?.toLowerCase()?.trim()) {
+    throw new TypeError(
+      'exportUserAnalyticsData() requires the authenticated data subject',
+    );
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -126,11 +142,26 @@ export async function exportUserAnalyticsData({ email }) {
  * @param {string} identifier.email - The data subject's email address
  * @returns {Promise<{ok: boolean, deleted?: {sessions: number, slideViews: number}, reason?: string}>}
  */
-export async function deleteUserAnalyticsData({ email }) {
-  const normalizedEmail = email?.toLowerCase()?.trim();
+export async function deleteUserAnalyticsData(scope, { email }) {
+  const context = toStorageContext(
+    scope,
+    'deleteUserAnalyticsData',
+    {},
+    { allowCrossOrganization: true },
+  );
 
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'deleteUserAnalyticsData() requires an instance data-subject scope',
+    );
+  const normalizedEmail = email?.toLowerCase()?.trim();
   if (!normalizedEmail) {
     return { ok: false, reason: 'invalid' };
+  }
+  if (normalizedEmail !== scope.actorEmail?.toLowerCase()?.trim()) {
+    throw new TypeError(
+      'deleteUserAnalyticsData() requires the authenticated data subject',
+    );
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) =>
@@ -165,14 +196,33 @@ export async function deleteUserAnalyticsData({ email }) {
  * @param {string} identifier.deviceId - The device id, resolved server-side.
  * @returns {Promise<{ok: boolean, deleted?: {sessions: number, slideViews: number}, reason?: string}>}
  */
-export async function eraseAnalyticsDataForDevice({ deviceId } = {}) {
+export async function eraseAnalyticsDataForDevice(scope, { deviceId } = {}) {
+  const context = toStorageContext(
+    scope,
+    'eraseAnalyticsDataForDevice',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'eraseAnalyticsDataForDevice() requires an anonymous device scope',
+    );
   const id = typeof deviceId === 'string' ? deviceId.trim() : '';
   if (!id) {
     return { ok: false, reason: 'invalid' };
   }
+  if (!scope.capabilitySessionId) return { ok: false, reason: 'forbidden' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) =>
     db.transaction().execute(async (trx) => {
+      const capability = await trx
+        .selectFrom('view_sessions')
+        .select('device_id')
+        .where('id', '=', scope.capabilitySessionId)
+        .executeTakeFirst();
+      if (capability?.device_id !== id)
+        return { ok: false, reason: 'forbidden' };
       const sessions = await trx
         .selectFrom('view_sessions')
         .select('id')
@@ -196,8 +246,22 @@ export async function eraseAnalyticsDataForDevice({ deviceId } = {}) {
  * @param {string} identifier.sessionId - The `view_sessions.id` to erase.
  * @returns {Promise<{ok: boolean, deleted?: {sessions: number, slideViews: number}, reason?: string}>}
  */
-export async function eraseAnalyticsDataForSession({ sessionId } = {}) {
+export async function eraseAnalyticsDataForSession(scope, { sessionId } = {}) {
+  const context = toStorageContext(
+    scope,
+    'eraseAnalyticsDataForSession',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'eraseAnalyticsDataForSession() requires an anonymous session scope',
+    );
   const id = typeof sessionId === 'string' ? sessionId.trim() : '';
+  if (id && scope.capabilitySessionId !== id) {
+    return { ok: false, reason: 'forbidden' };
+  }
   if (!id) {
     return { ok: false, reason: 'invalid' };
   }
@@ -248,7 +312,18 @@ async function eraseSessionRows(trx, sessionIds) {
  * @param {string} olderThan - ISO date string
  * @returns {Promise<{anonymized: number}>}
  */
-export async function anonymizeOldIpAddresses(olderThan) {
+export async function anonymizeOldIpAddresses(scope, olderThan) {
+  const context = toStorageContext(
+    scope,
+    'anonymizeOldIpAddresses',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'anonymizeOldIpAddresses() requires an instance retention scope',
+    );
   return withDbGuard({ anonymized: 0 }, async (db) => {
     // Update sessions older than threshold to have anonymized IPs
     // We set them to null since hashing would still be linkable

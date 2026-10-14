@@ -29,6 +29,7 @@ export {
   canTransferOwnership,
   canManageCollaborators,
   canCommentOnPresentation,
+  presentationCommentsEnabled,
   getEffectivePermission,
   isPresentationAuthor,
   isUnrestricted,

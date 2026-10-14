@@ -1,3 +1,4 @@
+import { DEFAULT_IMAGE_PLACEHOLDER } from '../image-placeholder.js';
 import {
   bgClass,
   escapeHtml,
@@ -65,6 +66,7 @@ export default {
       label: 'Image',
       labelKey: 'editor.slideField.image.label',
       type: 'image',
+      importPlaceholder: DEFAULT_IMAGE_PLACEHOLDER,
       required: false,
       // A picked image that would be heavily cropped switches to `contain`,
       // unless the author already chose a fit.

@@ -14,6 +14,7 @@
  * Run with: node --test tests/route-dispatch-home.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -32,23 +33,8 @@ function select(routes, method, pathname) {
   return null;
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end() {},
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 function ctx(method, { authedUser = { email: 'a@b.test' } } = {}) {
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {
@@ -88,7 +74,7 @@ test('home: an unknown path falls through', async () => {
     storageScope: {},
     authedUser: { email: 'a@b.test' },
     req: { method: 'GET', headers: {} },
-    res: mockRes(),
+    res: createMockRes(),
     url: { pathname: '/api/homestead', searchParams: new URLSearchParams() },
   };
   assert.equal(await handleHome(c), false);

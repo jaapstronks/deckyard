@@ -1,6 +1,6 @@
 /**
- * B332 umbrella review: the sandbox example shelf hands the browser record
- * UUIDs, never seed slugs.
+ * The sandbox example shelf hands the browser record UUIDs, never seed slugs
+ * (B332, umbrella review).
  *
  * The committed example decks name their theme by seed slug (`editorial`),
  * because a record UUID differs per installation. After the theme-record
@@ -43,8 +43,7 @@ const idOf = (slug) => SEEDS.find((row) => row.slug === slug).id;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { getPresentation } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations } =
@@ -66,7 +65,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

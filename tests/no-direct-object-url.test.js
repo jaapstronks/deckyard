@@ -15,6 +15,7 @@
  * Run with: node --test tests/no-direct-object-url.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -38,26 +39,15 @@ const ALLOWLIST = [
 ];
 
 /** Third-party code we neither wrote nor patch. */
-const SKIP_DIRS = new Set(['vendor']);
-
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      walk(full, out);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      out.push(full);
-    }
-  }
-  return out;
-}
 
 test('URL.createObjectURL in client/ only via downloadBlob()', () => {
   const allowed = new Set(ALLOWLIST.map((a) => a.file));
   const violations = [];
 
-  for (const file of walk(path.join(repoRoot, 'client'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'client'), {
+    extensions: ['.js'],
+    skipDirs: ['vendor'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     if (allowed.has(rel)) continue;
     const lines = fs.readFileSync(file, 'utf8').split('\n');

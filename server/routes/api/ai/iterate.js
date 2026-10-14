@@ -11,7 +11,8 @@ import {
   getBoolean,
   getLang,
 } from '../../../utils/request-validators.js';
-import { loadSlideTypeContext } from './shared.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/iterate — apply a natural-language command to a deck or a single
@@ -20,7 +21,7 @@ import { loadSlideTypeContext } from './shared.js';
  */
 export const handleAiIterate = withErrorHandler(
   'ai-iterate',
-  async ({ req, res, authedUser }) => {
+  async ({ req, res, authedUser, storageScope }) => {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -46,7 +47,7 @@ export const handleAiIterate = withErrorHandler(
     const rawIndex = Number(body?.currentSlideIndex);
     const currentSlideIndex = Number.isInteger(rawIndex) ? rawIndex : null;
 
-    const slideTypeCtx = await loadSlideTypeContext(authedUser);
+    const slideTypeOffer = await loadSlideTypeOffer(authedUser);
 
     const { iteratePresentation } =
       await import('../../../utils/ai/iterate-deck.js');
@@ -58,8 +59,8 @@ export const handleAiIterate = withErrorHandler(
       lang,
       vendor,
       currentSlideIndex,
-      disabledSlideTypes: slideTypeCtx.disabled,
-      customSlideTypes: slideTypeCtx.custom,
+      ...slideTypeOffer,
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
     serveJson(res, 200, {

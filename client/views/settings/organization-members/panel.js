@@ -189,7 +189,7 @@ export function renderOrganizationMembersPanel({
    * @param {number} shown - How many members this page holds.
    */
   function renderPager(shown) {
-    footer.innerHTML = '';
+    footer.replaceChildren();
     if (!shown) return;
 
     const first = offset + 1;
@@ -235,8 +235,8 @@ export function renderOrganizationMembersPanel({
   }
 
   function showLoadFailure() {
-    list.innerHTML = '';
-    footer.innerHTML = '';
+    list.replaceChildren();
+    footer.replaceChildren();
     list.append(
       h('div', {
         class: 'help',

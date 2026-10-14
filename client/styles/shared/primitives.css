@@ -9,6 +9,19 @@
    Editor-only primitives (modals, field labels, `.stack`, `.is-*`) stay in
    `app/components.css`; they never reach a viewer. */
 
+/* ---- Box model ---- */
+
+/* Every box measures its padding and border inside its width (B230). Without
+   this the default `content-box` adds them on top, so `width: 100%` plus
+   padding overflows its parent and a `width` in the stylesheet is not the
+   width on screen. Zero specificity, so a component that really wants
+   `content-box` only has to say so. The slide layer carries the same rule for
+   `.slide` (`slides/01-layout-and-title/00-base.css`): the MCP preview loads
+   the slide chain without this file. */
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
 /* ---- Buttons ---- */
 
 .btn {
@@ -152,7 +165,6 @@
 
 .form-input {
   width: 100%;
-  box-sizing: border-box;
   padding: var(--ps-space-2) var(--ps-space-3);
   border-radius: var(--ps-radius-md);
   border: 1px solid hsl(var(--app-border-default));

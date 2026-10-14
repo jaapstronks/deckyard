@@ -514,7 +514,7 @@
 .btn.btn-danger {
   background: hsl(var(--app-danger));
   border-color: hsl(var(--app-danger-hover));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
 }
 
 .btn.btn-danger:hover {

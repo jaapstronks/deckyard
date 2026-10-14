@@ -1,5 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 import {
   mapItemTexts,
@@ -24,6 +24,7 @@ export function createSaveManager({
   onStatusChange,
   getSelectedSlideId,
   onServerTruth,
+  onFieldRefusal,
 } = {}) {
   let dirty = false;
   let saving = false;
@@ -390,10 +391,7 @@ export function createSaveManager({
     if (!wasDirty && !dirtyToastShown) {
       toast.info(
         t('editor.save.autosaveEnabled', 'Changes are saved automatically…'),
-        {
-          id: 'save-status',
-          durationMs: 60000,
-        },
+        { id: 'save-status' },
       );
       dirtyToastShown = true;
     }
@@ -463,10 +461,6 @@ export function createSaveManager({
     const savingVersion = editVersion;
     saving = true;
     updatePills();
-    const savingToast = toast.info(t('editor.save.saving', 'Saving changes…'), {
-      id: 'save-status',
-      durationMs: 60000,
-    });
 
     // Capture modified slides for this save
     const modifiedForThisSave = Array.from(modifiedSlideIds.keys());
@@ -545,10 +539,11 @@ export function createSaveManager({
 
     try {
       await saveInFlight;
+      onFieldRefusal?.(null);
       savedVersion = Math.max(savedVersion, savingVersion);
       lastError = '';
     } catch (e) {
-      savingToast?.dismiss?.();
+      if (e?.details?.field && e?.details?.slideId) onFieldRefusal?.(e);
       // Conflict: someone else saved a newer version. Stop autosave spam and ask user to reload.
       // Only the revision conflict blocks: another 409 (a deck over the size
       // limit) is a refusal of this save, shown like any other error.

@@ -33,7 +33,7 @@ The internal `/api/*` routes return errors in one canonical envelope:
 
   | Key         | Meaning                                                                                                                                                         |
   | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `field`     | _Which_ input was bad. The standing case: a storage `invalid` says it here rather than in the code, which is what D48 collapsed the `invalid_*` spellings into. |
+  | `field`     | _Which_ input was bad. The standing case: a storage `invalid` says it here rather than in the code: the old `invalid_*` spellings were collapsed into it (D48). |
   | `index`     | Where in a list-valued `field` (0-based). Present only when the storage layer inspected the list entry by entry.                                                |
   | `itemIndex` | Where inside that entry, for a nested list (an `items` field's `itemFields`).                                                                                   |
   | `reason`    | A snake_case sub-code for the problem at that location, for a client that wants to translate. `message` still carries the English sentence.                     |
@@ -49,19 +49,20 @@ The internal `/api/*` routes return errors in one canonical envelope:
   success body (`lock`, `report`, `holder`); loose facts ride flat. The keys
   are **permitted, not required** — a code sends the subset it has:
 
-  | Code                     | Status | `details`                                                                                                                                                                                                                                                                                                                |
-  | ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-  | `bad_request`            | 400    | `{ errors }` when strict slide validation finds multiple field errors (`errors` is an array of strings).                                                                                                                                                                                                                 |
-  | `invalid`                | 400    | `{ field, index?, itemIndex?, reason?, use? }` — a storage reason, so it carries the location keys; `use` is added when the refused field is a retired spelling and names the field to send instead (`themeId` → `theme`, `language` → `lang`; B446, B521).                                                              |
-  | `held`                   | 409    | `{ lock }` — the competing slide lock, as the acquire/list bodies name it.                                                                                                                                                                                                                                               |
-  | `conflict`               | 409    | `{ id, revision, modified, updatedBy, conflictingSlides? }` — the server copy the stale `If-Match` lost against, `updatedBy` its last writer as a display pair (`null` when none is recorded); `conflictingSlides` names the slides the slide-level merge could not reconcile. One builder: `revisionConflict()` (B217). |
-  | `locked`                 | 423    | `{ slideId, lockKind, holder? }` — which slide, author or concurrent lock, who holds it (named, not addressed; D22).                                                                                                                                                                                                     |
-  | `conversion_failed`      | 422    | `{ report }` — the same conversion report the 201 body and the SSE stream carry.                                                                                                                                                                                                                                         |
-  | `maintenance`            | 503    | `{ active, reason, retryAfter }` — the same object `GET /api/maintenance` returns.                                                                                                                                                                                                                                       |
-  | `sandbox_quota_exceeded` | 429    | `{ resource, limit, used }` with `resource` `decks` or `bytes`.                                                                                                                                                                                                                                                          |
-  | `in_use`                 | 409    | `{ usage }` — what still uses the custom slide type a delete refused for: `{ slides, decks, libraryItems, versions }`. `DELETE /api/custom-slide-types/:id?force=true` is the explicit second step (B414).                                                                                                               |
-  | `unsupported_conversion` | 400    | `{ from, to, convertible }` — a slide-type change no conversion is declared for: the refused pair and the types the source does convert to (B624).                                                                                                                                                                       |
-  | `missing_alt`            | 422    | `{ lang, slideIndex, slideId, field, itemIndex?, itemField?, count }` — the first picture a publish refused for having no alt text (D137): its language version (`null` without versions), its slide, its field and, inside an item, which item and sub-field; `count` is how many pictures in the deck need one.        |
+  | Code                         | Status | `details`                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+  | ---------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `bad_request`                | 400    | `{ errors }` when strict slide validation finds multiple field errors (`errors` is an array of strings).                                                                                                                                                                                                                                                                                                                                                                           |
+  | `current_password_incorrect` | 400    | `{ field }` — always `currentPassword`: the change-password form marks that input (B674).                                                                                                                                                                                                                                                                                                                                                                                          |
+  | `invalid`                    | 400    | `{ field, index?, itemIndex?, reason?, use?, slideId?, lang?, errors? }` — a storage reason, so it carries the location keys; a declared slide-field refusal also names `slideId`, optional version `lang`, and that field’s `errors`, and on a new deck (create, JSON or `.deck` import) the slide's position as `index`; `use` is added when the refused field is a retired spelling and names the field to send instead (`themeId` → `theme`, `language` → `lang`; B446, B521). |
+  | `held`                       | 409    | `{ lock }` — the competing slide lock, as the acquire/list bodies name it.                                                                                                                                                                                                                                                                                                                                                                                                         |
+  | `conflict`                   | 409    | `{ id, revision, modified, updatedBy, conflictingSlides? }` — the server copy the stale `If-Match` lost against, `updatedBy` its last writer as a display pair (`null` when none is recorded); `conflictingSlides` names the slides the slide-level merge could not reconcile. One builder: `revisionConflict()` (B217).                                                                                                                                                           |
+  | `locked`                     | 423    | `{ slideId, lockKind, holder? }` — which slide, author or concurrent lock, who holds it (named, not addressed; D22).                                                                                                                                                                                                                                                                                                                                                               |
+  | `conversion_failed`          | 422    | `{ report }` — the same conversion report the 201 body and the SSE stream carry.                                                                                                                                                                                                                                                                                                                                                                                                   |
+  | `maintenance`                | 503    | `{ active, reason, retryAfter }` — the same object `GET /api/maintenance` returns.                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | `sandbox_quota_exceeded`     | 429    | `{ resource, limit, used }` with `resource` `decks` or `bytes`.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+  | `in_use`                     | 409    | `{ usage }` — what still uses the custom slide type a delete refused for: `{ slides, decks, libraryItems, versions }`. `DELETE /api/custom-slide-types/:id?force=true` is the explicit second step (B414).                                                                                                                                                                                                                                                                         |
+  | `unsupported_conversion`     | 400    | `{ from, to, convertible }` — a slide-type change no conversion is declared for: the refused pair and the types the source does convert to (B624).                                                                                                                                                                                                                                                                                                                                 |
+  | `missing_alt`                | 422    | `{ lang, slideIndex, slideId, field, itemIndex?, itemField?, count }` — the first picture a publish refused for having no alt text (D137): its language version (`null` without versions), its slide, its field and, inside an item, which item and sub-field; `count` is how many pictures in the deck need one.                                                                                                                                                                  |
 
   The register is **enforced**, at the two emission points that know the code:
   `jsonError()` and `AppError.toJSON()` both call `assertErrorDetails()` before
@@ -192,6 +193,32 @@ If a client ever does need to branch on the cause, add
 `error: '<snake_case_code>'` next to `message`, with the same meaning it has
 here. That upgrade is additive; it never renames a field a client reads.
 
+## Failed background jobs
+
+`GET /api/jobs/:id` answers 200 for a job that failed: reading the status
+succeeded, the work did not. So it is not the envelope either, and it carries
+the one field that means display text:
+
+```json
+{ "id": "heavy-7", "state": "failed", "message": "Presentation not found" }
+```
+
+- **No `error` key** — nothing branches on a cause here, and `error` would
+  claim the envelope's meaning (machine code) for text. This is where the job's
+  raw `failedReason` used to go: the message of whatever the worker threw
+  (`Unknown export type: …`, an `ENOENT` carrying a server path), untranslated
+  and written for nobody (B646).
+- **`message` is present only when the failure left a sentence**, decided by
+  the predicate every contract uses: `isInternalFailure()`. An `AppError` was
+  written for the caller whatever its status, so its sentence travels; any
+  other throw is ours and the job says nothing, the way a 500 stays generic.
+  The surface then uses its own wording (the export panel's "Export failed.
+  Please try again.").
+- The rule and the recording that carries it from worker to route live in
+  [`server/jobs/queue/job-failure.js`](../../server/jobs/queue/job-failure.js);
+  pinned by `tests/job-failure-message.test.js`. The raw reason stays
+  server-side, in the worker's failure log and the queue's own record.
+
 ## MCP tool errors
 
 A refused or failed MCP tool call is a successful JSON-RPC response with
@@ -226,15 +253,18 @@ an `AppError` with the fitting status. Pinned by
   `error`, minus this envelope's `ok:false` discriminator (the HTTP status is the
   public surface's discriminator). Produced through `sendV1Error`/`apiError` and
   the `withV1ErrorHandler` wrap in
-  `server/routes/public-api/v1/middleware.js` — B61 converged the three shapes it
-  used to speak into this one. Don't change it here. The wrap is the one v1
+  `server/routes/public-api/v1/middleware.js`, which once spoke three shapes and
+  now speaks this one (B61). Don't change it here. The wrap is the one v1
   error renderer (B619): no sub-handler catches a throw to answer it itself.
   It follows `withErrorHandler`'s rule: an `AppError` keeps its sentence, code
   and details at any status (a failing model is a 502 `bad_gateway` that says
   so), any other throw from 500 up answers "Internal server error", and every
   answer carries the key's rate-limit headers.
 - Enforced/covered by `tests/api-error-envelope.test.js`.
-- A handful of ad-hoc `serveJson(res, status, { error: err.message })` sites (AI,
-  media, uploads, notion) still put prose in `error`; the client tolerates both,
-  and migrating them (plus rolling out `withErrorHandler`) is the mechanical
-  follow-up tracked in `TODO.md`.
+- Internal API routes use `withErrorHandler` and the canonical helpers. The envelope guard also covers static routes and MCP transport HTTP errors; JSON-RPC responses keep their protocol-defined shape.
+
+## MCP transport HTTP errors
+
+The MCP GET and DELETE endpoints and unsupported HTTP methods use the same canonical envelope through `jsonError()`, with status-derived machine codes (`unauthorized`, `bad_request`, `not_found`, `method_not_allowed`; authentication service failures on GET use `unavailable`). POST JSON-RPC errors retain their protocol-defined `jsonrpc`, `id` and `error: { code, message }` shape.
+
+The top-level HTTP handler preserves an `AppError`'s code, safe message and registered details through `errorToResponse()`. Unexpected 5xx errors return `internal_error` and `Internal server error`, without raw error messages or details. Plain errors with an explicit sub-500 status use the status-derived code and their intended display message.

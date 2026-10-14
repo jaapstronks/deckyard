@@ -3,7 +3,7 @@
  * Simplified topbar with title, permission badge, present button, and optional comments toggle.
  */
 
-import { createUiModeSwitcher } from '../ui-mode-switcher.js';
+import { createUiModeSwitcher } from '../../lib/dom/ui-mode-switcher.js';
 import { t, withSessionLocaleParam } from '../../lib/ui-i18n.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { h } from '../../lib/dom/index.js';

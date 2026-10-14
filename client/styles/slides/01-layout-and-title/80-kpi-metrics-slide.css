@@ -156,8 +156,10 @@
 }
 
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-metric {
-  width: min(980px, 70%);
-  min-height: 360px;
+  /* Both sizes name the tile's inside; it adds its padding and 1px border
+     (border-box, B230). */
+  width: calc(min(980px, 70%) + 2 * var(--slide-space-16) + 2px);
+  min-height: calc(360px + 2 * var(--slide-space-12) + 2px);
   --slide-card-padding: var(--slide-space-12) var(--slide-space-16);
   align-items: center;
   justify-content: center;
@@ -168,10 +170,10 @@
    the same step, so repeating it would only be a fossil of the off-scale
    values. */
 .slide-kpi-metrics .kpi-grid[data-metric-count='2'] .kpi-metric {
-  min-height: 320px;
+  min-height: calc(320px + 2 * var(--slide-space-8) + 2px);
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='3'] .kpi-metric {
-  min-height: 300px;
+  min-height: calc(300px + 2 * var(--slide-space-8) + 2px);
 }
 
 .slide-kpi-metrics .kpi-value {
@@ -306,19 +308,20 @@
 .slide-kpi-metrics.has-bottom-subheading
   .kpi-grid[data-metric-count='1']
   .kpi-metric {
-  min-height: 400px;
+  width: calc(min(980px, 70%) + 2 * var(--slide-space-12) + 2px);
+  min-height: calc(400px + 2 * var(--slide-space-10) + 2px);
   --slide-card-padding: var(--slide-space-10) var(--slide-space-12);
 }
 .slide-kpi-metrics.has-bottom-subheading
   .kpi-grid[data-metric-count='2']
   .kpi-metric {
-  min-height: 240px;
+  min-height: calc(240px + 2 * var(--slide-space-6) + 2px);
   --slide-card-padding: var(--slide-space-6);
 }
 .slide-kpi-metrics.has-bottom-subheading
   .kpi-grid[data-metric-count='3']
   .kpi-metric {
-  min-height: 220px;
+  min-height: calc(220px + 2 * var(--slide-space-6) + 2px);
   --slide-card-padding: var(--slide-space-6);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-value-num {

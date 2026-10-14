@@ -8,6 +8,8 @@
  * and "which slug does it get" cannot mean two things for two kinds of record.
  */
 
+import { MAX_SLUG_LEN } from '../../shared/slug.js';
+
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -90,9 +92,6 @@ export async function withBundleRefs(repoRoot, portable) {
   }
   return rewriteThemeImageRefs(portable, (ref) => map.get(ref));
 }
-
-/** The longest slug `isValidSlug` accepts. */
-const MAX_SLUG_LEN = 80;
 
 /**
  * The slugs to try, in order, for a definition installed from a bundle: its

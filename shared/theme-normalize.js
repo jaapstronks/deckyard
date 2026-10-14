@@ -19,6 +19,7 @@ import {
 } from './theme-slide-backgrounds.js';
 import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from './theme-config-schema.js';
 import { hexToRgb, pickTextColorForBg } from './color-utils.js';
+import { SLIDE_ACCENT_FALLBACK } from './constants/themes.js';
 
 // Re-exported so long-standing importers keep their entry point: the theme
 // editor's variants section imports pickTextColorForBg here, and the tests
@@ -206,7 +207,7 @@ export function normalizeTheme(theme) {
       !!hexToRgb(mistHex) && pickTextColorForBg(mistHex, poles) === darkText;
     vars['--t-color-accent-soft'] = mistIsBright
       ? mistHex
-      : cssVar(vars, '--t-color-accent') || '#385c5c';
+      : cssVar(vars, '--t-color-accent') || SLIDE_ACCENT_FALLBACK;
   }
   // …and what reads on it — same derive-from-the-surface pattern as above.
   if (!vars['--t-color-accent-soft-contrast']) {
