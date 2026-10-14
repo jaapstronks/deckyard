@@ -16,11 +16,8 @@ import {
 } from '../../../utils/request-validators.js';
 import { extractPageId, notionEnabled } from '../../../utils/notion/index.js';
 import { convertNotionPage } from '../../../utils/convert-notion.js';
-import { updatePresentation } from '../../../storage/presentations/index.js';
-import {
-  assertCreatableDeckInput,
-  createPresentation,
-} from '../../../services/presentations.js';
+import { assertCreatableDeckInput } from '../../../services/presentations.js';
+import { createImportedPresentation } from '../../../services/import-json.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
@@ -121,30 +118,24 @@ export async function handleNotionImport({
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
 
-    const created = await createPresentation(
+    const updated = await createImportedPresentation(
       storageScope,
       { actor: authedUser },
       {
-        title: parts.title || deck.title || 'Imported from Notion',
-        theme,
+        parts,
+        slideTypes,
         lang: effectiveLang,
-        notionSourcePageId: normalizedPageId, // Store for "Publish to Notion" feature
-        settings: {
-          stepParagraphs: true,
-          transitions: { preset: 'fade' },
+        theme,
+        fields: {
+          title: parts.title || deck.title || 'Imported from Notion',
+          // Stored for "Publish to Notion".
+          notionSourcePageId: normalizedPageId,
+          settings: {
+            stepParagraphs: true,
+            transitions: { preset: 'fade' },
+          },
         },
       },
-    );
-
-    const updated = await updatePresentation(
-      storageScope,
-      created.id,
-      {
-        ...created,
-        title: parts.title || deck.title || 'Imported from Notion',
-        slides: parts.slides,
-      },
-      { actorEmail: authedUser?.email || null },
     );
 
     serveJson(res, 201, {
@@ -374,30 +365,24 @@ export async function handleNotionImportStream({
       slideTypes,
     });
 
-    const created = await createPresentation(
+    const updated = await createImportedPresentation(
       storageScope,
       { actor: authedUser },
       {
-        title: parts.title || deck.title || 'Imported from Notion',
-        theme,
+        parts,
+        slideTypes,
         lang: effectiveLang,
-        notionSourcePageId: normalizedPageId,
-        settings: {
-          stepParagraphs: true,
-          transitions: { preset: 'fade' },
+        theme,
+        fields: {
+          title: parts.title || deck.title || 'Imported from Notion',
+          // Stored for "Publish to Notion".
+          notionSourcePageId: normalizedPageId,
+          settings: {
+            stepParagraphs: true,
+            transitions: { preset: 'fade' },
+          },
         },
       },
-    );
-
-    const updated = await updatePresentation(
-      storageScope,
-      created.id,
-      {
-        ...created,
-        title: parts.title || deck.title || 'Imported from Notion',
-        slides: parts.slides,
-      },
-      { actorEmail: authedUser?.email || null },
     );
 
     sseWrite(res, {

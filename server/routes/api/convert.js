@@ -2,11 +2,9 @@
  * API route for converting PowerPoint/PDF files to presentations.
  */
 
-import { updatePresentation } from '../../storage/presentations/index.js';
-import {
-  assertCreatableDeckInput,
-  createPresentation,
-} from '../../services/presentations.js';
+import { assertCreatableDeckInput } from '../../services/presentations.js';
+import { createImportedPresentation } from '../../services/import-json.js';
+import { isAppError } from '../../utils/errors.js';
 import {
   badRequest,
   jsonError,
@@ -157,29 +155,22 @@ async function handleConvertFile({
       return true;
     }
 
-    const created = await createPresentation(
+    const updated = await createImportedPresentation(
       storageScope,
       { actor: authedUser },
       {
-        title: parts.title || deck.title || 'Converted Presentation',
-        theme: themeId,
+        parts,
+        slideTypes,
         lang: effectiveLang,
-      },
-    );
-
-    const updated = await updatePresentation(
-      storageScope,
-      created.id,
-      {
-        ...created,
-        title: parts.title || deck.title || 'Converted Presentation',
-        slides: parts.slides,
-        settings: deck.settings || {
-          stepParagraphs: true,
-          transitions: { preset: 'fade' },
+        theme: themeId,
+        fields: {
+          title: parts.title || deck.title || 'Converted Presentation',
+          settings: deck.settings || {
+            stepParagraphs: true,
+            transitions: { preset: 'fade' },
+          },
         },
       },
-      { actorEmail: authedUser?.email || null },
     );
 
     serveJson(res, 201, {
@@ -188,7 +179,9 @@ async function handleConvertFile({
       report,
       detectedLang: effectiveLang, // Include detected language for client navigation
     });
-  } catch {
+  } catch (e) {
+    // A refusal (an invalid slide field, a quota) keeps its own envelope.
+    if (isAppError(e)) throw e;
     jsonError(
       res,
       500,
@@ -497,29 +490,22 @@ async function handleConvertStream({
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
 
-    const created = await createPresentation(
+    const updated = await createImportedPresentation(
       storageScope,
       { actor: authedUser },
       {
-        title: parts.title || deck.title || 'Converted Presentation',
-        theme: themeId,
+        parts,
+        slideTypes,
         lang: effectiveLang,
-      },
-    );
-
-    const updated = await updatePresentation(
-      storageScope,
-      created.id,
-      {
-        ...created,
-        title: parts.title || deck.title || 'Converted Presentation',
-        slides: parts.slides,
-        settings: deck.settings || {
-          stepParagraphs: true,
-          transitions: { preset: 'fade' },
+        theme: themeId,
+        fields: {
+          title: parts.title || deck.title || 'Converted Presentation',
+          settings: deck.settings || {
+            stepParagraphs: true,
+            transitions: { preset: 'fade' },
+          },
         },
       },
-      { actorEmail: authedUser?.email || null },
     );
 
     sseWrite(res, {
