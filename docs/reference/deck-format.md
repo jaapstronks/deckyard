@@ -153,7 +153,8 @@ target is no jump (B695). Code: `slideJumpId()` in
 `shared/slide-types/semantic-projection.js`. Two surfaces still count the
 deck their caller already filtered: the PPTX export receives it without the
 live-only slides, and the presenter of a view-only reader without the slides
-hidden from viewers; threading the stored order there is B696.
+hidden from viewers; threading the stored order through those callers is
+open work (B696).
 
 ### Languages
 
