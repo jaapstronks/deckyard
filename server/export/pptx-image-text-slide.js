@@ -142,7 +142,7 @@ export function imageTextGeometry(content, { slideWidth, slideHeight, pad }) {
  * @param {object} pptx - the pptxgenjs instance, its layouts already defined
  * @param {object} slide - the stored image-text slide
  * @param {{ repoRoot: string, spec: ReturnType<typeof import('./pptx-theme.js').resolveThemeMaster>,
- *   def?: object, slideNum: number, docLang?: string, slideIds?: string[],
+ *   def?: object, slideNum: number, docLang?: string, slideJumps?: import('../../shared/slide-types/semantic-projection.js').SlideJumps,
  *   slideWidth: number, slideHeight: number }} ctx
  * @returns {Promise<{ pptxSlide: object, warnings: string[] }>}
  */
@@ -165,7 +165,7 @@ export async function composeImageTextSlide(pptx, slide, ctx) {
   const projected = slideBlocks(slide, ctx.def, {
     index: slideNum - 1,
     lang: ctx.docLang,
-    slideIds: ctx.slideIds,
+    slideJumps: ctx.slideJumps,
   });
   const title = projected.heading.visible ? projected.heading.text : '';
   const flow = projected.blocks.filter((b) => b.kind !== 'image');

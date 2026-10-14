@@ -24,7 +24,7 @@ function fieldBlock(slide, key, ctx) {
     {
       index: ctx.slideNum - 1,
       lang: ctx.docLang,
-      slideIds: ctx.slideIds,
+      slideJumps: ctx.slideJumps,
     },
   );
   return {

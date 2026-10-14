@@ -8,7 +8,10 @@ import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { getAppName } from '../config/branding.js';
 import { createLogger } from '../utils/logger.js';
-import { slideHeading } from '../../shared/slide-types/semantic-projection.js';
+import {
+  slideHeading,
+  slideJumpsFor,
+} from '../../shared/slide-types/semantic-projection.js';
 import {
   applyThemeToPptx,
   createWidePptx,
@@ -280,7 +283,9 @@ async function buildDeckPptx(
   const s = safeScale(scale);
   const deckLang = resolveDeckLang(pres);
   const docLang = resolveDocLangFromPresentation(pres);
-  const slideIds = slides.map((slide) => String(slide?.id || ''));
+  // The deck this file is made of is the one it receives: a caller that
+  // stripped slides passes the stripped deck, so `#N` counts what is here.
+  const slideJumps = slideJumpsFor(slides);
 
   for (let i = 0; i < slides.length; i++) {
     const slide = slides[i];
@@ -308,7 +313,7 @@ async function buildDeckPptx(
         spec,
         slideNum,
         lang: docLang,
-        slideIds,
+        slideJumps,
       });
       pptxSlide = result.pptxSlide;
       warnings.push(...result.warnings);
@@ -320,7 +325,7 @@ async function buildDeckPptx(
         def,
         slideNum,
         docLang,
-        slideIds,
+        slideJumps,
         slideWidth: SLIDE_W_IN,
         slideHeight: SLIDE_H_IN,
       });
