@@ -102,8 +102,11 @@ from the IdP too:
    `npm run org:create -- --slug acme --name "Acme" --external-id <idp-org-id>`
    (see [`../ops/multi-organization.md`](../ops/multi-organization.md)). Without
    an organization claim, skip this step.
-4. Open `/login` and choose the SSO button. The callback creates your user
-   just in time; because the address matches `AUTH_ADMIN_EMAIL`, it gets the
+4. Open `/login` and choose the SSO button. On a fresh install the boot
+   already created `AUTH_ADMIN_EMAIL` as an admin
+   ([`auth-and-sessions.md`](auth-and-sessions.md) § First admin) and the
+   callback signs you in as that row; otherwise it creates your user just in
+   time; because the address matches `AUTH_ADMIN_EMAIL`, it gets the
    instance `admin` role. Under `MULTI_ORG_ENABLED=true` you also get a
    membership: `owner` of your still-empty home organization without an
    organization claim, `admin` in the claimed organization with one.
