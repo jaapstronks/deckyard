@@ -1,5 +1,6 @@
 import { mightRedisBeAvailable } from './redis-client.js';
 import { allowRequestRedisDetails } from './rate-limit-redis.js';
+import { normalizeRateLimitOptions } from './rate-limit-options.js';
 import { envBool, envInt } from '../config/utils.js';
 import {
   LOGIN_LIMITS,
@@ -135,8 +136,10 @@ function pruneBuckets(now) {
  * @returns {{allowed: boolean, limit: number, remaining: number, resetAt: number, retryAfter: number}}
  */
 function checkRequestInMemory(key, { capacity, refillPerSec }) {
-  const cap = Math.max(1, Number(capacity || 0) || 1);
-  const rps = Math.max(0.001, Number(refillPerSec || 0) || 1);
+  const { capacity: cap, refillPerSec: rps } = normalizeRateLimitOptions({
+    capacity,
+    refillPerSec,
+  });
   const now = Date.now();
 
   let b = buckets.get(key);
@@ -146,8 +149,10 @@ function checkRequestInMemory(key, { capacity, refillPerSec }) {
     buckets.set(key, b);
   }
 
-  const elapsedSec = (now - b.last) / 1000;
-  b.last = now;
+  // A clock running behind the stored refill neither drains nor gifts tokens:
+  // elapsed time is clamped at zero and `last` never moves backwards.
+  const elapsedSec = Math.max(0, now - b.last) / 1000;
+  b.last = Math.max(b.last, now);
   b.tokens = Math.min(cap, b.tokens + elapsedSec * rps);
   // Refresh the limits so a changed capacity/refill (and pruneBuckets) always
   // sees the current bucket shape.

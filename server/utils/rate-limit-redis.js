@@ -1,107 +1,66 @@
 /**
- * Redis-backed rate limiter using sliding window algorithm.
- * Uses Redis sorted sets for efficient, distributed rate limiting.
- *
- * Algorithm:
- * - Each request is stored as a member in a sorted set with timestamp as score
- * - On each request, we remove expired entries and count remaining
- * - If count exceeds capacity, request is denied
- *
- * The accepted request timestamps define the rolling window.
+ * Distributed token bucket. One Lua execution refills, consumes and returns
+ * the decision snapshot, so concurrent instances cannot spend the same token.
  */
-
 import { withRedis } from './redis-client.js';
+import { normalizeRateLimitOptions } from './rate-limit-options.js';
 
-const KEY_PREFIX = 'ratelimit:';
-const DEFAULT_WINDOW_SECONDS = 60;
+// A separate namespace avoids interpreting old sliding-window sorted sets as
+// hashes during a rolling upgrade. Old keys expire under their existing TTL.
+const KEY_PREFIX = 'ratelimit:token-bucket:';
+
+const CONSUME = `
+local cap = tonumber(ARGV[1])
+local rps = tonumber(ARGV[2])
+local now = tonumber(ARGV[3])
+local state = redis.call('HMGET', KEYS[1], 'tokens', 'last')
+local tokens = tonumber(state[1]) or cap
+local last = tonumber(state[2]) or now
+-- A caller clock behind 'last' neither drains nor gifts: clamp, never rewind.
+tokens = math.min(cap, tokens + (math.max(0, now - last) / 1000) * rps)
+local allowed = tokens >= 1
+if allowed then tokens = tokens - 1 end
+redis.call('HSET', KEYS[1], 'tokens', string.format('%.17g', tokens), 'last',
+  math.max(last, now))
+-- Once fully refilled, the bucket is equivalent to an absent key.
+redis.call('PEXPIRE', KEYS[1], math.max(1, math.ceil((cap - tokens) / rps * 1000)))
+local retry = 0
+if not allowed then retry = math.ceil((1 - tokens) / rps) end
+-- Redis Lua truncates numeric return values, so capacity travels as a string.
+return {allowed and 1 or 0, string.format('%.17g', cap), math.floor(tokens),
+  math.ceil((now + ((cap - tokens) / rps) * 1000) / 1000), retry}
+`;
 
 /**
- * Check if a request is allowed under rate limit using Redis.
- * Uses sliding window log algorithm for accuracy.
- *
- * @param {string} key - Unique identifier for the rate limit bucket (e.g., "ip:group")
- * @param {Object} options - Rate limit options
- * @param {number} options.capacity - Maximum requests allowed in the window
- * @param {number} [options.windowSeconds] - Window size in seconds (default: 60)
+ * Consume one token and return decision/header values atomically.
+ * Null explicitly signals Redis failure; the caller owns local fallback.
+ * @param {string} key
+ * @param {{capacity: number, refillPerSec: number}} options
+ * @param {Function} runWithRedis - Redis executor, injectable for integration tests
  * @returns {Promise<{allowed: boolean, limit: number, remaining: number, resetAt: number, retryAfter: number}|null>}
  */
-export async function checkRateLimitRedis(
-  key,
-  { capacity, windowSeconds = DEFAULT_WINDOW_SECONDS },
-  runWithRedis = withRedis,
-) {
-  const now = Date.now();
-  const windowMs = windowSeconds * 1000;
-  const windowStart = now - windowMs;
-  const redisKey = `${KEY_PREFIX}${key}`;
-
-  const result = await runWithRedis(async (redis) => {
-    // One ordered pipeline yields the count and boundary scores used by the
-    // decision. Redis pipelines are not transactions.
-    const pipeline = redis.pipeline();
-
-    // Remove entries older than the window
-    pipeline.zremrangebyscore(redisKey, 0, windowStart);
-
-    // Count current entries in the window
-    pipeline.zcard(redisKey);
-
-    // The oldest score controls the next admission after a refusal; the
-    // newest accepted score controls when the current window fully clears.
-    pipeline.zrange(redisKey, 0, 0, 'WITHSCORES');
-    pipeline.zrange(redisKey, -1, -1, 'WITHSCORES');
-
-    // Add current request (will be checked after)
-    const requestId = `${now}:${Math.random().toString(36).slice(2, 8)}`;
-    pipeline.zadd(redisKey, now, requestId);
-
-    // Set expiry to clean up old keys
-    pipeline.expire(redisKey, windowSeconds + 10);
-
-    const results = await pipeline.exec();
-
-    // Extract results: [error, result] for each command
-    const currentCount = results[1][1]; // zcard result
-    const oldest = Number(results[2][1][1]);
-    const newest = Number(results[3][1][1]);
-
-    const allowed = currentCount < capacity;
-    const remaining = Math.max(0, capacity - currentCount - (allowed ? 1 : 0));
-
-    if (!allowed) {
-      // Remove the request we just added since it's denied
-      await redis.zrem(redisKey, requestId);
-    }
-
-    return {
-      allowed,
-      limit: capacity,
-      remaining,
-      resetAt: Math.ceil(((allowed ? now : newest) + windowMs) / 1000),
-      retryAfter: allowed
-        ? 0
-        : Math.max(1, Math.ceil((oldest + windowMs - now) / 1000)),
-    };
-  }, null);
-
-  // If Redis is unavailable, return null to signal fallback
-  return result;
-}
-
-/** Return the Redis decision and header values from the same window check. */
 export async function allowRequestRedisDetails(
   key,
-  { capacity, refillPerSec },
+  options,
+  runWithRedis = withRedis,
 ) {
-  // The existing Redis backend uses a sliding window sized from the tier's
-  // sustained rate; the in-memory backend refills tokens continuously.
-  const windowSeconds = Math.ceil(capacity / refillPerSec);
-
-  const result = await checkRateLimitRedis(key, { capacity, windowSeconds });
-
-  if (result === null) {
-    return null; // Signal that Redis is unavailable
-  }
-
-  return result;
+  const { capacity, refillPerSec } = normalizeRateLimitOptions(options);
+  const now = Date.now();
+  return runWithRedis(async (redis) => {
+    const result = await redis.eval(
+      CONSUME,
+      1,
+      `${KEY_PREFIX}${key}`,
+      capacity,
+      refillPerSec,
+      now,
+    );
+    return {
+      allowed: result[0] === 1,
+      limit: Number(result[1]),
+      remaining: result[2],
+      resetAt: result[3],
+      retryAfter: result[4],
+    };
+  }, null);
 }

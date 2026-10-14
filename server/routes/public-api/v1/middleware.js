@@ -251,7 +251,7 @@ export async function readApiV1Body(ctx, req, { requireObject = false } = {}) {
 
 /**
  * Check per-minute rate limit for the API key.
- * Uses the configured Redis sliding window or the in-memory token bucket.
+ * Uses the same token bucket in Redis or the in-memory fallback.
  * @param {Object} ctx - Request context with apiKey
  * @returns {Promise<boolean>} - True if allowed, false if rate limited
  */

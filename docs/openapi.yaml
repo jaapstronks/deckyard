@@ -43,8 +43,9 @@ info:
     - `X-RateLimit-Remaining`: Whole requests available after this request
     - `X-RateLimit-Reset`: Unix timestamp when the current request budget is full again
 
-    The request limiter refills tokens in memory, or uses a sliding window when
-    Redis is available. Its headers describe the backend that actually handled
+    The request limiter uses the same token bucket in memory and Redis. Redis
+    consumes tokens atomically across instances. During Redis outages, fallback
+    budgets are local to each process. Its headers describe the backend that actually handled
     the request. AI and export quota responses use the same header names for
     their daily quota instead. A request-rate-limited response also includes
     `Retry-After`, the seconds until the next request can be admitted.
