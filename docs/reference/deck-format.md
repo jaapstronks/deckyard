@@ -130,6 +130,18 @@ Portable slides carry **no `id`** — ids are a storage concern and are
 round-trip. For the same reason slide nesting (`parentId`, a reference to
 another slide's id) does not travel.
 
+An **in-deck jump** (a `url`-typed field, at slide level or inside an `items`
+field, that points at another slide) therefore travels in its positional form
+`#N`: the target's 1-based place in this deck's `slides` array. The export
+writes a stored `#slide:<id>` jump as `#N` on the order the deck is exported
+in, after any slide was filtered out; `#N` and web addresses travel as
+written. A jump whose target is not in the exported deck is not written as a
+link: the value becomes `""`, and an item whose required `url` has no target
+(an action button) is left out, in every language version. The importer keeps
+`#N` as written; a stored-shape import whose slides do carry ids has its
+`#slide:<id>` jumps remapped to the new ids. Code: `portableSlideJumps()` and
+`rewriteSlideJumpIds()` in `shared/slide-types/deck.js`.
+
 ### Languages
 
 A deck written in several languages carries its structure **once**. `content`,
@@ -242,6 +254,9 @@ Deliberate lossy edges (they degrade, they do not crash):
   key, so nothing renders differently: it is a retired key a stored deck still
   carried (the export writes stored content as it is), or one another writer
   invented. This is part of the one normalization pass the fixpoint allows.
+- An **in-deck jump to a slide that is not exported** is dropped (see
+  [Slides](#slides)); a jump to an exported slide stays on that slide
+  (`tests/deck-export-slide-jumps.test.js`).
 
 ## Evolution rule
 
