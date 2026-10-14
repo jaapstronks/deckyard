@@ -662,7 +662,7 @@
   "settings.slideTypes.fields.helpText": "Help text",
   "settings.slideTypes.fields.helpTextPlaceholder": "Optional help text",
   "settings.slideTypes.fields.itemFields": "Item fields",
-  "settings.slideTypes.fields.itemLabelField": "Heading of an item",
+  "settings.slideTypes.fields.itemLabelField": "Name of an item",
   "settings.slideTypes.fields.itemLabelFieldHelp": "Used by the reader and the reflowable export to head each item.",
   "settings.slideTypes.fields.itemLabelFieldNone": "(the first text sub-field)",
   "settings.slideTypes.fields.key": "Key",

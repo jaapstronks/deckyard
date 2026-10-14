@@ -27,6 +27,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import { labelableKeys } from '../shared/slide-types/field-definitions.js';
+import { labelFieldText } from '../shared/slide-types/field-lookup.js';
+import { validateSlideTypeDefinition } from '../shared/slide-types/validate-definition.js';
 
 /**
  * Every `fields[]` level of a type, top-level first, then each `itemFields[]`
@@ -65,15 +68,13 @@ function itemLabelFieldProblems(name, fields) {
         problems.push(`${where}: itemLabelField must be a string`);
         continue;
       }
-      // Readable, not merely present: a hidden or presentational sub-field is
-      // never a heading, so declaring one is the same silent no-op as a typo.
-      const headable = (field.itemFields || [])
-        .filter((f) => f?.type === 'string' && !f.hidden && !f.presentational)
-        .map((f) => f.key);
-      if (!headable.includes(field.itemLabelField)) {
+      // The validator's own set (B634): a guard with a looser private copy
+      // let quote-slide pass here while the validator warned on it.
+      const labelable = [...labelableKeys(field.itemFields)];
+      if (!labelable.includes(field.itemLabelField)) {
         problems.push(
           `${where}: itemLabelField '${field.itemLabelField}' is not ` +
-            `a readable string sub-field (${headable.join(', ') || 'none'})`,
+            `a readable string sub-field (${labelable.join(', ') || 'none'})`,
         );
       }
     }
@@ -141,6 +142,30 @@ test('every declared itemLabelField, at any depth, names a readable string sub-f
   for (const [name, def] of Object.entries(SLIDE_TYPES)) {
     assert.deepEqual(itemLabelFieldProblems(name, def.fields), []);
   }
+});
+
+test('no built-in type earns an itemLabelField warning from the validator (B634)', () => {
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    const { warnings } = validateSlideTypeDefinition(def, name);
+    assert.deepEqual(
+      warnings.filter((w) => w.includes('itemLabelField')),
+      [],
+      name,
+    );
+  }
+});
+
+test("quote-slide's list label is its first quote (B634)", () => {
+  const def = SLIDE_TYPES['quote-slide'];
+  assert.equal(
+    labelFieldText(def, {
+      quotes: [
+        { quote: ' First words ', authorName: 'Ada' },
+        { quote: 'Second', authorName: 'Bob' },
+      ],
+    }),
+    'First words',
+  );
 });
 
 test('every declared mediaRef, at any depth, is complete and names its own siblings', () => {

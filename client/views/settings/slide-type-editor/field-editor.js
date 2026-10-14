@@ -12,7 +12,7 @@ import {
   CUSTOM_TYPE_PROPERTY_KEYS,
 } from '../../../../shared/slide-types/custom-field-definitions.js';
 import {
-  headableKeys,
+  labelableKeys,
   offeredProperties,
 } from '../../../../shared/slide-types/field-definitions.js';
 import { enumOptionValues } from '../../../../shared/slide-types/field-types.js';
@@ -139,13 +139,13 @@ export function createFieldListEditor({
   }
 
   /**
-   * The sub-fields that could head an item, from the shared walk, plus a
+   * The sub-fields that could name an item, from the shared walk, plus a
    * declaration that no longer names one — same reason as above.
    * @param {Object} field
    * @returns {string[]}
    */
   function itemHeadingChoices(field) {
-    const headable = [...headableKeys(field.itemFields)];
+    const headable = [...labelableKeys(field.itemFields)];
     const declared = field.itemLabelField;
     return declared && !headable.includes(declared)
       ? [...headable, declared]
@@ -752,9 +752,9 @@ export function createFieldListEditor({
         ),
       );
 
-      // Which sub-field heads an item in the document projection (A2.1/D81).
-      // The choices are the walk's own `headableKeys`, so the builder cannot
-      // offer a heading the projection would refuse to honour.
+      // Which sub-field names an item (A2.1/D81, B634). The choices are the
+      // walk's own `labelableKeys`, so the builder offers exactly what the
+      // validator accepts.
       const headRow = h('div', { class: 'field-list-field-row' });
       const headSelect = h('select', { class: 'form-input form-input-sm' });
       const syncHead = () =>
@@ -787,7 +787,7 @@ export function createFieldListEditor({
           class: 'field-label field-label-sm',
           text: t(
             'settings.slideTypes.fields.itemLabelField',
-            'Heading of an item',
+            'Name of an item',
           ),
         }),
         headSelect,

@@ -80,7 +80,7 @@ const choices = (select) => [...select.options].map((o) => o.value);
 const fire = (node, type) =>
   node.dispatchEvent(new dom.window.Event(type, { bubbles: true }));
 
-test('an items row offers its readable string sub-fields as the item heading', () => {
+test('an items row offers its readable string sub-fields as the item name', () => {
   const view = mount([
     {
       key: 'rows',
@@ -89,16 +89,19 @@ test('an items row offers its readable string sub-fields as the item heading', (
       itemFields: [
         { key: 'value', type: 'string', label: 'Value' },
         { key: 'title', type: 'string', label: 'Title' },
+        { key: 'quote', type: 'string', label: 'Quote', role: 'quote' },
         { key: 'photo', type: 'image', label: 'Photo' },
       ],
     },
   ]);
-  const select = control(rows(view.el)[0], 'Heading of an item');
+  const select = control(rows(view.el)[0], 'Name of an item');
   assert.ok(select, 'the control is in the items row');
+  // A quote names its item (quote-slide's list label) though it never heads
+  // one: the builder offers what the validator accepts (B634).
   assert.deepEqual(
     choices(select),
-    ['', 'value', 'title'],
-    'the walk’s own headable keys, plus falling back to the first text',
+    ['', 'value', 'title', 'quote'],
+    'the walk’s own labelable keys, plus falling back to the first text',
   );
   assert.equal(select.value, '', 'undeclared means the default, not a guess');
 
@@ -115,7 +118,7 @@ test('an items row offers its readable string sub-fields as the item heading', (
   );
 });
 
-test('the item-heading choices follow the sub-fields as they are edited', () => {
+test('the item-name choices follow the sub-fields as they are edited', () => {
   const view = mount([
     {
       key: 'rows',
@@ -125,14 +128,14 @@ test('the item-heading choices follow the sub-fields as they are edited', () => 
     },
   ]);
   const row = rows(view.el)[0];
-  const select = control(row, 'Heading of an item');
+  const select = control(row, 'Name of an item');
   assert.deepEqual(choices(select), ['', 'value']);
 
   // Add a sub-field through the nested editor's own button.
   const nested = row.querySelector('.field-list-nested .field-list-editor');
   nested.querySelector('button.btn-secondary').click();
   assert.deepEqual(
-    choices(control(row, 'Heading of an item')),
+    choices(control(row, 'Name of an item')),
     ['', 'value', 'field2'],
     'the new sub-field is offered without a re-render of the row',
   );

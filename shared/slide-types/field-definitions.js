@@ -196,32 +196,58 @@ function fieldName(field, index) {
 }
 
 /**
- * The sub-field keys of an `items` field that could serve as an item heading:
- * the readable strings that no role gives an element of their own (D128) and
- * that are not the text of a link (`hrefKey`, D131).
- * Mirrors what `renderItemBlock` in semantic-projection will actually pick from, so an `itemLabelField` naming anything else is a
- * declaration that cannot be honoured.
+ * The sub-field keys of an `items` field that can name an item: its readable
+ * strings (not hidden, not presentational). This is the set an
+ * `itemLabelField` may declare (B634). The name drives the slide-list label
+ * (`labelFieldText`), the in-box prompt of an essential list's first entry and,
+ * where it is also in {@link headableKeys}, the item's heading in the reader.
  *
- * Exported because the builder's `itemLabelField` control offers exactly this
- * set: a second list of "which sub-fields can head an item" is the drift this
- * module exists to prevent (D84).
+ * Exported because the validator, the builder's `itemLabelField` control and
+ * the registry guard all read this one set: a second list of "which sub-fields
+ * can name an item" is the drift this module exists to prevent (D84).
+ *
+ * @param {unknown[]} itemFields
+ * @returns {Set<string>}
+ */
+export function labelableKeys(itemFields) {
+  return new Set(
+    readableStrings(itemFields)
+      .map((sub) => sub.key)
+      .filter(isNonEmpty),
+  );
+}
+
+/**
+ * The subset of {@link labelableKeys} that can also head an item: no role
+ * gives the string an element of its own (D128) and it is not the text of a
+ * link (`hrefKey`, D131). Mirrors what `renderItemBlock` in
+ * semantic-projection will actually pick from. A label outside this set is
+ * still honoured as the item's name; only the heading falls back to the first
+ * headable string (quote-slide names a quote by its text, but a quote never
+ * becomes an `<h3>`).
  *
  * @param {unknown[]} itemFields
  * @returns {Set<string>}
  */
 export function headableKeys(itemFields) {
   return new Set(
-    (Array.isArray(itemFields) ? itemFields : [])
+    readableStrings(itemFields)
       .filter(
         (sub) =>
-          sub?.type === 'string' &&
-          !sub.hidden &&
-          !sub.presentational &&
-          !isNonEmpty(sub.hrefKey) &&
-          !DOCUMENT_ELEMENT_ROLES.has(sub.role),
+          !isNonEmpty(sub.hrefKey) && !DOCUMENT_ELEMENT_ROLES.has(sub.role),
       )
       .map((sub) => sub.key)
       .filter(isNonEmpty),
+  );
+}
+
+/**
+ * @param {unknown[]} itemFields
+ * @returns {Array<Object>}
+ */
+function readableStrings(itemFields) {
+  return (Array.isArray(itemFields) ? itemFields : []).filter(
+    (sub) => sub?.type === 'string' && !sub.hidden && !sub.presentational,
   );
 }
 
@@ -510,14 +536,14 @@ export function walkFieldDefinitions(fields, profile) {
         if (type !== 'items') {
           at2('item_label_field_not_items', 'warning', { type });
         } else {
-          const headable = headableKeys(field.itemFields);
+          const labelable = labelableKeys(field.itemFields);
           if (
             !isNonEmpty(field.itemLabelField) ||
-            !headable.has(field.itemLabelField)
+            !labelable.has(field.itemLabelField)
           ) {
             at2('item_label_field_unknown', 'warning', {
               declared: field.itemLabelField,
-              headable: [...headable],
+              labelable: [...labelable],
             });
           }
         }
@@ -912,9 +938,8 @@ const FINDING_MESSAGES = {
   item_label_field_unknown: (where, f) =>
     `${where} declares \`itemLabelField\` ` +
     `${JSON.stringify(f?.detail?.declared)}, which is not a readable string ` +
-    `sub-field of this item (${(f?.detail?.headable || []).join(', ') || 'none'}), ` +
-    `so it is ignored and the item heading falls back to the first readable ` +
-    `string.`,
+    `sub-field of this item (${(f?.detail?.labelable || []).join(', ') || 'none'}), ` +
+    `so it is ignored and the item is named by its first readable string.`,
   media_ref_not_an_object: (where, f) =>
     `${where} declares \`mediaRef\` as something other than an object ` +
     `(\`{ label, linkKey }\`)` +
