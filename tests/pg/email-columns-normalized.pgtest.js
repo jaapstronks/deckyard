@@ -264,6 +264,35 @@ pgDescribe('e-mail columns normalised on write (real PostgreSQL)', () => {
       assert.equal(byId[carol], 'carol@example.com');
     });
 
+    it('leaves a blank value in a NOT NULL column as it is', async () => {
+      const deck = await insertDeck();
+      await db
+        .insertInto('presentation_versions')
+        .values({
+          presentation_id: deck,
+          organization_id: orgId,
+          created_by: '  ',
+          revision: 1,
+          presentation_data: JSON.stringify({}),
+        })
+        .execute();
+      const spec = EMAIL_COLUMNS.find(
+        (c) => c.table === 'presentation_versions',
+      );
+
+      assert.deepEqual(await countUnnormalized(db, spec), {
+        unnormalized: 1,
+        foldable: 0,
+      });
+      await runMigration(db);
+
+      const { created_by: createdBy } = await db
+        .selectFrom('presentation_versions')
+        .select('created_by')
+        .executeTakeFirstOrThrow();
+      assert.equal(createdBy, '  ', 'NULL would break the NOT NULL constraint');
+    });
+
     it('folds the favorites per element, dropping blanks and duplicates', async () => {
       const id = await insertLibraryItem('organization', [
         LEGACY_ANN,

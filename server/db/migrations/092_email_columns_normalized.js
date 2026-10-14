@@ -15,8 +15,9 @@
  * that differ only in case onto one value would break that constraint, and
  * which of the two is the real one is not a question a migration can answer.
  * Such a row is left as it is and counted in the log, so an operator can see
- * it; every other row is folded. Those columns are NOT NULL, so a blank value
- * is left alone too rather than turned into NULL.
+ * it; every other row is folded. Those columns are NOT NULL, and so is
+ * `presentation_versions.created_by` (migration 014): a blank value there is
+ * left alone too rather than turned into the NULL the constraint refuses.
  *
  * `slide_library.favorites` is an array of addresses: each element is folded,
  * blanks are dropped and duplicates collapse to one.
@@ -34,8 +35,10 @@ const log = createLogger('migration-092');
 /**
  * The e-mail columns this migration folds. `unique` names the columns that
  * scope a unique constraint over the address (`[]`: unique on its own); it is
- * absent for a column without one.
- * @type {readonly {table: string, column: string, unique?: string[]}[]}
+ * absent for a column without one, and a unique column is NOT NULL as well.
+ * `notNull` marks the one NOT NULL column without a unique constraint.
+ * @typedef {{table: string, column: string, unique?: string[], notNull?: boolean}} EmailColumn
+ * @type {readonly EmailColumn[]}
  */
 export const EMAIL_COLUMNS = Object.freeze([
   { table: 'users', column: 'email', unique: [] },
@@ -46,7 +49,7 @@ export const EMAIL_COLUMNS = Object.freeze([
     unique: ['presentation_id'],
   },
   { table: 'presentations', column: 'trashed_by' },
-  { table: 'presentation_versions', column: 'created_by' },
+  { table: 'presentation_versions', column: 'created_by', notNull: true },
   { table: 'slide_library', column: 'owner_email' },
   { table: 'slide_library', column: 'created_by' },
   { table: 'slide_library', column: 'updated_by' },
@@ -102,20 +105,34 @@ const foldableUnique = ({ table, column, unique }) => {
 };
 
 /**
+ * The condition, beyond "not yet normalised", a row must meet to be folded:
+ * a unique column takes the folded value only when no other row in its scope
+ * folds to it, and a NOT NULL column keeps a blank value rather than taking
+ * the NULL its constraint refuses. `null` when every unnormalised row folds.
+ * @param {EmailColumn} spec
+ * @returns {import('kysely').RawBuilder<unknown>|null}
+ */
+const foldable = (spec) => {
+  if (spec.unique) return foldableUnique(spec);
+  if (spec.notNull)
+    return sql`${normalized(sql.ref(`r.${spec.column}`))} IS NOT NULL`;
+  return null;
+};
+
+/**
  * How many rows hold a non-normalised value in one column, and how many of
  * those the fold will rewrite (the rest would collide on a unique
- * constraint). Exported so the real-PostgreSQL test can pin the filter.
+ * constraint, or are blank in a NOT NULL column). Exported so the
+ * real-PostgreSQL test can pin the filter.
  * @param {import('kysely').Kysely<any>} db
- * @param {{table: string, column: string, unique?: string[]}} spec - One of
- *   {@link EMAIL_COLUMNS}.
+ * @param {EmailColumn} spec - One of {@link EMAIL_COLUMNS}.
  * @returns {Promise<{unnormalized: number, foldable: number}>}
  */
 export async function countUnnormalized(db, spec) {
-  const foldable = spec.unique
-    ? sql`count(*) FILTER (WHERE ${foldableUnique(spec)})`
-    : sql`count(*)`;
+  const extra = foldable(spec);
+  const count = extra ? sql`count(*) FILTER (WHERE ${extra})` : sql`count(*)`;
   const { rows } = await sql`
-    SELECT count(*)::int AS unnormalized, (${foldable})::int AS foldable
+    SELECT count(*)::int AS unnormalized, (${count})::int AS foldable
     FROM ${unnormalizedRows(spec)}
   `.execute(db);
   return {
@@ -127,13 +144,14 @@ export async function countUnnormalized(db, spec) {
 /**
  * Fold one column. Exported for the real-PostgreSQL test.
  * @param {import('kysely').Kysely<any>} db
- * @param {{table: string, column: string, unique?: string[]}} spec
+ * @param {EmailColumn} spec
  */
 export async function foldColumn(db, spec) {
   const { table, column } = spec;
   const col = sql.ref(`r.${column}`);
-  const where = spec.unique
-    ? sql`${col} IS DISTINCT FROM ${normalized(col)} AND ${foldableUnique(spec)}`
+  const extra = foldable(spec);
+  const where = extra
+    ? sql`${col} IS DISTINCT FROM ${normalized(col)} AND ${extra}`
     : sql`${col} IS DISTINCT FROM ${normalized(col)}`;
   await sql`
     UPDATE ${sql.table(table)} r
@@ -169,7 +187,7 @@ export const up = async (db) => {
     log.info(`${name}: ${foldable} row(s) to normalise`);
     if (unnormalized > foldable) {
       log.warn(
-        `${name}: ${unnormalized - foldable} row(s) left as is: blank, or folding would collide with another row`,
+        `${name}: ${unnormalized - foldable} row(s) left as is: blank in a NOT NULL column, or folding would collide with another row`,
       );
     }
     if (foldable) await foldColumn(db, spec);
