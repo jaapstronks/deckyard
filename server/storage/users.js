@@ -65,6 +65,53 @@ export async function ensureUserByEmail(scope, options) {
   });
 }
 
+/**
+ * Create the instance's first user, an admin without a password, but only
+ * while the `users` table is empty. This is the boot-time bootstrap for
+ * `AUTH_ADMIN_EMAIL` (D192): once anyone exists, users come from the admin UI,
+ * SSO or the other login paths, and this never writes again. The first session
+ * is set up through magic link or password reset, which need an existing row.
+ *
+ * Two instances booting together race on the same address; the unique
+ * `users.email` turns the loser into a no-op.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} email - The configured admin address
+ * @returns {Promise<{created: boolean, user: object|null, reason?: 'invalid'|'not_empty'|'unavailable'}>}
+ */
+export async function createFirstAdmin(scope, email) {
+  const { organizationId } = toStorageContext(scope, 'createFirstAdmin');
+  const normalized = normalizeEmail(email);
+  if (!normalized || !normalized.includes('@')) {
+    return { created: false, user: null, reason: 'invalid' };
+  }
+  return withDbGuard(
+    { created: false, user: null, reason: 'unavailable' },
+    async (db) => {
+      const any = await db.selectFrom('users').select('id').limit(1).execute();
+      if (any.length > 0) {
+        return { created: false, user: null, reason: 'not_empty' };
+      }
+      const now = nowIso();
+      const inserted = await db
+        .insertInto('users')
+        .values({
+          organization_id: organizationId,
+          email: normalized,
+          role: 'admin',
+          auth_source: 'database',
+          created_at: now,
+          updated_at: now,
+        })
+        .onConflict((oc) => oc.column('email').doNothing())
+        .returningAll()
+        .executeTakeFirst();
+      return inserted
+        ? { created: true, user: inserted }
+        : { created: false, user: null, reason: 'not_empty' };
+    },
+  );
+}
+
 // ============================================================
 // USER CRUD
 // ============================================================

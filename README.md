@@ -256,11 +256,13 @@ DECKYARD_MCP_OWNER_EMAIL=you@example.com
 
 ### Authentication
 
-Auth is **disabled by default**. Enable it by setting:
+Auth is **on by default**: the server refuses to start without one of these:
 
-- `AUTH_ENABLED=true`
-- `AUTH_SECRET` — A random secret for session signing
-- `AUTH_ADMIN_EMAIL` — This user gets the admin role
+- `AUTH_SECRET` — A random secret for session signing (32+ characters)
+- `AUTH_ADMIN_EMAIL` — This user gets the admin role. On a fresh install the
+  server creates it at first boot; sign in with a magic link or "Forgot
+  password" (email must be configured), or through SSO with that address.
+- `AUTH_ENABLED=false` — run intentionally without auth (local single-user)
 
 Users are managed in the app itself (admin panel, invitations, password
 reset). For local development, `AUTH_DEV_BYPASS=true` skips auth entirely and
