@@ -242,6 +242,16 @@
   opacity: 1;
 }
 
+/* While a field of the slide is edited, its slide-level ghosts show without
+   hover (B704): the empty optional fields are the next Tab stops, so they
+   should be visible while you type. Item-scoped ghosts keep the per-item rule
+   below; the edited item is the active one (overlay.js focusin). */
+.thumb.is-inline-edit:has(.ie-editing)
+  .ie-overlay
+  .ie-ghost:not(.ie-item-scoped) {
+  opacity: 1;
+}
+
 /* A ghost chip marks an insertion point and never covers content (B435,
    ghost-placement.js), so it needs no opaque plane: an outline and its label
    until the chip itself is hovered, which fills it (the :hover rule below). A
