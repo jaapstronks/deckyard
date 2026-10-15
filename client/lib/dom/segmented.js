@@ -4,7 +4,8 @@
  * The editor chrome grew three copies of the same segmented-control recipe:
  * the canonical `.sb-segmented` (settings, presenter language, UI mode, …) and
  * two hand-rolled look-alikes with their own class names and their own CSS —
- * `.pane-tabs` (inspector/comments/notes) and `.comments-scope`. The CSS is now
+ * the old pane switcher (now column tabs, `column-tabs.js`) and
+ * `.comments-scope`. The CSS is now
  * one source (`.sb-segmented`, plus the `is-outlined` variant in
  * `app/components.css`); this factory is the DOM half of that, so
  * callers describe segments instead of rebuilding the markup and the

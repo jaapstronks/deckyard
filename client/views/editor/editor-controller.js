@@ -46,6 +46,7 @@ import {
 } from './convert-slide-action.js';
 import { createEditorTopbar } from './topbar/index.js';
 import { createPaneTabs } from './pane-tabs.js';
+import { createCanvasTabs } from './canvas-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveRefusal } from './editor-form/save-refusal.js';
 import { createSaveManager } from './save-manager.js';
@@ -898,16 +899,23 @@ export async function createEditorController({
     beforeCreate: saveManager.flush,
   });
 
-  // Pane tabs (Inspector / Comments / Notes) at the far right of the slide
-  // toolbar, directly above the rail. The panes are slide-scoped, so the
-  // tabs live in the slide row, not the deck-level topbar. Toggle semantics
-  // (open on my pane = dismiss, else open/switch) live in the pane host;
-  // dereferenced at click time (inspectorPanes is built above).
+  // Pane tabs (Inspector / Comments) head the right-hand column (D335), in
+  // their own grid cell so they stay put when the rail is dismissed. Toggle
+  // semantics (open on my pane = dismiss, else open/switch) live in the pane
+  // host; dereferenced at click time (inspectorPanes is built above).
   const paneTabs = createPaneTabs({
     onToggleInspector: () => inspectorPanes.toggle('settings'),
     onToggleComments: () => inspectorPanes.toggle('comments'),
   });
   setCommentsBadgeFn = paneTabs.updateBadge;
+  const railHead = h('div', { class: 'rail-head' }, [paneTabs.el]);
+
+  // Canvas | Fields above the canvas column (D335). Fields opens the
+  // all-fields dialog for now (B703 PR 2 brings it into the column); the
+  // dialog is built further down, so it is dereferenced at click time.
+  const canvasTabs = createCanvasTabs({
+    onOpenFields: () => bulkEditModal.open(),
+  });
 
   const previewPanel = createPreviewPanel({
     root,
@@ -947,6 +955,7 @@ export async function createEditorController({
       });
     },
     notesStripEl: notesStrip.el,
+    canvasTabsEl: canvasTabs.el,
   });
 
   const {
@@ -954,11 +963,6 @@ export async function createEditorController({
     thumbEl: thumb,
     slideBarEl: slideBar,
   } = previewPanel;
-  // Dock the pane openers (labeled) at the far right of the slide bar, above
-  // the inspector column they control (Option A). They live in the slide bar,
-  // not the deck-level topbar, and the bar is always present, so the rail stays
-  // re-openable when it collapses.
-  previewPanel.openersSlotEl?.append(paneTabs.el);
   // The notes textarea lives in the under-slide strip; every consumer
   // (live-edits binder, search focus, slide-change refresh) keeps using this
   // reference (the strip is persistent DOM, so it holds).
@@ -1055,13 +1059,14 @@ export async function createEditorController({
   // ============================================================
 
   // Column order slides | canvas | inspector (Keynote/Figma convention).
-  // Grid children (Option A): the slides column spans both rows; the slide bar
-  // spans preview + inspector on row 1; preview and inspector sit on row 2.
-  // Placement is by class (see 20-editor-layout.css), so DOM order here is not
-  // load-bearing.
+  // Grid children: the slides column spans both rows; row 1 holds the head
+  // of each working column (slide bar over the canvas, rail head over the
+  // inspector); preview and inspector sit on row 2. Placement is by class
+  // (see 20-editor-layout.css), so DOM order here is not load-bearing.
   const layout = h('div', { class: 'layout' }, [
     left,
     slideBar,
+    railHead,
     preview,
     inspectorPanel,
   ]);
@@ -1454,8 +1459,8 @@ export async function createEditorController({
     disabledSlideTypes,
     features,
     setInspectorCollapsed,
-    // Canvas-header mounts for the slide-scoped toolbar (type chip, All
-    // text, lock, actions). The `bulk` surface has neither toolbar nor
+    // Canvas-header mounts for the slide-scoped toolbar (type chip, Layout,
+    // lock, actions). The `bulk` surface has neither toolbar nor
     // header actions, so sharing this dep is harmless there.
     slideToolbar: previewPanel.slideToolbar,
   };
@@ -1470,7 +1475,11 @@ export async function createEditorController({
     getSlideLockKind,
     // Resync the panel form after the modal closes: the modal's structural
     // edits rerender its own form instance, not the panel behind it.
-    onClosed: () => rerenderEditor(),
+    // The Fields tab hands back to Canvas.
+    onClosed: () => {
+      canvasTabs.showCanvas();
+      rerenderEditor();
+    },
     createFormRenderer: (formMount, refreshModalPreview) =>
       createRerenderEditor({
         ...editorFormDeps,
@@ -1493,7 +1502,6 @@ export async function createEditorController({
   const editorForm = createRerenderEditor({
     ...editorFormDeps,
     surface: 'inspector',
-    onOpenBulkEdit: () => bulkEditModal.open(),
     getSelectedElement: () => selectedElement,
     // Chart inspector's "Edit data…" entry point opens the chart-data modal
     // (grid + live preview, editing-surfaces §4.3). Only the inspector instance

@@ -1,0 +1,55 @@
+/* Column tabs (`lib/dom/column-tabs.js`, D335): a tab strip fastened to the
+   column it switches - Canvas | Fields above the canvas, Inspector | Comments
+   in the head of the right-hand column. The strip's owner draws the bottom
+   rule; the active tab sits over it in the tone of the surface it opens, so it
+   reads as the top of that surface. The owner sets that tone with
+   `--column-tabs-surface` (an `--app-*` triple). */
+.column-tabs {
+  --column-tabs-surface: var(--app-bg-elevated);
+  display: flex;
+  align-items: flex-end;
+  align-self: flex-end;
+  gap: var(--ps-space-0-5);
+  flex-shrink: 0;
+}
+
+.column-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1-5);
+  margin-bottom: -1px;
+  padding: var(--ps-space-1-5) var(--ps-space-3);
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--ps-radius-md) var(--ps-radius-md) 0 0;
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font: inherit;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--ps-transition-fast),
+    color var(--ps-transition-fast);
+}
+
+.column-tab:hover {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-hover));
+}
+
+.column-tab.is-active {
+  /* 1px taller than its neighbours: the extra pixel covers the strip's rule. */
+  padding-bottom: calc(var(--ps-space-1-5) + 1px);
+  border-color: hsl(var(--app-border-default));
+  background: hsl(var(--column-tabs-surface));
+  color: hsl(var(--app-text-primary));
+  font-weight: 600;
+}
+
+.column-tab:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: -2px;
+}

@@ -893,9 +893,8 @@ table.csv-grid {
 }
 
 /* Outlined variant: a tighter, bordered segmented control for chrome that sits
-   on the app background rather than in a form — the pane tabs above the
-   inspector rail and the comments scope switch. Both were hand-rolled copies
-   of this recipe (.pane-tabs / .comments-scope) before it moved here.
+   on the app background rather than in a form — the comments scope switch,
+   once a hand-rolled copy of this recipe (.comments-scope).
 
    It differs from the default in flavour, not structure: a border and the base
    background instead of a sunken well, the smaller radius, and a tighter,

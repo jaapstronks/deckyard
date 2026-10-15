@@ -147,8 +147,6 @@
   "editor.bulkEdit.counter": "Slajd {n} z {total}",
   "editor.bulkEdit.hint": "Slajd aktualizuje się na żywo podczas pisania. Układ, tło i dostępność pozostają w panelu bocznym.",
   "editor.bulkEdit.next": "Następny slajd",
-  "editor.bulkEdit.open": "Cały tekst",
-  "editor.bulkEdit.openTitle": "Edytuj wszystkie pola tekstowe tego slajdu w jednym widoku",
   "editor.bulkEdit.prev": "Poprzedni slajd",
   "editor.bulkEdit.title": "Edytuj cały tekst",
   "editor.cards.collapse": "Zwiń",

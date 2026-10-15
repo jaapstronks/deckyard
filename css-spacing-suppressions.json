@@ -151,7 +151,7 @@
   },
   "client/styles/app/editor/20-preview.css": {
     "tokenisable-spacing": {
-      "count": 12
+      "count": 9
     }
   },
   "client/styles/app/editor/35-image-library.css": {

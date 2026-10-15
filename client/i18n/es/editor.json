@@ -147,8 +147,6 @@
   "editor.bulkEdit.counter": "Diapositiva {n} de {total}",
   "editor.bulkEdit.hint": "La diapositiva se actualiza en vivo mientras escribe. Diseño, fondo y accesibilidad se quedan en el panel lateral.",
   "editor.bulkEdit.next": "Siguiente diapositiva",
-  "editor.bulkEdit.open": "Todo el texto",
-  "editor.bulkEdit.openTitle": "Editar todos los campos de texto de esta diapositiva en una sola vista",
   "editor.bulkEdit.prev": "Diapositiva anterior",
   "editor.bulkEdit.title": "Editar todo el texto",
   "editor.cards.collapse": "Contraer",

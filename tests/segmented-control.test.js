@@ -2,11 +2,11 @@
  * Shared segmented-control factory (client/lib/segmented.js).
  *
  * Three copies of the same control existed: the canonical `.sb-segmented` and
- * two hand-rolled look-alikes (`.pane-tabs`, `.comments-scope`) with their own
- * CSS and their own is-active/aria-pressed bookkeeping. This covers the
- * bookkeeping the factory took over, including the `selectOnClick: false` mode
- * both migrated controls use (their owner decides what selection means —
- * clicking the active pane tab dismisses the rail rather than re-selecting).
+ * two hand-rolled look-alikes (the old pane switcher, `.comments-scope`) with
+ * their own CSS and their own is-active/aria-pressed bookkeeping. This covers
+ * the bookkeeping the factory took over, including the `selectOnClick: false`
+ * mode for controls whose owner decides what selection means. (The pane
+ * switcher has since become column tabs: tests/column-tabs.test.js.)
  *
  * Run with: node --test tests/segmented-control.test.js
  */
@@ -49,12 +49,12 @@ test('the outlined variant is a class on the same control, not a new one', () =>
   const { el } = createSegmented({
     segments: SEGMENTS,
     outlined: true,
-    className: 'pane-tabs',
-    buttonClass: 'pane-tab',
+    className: 'comments-scope',
+    buttonClass: 'comments-scope-btn',
   });
-  assert.equal(el.className, 'sb-segmented is-outlined pane-tabs');
+  assert.equal(el.className, 'sb-segmented is-outlined comments-scope');
   const btn = el.querySelector('.sb-segmented-btn');
-  assert.ok(btn.classList.contains('pane-tab'), 'legacy hook class kept');
+  assert.ok(btn.classList.contains('comments-scope-btn'), 'hook class kept');
 });
 
 test('clicking moves the selection and reports the value', () => {
@@ -100,7 +100,7 @@ test('selectOnClick:false reports clicks without moving the highlight itself', (
     'owner has not said yes',
   );
 
-  // The owner accepts, then later dismisses — the pane-tabs lifecycle.
+  // The owner accepts, then later dismisses.
   setValue('a');
   assert.deepEqual(stateOf(el), [
     [true, 'true'],
