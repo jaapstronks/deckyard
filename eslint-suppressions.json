@@ -386,11 +386,6 @@
       "count": 1
     }
   },
-  "client/views/editor/notes-strip.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "client/views/editor/presence/presence-ui.js": {
     "no-restricted-syntax": {
       "count": 1
@@ -402,11 +397,6 @@
     }
   },
   "client/views/editor/remote-refresh.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/views/editor/responsive-drawers.js": {
     "no-restricted-syntax": {
       "count": 1
     }

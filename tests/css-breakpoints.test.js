@@ -201,3 +201,60 @@ describe('css breakpoints', () => {
     );
   });
 });
+
+/**
+ * The editor's JS half of the ladder (D339). JS cannot read a CSS rung either,
+ * so the editor names its widths in one module, as media queries on the
+ * ladder, and nothing else in the editor measures the viewport itself: the 820
+ * a drawer once used in JS beside a 768 in CSS is the drift this pins.
+ */
+describe('editor JS breakpoints', () => {
+  const editorDir = path.join(repoRoot, 'client', 'views', 'editor');
+  const queriesFile = path.join(editorDir, 'responsive-drawers.js');
+  // A breakpoint, not a measurement: the viewport width tested against a
+  // threshold (a literal or a constant), or a width media query. Clamping a
+  // menu to `innerWidth` is fine.
+  const WIDTH_BREAKPOINT =
+    /innerWidth\s*[<>]|\d\s*[<>]=?\s*(window\.)?innerWidth|matchMedia\??\.?\(\s*['"`]\((max|min)-width/;
+
+  /** @param {string} dir @returns {Promise<string[]>} */
+  async function jsFiles(dir) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const out = [];
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) out.push(...(await jsFiles(full)));
+      else if (entry.name.endsWith('.js')) out.push(full);
+    }
+    return out.sort();
+  }
+
+  it('names its widths only in responsive-drawers.js, on the ladder', async () => {
+    const source = await fs.readFile(queriesFile, 'utf8');
+    const queries = [
+      ...source.matchAll(/_QUERY = '\((max|min)-width: (\d+)px\)'/g),
+    ];
+    assert.ok(queries.length >= 2, 'the drawer queries are declared');
+    for (const [, side, px] of queries) {
+      assert.ok(
+        LADDER[side].includes(Number(px)),
+        `${side}-width: ${px}px is not a rung of the ladder`,
+      );
+    }
+  });
+
+  it('sets no width breakpoint outside that module', async () => {
+    const offenders = [];
+    for (const file of await jsFiles(editorDir)) {
+      if (file === queriesFile) continue;
+      const source = await fs.readFile(file, 'utf8');
+      if (WIDTH_BREAKPOINT.test(source))
+        offenders.push(path.relative(repoRoot, file));
+    }
+    assert.deepStrictEqual(
+      offenders,
+      [],
+      'Use COMPACT_EDITOR_QUERY / SLIDES_DRAWER_QUERY from responsive-drawers.js.',
+    );
+  });
+});

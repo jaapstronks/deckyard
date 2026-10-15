@@ -1,8 +1,11 @@
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
 import { h } from '../../lib/dom/index.js';
+import { storage } from '../../lib/storage.js';
+import { COMPACT_EDITOR_QUERY, matchesQuery } from './responsive-drawers.js';
 
 const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
+const SESSION_OPEN_KEY = 'deckyard.notesStrip.openedThisSession';
 
 /**
  * Presenter-notes strip under the slide preview (Keynote / PowerPoint
@@ -11,8 +14,10 @@ const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
  * the strip fills the otherwise-empty space beneath the 16:9 stage.
  *
  * Collapsible: when collapsed only the header bar shows and the slide reclaims
- * the full canvas height. The collapsed state is remembered across slides and
- * reloads (localStorage).
+ * the full canvas height. On a wide screen the collapsed state is remembered
+ * across slides and reloads (localStorage). Below the D339 boundary the canvas
+ * needs the height, so the strip starts folded there unless it was opened in
+ * this browser session (sessionStorage) - crossing the boundary re-applies it.
  *
  * The textarea keeps the seams the old pane carried:
  * - `data-collab-field-key="notes"` for presence focus rings, and
@@ -24,7 +29,7 @@ const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
  * @param {Function} options.getSelectedSlideId
  * @param {Function} options.markDirty
  * @param {Function} [options.onOpenQr] - Opens the phone companion (QR) view
- * @returns {{ el: HTMLElement, textarea: HTMLTextAreaElement }}
+ * @returns {{ el: HTMLElement, textarea: HTMLTextAreaElement, detach: Function }}
  */
 export function createNotesStrip({
   pres,
@@ -32,17 +37,31 @@ export function createNotesStrip({
   markDirty,
   onOpenQr,
 } = {}) {
-  // On a narrow screen the strip shares one stacked row with the canvas, and
-  // an expanded strip leaves the slide too little height to read. Start
-  // collapsed there — the header stays tappable, and an explicit choice is
-  // still remembered, so this only decides the first visit.
-  let collapsed = window.innerWidth <= 820;
-  try {
-    const stored = localStorage.getItem(COLLAPSE_KEY);
-    if (stored !== null) collapsed = stored === '1';
-  } catch {
-    /* private mode / storage disabled: keep the width-based default */
-  }
+  // Session flag: "opened in this session" (D339). sessionStorage access can
+  // throw (storage disabled), so both helpers swallow that.
+  const openedThisSession = () => {
+    try {
+      return sessionStorage.getItem(SESSION_OPEN_KEY) === '1';
+    } catch {
+      return false;
+    }
+  };
+  const setOpenedThisSession = (opened) => {
+    try {
+      if (opened) sessionStorage.setItem(SESSION_OPEN_KEY, '1');
+      else sessionStorage.removeItem(SESSION_OPEN_KEY);
+      // eslint-disable-next-line no-restricted-syntax -- storage disabled: the strip still toggles, it only forgets the choice
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const collapsedForWidth = () =>
+    matchesQuery(COMPACT_EDITOR_QUERY)
+      ? !openedThisSession()
+      : storage.getBool(COLLAPSE_KEY, false);
+
+  let collapsed = collapsedForWidth();
 
   const el = h('div', { class: 'notes-strip' });
 
@@ -116,15 +135,23 @@ export function createNotesStrip({
 
   toggleBtn.addEventListener('click', () => {
     collapsed = !collapsed;
-    try {
-      localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
+    if (matchesQuery(COMPACT_EDITOR_QUERY)) setOpenedThisSession(!collapsed);
+    else storage.setBool(COLLAPSE_KEY, collapsed);
     applyCollapsed();
   });
 
+  const media = window.matchMedia?.(COMPACT_EDITOR_QUERY) || null;
+  const handleMediaChange = () => {
+    collapsed = collapsedForWidth();
+    applyCollapsed();
+  };
+  media?.addEventListener?.('change', handleMediaChange);
+
+  const detach = () => {
+    media?.removeEventListener?.('change', handleMediaChange);
+  };
+
   // The selected slide's notes are loaded into `textarea.value` by the
   // controller's slide-change path (previewNotesTa), same as the old pane.
-  return { el, textarea };
+  return { el, textarea, detach };
 }

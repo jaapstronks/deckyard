@@ -9,8 +9,8 @@ grid.
 
 The inspector column (`.inspector-panel`) is **drag-resizable**
 (`--inspector-width`, min 320px, default 340px) on desktop, and becomes a
-full-width row under the canvas below the 1100px breakpoint (see
-`editor-inspector.md`). Its width is therefore independent of the viewport,
+drawer over the canvas at 1024px and below, at most 90% of the canvas wide (see
+`editor-inspector.md` § Responsive model). Its width is therefore independent of the viewport,
 so viewport media queries can't drive its internal layout. The old approach
 put fields in a CSS grid with a hard column count
 (`grid-template-columns: repeat(2, …)`), which forced two columns no

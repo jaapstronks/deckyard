@@ -143,7 +143,8 @@ actions (Export, Share, deck grid, Present as the primary CTA with a
 caret menu holding Companion) - utilities (user menu, ⋯ with AI analysis,
 Translate, Versions, Settings, Keyboard shortcuts). At narrow widths the
 bar sheds progressively (title shrinks; deck grid mirrors into ⋯ at ≤1024;
-undo/redo ≤820; avatar ≤600).
+undo/redo ≤1024; avatar ≤640; the fold rungs live in
+`client/views/editor/topbar/index.js`).
 
 ## What the settings pane renders (the keeps-model)
 
@@ -450,21 +451,29 @@ markdown modal), table-modal slide-view entry points (open follow-up).
 
 ## Responsive model
 
-One converged model around a **1100px breakpoint**
-(`20-editor-layout.css`):
+Full editing is designed for **1024×700 and up**; below that the editor works
+without a design guarantee (D339). One boundary carries the model: the `lg`
+rung of the [breakpoint ladder](css-breakpoints.md), 1024px, in
+`20-editor-layout.css` and in `COMPACT_EDITOR_QUERY`
+(`client/views/editor/responsive-drawers.js`), the only place editor JS names
+a width.
 
-- **>1100px (desktop)**: the 3-column grid above. The inspector width
-  handle lives here.
-- **≤1100px**: 2 columns - slides | canvas - with the inspector as a
-  **full-width row under the canvas** (grid-template-areas; row
-  `minmax(200px, 38vh)`, 42vh at ≤820px). Not an overlay: the rail-toggle
-  machinery keeps working unchanged (dismissed = full-height canvas) and
-  nothing floats over the wysiwyg surface. The inspector resize handle is
-  hidden (the width is the full column).
-- **821-1024px**: additionally swaps the slides column for the
-  auto-collapse rail.
-- **≤820px**: drops the slides column entirely; slides live in a drawer
-  (`client/views/editor/responsive-drawers.js`, which only manages the
-  slides drawer).
+- **>1024px (desktop)**: the 3-column grid above. The inspector width
+  handle lives here, and dismissing the rail is remembered
+  (`ps:inspector-collapsed`).
+- **≤1024px (compact)**: the canvas keeps the height (at least half the
+  editor with the presenter notes open) and the **inspector is a drawer**
+  over the right edge of the canvas. Row 1 keeps both column heads; the rail
+  head's Inspector | Comments tabs (icons only here) open the drawer, and the
+  close button inside each pane, the selected tab, or Escape close it. The
+  drawer has its own open state (`is-inspector-drawer-open`), closed on load
+  and whenever the viewport crosses the boundary, so the remembered desktop
+  dismissal neither opens it nor is overwritten by it. The presenter notes
+  start folded unless opened in this browser session. The slides column
+  auto-collapses to its rail (769-1024px).
+- **≤768px (`md`)**: the slides column becomes a drawer from the left
+  (`SLIDES_DRAWER_QUERY`, same module, one drawer mechanism for both), and
+  the rail head moves to a row of its own so the slide bar keeps the full
+  width.
 
 The canvas is the primary editing surface at every width.

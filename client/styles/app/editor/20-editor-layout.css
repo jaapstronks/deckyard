@@ -454,61 +454,44 @@
    resizable --inspector-width. */
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Compact (≤1024px): 2 columns - slides | canvas, inspector BELOW the canvas.
-   Three columns get too cramped here (the canvas dips under a usable width
-   once slides + a 320px inspector are paid for); the settings-only inspector
-   is short enough to live as a bottom row instead. One converged model from
-   here down: narrower widths only change how the slides column presents
-   (rail at 769-1024, drawer ≤768).
+   Compact (≤1024px, the D339 boundary): the canvas keeps the height and the
+   inspector comes to it as a drawer. Row 1 keeps both column heads side by
+   side - the slide bar and the rail head with its Inspector | Comments tabs,
+   which open the drawer - and row 2 is the canvas alone. The drawer is
+   absolutely placed in the canvas area (the grid area is its containing
+   block), so it slides in under its own tabs and never covers the heads.
+   Its open state is `is-inspector-drawer-open` (responsive-drawers.js), not
+   the remembered desktop `is-inspector-collapsed`, which does not apply
+   here. Narrower widths only change how the slides column presents (rail at
+   769-1024, drawer ≤768).
    ───────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  /* Every desktop column-variant collapses into the same area model. */
-  .is-editor .layout {
-    grid-template-columns:
-      var(--slides-panel-width, var(--ps-slides-expanded-width))
-      minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto minmax(200px, 38vh);
-    grid-template-areas:
-      'slides bar'
-      'slides canvas'
-      'slides railhead'
-      'slides inspector';
-  }
-
-  .is-editor.is-slides-collapsed .layout {
-    grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
-  }
-
-  /* Dismissed rail: the canvas gets the height; the rail head stays under it
-     to bring the rail back. The columns repeat the two-column model: the
-     desktop dismissed-rail template (with its auto rail-head column) would
-     otherwise win on specificity. */
+  /* Every desktop column-variant collapses into the same area model. The
+     combo selectors repeat the desktop ones so these win the tie. */
+  .is-editor .layout,
   .is-editor.is-inspector-collapsed .layout {
     grid-template-columns:
       var(--slides-panel-width, var(--ps-slides-expanded-width))
-      minmax(0, 1fr);
-  }
-
-  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
-    grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
-  }
-
-  .is-editor.is-inspector-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
-    grid-template-rows: auto minmax(0, 1fr) auto;
+      minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
-      'slides bar'
-      'slides canvas'
-      'slides railhead';
+      'slides bar railhead'
+      'slides canvas canvas';
+    position: relative;
+  }
+
+  .is-editor.is-slides-collapsed .layout,
+  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
+    grid-template-columns:
+      var(--ps-slides-collapsed-width) minmax(0, 1fr)
+      auto;
   }
 
   /* These must out-specify the desktop line-based placement at the top of the
      file (`.is-editor .layout > .preview-panel { grid-column: 2 }` and
-     friends), which is a child selector and therefore beat the plain
-     `.is-editor .preview-panel` form these rules used to have. The areas
-     silently did nothing, so below 1100px the canvas and inspector stayed in
-     desktop columns, a phantom third column appeared, and the slide bar's
-     `grid-column: 2 / 4` stretched row 1 into a tall empty band. */
+     friends), which is a child selector and therefore beats the plain
+     `.is-editor .preview-panel` form: with the plain form the areas silently
+     did nothing and the panels stayed in desktop columns. */
   .is-editor .layout > .slides-panel {
     grid-area: slides;
   }
@@ -519,21 +502,42 @@
 
   .is-editor .layout > .rail-head {
     grid-area: railhead;
-    border-left: none;
-    border-top: 1px solid hsl(var(--app-border-default));
   }
 
-  .is-editor .layout > .preview-panel {
+  .is-editor .layout > .preview-panel,
+  .is-editor.is-inspector-collapsed .layout > .preview-panel {
     grid-area: canvas;
   }
 
-  .is-editor .layout > .inspector-panel {
-    grid-area: inspector;
-    border-left: none;
+  /* The drawer. Closed it is off to the right and hidden, so nothing in it
+     takes focus; the remembered desktop dismissal (`display: none`) does not
+     apply. */
+  .is-editor .layout > .inspector-panel,
+  .is-editor.is-inspector-collapsed .layout > .inspector-panel {
+    display: flex;
+    grid-area: canvas;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(var(--inspector-width, 340px), 90%);
+    z-index: var(--z-drawer);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform 0.25s ease-out,
+      visibility 0s linear 0.25s;
+    box-shadow: var(--app-shadow-xl);
   }
 
-  /* Width is the full column now; the drag handle only makes sense as a
-     side-by-side divider. (A row-height handle can come later if needed.) */
+  .is-editor.is-inspector-drawer-open .layout > .inspector-panel {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.25s ease-out;
+  }
+
+  /* Width is the drawer's now; the drag handle only makes sense as a
+     side-by-side divider. */
   .is-editor .inspector-resize-handle {
     display: none;
   }
@@ -544,7 +548,9 @@
    ───────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) and (min-width: 769px) {
   .is-editor:not(.is-slides-expanded-override) .layout {
-    grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
+    grid-template-columns:
+      var(--ps-slides-collapsed-width) minmax(0, 1fr)
+      auto;
   }
 
   /* Apply collapsed styling automatically at this width */
@@ -594,37 +600,28 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Tablet Portrait & Mobile (≤768px): slides drawer + the same stacked
-   canvas/inspector model as ≤1024, minus the slides column. The old model
-   (form as main column, canvas squeezed into a 92px rail, bottom sheet on
-   phones) predates the settings-only inspector; the canvas is the primary
-   editing surface at every width now.
+   Tablet Portrait & Mobile (≤768px): the compact model above, minus the
+   slides column, which becomes a drawer from the left. The slide bar needs
+   the full width here, so the rail head gets a row of its own, its tabs at
+   the right edge over the drawer they open.
    ───────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   /* Mirror the ≤1024 combo selectors so this later block wins the tie. */
   .is-editor .layout,
-  .is-editor.is-slides-collapsed .layout {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto minmax(200px, 42vh);
-    grid-template-areas:
-      'bar'
-      'canvas'
-      'railhead'
-      'inspector';
-    position: relative;
-  }
-
+  .is-editor.is-slides-collapsed .layout,
   .is-editor.is-inspector-collapsed .layout,
   .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
-    /* Repeat the columns: the desktop dismissed-rail rule (slides + canvas)
-       outranks the plain ≤768 rule above, and the slides column is a fixed
-       drawer here - without this the canvas would sit in a 200px column. */
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       'bar'
-      'canvas'
-      'railhead';
+      'railhead'
+      'canvas';
+  }
+
+  .is-editor .layout > .rail-head {
+    justify-content: flex-end;
+    border-left: none;
   }
 
   /* Slides panel becomes a slide-over drawer */
@@ -689,11 +686,6 @@
     box-shadow:
       var(--app-shadow-lg),
       0 0 0 3px hsl(var(--app-accent-primary) / 0.3);
-  }
-
-  .is-editor .inspector-panel {
-    border-right: none;
-    border-left: none;
   }
 }
 
