@@ -94,6 +94,11 @@ A member the hint does not name sorts after the ones it does. A name in a hint
 that no longer declares that group is ignored. Both are harmless — which is the
 whole point, because a stale _membership_ table was not.
 
+The picker reads its Media shelf in two rows, "One image" and "Collection"
+(`MEDIA_ROWS` in the same `data.js`, which also spells the shelf's order hint).
+That split is picker curation, like the order: it is not a seventh shelf, the
+`group` axis is unchanged, and the settings tab does not see it.
+
 ## Anyone may declare a shelf
 
 `SLIDE_TYPE_AUTHORING` is generated over `shared/slide-types/types/`, so it holds

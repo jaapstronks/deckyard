@@ -33,6 +33,49 @@ export const SURFACE_CANDIDATES = ['lime', 'mist', 'dark'];
 export const FREQUENT_MAX = 6;
 export const FREQUENT_MIN_TOTAL = 3;
 
+// The Media shelf is read in two rows (D343): what carries one image, and what
+// shows a collection of them. Video and embed are single carriers, not variants
+// of an image slide and not collections. The rows are a reading aid inside one
+// shelf, headed by a small subheading; they are not shelves of their own and do
+// not touch the `group` axis (shared/slide-types/authoring-groups.js), which the
+// settings tab shares. A media type no row names (a fork type declaring
+// `media`) lands in the row marked `rest`.
+//
+// `titleKey` / `title` pairs, as GROUP_TITLES in ./index.js, so the i18n
+// extractor counts the keys.
+export const MEDIA_ROWS = [
+  {
+    key: 'single',
+    titleKey: 'editor.slideTypeRow.mediaSingle',
+    title: 'One image',
+    rest: true,
+    types: [
+      'image-text-slide',
+      'image-set-slide',
+      'image-slide',
+      'video-slide',
+      'embed-slide',
+    ],
+  },
+  {
+    key: 'collection',
+    titleKey: 'editor.slideTypeRow.mediaCollection',
+    title: 'Collection',
+    types: ['gallery-slide', 'team-cards-slide', 'logo-wall-slide'],
+  },
+];
+
+// Shelves split into headed rows, by group key. Only Media has them.
+export const PICKER_SHELF_ROWS = { media: MEDIA_ROWS };
+
+// Types whose tile always shows the live preview, whatever the schematic /
+// preview switch says (D344). The three collections all draw as a grid in a
+// schematic; only their content tells them apart, so the schematic would hide
+// the one thing the author needs to choose between them.
+export const ALWAYS_PREVIEW_TYPES = new Set(
+  MEDIA_ROWS.find((row) => row.key === 'collection').types,
+);
+
 // Display order within each curated group — a *hint*, not the membership.
 //
 // Which group a type belongs to is declared by the type itself, in
@@ -63,16 +106,8 @@ export const PICKER_GROUP_ORDER = {
     'quote-slide',
     'list-slide',
   ],
-  media: [
-    'image-text-slide',
-    'image-set-slide',
-    'image-slide',
-    'gallery-slide',
-    'video-slide',
-    'embed-slide',
-    'team-cards-slide',
-    'logo-wall-slide',
-  ],
+  // Spelled by the shelf's rows below, so the order and the split cannot drift.
+  media: MEDIA_ROWS.flatMap((row) => row.types),
   layouts: [
     'text-blocks-slide',
     'icon-card-grid-slide',

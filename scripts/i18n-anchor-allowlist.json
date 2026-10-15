@@ -939,6 +939,10 @@
       "forms": ["Zoekopdracht wissen", "Zoekveld leegmaken"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
+    "nl  Collection": {
+      "forms": ["Collectie", "Verzameling"],
+      "reason": "two concepts: \"Collectie\" is the home page's deck collection; \"Verzameling\" is the picker's Media row of collection types (Gallery, Image cards, Logo wall), named by Jaap in D343."
+    },
     "nl  Conversion failed.": {
       "forms": ["Converteren mislukt.", "Omzetten mislukt."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."

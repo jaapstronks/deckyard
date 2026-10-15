@@ -49,7 +49,7 @@ function resolveMembers(content) {
 }
 
 /**
- * Canonicalize an "Image blocks" slide to the array form (editor-only,
+ * Canonicalize an "Image cards" slide to the array form (editor-only,
  * idempotent). Mirrors `ensureLogos` / `ensureImageSetImages`: it materializes
  * `members[]` so the inline media popover and card affordances have a stable,
  * mutable array to write to. Never called from `renderHtml` (which stays pure):
@@ -57,8 +57,8 @@ function resolveMembers(content) {
  *
  * When there is genuinely nothing, it leaves an empty array (not a seeded empty
  * member): the renderer skips all-empty members, so a seed would be an
- * invisible orphan — the inline "+ Add block" affordance provides the first
- * block instead.
+ * invisible orphan — the inline "+ Add card" affordance provides the first
+ * card instead.
  * @param {Object} content
  * @returns {Object} the same content object
  */
@@ -77,7 +77,7 @@ export default {
   fallback: 'list-slide',
   runtime: 'static',
   fidelity: { pptx: 'raster' },
-  label: 'Image blocks',
+  label: 'Image cards',
   fields: [
     {
       key: 'title',
@@ -149,7 +149,7 @@ export default {
         },
       },
       itemFields: [
-        // Labels match the "Image blocks" framing (and the side form): the
+        // Labels match the "Image cards" framing (and the side form): the
         // photo's name is the block Title, the byline is its Caption. These
         // labels also drive the in-slide inline "+ …" ghost chips.
         { key: 'image', type: 'image', label: 'Photo' },
@@ -413,7 +413,7 @@ export default {
       const itemAttrs = ` data-inline-item="members" data-inline-item-index="${idx}"`;
       return `
         <div class="team-card" role="group" aria-label="${escapeHtml(
-          name || `Block ${idx + 1}`,
+          name || `Card ${idx + 1}`,
         )}"${itemAttrs}>
           ${cardContent}
         </div>
@@ -436,7 +436,7 @@ export default {
       count === 0
         ? `
           <div class="team-cards-empty" role="note">
-            Add blocks in the editor.
+            Add cards in the editor.
           </div>
         `
         : '';

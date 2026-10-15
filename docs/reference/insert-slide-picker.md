@@ -31,6 +31,11 @@ A segmented control (`editor.slideTypePicker.view.schematic` /
 renders; the choice persists in `ps-slide-picker-view` and defaults to
 `schematic`. The rest of this section describes the `preview` mode.
 
+Three tiles do not follow the switch: Gallery, Image cards and Logo wall
+(`ALWAYS_PREVIEW_TYPES` in `data.js`, the Media shelf's "Collection" row) always
+render their live preview. All three draw as a grid in a schematic, so only
+their content tells them apart.
+
 `hydrateThumb` builds a fake slide `{ type, content: sampleContentFor(type) }`
 and calls `renderSlideElement(slide, { mode: 'thumb', theme })`. CSS scales the
 real 1600px `.slide` down to the tile via a per-tile `--thumb-scale`
@@ -62,6 +67,12 @@ sit above data by request). Rules:
   is pinned to its tail.
 - During an active search, collapsed sections are force-expanded (via
   `is-searching`) so matches stay visible.
+- The Media shelf reads in two rows, "One image" (Image + text, Images + text,
+  Image slide, Video, Embed) and "Collection" (Gallery, Image cards, Logo
+  wall), each under a small subheading (`MEDIA_ROWS` in `data.js`). The
+  subheadings are full-width items in the shelf's one grid, so collapsing,
+  search and keyboard navigation treat the shelf as one; a subheading hides
+  with its row during a search. A media type no row names joins "One image".
 
 ### Quick-access strips
 
