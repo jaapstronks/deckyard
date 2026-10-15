@@ -1,21 +1,21 @@
 /**
  * Take: **"a slide is a form"** — the first clip of the video factory.
  *
- * Typing in the bulk-edit form on the left; the slide on the right follows,
- * word by word. That is the whole claim, and it is the one thing a still
- * screenshot structurally cannot make: `editor-form-nl` photographs the two
- * panes side by side, but only motion shows that one drives the other.
+ * Typing in the Fields view of the canvas column; the slide preview at its
+ * head follows, word by word. That is the whole claim, and it is the one thing a still
+ * screenshot structurally cannot make: `editor-form-nl` photographs the form
+ * and its preview together, but only motion shows that one drives the other.
  *
  * Built **on top of** `editorFormShot('nl')` rather than beside it: the state,
- * route, readiness selector and the click that opens the modal are taken from
- * the shot by reference, so the take and the marketing shot cannot drift into
- * photographing two different screens. It also means `hashRecipeGraph()`
+ * route, readiness selector and the click that opens the Fields tab are taken
+ * from the shot by reference, so the take and the marketing shot cannot drift
+ * into photographing two different screens. It also means `hashRecipeGraph()`
  * already covers this take — `_marketing-shots.js` is in its module graph.
  *
  * Two labelled steps, so the camera is a move rather than a single push-in:
  * the first zooms to the field being typed into, the second follows the
  * pointer to the headline it changed. Both coordinates come from
- * `boundingBox()` at record time, so a restyled modal moves the camera with it
+ * `boundingBox()` at record time, so a restyled view moves the camera with it
  * instead of leaving it framing empty space.
  */
 
@@ -29,12 +29,14 @@ import { editorFormShot } from './_marketing-shots.js';
  */
 const shot = editorFormShot('nl');
 
-/** The title field in the bulk-edit form, by its collaboration field key. */
-const TITLE_FIELD =
-  '.bulk-edit-form [data-collab-field-key="title"] .form-input';
+/**
+ * The title field in the Fields view, by its collaboration field key. It sits
+ * in the view's head beside the preview, not inside `.editor-form`.
+ */
+const TITLE_FIELD = '.fields-view [data-collab-field-key="title"] .form-input';
 
-/** The headline of the live preview beside the form. */
-const PREVIEW_HEADLINE = '.bulk-edit-preview .slide .heading';
+/** The headline of the live preview at the head of the Fields view. */
+const PREVIEW_HEADLINE = '.fields-view-preview .slide .heading';
 
 /**
  * What gets typed. Short enough to land inside the beat, and different enough

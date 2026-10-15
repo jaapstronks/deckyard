@@ -148,6 +148,16 @@ async function stagePage(recipe, api) {
     forRecording: isVideoRecipe(recipe),
   });
   try {
+    // Every recipe starts from empty localStorage: the browser is shared across
+    // a run, and the editor keeps per-user choices there (the Canvas | Fields
+    // tab, folded panels), so without this a shot inherits whatever the recipe
+    // before it left behind and the result depends on run order.
+    const cdp = await page.createCDPSession();
+    await cdp.send('Storage.clearDataForOrigin', {
+      origin: new URL(api.base).origin,
+      storageTypes: 'local_storage',
+    });
+    await cdp.detach();
     // Seed localStorage before any app script runs — used to suppress one-time
     // hints/coach-marks so captures are clean and deterministic.
     if (recipe.localStorage) {
