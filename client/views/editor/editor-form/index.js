@@ -66,7 +66,6 @@ export function createRerenderEditor({
   // ({ leftEl, actionsEl }); absent on surfaces without a toolbar mount and
   // in tests.
   slideToolbar,
-  onOpenBulkEdit,
   // Which surface this form renders on: a name from the declared table in
   // editor-form/surfaces.js ('inspector' | 'bulk' | 'library'). Every part of
   // the form that is not on every surface reads one capability from that row;
@@ -134,8 +133,8 @@ export function createRerenderEditor({
     let closeSlot = null;
 
     // Pane chrome (chrome re-org 2026-07-16). Everything scoped to the current
-    // slide (type chip, "All text", lock, actions menu) renders into the slide
-    // toolbar above the canvas instead.
+    // slide (type chip, lock, actions menu) renders into the slide toolbar
+    // above the canvas instead.
     if (caps.headerActions) {
       // Collapse control. The "INSPECTOR" title it used to sit next to was
       // redundant beside the already-active Inspector pane tab, so the whole
@@ -160,7 +159,7 @@ export function createRerenderEditor({
     }
 
     if (caps.toolbar) {
-      // Slide toolbar above the canvas: type chip + badges + "All text" on the
+      // Slide toolbar above the canvas: type chip + badges + Layout on the
       // left; lock + slide-actions menu on the right. Rebuilt per slide.
       const tbLeft = slideToolbar?.leftEl || null;
       if (tbLeft) {
@@ -218,23 +217,6 @@ export function createRerenderEditor({
           typeConversion: caps.typeConversion,
         });
         if (layoutChip) tbLeft.append(layoutChip);
-
-        // "Edit all text": opens the roomy bulk-edit modal (all content fields
-        // + live preview).
-        if (typeof onOpenBulkEdit === 'function') {
-          tbLeft.append(
-            h('button', {
-              type: 'button',
-              class: 'btn editor-bulk-edit-btn',
-              text: t('editor.bulkEdit.open', 'All text'),
-              title: t(
-                'editor.bulkEdit.openTitle',
-                'Edit all text fields of this slide in one view',
-              ),
-              onclick: () => onOpenBulkEdit(),
-            }),
-          );
-        }
       }
     }
 

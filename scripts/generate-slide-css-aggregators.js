@@ -243,6 +243,7 @@ export const APP_COMPONENT_LAYER = {
     '00-components.css',
     '10-modals-base.css',
     '11-modals-loading.css',
+    '12-column-tabs.css',
     '106-shortcuts-overlay.css',
   ],
 };

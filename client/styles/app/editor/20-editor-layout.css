@@ -1,7 +1,14 @@
 /* 3-column editor layout (editor route only): slides | canvas | inspector.
-   Two rows (Option A): row 1 is the full-width slide bar spanning the canvas +
-   inspector columns; row 2 holds the canvas and inspector. The slides column
-   spans both rows (it keeps its own "Slides" header). */
+   Two rows: row 1 holds the head of each working column - the slide bar with
+   Canvas | Fields over the canvas, the rail head with Inspector | Comments over
+   the inspector (D335); row 2 holds the canvas and inspector. The slides column
+   spans both rows (it keeps its own "Slides" header).
+
+   Three tones (D335): the topbar is the deck's chrome (elevated, with shadow);
+   the slides column and the inspector column share the panel tone
+   (`--app-bg-base`); the stage between them is a shade darker
+   (`--app-bg-sunken`), so the slide sits on it. Each column's active tab takes
+   the tone of the surface it opens. */
 .is-editor .layout {
   display: grid;
   /* The slide canvas is the primary editing surface (inline WYSIWYG), so it
@@ -25,7 +32,11 @@
   grid-row: 1 / 3;
 }
 .is-editor .layout > .slide-bar {
-  grid-column: 2 / 4;
+  grid-column: 2;
+  grid-row: 1;
+}
+.is-editor .layout > .rail-head {
+  grid-column: 3;
   grid-row: 1;
 }
 .is-editor .layout > .preview-panel {
@@ -36,15 +47,14 @@
   grid-column: 3;
   grid-row: 2;
 }
-/* Rail dismissed: the grid drops to two columns, so the bar spans only the
-   canvas column (openers stay pinned at its right - above where the rail was).
-   Scoped to the desktop layout on purpose: this selector is more specific than
-   the area assignments in the ≤1024 block, so unscoped it would survive into
-   the narrow layouts and force a phantom second column out of a single-column
-   template. */
+/* Rail dismissed: only its head stays, shrunk to its tabs, so the rail is
+   re-opened from where it was; the canvas takes the width under it. Scoped to
+   the desktop layout on purpose: this selector is more specific than the area
+   assignments in the ≤1024 block, so unscoped it would survive into the narrow
+   layouts and force a phantom column out of their templates. */
 @media (min-width: 1025px) {
-  .is-editor.is-inspector-collapsed .layout > .slide-bar {
-    grid-column: 2 / 3;
+  .is-editor.is-inspector-collapsed .layout > .preview-panel {
+    grid-column: 2 / 4;
   }
 }
 
@@ -61,16 +71,18 @@
     minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
 }
 
-/* Dismissed inspector rail: the panel leaves the grid entirely and the
-   canvas gets all the space (the topbar "i" toggle brings it back). */
+/* Dismissed inspector rail: the panel leaves the grid and its column shrinks
+   to the rail head's tabs, which bring it back. */
 .is-editor.is-inspector-collapsed .layout {
   grid-template-columns:
     var(--slides-panel-width, var(--ps-slides-expanded-width))
-    minmax(320px, 1fr);
+    minmax(320px, 1fr) auto;
 }
 
 .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
-  grid-template-columns: var(--ps-slides-collapsed-width) minmax(320px, 1fr);
+  grid-template-columns:
+    var(--ps-slides-collapsed-width) minmax(320px, 1fr)
+    auto;
 }
 
 .is-editor.is-inspector-collapsed .inspector-panel {
@@ -337,8 +349,8 @@
 }
 
 .is-editor .inspector-panel {
-  background: hsl(var(--app-bg-elevated));
-  border-left: 1px solid hsl(var(--app-border-subtle));
+  background: hsl(var(--app-bg-base));
+  border-left: 1px solid hsl(var(--app-border-default));
   /* Positioning context for the drag-to-resize handle on its left edge. */
   position: relative;
 }
@@ -355,27 +367,44 @@
 }
 
 .is-editor .preview-panel {
-  background: hsl(var(--app-bg-base));
+  /* The stage: one shade darker than the panels either side (D335). */
+  background: hsl(var(--app-bg-sunken));
   border-left: 1px solid hsl(var(--app-border-default));
-  /* The generic .panel border would draw a hairline right under the slide
-     bar; bar and canvas are one surface (B614). */
+  /* The slide bar above draws the rule the Canvas tab sits on. */
   border-top: none;
 }
 
-/* Slide bar (Option A): the bar above the working area, scoped to the current
-   slide (B614). The topbar is the deck's chrome: elevated, white, carrying the
-   one hairline. This bar belongs to the slide instead, so it shares the
-   canvas's surface - the same base tone, no line between them, and less room
-   below than above, so it sits with the slide rather than with the topbar.
-   Layout: everything slide-scoped on the left, the openers pinned alone on the
-   right (see 20-preview.css). */
-.is-editor .slide-bar {
+/* Column heads: the slide bar over the canvas and the rail head over the
+   inspector share row 1, so they share a height. Both are panel-toned and
+   draw the rule their column's tabs sit on (column tabs, D335); the active
+   tab paints over it in the tone of the surface it opens. */
+.is-editor .slide-bar,
+.is-editor .rail-head {
   display: flex;
   align-items: center;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-3) var(--ps-space-4) var(--ps-space-1);
-  background: hsl(var(--app-bg-base));
+  gap: var(--ps-space-3);
   min-width: 0;
+  padding: var(--ps-space-2) var(--ps-space-4) 0;
+  background: hsl(var(--app-bg-base));
+  border-bottom: 1px solid hsl(var(--app-border-default));
+}
+
+/* The slide bar heads the canvas: everything in it is scoped to the current
+   slide (B614). Contents in 20-preview.css. */
+.is-editor .slide-bar {
+  border-left: 1px solid hsl(var(--app-border-default));
+}
+
+.is-editor .canvas-tabs {
+  --column-tabs-surface: var(--app-bg-sunken);
+}
+
+.is-editor .rail-head {
+  border-left: 1px solid hsl(var(--app-border-default));
+}
+
+.is-editor .pane-tabs {
+  --column-tabs-surface: var(--app-bg-base);
 }
 
 .is-editor .preview-panel-body {
@@ -438,10 +467,11 @@
     grid-template-columns:
       var(--slides-panel-width, var(--ps-slides-expanded-width))
       minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) minmax(200px, 38vh);
+    grid-template-rows: auto minmax(0, 1fr) auto minmax(200px, 38vh);
     grid-template-areas:
       'slides bar'
       'slides canvas'
+      'slides railhead'
       'slides inspector';
   }
 
@@ -449,13 +479,27 @@
     grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
   }
 
-  /* Dismissed rail: the canvas gets the full height. */
+  /* Dismissed rail: the canvas gets the height; the rail head stays under it
+     to bring the rail back. The columns repeat the two-column model: the
+     desktop dismissed-rail template (with its auto rail-head column) would
+     otherwise win on specificity. */
+  .is-editor.is-inspector-collapsed .layout {
+    grid-template-columns:
+      var(--slides-panel-width, var(--ps-slides-expanded-width))
+      minmax(0, 1fr);
+  }
+
+  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
+    grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
+  }
+
   .is-editor.is-inspector-collapsed .layout,
   .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       'slides bar'
-      'slides canvas';
+      'slides canvas'
+      'slides railhead';
   }
 
   /* These must out-specify the desktop line-based placement at the top of the
@@ -473,6 +517,12 @@
     grid-area: bar;
   }
 
+  .is-editor .layout > .rail-head {
+    grid-area: railhead;
+    border-left: none;
+    border-top: 1px solid hsl(var(--app-border-default));
+  }
+
   .is-editor .layout > .preview-panel {
     grid-area: canvas;
   }
@@ -480,7 +530,6 @@
   .is-editor .layout > .inspector-panel {
     grid-area: inspector;
     border-left: none;
-    border-top: 1px solid hsl(var(--app-border-subtle));
   }
 
   /* Width is the full column now; the drag handle only makes sense as a
@@ -556,10 +605,11 @@
   .is-editor .layout,
   .is-editor.is-slides-collapsed .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) minmax(200px, 42vh);
+    grid-template-rows: auto minmax(0, 1fr) auto minmax(200px, 42vh);
     grid-template-areas:
       'bar'
       'canvas'
+      'railhead'
       'inspector';
     position: relative;
   }
@@ -570,10 +620,11 @@
        outranks the plain ≤768 rule above, and the slides column is a fixed
        drawer here - without this the canvas would sit in a 200px column. */
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       'bar'
-      'canvas';
+      'canvas'
+      'railhead';
   }
 
   /* Slides panel becomes a slide-over drawer */

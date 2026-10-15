@@ -11,7 +11,8 @@
   flex: 0 0 auto;
   min-height: 0;
   border-top: 1px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-base));
+  /* Notes are slide content: they sit on the stage tone (D335). */
+  background: transparent;
 }
 
 .notes-strip-header {

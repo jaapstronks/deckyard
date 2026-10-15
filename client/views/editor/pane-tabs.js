@@ -1,41 +1,33 @@
 /**
- * Pane openers for the inspector rail: Inspector / Comments.
+ * Pane tabs for the inspector rail: Inspector / Comments.
  *
- * Lives at the far right of the topbar, directly above the rail it controls
- * (Keynote model, chrome re-org 2026-07-19). The opener is workspace chrome -
- * "show the side panel" - even though the panes' CONTENTS are slide-scoped; a
- * full-width strip is the only home that stays put when the rail collapses, so
- * the rail is always re-openable. Rendered `compact` (icon-only) there to sit
- * with the topbar's other icon controls. Pressed = "rail open on MY pane";
- * clicking the active opener dismisses the rail.
+ * They head the right-hand column they switch (D335), the way Canvas | Fields
+ * heads the canvas column, instead of docking in the slide bar. The head is
+ * its own grid cell (`.rail-head`), so it stays when the rail is dismissed and
+ * the rail is always re-openable from where it was. Selected = "rail open on
+ * MY pane"; clicking the selected tab dismisses the rail, leaving no tab
+ * selected.
  *
- * Presenter notes are no longer an opener here - they live in a strip under the
- * slide (notes-strip.js), so the rail is Inspector + Comments only.
+ * Presenter notes are not a pane - they live in a strip under the slide
+ * (notes-strip.js).
  */
 
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
-import { createSegmented } from '../../lib/dom/segmented.js';
+import { createColumnTabs } from '../../lib/dom/column-tabs.js';
 import { h } from '../../lib/dom/index.js';
 
 /**
  * @param {Object} options
  * @param {Function} [options.onToggleInspector]
  * @param {Function} [options.onToggleComments]
- * @param {boolean} [options.compact] - Icon-only (no visible labels), for the
- *   topbar. The accessible name moves to `aria-label` on each button.
  * @returns {{ el: HTMLElement, setState: Function, updateBadge: Function }}
  */
-export function createPaneTabs({
-  onToggleInspector,
-  onToggleComments,
-  compact = false,
-} = {}) {
-  const tabContent = (name, label) => {
-    const iconEl = icon(name, { size: 15 });
-    if (compact) return [iconEl];
-    return [iconEl, h('span', { class: 'pane-tab-label', text: label })];
-  };
+export function createPaneTabs({ onToggleInspector, onToggleComments } = {}) {
+  const tabContent = (name, label) => [
+    icon(name, { size: 15 }),
+    h('span', { class: 'pane-tab-label', text: label }),
+  ];
 
   const badgeEl = h('span', { class: 'pane-tab-badge', text: '' });
   badgeEl.hidden = true;
@@ -44,42 +36,40 @@ export function createPaneTabs({
   const commentsLabel = t('editor.comments', 'Comments');
 
   // The rail owns the selection - clicking the active tab dismisses it rather
-  // than re-selecting - so the control reports clicks and setState drives the
-  // highlight.
-  const segmented = createSegmented({
-    outlined: true,
-    className: compact ? 'pane-tabs is-compact' : 'pane-tabs',
-    buttonClass: 'pane-tab',
+  // than re-selecting - so the strip reports clicks and setState drives it.
+  // The labels hide when the rail is dismissed (icons stay), so each tab
+  // carries its name as aria-label too.
+  const strip = createColumnTabs({
+    className: 'pane-tabs',
     ariaLabel: t('editor.panes.label', 'Side panels'),
     value: null,
     selectOnClick: false,
-    segments: [
+    tabs: [
       {
         value: 'settings',
         title: t('editor.inspector.toggle', 'Show or hide the inspector'),
-        ...(compact ? { ariaLabel: inspectorLabel } : {}),
+        ariaLabel: inspectorLabel,
         content: tabContent('sliders-horizontal', inspectorLabel),
       },
       {
         value: 'comments',
         title: commentsLabel,
-        ...(compact ? { ariaLabel: commentsLabel } : {}),
+        ariaLabel: commentsLabel,
         content: [...tabContent('message-circle', commentsLabel), badgeEl],
       },
     ],
     onSelect: (pane) =>
       pane === 'settings' ? onToggleInspector?.() : onToggleComments?.(),
   });
-  const el = segmented.el;
 
   /**
-   * Reflect the rail state on the tabs. Pressed means "the rail is open on
-   * MY pane", not merely "the rail is open" - so a pane switch flips one tab
-   * off and the other on.
+   * Reflect the rail state on the tabs. Selected means "the rail is open on
+   * MY pane", not merely "the rail is open" - so a pane switch moves the
+   * selection from one tab to the other.
    * @param {{ open: boolean, pane: string|null }} state
    */
   const setState = ({ open, pane } = {}) => {
-    segmented.setValue(open ? (pane ?? null) : null);
+    strip.setValue(open ? (pane ?? null) : null);
   };
 
   /**
@@ -96,5 +86,5 @@ export function createPaneTabs({
     badgeEl.classList.toggle('pane-tab-badge--seen', !hasNew && n > 0);
   };
 
-  return { el, setState, updateBadge };
+  return { el: strip.el, setState, updateBadge };
 }

@@ -146,8 +146,6 @@
   "editor.bulkEdit.counter": "Diapositive {n} sur {total}",
   "editor.bulkEdit.hint": "La diapositive se met à jour en direct pendant que vous tapez. Disposition, arrière-plan et accessibilité restent dans le panneau latéral.",
   "editor.bulkEdit.next": "Diapositive suivante",
-  "editor.bulkEdit.open": "Tout le texte",
-  "editor.bulkEdit.openTitle": "Modifier tous les champs texte de cette diapositive dans une seule vue",
   "editor.bulkEdit.prev": "Diapositive précédente",
   "editor.bulkEdit.title": "Modifier tout le texte",
   "editor.cards.collapse": "Réduire",

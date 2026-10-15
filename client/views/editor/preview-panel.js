@@ -22,6 +22,8 @@ export function createPreviewPanel({
   onLightboxNavigate,
   // Presenter-notes strip, mounted under the slide (see notes-strip.js).
   notesStripEl,
+  // Canvas | Fields tabs (canvas-tabs.js), placed in the slide bar.
+  canvasTabsEl,
 } = {}) {
   const preview = h('div', { class: 'panel preview-panel' });
 
@@ -43,14 +45,14 @@ export function createPreviewPanel({
   });
   const openPreviewLightbox = () => previewLightbox.open();
 
-  // Slide bar (Option A, chrome re-org 2026-07-19): a full-width bar spanning
-  // the preview + inspector columns, above the working area. Everything scoped
-  // to the CURRENT slide lives here - identity/structure (type chip, Layout,
-  // "All text") and tools (Add comment, zoom, lock, actions menu) grouped on
-  // the LEFT; the inspector/comments openers dock alone at the far RIGHT, above
-  // the inspector column. The editor form renders the slide-dependent contents
-  // into the mounts below on every rerender. The controller places this bar
-  // into the layout grid (it is NOT appended to the preview panel).
+  // Slide bar: the head of the canvas column, scoped to the CURRENT slide.
+  // Identity/structure (type chip, Layout) and the Canvas | Fields tabs on the
+  // left; the slide tools (Add comment, zoom, lock, actions menu) at the right,
+  // above the canvas they act on (mockup v5). The Inspector |
+  // Comments tabs head their own column (`.rail-head`, D335), not this bar.
+  // The editor form renders the slide-dependent contents into the mounts
+  // below on every rerender. The controller places this bar into the layout
+  // grid (it is NOT appended to the preview panel).
   const slideBar = h('div', { class: 'slide-bar' });
   const slideToolbarLeft = h('div', { class: 'row slide-toolbar-left' });
 
@@ -93,23 +95,16 @@ export function createPreviewPanel({
     pinModeHint.hidden = true;
   }
 
-  // Slide tools (Add comment, zoom, lock, actions menu) sit LEFT next to the
-  // slide identity - deliberately not floated right, where they would crowd the
-  // openers we are trying to keep separate. A subtle divider marks the seam
-  // between identity/structure and tools.
+  // Slide tools (Add comment, zoom, lock, actions menu), pinned right.
   const slideToolbarActions = h('div', { class: 'row slide-toolbar-actions' });
   const toolsGroup = h('div', { class: 'row slide-bar-tools' });
   if (pinCommentBtn) toolsGroup.append(pinCommentBtn);
   toolsGroup.append(zoomBtn, slideToolbarActions);
-  const slideBarLeft = h('div', { class: 'row slide-bar-left' }, [
+  slideBar.append(
     slideToolbarLeft,
-    h('div', { class: 'slide-bar-sep', 'aria-hidden': 'true' }),
+    ...(canvasTabsEl ? [canvasTabsEl] : []),
     toolsGroup,
-  ]);
-  // Pane openers (Inspector / Comments) dock here, pinned to the far right via
-  // margin-left:auto. The controller fills this mount once the panes exist.
-  const openersSlot = h('div', { class: 'slide-bar-openers' });
-  slideBar.append(slideBarLeft, openersSlot);
+  );
 
   const previewScroll = h('div', {
     class: 'preview-panel-body',
@@ -315,11 +310,9 @@ export function createPreviewPanel({
   return {
     previewEl: preview,
     thumbEl: thumb,
-    // The full-width slide bar (Option A); the controller mounts it in the
-    // layout grid above the preview + inspector columns.
+    // The slide bar; the controller mounts it in the layout grid above the
+    // canvas column.
     slideBarEl: slideBar,
-    // Mount for the pane openers, docked at the bar's far right.
-    openersSlotEl: openersSlot,
     // Mount points for the slide-scoped toolbar (filled by rerenderEditor).
     slideToolbar: { leftEl: slideToolbarLeft, actionsEl: slideToolbarActions },
     detachThumbScale,

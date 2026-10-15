@@ -149,8 +149,6 @@
   "editor.bulkEdit.counter": "Dia {n}/{total}",
   "editor.bulkEdit.hint": "Dia päivittyy kirjoittaessa reaaliajassa. Asettelu, tausta ja saavutettavuus pysyvät sivupaneelissa.",
   "editor.bulkEdit.next": "Seuraava dia",
-  "editor.bulkEdit.open": "Kaikki teksti",
-  "editor.bulkEdit.openTitle": "Muokkaa dian kaikkia tekstikenttiä yhdessä näkymässä",
   "editor.bulkEdit.prev": "Edellinen dia",
   "editor.bulkEdit.title": "Muokkaa kaikkea tekstiä",
   "editor.cards.collapse": "Tiivistä",

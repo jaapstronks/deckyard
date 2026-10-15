@@ -84,18 +84,21 @@ default 340px), and is a **toggleable rail with swappable panes**
   **settings** and **comments** (the deck-level comment threads, incl.
   jump-to-slide and highlight-from-marker via `data-comment-id`) —
   `editor-controller.js`, `registerPane`.
-- The rail is driven by the **pane switcher**: a labeled tab group
-  ([Inspector | Comments], `client/views/editor/pane-tabs.js`) at the far
-  right of the topbar, in its own visual zone exactly above the rail. It is
-  always visible - also with the rail closed - which is what makes the rail
-  findable.
-- **Pressed-state semantics**: `aria-pressed` on a tab means "rail open on
-  MY pane", so a pane switch flips one tab off and the other on. Clicking
-  the active pane's own tab dismisses the rail.
+- The rail is driven by the **pane tabs** ([Inspector | Comments],
+  `client/views/editor/pane-tabs.js`), which head the right-hand column the
+  way Canvas | Fields heads the canvas column (D335). They sit in their own
+  grid cell (`.rail-head`), so they stay visible with the rail closed -
+  which is what makes the rail findable. Both strips are column tabs
+  (`client/lib/dom/column-tabs.js`): the active tab takes the tone of the
+  surface it opens.
+- **Selection semantics**: `aria-selected` on a tab means "rail open on MY
+  pane", so a pane switch moves the selection from one tab to the other.
+  Clicking the active pane's own tab dismisses the rail, leaving no tab
+  selected.
 - **The pane's × dismisses the whole rail** (same as the tabs; hiding just
   the pane would leave an open empty rail). A dismissed rail gives the
-  canvas the space (`is-inspector-collapsed`; the panel leaves the grid
-  entirely).
+  canvas the space (`is-inspector-collapsed`): the panel leaves the grid and
+  its column shrinks to the rail head's icons.
 - The unseen-comments badge sits on the Comments tab, so it is visible
   while the rail is closed.
 - **Notes are not a pane**: presenter notes used to be a third pane, but
@@ -114,12 +117,19 @@ default 340px), and is a **toggleable rail with swappable panes**
 
 ## The slide toolbar and the topbar zones
 
-Everything scoped to the **current slide** lives with the slide, in a
-toolbar in the canvas header (mount points filled by `rerenderEditor` on
-every slide change): the type chip (+ retired/custom badges), "All text"
-(the bulk modal), the Comment pin, the author lock, the "…" slide-actions
-menu (Fill / Save to library / Convert / AI Convert / Duplicate / Delete)
-and the zoom button. The inspector pane itself has **no header row**: the
+Everything scoped to the **current slide** lives with the slide, in the
+slide bar that heads the canvas column (mount points filled by
+`rerenderEditor` on every slide change): the type chip (+ retired/custom
+badges) and the Layout chip, then the **Canvas | Fields** tabs
+(`client/views/editor/canvas-tabs.js`, D335; Fields opens the all-fields
+dialog until the form moves into the column), and at the right the Comment
+pin, the zoom button, the author lock and the "…" slide-actions menu (Fill /
+Save to library / Convert / AI Convert / Duplicate / Delete).
+
+Three tones separate the zones (D335): the topbar is the deck's chrome
+(elevated, with shadow); the slides column and the inspector column share
+the panel tone (`--app-bg-base`); the stage between them, where the slide
+and its notes lie, is a shade darker (`--app-bg-sunken`). The inspector pane itself has **no header row**: the
 "INSPECTOR" title duplicated the already-active Inspector pane tab, so the
 row was dropped (declutter 2026-07-26) and only its collapse × survives, in
 a zero-height slot (`.editor-form-close-slot`) that floats it over the first
@@ -131,10 +141,9 @@ The topbar holds only **deck-level** chrome, in zones: identity (back,
 title, save status, presence) - deck editing (undo/redo, language) - deck
 actions (Export, Share, deck grid, Present as the primary CTA with a
 caret menu holding Companion) - utilities (user menu, ⋯ with AI analysis,
-Translate, Versions, Settings, Keyboard shortcuts) - and, far right past
-a separator, the pane switcher. At narrow widths the bar sheds
-progressively (title shrinks; deck grid mirrors into ⋯ at ≤1024; undo/
-redo ≤820; avatar ≤600) so the pane switcher never falls off-screen.
+Translate, Versions, Settings, Keyboard shortcuts). At narrow widths the
+bar sheds progressively (title shrinks; deck grid mirrors into ⋯ at ≤1024;
+undo/redo ≤820; avatar ≤600).
 
 ## What the settings pane renders (the keeps-model)
 

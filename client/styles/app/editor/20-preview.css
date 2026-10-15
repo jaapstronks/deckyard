@@ -120,43 +120,26 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Slide bar contents (Option A). Everything slide-scoped groups on the LEFT
-   (identity/structure + tools, split by a subtle divider); the pane openers
-   dock ALONE on the right via margin-left:auto, so the tools never crowd them.
-   The bar shell (background, padding, borders) lives in 20-editor-layout.css.
+   Slide bar contents: identity/structure (type chip, Layout) and the Canvas |
+   Fields tabs on the left, the slide tools pinned right, above the canvas they
+   act on. The bar shell (background, padding, rule) lives in
+   20-editor-layout.css; the tabs in app/components/12-column-tabs.css.
    ───────────────────────────────────────────────────────────────────────────── */
-.slide-bar-left {
-  display: flex;
-  align-items: center;
-  gap: var(--ps-space-3);
-  min-width: 0;
-}
 
-.slide-bar-openers {
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-/* Seam between slide identity/structure and the slide tools. */
-.slide-bar-sep {
-  width: 1px;
-  align-self: stretch;
-  margin: 4px 2px;
-  background: hsl(var(--app-border-default));
-  flex-shrink: 0;
-}
-
-/* Identity/structure cluster (type chip, Layout, "All text") rendered by
-   rerenderEditor. */
+/* Identity/structure cluster (type chip, badges, Layout) rendered by
+   rerenderEditor. Centred in the bar while the tabs sit on its rule. */
 .slide-toolbar-left {
   gap: 8px;
   min-width: 0;
   flex-wrap: wrap;
+  padding-bottom: var(--ps-space-1-5);
 }
 
 /* Tools cluster: add-comment, zoom, and the actions mount (lock + menu). */
 .slide-bar-tools {
   gap: 4px;
+  margin-left: auto;
+  padding-bottom: var(--ps-space-1-5);
 }
 
 .slide-toolbar-actions {
@@ -168,22 +151,12 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Pane openers (Inspector / Comments): labeled segmented pair, docked at the
-   far right of the slide bar, above the inspector column they control. Built on
-   the shared outlined segmented control (`.sb-segmented.is-outlined`); pressed
-   (is-active) = "rail open on MY pane".
+   Pane tabs (Inspector / Comments) in the rail head (pane-tabs.js). Selected =
+   "rail open on MY pane". With the rail dismissed the head shrinks to the
+   icons; the label returns with the rail.
    ───────────────────────────────────────────────────────────────────────────── */
-.pane-tab {
-  gap: 6px;
-}
-
-/* Active fill = accent-soft: the outlined control's default active fill is
-   `bg-elevated`, identical to the white bar, so it would vanish. Matches the
-   `.ghost-icon-btn.is-active` treatment used elsewhere in the chrome. */
-.pane-tab.is-active {
-  background: hsl(var(--app-accent-soft));
-  color: hsl(var(--app-accent-text));
-  box-shadow: none;
+.is-inspector-collapsed .pane-tab-label {
+  display: none;
 }
 
 /* Inline count on the Comments tab. Red = new/unseen, grey = seen but
@@ -207,13 +180,6 @@
 
 .pane-tab-badge--seen {
   background: hsl(var(--app-text-tertiary));
-}
-
-/* Narrow widths: drop the opener labels (icons + badge stay). */
-@media (max-width: 1280px) {
-  .pane-tab-label {
-    display: none;
-  }
 }
 
 /* Add-comment button: labeled (icon + text), not a bare pin glyph, so the
