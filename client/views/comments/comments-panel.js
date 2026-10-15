@@ -225,16 +225,15 @@ export function createCommentsPanel({
     const emails = new Set();
     // The owner's address, the one a reader of their own deck may still have
     // (D22). The creator no longer offers one to fall back on: they are named,
-    // not addressed.
-    const owner = String(pres?.ownerEmail || '').toLowerCase();
-    if (owner) emails.add(owner);
+    // not addressed. Addresses from the server arrive in their stored
+    // spelling (D200), so they are compared bare.
+    if (pres?.ownerEmail) emails.add(pres.ownerEmail);
     try {
       const resp = await api(
         `/api/presentations/${presentationId}/collaborators`,
       );
       for (const c of resp?.collaborators || []) {
-        const email = String(c?.userEmail || '').toLowerCase();
-        if (email) emails.add(email);
+        if (c?.userEmail) emails.add(c.userEmail);
       }
       accessListAuthoritative = true;
     } catch {

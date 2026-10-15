@@ -161,9 +161,8 @@ export function attachMentionAutocomplete({
 
   async function search(query) {
     const queryId = ++lastQueryId;
-    const priority = (getPriorityEmails?.() || []).map((e) =>
-      String(e).toLowerCase(),
-    );
+    // Both lists come from the server in the stored spelling (D200).
+    const priority = getPriorityEmails?.() || [];
     let found = [];
     try {
       const resp = await api(
@@ -175,8 +174,7 @@ export function attachMentionAutocomplete({
     }
     if (queryId !== lastQueryId || !isOpen) return; // Stale response
     // Deck collaborators (+ owner) first, then the rest, stable within groups.
-    const rank = (u) =>
-      priority.includes(String(u.email).toLowerCase()) ? 0 : 1;
+    const rank = (u) => (priority.includes(u.email) ? 0 : 1);
     results = [...found].sort((a, b) => rank(a) - rank(b));
     highlightIndex = 0;
     render();

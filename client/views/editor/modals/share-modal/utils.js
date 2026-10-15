@@ -2,6 +2,8 @@
  * Utility functions for the share modal.
  */
 
+import { normalizeEmail } from '../../../../../shared/email.js';
+
 /**
  * Calculate expiration date from a duration value.
  * @param {string} value - Duration string (e.g., '1h', '24h', '7d', '30d')
@@ -33,4 +35,19 @@ export function formatExpiration(date) {
   if (days > 1) return `${days}d`;
   if (hours > 1) return `${hours}h`;
   return '<1h';
+}
+
+/**
+ * Find the collaborator a typed address names among those eligible to take
+ * over the deck. The typed address is folded once (D200); the collaborators'
+ * addresses come from the server in that spelling and are compared bare.
+ * @param {Array<{ userEmail: string }>} eligibleUsers - Collaborators with
+ *   edit or admin permission
+ * @param {string} typed - The address as the user typed it
+ * @returns {{ userEmail: string }|null} The matching collaborator, or null
+ */
+export function findEligibleOwner(eligibleUsers, typed) {
+  const email = normalizeEmail(typed);
+  if (!email) return null;
+  return eligibleUsers.find((u) => u.userEmail === email) || null;
 }

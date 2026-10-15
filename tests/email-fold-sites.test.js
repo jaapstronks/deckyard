@@ -9,8 +9,10 @@
  * instead of the write. Four such normalisers and some 35 inline folds had
  * grown before this guard; the history is in migration 092.
  *
- * Measured over `server/` and `shared/`. Migrations are excluded: they are
- * history, and the old backfills join on `lower()` deliberately.
+ * Measured over `server/`, `shared/` and `client/` (vendor excluded): the
+ * browser compares the addresses the server hands it bare and folds only what
+ * a user types, through the same function (B699). Migrations are excluded:
+ * they are history, and the old backfills join on `lower()` deliberately.
  *
  * Run with: node --test tests/email-fold-sites.test.js
  */
@@ -30,7 +32,7 @@ const repoRoot = path.join(here, '..');
 const CANONICAL = 'shared/email.js';
 const MIGRATIONS = 'server/db/migrations/';
 
-const sources = ['server', 'shared']
+const sources = ['server', 'shared', 'client']
   .flatMap((tree) =>
     walkFiles(path.join(repoRoot, tree), {
       extensions: ['.js'],
