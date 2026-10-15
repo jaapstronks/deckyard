@@ -35,7 +35,7 @@ import {
   walkFieldDefinitions,
 } from './field-definitions.js';
 import { FIELD_TYPE_NAMES } from './field-types.js';
-import { bulkOnlyFields } from './field-homes.js';
+import { fieldsOnlyFields } from './field-homes.js';
 import {
   DEFAULT_FIDELITY,
   FIDELITY_TARGETS,
@@ -518,11 +518,12 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
 }
 
 /**
- * Warn about fields whose only editing home is the bulk "All text" modal: not
- * on the canvas, not in the inspector, not in an element tab. Core is held to
- * that by a test (`tests/slide-type-docs.test.js`, B450); a fork type gets a
- * warning instead, because the type renders fine and an editor can still
- * reach the field, just not where they look for it (B600).
+ * Warn about fields whose only editing home is the Fields form: not on the
+ * canvas, not in the inspector, not in an element tab. Core is held to that by
+ * a test (`tests/slide-type-docs.test.js`, B450); a fork type gets a warning
+ * instead, because the type renders fine (B600). A content field is then
+ * reachable in the Fields form only; a setting not even there, because the
+ * deck editor's Fields form renders no setting (D335).
  *
  * Only the definition's own declarations count (`inline`, `inspectorKeeps`,
  * `elementTab`), the ones that travel on `GET /api/slide-types`. A type that
@@ -539,7 +540,7 @@ function checkFieldHomes(def, who, out) {
   if (typeof def.renderHtml !== 'function') return;
   let gaps;
   try {
-    gaps = bulkOnlyFields(def, {
+    gaps = fieldsOnlyFields(def, {
       descriptor: isPlainObject(def.inline) ? def.inline : null,
       keeps: Array.isArray(def.inspectorKeeps) ? def.inspectorKeeps : null,
       tab: isPlainObject(def.elementTab) ? def.elementTab : null,
@@ -547,11 +548,12 @@ function checkFieldHomes(def, who, out) {
   } catch {
     return;
   }
-  const paths = [...gaps.bulkOnly, ...gaps.itemBulkOnly];
+  const paths = [...gaps.fieldsOnly, ...gaps.itemFieldsOnly];
   if (!paths.length) return;
   out.warnings.push(
-    `${who}: ${paths.map((p) => `\`${p}\``).join(', ')} can only be edited ` +
-      `in the "All text" modal — give each a home: canvas text ` +
+    `${who}: ${paths.map((p) => `\`${p}\``).join(', ')} have no home ` +
+      `outside the Fields form, which renders no setting — give each a home: ` +
+      `canvas text ` +
       `(\`inline.formText\` or a \`data-inline-field\` in the markup), ` +
       `\`inspectorKeeps\`, or an \`elementTab.card.fields\` entry for an ` +
       `item setting`,

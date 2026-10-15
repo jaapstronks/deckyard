@@ -15,8 +15,8 @@
  *    active — so a set background stays visible without costing the space.
  *
  * Rendered only on a surface whose row declares `background`
- * (editor-form/surfaces.js): the inspector and the library editor, not the bulk
- * modal (the parity invariant, see editor-inspector.md).
+ * (editor-form/surfaces.js): the inspector and the library editor, not the
+ * deck editor's Fields form (a setting has one home, see editing-surfaces.md).
  */
 import { t } from '../../../lib/ui-i18n.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';

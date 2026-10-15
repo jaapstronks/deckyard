@@ -75,7 +75,7 @@
  *     layer (plain text, markdown modal, and items whose subfields are all
  *     inline-editable). For types without an INSPECTOR_KEEPS entry these are
  *     the keys the settings inspector may omit (conservative fallback in
- *     inspector-form.js); the bulk "Edit all text" modal renders them too.
+ *     inspector-form.js); the Fields form renders them too.
  *     A field whose editor also carries non-inline controls (icon pickers,
  *     image subfields, table column ops) must NOT be listed here.
  *

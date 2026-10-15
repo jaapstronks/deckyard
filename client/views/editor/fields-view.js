@@ -1,18 +1,26 @@
 /**
- * Fields: the second working posture on a slide's content, as a form in the
- * canvas column (D335, B703 PR 2).
+ * Fields: the second working posture on a slide's content, as a form (D335,
+ * B703).
  *
  * The canvas is for shaping a slide, this form for writing and checking it:
  * every content field in schema order, Tab from one to the next, empty
  * optional fields present as fields, item lists as rows, chart data as a
- * summary with "Edit data…", presenter notes last. Settings never render here
- * (the `bulk` surface carries `fields: 'content'`); the inspector beside the
- * column stays their one home.
+ * summary with "Edit data…", presenter notes last.
+ *
+ * One form, two contexts ({@link FIELDS_CONTEXTS}); the context decides the
+ * form surface (editor-form/surfaces.js):
+ *
+ * - `deck`: the deck editor's canvas column. The inspector stands beside it and
+ *   is the one home of every setting, so the form carries content only (the
+ *   `fields` surface). The head counts the slide and leads back to the canvas.
+ * - `library`: the slide-library editor (single-slide-editor.js). No canvas
+ *   and no inspector stand beside it, so the form is the slide's one editing
+ *   surface there and carries the settings too (the `library` surface).
  *
  * A slide head sits on top: a small live preview, the slide number, the title
- * field and the way back to the canvas. A click on the preview goes back to
- * the canvas at the field that was clicked. The head folds away to give the
- * form the height; that choice is remembered.
+ * field and, in the deck, the way back to the canvas. A click on the preview
+ * goes back to the canvas at the field that was clicked. The head folds away
+ * to give the form the height; that choice is remembered.
  *
  * The view owns no selection: the slide list, the keyboard and undo move the
  * selection through the editor's seams, and the controller calls `sync()`
@@ -30,19 +38,41 @@ import { h } from '../../lib/dom/index.js';
 const HEAD_COLLAPSED_KEY = 'deckyard.fieldsView.headCollapsed';
 
 /**
+ * The contexts the Fields form runs in, as one declared table: the view reads
+ * a context's row and never branches on its name.
+ *
+ * - `surface`: the editor-form surface the host renders the form on.
+ * - `canvas`: there is a canvas to go back to ("Edit on canvas →" and a
+ *   clickable preview).
+ * - `counter`: the head shows "Slide n of N".
+ *
+ * @type {Readonly<Record<string, Readonly<{surface: string, canvas: boolean,
+ *   counter: boolean}>>>}
+ */
+export const FIELDS_CONTEXTS = Object.freeze({
+  deck: Object.freeze({ surface: 'fields', canvas: true, counter: true }),
+  library: Object.freeze({ surface: 'library', canvas: false, counter: false }),
+});
+
+/**
  * @param {Object} opts
+ * @param {'deck'|'library'} [opts.context] - where the form runs
  * @param {Object} opts.pres - the presentation model (live reference)
  * @param {() => string|null} opts.getSelectedSlideId
  * @param {() => Object} [opts.getTheme] - the current theme, for the preview
+ * @param {Object} [opts.renderVia] - how the preview resolves its theme;
+ *   defaults to the deck (`{ kind: 'deck', id: pres.id }`)
  * @param {(slideId: string) => ('author'|'other'|null)} [opts.getSlideLockKind]
  *   - the editor's state-driven lock seam; a locked slide's form is inert
- * @param {(formMount: HTMLElement, hooks: { refreshPreview: Function,
- *   onRendered: Function }) => Function} opts.createFormRenderer - builds the
- *   form on `formMount` and returns its rerender function. The controller
- *   makes it from createRerenderEditor on the `bulk` surface, so the view
- *   reuses the exact form machinery of the inspector.
- * @param {(fieldKey: string|null) => void} opts.onEditOnCanvas - switch the
- *   column to the canvas, at this field when one is named
+ * @param {(formMount: HTMLElement, hooks: { surface: string,
+ *   refreshPreview: Function, onRendered: Function }) => Function}
+ *   opts.createFormRenderer - builds the form on `formMount`, on the surface
+ *   the context names, and returns its rerender function. The host makes it
+ *   from createRerenderEditor, so the view reuses the exact form machinery of
+ *   the inspector.
+ * @param {(fieldKey: string|null) => void} [opts.onEditOnCanvas] - switch the
+ *   column to the canvas, at this field when one is named (a context with a
+ *   canvas only)
  * @param {HTMLElement} [opts.notesEl] - the presenter-notes strip; it moves
  *   into the form while the view shows and back when it hides
  * @returns {{ el: HTMLElement, show: () => void, hide: (home?: HTMLElement)
@@ -50,14 +80,21 @@ const HEAD_COLLAPSED_KEY = 'deckyard.fieldsView.headCollapsed';
  *   => void, detach: () => void }}
  */
 export function createFieldsView({
+  context = 'deck',
   pres,
   getSelectedSlideId,
   getTheme,
+  renderVia = null,
   getSlideLockKind,
   createFormRenderer,
   onEditOnCanvas,
   notesEl = null,
 }) {
+  const ctx = Object.hasOwn(FIELDS_CONTEXTS, context)
+    ? FIELDS_CONTEXTS[context]
+    : null;
+  if (!ctx) throw new Error(`Unknown Fields context: ${context}`);
+
   let shown = false;
   let renderedSlideId = null;
   let previewRaf = 0;
@@ -65,31 +102,40 @@ export function createFieldsView({
 
   // ---- Slide head: preview | number, title, back to canvas | fold ----
   const thumb = h('div', { class: 'thumb fields-view-thumb' });
-  const previewBtn = h(
-    'button',
-    {
-      type: 'button',
-      class: 'fields-view-preview',
-      title: t('editor.fieldsView.previewTitle', 'Edit this on the canvas'),
-      'aria-label': t(
-        'editor.fieldsView.previewTitle',
-        'Edit this on the canvas',
-      ),
-      onclick: (ev) => {
-        const fieldEl = ev.target?.closest?.('[data-inline-field]');
-        onEditOnCanvas(fieldEl?.getAttribute('data-inline-field') || null);
-      },
-    },
-    [thumb],
-  );
+  // With a canvas to go back to, the preview is a button; without one it is
+  // a picture of the slide.
+  const previewBtn = ctx.canvas
+    ? h(
+        'button',
+        {
+          type: 'button',
+          class: 'fields-view-preview',
+          title: t('editor.fieldsView.previewTitle', 'Edit this on the canvas'),
+          'aria-label': t(
+            'editor.fieldsView.previewTitle',
+            'Edit this on the canvas',
+          ),
+          onclick: (ev) => {
+            const fieldEl = ev.target?.closest?.('[data-inline-field]');
+            onEditOnCanvas?.(
+              fieldEl?.getAttribute('data-inline-field') || null,
+            );
+          },
+        },
+        [thumb],
+      )
+    : h('div', { class: 'fields-view-preview is-static' }, [thumb]);
   const counter = h('span', { class: 'fields-view-counter' });
+  counter.hidden = !ctx.counter;
   const titleSlot = h('div', { class: 'fields-view-title-slot' });
-  const canvasBtn = h('button', {
-    type: 'button',
-    class: 'btn btn-secondary btn-sm fields-view-to-canvas',
-    text: t('editor.fieldsView.toCanvas', 'Edit on canvas →'),
-    onclick: () => onEditOnCanvas(null),
-  });
+  const canvasBtn = ctx.canvas
+    ? h('button', {
+        type: 'button',
+        class: 'btn btn-secondary btn-sm fields-view-to-canvas',
+        text: t('editor.fieldsView.toCanvas', 'Edit on canvas →'),
+        onclick: () => onEditOnCanvas?.(null),
+      })
+    : null;
   const foldBtn = h('button', {
     type: 'button',
     class: 'ghost-icon-btn fields-view-fold',
@@ -101,7 +147,7 @@ export function createFieldsView({
       foldBtn,
     ]),
     titleSlot,
-    h('div', { class: 'row' }, [canvasBtn]),
+    ...(canvasBtn ? [h('div', { class: 'row' }, [canvasBtn])] : []),
   ]);
   const head = h('header', { class: 'fields-view-head' }, [previewBtn, meta]);
 
@@ -118,7 +164,7 @@ export function createFieldsView({
   const el = h(
     'section',
     {
-      class: 'fields-view',
+      class: `fields-view is-${context}`,
       'aria-label': t('editor.canvasTabs.fields', 'Fields'),
     },
     [sheet],
@@ -159,7 +205,7 @@ export function createFieldsView({
       mountSlideInto(thumb, slide, {
         theme: getTheme?.(),
         presentationId: pres?.id,
-        renderVia: { kind: 'deck', id: pres?.id },
+        renderVia: renderVia || { kind: 'deck', id: pres?.id },
         lang: resolveDeckLang(pres),
       });
     });
@@ -177,6 +223,7 @@ export function createFieldsView({
   }
 
   const rerenderForm = createFormRenderer(formMount, {
+    surface: ctx.surface,
     refreshPreview,
     onRendered: liftTitle,
   });
@@ -189,15 +236,17 @@ export function createFieldsView({
       titleSlot.replaceChildren();
       return;
     }
-    const idx = pres.slides.indexOf(slide);
-    counter.textContent = t(
-      'editor.fieldsView.counter',
-      'Slide {n} of {total}',
-      {
-        n: String(idx + 1),
-        total: String(pres.slides.length),
-      },
-    );
+    if (ctx.counter) {
+      const idx = pres.slides.indexOf(slide);
+      counter.textContent = t(
+        'editor.fieldsView.counter',
+        'Slide {n} of {total}',
+        {
+          n: String(idx + 1),
+          total: String(pres.slides.length),
+        },
+      );
+    }
     // A locked slide (author lock, or another editor holding it) reads but
     // does not take input; the same seam gates the canvas.
     const lockKind = getSlideLockKind?.(slide.id) || null;

@@ -71,7 +71,7 @@ export function fieldFormLayout(field) {
  *
  * Total and order-preserving — flattening the result's keys always reproduces
  * `fields[]` in definition order, which is what makes this safe to put in front
- * of both form loops (bulk modal and inspector). Rows are returned even when a
+ * of both form loops (Fields form and inspector). Rows are returned even when a
  * key will end up rendering nothing; the caller decides what to do with an empty
  * row, because only the caller knows which keys its surface gates out.
  *

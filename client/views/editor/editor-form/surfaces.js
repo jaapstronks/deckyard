@@ -10,7 +10,9 @@
  *   on the canvas and in the Fields form); `'content'` renders the per-type
  *   form without a single setting (`isSettingsField`, D335: content has two
  *   postures, a setting one home); `'all'` renders the full per-type form,
- *   settings included, for a surface with no inspector beside it.
+ *   settings included, for a surface with no inspector beside it. Both
+ *   non-inspector rows are the one Fields form (`fields-view.js`) in its two
+ *   contexts: `fields` in the deck editor, `library` in the library editor.
  * - `toolbar`: the slide toolbar - type pill and retired/custom badges. (The
  *   Canvas | Fields tabs beside it are deck-editor chrome, built once by the
  *   controller, not per render.)
@@ -56,9 +58,10 @@ export const FORM_SURFACES = Object.freeze({
     background: true,
     a11y: true,
   }),
-  // The Fields form in the canvas column (fields-view.js); the inspector
-  // stands beside it, so it carries content only.
-  bulk: Object.freeze({
+  // The Fields form in the deck editor's canvas column (fields-view.js, the
+  // `deck` context); the inspector stands beside it, so it carries content
+  // only.
+  fields: Object.freeze({
     fields: 'content',
     toolbar: false,
     layout: false,
@@ -69,6 +72,9 @@ export const FORM_SURFACES = Object.freeze({
     background: false,
     a11y: false,
   }),
+  // The Fields form in the slide-library editor (fields-view.js, the
+  // `library` context). Nothing stands beside it, so it is the slide's one
+  // editing surface there and carries the settings too.
   library: Object.freeze({
     fields: 'all',
     toolbar: true,

@@ -769,9 +769,9 @@
    SLIDE LIBRARY - EDIT MODAL
    ============================================================ */
 
-/* The two panes and the preview are `.bulk-edit-*` (108-bulk-edit.css): the
-   library editor is the same form on another surface. The modal size, the
-   name row, the toolbar and the footer live here. */
+/* The editor inside is the Fields form in its library context
+   (110-fields-view.css). The modal size, the name row, the toolbar and the
+   footer live here. */
 .modal.ps-lib-edit-modal {
   width: min(1680px, calc(100vw - 48px));
   max-width: none;

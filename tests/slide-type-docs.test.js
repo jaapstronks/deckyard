@@ -24,6 +24,7 @@ import {
   coverageRows,
 } from '../scripts/lib/slide-type-doc-tables.js';
 import { familyPattern } from '../shared/slide-types/field-homes.js';
+import { isSettingsField } from '../shared/slide-types/settings-fields.js';
 
 // The item-level coverage renders every core type once to read the canvas's
 // `data-inline-field` paths; without DOMPurify the markdown fields would warn.
@@ -174,7 +175,7 @@ test('the inspector-keeps column restates the declaration', () => {
       .split('\n')
       .find((l) => new RegExp(`^\\| \`${row.type}\`\\s*\\|`).test(l));
     assert.ok(line, `${row.type}: no row in the coverage table`);
-    const cell = line.split('|')[4].trim();
+    const cell = line.split('|')[3].trim();
     const expected = condenseKeys(row.keeps || []);
     assert.equal(
       cell,
@@ -185,37 +186,32 @@ test('the inspector-keeps column restates the declaration', () => {
 });
 
 /**
- * The parity invariant, as a property rather than a paragraph: a field the user
- * cannot point at on the canvas may not have the bulk modal as its only home
- * (editor-inspector.md, tightened 2026-07-21). Every key the derivation leaves
- * in that column today is a repeatable content collection, so the check is that
- * nothing SETTINGS-shaped joins them — enums, booleans and numbers are exactly
- * the field types with no canvas affordance.
+ * The Fields rule (D335), as a property of the schema rather than a paragraph:
+ * content has two postures (canvas and the Fields form), a setting one home,
+ * and the Fields form beside the inspector renders no setting. So a setting
+ * (`isSettingsField`: enum, boolean, number, color, icon, or a widget that
+ * picks one) whose only home would be the Fields form renders nowhere in the
+ * deck editor. The Fields-only column may hold content - a gap in the canvas
+ * posture, not a lost field - but never a setting. Its runtime half, that the
+ * form indeed renders none, is `tests/editor-form-surfaces.test.js`.
  */
-test('no settings-shaped field relies on the bulk modal alone', () => {
-  const SETTINGS_TYPES = new Set([
-    'enum',
-    'boolean',
-    'number',
-    'color',
-    'icon',
-  ]);
+test('the Fields form holds no setting: no setting has it as its only home', () => {
   /**
    * Keys the inspector genuinely renders, through a per-type widget in
    * `renderInspectorExtrasByType` rather than through the keep-list. That
    * routing is imperative JS, so no declaration says so and the derivation
    * cannot see it — the entry is the honest cost of that, not an exemption from
-   * the invariant. Keep it SHORT: an entry here is a standing argument for
-   * making the widget's coverage declarative.
+   * the rule. Keep it SHORT: an entry here is a standing argument for making
+   * the widget's coverage declarative.
    */
   const WIDGET_RENDERED = new Set([]);
   const offenders = [];
   for (const type of CORE_SLIDE_TYPE_NAMES) {
     const row = coverageFor(type);
     const byKey = new Map((row.def.fields || []).map((f) => [f.key, f]));
-    for (const key of row.bulkOnly) {
+    for (const key of row.fieldsOnly) {
       const field = byKey.get(key);
-      if (!field || !SETTINGS_TYPES.has(field.type)) continue;
+      if (!isSettingsField(field)) continue;
       if (WIDGET_RENDERED.has(`${type}.${familyPattern(key)}`)) continue;
       offenders.push(`${type}.${key} (${field.type})`);
     }
@@ -223,28 +219,28 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
   assert.deepEqual(
     offenders,
     [],
-    'parity violation — a settings field must render in the inspector (or be ' +
-      'claimed by the Layout chip / an element knob), never in the bulk modal only:\n' +
+    'a setting must render in the inspector (or be claimed by the Layout row / ' +
+      'an element knob); the Fields form renders none, so these render nowhere:\n' +
       offenders.join('\n'),
   );
 });
 
 /**
- * The parity invariant one level down (B450): an ITEM field whose only home is
- * the bulk modal. The list-level check above counted a collection as homed once
- * the list was, which is how text-blocks' row arrows and colours stayed
- * modal-only. The ratchet that pinned the leftovers reached zero with B599, so
- * any entry fails: give the field a home - canvas for content, the "This card"
- * tab or the inspector for settings.
+ * The same rule one level down (B450): an ITEM field whose only home is the
+ * Fields form. The list-level check above counts a collection as homed once
+ * the list is, which is how text-blocks' row arrows and colours once stayed
+ * form-only. The ratchet that pinned the leftovers reached zero with B599, so
+ * any entry fails, content included: give the field a home - canvas for
+ * content, the "This card" tab or the inspector for settings.
  */
-test('no item field has the bulk modal as its only home', () => {
+test('no item field has the Fields form as its only home', () => {
   const actual = coverageRows().flatMap((r) =>
-    r.itemBulkOnly.map((p) => `${r.type}.${p}`),
+    r.itemFieldsOnly.map((p) => `${r.type}.${p}`),
   );
   assert.deepEqual(
     actual,
     [],
-    'these item fields render nowhere but the bulk modal - give each a home ' +
+    'these item fields render nowhere but the Fields form - give each a home ' +
       '(docs/reference/editing-surfaces.md):\n' +
       actual.join('\n'),
   );

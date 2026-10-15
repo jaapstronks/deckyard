@@ -22,10 +22,22 @@ every setting exactly one home.
 >
 > Every setting exists in exactly one place.
 > One entry per element: the inspector tab.
+>
+> Content has two postures on the same fields (canvas and Fields); settings
+> have one home.
 
-The last line matters most. Even when an edit opens elsewhere (a chart's data in
-its own data editor, say), the inspector element tab stays the single place where
-you see what is settable for an element, and the entry point to that edit.
+The inspector line matters most. Even when an edit opens elsewhere (a chart's
+data in its own data editor, say), the inspector element tab stays the single
+place where you see what is settable for an element, and the entry point to that
+edit.
+
+The last line is the newest (D335). Writing and checking a slide is another posture than
+shaping it, so the canvas column has two tabs, **Canvas | Fields**: the canvas
+to shape a slide, the Fields form (`client/views/editor/fields-view.js`) to
+write and check it, every content field in schema order with Tab from one to
+the next. Both show the same content; Fields renders no setting, because the
+inspector stands beside it and is a setting's one home. A second posture for
+_content_ is not a second home for a _setting_.
 
 ## The underlying axis
 
@@ -59,8 +71,8 @@ grid beside a live preview. It writes live like every other edit, so the chart o
 the canvas moves as you type; it has no Cancel/Save, only **Done** (or Escape,
 Ctrl/⌘+Enter), and the whole session is one undo step, so Cmd+Z after Done takes
 it all back. Every way in opens it: the inspector's "Edit data…", a click on the
-chart on the canvas, and the data summary that stands in a full form (the bulk
-modal, the slide library) in place of the grid.
+chart on the canvas, and the data summary that stands in the Fields form (in
+the deck editor and in the slide library) in place of the grid.
 
 ## Single-element types
 
@@ -75,8 +87,24 @@ normal tab split still stays — no special casing:
 
 Corollary: element inputs that have no canvas surface (video source/ID, player
 settings, embed URL) are **inspector material** — they must never end up with
-the bulk "All text" modal as their only home. (The bulk modal is a convenience,
-never the only surface for any field — the _parity invariant_.)
+the Fields form as their only home, because the Fields form renders no setting
+and they would render nowhere. (Content may rely on canvas plus Fields; a
+setting never on Fields — the _parity invariant_, guarded by
+`tests/slide-type-docs.test.js`.)
+
+## The Fields form in two contexts
+
+The Fields form is one form with two contexts (`FIELDS_CONTEXTS` in
+`fields-view.js`), and the context picks its surface row in
+`client/views/editor/editor-form/surfaces.js`:
+
+| Context   | Where                                                                   | Surface   | Carries                                                |
+| --------- | ----------------------------------------------------------------------- | --------- | ------------------------------------------------------ |
+| `deck`    | the deck editor's canvas column                                         | `fields`  | content only; the inspector beside it has the settings |
+| `library` | the slide-library editor (one slide, no deck, `single-slide-editor.js`) | `library` | content and settings: it is the slide's only surface   |
+
+The library editor has no canvas and no inspector, so there the form is the one
+home of every field; nothing else claims a setting, so nothing duplicates one.
 
 ## Why the inspector is the carrier
 
@@ -88,7 +116,8 @@ never the only surface for any field — the _parity invariant_.)
 
 ## Checklist for a new element type
 
-- [ ] Does every setting exist in exactly one place?
+- [ ] Does every setting exist in exactly one place, and never only in the
+      Fields form?
 - [ ] Is the inspector tab the only entry to everything settable for this element?
 - [ ] Is there nothing on the canvas that covers the content itself?
 - [ ] Is every canvas control spatial or direct manipulation — not a chooser?

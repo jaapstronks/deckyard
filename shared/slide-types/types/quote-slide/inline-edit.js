@@ -12,7 +12,7 @@
 /** @type {Object} InlineDescriptor for quote-slide. */
 export const inlineEdit = {
   // Every quote lives in quotes[] (D314); its text, name and role are inline
-  // fields, its portraits the media below, so the bulk modal is never the
+  // fields, its portraits the media below, so the Fields form is never the
   // only way in. quotes stays out of formText: its items carry images.
   formText: [],
   // Add/remove/reorder whole quotes on the canvas. The add button anchors to

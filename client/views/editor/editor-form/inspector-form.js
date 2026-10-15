@@ -27,9 +27,10 @@ import { renderItemElementCard } from './item-element-card.js';
  *
  * The rule the keep-lists follow: the inspector renders ONLY Background,
  * Accessibility and these settings/design fields. Content fields live on the
- * slide itself (wysiwyg) and — all of them, by construction — in the "Edit all
- * text" bulk modal. A key may only be dropped from a keep-list when its
- * replacement surface has shipped (parity invariant).
+ * slide itself (wysiwyg) and — all of them, by construction — in the Fields
+ * form (D335: content has two postures, a setting one home). A key may only be
+ * dropped from a keep-list when its replacement surface has shipped (parity
+ * invariant).
  *
  * The per-type coverage table in docs/reference/editor-inspector.md is generated
  * FROM these declarations (scripts/lib/slide-type-doc-tables.js), so it is a
@@ -37,11 +38,12 @@ import { renderItemElementCard } from './item-element-card.js';
  * regenerate.
  *
  * Coverage-audit rule (editing-surfaces §"Status: per-type coverage audit",
- * re-audited 2026-07-21): CONTENT TEXT may rely on the canvas + bulk modal;
- * SETTINGS/CONFIG/METADATA may never be bulk-only — a field the user cannot
- * point at on the canvas (URLs, config texts, alt/bg images) must render in the
- * inspector. `tests/slide-type-docs.test.js` states that half as a property:
- * no enum/boolean/number field may be left with the bulk modal as its only home.
+ * re-audited 2026-07-21): CONTENT TEXT may rely on the canvas + the Fields
+ * form; SETTINGS/CONFIG/METADATA may never be Fields-only — a field the user
+ * cannot point at on the canvas (URLs, config texts, alt/bg images) must render
+ * in the inspector. `tests/slide-type-docs.test.js` states that half as a
+ * property: no setting (`isSettingsField`) may be left with the Fields form as
+ * its only home, because the Fields form renders none.
  *
  * Documented deviations from the audit table's shorthand (see the reference
  * doc): table colCount is a derived mirror managed by its editor and was never
