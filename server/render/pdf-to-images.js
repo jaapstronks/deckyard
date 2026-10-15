@@ -73,23 +73,14 @@ export async function pdfToImages({
 
   const browser = await getPuppeteerBrowser({ featureName: 'PDF Import' });
   const results = [];
+  let renderPage = null;
 
   try {
-    // First, get the page count by opening the PDF and checking
-    const page = await browser.newPage();
-
-    // Set a reasonable viewport
-    await page.setViewport({ width, height, deviceScaleFactor: 1 });
-
-    // Navigate to the PDF data URL
-    // Puppeteer's built-in PDF viewer will render it
-    await page.goto(pdfDataUrl, { waitUntil: 'networkidle0', timeout: 60000 });
-
-    await page.close();
-
-    // Now render each page using pdf.js approach
-    // We'll create a page that uses pdf.js to render each PDF page to canvas
-    const renderPage = await browser.newPage();
+    // One page renders every PDF page with pdf.js onto a canvas; pdf.js also
+    // counts the pages. Never navigate a page to the PDF itself: a browser
+    // without a PDF viewer (Chromium in the Docker image) treats that as a
+    // download and aborts it with `net::ERR_ABORTED` (B701).
+    renderPage = await browser.newPage();
     await renderPage.setViewport({ width, height, deviceScaleFactor: 1 });
 
     // Create an HTML page that uses pdf.js to render PDF pages
@@ -224,8 +215,6 @@ export async function pdfToImages({
         buffer: toNodeBuffer(imageBuffer),
       });
     }
-
-    await renderPage.close();
   } catch (err) {
     // A cancelled render is not a broken PDF — it keeps its own error so the
     // caller can tell the two apart.
@@ -234,6 +223,15 @@ export async function pdfToImages({
     const error = new Error(`Failed to convert PDF to images: ${err.message}`);
     error.cause = err;
     throw error;
+  } finally {
+    // The browser is shared, so a failed or cancelled import must not leave
+    // its page open.
+    try {
+      await renderPage?.close();
+      // eslint-disable-next-line no-restricted-syntax -- a page that will not close has nothing left to report; the conversion's own outcome stands
+    } catch {
+      // ignore
+    }
   }
 
   return results;
