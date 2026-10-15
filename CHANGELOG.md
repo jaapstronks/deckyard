@@ -4,6 +4,25 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.69.0](https://github.com/jaapstronks/deckyard/compare/v1.68.0...v1.69.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* `server/utils/normalize.js` no longer exports `normalizeEmail`; import it from `shared/email.js`. Migration 092 rewrites the casing of stored e-mail addresses in users, user_settings, presentation_collaborators, presentations.trashed_by, presentation_versions, slide_library, slide_collections and view_sessions.
+
+### Added
+
+* create the first admin from AUTH_ADMIN_EMAIL on a fresh install ([#1647](https://github.com/jaapstronks/deckyard/issues/1647)) ([a62fbea](https://github.com/jaapstronks/deckyard/commit/a62fbeab09561094bf553db5b1281f10431ca459))
+
+
+### Fixed
+
+* fold e-mail addresses once, in shared/email.js ([#1652](https://github.com/jaapstronks/deckyard/issues/1652)) ([5f11cc7](https://github.com/jaapstronks/deckyard/commit/5f11cc7ad3cbf69b5f915d6e9df551063a0162fc))
+* leave hidden slides out of every language version for viewers ([#1650](https://github.com/jaapstronks/deckyard/issues/1650)) ([5d82604](https://github.com/jaapstronks/deckyard/commit/5d826044b65003a3ec8d8b974f741d9adeb62c8e))
+* let itemLabelField name an item by any readable string ([#1653](https://github.com/jaapstronks/deckyard/issues/1653)) ([48e166e](https://github.com/jaapstronks/deckyard/commit/48e166e9a14c1d431f13fe420c46edef3c1770be))
+* run converter imports through the shared field validation ([#1645](https://github.com/jaapstronks/deckyard/issues/1645)) ([112388e](https://github.com/jaapstronks/deckyard/commit/112388e03344446fc74a15932d1d9bdad002a5d8))
+
 ## [1.68.0](https://github.com/jaapstronks/deckyard/compare/v1.67.0...v1.68.0) (2026-10-14)
 
 
