@@ -706,6 +706,75 @@
   border-color: hsl(var(--app-border-strong));
 }
 
+/* Variants corner (D341): a base tile whose presets are folded carries an
+   always-visible "N variants" button on the thumbnail's bottom-right corner.
+   The wrap is a size container so the corner can sit on the 16:9 thumbnail's
+   bottom edge whatever the tile's width; the label strip below stays free. */
+.ps-type-card-wrap.has-variants {
+  container-type: inline-size;
+}
+
+.ps-type-variants-btn {
+  position: absolute;
+  top: calc(100cqw * 9 / 16 - var(--ps-space-1-5));
+  right: var(--ps-space-1-5);
+  z-index: 2;
+  transform: translateY(-100%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-0-5);
+  padding: var(--ps-space-0-5) var(--ps-space-1-5);
+  border-radius: var(--ps-radius-sm);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated) / 0.92);
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.ps-type-variants-btn:hover,
+.ps-type-variants-btn[aria-expanded='true'] {
+  color: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+}
+
+.ps-type-variants-btn svg {
+  transition: transform var(--ps-transition-fast);
+}
+
+.ps-type-variants-btn[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.ps-type-card-wrap.is-open .ps-type-card {
+  border-color: hsl(var(--app-accent-primary));
+}
+
+/* The unfolded row spans the shelf grid under the base tile's row and holds a
+   grid of its own, so the variant tiles keep the usual tile box. */
+.ps-type-variants {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2);
+  border: 1px dashed hsl(var(--app-accent-primary) / 0.6);
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-accent-primary) / 0.06);
+}
+
+.ps-type-variants[hidden] {
+  display: none;
+}
+
+.ps-type-variants-hint {
+  margin: 0;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}
+
 /* Peek lightbox: a larger preview over the picker modal. */
 .modal.ps-modal.ps-type-peek {
   width: min(92vw, 860px);

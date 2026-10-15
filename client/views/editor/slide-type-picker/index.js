@@ -12,6 +12,7 @@
  *                       fluid scale)
  *   - peek.js         — the click-to-peek lightbox
  *   - library-strip.js — the inline "From your library" strip (item 10)
+ *   - variants.js     — preset variants folded into their base tile (D341)
  *
  * The live-render thumbnail path (hydrateThumb) stays here because it closes
  * over the mutable preview surface; it calls the pure builders for the
@@ -72,6 +73,12 @@ import {
 } from './thumbnails.js';
 import { openTypePeek } from './peek.js';
 import { mountLibraryStrip } from './library-strip.js';
+import {
+  VARIANT_ROW_SELECTOR,
+  buildVariantsToggle,
+  buildVariantRow,
+  placeVariantRow,
+} from './variants.js';
 import { h } from '../../../lib/dom/index.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
 
@@ -438,26 +445,57 @@ export function createSlideTypePicker({
       );
     };
 
+    // Count a shelf's own tiles: not its subheadings, and not the tiles in a
+    // folded variant row (D341), which are the same type.
     const updateGroupCount = (group) => {
       const c = group.querySelector('.ps-type-group-count');
       if (c)
         c.textContent = String(
-          group.querySelectorAll('.ps-type-card-wrap').length,
+          group.querySelectorAll(':scope > .ps-type-grid > .ps-type-card-wrap')
+            .length,
         );
     };
 
-    // Append the tile(s) for one type to a grid: one tile per curated preset
-    // (item 15) when `expandPresets` and the type has any, else a single base
-    // tile. The pinned/frequent/other strips pass expandPresets=false so they
-    // stay compact (one base tile per type).
-    const appendTypeTiles = (grid, type, expandPresets) => {
-      const presets = expandPresets ? SLIDE_TYPE_PRESETS[type] : null;
-      if (presets && presets.length) {
-        for (const p of presets)
-          grid.append(renderThumbnailCard(type, presetLabelFor(p), p));
-      } else {
-        grid.append(renderThumbnailCard(type, labelFor(type)));
+    // The one variant row that is open (D341), by base type; null = none. A
+    // search shows every row with a match on top of it, see applyFilter.
+    let openVariantsFor = null;
+    const toggleVariants = (type) => {
+      openVariantsFor = openVariantsFor === type ? null : type;
+      for (const btn of typesWrap.querySelectorAll('.ps-type-variants-btn')) {
+        const open = btn.dataset.variantsFor === openVariantsFor;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.closest('.ps-type-card-wrap')?.classList.toggle('is-open', open);
       }
+      applyFilter();
+    };
+
+    // Append the tile(s) for one type to a grid. In a curated shelf
+    // (`expandPresets`) a type with presets gets one base tile, which inserts
+    // the type's default, plus a folded row of its variants (D341). The
+    // pinned/frequent/other strips pass expandPresets=false: one base tile.
+    const appendTypeTiles = (grid, type, expandPresets) => {
+      const base = renderThumbnailCard(type, labelFor(type));
+      grid.append(base);
+      const presets = expandPresets ? SLIDE_TYPE_PRESETS[type] : null;
+      if (!presets?.length) return;
+      base.append(
+        buildVariantsToggle({
+          type,
+          count: presets.length,
+          onToggle: () => toggleVariants(type),
+        }),
+      );
+      base.classList.add('has-variants');
+      grid.append(
+        buildVariantRow({
+          type,
+          typeLabel: labelFor(type),
+          tiles: presets.map((p) =>
+            renderThumbnailCard(type, presetLabelFor(p), p),
+          ),
+          baseWrap: base,
+        }),
+      );
     };
 
     // Split a shelf's types over its headed rows (PICKER_SHELF_ROWS), in the
@@ -519,10 +557,12 @@ export function createSlideTypePicker({
       toggle.append(
         h('span', { class: 'ps-type-group-chev', 'aria-hidden': 'true' }),
         h('span', { class: 'ps-type-group-name', text: title }),
-        // Count actual tiles, not types — preset expansion adds variant tiles.
+        // Count the shelf's tiles, not subheadings or folded variants.
         h('span', {
           class: 'ps-type-group-count',
-          text: String(grid.querySelectorAll('.ps-type-card-wrap').length),
+          text: String(
+            grid.querySelectorAll(':scope > .ps-type-card-wrap').length,
+          ),
         }),
       );
 
@@ -858,6 +898,15 @@ export function createSlideTypePicker({
         }
         group.hidden = !groupVisible;
         if (groupVisible) anyVisible = true;
+        // A variant row shows while it is open, or during a search when one of
+        // its variants matches; a shown row sits under its base tile's row.
+        for (const row of group.querySelectorAll(VARIANT_ROW_SELECTOR)) {
+          const show = q
+            ? !!row.querySelector('.ps-type-card-wrap:not([hidden])')
+            : row.dataset.variantsFor === openVariantsFor;
+          row.hidden = !show;
+          if (show) placeVariantRow(row);
+        }
         // A row subheading goes with its row: hidden when none of the tiles
         // up to the next subheading match.
         for (const title of group.querySelectorAll('.ps-type-row-title')) {
@@ -1061,6 +1110,18 @@ export function createSlideTypePicker({
         // ignore
       }
     });
+
+    // An open variant row follows its base tile's row as the grid reflows.
+    if (typeof ResizeObserver !== 'undefined') {
+      const rowObserver = new ResizeObserver(() => {
+        for (const row of typesWrap.querySelectorAll(
+          `${VARIANT_ROW_SELECTOR}:not([hidden])`,
+        ))
+          placeVariantRow(row);
+      });
+      rowObserver.observe(typesWrap);
+      observers.push(rowObserver);
+    }
 
     // Keyboard-first flow (item 17): ArrowDown from search enters the grid,
     // arrows move between cards, Enter inserts, ArrowUp from the top row returns
