@@ -145,8 +145,17 @@ export async function createEditorController({
   });
   inspectorCollapsedPref.loadInitial();
 
+  // Below the D339 boundary the rail is a drawer over the canvas
+  // (responsive-drawers.js). The drawer has its own open state, closed by
+  // default, so the remembered desktop preference neither opens it on load
+  // nor is overwritten by it. Late-bound: the drawer is built with the shell.
+  let inspectorDrawer = null;
+  const inDrawerMode = () => inspectorDrawer?.isActive() === true;
+
   const isInspectorCollapsed = () =>
-    document.documentElement.classList.contains('is-inspector-collapsed');
+    inDrawerMode()
+      ? !inspectorDrawer.isOpen()
+      : document.documentElement.classList.contains('is-inspector-collapsed');
 
   // Late-bound: reassigned once topbar, panes and comments panel all exist.
   // Reflects the rail state everywhere it is mirrored: the per-pane topbar
@@ -154,6 +163,12 @@ export async function createEditorController({
   // visible/seen state.
   let syncRailState = () => {};
   const setInspectorCollapsed = (v) => {
+    if (inDrawerMode()) {
+      // The drawer reports back through onInspectorChange → syncRailState.
+      if (v) inspectorDrawer.close();
+      else inspectorDrawer.open();
+      return;
+    }
     inspectorCollapsedPref.set(v);
     syncRailState();
   };
@@ -857,6 +872,7 @@ export async function createEditorController({
     markDirty,
     onOpenQr: () => topbarApi.openNotesQr?.(),
   });
+  cleanup.register('notesStrip', notesStrip.detach);
 
   // Chart data edits open their own roomy surface — a modal with the grid and a
   // live chart preview side by side (editing-surfaces §4.3). Both the inspector
@@ -1122,6 +1138,20 @@ export async function createEditorController({
   const commentsPane = h('div', {}, [commentsPanel.panelEl]);
   inspectorPanes.registerPane('comments', commentsPane);
 
+  // ============================================================
+  // RESPONSIVE DRAWERS
+  // ============================================================
+
+  // Built before the rail mirror below reads the drawer state; any change of
+  // the inspector drawer (tabs, close button, Escape, crossing the rung)
+  // re-syncs the tabs and the comments pane.
+  const responsiveDrawers = createResponsiveDrawers({
+    root: shell,
+    onInspectorChange: () => syncRailState(),
+  });
+  cleanup.register('responsiveDrawers', responsiveDrawers.detach);
+  inspectorDrawer = responsiveDrawers.inspector;
+
   // Single mirror of the rail state: per-pane tab pressed-states and the
   // comments panel's visible/seen tracking (show() marks as seen + loads).
   syncRailState = () => {
@@ -1134,13 +1164,6 @@ export async function createEditorController({
   syncRailState();
 
   root.append(shell);
-
-  // ============================================================
-  // RESPONSIVE DRAWERS
-  // ============================================================
-
-  const responsiveDrawers = createResponsiveDrawers({ root: shell });
-  cleanup.register('responsiveDrawers', responsiveDrawers.detach);
 
   // ============================================================
   // KEYBOARD SHORTCUTS

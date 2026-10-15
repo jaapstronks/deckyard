@@ -153,10 +153,20 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Pane tabs (Inspector / Comments) in the rail head (pane-tabs.js). Selected =
    "rail open on MY pane". With the rail dismissed the head shrinks to the
-   icons; the label returns with the rail.
+   icons; the label returns with the rail. Below the D339 boundary the rail is
+   a drawer (20-editor-layout.css) and the head shares row 1 with the slide
+   bar, so it stays icons-only: a label returning with the drawer would widen
+   the head and push the slide bar onto a second line. Each tab carries its
+   name as aria-label and title.
    ───────────────────────────────────────────────────────────────────────────── */
 .is-inspector-collapsed .pane-tab-label {
   display: none;
+}
+
+@media (max-width: 1024px) {
+  .is-editor .pane-tab-label {
+    display: none;
+  }
 }
 
 /* Inline count on the Comments tab. Red = new/unseen, grey = seen but
