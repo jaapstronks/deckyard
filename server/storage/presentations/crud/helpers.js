@@ -3,7 +3,7 @@
  */
 
 import { normalizePresentationVisibility } from '../../../utils/presentation-authz/index.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
+import { normalizeEmail } from '../../../../shared/email.js';
 import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
 import { envInt } from '../../../config/utils.js';
 

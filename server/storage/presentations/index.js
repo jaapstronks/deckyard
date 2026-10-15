@@ -16,7 +16,8 @@ import { crossOrganizationScope } from '../scope.js';
 import crypto from 'node:crypto';
 import { getDb, sql } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
-import { normalizeEmail, nowIso } from '../../utils/normalize.js';
+import { nowIso } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
 import {
   resolveDisplayNames,
@@ -1155,7 +1156,7 @@ async function deletePresentationRow(id, ctx) {
   // resolution of the same address, so the trash-visibility / restore
   // authz reads can match on the stable id. An actor with no users row
   // resolves `external` and stays NULL (the pinned legacy path).
-  const trashedByEmail = ctx?.actorEmail || null;
+  const trashedByEmail = normalizeEmail(ctx?.actorEmail);
   const trashedByResolution = trashedByEmail
     ? await resolveIdentityByEmail(ctx, trashedByEmail)
     : null;
@@ -1535,7 +1536,7 @@ async function createPresentationVersionRow(
   // maps to their users.id; an actor with no users row resolves `external`
   // and stays NULL (the pinned legacy path). Nothing keys authz on this audit
   // column — the version list renders `{ id, displayName }` from it (D22).
-  const createdByEmail = ctx?.actorEmail || null;
+  const createdByEmail = normalizeEmail(ctx?.actorEmail);
   const createdByResolution = createdByEmail
     ? await resolveIdentityByEmail(ctx, createdByEmail)
     : null;

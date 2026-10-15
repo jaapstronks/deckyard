@@ -26,7 +26,7 @@ import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sendMagicLinkEmail } from '../../integrations/email/index.js';
 import { validateEmail } from '../../utils/secure-tokens.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import {
   createMagicToken,
   consumeMagicToken,

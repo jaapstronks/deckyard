@@ -4,19 +4,6 @@
  */
 
 /**
- * Normalize an email address.
- * Trims whitespace and converts to lowercase.
- * @param {string|null|undefined} email - The email to normalize
- * @returns {string|null} - Normalized email or null if empty
- */
-export function normalizeEmail(email) {
-  const s = String(email || '')
-    .trim()
-    .toLowerCase();
-  return s || null;
-}
-
-/**
  * Normalize a string value.
  * Trims whitespace.
  * @param {string|null|undefined} str - The string to normalize

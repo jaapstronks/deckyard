@@ -4,6 +4,7 @@
  */
 
 import crypto from 'node:crypto';
+import { normalizeEmail } from '../../shared/email.js';
 
 // ============================================================
 // TOKEN GENERATION
@@ -46,9 +47,7 @@ const EMAIL_REGEX =
  * @returns {{valid: boolean, reason?: string}} - Validation result
  */
 export function validateEmail(email) {
-  const normalized = String(email || '')
-    .trim()
-    .toLowerCase();
+  const normalized = normalizeEmail(email) || '';
 
   if (!normalized) {
     return { valid: false, reason: 'missing' };

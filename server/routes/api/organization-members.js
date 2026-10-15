@@ -16,7 +16,7 @@ import {
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import {
   listOrganizationMembers,
   getOrganizationMember,

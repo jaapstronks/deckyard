@@ -42,7 +42,7 @@ import {
 } from '../server/storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../server/storage/identity.js';
 import { createUser } from '../server/storage/users.js';
-import { normalizeEmail } from '../server/utils/normalize.js';
+import { normalizeEmail } from '../shared/email.js';
 
 const USAGE =
   'npm run org:create -- --slug <slug> --name <name> [--external-id <id>] [--owner <email>]';

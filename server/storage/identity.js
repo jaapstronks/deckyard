@@ -20,7 +20,7 @@
 
 import { toStorageContext } from './scope.js';
 
-import { normalizeEmail } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';

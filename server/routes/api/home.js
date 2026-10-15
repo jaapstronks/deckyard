@@ -37,6 +37,7 @@ import {
   listPersonalCollections,
   listOrganizationCollections,
 } from '../../storage/collections.js';
+import { normalizeEmail } from '../../../shared/email.js';
 
 /**
  * Build the activity filter opts from the request, mirroring `/api/activity`.
@@ -88,9 +89,7 @@ export function buildActivityOpts(searchParams, email) {
  * @returns {Promise<boolean>} true if handled
  */
 async function handleHomeGet({ repoRoot, storageScope, res, url, authedUser }) {
-  const email = String(authedUser?.email || '')
-    .trim()
-    .toLowerCase();
+  const email = normalizeEmail(authedUser?.email);
   if (!email) return unauthorized(res);
 
   const activityOpts = buildActivityOpts(url.searchParams, email);

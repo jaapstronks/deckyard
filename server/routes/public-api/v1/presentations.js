@@ -23,6 +23,7 @@ import {
   parseQueryFlag,
 } from '../../../utils/request-validators.js';
 import { savePresentation } from '../../../services/save-presentation.js';
+import { normalizeEmail } from '../../../../shared/email.js';
 import {
   createPresentation,
   deletePresentation,
@@ -52,9 +53,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
   // compares is `ownerId`, which is not redacted because it discloses nothing
   // about a person — see shared/identity-match.js and docs/openapi.yaml.
   const ownerEmail =
-    requesterEmail &&
-    owner &&
-    owner.toLowerCase() === String(requesterEmail).toLowerCase()
+    requesterEmail && owner && owner === normalizeEmail(requesterEmail)
       ? owner
       : null;
 

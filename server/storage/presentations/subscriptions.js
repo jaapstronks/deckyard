@@ -6,7 +6,8 @@
 
 import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
-import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
+import { norm, nowIso } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { withDbGuard } from '../../db/client.js';
 
 /** Valid subscription levels, most → least verbose. */

@@ -32,7 +32,7 @@ import { t } from '../../i18n/index.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sendPasswordResetEmail } from '../../integrations/email/index.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { createLogger } from '../../utils/logger.js';
 import {
   createResetToken,

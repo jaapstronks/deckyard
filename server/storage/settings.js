@@ -48,6 +48,7 @@ import {
   DEFAULT_AI_EMAIL,
 } from '../../shared/constants/ai.js';
 import { DEFAULT_UI_LOCALE } from '../../shared/constants/ui-locale.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { getAppName } from '../config/branding.js';
 import { envStr } from '../config/utils.js';
 import {
@@ -77,11 +78,7 @@ const ANONYMOUS_KEY = 'anonymous';
  * @returns {string}
  */
 function userEmailKey(email) {
-  return (
-    String(email || '')
-      .trim()
-      .toLowerCase() || ANONYMOUS_KEY
-  );
+  return normalizeEmail(email) || ANONYMOUS_KEY;
 }
 
 /**
@@ -932,7 +929,7 @@ export async function listDigestRecipients(scope, dayOfWeek) {
             eb('user_settings.user_id', '=', eb.ref('users.id')),
             eb.and([
               eb('user_settings.user_id', 'is', null),
-              eb('user_settings.email', '=', sql`lower(users.email)`),
+              eb('user_settings.email', '=', eb.ref('users.email')),
             ]),
           ]),
         ),

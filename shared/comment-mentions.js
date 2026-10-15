@@ -8,6 +8,8 @@
  * The body stays plain text otherwise; escaping is the renderer's job.
  */
 
+import { normalizeEmail } from './email.js';
+
 const MENTION_RE = /@\[([^\]\n]+)\]\(user:([^()\s]+@[^()\s]+)\)/g;
 
 /**
@@ -63,7 +65,7 @@ export function parseMentions(body) {
   const seen = new Set();
   const mentions = [];
   for (const match of text.matchAll(MENTION_RE)) {
-    const email = match[2].toLowerCase();
+    const email = normalizeEmail(match[2]);
     if (seen.has(email)) continue;
     seen.add(email);
     mentions.push({ name: match[1], email });
@@ -91,7 +93,7 @@ export function splitMentionSegments(body) {
     segments.push({
       type: 'mention',
       name: match[1],
-      email: match[2].toLowerCase(),
+      email: normalizeEmail(match[2]),
     });
     lastIndex = match.index + match[0].length;
   }

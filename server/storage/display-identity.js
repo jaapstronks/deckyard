@@ -54,6 +54,7 @@
 import { toStorageContext } from './scope.js';
 
 import { displayNameFromEmail } from '../../shared/display-name.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
 
 /**
@@ -204,16 +205,6 @@ export function invalidateDisplayNames() {
 }
 
 /**
- * Normalize an email to the form `users.email` is stored in.
- *
- * @param {string} [email]
- * @returns {string}
- */
-function normalize(email) {
-  return typeof email === 'string' ? email.trim().toLowerCase() : '';
-}
-
-/**
  * Look up the real names behind a batch of identity stamps, in one query.
  *
  * Both keys are accepted because both shapes occur: ownership stamps carry a
@@ -242,7 +233,7 @@ export async function resolveDisplayNames(scope, stamps) {
   const emails = new Set();
   for (const stamp of stamps || []) {
     if (stamp?.id) ids.add(stamp.id);
-    const email = normalize(stamp?.email);
+    const email = normalizeEmail(stamp?.email);
     if (email) emails.add(email);
   }
   if (!ids.size && !emails.size) return NO_DISPLAY_NAMES;
@@ -318,13 +309,13 @@ export async function resolveDisplayNames(scope, stamps) {
         profileName(row?.settingsByEmail) ||
         String(row?.name || '').trim();
       if (row.id) record(`id:${row.id}`, name);
-      const email = normalize(row.email);
+      const email = normalizeEmail(row.email);
       if (email) record(`email:${email}`, name, row.id || null);
     }
   }
 
   const readEmail = (email) => {
-    const key = normalize(email);
+    const key = normalizeEmail(email);
     return key ? resolved.get(`email:${key}`) : undefined;
   };
   return {

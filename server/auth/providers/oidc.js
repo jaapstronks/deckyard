@@ -15,7 +15,7 @@
 
 import * as client from 'openid-client';
 import { getOidcConfig } from '../../config/sso.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { createLogger } from '../../utils/logger.js';
 
 const log = createLogger('sso-oidc');

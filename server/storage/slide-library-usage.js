@@ -17,6 +17,7 @@
 import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
+import { normalizeEmail } from '../../shared/email.js';
 
 const ITEM_TYPES = new Set(['slide', 'collection']);
 
@@ -53,9 +54,7 @@ function normalizeUsageItems(input) {
  * @returns {Promise<{ items: Array<object> }>}
  */
 export async function listSlideLibraryUsage(scope, userEmail) {
-  const email = String(userEmail || '')
-    .trim()
-    .toLowerCase();
+  const email = normalizeEmail(userEmail);
   const ctx = toStorageContext(scope, 'listSlideLibraryUsage', {
     userEmail: email,
   });
@@ -96,9 +95,7 @@ export async function listSlideLibraryUsage(scope, userEmail) {
  * @returns {Promise<{ ok: boolean, recorded: number }>}
  */
 export async function recordSlideLibraryUsage(scope, userEmail, items) {
-  const email = String(userEmail || '')
-    .trim()
-    .toLowerCase();
+  const email = normalizeEmail(userEmail);
   if (!email) return { ok: true, recorded: 0 };
   const ctx = toStorageContext(scope, 'recordSlideLibraryUsage', {
     userEmail: email,
