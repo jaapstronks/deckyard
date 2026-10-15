@@ -125,12 +125,18 @@ reason fails instead of being ignored. It describes the repository,
 so it stays at `custom/fork.json` in the checkout even when
 `DECKYARD_CUSTOM_DIR` moves the runtime fork root (next section).
 
-Two tools read it:
+Three kinds of tool read it:
 
 - **The doc gate** (`tests/docs-paths-resolvable.test.js`) does not scan your
   owned paths or `CLAUDE.md`, and does not require links into them. A private
   doc tree or a `CLAUDE.md` that names paths in sibling repositories keeps
   `npm test` green without a change to the test.
+- **The prose guards** judge upstream's prose only:
+  `tests/docs-prose-claims.test.js` (size counts, undated status sections) and
+  `tests/plan-codes-public-docs.test.js` (planning codes and citations of the
+  private planning tree, read through `publicDocs()` in
+  `scripts/lib/codebase-counts.js`) skip your owned paths and `CLAUDE.md` the
+  same way.
 - **`npm run fork:seams`** classifies every core file you diverge on against
   this list (see _Merge round checklist_).
 
@@ -581,7 +587,10 @@ One release per round, on a branch, through your own PR:
    `tests/custom-imports-resolvable.test.js`, see above), `npm run lint`,
    `npm run format:check`, `npm run i18n:sync` (reports missing keys;
    `npm run i18n:sync:apply` writes them), and start the app once to see your
-   themes and slide types load.
+   themes and slide types load. The doc gate and the prose guards skip what
+   `custom/fork.json` owns (see _What the fork owns_), so a red doc test on a
+   file of yours means the path is missing from `owned`, not that the file
+   needs a core patch.
 5. **Open the PR**, merge it after review, and deploy.
 
 ### Tag editor import migration (B671, unreleased)
