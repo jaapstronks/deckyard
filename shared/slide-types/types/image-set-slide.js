@@ -226,7 +226,7 @@ export default {
     {
       id: 'split-half',
       labelKey: 'editor.layoutVariant.splitHalf',
-      label: 'Image 1/2',
+      label: 'Image 50%',
       convertTo: 'image-text-slide',
       set: { layout: 'split', imageWidth: 'half' },
       schematic: { split: 50 },
