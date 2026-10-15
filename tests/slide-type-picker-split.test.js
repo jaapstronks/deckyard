@@ -325,3 +325,182 @@ test('index: a custom type that declares nothing stays on the Custom shelf', () 
   assert.ok(['custom', 'other'].includes(shelf), `unexpected shelf ${shelf}`);
   mount.remove();
 });
+
+// --- the Media shelf: two rows, and the collections in preview (D343, D344) --
+// The shelf reads "One image" / "Collection" under small subheadings inside one
+// grid; the three collection tiles always show their live preview, because all
+// three draw as a grid in a schematic and only their content tells them apart.
+
+const ONE_IMAGE = [
+  'image-text-slide',
+  'image-set-slide',
+  'image-slide',
+  'video-slide',
+  'embed-slide',
+];
+const COLLECTION = ['gallery-slide', 'team-cards-slide', 'logo-wall-slide'];
+
+test('data: the Media rows split one image from collections, as decided', () => {
+  assert.deepEqual(
+    data.MEDIA_ROWS.map((row) => [row.key, row.types]),
+    [
+      ['single', ONE_IMAGE],
+      ['collection', COLLECTION],
+    ],
+  );
+  // The shelf's order hint is spelled by its rows, so the two cannot drift.
+  assert.deepEqual(data.PICKER_GROUP_ORDER.media, [
+    ...ONE_IMAGE,
+    ...COLLECTION,
+  ]);
+  assert.deepEqual(
+    [...data.ALWAYS_PREVIEW_TYPES].sort(),
+    [...COLLECTION].sort(),
+  );
+});
+
+const SLIDE_TYPES_MEDIA = {
+  ...SLIDE_TYPES,
+  ...Object.fromEntries(
+    [...ONE_IMAGE, ...COLLECTION].map((type) => [
+      type,
+      { label: type, group: 'media' },
+    ]),
+  ),
+  'acme-photo': { label: 'Acme photo', isCustom: true, group: 'media' },
+};
+
+const mediaShelf = (mount) =>
+  mount.querySelector('.ps-type-group[data-group-key="media"]');
+
+// Each row title with the tile types that follow it, in grid order.
+const mediaRows = (mount) => {
+  const rows = [];
+  for (const el of mediaShelf(mount).querySelector('.ps-type-grid').children) {
+    if (el.classList.contains('ps-type-row-title'))
+      rows.push({ key: el.dataset.rowKey, title: el, types: [] });
+    // One entry per type: image + text still unfolds into preset tiles.
+    else if (rows.at(-1).types.at(-1) !== el.dataset.thumbTypeKey)
+      rows.at(-1).types.push(el.dataset.thumbTypeKey);
+  }
+  return rows;
+};
+
+test('index: the Media shelf shows "One image" and "Collection" in one grid', () => {
+  localStorage.clear();
+  localStorage.setItem('ps-slide-picker-view', 'preview');
+  const mount = h('div', {});
+  document.body.append(mount);
+  makePicker({ SLIDE_TYPES: SLIDE_TYPES_MEDIA }).renderSlideTypePicker(mount);
+
+  const shelf = mediaShelf(mount);
+  assert.equal(shelf.querySelectorAll('.ps-type-grid').length, 1);
+  const rows = mediaRows(mount);
+  assert.deepEqual(
+    rows.map((r) => [r.key, r.title.textContent]),
+    [
+      ['single', 'One image'],
+      ['collection', 'Collection'],
+    ],
+  );
+  // A media type no row names (a fork's) joins the "One image" row.
+  assert.deepEqual(rows[0].types, [...ONE_IMAGE, 'acme-photo']);
+  assert.deepEqual(rows[1].types, COLLECTION);
+  // The count is tiles, not tiles plus subheadings.
+  assert.equal(
+    shelf.querySelector('.ps-type-group-count').textContent,
+    String(shelf.querySelectorAll('.ps-type-card-wrap').length),
+  );
+  // Only the Media shelf has rows.
+  assert.equal(mount.querySelectorAll('.ps-type-row-title').length, 2);
+  mount.remove();
+});
+
+test('index: a subheading hides with its row during a search', () => {
+  localStorage.clear();
+  localStorage.setItem('ps-slide-picker-view', 'preview');
+  const mount = h('div', {});
+  document.body.append(mount);
+  makePicker({ SLIDE_TYPES: SLIDE_TYPES_MEDIA }).renderSlideTypePicker(mount);
+
+  const search = mount.querySelector('.ps-picker-search-input');
+  search.value = 'logo';
+  search.dispatchEvent(new dom.window.Event('input'));
+  const [single, collection] = mediaRows(mount);
+  assert.equal(single.title.hidden, true, 'empty row keeps its subheading');
+  assert.equal(collection.title.hidden, false);
+
+  search.value = '';
+  search.dispatchEvent(new dom.window.Event('input'));
+  assert.equal(single.title.hidden, false);
+  mount.remove();
+});
+
+const thumbOf = (mount, type) =>
+  mount.querySelector(
+    `.ps-type-card-wrap[data-thumb-type-key="${type}"] .ps-type-thumb`,
+  );
+
+test('index: the collection tiles stay in preview while the switch says schematic', () => {
+  localStorage.clear();
+  const mount = h('div', {});
+  document.body.append(mount);
+  // A non-media shelf for the schematic side (the media glyphs draw an SVG,
+  // which jsdom cannot class), plus the three collections.
+  const types = {
+    ...SLIDE_TYPES,
+    ...Object.fromEntries(
+      COLLECTION.map((type) => [type, { label: type, group: 'media' }]),
+    ),
+  };
+  makePicker({ SLIDE_TYPES: types }).renderSlideTypePicker(mount);
+
+  const isSchematic = (thumb) =>
+    !!thumb.querySelector('.slide-schematic, svg, [class*="schematic"]');
+  assert.ok(isSchematic(thumbOf(mount, 'chart-slide')), 'chart is schematic');
+  for (const type of COLLECTION) {
+    const thumb = thumbOf(mount, type);
+    // Hydrated as a live render (here: an error tile, the stub has no
+    // renderer), never filled with a schematic.
+    assert.equal(isSchematic(thumb), false, `${type} drew a schematic`);
+    assert.equal(thumb.classList.contains('is-pending'), false);
+  }
+
+  // Switching to preview and back leaves them as they were.
+  const before = COLLECTION.map((type) => thumbOf(mount, type).innerHTML);
+  for (const view of ['preview', 'schematic']) {
+    mount.querySelector(`.ps-view-toggle-btn[data-view="${view}"]`).click();
+  }
+  assert.ok(isSchematic(thumbOf(mount, 'chart-slide')));
+  assert.deepEqual(
+    COLLECTION.map((type) => thumbOf(mount, type).innerHTML),
+    before,
+  );
+  mount.remove();
+});
+
+test('team-cards-slide is "Image cards", with the description from D344', async () => {
+  const { SLIDE_TYPES: registry } = await import('../shared/slide-types.js');
+  assert.equal(registry['team-cards-slide'].label, 'Image cards');
+  assert.equal(
+    companions.SLIDE_TYPE_DESCRIPTION['team-cards-slide'],
+    'Photo with name and text per card',
+  );
+  const { readFileSync } = await import('node:fs');
+  const read = (lang, file) =>
+    JSON.parse(
+      readFileSync(new URL(`../client/i18n/${lang}/${file}`, import.meta.url)),
+    );
+  assert.equal(
+    read('nl', 'slide-types.json')['slideType.team-cards-slide.label'],
+    'Beeldkaarten',
+  );
+  assert.equal(
+    read('nl', 'editor.json')['editor.slideTypeDesc.team-cards-slide'],
+    'Foto met naam en uitleg per kaart',
+  );
+  assert.equal(
+    read('nl', 'editor.json')['editor.slideTypeRow.mediaSingle'],
+    'Eén beeld',
+  );
+});

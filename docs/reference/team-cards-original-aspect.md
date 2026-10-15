@@ -1,6 +1,6 @@
-# Image blocks: `imageAspect: original` layout
+# Image cards: `imageAspect: original` layout
 
-How the **Image blocks** slide (`team-cards-slide`, `.slide-team-cards`)
+How the **Image cards** slide (`team-cards-slide`, `.slide-team-cards`)
 renders when `imageAspect: original` is selected — the uncropped mode used for
 screenshots and mixed-shape images, as opposed to the default `square` crop
 used for headshots.

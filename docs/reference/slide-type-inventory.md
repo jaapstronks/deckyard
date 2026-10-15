@@ -28,7 +28,7 @@ See [`slide-type-tiers.md`](./slide-type-tiers.md).
 | `image-text-slide`     | Image + text            | Active | 1    | —                  |
 | `image-set-slide`      | Images + text           | Active | 2    | `image-text-slide` |
 | `video-slide`          | Video                   | Active | 2    | `content-slide`    |
-| `team-cards-slide`     | Image blocks            | Active | 2    | `list-slide`       |
+| `team-cards-slide`     | Image cards             | Active | 2    | `list-slide`       |
 | `logo-wall-slide`      | Logo wall               | Active | 2    | `image-slide`      |
 | `icon-card-grid-slide` | Icon cards              | Active | 2    | `list-slide`       |
 | `payoff-slide`         | Payoff                  | Active | 2    | `end-slide`        |
