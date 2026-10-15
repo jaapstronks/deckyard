@@ -133,7 +133,7 @@ export const SLIDE_TYPE_PRESETS = {
     {
       id: 'image-wide',
       labelKey: 'editor.slideTypePreset.imageText.wide',
-      label: 'Image 2/3',
+      label: 'Image 63%',
       content: { imageWidth: 'wide' },
     },
     {

@@ -23,7 +23,8 @@
  * face (Inter, falling back to system-ui; measured per glyph and rounded up),
  * so the estimate errs towards a dropdown rather than towards a clipped row.
  * An option that declares an `icon` renders as a fixed-width glyph, whatever
- * its label says.
+ * its label says; with `labelBeside` the glyph is narrower and the label is
+ * counted too.
  */
 
 /** The inspector form column at the minimum inspector width (320px), in px. */
@@ -34,11 +35,13 @@ const DEFAULT_BASIS_PX = 160;
 const WIDE_BASIS_PX = 272;
 
 // `.sb-segmented`: 4px padding and a 4px gap; `.sb-segmented-btn`: 12px
-// padding either side; `.sb-icon`: 28px wide.
+// padding either side; `.sb-icon`: 28px wide, or 20px plus a 6px gap when it
+// sits beside its label (`.is-beside`, 40-option-icons.css).
 const GROUP_PADDING_PX = 8;
 const GAP_PX = 4;
 const BUTTON_PADDING_PX = 24;
 const ICON_PX = 28;
+const ICON_BESIDE_PX = 26;
 
 // `select.form-input`: horizontal padding plus the arrow.
 const SELECT_CHROME_PX = 44;
@@ -62,18 +65,52 @@ export function labelWidthPx(text) {
   return Math.ceil(w);
 }
 
+// The glyphs 40-option-icons.css draws (`.sb-icon-<name>`). Option
+// declarations reach the inspector as JSON (/api/slide-types), also from
+// custom and fork types, so an `icon` naming anything else would render an
+// empty frame; such an option shows its label instead, and the width estimate
+// counts the label it will show.
+const OPTION_GLYPHS = new Set([
+  'side-left',
+  'side-right',
+  'cols-1',
+  'cols-2',
+  'split-37',
+  'split-50',
+  'split-63',
+]);
+
+/**
+ * The glyph an option renders, or '' when it renders its label.
+ * @param {{icon?: string}} [opt]
+ * @returns {string}
+ */
+export function optionGlyph(opt) {
+  return opt?.icon && OPTION_GLYPHS.has(opt.icon) ? opt.icon : '';
+}
+
+/**
+ * Estimated width of one segmented button's content, in px: the glyph when
+ * the option draws one, the label when it does not, both when the glyph sits
+ * beside the label.
+ * @param {{label?: string, value?: string, icon?: string, labelBeside?: boolean}} opt
+ * @returns {number}
+ */
+function buttonContentPx(opt) {
+  if (!optionGlyph(opt)) return labelWidthPx(opt?.label ?? opt?.value);
+  if (!opt.labelBeside) return ICON_PX;
+  return ICON_BESIDE_PX + labelWidthPx(opt.label ?? opt.value);
+}
+
 /**
  * Estimated width of the options as one segmented row, in px.
- * @param {Array<{label: string, icon?: string}>} options - resolved copy
+ * @param {Array<{label: string, icon?: string, labelBeside?: boolean}>} options - resolved copy
  * @returns {number}
  */
 export function segmentedRowPx(options) {
   const list = Array.isArray(options) ? options : [];
   const buttons = list.reduce(
-    (sum, opt) =>
-      sum +
-      BUTTON_PADDING_PX +
-      (opt?.icon ? ICON_PX : labelWidthPx(opt?.label ?? opt?.value)),
+    (sum, opt) => sum + BUTTON_PADDING_PX + buttonContentPx(opt),
     0,
   );
   return GROUP_PADDING_PX + buttons + GAP_PX * Math.max(0, list.length - 1);

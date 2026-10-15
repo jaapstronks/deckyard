@@ -120,7 +120,7 @@ export default {
     {
       id: 'split-narrow',
       labelKey: 'editor.layoutVariant.splitNarrow',
-      label: 'Image 1/3',
+      label: 'Image 37%',
       convertTo: 'image-text-slide',
       set: { layout: 'split', imageWidth: 'narrow' },
       schematic: { split: 37 },
@@ -128,7 +128,7 @@ export default {
     {
       id: 'split-half',
       labelKey: 'editor.layoutVariant.splitHalf',
-      label: 'Image 1/2',
+      label: 'Image 50%',
       convertTo: 'image-text-slide',
       set: { layout: 'split', imageWidth: 'half' },
       schematic: { split: 50 },
@@ -136,7 +136,7 @@ export default {
     {
       id: 'split-wide',
       labelKey: 'editor.layoutVariant.splitWide',
-      label: 'Image 2/3',
+      label: 'Image 63%',
       convertTo: 'image-text-slide',
       set: { layout: 'split', imageWidth: 'wide' },
       schematic: { split: 63 },

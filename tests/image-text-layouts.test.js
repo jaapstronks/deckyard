@@ -107,7 +107,8 @@ test('layout enum offers split and corner only', () => {
 test('imageWidth enum carries the full width series', () => {
   const field = DEF.fields.find((f) => f.key === 'imageWidth');
   const values = field.options.map((o) => o.value);
-  assert.deepEqual(values, ['half', 'narrow', 'wide']);
+  // Small to large, the order the layout switcher and the inspector share (D337).
+  assert.deepEqual(values, ['narrow', 'half', 'wide']);
 });
 
 // ---- Layout-variant declaration (switcher contract) ----------------------

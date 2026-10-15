@@ -199,8 +199,13 @@ export const IMAGE_SIDE_FIELD = {
 
 /**
  * How much of the width the image area takes. narrow/half/wide double as the
- * layout catalogue's 1/3, 1/2 and 2/3 splits (37/63 mirrors 63/37, so no
- * fourth value is needed).
+ * layout catalogue's 37%, 50% and 63% splits (37/63 mirrors 63/37, so no
+ * fourth value is needed). The stored values are the vocabulary; what the
+ * author sees is one set of labels everywhere, small to large, each with the
+ * same split glyph the layout switcher draws (D337): the inspector's
+ * `split-<pct>` icon is the 28×18 rendition of the switcher's
+ * `{ split: <pct> }` schematic. The percentage stays beside the glyph
+ * (`labelBeside`), since the number is the name.
  */
 export const IMAGE_WIDTH_FIELD = {
   key: 'imageWidth',
@@ -210,9 +215,33 @@ export const IMAGE_WIDTH_FIELD = {
   required: false,
   formLayout: 'pair',
   options: [
-    sharedOption('editor.slideField.imageWidth.option.half', 'half', '50%'),
-    sharedOption('editor.slideField.imageWidth.option.narrow', 'narrow', '37%'),
-    sharedOption('editor.slideField.imageWidth.option.wide', 'wide', '63%'),
+    {
+      ...sharedOption(
+        'editor.slideField.imageWidth.option.narrow',
+        'narrow',
+        '37%',
+      ),
+      icon: 'split-37',
+      labelBeside: true,
+    },
+    {
+      ...sharedOption(
+        'editor.slideField.imageWidth.option.half',
+        'half',
+        '50%',
+      ),
+      icon: 'split-50',
+      labelBeside: true,
+    },
+    {
+      ...sharedOption(
+        'editor.slideField.imageWidth.option.wide',
+        'wide',
+        '63%',
+      ),
+      icon: 'split-63',
+      labelBeside: true,
+    },
   ],
 };
 
