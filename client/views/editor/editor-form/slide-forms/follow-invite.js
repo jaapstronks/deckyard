@@ -6,28 +6,20 @@ import {
 } from '../../../../../shared/i18n-utils.js';
 import { h } from '../../../../lib/dom/index.js';
 
-export function renderFollowInviteForm({
+/**
+ * The invite's one setting: what the slide is, and whether it is used while
+ * presenting. A setting has one home (D335): the inspector, and the library
+ * editor, which has no inspector beside it.
+ */
+export function renderFollowInviteSettings({
   form,
-  pres,
   slide,
-  fieldText,
-  fieldTextarea,
   markDirty,
   rerenderSlideList,
   rerenderPreview,
   scheduleUiRefresh,
 } = {}) {
   if (!slide.content || typeof slide.content !== 'object') slide.content = {};
-
-  // The copy below is what this version's invite renders, so it is labelled
-  // with the version's own language. It used to read `content.targetLang`,
-  // which was the *other* language — the fields said "(Engels)" while editing
-  // the Dutch invite. Those keys are gone; the renderer's own resolution
-  // (resolveDeckLang, active version first) is the answer. The label comes off
-  // the axis for the same reason: a `copyLang === 'en-GB' ? … : …` ternary
-  // called a French invite "Nederlands" (B182 fase 3).
-  const copyLang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
-  const copyLangLabel = getLangDisplayName(copyLang);
 
   const expl = h('div', {
     class: 'help editor-callout',
@@ -61,6 +53,37 @@ export function renderFollowInviteForm({
     }),
   );
   form.append(toggleRow);
+}
+
+/**
+ * The invite's content: its own title and text in the version's language,
+ * on the Fields form and in the library editor. The library editor also gets
+ * the setting above; the Fields form leaves it to the inspector beside it
+ * (`omitSettings`, the content-only surface).
+ */
+export function renderFollowInviteForm(ctx = {}) {
+  const {
+    form,
+    pres,
+    slide,
+    fieldText,
+    fieldTextarea,
+    markDirty,
+    scheduleUiRefresh,
+    omitSettings = false,
+  } = ctx;
+  if (!slide.content || typeof slide.content !== 'object') slide.content = {};
+  if (!omitSettings) renderFollowInviteSettings(ctx);
+
+  // The copy below is what this version's invite renders, so it is labelled
+  // with the version's own language. It used to read `content.targetLang`,
+  // which was the *other* language — the fields said "(Engels)" while editing
+  // the Dutch invite. Those keys are gone; the renderer's own resolution
+  // (resolveDeckLang, active version first) is the answer. The label comes off
+  // the axis for the same reason: a `copyLang === 'en-GB' ? … : …` ternary
+  // called a French invite "Nederlands" (B182 fase 3).
+  const copyLang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
+  const copyLangLabel = getLangDisplayName(copyLang);
 
   form.append(
     fieldText(

@@ -111,19 +111,19 @@ test('pane tabs: the comments badge shows a count and a seen state', () => {
   assert.ok(badge.classList.contains('pane-tab-badge--seen'));
 });
 
-test('canvas tabs: Fields opens the fields view and hands back to Canvas', () => {
-  let opened = 0;
-  const tabs = createCanvasTabs({ onOpenFields: () => opened++ });
+test('canvas tabs: each tab names its view, the owner sets the remembered one', () => {
+  const picked = [];
+  const tabs = createCanvasTabs({ onSelect: (view) => picked.push(view) });
   assert.deepEqual(selected(tabs.el), ['canvas:true', 'fields:false']);
 
   tabs.el.querySelector('[data-value="fields"]').click();
-  assert.equal(opened, 1);
-  assert.deepEqual(selected(tabs.el), ['canvas:false', 'fields:true']);
-
-  tabs.showCanvas();
+  tabs.el.querySelector('[data-value="canvas"]').click();
+  assert.deepEqual(picked, ['fields', 'canvas']);
   assert.deepEqual(selected(tabs.el), ['canvas:true', 'fields:false']);
 
-  // Canvas is the canvas: clicking it opens nothing.
-  tabs.el.querySelector('[data-value="canvas"]').click();
-  assert.equal(opened, 1);
+  // A remembered Fields view opens selected (D335: kept per user).
+  const kept = createCanvasTabs({ value: 'fields', onSelect: () => {} });
+  assert.deepEqual(selected(kept.el), ['canvas:false', 'fields:true']);
+  kept.setValue('canvas');
+  assert.deepEqual(selected(kept.el), ['canvas:true', 'fields:false']);
 });

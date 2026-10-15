@@ -33,7 +33,8 @@ import { createFieldRenderers } from './fields/index.js';
 import { setupSlideList } from './slide-list/index.js';
 import { createRerenderEditor } from './editor-form/index.js';
 import { closeAllOverlays } from '../../lib/dom/modal.js';
-import { createBulkEditModal } from './bulk-edit-modal.js';
+import { createFieldsView } from './fields-view.js';
+import { storage } from '../../lib/storage.js';
 import { createNotesStrip } from './notes-strip.js';
 import { createPreviewPanel } from './preview-panel.js';
 import { createInspectorResize } from './inspector-resize.js';
@@ -98,6 +99,9 @@ import { createRemoteRefresh } from './remote-refresh.js';
 import { onMaintenanceChange } from '../../lib/state/maintenance.js';
 import { createReadOnlyController } from './read-only-controller.js';
 import { queryParam, setQueryParams } from '../../lib/state/router.js';
+
+/** Which view the canvas column shows ('canvas' | 'fields'), kept per user. */
+const CANVAS_VIEW_KEY = 'deckyard.editor.canvasView';
 
 export async function createEditorController({
   root,
@@ -314,8 +318,8 @@ export async function createEditorController({
     },
   });
 
-  // Single state-driven lock seam for every editing surface (bulk-edit
-  // modal, inline editor, future inspector panes). Body-mounted overlays
+  // Single state-driven lock seam for every editing surface (the Fields
+  // view, inline editor, future inspector panes). Body-mounted overlays
   // escape the shell-scoped locked-slide CSS, so gating must come from
   // state, not stylesheets. The server enforces the same rules (423).
   const getSlideLockKind = (slideId) => {
@@ -396,7 +400,6 @@ export async function createEditorController({
         err.details.lang &&
         normalizeLang(err.details.lang) !== normalizeLang(pres.i18n?.active)
       ) {
-        bulkEditModal?.close();
         topbarApi?.revealRefusedVersion(err.details.lang);
       }
       setSelectedSlideIdWithLock(err.details.slideId);
@@ -940,11 +943,11 @@ export async function createEditorController({
   setCommentsBadgeFn = paneTabs.updateBadge;
   const railHead = h('div', { class: 'rail-head' }, [paneTabs.el]);
 
-  // Canvas | Fields above the canvas column (D335). Fields opens the
-  // all-fields dialog for now (B703 PR 2 brings it into the column); the
-  // dialog is built further down, so it is dereferenced at click time.
+  // Canvas | Fields above the canvas column (D335). The view is a choice the
+  // user keeps (CANVAS_VIEW_KEY), never switched for them; setCanvasView is
+  // defined once the Fields view exists, so it is dereferenced at click time.
   const canvasTabs = createCanvasTabs({
-    onOpenFields: () => bulkEditModal.open(),
+    onSelect: (view) => setCanvasView(view),
   });
 
   const previewPanel = createPreviewPanel({
@@ -1459,7 +1462,7 @@ export async function createEditorController({
   // EDITOR FORM
   // ============================================================
 
-  // Shared between the panel form and the bulk-edit modal (which runs a second
+  // Shared between the panel form and the Fields view (which runs a second
   // createRerenderEditor instance on the `bulk` surface on its own mount).
   const editorFormDeps = {
     saveRefusal,
@@ -1502,53 +1505,49 @@ export async function createEditorController({
     slideToolbar: previewPanel.slideToolbar,
   };
 
-  const bulkEditModal = createBulkEditModal({
+  // Fields: the content form in the canvas column (D335). A second
+  // createRerenderEditor instance on the `bulk` surface (content only, no
+  // settings) on the view's own mount; the inspector beside it is untouched.
+  const fieldsView = createFieldsView({
     pres,
     getSelectedSlideId: () => selectedSlideId,
-    setSelectedSlideId: setSelectedSlideIdWithLock,
     getTheme: () => theme,
-    // The shell-scoped locked-slide CSS can't reach the modal (it mounts on
-    // document.body), so it asks for the lock state and gates itself.
     getSlideLockKind,
-    // Resync the panel form after the modal closes: the modal's structural
-    // edits rerender its own form instance, not the panel behind it.
-    // The Fields tab hands back to Canvas.
-    onClosed: () => {
-      canvasTabs.showCanvas();
-      rerenderEditor();
-    },
-    createFormRenderer: (formMount, refreshModalPreview) => {
-      const bulkForm = createRerenderEditor({
+    notesEl: notesStrip.el,
+    onEditOnCanvas: (fieldKey) => setCanvasView('canvas', { fieldKey }),
+    createFormRenderer: (formMount, { refreshPreview, onRendered }) => {
+      const fieldsForm = createRerenderEditor({
         ...editorFormDeps,
         editorMount: formMount,
         surface: 'bulk',
-        // Keep the main canvas live too, and repaint the modal preview.
+        onRendered,
+        // Keep the slide list live too, and repaint the view's preview.
         scheduleUiRefresh: () => {
           scheduleUiRefresh();
-          refreshModalPreview();
+          refreshPreview();
         },
         rerenderPreview: () => {
           rerenderPreview();
-          refreshModalPreview();
+          refreshPreview();
         },
-        // The data summary opens the one data editor on top; closing it
-        // refreshes this form's summary and the modal preview.
+        // The data summary opens the one data editor; closing it refreshes
+        // this form's summary and the preview.
         onEditChartData: (fieldKey) =>
           openChartData({
             fieldKey,
-            // On top of the bulk modal, which mounts on document.body.
-            mountRoot: document.body,
             onClosed: () => {
-              bulkForm.rerender();
-              refreshModalPreview();
+              fieldsForm.rerender();
+              refreshPreview();
             },
           }),
         // The `bulk` surface has no header actions dropdown, so this instance
         // owns no document listeners and needs no detach.
       });
-      return bulkForm.rerender;
+      return fieldsForm.rerender;
     },
   });
+  preview.insertBefore(fieldsView.el, notesStrip.el);
+  cleanup.register('fieldsView', fieldsView.detach);
 
   const editorForm = createRerenderEditor({
     ...editorFormDeps,
@@ -1558,7 +1557,12 @@ export async function createEditorController({
     // (grid + live preview, editing-surfaces §4.3).
     onEditChartData: (fieldKey) => openChartData({ fieldKey }),
   });
-  rerenderEditor = editorForm.rerender;
+  // The Fields view follows every inspector render: a new selection, undo,
+  // a remote update (fields-view.js `sync`).
+  rerenderEditor = () => {
+    editorForm.rerender();
+    fieldsView.sync();
+  };
   // The inspector header's actions dropdown holds document-level listeners;
   // rerender swaps them, unmount has to drop the last pair.
   cleanup.register('editorForm', editorForm.detach);
@@ -1638,6 +1642,31 @@ export async function createEditorController({
   cleanup.register('inlineEditor', inlineEditor.detach);
 
   // ============================================================
+  // CANVAS | FIELDS
+  // ============================================================
+
+  /**
+   * Show the canvas or the Fields form in the canvas column and remember the
+   * choice (D335: kept per user, default Canvas). Back on the canvas a named
+   * field starts editing, as a click on it would.
+   * @param {'canvas'|'fields'} view
+   * @param {{ fieldKey?: string|null }} [opts]
+   */
+  function setCanvasView(view, { fieldKey = null } = {}) {
+    const fields = view === 'fields';
+    storage.set(CANVAS_VIEW_KEY, fields ? 'fields' : 'canvas');
+    canvasTabs.setValue(fields ? 'fields' : 'canvas');
+    shell.classList.toggle('is-fields-view', fields);
+    if (fields) {
+      fieldsView.show();
+      return;
+    }
+    fieldsView.hide(preview);
+    rerenderPreview();
+    if (fieldKey) requestAnimationFrame(() => inlineEditor.editField(fieldKey));
+  }
+
+  // ============================================================
   // PREVIEW RERENDER
   // ============================================================
 
@@ -1700,6 +1729,7 @@ export async function createEditorController({
   rerenderSlideList();
   rerenderEditor();
   rerenderPreview();
+  if (storage.get(CANVAS_VIEW_KEY) === 'fields') setCanvasView('fields');
 
   // Apply initial author lock state if the selected slide is locked
   if (selectedSlideId) {

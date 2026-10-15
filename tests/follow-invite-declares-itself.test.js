@@ -60,7 +60,9 @@ const SOURCE_TREES = ['client', 'server', 'shared'];
  *   - the registry and the two generated companion aggregators — they key
  *     every type by name;
  *   - the bespoke form registration — the one form that is not derived from
- *     `fields[]`, registered by name on purpose (`fields: []` by design);
+ *     `fields[]`, registered by name on purpose (`fields: []` by design) —
+ *     and its inspector half, the one setting that form carries (D335: a
+ *     setting renders in the inspector, never in the Fields form);
  *   - the two display-order hints — they name every type on a shelf in the
  *     order the surface prefers and decide nothing about any of them
  *     (membership comes from `group` in the authoring companion;
@@ -73,6 +75,7 @@ const ALLOWED = [
   'shared/slide-types/authoring.js',
   'shared/slide-types/inline-edit.js',
   'client/views/editor/editor-form/slide-form-router.js',
+  'client/views/editor/editor-form/inspector-form.js',
   'client/views/editor/slide-type-picker/data.js',
   'client/views/settings/tabs/slide-types-tab/categories.js',
 ];

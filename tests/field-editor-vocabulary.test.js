@@ -44,7 +44,12 @@ const { createRerenderEditor } =
   await import('../client/views/editor/editor-form/index.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
-function renderForm({ type, content, surface = 'bulk', onEditChartData } = {}) {
+function renderForm({
+  type,
+  content,
+  surface = 'library',
+  onEditChartData,
+} = {}) {
   const editorMount = document.createElement('div');
   document.body.append(editorMount);
   const slide = {
@@ -156,10 +161,11 @@ test('chart: visibleWhen shows only the controls the chart type draws', () => {
   assert.ok(!has('pie', 'Series 1 label'), 'pie: no series labels');
 });
 
-test('chart: the bulk form shows a data summary and the one data editor (D338)', () => {
+test('chart: the Fields form shows a data summary and the one data editor (D338)', () => {
   let openedWith = null;
   const { editorMount } = renderForm({
     type: 'chart-slide',
+    surface: 'bulk',
     onEditChartData: (fieldKey) => {
       openedWith = fieldKey;
     },

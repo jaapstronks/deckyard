@@ -281,8 +281,8 @@ already been cut, and the two `else` fallbacks behind it
 Restricted as a parameter/destructuring shape rather than a whole-token
 identifier ban (the `overlayClosers` treatment), because `nav` is also a
 legitimate **local** name for a `<nav>` element — `const nav = h('nav', …)` in
-`views/list/sidebar.js`, `views/share-viewer/index.js` and
-`views/editor/bulk-edit-modal.js`. Those are plain declarators and stay legal;
+`views/list/sidebar.js` and `views/share-viewer/index.js`. Those are plain
+declarators and stay legal;
 only taking or passing `nav`, where it can mean nothing but the router, is
 restricted. `navigator` and `navUrl` are untouched by construction
 (`[name='nav']` / `[key.name='nav']`).

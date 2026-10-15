@@ -7,8 +7,10 @@
  * a new row here, not a new boolean threaded through the render.
  *
  * - `fields`: `'keeps'` renders only the type's inspector keeps (content lives
- *   on the canvas and in the bulk modal); `'all'` renders the full per-type
- *   content form.
+ *   on the canvas and in the Fields form); `'content'` renders the per-type
+ *   form without a single setting (`isSettingsField`, D335: content has two
+ *   postures, a setting one home); `'all'` renders the full per-type form,
+ *   settings included, for a surface with no inspector beside it.
  * - `toolbar`: the slide toolbar - type pill, retired/custom badges, layout
  *   chip. (The Canvas | Fields tabs beside it are deck-editor chrome, built
  *   once by the controller, not per render.)
@@ -27,7 +29,7 @@
 
 /**
  * @typedef {object} SurfaceCapabilities
- * @property {'keeps'|'all'} fields
+ * @property {'keeps'|'content'|'all'} fields
  * @property {boolean} toolbar
  * @property {boolean} typeConversion
  * @property {boolean} headerActions
@@ -49,8 +51,10 @@ export const FORM_SURFACES = Object.freeze({
     background: true,
     a11y: true,
   }),
+  // The Fields form in the canvas column (fields-view.js); the inspector
+  // stands beside it, so it carries content only.
   bulk: Object.freeze({
-    fields: 'all',
+    fields: 'content',
     toolbar: false,
     typeConversion: false,
     headerActions: false,

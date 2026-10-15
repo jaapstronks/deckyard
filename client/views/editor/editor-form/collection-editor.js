@@ -11,6 +11,7 @@ import {
   fieldFormRows,
 } from '../../../../shared/slide-types/form-layout.js';
 import { h } from '../../../lib/dom/index.js';
+import { isSettingsField } from '../../../../shared/slide-types/settings-fields.js';
 import {
   imageCollectionSpec,
   startBatchCollectionUpload,
@@ -83,6 +84,9 @@ const collapsedState = createCollapsedState('collection');
  * @param {string|null} [o.lang] - deck language (`resolveDeckLang(pres)`);
  *   picks the new-item skeleton from `itemDefaultsByLang`
  * @param {number} [o.depth] - nesting depth (internal; one nested level max)
+ * @param {boolean} [o.omitSettings] - leave out settings-shaped item fields
+ *   (`isSettingsField`): the Fields form carries content only, the "This
+ *   card" tab and the inspector own the rest (D335)
  * @returns {HTMLElement}
  */
 export function createCollectionEditor({
@@ -97,6 +101,7 @@ export function createCollectionEditor({
   labels = null,
   lang = null,
   depth = 0,
+  omitSettings = false,
   openImagePicker = null,
   pres = null,
   getSelectedSlideId = () => slide?.id,
@@ -112,7 +117,7 @@ export function createCollectionEditor({
   const itemDefaults = resolveItemDefaults(field, lang);
   const itemFields = (
     Array.isArray(field?.itemFields) ? field.itemFields : []
-  ).filter((f) => f && !f.hidden);
+  ).filter((f) => f && !f.hidden && !(omitSettings && isSettingsField(f)));
   const collapsible = !!field?.collapsible && depth === 0;
 
   // Canonicalize once on mount: dual-model types (icon-card-grid, team-cards,
@@ -374,6 +379,7 @@ export function createCollectionEditor({
               labels: childLabels,
               lang,
               depth: depth + 1,
+              omitSettings,
               model: {
                 read: () => {
                   const parent = readArr()[i];

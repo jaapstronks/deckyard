@@ -745,8 +745,9 @@ export function openImageBatch({
       if (!ready || closed || stopped) return;
       applySuccessful();
     };
-  // The collection action can start inside the All text overlay. Mount on the
-  // document so this new dialog is above that overlay and receives focus.
+  // The collection action can start inside another dialog (the library
+  // editor). Mount on the document so this new dialog is above it and
+  // receives focus.
   modal.show(document.body);
   updateActions();
   if (files.length) addFiles(files);

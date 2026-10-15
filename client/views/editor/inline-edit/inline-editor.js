@@ -1134,8 +1134,9 @@ export function createInlineEditor({
    * carries one: rows are items, columns are the sibling count the field names
    * in `columnCountKey` plus one cell key per row. Before this, the canvas
    * offered the row axis and the column axis existed only inside the form's
-   * table grid — reachable through the "Edit all text" modal, which is the
-   * route a user has no reason to look for while standing on the slide.
+   * table grid — reachable through the all-fields form (then a modal, now
+   * the Fields view), a route a user has no reason to take while standing
+   * on the slide.
    *
    * Only the "+" lives here. Deleting a column is a per-column control that
    * needs a column head to hang on, which the rendered table does not have
@@ -2054,7 +2055,23 @@ export function createInlineEditor({
     }
   }
 
-  return { refresh, isEditing, detach, openMediaByIndex };
+  /**
+   * Start editing the rendered field with this `data-inline-field` key, as a
+   * click on it would. The Fields view sends a click on its preview here.
+   * @param {string} key
+   * @returns {boolean} whether the field was found and is editable
+   */
+  function editField(key) {
+    if (!key || !getCanEdit?.()) return false;
+    const fieldEl = thumb.querySelector(
+      `[data-inline-field="${CSS.escape(String(key))}"]`,
+    );
+    if (!fieldEl) return false;
+    enterField(fieldEl);
+    return true;
+  }
+
+  return { refresh, isEditing, detach, openMediaByIndex, editField };
 }
 
 // --------------------------------------------------------------------

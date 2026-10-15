@@ -325,8 +325,8 @@ const clientRestrictedSyntax = [
   //
   // Parameter- and destructuring-shaped rather than a whole-token identifier
   // ban, because `nav` is also a legitimate *local* name for a `<nav>`
-  // element (`const nav = h('nav', …)` in list/sidebar.js, share-viewer and
-  // bulk-edit-modal). Those are plain declarators and stay legal; only taking
+  // element (`const nav = h('nav', …)` in list/sidebar.js and share-viewer).
+  // Those are plain declarators and stay legal; only taking
   // or passing `nav` — the thing that can mean nothing but the router — is
   // restricted. The allowlist is empty: `router.js` declares it as a function
   // declaration, never a parameter.

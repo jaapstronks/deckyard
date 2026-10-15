@@ -50,7 +50,7 @@ const { normalizeSlideContent } =
 const { FIELD_EDITOR_VALUES, fieldEditor } =
   await import('../shared/slide-types/field-editors.js');
 
-function renderForm({ type, content, surface = 'bulk' } = {}) {
+function renderForm({ type, content, surface = 'library' } = {}) {
   const editorMount = document.createElement('div');
   document.body.append(editorMount);
   const slide = {

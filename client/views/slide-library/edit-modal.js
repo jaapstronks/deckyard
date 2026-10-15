@@ -75,7 +75,7 @@ export async function openEditModal({
 
   const modal = createModal({
     title: t('slideLibrary.edit.title', 'Edit slide'),
-    modalClass: 'ps-modal ps-lib-edit-modal bulk-edit-modal',
+    modalClass: 'ps-modal ps-lib-edit-modal',
     fill: true,
     // Cancel lives in the footer beside Save; the header keeps the icon X.
     closeButton: 'icon',
