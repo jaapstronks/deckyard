@@ -2,16 +2,17 @@
  * PPTX speaker notes, per slide, in the order the deck shows them.
  *
  * The raster import (B700) puts each source slide on an image slide and needs
- * the notes beside the right image. That takes the deck's own order — the
- * slide list in `ppt/presentation.xml` — not the order of the part names
- * (`slide10.xml` can come before `slide2.xml`, and a reordered deck keeps its
- * old names), and the notes part the slide's relationships point at, not the
- * one with the same number. Hidden slides are reported, so a caller can line
- * the notes up with a rendering that leaves them out.
+ * the notes beside the right image, and the interpreting import (B702) walks
+ * the same list to read each slide's text and pictures. Both take the deck's
+ * own order — the slide list in `ppt/presentation.xml` — not the order of the
+ * part names (`slide10.xml` can come before `slide2.xml`, and a reordered deck
+ * keeps its old names), and the notes part the slide's relationships point at,
+ * not the one with the same number. Hidden slides are reported, so a caller
+ * can line the notes up with a rendering that leaves them out.
  */
 
 import JSZip from 'jszip';
-import { extractTextFromSlideXml } from './pptx-parser.js';
+import { extractTextFromSlideXml } from './pptx-text.js';
 
 const NOTES_REL_TYPE = /\/notesSlide$/;
 const SLIDE_REL_TYPE = /\/slide$/;
@@ -27,7 +28,18 @@ const SLIDE_REL_TYPE = /\/slide$/;
  * @returns {Promise<Array<{ part: string, hidden: boolean, notes: string }>>}
  */
 export async function readPptxSlideNotes(buffer) {
-  const zip = await JSZip.loadAsync(buffer);
+  return readSlideNotesFromZip(await JSZip.loadAsync(buffer));
+}
+
+/**
+ * The same reading, on a package that is already open: for a caller that
+ * goes on to read the slide parts themselves and should not load the zip
+ * twice. Slides whose part is missing from the package are left out.
+ *
+ * @param {JSZip} zip - The opened PPTX package
+ * @returns {Promise<Array<{ part: string, hidden: boolean, notes: string }>>}
+ */
+export async function readSlideNotesFromZip(zip) {
   const slideParts = await slidePartsInDeckOrder(zip);
   const slides = [];
   for (const part of slideParts) {
