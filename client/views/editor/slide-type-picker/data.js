@@ -33,6 +33,22 @@ export const SURFACE_CANDIDATES = ['lime', 'mist', 'dark'];
 export const FREQUENT_MAX = 6;
 export const FREQUENT_MIN_TOTAL = 3;
 
+// "Start here" (D342): the empty state of the frequently-used strip. Until the
+// strip has signal, the picker opens on these eight types in this order; once
+// it has, the strip takes the place and this shelf is gone. Never both. A
+// curation of the insert flow, like PICKER_GROUP_ORDER, not a fact about any
+// type: a name that no longer exists (or a type the deck disallows) is skipped.
+export const START_HERE_TYPES = [
+  'title-slide',
+  'content-slide',
+  'list-slide',
+  'image-text-slide',
+  'gallery-slide',
+  'chart-slide',
+  'table-slide',
+  'quote-slide',
+];
+
 // The Media shelf is read in two rows (D343): what carries one image, and what
 // shows a collection of them. Video and embed are single carriers, not variants
 // of an image slide and not collections. The rows are a reading aid inside one

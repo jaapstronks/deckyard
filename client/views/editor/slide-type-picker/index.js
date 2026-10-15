@@ -11,7 +11,6 @@
  *   - thumbnails.js   — pure thumbnail builders (video/embed mocks, schematic,
  *                       fluid scale)
  *   - peek.js         — the click-to-peek lightbox
- *   - library-strip.js — the inline "From your library" strip (item 10)
  *   - variants.js     — preset variants folded into their base tile (D341)
  *
  * The live-render thumbnail path (hydrateThumb) stays here because it closes
@@ -34,6 +33,7 @@ import {
   SURFACE_CANDIDATES,
   FREQUENT_MAX,
   FREQUENT_MIN_TOTAL,
+  START_HERE_TYPES,
   VIEW_MODES,
   SLIDE_TYPE_PRESETS,
   PICKER_GROUP_ORDER,
@@ -67,12 +67,9 @@ import {
   fillVideoThumb,
   fillEmbedThumb,
   fillSchematic,
-  THUMB_SOURCE_LIBRARY,
-  THUMB_SOURCE_TYPE,
-  TYPE_THUMB_SELECTOR,
+  THUMB_SELECTOR,
 } from './thumbnails.js';
 import { openTypePeek } from './peek.js';
-import { mountLibraryStrip } from './library-strip.js';
 import {
   VARIANT_ROW_SELECTOR,
   buildVariantsToggle,
@@ -88,11 +85,6 @@ export function createSlideTypePicker({
   insertSlide,
   disabledSlideTypes,
   requestAi = null,
-  // Optional inline "From your library" strip (item 10). Both must be provided,
-  // and the caller must also pass onSeeAllLibrary per render, or the strip is
-  // skipped entirely (e.g. the quick-add drawer, which has no library tab).
-  loadLibraryStripItems = null,
-  insertLibraryItem = null,
 } = {}) {
   // NOTE: UI translations use app locale (not slide language mode).
   // Keep fallbacks in English.
@@ -198,46 +190,33 @@ export function createSlideTypePicker({
 
   // Build the real (or mock) thumbnail contents into a pending wrapper. Called
   // lazily when the tile scrolls into view (or when its section is expanded).
-  // The wrap's `data-thumb-source` says where its content comes from: a
-  // `library` tile renders the item it was built from (`__slideId`, `__content`,
-  // in the item's own `__contentLang`); a `type` tile renders its type's sample.
   const hydrateThumb = (thumbWrap, resizeObserver) => {
     const type = thumbWrap.dataset.thumbType;
-    const ownContent = thumbWrap.dataset.thumbSource === THUMB_SOURCE_LIBRARY;
     thumbWrap.classList.remove('is-pending');
 
-    if (!ownContent && type === 'video-slide') {
+    if (type === 'video-slide') {
       fillVideoThumb(thumbWrap);
       return;
     }
-    if (!ownContent && type === 'embed-slide') {
+    if (type === 'embed-slide') {
       fillEmbedThumb(thumbWrap);
       return;
     }
 
     try {
-      const slide = ownContent
-        ? {
-            id: thumbWrap.__slideId,
-            type,
-            content: thumbWrap.__content,
-            notes: '',
-          }
-        : {
-            id: `sample-${type}`,
-            type,
-            // Preset overrides (item 15) are stashed on the wrap so lazy
-            // hydration and surface re-renders reapply them without
-            // re-reading the def.
-            content: sampleContentFor(type, thumbWrap.__presetContent || null),
-            notes: '',
-          };
+      const slide = {
+        id: `sample-${type}`,
+        type,
+        // Preset overrides (item 15) are stashed on the wrap so lazy hydration
+        // and surface re-renders reapply them without re-reading the def.
+        content: sampleContentFor(type, thumbWrap.__presetContent || null),
+        notes: '',
+      };
       const el = renderSlideElement(slide, {
         mode: 'thumb',
         theme,
         renderVia: RENDER_VIA_THEME,
-        // A library tile speaks the item's own language, not the deck's.
-        lang: ownContent ? thumbWrap.__contentLang : NO_DECK_LANG,
+        lang: NO_DECK_LANG,
       });
       thumbWrap.append(el);
       // Scale to fill now (element is laid out), then keep it in sync on resize.
@@ -268,7 +247,7 @@ export function createSlideTypePicker({
 
   const renderSlideTypePicker = (
     mount,
-    { afterSlideId, parentId, onPicked, onSeeAllLibrary } = {},
+    { afterSlideId, parentId, onPicked } = {},
   ) => {
     teardownObservers();
     mount.replaceChildren();
@@ -335,12 +314,10 @@ export function createSlideTypePicker({
     // Re-render already-hydrated thumbnails after the preview surface changes.
     // Pending tiles are left alone — they hydrate with the new surface when they
     // scroll into view. Tiles whose type has no background field never change,
-    // so they're skipped to avoid needless re-renders/flashes. Library tiles
-    // show a real slide with its own background, so the surface never reaches
-    // them (TYPE_THUMB_SELECTOR).
+    // so they're skipped to avoid needless re-renders/flashes.
     const restyleHydratedThumbs = () => {
       if (viewMode !== 'preview') return; // schematics don't render a surface
-      for (const wrap of typesWrap.querySelectorAll(TYPE_THUMB_SELECTOR)) {
+      for (const wrap of typesWrap.querySelectorAll(THUMB_SELECTOR)) {
         const type = wrap.dataset.thumbType;
         if (type === 'video-slide' || type === 'embed-slide') continue;
         if (wrap.classList.contains('is-pending')) continue;
@@ -365,7 +342,6 @@ export function createSlideTypePicker({
       const thumbWrap = h('div', {
         class: 'ps-type-thumb thumb is-pending',
         'data-thumb-type': type,
-        'data-thumb-source': THUMB_SOURCE_TYPE,
       });
       if (preset) {
         thumbWrap.__presetContent = previewOverridesFor(preset);
@@ -714,9 +690,7 @@ export function createSlideTypePicker({
 
     // Swap every tile's thumbnail between schematic and live-preview rendering,
     // persist the choice, and sync the toggle + surface control. Tiles are
-    // rebuilt in place so scroll position and search state survive. Only type
-    // tiles swap: a library tile is a slide, not a type, and keeps showing its
-    // own content in both views.
+    // rebuilt in place so scroll position and search state survive.
     const applyViewMode = (mode) => {
       if (!VIEW_MODES.has(mode) || mode === viewMode) return;
       viewMode = mode;
@@ -731,7 +705,7 @@ export function createSlideTypePicker({
       // The preview-background swatches only affect live renders.
       const surfaceEl = controls.querySelector('.ps-surface-toggle');
       if (surfaceEl) surfaceEl.hidden = mode !== 'preview';
-      for (const wrap of typesWrap.querySelectorAll(TYPE_THUMB_SELECTOR)) {
+      for (const wrap of typesWrap.querySelectorAll(THUMB_SELECTOR)) {
         // Always-preview tiles do not follow the switch (D344).
         if (ALWAYS_PREVIEW_TYPES.has(wrap.dataset.thumbType)) continue;
         cleanupSlideRuntimes(wrap);
@@ -1030,6 +1004,7 @@ export function createSlideTypePicker({
 
     // Frequently used: top types by local insert count. Excludes pinned (they're
     // already up top) and only shows once there's real signal, capped to one row.
+    // Until then "Start here" holds its place (D342): one shelf, never both.
     const usage = getUsage();
     const totalUses = Object.values(usage).reduce(
       (a, b) => a + (Number(b) || 0),
@@ -1049,6 +1024,15 @@ export function createSlideTypePicker({
         'frequent',
         t('editor.slideTypeGroup.frequent', 'Frequently used'),
         frequentTypes.map((type) => ({ type })),
+      );
+    } else {
+      renderAddGroup(
+        typesWrap,
+        'start',
+        t('editor.slideTypeGroup.start', 'Start here'),
+        START_HERE_TYPES.filter((type) => allowed(type)).map((type) => ({
+          type,
+        })),
       );
     }
 
@@ -1130,28 +1114,6 @@ export function createSlideTypePicker({
       container: typesWrap,
       searchInput,
     });
-
-    // --- Inline "From your library" strip (item 10) ------------------------
-    // Loaded async so it never blocks the type grid, prepended above the
-    // categories when non-empty, and gated on onSeeAllLibrary (modal context
-    // with a library tab). Hidden entirely on empty/error.
-    if (
-      typeof loadLibraryStripItems === 'function' &&
-      typeof onSeeAllLibrary === 'function'
-    ) {
-      mountLibraryStrip({
-        typesWrap,
-        labelFor,
-        afterSlideId,
-        onPicked,
-        loadLibraryStripItems,
-        insertLibraryItem,
-        onSeeAllLibrary,
-        hydrateThumb,
-        resizeObserver,
-        applyFilter,
-      });
-    }
   };
 
   return { renderSlideTypePicker };

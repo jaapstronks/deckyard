@@ -280,9 +280,11 @@ const SLIDE_TYPES_WITH_FORK = {
   'acme-widget': { label: 'Acme widget', isCustom: true },
 };
 
+// The shelf a type lives on, past the "Start here" strip that repeats a few
+// core types above the shelves (D342).
 const shelfOf = (mount, type) => {
   const wrap = mount.querySelector(
-    `.ps-type-card-wrap[data-thumb-type-key="${type}"]`,
+    `.ps-type-group:not([data-group-key="start"]) .ps-type-card-wrap[data-thumb-type-key="${type}"]`,
   );
   return (
     wrap?.closest('.ps-type-group')?.getAttribute('data-group-key') ?? null

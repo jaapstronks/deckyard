@@ -132,14 +132,6 @@ export function openSlideTypeModal({
   const storedTab = storage.get(LAST_TAB_KEY, 'types');
   let activeTab = tabAvailable(storedTab) ? storedTab : 'types';
 
-  // Assigned by the tabs builder below; lets the types picker's "See all" jump
-  // to the library tab. Stays null when there is no library tab.
-  let selectLibraryTab = null;
-  // One-shot shelf to apply the next time the library tab renders, set when the
-  // types picker's per-shelf "See all" is clicked. Consumed (cleared) on render
-  // so later re-renders keep whatever shelf the user picked in the library tab.
-  let pendingLibraryShelf = null;
-
   const renderActive = () => {
     if (activeTab === 'import' && api && pres?.id) {
       typesMount.hidden = true;
@@ -170,12 +162,9 @@ export function openSlideTypeModal({
       typesMount.hidden = true;
       libraryMount.hidden = false;
       importMount.hidden = true;
-      const shelf = pendingLibraryShelf;
-      pendingLibraryShelf = null;
       renderSlideLibraryPicker?.(libraryMount, {
         afterSlideId: insertAfterSlideId,
         onPicked: () => close(),
-        ...(shelf ? { shelf } : {}),
       });
       return;
     }
@@ -186,12 +175,6 @@ export function openSlideTypeModal({
       afterSlideId: insertAfterSlideId,
       parentId: insertParentId,
       onPicked: () => close(),
-      // Only offer the inline library strip + "See all" when the library tab
-      // actually exists in this context.
-      onSeeAllLibrary:
-        typeof renderSlideLibraryPicker === 'function' && selectLibraryTab
-          ? selectLibraryTab
-          : undefined,
     });
   };
 
@@ -211,13 +194,6 @@ export function openSlideTypeModal({
       storage.set(LAST_TAB_KEY, tab);
       updateActiveStates();
       renderActive();
-    };
-    // Expose library-tab switching to the types picker's "See all" affordance.
-    // An optional shelf ('personal' | 'organization') routes straight to that shelf.
-    selectLibraryTab = (shelf) => {
-      if (shelf === 'personal' || shelf === 'organization')
-        pendingLibraryShelf = shelf;
-      selectTab('library');
     };
 
     const btnTypes = h('button', {
