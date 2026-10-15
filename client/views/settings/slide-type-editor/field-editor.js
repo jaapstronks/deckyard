@@ -144,12 +144,12 @@ export function createFieldListEditor({
    * @param {Object} field
    * @returns {string[]}
    */
-  function itemHeadingChoices(field) {
-    const headable = [...labelableKeys(field.itemFields)];
+  function itemNameChoices(field) {
+    const labelable = [...labelableKeys(field.itemFields)];
     const declared = field.itemLabelField;
-    return declared && !headable.includes(declared)
-      ? [...headable, declared]
-      : headable;
+    return declared && !labelable.includes(declared)
+      ? [...labelable, declared]
+      : labelable;
   }
 
   function renderFieldRow(index) {
@@ -768,7 +768,7 @@ export function createFieldListEditor({
                 '(the first text sub-field)',
               ),
             },
-            ...itemHeadingChoices(field).map((key) => ({
+            ...itemNameChoices(field).map((key) => ({
               value: key,
               text: key,
             })),
@@ -795,7 +795,7 @@ export function createFieldListEditor({
           class: 'help',
           text: t(
             'settings.slideTypes.fields.itemLabelFieldHelp',
-            'Used by the reader and the reflowable export to head each item.',
+            'Names each item in the slide list, and heads it in the reader and the reflowable export when the sub-field can be a heading.',
           ),
         }),
       );
