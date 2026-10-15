@@ -56,7 +56,7 @@ import {
   getClientIp,
   allowShareVerifyAttempt,
 } from '../../../utils/rate-limit.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
+import { normalizeEmail } from '../../../../shared/email.js';
 import { filterForShareViewer } from '../../../utils/public-output.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createLogger } from '../../../utils/logger.js';

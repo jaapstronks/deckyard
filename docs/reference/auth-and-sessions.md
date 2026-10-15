@@ -105,12 +105,35 @@ in-memory fallback, `rate-limit-redis.js`):
   their storage modules (magic-link: 5/h per email, 15/h per IP; reset: 3/h per
   email, 10/h per IP).
 
+## First admin
+
+Every login path needs an existing `users` row, and only an admin creates one.
+A fresh install gets its first admin at boot: when auth is on, the instance is
+not in sandbox/demo mode and the `users` table is empty, `bootstrapFirstAdmin()`
+(`server/auth/first-admin.js`, called from `server/server.js` after the schema
+check) inserts `AUTH_ADMIN_EMAIL` as an `admin` without a password
+(`createFirstAdmin()` in `server/storage/users.js`). Once any user exists it
+writes nothing, so it is not a second way to create users next to the admin UI.
+
+The first session runs through the existing flows:
+
+- **Without SSO**: a magic link or "Forgot password" on `/login`. Both mail the
+  address, so email must be configured (`BREVO_API_KEY`); the boot warns when it
+  is not.
+- **With `SSO_ENFORCE=true`**: magic link and reset are refused, and the first
+  login is the SSO callback, which matches the existing row by address
+  ([`sso-oidc.md`](sso-oidc.md) § Your first login).
+
+Running with `AUTH_ENABLED=false` to create the first user is not needed.
+
 ## Config & flags
 
 Core (`server/auth/auth.js`):
 
 - `AUTH_SECRET` — HMAC key; enables auth; ≥32 chars required.
-- `AUTH_ADMIN_EMAIL` — email granted the admin role.
+- `AUTH_ADMIN_EMAIL` — email granted the admin role. On a fresh install (empty
+  `users` table, auth on) the boot creates it as a passwordless admin
+  (`server/auth/first-admin.js`); see [First admin](#first-admin).
 - `AUTH_ENABLED=false` — run intentionally without auth (anonymous admin).
 - `AUTH_ALLOW_WEAK_SECRET` — boot with a sub-32-char secret (escape hatch).
 - `AUTH_DEV_BYPASS` — dev-only passwordless admin (`NODE_ENV=development` only;

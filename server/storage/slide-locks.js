@@ -10,6 +10,7 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 
 import { getOrgId } from '../utils/context.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
 import { withDbGuard } from '../db/client.js';
 import {
@@ -177,7 +178,7 @@ export async function acquireSlideLock(
   toStorageContext(scope, 'acquireSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
-  const holderEmail = norm(email).toLowerCase();
+  const holderEmail = normalizeEmail(email);
   const holderName = norm(name) || holderEmail;
   const holderId = userId || null;
 
@@ -293,7 +294,7 @@ export async function refreshSlideLock(
   toStorageContext(scope, 'refreshSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
-  const holderEmail = norm(email).toLowerCase();
+  const holderEmail = normalizeEmail(email);
   const actor = lockActor({ userId, unrestricted });
 
   if (!pid || !sid || !holderEmail) {
@@ -381,7 +382,7 @@ export async function releaseSlideLock(
   toStorageContext(scope, 'releaseSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
-  const holderEmail = norm(email).toLowerCase();
+  const holderEmail = normalizeEmail(email);
   const actor = lockActor({ userId, unrestricted });
 
   if (!pid || !sid || !holderEmail) {

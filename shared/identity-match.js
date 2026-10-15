@@ -61,18 +61,7 @@
  * @module shared/identity-match
  */
 
-/**
- * Normalize an email for comparison: trimmed, lowercased, '' when absent.
- *
- * Nothing compares addresses to decide identity any more; this normalizes the
- * one remaining use, {@link hasIdentity}'s "is there an actor at all?".
- *
- * @param {string} [email]
- * @returns {string}
- */
-function normalizeEmail(email) {
-  return typeof email === 'string' ? email.trim().toLowerCase() : '';
-}
+import { normalizeEmail } from './email.js';
 
 /**
  * The identity an actor carries into an authorization decision.
@@ -98,7 +87,7 @@ function normalizeEmail(email) {
 export function actorIdentity(user) {
   return {
     userId: user?.id || null,
-    email: normalizeEmail(user?.email),
+    email: normalizeEmail(user?.email) ?? '',
     unrestricted: user?.unrestricted === true,
   };
 }

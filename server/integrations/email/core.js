@@ -57,6 +57,15 @@ export async function getSenderIdentity(repoRoot) {
  *   the provider was tried and failed (HTTP error, network, timeout). Callers
  *   that surface the failure over HTTP map the two differently (501 vs 502).
  */
+/**
+ * Whether this install can send mail at all (a Brevo key is set). Callers that
+ * depend on a mail arriving, such as the first-admin bootstrap, warn on false.
+ * @returns {boolean}
+ */
+export function isEmailConfigured() {
+  return Boolean(envStr('BREVO_API_KEY'));
+}
+
 export async function sendEmail({
   to,
   toName,

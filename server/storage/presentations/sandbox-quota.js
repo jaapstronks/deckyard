@@ -29,7 +29,7 @@
 import { getDb, sql } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { AppError } from '../../utils/errors.js';
 import { envInt } from '../../config/utils.js';
 

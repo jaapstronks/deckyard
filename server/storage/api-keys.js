@@ -5,7 +5,8 @@
 
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
-import { nowIso, normalizeEmail } from '../utils/normalize.js';
+import { nowIso } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import {
   generateSecureToken,
   hashToken,

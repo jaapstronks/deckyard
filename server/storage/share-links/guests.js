@@ -4,13 +4,8 @@
 
 import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
-import {
-  norm,
-  nowIso,
-  isoAfter,
-  isoBefore,
-  normalizeEmail,
-} from '../../utils/normalize.js';
+import { norm, nowIso, isoAfter, isoBefore } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { withDbGuard } from '../../db/client.js';
 import { canComment } from '../../../shared/constants/permissions.js';
 import { generateGuestToken } from './index.js';

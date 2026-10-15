@@ -5,6 +5,7 @@
 
 import { getOrgId } from '../../utils/context.js';
 import { resolveScope } from '../scope.js';
+import { normalizeEmail } from '../../../shared/email.js';
 
 export function parseJson(val, fallback) {
   if (val == null) return fallback;
@@ -18,6 +19,9 @@ export function parseJson(val, fallback) {
 
 /**
  * The id of the user with this e-mail address in the scope's organization.
+ * `users.email` is stored through `normalizeEmail`, so the address is folded
+ * the same way before the bare comparison: a mixed-case spelling finds the
+ * same user (B664).
  * @param {import('../scope.js').StorageScope} scope
  * @param {import('kysely').Kysely<any>} db - The open handle or transaction
  * @param {string} email
@@ -25,11 +29,13 @@ export function parseJson(val, fallback) {
  */
 export async function getUserIdByEmail(scope, db, email) {
   const orgId = getOrgId(resolveScope(scope, 'getUserIdByEmail'));
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
   const user = await db
     .selectFrom('users')
     .select('id')
     .where('organization_id', '=', orgId)
-    .where('email', '=', email)
+    .where('email', '=', normalized)
     .executeTakeFirst();
   return user?.id || null;
 }

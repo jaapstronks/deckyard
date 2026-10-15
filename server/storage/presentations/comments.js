@@ -4,7 +4,8 @@
  */
 
 import { getOrgId } from '../../utils/context.js';
-import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
+import { norm, nowIso } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { toStorageContext } from '../scope.js';
 import { withDbGuard } from '../../db/client.js';
@@ -462,7 +463,7 @@ export async function getComment(scope, commentId) {
 export async function createComment(scope, presentationId, data) {
   toStorageContext(scope, 'createComment');
   const pid = norm(presentationId);
-  const authorEmail = norm(data?.email || scope?.actorEmail).toLowerCase();
+  const authorEmail = normalizeEmail(data?.email || scope?.actorEmail);
   const authorName = norm(data?.name) || authorEmail;
   const body = norm(data?.body);
   // A share-link guest is identified by their guest row, not by an address:
@@ -598,7 +599,7 @@ export async function resolveComment(scope, commentId, { email } = {}) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
     const now = nowIso();
-    const resolverEmail = norm(email).toLowerCase();
+    const resolverEmail = normalizeEmail(email);
 
     const row = await db
       .updateTable('presentation_comments')
@@ -668,7 +669,7 @@ export async function dismissComment(scope, commentId, { email } = {}) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
     const now = nowIso();
-    const dismisserEmail = norm(email).toLowerCase();
+    const dismisserEmail = normalizeEmail(email);
 
     const row = await db
       .updateTable('presentation_comments')

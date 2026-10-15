@@ -15,6 +15,7 @@ import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
 import { rekeyNewDeckSlides } from './rekey-new-deck.js';
 import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
+import { normalizeEmail } from '../../../../shared/email.js';
 
 /** @param {unknown} value */
 function isPlainObject(value) {
@@ -259,8 +260,8 @@ export async function prepareNewPresentation(
     }
   }
 
-  if (typeof body?.ownerEmail === 'string' && body.ownerEmail.trim())
-    pres.ownerEmail = body.ownerEmail.trim().toLowerCase();
+  const ownerEmail = normalizeEmail(body?.ownerEmail);
+  if (ownerEmail) pres.ownerEmail = ownerEmail;
   pres.visibility = 'private';
   pres.createdBy = pres.ownerEmail || null;
   pres.updatedBy = pres.ownerEmail || null;

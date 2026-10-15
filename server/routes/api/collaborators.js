@@ -40,7 +40,7 @@ import {
   EVENT_TYPES,
   ENTITY_TYPES,
 } from '../../storage/activity-events.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { createLogger } from '../../utils/logger.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { withDeckCardFields } from '../../utils/deck-card-fields.js';
@@ -156,7 +156,7 @@ async function handleCollaboratorAdd(
   }
 
   // Prevent adding self as collaborator
-  const selfEmail = authedUser?.email?.toLowerCase();
+  const selfEmail = normalizeEmail(authedUser?.email);
   emailsToInvite = emailsToInvite.filter((e) => e !== selfEmail);
   if (emailsToInvite.length === 0) {
     return badRequest(res, 'Cannot add yourself as a collaborator');
@@ -164,7 +164,7 @@ async function handleCollaboratorAdd(
 
   // Get all users in the organization
   const users = await listUsers(storageScope);
-  const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
+  const userMap = new Map(users.map((u) => [u.email, u]));
 
   // Process invites
   const results = [];
@@ -366,10 +366,10 @@ async function handleCollaboratorList(
 
   // Enrich with user names if available
   const users = await listUsers(storageScope);
-  const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
+  const userMap = new Map(users.map((u) => [u.email, u]));
 
   const enrichedCollaborators = collaborators.map((c) => {
-    const user = userMap.get(c.userEmail?.toLowerCase());
+    const user = userMap.get(c.userEmail);
     return {
       ...c,
       userName: user?.name || null,

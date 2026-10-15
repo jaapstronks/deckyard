@@ -16,7 +16,8 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 
 import { getOrgId } from '../utils/context.js';
 import { ensureUserByEmail } from './users.js';
-import { nowIso, normalizeEmail } from '../utils/normalize.js';
+import { nowIso } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { sessionVersion } from '../utils/session-version.js';
 import { withDbGuard } from '../db/client.js';
 import { envStr } from '../config/utils.js';
