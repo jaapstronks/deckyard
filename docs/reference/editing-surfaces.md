@@ -24,8 +24,8 @@ every setting exactly one home.
 > One entry per element: the inspector tab.
 
 The last line matters most. Even when an edit opens elsewhere (a chart's data in
-a bottom panel, say), the inspector element tab stays the single place where you
-see what is settable for an element, and the entry point to that edit.
+its own data editor, say), the inspector element tab stays the single place where
+you see what is settable for an element, and the entry point to that edit.
 
 ## The underlying axis
 
@@ -53,9 +53,14 @@ drag ↔ 3×3 focus grid), that is one value with two representations, which is
 fine; two places to _choose_ is not.
 
 **Own surface** is for input that fits neither — chart data is data, not layout,
-and a table does not fit a narrow column. Preferred form: a non-blocking bottom
-panel (the presenter-notes zone gained a sibling "Data" tab) so the chart moves
-live as you type. The entry point still sits in the inspector ("Edit data…").
+and a table does not fit a narrow column. Chart data has one route (D338): the
+data editor (`client/views/editor/chart-data-modal.js`), a wide modal with the
+grid beside a live preview. It writes live like every other edit, so the chart on
+the canvas moves as you type; it has no Cancel/Save, only **Done** (or Escape,
+Ctrl/⌘+Enter), and the whole session is one undo step, so Cmd+Z after Done takes
+it all back. Every way in opens it: the inspector's "Edit data…", a click on the
+chart on the canvas, and the data summary that stands in a full form (the bulk
+modal, the slide library) in place of the grid.
 
 ## Single-element types
 

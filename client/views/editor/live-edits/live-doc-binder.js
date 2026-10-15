@@ -52,6 +52,8 @@ const SERVER_MANAGED_KEYS = new Set([
   'updatedBy',
   'scope',
 ]);
+// Y.UndoManager merges local edits closer together than this into one step.
+const CAPTURE_TIMEOUT_MS = 400;
 const PRES_SPECIAL_KEYS = new Set(['title', 'slides', 'i18n']);
 const SLIDE_SPECIAL_KEYS = new Set(['id', 'type', 'content', 'notes']);
 
@@ -841,7 +843,7 @@ export function createLiveDocBinder({
 
     undoManager = new Y.UndoManager([yslides, meta], {
       trackedOrigins: new Set([origin]),
-      captureTimeout: 400,
+      captureTimeout: CAPTURE_TIMEOUT_MS,
     });
     undoManager.on('stack-item-added', notifyUndoState);
     undoManager.on('stack-item-popped', notifyUndoState);
@@ -858,6 +860,24 @@ export function createLiveDocBinder({
   function redo() {
     if (!undoManager || !undoManager.redoStack.length) return false;
     return undoManager.redo() != null;
+  }
+
+  /**
+   * Group every local edit until endUndoGroup() into one undo step (a
+   * data-editor session, D338): close the running capture, then lift the
+   * capture timeout so pauses between edits do not split the step.
+   */
+  function beginUndoGroup() {
+    if (!undoManager) return;
+    undoManager.stopCapturing();
+    undoManager.captureTimeout = Number.POSITIVE_INFINITY;
+  }
+
+  /** Close the group opened by beginUndoGroup(). */
+  function endUndoGroup() {
+    if (!undoManager) return;
+    undoManager.captureTimeout = CAPTURE_TIMEOUT_MS;
+    undoManager.stopCapturing();
   }
 
   /**
@@ -901,6 +921,8 @@ export function createLiveDocBinder({
     syncLocal,
     undo,
     redo,
+    beginUndoGroup,
+    endUndoGroup,
     canUndo: () => !!undoManager && undoManager.undoStack.length > 0,
     canRedo: () => !!undoManager && undoManager.redoStack.length > 0,
     projectLanguage,

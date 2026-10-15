@@ -51,7 +51,11 @@ these paths is untouched:
 - **Undo/redo**: `Y.UndoManager` scoped to the slides array + meta map with
   `trackedOrigins` = the binder's local origin — undo reverts **your own**
   edits only, never a collaborator's, and works for deletions/reorders too.
-  Same topbar buttons and keyboard shortcuts.
+  Same topbar buttons and keyboard shortcuts. Edits closer together than the
+  capture timeout (400 ms) merge into one step; `beginUndoGroup()` /
+  `endUndoGroup()` lift that limit for a session that must undo as a whole
+  (the chart-data editor, D338), the same seam the snapshot undo manager
+  offers as `beginGroup()` / `endGroup()` when live edits are off.
 - **SSE slide-update handler**: not attached. Remote changes arrive through
   the doc; the SSE refetch would race it with stale (≤ one debounce window)
   server JSON.

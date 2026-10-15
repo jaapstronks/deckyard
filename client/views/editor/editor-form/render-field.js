@@ -9,7 +9,7 @@ import {
   translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
-import { createCsvGridEditor } from '../fields/csv-grid.js';
+import { summarizeCsvData } from '../fields/csv-grid.js';
 import { createTableGridEditor } from '../fields/table-grid.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
 import { renderImageFitField } from '../fields/image-fit.js';
@@ -116,9 +116,9 @@ export function createRenderField({
   scheduleUiRefresh,
   updateSelectedSlideListItem,
   onTranslateField,
-  // Inspector only: opens the bottom-panel Data tab for the csv-grid widget.
-  // When set, the widget renders an "Edit data…" entry point instead of the
-  // inline grid (the grid belongs on a wide surface, editing-surfaces §4.3).
+  // Opens the data editor for a csv-grid field, called with the field key.
+  // Every host passes it; the widget is a summary plus this entry point
+  // (the grid belongs on a wide surface, editing-surfaces §4.3, D338).
   onEditData = null,
   getSelectedSlideId,
   saveRefusal,
@@ -145,40 +145,32 @@ export function createRenderField({
 
   /**
    * The csv-grid widget (field-editors.js vocabulary; also the base widget of
-   * the `csv` field TYPE). Inline grid by default; with `onEditData` (the
-   * inspector) an entry-point button into the wide data surface instead.
+   * the `csv` field TYPE). The grid itself lives only in the data editor
+   * (D338): a form shows a summary of the data and an "Edit data…" button,
+   * which the host wires to that editor through `onEditData`.
    */
   const renderCsvGrid = (field) => {
     const label = t(field.labelKey || field.key, field.label || field.key);
-    if (typeof onEditData === 'function') {
-      return h('div', { class: 'field chart-data-entry' }, [
-        h('label', { class: 'field-label', text: label }),
-        h('button', {
-          class: 'btn btn-secondary chart-data-edit-btn',
-          type: 'button',
-          text: t('editor.chart.editData', 'Edit data…'),
-          onclick: () => onEditData(),
-        }),
-        h('p', {
-          class: 'help',
-          text: t(
-            'editor.chart.editDataHelp',
-            'Opens the data editor with a live chart preview.',
-          ),
-        }),
-      ]);
-    }
-    const dataEditor = createCsvGridEditor({
-      chartType: String(slide.content?.chartType || 'bar'),
-      value: slide.content[field.key] || '',
-      label,
-      onChange: (csv) => {
-        slide.content[field.key] = csv;
-        markDirty?.();
-        scheduleUiRefresh?.();
-      },
-    });
-    return dataEditor.el;
+    const { columns, rows } = summarizeCsvData(slide.content?.[field.key]);
+    const summary = rows
+      ? t(
+          'editor.chart.dataSummary',
+          { one: '1 row · {columns}', many: '{count} rows · {columns}' },
+          { count: rows, columns: columns.join(', ') },
+        )
+      : t('editor.chart.dataEmpty', 'No data yet');
+    return h('div', { class: 'field chart-data-entry' }, [
+      h('label', { class: 'field-label', text: label }),
+      h('p', { class: 'chart-data-summary', text: summary }),
+      typeof onEditData === 'function'
+        ? h('button', {
+            class: 'btn btn-secondary chart-data-edit-btn',
+            type: 'button',
+            text: t('editor.chart.editData', 'Edit data…'),
+            onclick: () => onEditData(field.key),
+          })
+        : null,
+    ]);
   };
 
   const renderFieldInner = function renderField(field) {

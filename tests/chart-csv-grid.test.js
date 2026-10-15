@@ -15,7 +15,7 @@ import assert from 'node:assert';
 const { serializeCsv, parseCsvToGrid, defaultHeaderFor, parseChartData } =
   await import('../shared/slide-types/types/chart-slide/parse.js');
 
-const { applyHeaderPaste } =
+const { applyHeaderPaste, summarizeCsvData } =
   await import('../client/views/editor/fields/csv-grid.js');
 
 const BAR_MODEL = { min: 2, max: 2, defaultHeaders: ['Label', 'Value'] };
@@ -251,5 +251,27 @@ describe('applyHeaderPaste (header-cell paste placement)', () => {
     });
     assert.deepEqual(next.header, header);
     assert.deepEqual(next.body, body);
+  });
+});
+
+// A form shows this summary in place of the grid (D338).
+describe('summarizeCsvData', () => {
+  it('names the header columns and counts the data rows', () => {
+    assert.deepStrictEqual(summarizeCsvData('Label,Value\nA,10\nB,25'), {
+      columns: ['Label', 'Value'],
+      rows: 2,
+    });
+  });
+
+  it('does not count all-empty rows', () => {
+    assert.equal(summarizeCsvData('X,S1,S2\nJan,1,2\n,,\n').rows, 1);
+  });
+
+  it('reads an empty or missing value as no data', () => {
+    assert.deepStrictEqual(summarizeCsvData(''), { columns: [], rows: 0 });
+    assert.deepStrictEqual(summarizeCsvData(undefined), {
+      columns: [],
+      rows: 0,
+    });
   });
 });

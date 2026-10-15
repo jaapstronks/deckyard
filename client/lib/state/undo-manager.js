@@ -47,6 +47,7 @@ export function createUndoManager({
   let isNewSequence = true; // Whether next capture starts a new edit sequence
   let debounceTimer = null;
   let skipNextCapture = false; // Skip capture after undo/redo to avoid re-pushing
+  let grouping = false; // Inside beginGroup/endGroup: no debounce boundary
 
   /**
    * Deep clone a presentation object.
@@ -123,6 +124,9 @@ export function createUndoManager({
       isNewSequence = false;
       notifyChange();
     }
+
+    // An open group has no debounce boundary: endGroup() closes it.
+    if (grouping) return;
 
     // Reset debounce timer - when it fires, current state becomes the new stable state
     if (debounceTimer) clearTimeout(debounceTimer);
@@ -218,6 +222,36 @@ export function createUndoManager({
   });
 
   /**
+   * Open a group: every capture until endGroup() is one undo step, however
+   * long the pauses between edits (a data-editor session, D338). Closes the
+   * running sequence first, so the group never merges into an earlier edit.
+   * @param {Object} pres - Current presentation state (before the group)
+   */
+  const beginGroup = (pres) => {
+    if (!pres) return;
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    lastStableState = clonePres(pres);
+    isNewSequence = true;
+    skipNextCapture = false;
+    grouping = true;
+  };
+
+  /**
+   * Close the group opened by beginGroup(); the next capture starts a new
+   * step. A group without captures leaves the stacks untouched.
+   * @param {Object} pres - Current presentation state (after the group)
+   */
+  const endGroup = (pres) => {
+    if (!grouping) return;
+    grouping = false;
+    if (pres) lastStableState = clonePres(pres);
+    isNewSequence = true;
+  };
+
+  /**
    * Clear all undo/redo history.
    */
   const clear = () => {
@@ -225,6 +259,7 @@ export function createUndoManager({
     redoStack.length = 0;
     lastStableState = null;
     isNewSequence = true;
+    grouping = false;
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
@@ -235,6 +270,8 @@ export function createUndoManager({
   return {
     init,
     captureSnapshot,
+    beginGroup,
+    endGroup,
     undo,
     redo,
     canUndo,

@@ -15,6 +15,7 @@
  */
 
 import { createRerenderEditor } from './editor-form/index.js';
+import { openChartDataModal } from './chart-data-modal.js';
 import { createFieldRenderers } from './fields/index.js';
 import { createImagePickers } from './image-pickers.js';
 import { readFileAsDataUrl } from '../../lib/net/file.js';
@@ -168,6 +169,23 @@ export async function createSingleSlideEditor({
     user,
     features,
     slideToolbar: { leftEl: toolbarEl },
+    // The one data editor (D338), live; the session is one undo step.
+    onEditChartData: (fieldKey) =>
+      openChartDataModal({
+        root: document.body,
+        slide: currentSlide(),
+        fieldKey,
+        theme,
+        renderVia: RENDER_VIA_THEME,
+        lang: deckLang || null,
+        markDirty,
+        rerenderPreview,
+        undoGroup: {
+          begin: () => undoManager.beginGroup(pres),
+          end: () => undoManager.endGroup(pres),
+        },
+        onClosed: () => rerenderEditor(),
+      }),
   });
   rerenderEditor = form.rerender;
 

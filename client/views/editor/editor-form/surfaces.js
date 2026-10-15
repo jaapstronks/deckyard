@@ -18,7 +18,8 @@
  * - `headerActions`: the pane chrome that belongs to the deck editor - the
  *   inspector's collapse control and the slide-actions menu.
  * - `deckTools`: everything that needs a saved deck around the slide - data
- *   source bar, per-slide duration, AI panels, the chart-data entry point.
+ *   source bar, per-slide duration, AI panels. (The chart-data entry point
+ *   is on every surface: each host passes its own `onEditChartData`, D338.)
  * - `elementTabs`: the selection-aware [This element | Slide] tabs.
  * - `background`: the background colour group and image section.
  * - `a11y`: the Accessibility section. Off means an a11y key renders nowhere.

@@ -156,17 +156,27 @@ test('chart: visibleWhen shows only the controls the chart type draws', () => {
   assert.ok(!has('pie', 'Series 1 label'), 'pie: no series labels');
 });
 
-test('chart: bulk modal renders the inline csv grid', () => {
-  const { editorMount } = renderForm({ type: 'chart-slide' });
-  assert.ok(
-    editorMount.querySelector('.csv-grid-host'),
-    'inline data grid renders',
-  );
+test('chart: the bulk form shows a data summary and the one data editor (D338)', () => {
+  let openedWith = null;
+  const { editorMount } = renderForm({
+    type: 'chart-slide',
+    onEditChartData: (fieldKey) => {
+      openedWith = fieldKey;
+    },
+  });
   assert.equal(
-    editorMount.querySelector('.chart-data-entry'),
+    editorMount.querySelector('.csv-grid-host'),
     null,
-    'no entry-point button in the bulk modal',
+    'no inline data grid in a form',
   );
+  const entry = editorMount.querySelector('.chart-data-entry');
+  assert.ok(entry, 'summary + entry point render');
+  assert.ok(
+    entry.querySelector('.chart-data-summary')?.textContent,
+    'the summary names the data',
+  );
+  entry.querySelector('button').click();
+  assert.equal(openedWith, 'data', 'the button opens the data editor');
 });
 
 test('chart: inspector renders the "Edit data…" entry point instead of the grid', () => {

@@ -8,43 +8,51 @@ import { h } from '../../lib/dom/index.js';
 /**
  * Chart-data editor as its own roomy surface (editing-surfaces §4.3): a wide
  * modal with the spreadsheet grid on the left and a live chart preview on the
- * right (stacked on narrow screens). Unlike a visual whose data is manipulated
- * for effect, chart data *is* the data — the render is a consequence — so a
- * blocking modal is the right trade: it gives the grid room to grow (the bottom
- * panel could not), and the side preview still shows the result as you type
- * (Jaap, 2026-07-21). Buffered: edits apply to the slide only on Save.
+ * right (stacked on narrow screens). Chart data *is* the data — the render is
+ * a consequence — so the grid gets room to grow here instead of in a form.
  *
- * The entry points are the inspector's "Edit data…" button and a click on the
- * chart on the canvas — both route here (one data surface).
+ * Live, like every other edit (D338): each change to the grid is written to
+ * the slide at once, so the canvas behind the modal follows as you type. There
+ * is no Cancel/Save; one **Done** button (or Escape, or Ctrl/⌘+Enter) closes
+ * the modal. Undo is the safety net: the whole session is one undo step,
+ * through the host's `undoGroup` (begin on open, end on close).
+ *
+ * The one route to chart data: the inspector's "Edit data…" button, a click
+ * on the chart on the canvas and the data summary in a full form all open
+ * this modal.
  *
  * @param {Object} opts
  * @param {HTMLElement} opts.root - Mount root for the modal (usually document.body)
- * @param {Object} opts.slide - The chart slide being edited
+ * @param {Object} opts.slide - The slide whose data is edited
+ * @param {string} [opts.fieldKey='data'] - The csv field on that slide
  * @param {Object} [opts.theme] - Active theme, for a faithful preview
  * @param {string} [opts.presentationId]
+ * @param {Object} [opts.renderVia] - How the preview resolves assets; the
+ *   deck by default, `RENDER_VIA_THEME` where there is no deck (library)
  * @param {string|null} [opts.lang] - Deck language, so the preview's legend label
  *   matches what the canvas shows
- * @param {Function} opts.markDirty
- * @param {Function} [opts.requestSave]
- * @param {Function} [opts.rerenderEditor]
- * @param {Function} [opts.rerenderPreview]
+ * @param {Function} opts.markDirty - Called after each write to the slide
+ * @param {Function} [opts.rerenderPreview] - Repaint the canvas after a write
+ * @param {{ begin: Function, end: Function }} [opts.undoGroup] - Makes the
+ *   session one undo step; without it the host's own grouping applies
+ * @param {Function} [opts.onClosed] - After the modal closed (refresh a form)
  */
 export function openChartDataModal({
   root,
   slide,
+  fieldKey = 'data',
   theme,
   presentationId,
+  renderVia = { kind: 'deck', id: presentationId },
   lang = null,
   markDirty,
-  requestSave,
-  rerenderEditor,
   rerenderPreview,
+  undoGroup,
+  onClosed,
 } = {}) {
-  if (!slide || slide.type !== 'chart-slide') return;
+  if (!slide?.content) return;
 
-  const raw = String(slide.content?.data ?? '');
-  const chartType = String(slide.content?.chartType || 'bar');
-  let latest = raw;
+  const chartType = String(slide.content.chartType || 'bar');
 
   // --- Live preview (right / top) -----------------------------------------
   const previewThumb = h('div', { class: 'thumb chart-data-preview-thumb' });
@@ -59,15 +67,12 @@ export function openChartDataModal({
     previewStage,
   ]);
 
-  const renderPreview = () => {
-    // Render the real slide with the buffered data so the preview is faithful
-    // (title + chart, exactly as the slide will look).
-    const tempSlide = { ...slide, content: { ...slide.content, data: latest } };
-    mountSlideInto(previewThumb, tempSlide, {
+  const renderModalPreview = () => {
+    mountSlideInto(previewThumb, slide, {
       mode: 'thumb',
       theme,
       presentationId,
-      renderVia: { kind: 'deck', id: presentationId },
+      renderVia,
       lang,
     });
   };
@@ -75,11 +80,14 @@ export function openChartDataModal({
   // --- Grid (left / bottom) ------------------------------------------------
   const { el: gridEl } = createCsvGridEditor({
     chartType,
-    value: raw,
+    value: String(slide.content[fieldKey] ?? ''),
     label: '',
-    onChange: (v) => {
-      latest = v;
-      renderPreview();
+    onChange: (csv) => {
+      if (slide.content[fieldKey] === csv) return;
+      slide.content[fieldKey] = csv;
+      markDirty?.();
+      rerenderPreview?.();
+      renderModalPreview();
     },
   });
   const gridWrap = h('div', { class: 'chart-data-grid' }, [gridEl]);
@@ -94,59 +102,41 @@ export function openChartDataModal({
     title: t('editor.chart.editDataTitle', 'Chart data'),
     modalClass: 'chart-data-modal',
     fill: true,
-    isDirty: () => latest !== raw,
-    confirmMessage: t(
-      'editor.chart.discardConfirm',
-      'Discard your changes to the chart data?',
-    ),
     onClose: () => {
       detachScale?.();
       detachScale = null;
+      undoGroup?.end();
+      onClosed?.();
     },
   });
-
-  const save = () => {
-    if (latest !== raw) {
-      slide.content.data = latest;
-      markDirty?.();
-      requestSave?.();
-      rerenderEditor?.();
-      rerenderPreview?.();
-    }
-    modal.close();
-  };
 
   const footer = h('div', { class: 'row spread chart-data-modal-footer' }, [
     h('span', {
       class: 'help',
-      text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save'),
+      text: t(
+        'editor.chart.liveHint',
+        'Changes apply as you type. Undo reverts the whole session.',
+      ),
     }),
-    h('div', { class: 'row' }, [
-      h('button', {
-        class: 'btn btn-secondary',
-        type: 'button',
-        text: t('common.cancel', 'Cancel'),
-        onclick: () => modal.requestClose(),
-      }),
-      h('button', {
-        class: 'btn btn-primary',
-        type: 'button',
-        text: t('common.save', 'Save'),
-        onclick: save,
-      }),
-    ]),
+    h('button', {
+      class: 'btn btn-primary',
+      type: 'button',
+      text: t('common.done', 'Done'),
+      onclick: () => modal.close(),
+    }),
   ]);
 
   modal.append(body, footer);
 
-  // Ctrl/Cmd+Enter commits from anywhere in the modal.
+  // Ctrl/Cmd+Enter closes from anywhere in the modal, like Done.
   modal.modal.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
-      save();
+      modal.close();
     }
   });
 
+  undoGroup?.begin();
   modal.show(root);
   detachScale = attachThumbScaleContain(previewThumb, {
     containerEl: previewStage,
@@ -154,7 +144,7 @@ export function openChartDataModal({
     virtualWidth: 1600,
     virtualHeight: 900,
   });
-  renderPreview();
+  renderModalPreview();
 
   // Land focus in the first grid cell so editing starts immediately.
   body.querySelector('.csv-grid-host input, .csv-grid-raw')?.focus();
