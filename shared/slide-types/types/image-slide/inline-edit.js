@@ -48,6 +48,8 @@ export const inlineEdit = {
       '.image[data-inline-photo], .image-placeholder[data-inline-photo]',
     imageField: 'image',
     altField: 'alt',
+    // Role and zoom chain mean nothing until there is a picture (D336).
+    withImage: ['imageRole', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
   },
   // Draggable focal point on the single image, but only in cover mode -
   // contain (no crop) has nothing to move, so the point stays hidden there

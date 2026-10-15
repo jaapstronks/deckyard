@@ -29,7 +29,35 @@ import {
   resolveMediaMember,
 } from '../inline-edit/descriptors.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom/index.js';
+import { imagesMissingAlt } from '../../../../shared/slide-types/semantic-projection.js';
 import { renderItemFieldWidget } from './item-field-widget.js';
+
+/**
+ * Whether publishing would refuse this picture for want of a name: the same
+ * {@link imagesMissingAlt} walk the publish gate runs, narrowed to the one
+ * image the card shows, so the card and the refusal cannot disagree (a
+ * decorative image, or a team member named by their heading, is not missing).
+ *
+ * @param {Object} slide
+ * @param {Object} def
+ * @param {Object} media - the descriptor's `media` entry
+ * @param {number} idx - the photo index the card shows
+ * @param {string} imageField - the resolved image key
+ * @returns {boolean}
+ */
+function altMissing(slide, def, media, idx, imageField) {
+  const slots =
+    Number.isInteger(media?.slots) && media.slots > 1 ? media.slots : 1;
+  const itemIndex = Math.floor(idx / slots);
+  return imagesMissingAlt(slide, def).some((hit) =>
+    media?.list
+      ? hit.field === media.list &&
+        hit.itemIndex === itemIndex &&
+        hit.itemField === imageField
+      : hit.field === imageField && hit.itemIndex === undefined,
+  );
+}
 
 /**
  * Resolve where the image element at `idx` reads/writes, from the type's inline
@@ -153,17 +181,49 @@ export function renderImageElementCard({
 
   // Alt text (metadata you cannot point at → inspector). Only meaningful once
   // there is an image; on an empty element the picker is the only thing to do.
+  // It sits right under the picture, with a warning while publishing would
+  // refuse it (D336); typing a name clears the warning without a rebuild.
   if (hasImage && typeof fieldText === 'function') {
+    const media = getInlineDescriptor(slide?.type, def)?.media;
+    // Name the way out only where the type has one: a role field beside the
+    // picture (`<key>Role` or `imageRole`, the sibling spelling of field-types).
+    const roleKeys = new Set([`${imageField}Role`, 'imageRole']);
+    const itemFields = media?.list
+      ? (def?.fields || []).find((f) => f.key === media.list)?.itemFields
+      : null;
+    const canBeDecorative = [
+      ...(def?.fields || []),
+      ...(Array.isArray(itemFields) ? itemFields : []),
+    ].some((f) => roleKeys.has(f?.key));
+    const warning = h('p', {
+      class: 'help is-warning',
+      role: 'status',
+      text: canBeDecorative
+        ? t(
+            'editor.image.altMissingOrDecorative',
+            'No alt text yet. Describe what the image shows, or set the image role to Decorative: publishing needs one of the two.',
+          )
+        : t(
+            'editor.image.altMissing',
+            'No alt text yet. Describe what the image shows: publishing needs it.',
+          ),
+    });
+    const syncWarning = () => {
+      warning.hidden = !altMissing(slide, def, media, idx, imageField);
+    };
+    syncWarning();
     container.append(
       fieldText(
         t('editor.imageText.altText', 'Alt text'),
         typeof member[altField] === 'string' ? member[altField] : '',
         (v) => {
           member[altField] = v;
+          syncWarning();
           markDirty?.();
           scheduleUiRefresh?.();
         },
       ),
+      warning,
     );
   }
 

@@ -1,4 +1,8 @@
-import { getInlineFormTextKeys } from '../inline-edit/descriptors.js';
+import {
+  getInlineDescriptor,
+  getInlineFormTextKeys,
+  mediaHoldsImage,
+} from '../inline-edit/descriptors.js';
 import { SLIDE_TYPE_INSPECTOR_KEEPS } from '../../../../shared/slide-types/inline-edit.js';
 import {
   slideTypeInspectorKeeps,
@@ -126,6 +130,11 @@ const INSPECTOR_EXTRAS = new Map([
  *    the card without touching a file outside its own directory. A selected
  *    collection item gets the "This card" card the same way, from a `card`
  *    element tab that names item `fields` (item-element-card.js).
+ *    The Slide tab of a type whose image is ONE flat key (image-slide,
+ *    image-text) opens on that same card, so an empty image slide starts with
+ *    the picker and a filled one with the picture and its alt text (D336).
+ *    A list type has no one picture to open on; its cards stay per element.
+ *    Either way, the keeps the media's `withImage` names wait for a picture.
  * 2. THE EXCEPTIONS — the INSPECTOR_EXTRAS table above.
  *
  * Runs BEFORE the generic keeps loop; anything rendered here marks its keys
@@ -135,16 +144,45 @@ const INSPECTOR_EXTRAS = new Map([
  */
 export function renderInspectorExtrasByType(ctx) {
   const {
+    form,
     elementForm,
     selectedElement,
     slide,
     def,
+    used,
     fieldRenderers,
     markDirty,
     rerenderEditor,
     rerenderPreview,
     scheduleUiRefresh,
   } = ctx;
+
+  const media = getInlineDescriptor(slide.type, def)?.media;
+  if (
+    media &&
+    !media.list &&
+    !String(media.imageField).includes('{n}') &&
+    slideTypeElementTab(slide.type, def)?.image
+  ) {
+    renderImageElementCard({
+      container: form,
+      slide,
+      def,
+      idx: 0,
+      fieldRenderers,
+      deckSlides: ctx.deckSlides,
+      markDirty,
+      rerenderEditor,
+      rerenderPreview,
+      scheduleUiRefresh,
+    });
+  }
+  if (
+    Array.isArray(media?.withImage) &&
+    !mediaHoldsImage(slide.content, media)
+  ) {
+    for (const key of media.withImage) used?.add(key);
+  }
 
   if (
     selectedElement?.kind === 'image' &&

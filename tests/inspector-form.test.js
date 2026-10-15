@@ -68,6 +68,12 @@ function renderForm({
     rerenderEditor: noop,
     updateSelectedSlideListItem: noop,
     normalizeLang: (l) => l,
+    // A picker seam with a source and a direct upload, so image fields render
+    // their entry buttons the way the editor does.
+    openImagePicker: Object.assign(noop, {
+      providers: [{ id: 'library' }],
+      upload: noop,
+    }),
   };
   const rerender = createRerenderEditor({
     ...deps,
@@ -317,8 +323,19 @@ const RENDER_PRECONDITIONS = {
   // instead of an always-present empty box (shared/slide-types/aside-field.js).
   'content-slide': [{ content: { asideVariant: 'note' } }],
   'list-slide': [{ content: { asideVariant: 'note' } }],
-  'image-text-slide': [{ content: { asideVariant: 'note' } }],
-  'image-set-slide': [{ content: { asideVariant: 'note' } }],
+  // The image role and the colour behind a letterboxed image wait for a
+  // picture (`media.withImage`, D336), so these states carry one.
+  'image-text-slide': [
+    { content: { asideVariant: 'note', image: '/a.jpg', alt: 'a' } },
+  ],
+  'image-set-slide': [
+    {
+      content: {
+        asideVariant: 'note',
+        images: [{ src: '/a.jpg', alt: 'a' }, { src: '' }],
+      },
+    },
+  ],
 };
 
 test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {
@@ -516,7 +533,8 @@ test('image-set: element tab shows only the selected cell, slide form only slide
 test('image-text: the element tab is the one image, and it carries the ImageRef', () => {
   // The singleton counterpart of the block above: image-text has exactly one
   // cell, so index 0 is the only selectable element and its controls are the
-  // slide-level flat keys - the same shape image-slide has (D100).
+  // slide-level flat keys - the same shape image-slide has (D100). Since D336
+  // the Slide tab opens on the same card, so it carries them too.
   const noSel = renderForm({
     type: 'image-text-slide',
     content: structuredClone(TEXT_CONTENT),
@@ -524,8 +542,8 @@ test('image-text: the element tab is the one image, and it carries the ImageRef'
   const noSelLabels = fieldLabels(slideForm(noSel));
   for (const label of ['alt text', 'image fit', 'image focus']) {
     assert.ok(
-      !noSelLabels.some((l) => l.includes(label)),
-      `no ${label} in the no-selection view`,
+      noSelLabels.some((l) => l.includes(label)),
+      `${label} in the no-selection view (the image card, D336)`,
     );
   }
 
@@ -578,7 +596,7 @@ test('image-text: layout settings render as plain fields, behind no collapsible'
   );
 });
 
-test('image-slide: image controls live in the element tab only; Slide tab == no-selection view', () => {
+test('image-slide: the Slide tab opens on the image card; Slide tab == no-selection view', () => {
   const content = { title: '', image: '/uploads/a.jpg', alt: 'a' };
   const noSel = renderForm({
     type: 'image-slide',
@@ -586,12 +604,12 @@ test('image-slide: image controls live in the element tab only; Slide tab == no-
   });
   const noSelLabels = fieldLabels(slideForm(noSel));
   assert.ok(
-    !noSelLabels.some((l) => l.includes('image fit')),
-    'no fit in the no-selection view',
+    noSelLabels.some((l) => l.includes('image fit')),
+    'fit in the no-selection view (the image card, D336)',
   );
   assert.ok(
-    !noSelLabels.some((l) => l.includes('edge-to-edge')),
-    'no bleed in the no-selection view',
+    noSelLabels.some((l) => l.includes('edge-to-edge')),
+    'bleed in the no-selection view (the image card, D336)',
   );
 
   const withSel = renderForm({
@@ -618,6 +636,184 @@ test('image-slide: image controls live in the element tab only; Slide tab == no-
     fieldLabels(slideForm(noSel)),
     'Slide tab and no-selection view render identical fields',
   );
+});
+
+// D336 (B705): an image slide's inspector starts with the image itself.
+
+/** Field labels of a panel, in document order. */
+const labelsInOrder = (el) =>
+  [...el.querySelectorAll('.field-label, label')].map((n) =>
+    n.textContent.trim().toLowerCase(),
+  );
+
+/** Button texts of a panel, in document order. */
+const buttonTexts = (el) =>
+  [...el.querySelectorAll('button')].map((b) => b.textContent.trim());
+
+/** The alt warning, if the card rendered one. */
+const altWarning = (el) => el.querySelector('.help.is-warning');
+
+test('D336: an empty image-text slide opens on the picker, without role, alt, fit or image background', () => {
+  const mount = renderForm({ type: 'image-text-slide' });
+  const form = slideForm(mount);
+  const labels = labelsInOrder(form);
+  assert.equal(labels[0], 'image', 'the image field is the first field');
+  const buttons = buttonTexts(form);
+  assert.equal(buttons[0], 'Choose image…', 'Choose comes first');
+  assert.ok(buttons.includes('Upload from computer'), 'Upload is offered');
+  for (const absent of [
+    'alt text',
+    'image role',
+    'image fit',
+    'image focus',
+    'image background',
+  ]) {
+    assert.ok(
+      !labels.some((l) => l.includes(absent)),
+      `no ${absent} before there is an image`,
+    );
+  }
+  // Side and width shape the empty slot too, so they stay.
+  for (const present of ['image position', 'image width']) {
+    assert.ok(
+      labels.some((l) => l.includes(present)),
+      `${present} stays on the empty slide`,
+    );
+  }
+});
+
+test('D336: a filled image-text slide shows picture, Replace and alt at the top, then role and image background', () => {
+  const mount = renderForm({
+    type: 'image-text-slide',
+    content: { ...structuredClone(TEXT_CONTENT), alt: '' },
+  });
+  const form = slideForm(mount);
+  const labels = labelsInOrder(form);
+  assert.deepEqual(labels.slice(0, 2), ['image', 'alt text']);
+  assert.ok(form.querySelector('img.editor-img-preview'), 'a thumbnail');
+  assert.equal(buttonTexts(form)[0], 'Replace…', 'Replace leads');
+  assert.ok(
+    labels.indexOf('image role') > labels.indexOf('alt text'),
+    'the role renders once there is an image',
+  );
+  assert.ok(
+    labels.some((l) => l.includes('image background')),
+    'the image background renders once there is an image',
+  );
+
+  const warning = altWarning(form);
+  assert.ok(warning && !warning.hidden, 'a missing alt is flagged');
+  assert.match(warning.textContent, /Decorative/, 'and names the way out');
+  // The picker has no text input, so the first one is the alt under it.
+  const altInput = form.querySelector('input.form-input');
+  altInput.value = 'A harbour at dusk';
+  altInput.dispatchEvent(new window.Event('input'));
+  assert.equal(warning.hidden, true, 'typing an alt clears the warning');
+});
+
+test('D336: a decorative image is not flagged, the publish gate does not want its alt', () => {
+  const mount = renderForm({
+    type: 'image-text-slide',
+    content: {
+      ...structuredClone(TEXT_CONTENT),
+      alt: '',
+      imageRole: 'decorative',
+    },
+  });
+  const warning = altWarning(slideForm(mount));
+  assert.ok(!warning || warning.hidden, 'no warning on a decorative image');
+});
+
+test('D336: an empty image slide opens on the picker, without role or zoom', () => {
+  const mount = renderForm({ type: 'image-slide' });
+  const labels = labelsInOrder(slideForm(mount));
+  assert.equal(labels[0], 'image', 'the image field is the first field');
+  for (const absent of ['image role', 'zoom steps', 'alt text', 'image fit']) {
+    assert.ok(
+      !labels.some((l) => l.includes(absent)),
+      `no ${absent} before there is an image`,
+    );
+  }
+});
+
+test('D336: image-set, gallery and team-cards cards start with the picker and put alt under the picture', () => {
+  const cases = [
+    {
+      type: 'image-set-slide',
+      empty: { images: [{ src: '' }, { src: '' }] },
+      filled: { images: [{ src: '/a.jpg', alt: '' }, { src: '' }] },
+    },
+    {
+      type: 'gallery-slide',
+      empty: { images: [{ src: '' }] },
+      filled: { images: [{ src: '/a.jpg', alt: '' }] },
+    },
+    {
+      type: 'team-cards-slide',
+      empty: { members: [{ image: '' }] },
+      filled: { members: [{ image: '/a.jpg', alt: '' }] },
+    },
+  ];
+  for (const { type, empty, filled } of cases) {
+    const selectedElement = { kind: 'image', idx: 0 };
+    const emptyCard = elementFormOf(
+      renderForm({ type, content: empty, selectedElement }),
+    );
+    assert.ok(emptyCard, `${type}: the empty cell has a card`);
+    assert.equal(buttonTexts(emptyCard)[0], 'Choose image…', type);
+    assert.ok(
+      !labelsInOrder(emptyCard).some((l) => l.includes('alt text')),
+      `${type}: no alt before there is an image`,
+    );
+
+    const card = elementFormOf(
+      renderForm({ type, content: filled, selectedElement }),
+    );
+    assert.deepEqual(
+      labelsInOrder(card).slice(0, 2),
+      ['image', 'alt text'],
+      type,
+    );
+    assert.equal(buttonTexts(card)[0], 'Replace…', type);
+    const warning = altWarning(card);
+    assert.ok(warning && !warning.hidden, `${type}: a missing alt is flagged`);
+  }
+});
+
+test('D336: a team member named by their heading is not flagged, publishing reads the name', () => {
+  const card = elementFormOf(
+    renderForm({
+      type: 'team-cards-slide',
+      content: {
+        members: [{ image: '/a.jpg', alt: '', name: 'Ada Lovelace' }],
+      },
+      selectedElement: { kind: 'image', idx: 0 },
+    }),
+  );
+  const warning = altWarning(card);
+  assert.ok(!warning || warning.hidden, 'the name is the alt of last resort');
+});
+
+test('D336: mediaHoldsImage reads every media shape', async () => {
+  const { mediaHoldsImage } =
+    await import('../client/views/editor/inline-edit/descriptors.js');
+  const flat = { imageField: 'image' };
+  assert.equal(mediaHoldsImage({ image: '' }, flat), false);
+  assert.equal(mediaHoldsImage({ image: ' /a.jpg ' }, flat), true);
+  const list = { list: 'images', imageField: 'src' };
+  assert.equal(mediaHoldsImage({ images: [{ src: '' }, {}] }, list), false);
+  assert.equal(
+    mediaHoldsImage({ images: [{}, { src: '/b.jpg' }] }, list),
+    true,
+  );
+  assert.equal(mediaHoldsImage({}, list), false);
+  const slots = { list: 'quotes', slots: 2, imageField: 'authorImage{n}' };
+  assert.equal(
+    mediaHoldsImage({ quotes: [{ authorImage2: '/c.jpg' }] }, slots),
+    true,
+  );
+  // A flat {n} window cannot be counted: never hide on it.
+  assert.equal(mediaHoldsImage({}, { imageField: 'col{n}Image' }), true);
 });
 
 test('bulk modal (bulk surface) still renders the content fields the inspector dropped', () => {
