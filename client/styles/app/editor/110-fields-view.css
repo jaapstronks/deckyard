@@ -1,0 +1,120 @@
+/* Fields (`views/editor/fields-view.js`, D335): the content form in the canvas
+   column. It lies on the stage tone the canvas lies on, one column of at most
+   ~760px; the field widgets keep the regular editor field styles. */
+
+/* The column shows one view: the canvas or this form. Canvas-only tools
+   (comment pin, zoom) exist only on the canvas. */
+.editor-shell.is-fields-view .preview-panel-body,
+.editor-shell.is-fields-view .pin-comment-btn,
+.editor-shell.is-fields-view .preview-zoom-btn {
+  display: none;
+}
+
+.fields-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ps-space-4);
+  scroll-padding-bottom: var(--ps-space-12);
+}
+
+.fields-view[hidden] {
+  display: none;
+}
+
+.fields-view-sheet {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--ps-space-4) var(--ps-space-5) var(--ps-space-6);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  box-shadow: var(--app-shadow-sm);
+}
+
+/* Slide head: preview (~240px) beside number, title and the way back. */
+.fields-view-head {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: var(--ps-space-4);
+  align-items: start;
+  padding-bottom: var(--ps-space-4);
+  margin-bottom: var(--ps-space-4);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.fields-view-head.is-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.fields-view-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+}
+
+.fields-view-preview:hover,
+.fields-view-preview:focus-visible {
+  border-color: hsl(var(--app-accent-primary));
+}
+
+/* The preview is a picture of the slide, not a second canvas: no text
+   selection. A click on it reaches the button, which reads the field under
+   the pointer. Scaled by attachThumbScaleContain. */
+.fields-view-thumb {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.fields-view-meta {
+  gap: var(--ps-space-2);
+  min-width: 0;
+}
+
+.fields-view-meta-row {
+  align-items: center;
+}
+
+.fields-view-counter {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+}
+
+.fields-view-title-slot > * {
+  margin: 0;
+}
+
+/* Locked slide (author lock or another editor): the form reads, takes no
+   input. The canvas carries the same gating from the same seam. */
+.fields-view-locked-note {
+  margin: 0 0 var(--ps-space-3);
+  padding: var(--ps-space-1) var(--ps-space-3);
+  border-radius: var(--ps-radius-sm);
+  background: hsl(var(--app-warning) / 0.2);
+  color: hsl(var(--app-text-primary));
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+}
+
+.fields-view.is-locked .fields-view-form,
+.fields-view.is-locked .fields-view-title-slot,
+.fields-view.is-locked .fields-view-notes {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Presenter notes are the last field: the strip moves in while the view
+   shows, open on the sheet instead of pinned under the stage. */
+.fields-view-notes .notes-strip {
+  margin-top: var(--ps-space-4);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}

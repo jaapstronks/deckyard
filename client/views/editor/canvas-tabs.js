@@ -3,25 +3,26 @@
  *
  * Content has two working postures on the same fields: shaping it on the
  * canvas, and writing and checking it as a form. The tabs name what the
- * column shows. Until the Fields form lands in the canvas column (B703 PR 2)
- * the Fields tab opens the existing all-fields dialog; it stays selected while
- * that dialog is open and hands back to Canvas when it closes, so the strip
- * never claims a view that is not showing.
+ * column shows; the controller swaps the column's view (fields-view.js) and
+ * remembers the choice.
  */
 
 import { t } from '../../lib/ui-i18n.js';
 import { createColumnTabs } from '../../lib/dom/column-tabs.js';
 
+/** @typedef {'canvas'|'fields'} CanvasView */
+
 /**
  * @param {Object} options
- * @param {() => void} options.onOpenFields - Open the Fields view.
- * @returns {{ el: HTMLElement, showCanvas: () => void }}
+ * @param {CanvasView} [options.value] - The view shown at mount.
+ * @param {(view: CanvasView) => void} options.onSelect - Show this view.
+ * @returns {{ el: HTMLElement, setValue: (view: CanvasView) => void }}
  */
-export function createCanvasTabs({ onOpenFields }) {
+export function createCanvasTabs({ value = 'canvas', onSelect }) {
   const strip = createColumnTabs({
     className: 'canvas-tabs',
     ariaLabel: t('editor.canvasTabs.label', 'Slide view'),
-    value: 'canvas',
+    value,
     tabs: [
       { value: 'canvas', label: t('editor.canvasTabs.canvas', 'Canvas') },
       {
@@ -33,10 +34,8 @@ export function createCanvasTabs({ onOpenFields }) {
         ),
       },
     ],
-    onSelect: (view) => {
-      if (view === 'fields') onOpenFields();
-    },
+    onSelect,
   });
 
-  return { el: strip.el, showCanvas: () => strip.setValue('canvas') };
+  return { el: strip.el, setValue: strip.setValue };
 }

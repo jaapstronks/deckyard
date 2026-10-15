@@ -24,14 +24,17 @@ one of three surfaces:
    registry: `client/views/editor/inline-edit/descriptors.js` (custom types
    declare an `inline` descriptor on the type definition, see
    `docs/developer/slide-types.md`).
-2. **The "Edit all text" bulk modal** (`client/views/editor/bulk-edit-modal.js`) -
-   the non-wysiwyg mode: all content fields in one list on the left, a live
-   contain-scaled preview on the right, ‹ x/N › navigation across the deck.
+2. **The Fields view** (`client/views/editor/fields-view.js`, tab Fields
+   above the canvas, D335) - the non-wysiwyg posture: a slide head (live
+   preview, number, title, back to the canvas) and every content field in
+   schema order, presenter notes last; the slide list moves through the deck.
    It mounts the _existing_ form field renderers on the `bulk` surface
-   (no chrome, no Background/Accessibility; the surface table is
+   (no chrome, no Background/Accessibility, no setting at any level: the
+   surface carries `fields: 'content'`, the table is
    `client/views/editor/editor-form/surfaces.js`), so items add/remove/reorder,
-   markdown editors and validation are parity-safe **by construction** - it
-   renders every non-Background/non-a11y field a type has. The slide-library
+   markdown editors and validation are parity-safe **by construction**. Until
+   this page is rewritten for it (B703), read "bulk modal" below as this
+   view. The slide-library
    editor mounts the same form on the `library` surface (all fields plus
    Background and Accessibility, none of the deck tools) through
    `client/views/editor/single-slide-editor.js`; see

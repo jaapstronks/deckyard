@@ -11,6 +11,7 @@ import {
 import { renderImageSetCollectionExtra } from './slide-forms/image-set-images.js';
 import { renderIconCardExtras } from './slide-forms/icon-card-links.js';
 import { renderListDensityExtra } from './slide-forms/list-density.js';
+import { renderFollowInviteSettings } from './slide-forms/follow-invite.js';
 import { renderImageElementCard } from './image-element-card.js';
 import { renderItemElementCard } from './item-element-card.js';
 
@@ -107,6 +108,9 @@ export function getInspectorKeepKeys(type, def) {
  * - list-slide: the "Text size" step-down note — needs live layout
  *   resolution, which the JSON-safe field vocabulary cannot carry
  *   (slide-forms/list-density.js).
+ * - follow-invite-slide: the "Use this slide while presenting" toggle —
+ *   `fields: []` by design (see slide-form-router.js), so its one setting
+ *   cannot be a keep (slide-forms/follow-invite.js).
  *
  * This table used to be a ~170-line switch over eight types (route 4 PR D):
  * the shared "This image" card was already generic in content, and its
@@ -117,6 +121,7 @@ const INSPECTOR_EXTRAS = new Map([
   ['image-set-slide', renderImageSetCollectionExtra],
   ['icon-card-grid-slide', renderIconCardExtras],
   ['list-slide', renderListDensityExtra],
+  ['follow-invite-slide', renderFollowInviteSettings],
 ]);
 
 /**

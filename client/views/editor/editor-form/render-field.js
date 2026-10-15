@@ -120,6 +120,9 @@ export function createRenderField({
   // Every host passes it; the widget is a summary plus this entry point
   // (the grid belongs on a wide surface, editing-surfaces §4.3, D338).
   onEditData = null,
+  // The Fields form renders no setting (D335); a collection drops its
+  // settings-shaped item fields too.
+  omitSettings = false,
   getSelectedSlideId,
   saveRefusal,
 } = {}) {
@@ -533,6 +536,7 @@ export function createRenderField({
         // content, so it follows the deck — same rule as makeNewSlide's
         // defaultsByLang resolution.
         lang: resolveDeckLang(pres),
+        omitSettings,
       });
     }
 

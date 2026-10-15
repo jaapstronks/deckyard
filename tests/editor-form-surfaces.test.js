@@ -3,10 +3,11 @@
  * the declared table in client/views/editor/editor-form/surfaces.js and every
  * surface-dependent part of the form reads one capability from that row.
  *
- * - `bulk` (the "Edit all text" modal) renders ONLY the per-type content
- *   fields - no header, no Background/Accessibility sections - and
- *   inline-covered text fields render in place instead of tucked behind the
- *   collapsed Text section. These assertions ARE the bulk parity contract.
+ * - `bulk` (the Fields form in the canvas column, D335) renders ONLY the
+ *   per-type content fields - no header, no Background/Accessibility
+ *   sections, and no setting at any level - and inline-covered text fields
+ *   render in place instead of tucked behind the collapsed Text section.
+ *   These assertions ARE the Fields contract.
  * - `inspector` keeps the rail chrome and the settings sections.
  * - `library` (the slide-library editor) renders all fields plus Background
  *   and Accessibility, and none of the deck-bound chrome.
@@ -49,6 +50,10 @@ const { createRerenderEditor } =
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { FORM_SURFACES, surfaceCapabilities } =
   await import('../client/views/editor/editor-form/surfaces.js');
+const { isSettingsField } =
+  await import('../shared/slide-types/settings-fields.js');
+const { CORE_SLIDE_TYPE_NAMES } =
+  await import('../shared/slide-types/registry.js');
 
 function renderForm({
   surface,
@@ -214,6 +219,98 @@ test('library renders every field plus Background and Accessibility, no deck chr
   assert.equal(mount.querySelector('.inspector-tabs'), null, 'no element tabs');
 });
 
+/**
+ * Render one type's form on a surface with the setting widgets spied on: the
+ * field renderers a setting reaches (enum, number, colour, icon picker), at the
+ * top level and inside every collection item.
+ */
+function renderTypeWithSpies(type, surface) {
+  const editorMount = document.createElement('div');
+  document.body.append(editorMount);
+  const slide = {
+    id: 's1',
+    type,
+    content: structuredClone(SLIDE_TYPES[type]?.defaults || {}),
+  };
+  const pres = { id: 'p1', slides: [slide], settings: {} };
+  const noop = () => {};
+  const deps = {
+    pres,
+    user: {},
+    markDirty: noop,
+    scheduleUiRefresh: noop,
+    rerenderEditor: noop,
+    updateSelectedSlideListItem: noop,
+    normalizeLang: (l) => l,
+  };
+  const calls = [];
+  const renderers = createFieldRenderers(deps);
+  for (const name of [
+    'fieldEnum',
+    'fieldNumber',
+    'fieldColor',
+    'fieldIconPicker',
+  ]) {
+    const real = renderers[name];
+    if (typeof real !== 'function') continue;
+    renderers[name] = (label, ...rest) => {
+      calls.push(`${name}(${typeof label === 'string' ? label : '?'})`);
+      return real(label, ...rest);
+    };
+  }
+  createRerenderEditor({
+    ...deps,
+    editorMount,
+    SLIDE_TYPES,
+    api: null,
+    getSelectedSlideId: () => 's1',
+    setSelectedSlideId: noop,
+    editorState: {},
+    requestSave: noop,
+    rerenderSlideList: noop,
+    rerenderPreview: noop,
+    fieldRenderers: renderers,
+    surface,
+  }).rerender();
+  editorMount.remove();
+  return { editorMount, calls, def: SLIDE_TYPES[type] };
+}
+
+// The Fields rule (D335) as a property of every core type: a setting has one
+// home, the inspector beside the form, so the `bulk` surface renders none -
+// no settings-shaped schema field, no setting widget inside a collection item,
+// no checkbox.
+test('the Fields form (bulk surface) renders no settings field on any core type', () => {
+  const offenders = [];
+  for (const type of CORE_SLIDE_TYPE_NAMES) {
+    const { editorMount, calls, def } = renderTypeWithSpies(type, 'bulk');
+    const byKey = new Map((def.fields || []).map((f) => [f.key, f]));
+    for (const el of editorMount.querySelectorAll('[data-collab-field-key]')) {
+      const key = el.getAttribute('data-collab-field-key');
+      if (isSettingsField(byKey.get(key))) offenders.push(`${type}.${key}`);
+    }
+    for (const call of calls) offenders.push(`${type}: ${call}`);
+    if (editorMount.querySelector('input[type="checkbox"]'))
+      offenders.push(`${type}: a checkbox`);
+  }
+  assert.deepEqual(offenders, []);
+});
+
+// The spies are not vacuous: the full form of the same types does reach the
+// setting widgets, and the content stays in the Fields form.
+test('the full form renders the settings the Fields form leaves to the inspector', () => {
+  const full = renderTypeWithSpies('text-blocks-slide', 'library');
+  assert.ok(
+    full.calls.some((c) => c.startsWith('fieldEnum')),
+    'the library form renders the row colour/arrow enums',
+  );
+  const fields = renderTypeWithSpies('text-blocks-slide', 'bulk');
+  assert.ok(
+    fields.editorMount.querySelector('textarea, [contenteditable], input'),
+    'the Fields form still renders the row text',
+  );
+});
+
 test('bulk renders a11y keys nowhere', () => {
   const mount = renderForm({ surface: 'bulk' });
   assert.equal(mount.querySelector('.editor-a11y-section'), null);
@@ -241,7 +338,7 @@ test('the surface table declares every capability on every row', () => {
   ]);
   for (const [name, row] of Object.entries(FORM_SURFACES)) {
     assert.deepEqual(Object.keys(row).sort(), [...keys].sort(), name);
-    assert.ok(['keeps', 'all'].includes(row.fields), name);
+    assert.ok(['keeps', 'content', 'all'].includes(row.fields), name);
   }
   assert.throws(
     () => surfaceCapabilities('panel'),
