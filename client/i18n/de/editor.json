@@ -146,8 +146,6 @@
   "editor.bulkEdit.counter": "Folie {n} von {total}",
   "editor.bulkEdit.hint": "Die Folie wird beim Tippen live aktualisiert. Layout, Hintergrund und Barrierefreiheit bleiben im Seitenbereich.",
   "editor.bulkEdit.next": "Nächste Folie",
-  "editor.bulkEdit.open": "Gesamter Text",
-  "editor.bulkEdit.openTitle": "Alle Textfelder dieser Folie in einer Ansicht bearbeiten",
   "editor.bulkEdit.prev": "Vorherige Folie",
   "editor.bulkEdit.title": "Gesamten Text bearbeiten",
   "editor.cards.collapse": "Einklappen",

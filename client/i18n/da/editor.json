@@ -144,8 +144,6 @@
   "editor.bulkEdit.counter": "Slide {n} af {total}",
   "editor.bulkEdit.hint": "Sliden opdateres live, mens du skriver. Layout, baggrund og tilgængelighed bliver i sidepanelet.",
   "editor.bulkEdit.next": "Næste slide",
-  "editor.bulkEdit.open": "Al tekst",
-  "editor.bulkEdit.openTitle": "Redigér alle slidens tekstfelter i én visning",
   "editor.bulkEdit.prev": "Forrige slide",
   "editor.bulkEdit.title": "Redigér al tekst",
   "editor.cards.collapse": "Fold sammen",

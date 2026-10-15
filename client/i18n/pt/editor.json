@@ -148,8 +148,6 @@
   "editor.bulkEdit.counter": "Diapositivo {n} de {total}",
   "editor.bulkEdit.hint": "O diapositivo é atualizado em direto enquanto escreve. Esquema, fundo e acessibilidade ficam no painel lateral.",
   "editor.bulkEdit.next": "Próximo diapositivo",
-  "editor.bulkEdit.open": "Todo o texto",
-  "editor.bulkEdit.openTitle": "Editar todos os campos de texto deste diapositivo numa só vista",
   "editor.bulkEdit.prev": "Diapositivo anterior",
   "editor.bulkEdit.title": "Editar todo o texto",
   "editor.cards.collapse": "Recolher",

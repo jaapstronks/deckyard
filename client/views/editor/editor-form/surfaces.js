@@ -10,7 +10,8 @@
  *   on the canvas and in the bulk modal); `'all'` renders the full per-type
  *   content form.
  * - `toolbar`: the slide toolbar - type pill, retired/custom badges, layout
- *   chip (and "All text" where the caller wires it).
+ *   chip. (The Canvas | Fields tabs beside it are deck-editor chrome, built
+ *   once by the controller, not per render.)
  * - `typeConversion`: whether the layout chip may offer cross-type tiles
  *   (`convertTo`). Off where the slide's type is fixed: a library item's
  *   `slideType` is not writable (D170).

@@ -146,7 +146,6 @@
   "editor.bulkEdit.counter": "Slide {n} av {total}",
   "editor.bulkEdit.hint": "Sliden uppdateras direkt medan du skriver. Layout, bakgrund och tillgänglighet finns kvar i sidopanelen.",
   "editor.bulkEdit.next": "Nästa slide",
-  "editor.bulkEdit.openTitle": "Redigera slidens alla textfält i en enda vy",
   "editor.bulkEdit.prev": "Föregående slide",
   "editor.bulkEdit.title": "Redigera all text",
   "editor.cards.collapse": "Fäll ihop",
