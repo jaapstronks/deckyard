@@ -29,6 +29,42 @@
   );
 }
 
+/* Icons: image width. The same split the layout switcher's tile draws
+   (`{ split: 37|50|63 }`, 109-layout-switcher.css), as a glyph beside the
+   percentage: image block on the left at that share, text area on the right.
+   The inspector does not mirror these with imageSide; the switcher does. */
+.sb-icon.sb-icon-split-37,
+.sb-icon.sb-icon-split-50,
+.sb-icon.sb-icon-split-63 {
+  --sb-icon-split: 50%;
+  background: linear-gradient(
+    to right,
+    hsl(var(--app-text-secondary) / 0.55) 0%,
+    hsl(var(--app-text-secondary) / 0.55) var(--sb-icon-split),
+    hsl(var(--app-text-secondary) / 0.14) var(--sb-icon-split),
+    hsl(var(--app-text-secondary) / 0.14) 100%
+  );
+}
+.sb-icon.sb-icon-split-37 {
+  --sb-icon-split: 37%;
+}
+.sb-icon.sb-icon-split-63 {
+  --sb-icon-split: 63%;
+}
+
+/* A glyph beside its label (`labelBeside` on the option) is a compact sketch,
+   not the button's whole face: narrower, with a gap before the text. Widths
+   are mirrored in views/editor/fields/enum-fit.js (ICON_BESIDE_PX). */
+.sb-icon.is-beside {
+  width: 20px;
+  height: 14px;
+  border-radius: 3px;
+  flex: none;
+}
+.sb-segmented-btn.has-icon-beside {
+  gap: var(--ps-space-1-5);
+}
+
 /* Icons: columns */
 .sb-icon.sb-icon-cols-2 {
   background: linear-gradient(

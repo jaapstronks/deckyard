@@ -1,7 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { optionCopy } from './option-copy.js';
-import { enumControl } from './enum-fit.js';
+import { enumControl, optionGlyph } from './enum-fit.js';
 
 /**
  * The translated visible label for an enum field. Enum fields resolve their
@@ -18,14 +18,20 @@ function enumFieldLabel(field) {
 
 export function createEnumFields({ fieldSelect } = {}) {
   // An option that declares an `icon` (`sb-icon-<icon>`, 40-option-icons.css)
-  // draws that glyph; its label stays the button's title and accessible name.
-  const enumButtonContent = (opt) =>
-    opt.icon
-      ? h('span', {
-          class: `sb-icon sb-icon-${opt.icon}`,
-          'aria-hidden': 'true',
-        })
-      : h('span', { text: opt.label ?? opt.value });
+  // draws that glyph in place of its label; the label stays the button's
+  // title and accessible name. With `labelBeside` the glyph is a compact
+  // sketch next to the label instead (the image-width splits, where the
+  // percentage is the name and the sketch shows what it means).
+  const enumButtonContent = (opt) => {
+    const label = h('span', { text: opt.label ?? opt.value });
+    const icon = optionGlyph(opt);
+    if (!icon) return [label];
+    const glyph = h('span', {
+      class: `sb-icon sb-icon-${icon}${opt.labelBeside ? ' is-beside' : ''}`,
+      'aria-hidden': 'true',
+    });
+    return opt.labelBeside ? [glyph, label] : [glyph];
+  };
 
   const fieldSegmented = (field, value, options, onChange, sizeClass) => {
     const group = h('div', {
@@ -57,7 +63,9 @@ export function createEnumFields({ fieldSelect } = {}) {
       });
       btn.dataset.value = opt.value;
       if (String(value ?? '') === opt.value) btn.classList.add('is-active');
-      btn.append(enumButtonContent(opt));
+      if (optionGlyph(opt) && opt.labelBeside)
+        btn.classList.add('has-icon-beside');
+      btn.append(...enumButtonContent(opt));
       group.append(btn);
     }
     // Use `stack is-field` so label/control spacing matches other editor fields

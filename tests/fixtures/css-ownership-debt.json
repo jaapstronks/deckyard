@@ -294,12 +294,6 @@
   "editor/inspector/100-cards-and-images.css": ["danger"],
   "editor/inspector/110-collapse.css": ["field-label-sm"],
   "editor/inspector/20-card-groups.css": ["is-sort-dragging", "is-sorting"],
-  "editor/inspector/40-option-icons.css": [
-    "sb-icon-cols-1",
-    "sb-icon-cols-2",
-    "sb-icon-side-left",
-    "sb-icon-side-right"
-  ],
   "editor/inspector/50-field-labels.css": [
     "field-required-mark",
     "inline-error"
