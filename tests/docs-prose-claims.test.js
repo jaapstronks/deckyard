@@ -18,6 +18,10 @@
  * Both scan every git-tracked `.md`, the same corpus and the same reasoning as
  * `tests/slide-type-count-prose-guard.test.js`. `docs/plans/` is a gitignored
  * symlink to the private planning repo, so `git ls-files` excludes it already.
+ * A fork's own paths (`custom/fork.json` § owned, plus `CLAUDE.md`) are left
+ * out the way `tests/docs-paths-resolvable.test.js` leaves them out: these are
+ * upstream's rules for upstream's prose, and a fork's archive should not need a
+ * patch to this file to pass them.
  *
  * Run with: node --test tests/docs-prose-claims.test.js
  */
@@ -28,6 +32,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { isForkOwned, readForkManifest } from '../scripts/lib/fork-manifest.js';
 
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
@@ -74,7 +79,16 @@ function collectMarkdown() {
   return out;
 }
 
-const MARKDOWN_FILES = collectMarkdown();
+/**
+ * The corpus the guards judge: every tracked `.md` that core owns.
+ *
+ * @param {import('../scripts/lib/fork-manifest.js').ForkManifest} manifest
+ * @returns {string[]}
+ */
+const proseCorpus = (manifest) =>
+  collectMarkdown().filter((rel) => !isForkOwned(manifest, rel));
+
+const MARKDOWN_FILES = proseCorpus(readForkManifest(REPO_ROOT));
 
 /** @returns {string} the file's text */
 const read = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
@@ -101,6 +115,20 @@ test('the prose scan actually sees the docs', () => {
     MARKDOWN_FILES.includes('docs/README.md'),
     'sanity: the documentation index is in the scan',
   );
+});
+
+test('the prose scan skips what a fork manifest owns', () => {
+  const fixture = { owned: ['docs/reference/'], deviations: {} };
+  const corpus = proseCorpus(fixture);
+  assert.ok(
+    MARKDOWN_FILES.some((rel) => rel.startsWith('docs/reference/')),
+    'sanity: without that manifest the tree is scanned',
+  );
+  assert.deepEqual(
+    corpus.filter((rel) => rel.startsWith('docs/reference/')),
+    [],
+  );
+  assert.ok(corpus.includes('docs/README.md'), 'core docs stay in the scan');
 });
 
 const sizeClaim =
