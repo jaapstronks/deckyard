@@ -81,13 +81,18 @@ export function buildVariantRow({ type, typeLabel, tiles, baseWrap }) {
  * row, so it opens under that row and the tiles after it keep their places.
  * The row is measured out of the flow: a shown full-width row would itself
  * break the line it is looking for. Without layout (base hidden by a search,
- * or no layout engine) the row stays right after its base tile.
+ * or no layout engine) the row stays right after its base tile. Focus inside
+ * the row survives the move.
  * @param {HTMLElement} row
  */
 export function placeVariantRow(row) {
   const base = row.__baseWrap;
   if (!base) return;
   const wasHidden = row.hidden;
+  // Hiding and moving the row blurs a variant tile reached with the arrow
+  // keys; remember it and hand the focus back once the row is in place.
+  const active = row.ownerDocument.activeElement;
+  const refocus = active && row.contains(active) ? active : null;
   row.hidden = true;
   let anchor = base;
   if (base.offsetParent !== null) {
@@ -101,4 +106,5 @@ export function placeVariantRow(row) {
   }
   if (anchor.nextElementSibling !== row) anchor.after(row);
   row.hidden = wasHidden;
+  if (refocus && !wasHidden) refocus.focus({ preventScroll: true });
 }

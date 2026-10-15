@@ -66,7 +66,8 @@ Object.defineProperty(dom.window.HTMLElement.prototype, 'offsetTop', {
   },
 });
 
-const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { CORE_SLIDE_TYPE_DEFS } =
+  await import('../shared/slide-types/registry.js');
 const { SLIDE_TYPE_PRESETS } =
   await import('../client/views/editor/slide-type-picker/data.js');
 const prefs =
@@ -76,16 +77,17 @@ const { createSlideTypePicker } =
 
 const FOLDED = Object.keys(SLIDE_TYPE_PRESETS);
 
-// The default registry, rendered in preview mode: jsdom cannot draw the media
+// The core registry, rendered in preview mode: jsdom cannot draw the media
 // schematics (SVG `className` is read-only there), and the tile count does not
-// depend on the thumbnail style.
+// depend on the thumbnail style. Core defs, not `SLIDE_TYPES`: a fork's own
+// types would otherwise land on the shelves and break the core tile budget.
 function renderPicker({ insertSlide = () => {} } = {}) {
   localStorage.clear();
   prefs.persistViewMode('preview');
   const mount = document.createElement('div');
   document.body.append(mount);
   createSlideTypePicker({
-    SLIDE_TYPES,
+    SLIDE_TYPES: CORE_SLIDE_TYPE_DEFS,
     theme: null,
     insertSlide,
     disabledSlideTypes: [],
