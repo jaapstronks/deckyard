@@ -1,18 +1,13 @@
 /**
- * "Import slides as images" takes a PowerPoint file too, and its speaker notes
- * become the notes of the image slides (B700).
+ * "Import slides as images" keeps a deck's speaker notes (B700, D334).
  *
- * Next to the import that interprets a deck into Deckyard slide types, there is
- * the import that keeps every source slide as a flat picture. For a PDF that
- * was all there was; a PPTX is printed to a PDF by LibreOffice first and its
- * notes are read from the package itself, in the deck's own order, hidden
- * slides left out the way LibreOffice leaves them out of the PDF.
- *
- * LibreOffice is a system package, so the route is driven here with a stand-in
- * `soffice` (`SOFFICE_PATH`) that writes a PDF printed by the shared browser
- * and keeps a copy of the file it was handed. That covers the whole route:
- * the spawn, the notes, the slides in the deck. The last test runs the real
- * LibreOffice where one is installed.
+ * Next to the import that interprets a deck into Deckyard slide types, there
+ * is the import that keeps every source slide as a flat picture. The pixels
+ * come from a PDF the presentation app exported; the notes from the
+ * PowerPoint file beside it, read from the package in the deck's own order and
+ * paired by position. A PDF export leaves hidden slides out by default, so the
+ * shown slides are paired first. Either file may come alone; when both come
+ * and the counts differ, nothing is imported.
  *
  * Run with: node --test tests/import-slides-as-images-pptx.test.js
  */
@@ -20,9 +15,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 import JSZip from 'jszip';
 import {
   getPuppeteerBrowser,
@@ -30,7 +22,6 @@ import {
   resolveChromeExecutablePath,
   toNodeBuffer,
 } from '../server/utils/puppeteer-browser.js';
-import { SOFFICE_CANDIDATE_PATHS } from '../server/render/pptx-to-pdf.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.SANDBOX_MODE;
@@ -50,7 +41,6 @@ const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { readPptxSlideNotes } =
   await import('../server/utils/convert-file/index.js');
-const { getFeatureFlags } = await import('../server/config/flags-snapshot.js');
 const { handlePresentationImportSlidesAsImages } =
   await import('../server/routes/api/presentations/import-slides-as-images.js');
 
@@ -175,18 +165,26 @@ function scope() {
   return createStorageScope({ organizationId: ORG, user: OWNER });
 }
 
-async function runImport(buffer, filename) {
+const PPTX_MIME =
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+
+/** Drive the route with a PDF, a PowerPoint file, or both. */
+async function runImport({ pdf = null, pptx = null, body = {} } = {}) {
   const res = makeSseRes();
-  const mime = filename.endsWith('.pdf')
-    ? 'application/pdf'
-    : 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
   await handlePresentationImportSlidesAsImages(
     {
       repoRoot: process.cwd(),
       storageScope: scope(),
       req: makeReq({
-        dataUrl: `data:${mime};base64,${buffer.toString('base64')}`,
-        filename,
+        ...(pdf && {
+          dataUrl: `data:application/pdf;base64,${pdf.toString('base64')}`,
+          filename: 'talk.pdf',
+        }),
+        ...(pptx && {
+          pptxDataUrl: `data:${PPTX_MIME};base64,${pptx.toString('base64')}`,
+          pptxFilename: 'talk.pptx',
+        }),
+        ...body,
       }),
       res,
       authedUser: OWNER,
@@ -196,27 +194,31 @@ async function runImport(buffer, filename) {
   return res;
 }
 
-/**
- * Four slides; the second has no notes, the third is hidden, the fourth
- * carries a hyperlink (an external relationship).
- */
+/** The `complete` payload, or the `error` message, of a finished stream. */
+function lastEvent(res) {
+  const text = res.chunks.join('');
+  const blocks = text.split('\n\n').filter((b) => /^event: /m.test(b));
+  const last = blocks.at(-1) || '';
+  return {
+    event: /^event: (.+)$/m.exec(last)?.[1],
+    data: JSON.parse(/^data: (.+)$/m.exec(last)?.[1] || 'null'),
+  };
+}
+
+const NOTES = {
+  one: 'Notes for One & <co>\nsecond line',
+  three: 'Notes for Three & <co>\nsecond line',
+  four: 'Notes for Four & <co>\nsecond line',
+};
+
+/** Four slides; the second has no notes, the third is hidden. */
 async function sampleDeck() {
   const pptx = new PptxGenJS();
   pptx.layout = 'LAYOUT_16x9';
   const titles = ['One', 'Two', 'Three', 'Four'];
   titles.forEach((title, i) => {
     const slide = pptx.addSlide();
-    slide.addText(
-      i === 3
-        ? [
-            {
-              text: `Slide ${title}`,
-              options: { hyperlink: { url: 'https://tracker.example.test/' } },
-            },
-          ]
-        : `Slide ${title}`,
-      { x: 1, y: 1, w: 8, h: 1, fontSize: 40 },
-    );
+    slide.addText(`Slide ${title}`, { x: 1, y: 1, w: 8, h: 1, fontSize: 40 });
     if (i !== 1) slide.addNotes(`Notes for ${title} & <co>\nsecond line`);
     if (i === 2) slide.hidden = true;
   });
@@ -240,53 +242,18 @@ async function printPdf(titles) {
   }
 }
 
-/**
- * A stand-in `soffice`: writes `pdf` where LibreOffice would and keeps the
- * file it was handed in `seen`. Pointed at through `SOFFICE_PATH`.
- */
-async function fakeSoffice(t, pdf) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'b700-soffice-'));
-  const pdfPath = path.join(dir, 'out.pdf');
-  const seen = path.join(dir, 'seen.pptx');
-  await fs.writeFile(pdfPath, pdf);
-  const bin = path.join(dir, 'soffice');
-  await fs.writeFile(
-    bin,
-    `#!${process.execPath}
-const fs = require('node:fs');
-const path = require('node:path');
-const args = process.argv.slice(2);
-const outdir = args[args.indexOf('--outdir') + 1];
-const input = args[args.length - 1];
-fs.copyFileSync(input, ${JSON.stringify(seen)});
-fs.copyFileSync(${JSON.stringify(pdfPath)}, path.join(outdir, path.basename(input, '.pptx') + '.pdf'));
-`,
-    { mode: 0o755 },
-  );
-  const before = process.env.SOFFICE_PATH;
-  process.env.SOFFICE_PATH = bin;
-  t.after(async () => {
-    if (before === undefined) delete process.env.SOFFICE_PATH;
-    else process.env.SOFFICE_PATH = before;
-    await fs.rm(dir, { recursive: true, force: true });
-  });
-  return { seen };
-}
-
 test(
   'readPptxSlideNotes: notes per slide in deck order, hidden slides marked, body text only',
-  {
-    skip: noPptxgen,
-  },
+  { skip: noPptxgen },
   async () => {
     const slides = await readPptxSlideNotes(await sampleDeck());
     assert.deepEqual(
       slides.map((s) => [s.hidden, s.notes]),
       [
-        [false, 'Notes for One & <co>\nsecond line'],
+        [false, NOTES.one],
         [false, ''],
-        [true, 'Notes for Three & <co>\nsecond line'],
-        [false, 'Notes for Four & <co>\nsecond line'],
+        [true, NOTES.three],
+        [false, NOTES.four],
       ],
     );
   },
@@ -294,9 +261,7 @@ test(
 
 test(
   'readPptxSlideNotes: a reordered deck follows presentation.xml, not the part names',
-  {
-    skip: noPptxgen,
-  },
+  { skip: noPptxgen },
   async () => {
     const zip = await JSZip.loadAsync(await sampleDeck());
     const presXml = await zip.file('ppt/presentation.xml').async('string');
@@ -316,168 +281,154 @@ test(
       slides.map((s) => s.part),
       [4, 3, 2, 1].map((n) => `ppt/slides/slide${n}.xml`),
     );
-    assert.match(slides[0].notes, /^Notes for Four/);
+    assert.equal(slides[0].notes, NOTES.four);
   },
 );
 
 test(
-  'a PPTX with notes lands as one image slide per shown slide, each with its notes',
-  {
-    skip: noPptxgen || noChrome,
-  },
-  async (t) => {
+  'a PDF with its PowerPoint file lands as one image slide per page, each with the notes of its slide',
+  { skip: noPptxgen || noChrome },
+  async () => {
     seed();
-    // Three pages: what LibreOffice prints for the four slides, the hidden one
-    // left out.
-    const { seen } = await fakeSoffice(
-      t,
-      await printPdf(['One', 'Two', 'Four']),
-    );
-    assert.equal(getFeatureFlags().pptxRasterImport, true);
+    // Three pages: what PowerPoint exports for the four slides, the hidden
+    // one left out.
+    const res = await runImport({
+      pdf: await printPdf(['One', 'Two', 'Four']),
+      pptx: await sampleDeck(),
+    });
 
-    const res = await runImport(await sampleDeck(), 'talk.pptx');
-
-    assert.ok(res.events.includes('complete'), res.chunks.join(''));
+    const done = lastEvent(res);
+    assert.equal(done.event, 'complete', res.chunks.join(''));
+    assert.equal(done.data.withImages, true);
+    assert.equal(done.data.withNotes, true);
     const slides = deckSlides();
     assert.equal(slides[0].id, 's1');
     const imported = slides.slice(1);
-    assert.equal(imported.length, 3);
-    assert.ok(imported.every((s) => s.type === 'image-slide'));
-    assert.deepEqual(
-      imported.map((s) => s.notes),
-      [
-        'Notes for One & <co>\nsecond line',
-        '',
-        'Notes for Four & <co>\nsecond line',
-      ],
-    );
-    assert.deepEqual(
-      imported.map((s) => s.content.alt),
-      ['talk - Slide 1', 'talk - Slide 2', 'talk - Slide 3'],
-    );
-
-    // What reached LibreOffice had no external address left in it.
-    const handed = await JSZip.loadAsync(await fs.readFile(seen));
-    for (const name of Object.keys(handed.files).filter((n) =>
-      n.endsWith('.rels'),
-    )) {
-      const xml = await handed.file(name).async('string');
-      assert.ok(!xml.includes('tracker.example.test'), name);
-    }
-  },
-);
-
-test(
-  'a page count that does not match the shown slides imports without notes',
-  {
-    skip: noPptxgen || noChrome,
-  },
-  async (t) => {
-    seed();
-    await fakeSoffice(t, await printPdf(['One', 'Two']));
-    const res = await runImport(await sampleDeck(), 'talk.pptx');
-    assert.ok(res.events.includes('complete'), res.chunks.join(''));
-    const imported = deckSlides().slice(1);
-    assert.equal(imported.length, 2);
-    assert.deepEqual(
-      imported.map((s) => s.notes),
-      ['', ''],
-    );
-  },
-);
-
-test(
-  'a PDF still imports page by page, without notes',
-  {
-    skip: noChrome,
-  },
-  async () => {
-    seed();
-    const res = await runImport(await printPdf(['A', 'B']), 'source.pdf');
-    assert.ok(res.events.includes('complete'), res.chunks.join(''));
-    const imported = deckSlides().slice(1);
     assert.deepEqual(
       imported.map((s) => [s.type, s.notes, s.content.alt]),
       [
-        ['image-slide', '', 'source - Page 1'],
-        ['image-slide', '', 'source - Page 2'],
+        ['image-slide', NOTES.one, 'talk - Page 1'],
+        ['image-slide', '', 'talk - Page 2'],
+        ['image-slide', NOTES.four, 'talk - Page 3'],
       ],
     );
   },
 );
 
-test('a file that is neither a PDF nor a zip is refused before the stream opens', async () => {
+test(
+  'a PDF that kept the hidden slide pairs with all slides',
+  { skip: noPptxgen || noChrome },
+  async () => {
+    seed();
+    const res = await runImport({
+      pdf: await printPdf(['One', 'Two', 'Three', 'Four']),
+      pptx: await sampleDeck(),
+    });
+    assert.equal(lastEvent(res).event, 'complete', res.chunks.join(''));
+    assert.deepEqual(
+      deckSlides()
+        .slice(1)
+        .map((s) => s.notes),
+      [NOTES.one, '', NOTES.three, NOTES.four],
+    );
+  },
+);
+
+test(
+  'a page count that matches neither is refused with both numbers, and the deck is left alone',
+  { skip: noPptxgen || noChrome },
+  async () => {
+    seed();
+    const res = await runImport({
+      pdf: await printPdf(['One', 'Two']),
+      pptx: await sampleDeck(),
+    });
+    const done = lastEvent(res);
+    assert.equal(done.event, 'error');
+    assert.match(done.data.message, /2 pages.*3 slides/);
+    assert.deepEqual(
+      deckSlides().map((s) => s.id),
+      ['s1'],
+    );
+  },
+);
+
+test(
+  'a PowerPoint file alone gives every shown slide its notes, without an image',
+  { skip: noPptxgen },
+  async () => {
+    seed();
+    const res = await runImport({ pptx: await sampleDeck() });
+    const done = lastEvent(res);
+    assert.equal(done.event, 'complete', res.chunks.join(''));
+    assert.equal(done.data.withImages, false);
+    assert.deepEqual(
+      deckSlides()
+        .slice(1)
+        .map((s) => [s.type, s.content.image, s.notes]),
+      [
+        ['image-slide', '', NOTES.one],
+        ['image-slide', '', ''],
+        ['image-slide', '', NOTES.four],
+      ],
+    );
+  },
+);
+
+test(
+  'a PDF alone still imports page by page, without notes',
+  { skip: noChrome },
+  async () => {
+    seed();
+    const res = await runImport({ pdf: await printPdf(['A', 'B']) });
+    const done = lastEvent(res);
+    assert.equal(done.event, 'complete', res.chunks.join(''));
+    assert.equal(done.data.withNotes, false);
+    assert.deepEqual(
+      deckSlides()
+        .slice(1)
+        .map((s) => [s.type, s.notes, s.content.alt]),
+      [
+        ['image-slide', '', 'talk - Page 1'],
+        ['image-slide', '', 'talk - Page 2'],
+      ],
+    );
+  },
+);
+
+test('files that are not what their field says are refused before the stream opens', async () => {
+  const text = `data:application/pdf;base64,${Buffer.from('hello').toString('base64')}`;
+  for (const body of [
+    {},
+    { dataUrl: text },
+    { pptxDataUrl: text },
+    {
+      dataUrl: `data:application/pdf;base64,${Buffer.from('PK\x03\x04').toString('base64')}`,
+    },
+  ]) {
+    seed();
+    const res = await runImport({ body });
+    assert.equal(res.statusCode, 400, JSON.stringify(Object.keys(body)));
+    assert.deepEqual(res.events, []);
+    assert.deepEqual(
+      deckSlides().map((s) => s.id),
+      ['s1'],
+    );
+  }
+});
+
+test('a zip that holds no slides is refused, and the deck is left alone', async () => {
   seed();
-  const res = await runImport(Buffer.from('hello, world'), 'notes.txt');
-  assert.equal(res.statusCode, 400);
-  assert.deepEqual(res.events, []);
+  const zip = new JSZip();
+  zip.file('word/document.xml', '<w:document/>');
+  const res = await runImport({
+    pptx: await zip.generateAsync({ type: 'nodebuffer' }),
+  });
+  const done = lastEvent(res);
+  assert.equal(done.event, 'error');
+  assert.match(done.data.message, /No slides found/);
   assert.deepEqual(
     deckSlides().map((s) => s.id),
     ['s1'],
   );
 });
-
-test(
-  'without LibreOffice a PPTX is refused with its own code, and the flag is off',
-  {
-    skip: noPptxgen,
-  },
-  async (t) => {
-    const installed = [];
-    for (const p of SOFFICE_CANDIDATE_PATHS) {
-      try {
-        await fs.access(p, fs.constants.X_OK);
-        installed.push(p);
-        // eslint-disable-next-line no-restricted-syntax -- not installed at this path, which is what this test wants
-      } catch {
-        // not here
-      }
-    }
-    if (installed.length) {
-      t.skip(`LibreOffice is installed (${installed[0]})`);
-      return;
-    }
-    const before = process.env.SOFFICE_PATH;
-    process.env.SOFFICE_PATH = path.join(os.tmpdir(), 'no-such-soffice');
-    t.after(() => {
-      if (before === undefined) delete process.env.SOFFICE_PATH;
-      else process.env.SOFFICE_PATH = before;
-    });
-    seed();
-    assert.equal(getFeatureFlags().pptxRasterImport, false);
-    const res = await runImport(await sampleDeck(), 'talk.pptx');
-    assert.equal(res.statusCode, 400);
-    assert.equal(
-      JSON.parse(res.chunks.join('')).error,
-      'pptx_import_unavailable',
-    );
-  },
-);
-
-test(
-  'with the real LibreOffice, the notes still line up',
-  {
-    skip: noPptxgen || noChrome,
-  },
-  async (t) => {
-    const { resolveSofficePath } =
-      await import('../server/render/pptx-to-pdf.js');
-    if (!resolveSofficePath()) {
-      t.skip('LibreOffice is not installed');
-      return;
-    }
-    seed();
-    const res = await runImport(await sampleDeck(), 'talk.pptx');
-    assert.ok(res.events.includes('complete'), res.chunks.join(''));
-    assert.deepEqual(
-      deckSlides()
-        .slice(1)
-        .map((s) => s.notes),
-      [
-        'Notes for One & <co>\nsecond line',
-        '',
-        'Notes for Four & <co>\nsecond line',
-      ],
-    );
-  },
-);

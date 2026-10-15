@@ -5,16 +5,15 @@ import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
-import { getFeatures } from '../../../lib/state/features.js';
 
 const PPTX_MIME =
   'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 
 /**
  * Creates the "Import from file" tab content for the slide-type-modal.
- * Each PDF page becomes an image-slide; so does each slide of a PowerPoint
- * file, with its speaker notes as the slide's notes, where the server can
- * convert one (`pptxRasterImport`, B700).
+ * Each page of a PDF becomes an image-slide; the PowerPoint file beside it
+ * gives each slide its speaker notes, paired by slide order (B700, D334).
+ * Either file may come alone.
  *
  * @param {object} options
  * @param {function} options.api - API caller function
@@ -32,19 +31,16 @@ export function createImportSlidesTab({
 } = {}) {
   const wrap = h('div', { class: 'import-slides-tab' });
 
-  // State
-  let selectedFile = null;
+  // State: one slot per role, the PDF for the images and the PowerPoint
+  // file for the notes.
+  const selected = { pdf: null, pptx: null };
   let importing = false;
-
-  // PowerPoint is offered only where the server has LibreOffice to print it.
-  const withPptx = getFeatures()?.pptxRasterImport === true;
 
   // Hidden file input
   const inputFile = h('input', {
     type: 'file',
-    accept: withPptx
-      ? `application/pdf,.pdf,${PPTX_MIME},.pptx`
-      : 'application/pdf,.pdf',
+    accept: `application/pdf,.pdf,${PPTX_MIME},.pptx`,
+    multiple: true,
     style: 'display:none',
   });
 
@@ -55,28 +51,18 @@ export function createImportSlidesTab({
 
   const dropzoneText = h('div', {
     class: 'import-slides-dropzone-text',
-    text: withPptx
-      ? t(
-          'editor.importSlides.dropzone.textWithPptx',
-          'Drop a PDF or PowerPoint file here or click to upload',
-        )
-      : t(
-          'editor.importSlides.dropzone.text',
-          'Drop PDF here or click to upload',
-        ),
+    text: t(
+      'editor.importSlides.dropzone.text',
+      'Drop a PDF and the PowerPoint file here, or click to choose',
+    ),
   });
 
   const dropzoneHint = h('div', {
     class: 'import-slides-dropzone-hint help',
-    text: withPptx
-      ? t(
-          'editor.importSlides.dropzone.hintWithPptx',
-          'Each page or slide becomes an image slide; speaker notes come along',
-        )
-      : t(
-          'editor.importSlides.dropzone.hint',
-          'Each page becomes an image slide',
-        ),
+    text: t(
+      'editor.importSlides.dropzone.hint',
+      'The PDF gives the images, the .pptx the speaker notes; either can come alone',
+    ),
   });
 
   const dropzone = h('div', { class: 'import-slides-dropzone' }, [
@@ -85,29 +71,41 @@ export function createImportSlidesTab({
     dropzoneHint,
   ]);
 
-  // File info section (shown after file selected)
-  const fileInfoName = h('span', { class: 'import-slides-file-name' });
-  const fileInfoSize = h('span', { class: 'import-slides-file-size help' });
-  const btnClear = h('button', {
-    class: 'btn btn-secondary btn-sm',
-    type: 'button',
-    text: t('common.clear', 'Clear'),
-    onclick: clearFile,
-  });
-  const fileInfo = h(
-    'div',
-    { class: 'import-slides-file-info', hidden: true },
-    [
+  // One row per chosen file, with what it is used for.
+  const ROLE_LABELS = {
+    pdf: () => t('editor.importSlides.role.pdf', 'Images'),
+    pptx: () => t('editor.importSlides.role.pptx', 'Speaker notes'),
+  };
+  const fileRows = {};
+  for (const kind of ['pdf', 'pptx']) {
+    const name = h('span', { class: 'import-slides-file-name' });
+    const size = h('span', { class: 'import-slides-file-size help' });
+    const clear = h('button', {
+      class: 'btn btn-secondary btn-sm',
+      type: 'button',
+      text: t('common.clear', 'Clear'),
+      onclick: () => clearFile(kind),
+    });
+    const el = h('div', { class: 'import-slides-file-info', hidden: true }, [
       h('div', { class: 'import-slides-file-icon' }, [
         icon('file', { size: 24 }),
       ]),
-      h('div', { class: 'import-slides-file-details' }, [
-        fileInfoName,
-        fileInfoSize,
-      ]),
-      btnClear,
-    ],
-  );
+      h('div', { class: 'import-slides-file-details' }, [name, size]),
+      clear,
+    ]);
+    fileRows[kind] = { el, name, size, clear };
+  }
+
+  // Said before the import, not after: a PowerPoint file alone brings notes
+  // but no pictures.
+  const pptxOnlyNotice = h('div', {
+    class: 'import-slides-help help',
+    hidden: true,
+    text: t(
+      'editor.importSlides.pptxOnlyNotice',
+      'Without a PDF the slides get their speaker notes but no images. Export a PDF from PowerPoint or Keynote and add it for the images.',
+    ),
+  });
 
   // Progress section
   const progressBar = h('div', { class: 'import-slides-progress-bar' });
@@ -142,30 +140,34 @@ export function createImportSlidesTab({
   });
   const refusal = createInlineError({ callout: true });
 
-  function showFile(file) {
-    selectedFile = file;
-    fileInfoName.textContent = file.name;
-    fileInfoSize.textContent = formatFileSize(file.size);
-    dropzone.hidden = true;
-    fileInfo.hidden = false;
-    btnImport.disabled = false;
-    statusMessage.hidden = true;
-    refusal.clear();
+  /** Bring the rows, the dropzone and the button in line with the slots. */
+  function render() {
+    for (const kind of ['pdf', 'pptx']) {
+      const file = selected[kind];
+      const row = fileRows[kind];
+      row.el.hidden = !file;
+      if (file) {
+        row.name.textContent = file.name;
+        row.size.textContent = `${ROLE_LABELS[kind]()} · ${formatFileSize(file.size)}`;
+      }
+    }
+    // The dropzone stays until both roles are filled.
+    dropzone.hidden = Boolean(selected.pdf && selected.pptx);
+    pptxOnlyNotice.hidden = !(selected.pptx && !selected.pdf);
+    btnImport.disabled = !(selected.pdf || selected.pptx);
   }
 
-  function clearFile() {
-    selectedFile = null;
+  function clearFile(kind) {
+    selected[kind] = null;
     inputFile.value = '';
-    dropzone.hidden = false;
-    fileInfo.hidden = true;
     progressSection.hidden = true;
-    btnImport.disabled = true;
     btnImport.textContent = t(
       'editor.importSlides.importButton',
       'Import slides',
     );
     statusMessage.hidden = true;
     refusal.clear();
+    render();
   }
 
   function setProgress(current, total, message) {
@@ -180,12 +182,12 @@ export function createImportSlidesTab({
   }
 
   async function startImport() {
-    if (!selectedFile || importing) return;
+    if (!(selected.pdf || selected.pptx) || importing) return;
 
     importing = true;
     btnImport.disabled = true;
     btnImport.textContent = t('editor.importSlides.importing', 'Importing…');
-    btnClear.disabled = true;
+    for (const row of Object.values(fileRows)) row.clear.disabled = true;
     progressSection.hidden = false;
     setProgress(
       0,
@@ -194,8 +196,13 @@ export function createImportSlidesTab({
     );
 
     try {
-      // Read file as data URL
-      const dataUrl = await readFileAsDataUrl(selectedFile);
+      // Read the files as data URLs
+      const dataUrl = selected.pdf
+        ? await readFileAsDataUrl(selected.pdf)
+        : null;
+      const pptxDataUrl = selected.pptx
+        ? await readFileAsDataUrl(selected.pptx)
+        : null;
 
       setProgress(
         5,
@@ -216,7 +223,9 @@ export function createImportSlidesTab({
         },
         body: JSON.stringify({
           dataUrl,
-          filename: selectedFile.name,
+          filename: selected.pdf?.name,
+          pptxDataUrl,
+          pptxFilename: selected.pptx?.name,
           insertAfterSlideId: afterSlideId,
         }),
         credentials: 'include',
@@ -249,49 +258,54 @@ export function createImportSlidesTab({
           } else if (line.startsWith('data: ')) {
             data = line.slice(6);
           } else if (line === '' && data) {
-            // Process the event
+            // Parse first, handle after: an `error` event throws to the
+            // refusal below, so it must not land in the parse guard.
+            let parsed;
             try {
-              const parsed = JSON.parse(data);
-
-              if (event === 'progress') {
-                const { stage, current, total, message } = parsed;
-                let pct = 10;
-                if (stage === 'converting' && total > 0) {
-                  pct = 10 + Math.round((current / total) * 40);
-                } else if (stage === 'uploading' && total > 0) {
-                  pct = 50 + Math.round((current / total) * 40);
-                } else if (stage === 'saving') {
-                  pct = 95;
-                }
-                setProgress(pct, 100, message);
-              } else if (event === 'error') {
-                throw new Error(
-                  parsed.message || t('editor.import.failed', 'Import failed'),
-                );
-              } else if (event === 'complete') {
-                setProgress(
-                  100,
-                  100,
-                  t('editor.importSlides.progress.complete', 'Complete!'),
-                );
-                showStatus(
-                  t(
-                    'editor.importSlides.success',
-                    {
-                      one: '1 slide imported',
-                      many: '{count} slides imported',
-                    },
-                    { count: parsed.slidesAdded || 0 },
-                  ),
-                );
-                onComplete?.(parsed);
-                return;
-              }
+              parsed = JSON.parse(data);
             } catch (parseErr) {
               console.error(
                 '[import-slides] Failed to parse SSE data:',
                 parseErr,
               );
+              event = '';
+              data = '';
+              continue;
+            }
+
+            if (event === 'progress') {
+              const { stage, current, total, message } = parsed;
+              let pct = 10;
+              if (stage === 'converting' && total > 0) {
+                pct = 10 + Math.round((current / total) * 40);
+              } else if (stage === 'uploading' && total > 0) {
+                pct = 50 + Math.round((current / total) * 40);
+              } else if (stage === 'saving') {
+                pct = 95;
+              }
+              setProgress(pct, 100, message);
+            } else if (event === 'error') {
+              throw new Error(
+                parsed.message || t('editor.import.failed', 'Import failed'),
+              );
+            } else if (event === 'complete') {
+              setProgress(
+                100,
+                100,
+                t('editor.importSlides.progress.complete', 'Complete!'),
+              );
+              showStatus(
+                t(
+                  'editor.importSlides.success',
+                  {
+                    one: '1 slide imported',
+                    many: '{count} slides imported',
+                  },
+                  { count: parsed.slidesAdded || 0 },
+                ),
+              );
+              onComplete?.(parsed);
+              return;
             }
             event = '';
             data = '';
@@ -310,34 +324,43 @@ export function createImportSlidesTab({
         'editor.importSlides.importButton',
         'Import slides',
       );
-      btnClear.disabled = false;
+      for (const row of Object.values(fileRows)) row.clear.disabled = false;
+      render();
     }
   }
 
-  /** Take a picked or dropped file, or say why not. */
-  function pickFile(file) {
-    if (!file) return;
-    const name = file.name.toLowerCase();
-    const isPdf = file.type.includes('pdf') || name.endsWith('.pdf');
-    const isPptx =
-      withPptx && (file.type === PPTX_MIME || name.endsWith('.pptx'));
-    if (!isPdf && !isPptx) {
-      statusMessage.hidden = true;
-      refusal.show(
-        withPptx
-          ? t(
-              'editor.importSlides.error.notPdfOrPptx',
-              'Please select a PDF or PowerPoint file',
-            )
-          : t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
-      );
-      return;
+  /**
+   * Put picked or dropped files in their slot (a later file of the same kind
+   * replaces the earlier one), or say why one does not fit.
+   */
+  function pickFiles(files) {
+    let refused = false;
+    for (const file of files || []) {
+      const name = file.name.toLowerCase();
+      if (file.type.includes('pdf') || name.endsWith('.pdf')) {
+        selected.pdf = file;
+      } else if (file.type === PPTX_MIME || name.endsWith('.pptx')) {
+        selected.pptx = file;
+      } else {
+        refused = true;
+      }
     }
-    showFile(file);
+    statusMessage.hidden = true;
+    if (refused) {
+      refusal.show(
+        t(
+          'editor.importSlides.error.unsupported',
+          'Choose a PDF, a PowerPoint (.pptx) file, or both',
+        ),
+      );
+    } else {
+      refusal.clear();
+    }
+    render();
   }
 
   // Handle file selection
-  inputFile.addEventListener('change', () => pickFile(inputFile.files?.[0]));
+  inputFile.addEventListener('change', () => pickFiles(inputFile.files));
 
   // Dropzone click
   dropzone.addEventListener('click', () => inputFile.click());
@@ -353,21 +376,16 @@ export function createImportSlidesTab({
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.classList.remove('is-dragover');
-    pickFile(e.dataTransfer?.files?.[0]);
+    pickFiles(e.dataTransfer?.files);
   });
 
   // Help text
   const helpText = h('div', {
     class: 'import-slides-help help',
-    text: withPptx
-      ? t(
-          'editor.importSlides.helpWithPptx',
-          'Import slides from a PDF or PowerPoint file. Each page or slide becomes an image slide at 1920x1080 resolution; the speaker notes of a PowerPoint slide become the notes of its image slide.',
-        )
-      : t(
-          'editor.importSlides.help',
-          'Import slides from a PDF file. Each page will be converted to an image slide at 1920x1080 resolution.',
-        ),
+    text: t(
+      'editor.importSlides.help',
+      'Import an existing deck as images. Export it as a PDF from PowerPoint or Keynote: each page becomes an image slide at 1920x1080 resolution. Add the .pptx file too and every slide gets its speaker notes.',
+    ),
   });
 
   // Assemble
@@ -375,7 +393,9 @@ export function createImportSlidesTab({
     helpText,
     inputFile,
     dropzone,
-    fileInfo,
+    fileRows.pdf.el,
+    fileRows.pptx.el,
+    pptxOnlyNotice,
     progressSection,
     actionsSection,
     refusal.el,

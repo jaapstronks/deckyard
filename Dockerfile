@@ -41,15 +41,6 @@ RUN apk add --no-cache \
   ttf-freefont \
   font-noto-emoji
 
-# PowerPoint in "Import slides as images" (B700): LibreOffice prints the PPTX
-# to a PDF. Off by default, because it adds about 600 MB to the image; without
-# it that import takes PDF only. `docker build --build-arg WITH_LIBREOFFICE=true`.
-# Writer is not optional: Alpine's Impress crashes on a PDF export without it.
-ARG WITH_LIBREOFFICE=false
-RUN if [ "$WITH_LIBREOFFICE" = "true" ]; then \
-  apk add --no-cache libreoffice-impress libreoffice-writer; \
-  fi
-
 # Run as a non-root user. The `node` image ships an unprivileged `node`
 # user (uid 1000); it owns the app dir so runtime writes (uploads, data/)
 # succeed. A renderer compromise then lands as `node`, not root.
