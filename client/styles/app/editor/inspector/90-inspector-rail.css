@@ -57,15 +57,3 @@
   outline: 2px solid hsl(var(--app-accent-primary));
   outline-offset: 1px;
 }
-
-.editor-form-header-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--ps-space-2);
-  /* Stay pinned to the right even when the header wraps to a second line
-     (a long type label in the left group). Otherwise the actions drop to the left, and the "…" menu - which opens
-     leftward from the button's right edge - overflows the panel's left edge
-     and gets clipped by the panel's overflow:hidden / hidden behind the
-     slides column. */
-  margin-left: auto;
-}

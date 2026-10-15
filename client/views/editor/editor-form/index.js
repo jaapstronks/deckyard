@@ -7,8 +7,8 @@ import { isOrgDisabledSlideType } from '../../../../shared/slide-types/policy.js
 import { needsNativeComposition } from '../../../../shared/slide-types/fidelity.js';
 import { buildDataSourceIndicator } from '../data-source-panel.js';
 import { icon } from '../../../lib/dom/icons.js';
-import { buildHeaderActions } from './header-actions.js';
-import { createLayoutSwitcherChip } from '../layout-switcher.js';
+import { buildTypeMenu } from './type-menu.js';
+import { createLayoutRow } from '../layout-switcher.js';
 import {
   getInspectorKeepKeys,
   renderInspectorExtrasByType,
@@ -42,7 +42,6 @@ export function createRerenderEditor({
   SLIDE_TYPES,
   api,
   toast = defaultToast,
-  openSlideLibraryModal,
   getSelectedSlideId,
   setSelectedSlideId,
   editorState,
@@ -59,13 +58,11 @@ export function createRerenderEditor({
   onTranslateSlide,
   onTranslateField,
   user,
-  isAuthor,
   disabledSlideTypes,
   features,
   setInspectorCollapsed,
-  // Mount points in the canvas header for the slide-scoped toolbar
-  // ({ leftEl, actionsEl }); absent on surfaces without a toolbar mount and
-  // in tests.
+  // Mount point in the canvas header for the slide-scoped toolbar
+  // ({ leftEl }); absent on surfaces without a toolbar mount and in tests.
   slideToolbar,
   // Which surface this form renders on: a name from the declared table in
   // editor-form/surfaces.js ('inspector' | 'bulk' | 'library'). Every part of
@@ -106,19 +103,19 @@ export function createRerenderEditor({
     openImagePicker,
   } = fieldRenderers || {};
 
-  // Track detachers for cleanup between re-renders. The header's actions
-  // dropdown installs document-level pointerdown/keydown handlers, so the
-  // *last* render's pair needs detaching on unmount too, not just the
-  // previous one on each rerender — hence the `detach` on the returned API.
-  let headerActionsDetach = null;
-  const detachHeaderActions = () => {
-    if (!headerActionsDetach) return;
+  // Track detachers for cleanup between re-renders. The type pill's menu
+  // installs document-level pointerdown/keydown handlers, so the *last*
+  // render's pair needs detaching on unmount too, not just the previous one
+  // on each rerender — hence the `detach` on the returned API.
+  let typeMenuDetach = null;
+  const detachTypeMenu = () => {
+    if (!typeMenuDetach) return;
     try {
-      headerActionsDetach();
+      typeMenuDetach();
     } catch {
       /* ignore */
     }
-    headerActionsDetach = null;
+    typeMenuDetach = null;
   };
 
   // Which inspector tab is active while an element is selected. A newly
@@ -129,7 +126,7 @@ export function createRerenderEditor({
 
   function rerenderEditor() {
     // Clean up previous dropdown listeners
-    detachHeaderActions();
+    detachTypeMenu();
 
     editorMount.replaceChildren();
     const slide = pres.slides.find((s) => s.id === getSelectedSlideId?.());
@@ -138,9 +135,9 @@ export function createRerenderEditor({
     /** @type {HTMLElement|null} The floating collapse control, appended last. */
     let closeSlot = null;
 
-    // Pane chrome (chrome re-org 2026-07-16). Everything scoped to the current
-    // slide (type chip, lock, actions menu) renders into the slide toolbar
-    // above the canvas instead.
+    // Pane chrome (chrome re-org 2026-07-16). The type pill renders into the
+    // slide toolbar above the canvas; the slide actions live in the slide
+    // list (B703 PR 3).
     if (caps.headerActions) {
       // Collapse control. The "INSPECTOR" title it used to sit next to was
       // redundant beside the already-active Inspector pane tab, so the whole
@@ -165,21 +162,40 @@ export function createRerenderEditor({
     }
 
     if (caps.toolbar) {
-      // Slide toolbar above the canvas: type chip + badges + Layout on the
-      // left; lock + slide-actions menu on the right. Rebuilt per slide.
+      // Slide toolbar above the canvas: the type pill (a menu on the deck
+      // editor: Convert, AI Convert, View JSON) and its badges. Rebuilt per
+      // slide; the Canvas | Fields tabs beside it are the controller's.
       const tbLeft = slideToolbar?.leftEl || null;
       if (tbLeft) {
         tbLeft.replaceChildren();
-        tbLeft.append(
-          h('div', {
-            class: 'pill',
-            text: t(
-              SLIDE_TYPES[slide.type]?.labelKey ||
-                `slideType.${slide.type}.label`,
-              SLIDE_TYPES[slide.type]?.label || slide.type,
-            ),
-          }),
-        );
+        if (caps.headerActions) {
+          const typeMenu = buildTypeMenu({
+            slide,
+            pres,
+            api,
+            toast,
+            SLIDE_TYPES,
+            editorState,
+            rerenderEditor,
+            user,
+            markDirty,
+            rerenderPreview,
+            rerenderSlideList,
+          });
+          typeMenuDetach = typeMenu.detach;
+          tbLeft.append(typeMenu.el);
+        } else {
+          tbLeft.append(
+            h('div', {
+              class: 'pill',
+              text: t(
+                SLIDE_TYPES[slide.type]?.labelKey ||
+                  `slideType.${slide.type}.label`,
+                SLIDE_TYPES[slide.type]?.label || slide.type,
+              ),
+            }),
+          );
+        }
 
         // Show retired badge if slide type is org-disabled
         if (isOrgDisabledSlideType(slide.type, disabledSlideTypes)) {
@@ -212,43 +228,6 @@ export function createRerenderEditor({
             }),
           );
         }
-
-        // Layout switcher chip: only for types that declare layoutVariants
-        // (type-agnostic; forks that override a type control their own set).
-        const layoutChip = createLayoutSwitcherChip({
-          slide,
-          pres,
-          SLIDE_TYPES,
-          editorState,
-          typeConversion: caps.typeConversion,
-        });
-        if (layoutChip) tbLeft.append(layoutChip);
-      }
-    }
-
-    if (caps.headerActions) {
-      const headerActionsResult = buildHeaderActions({
-        slide,
-        pres,
-        api,
-        toast,
-        SLIDE_TYPES,
-        openSlideLibraryModal,
-        setSelectedSlideId,
-        editorState,
-        rerenderEditor,
-        onTranslateSlide,
-        user,
-        markDirty,
-        rerenderPreview,
-        rerenderSlideList,
-        isAuthor,
-      });
-      headerActionsDetach = headerActionsResult.detach;
-      const tbActions = slideToolbar?.actionsEl || null;
-      if (tbActions) {
-        tbActions.replaceChildren();
-        tbActions.append(headerActionsResult.el);
       }
     }
 
@@ -330,6 +309,20 @@ export function createRerenderEditor({
       class: 'stack editor-form editor-element-form',
     });
 
+    // Layout: the form's first row (B703 PR 3, D335), only for a type that
+    // declares layout variants (type-agnostic; forks that override a type
+    // control their own set).
+    if (caps.layout) {
+      const layoutRow = createLayoutRow({
+        slide,
+        pres,
+        SLIDE_TYPES,
+        editorState,
+        typeConversion: caps.typeConversion,
+      });
+      if (layoutRow) form.append(layoutRow);
+    }
+
     // AI reasoning panel (shown for AI-generated slides)
     if (caps.deckTools) {
       const aiReasoning = buildAiReasoningPanel({ slide });
@@ -356,6 +349,11 @@ export function createRerenderEditor({
             setSelectedSlideId,
             editorState,
             toast,
+            // "Fill slide…" (translate from the source version) sits with
+            // the other AI tool on the slide (B703 PR 3).
+            onFillSlide: onTranslateSlide
+              ? () => onTranslateSlide({ slideId: slide.id })
+              : null,
           })
         : null;
 
@@ -729,5 +727,5 @@ export function createRerenderEditor({
     saveRefusal?.reveal();
   }
 
-  return { rerender: rerenderEditor, detach: detachHeaderActions };
+  return { rerender: rerenderEditor, detach: detachTypeMenu };
 }

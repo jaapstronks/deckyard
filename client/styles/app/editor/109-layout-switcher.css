@@ -1,10 +1,33 @@
-/* Layout switcher: "Layout" chip in the slide toolbar + tile popover with
-   mini-schematics per layout variant (image-text layout catalogue). */
+/* Layout switcher: the inspector's first row (four mini-schematics plus
+   "All N →") and the tile popover with every layout variant. */
 
-.layout-switcher-chip {
-  display: inline-flex;
+.layout-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1-5);
+}
+
+/* "All N →" sits beside the label, not at the far right: the inspector's
+   collapse × floats over the first row's right corner. */
+.layout-row-head {
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--ps-space-2);
+}
+
+.layout-row-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ps-space-1-5);
+}
+
+/* Compact tiles: the schematic alone, its label in title/aria-label. */
+.layout-row-tiles .layout-tile {
+  padding: 4px;
+}
+
+.layout-row-tiles .layout-tile-schematic {
+  width: 100%;
 }
 .layout-switcher-popover {
   z-index: var(--z-overlay);

@@ -93,7 +93,7 @@ function renderGroupAlignHint({ fieldRenderers, group, slide }) {
     el,
     t(
       'editor.textStyle.align.groupOwned',
-      'This text moves with the whole block. Set its alignment under Layout in the toolbar.',
+      'This text moves with the whole block. Set its alignment under Layout in the Slide tab.',
     ),
   );
 }
@@ -198,7 +198,7 @@ export function renderTextElementCard({
   };
 
   // A field in a declared visual block hands its alignment to the block:
-  // show the control disabled with a pointer to the Layout chip rather than
+  // show the control disabled with a pointer to the Layout row rather than
   // hiding it, because there the answer is "elsewhere", not "never".
   const { owner: alignOwner, groupId } = fieldAlignAffordance(
     slideTypeDef,

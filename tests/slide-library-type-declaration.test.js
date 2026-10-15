@@ -101,11 +101,11 @@ test('/api/slide-types carries the declaration to the editor', async () => {
 test('the editor asks the predicate, not the type name', () => {
   const src = readFileSync(
     new URL(
-      '../client/views/editor/editor-form/header-actions.js',
+      '../client/views/editor/slide-list/slide-actions.js',
       import.meta.url,
     ),
     'utf8',
   );
   assert.doesNotMatch(src, /follow-invite-slide/);
-  assert.match(src, /isLibrarySlideType\(SLIDE_TYPES\?\.\[slide\.type\]\)/);
+  assert.match(src, /isLibrarySlideType\(SLIDE_TYPES\?\.\[slide\?\.type\]\)/);
 });

@@ -36,7 +36,7 @@ export default {
       essential: true,
       maxLength: 120,
       group: 'title-block',
-      // Size only: the title block owns alignment (Layout chip). Composes with
+      // Size only: the title block owns alignment (the inspector's Layout row). Composes with
       // the content-aware cover scale (render.js coverFontScale) - B277.
       textStyle: ['size'],
     },

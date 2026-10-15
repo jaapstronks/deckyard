@@ -6,7 +6,7 @@
  * The bulk modal renders every surfaced field by construction, so it is the
  * fallback home of everything. A field *relies* on it exactly when nothing else
  * claims it: not the canvas (`inline.formText`, a `data-inline-field` the
- * renderer emits, the descriptor's element knobs, the Layout chip), not the
+ * renderer emits, the descriptor's element knobs, the Layout row), not the
  * inspector keep-list and not an element tab. That is the parity invariant of
  * B450: every field has a home outside "All text".
  *
@@ -117,7 +117,7 @@ function descriptorElementKeys(d, def) {
 }
 
 /**
- * Content keys whose canonical control is the canvas **Layout chip**, not a
+ * Content keys whose canonical control is the inspector **Layout row**, not a
  * form field: the keys a declared layout variant writes, and the alignment key
  * of a declared field group.
  *

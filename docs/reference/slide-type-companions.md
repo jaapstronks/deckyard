@@ -339,7 +339,7 @@ a ceiling in `tests/slide-type-runtime.test.js`: no module may write the live
 set out again.
 
 **Conversion knowledge lives in three places**: `shared/slide-types/convert.js`,
-`client/views/editor/editor-form/header-actions.js` and
+`client/views/editor/editor-form/type-menu.js` and
 `server/utils/openai/convert-slide.js` each write out which type turns into
 which. That is the strongest argument in the inventory for deriving conversion
 from the `structure` facet rather than maintaining three maps.

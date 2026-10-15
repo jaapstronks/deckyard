@@ -120,14 +120,14 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Slide bar contents: identity/structure (type chip, Layout) and the Canvas |
-   Fields tabs on the left, the slide tools pinned right, above the canvas they
-   act on. The bar shell (background, padding, rule) lives in
-   20-editor-layout.css; the tabs in app/components/12-column-tabs.css.
+   Slide bar contents: the type pill (a menu: Convert, AI Convert, View JSON)
+   and the Canvas | Fields tabs; nothing else (B703 PR 3). The bar shell
+   (background, padding, rule) lives in 20-editor-layout.css; the tabs in
+   app/components/12-column-tabs.css.
    ───────────────────────────────────────────────────────────────────────────── */
 
-/* Identity/structure cluster (type chip, badges, Layout) rendered by
-   rerenderEditor. Centred in the bar while the tabs sit on its rule. */
+/* Identity cluster (type pill, badges) rendered by rerenderEditor. Centred in
+   the bar while the tabs sit on its rule. */
 .slide-toolbar-left {
   gap: 8px;
   min-width: 0;
@@ -135,19 +135,39 @@
   padding-bottom: var(--ps-space-1-5);
 }
 
-/* Tools cluster: add-comment, zoom, and the actions mount (lock + menu). */
-.slide-bar-tools {
-  gap: 4px;
-  margin-left: auto;
-  padding-bottom: var(--ps-space-1-5);
+/* The type pill opens its menu: a summary trigger, so it reads as a button. */
+.type-pill {
+  gap: var(--ps-space-1);
+  cursor: pointer;
 }
 
-.slide-toolbar-actions {
-  gap: 4px;
+.type-pill:hover {
+  filter: brightness(0.96);
 }
 
-.slide-toolbar-actions:empty {
-  display: none;
+.type-pill:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 2px;
+}
+
+/* The pill sits at the left of the canvas: its menu opens rightward. */
+.type-pill-menu {
+  left: 0;
+  right: auto;
+}
+
+/* Canvas tools (add-comment, zoom), floating at the top right of the stage,
+   on the canvas they act on. */
+.canvas-float-tools {
+  position: absolute;
+  top: var(--ps-space-2);
+  right: var(--ps-space-2);
+  z-index: 8;
+  gap: 4px;
+  padding: 2px;
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-elevated) / 0.92);
+  box-shadow: var(--app-shadow-sm);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

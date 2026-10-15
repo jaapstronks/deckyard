@@ -45,14 +45,13 @@ export function createPreviewPanel({
   });
   const openPreviewLightbox = () => previewLightbox.open();
 
-  // Slide bar: the head of the canvas column, scoped to the CURRENT slide.
-  // Identity/structure (type chip, Layout) and the Canvas | Fields tabs on the
-  // left; the slide tools (Add comment, zoom, lock, actions menu) at the right,
-  // above the canvas they act on (mockup v5). The Inspector |
-  // Comments tabs head their own column (`.rail-head`, D335), not this bar.
-  // The editor form renders the slide-dependent contents into the mounts
-  // below on every rerender. The controller places this bar into the layout
-  // grid (it is NOT appended to the preview panel).
+  // Slide bar: the head of the canvas column, scoped to the CURRENT slide. It
+  // holds only the type pill (with its menu) and the Canvas | Fields tabs
+  // (B703 PR 3); the canvas tools float on the canvas itself, the slide
+  // actions live in the slide list. The Inspector | Comments tabs head their
+  // own column (`.rail-head`, D335), not this bar. The editor form renders
+  // the pill into the mount below on every rerender. The controller places
+  // this bar into the layout grid (it is NOT appended to the preview panel).
   const slideBar = h('div', { class: 'slide-bar' });
   const slideToolbarLeft = h('div', { class: 'row slide-toolbar-left' });
 
@@ -95,16 +94,14 @@ export function createPreviewPanel({
     pinModeHint.hidden = true;
   }
 
-  // Slide tools (Add comment, zoom, lock, actions menu), pinned right.
-  const slideToolbarActions = h('div', { class: 'row slide-toolbar-actions' });
-  const toolsGroup = h('div', { class: 'row slide-bar-tools' });
-  if (pinCommentBtn) toolsGroup.append(pinCommentBtn);
-  toolsGroup.append(zoomBtn, slideToolbarActions);
-  slideBar.append(
-    slideToolbarLeft,
-    ...(canvasTabsEl ? [canvasTabsEl] : []),
-    toolsGroup,
-  );
+  slideBar.append(slideToolbarLeft, ...(canvasTabsEl ? [canvasTabsEl] : []));
+
+  // Canvas tools (Add comment, zoom), floating at the top right of the canvas
+  // they act on (B703 PR 3). On the stage, so the Fields view hides them with
+  // the canvas.
+  const canvasTools = h('div', { class: 'row canvas-float-tools' });
+  if (pinCommentBtn) canvasTools.append(pinCommentBtn);
+  canvasTools.append(zoomBtn);
 
   const previewScroll = h('div', {
     class: 'preview-panel-body',
@@ -124,7 +121,7 @@ export function createPreviewPanel({
     if (thumb.classList.contains('is-inline-edit')) return;
     openPreviewLightbox();
   });
-  previewStage.append(thumb);
+  previewStage.append(thumb, canvasTools);
   // Add-comment mode hint: an overlay banner on the stage (pointer-through so
   // it never blocks the placement click). Lives here, not in the toolbar row.
   if (pinModeHint) previewStage.append(pinModeHint);
@@ -313,8 +310,8 @@ export function createPreviewPanel({
     // The slide bar; the controller mounts it in the layout grid above the
     // canvas column.
     slideBarEl: slideBar,
-    // Mount points for the slide-scoped toolbar (filled by rerenderEditor).
-    slideToolbar: { leftEl: slideToolbarLeft, actionsEl: slideToolbarActions },
+    // Mount point for the slide-scoped toolbar (filled by rerenderEditor).
+    slideToolbar: { leftEl: slideToolbarLeft },
     detachThumbScale,
     rerenderLightboxIfOpen: () => previewLightbox.rerenderIfOpen(),
     // Slide comments API (markers only; the thread list lives in the

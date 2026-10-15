@@ -64,12 +64,12 @@ const ENTRIES = {
       gate: 'client/views/editor/editor-form/index.js',
     },
     {
-      entry: 'Slide menu: AI Convert…',
-      calls: ['client/views/editor/editor-form/header-actions.js'],
-      gate: 'client/views/editor/editor-form/header-actions.js',
+      entry: 'Type pill menu: AI Convert…',
+      calls: ['client/views/editor/editor-form/type-menu.js'],
+      gate: 'client/views/editor/editor-form/type-menu.js',
     },
     {
-      entry: 'Slide menu: Fill slide… / field: From {lang}',
+      entry: 'AI box: Fill slide… / field: From {lang}',
       calls: [
         'client/views/editor/modals/translate-slide-modal.js',
         'client/views/editor/modals/translate-field-modal.js',

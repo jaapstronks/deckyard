@@ -173,11 +173,10 @@ test('inspector keeps the rail chrome and the settings sections', () => {
 
 test('library renders every field plus Background and Accessibility, no deck chrome', () => {
   const leftEl = document.createElement('div');
-  const actionsEl = document.createElement('div');
   const mount = renderForm({
     surface: 'library',
     setInspectorCollapsed: () => {},
-    slideToolbar: { leftEl, actionsEl },
+    slideToolbar: { leftEl },
   });
 
   // All content fields, in place (the inspector would drop the title).
@@ -205,7 +204,11 @@ test('library renders every field plus Background and Accessibility, no deck chr
 
   // Toolbar yes (type pill into the caller's mount), deck chrome no.
   assert.ok(leftEl.querySelector('.pill'), 'type pill renders in the toolbar');
-  assert.equal(actionsEl.childNodes.length, 0, 'no slide-actions menu');
+  assert.equal(
+    leftEl.querySelector('.type-pill-menu'),
+    null,
+    'the pill is a label here: the library keeps its type, no menu',
+  );
   assert.equal(
     mount.querySelector('.editor-form-close-slot'),
     null,
@@ -324,6 +327,7 @@ test('the surface table declares every capability on every row', () => {
   const keys = [
     'fields',
     'toolbar',
+    'layout',
     'typeConversion',
     'headerActions',
     'deckTools',
@@ -378,9 +382,9 @@ test('contentOnly no longer appears in the client', () => {
 });
 
 // The library editor keeps the item's type (D170: `slideType` is not
-// writable), so its layout chip offers no cross-type tile.
-test('the layout chip offers cross-type tiles only where typeConversion is on', async () => {
-  const { createLayoutSwitcherChip } =
+// writable), so its Layout row offers no cross-type tile.
+test('the Layout row offers cross-type tiles only where typeConversion is on', async () => {
+  const { createLayoutRow } =
     await import('../client/views/editor/layout-switcher.js');
   const tileLabels = (typeConversion) => {
     const slide = {
@@ -388,22 +392,25 @@ test('the layout chip offers cross-type tiles only where typeConversion is on', 
       type: 'image-text-slide',
       content: structuredClone(SLIDE_TYPES['image-text-slide'].defaults),
     };
-    const chip = createLayoutSwitcherChip({
+    const row = createLayoutRow({
       slide,
       pres: { id: '', slides: [slide] },
       SLIDE_TYPES,
       editorState: { dirtyRefreshWithItem() {} },
       typeConversion,
     });
-    document.body.append(chip);
-    chip.click();
+    document.body.append(row);
+    const inline = row.querySelectorAll('.layout-row-tiles .layout-tile');
+    assert.ok(inline.length <= 4, 'at most four schematics inline');
+    // image-text declares a mirror toggle, so "All N" is there on both.
+    row.querySelector('.layout-row-all').click();
     const labels = [
-      ...document.querySelectorAll('.layout-switcher-popover button'),
+      ...document.querySelectorAll('.layout-switcher-popover .layout-tile'),
     ].map((b) => b.textContent.trim());
     document.dispatchEvent(
       new window.KeyboardEvent('keydown', { key: 'Escape' }),
     );
-    chip.remove();
+    row.remove();
     for (const el of document.querySelectorAll('.layout-switcher-popover')) {
       el.remove();
     }
@@ -416,4 +423,47 @@ test('the layout chip offers cross-type tiles only where typeConversion is on', 
     JSON.stringify({ withConversion, without }),
   );
   assert.ok(without.length > 0, 'same-type tiles still render');
+});
+
+// The Layout row is the form's first row on the surfaces that declare
+// `layout`, for exactly the types that declare layoutVariants (B703 PR 3).
+test('the Layout row leads the inspector for every type with layout variants', async () => {
+  const { getLayoutVariants } = await import('../shared/slide-types.js');
+  const withVariants = Object.keys(SLIDE_TYPES).filter(
+    (type) => getLayoutVariants(SLIDE_TYPES[type]).length > 0,
+  );
+  assert.deepEqual(withVariants.sort(), [
+    'chapter-title-slide',
+    'chart-slide',
+    'content-slide',
+    'image-set-slide',
+    'image-text-slide',
+    'kpi-metrics-slide',
+    'list-slide',
+    'logo-wall-slide',
+    'quote-slide',
+    'text-blocks-slide',
+    'title-slide',
+  ]);
+  for (const type of Object.keys(SLIDE_TYPES)) {
+    const { editorMount } = renderTypeWithSpies(type, 'inspector');
+    const form = editorMount.querySelector('.editor-form');
+    const first = form?.firstElementChild;
+    if (withVariants.includes(type)) {
+      assert.ok(
+        first?.classList.contains('layout-row'),
+        `${type}: Layout is the first inspector row`,
+      );
+    } else {
+      assert.equal(form?.querySelector('.layout-row'), null, type);
+    }
+    editorMount.remove();
+  }
+  const { editorMount } = renderTypeWithSpies('content-slide', 'bulk');
+  assert.equal(
+    editorMount.querySelector('.layout-row'),
+    null,
+    'Fields carries no Layout row',
+  );
+  editorMount.remove();
 });

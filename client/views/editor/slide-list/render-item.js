@@ -16,6 +16,7 @@ import {
 } from '../slide-visibility-menu.js';
 import { isParentSlide } from './nested-helpers.js';
 import { normalizeQuery, renderHighlightedText } from './search.js';
+import { setAuthorLock } from './slide-actions.js';
 import { h } from '../../../lib/dom/index.js';
 
 /**
@@ -103,6 +104,8 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     rerenderEditor,
     rerenderPreview,
     toggleCollapsed,
+    openSlideMenu,
+    editorState,
   } = context;
 
   const s = slide;
@@ -233,6 +236,25 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
   });
   thumbMini.append(visibilityToggle);
 
+  // The slide-list menu on the thumbnail itself (B703 PR 3): the actions that
+  // used to sit in the ⋯ above the canvas, reachable without a right-click.
+  // Top-left, so the thumbnail's bottom edge stays free (B497).
+  if (openSlideMenu) {
+    const menuBtn = h('button', {
+      class: 'slide-item-menu-btn',
+      type: 'button',
+      title: t('editor.slideList.slideMenu', 'Slide actions'),
+      'aria-label': t('editor.slideList.slideMenu', 'Slide actions'),
+      'aria-haspopup': 'menu',
+      onclick: (e) => {
+        e.stopPropagation();
+        openSlideMenu(e.currentTarget);
+      },
+    });
+    menuBtn.append(icon('ellipsis', { size: 14 }));
+    thumbMini.append(menuBtn);
+  }
+
   // Author lock indicator
   const authorLocked = isSlideAuthorLocked?.(s.id) || !!s.lockedByAuthor;
   if (authorLocked) {
@@ -240,10 +262,23 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     const lockTitle = isCurrentUserAuthor
       ? t('editor.slideList.authorLocked', 'Locked (click to unlock)', {})
       : t('editor.slideList.authorLockedOther', 'Locked by author', {});
-    const authorLockIndicator = h('div', {
-      class: 'slide-author-lock-indicator',
-      title: lockTitle,
-    });
+    // The badge is the lock's state; for the author it is also the quickest
+    // way out of it (the slide-list menu has Lock/Unlock too).
+    const authorLockIndicator = isCurrentUserAuthor
+      ? h('button', {
+          class: 'slide-author-lock-indicator',
+          type: 'button',
+          title: lockTitle,
+          'aria-label': t('editor.slide.unlock', 'Unlock slide'),
+          onclick: (e) => {
+            e.stopPropagation();
+            setAuthorLock({ ids: [s.id], pres, locked: false, editorState });
+          },
+        })
+      : h('div', {
+          class: 'slide-author-lock-indicator',
+          title: lockTitle,
+        });
     thumbMini.append(authorLockIndicator);
     const authorLockIndicatorCollapsed = h('div', {
       class: 'slide-author-lock-indicator-collapsed',

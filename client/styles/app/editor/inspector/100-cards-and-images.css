@@ -12,10 +12,6 @@
   margin-right: var(--ps-space-1);
 }
 
-.btn-lock-icon {
-  vertical-align: middle;
-}
-
 .editor-card {
   padding: var(--ps-space-3);
   border-radius: 12px;

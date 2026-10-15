@@ -30,6 +30,8 @@ import {
  * @param {(id: string) => void} [ctx.setSelectedSlideId]
  * @param {object} ctx.editorState
  * @param {object} ctx.toast
+ * @param {(() => void)|null} [ctx.onFillSlide] Opens "Fill slide…" (translate
+ *   from the source version, with preview); absent where AI translation is off.
  * @returns {HTMLElement|null} The refine panel, or null when `api` is absent.
  */
 export function buildAiIteratePanel({
@@ -40,6 +42,7 @@ export function buildAiIteratePanel({
   setSelectedSlideId,
   editorState,
   toast,
+  onFillSlide = null,
 }) {
   if (!api) return null;
 
@@ -188,5 +191,21 @@ export function buildAiIteratePanel({
 
   iterateForm.append(iterateInput, iterateBtn);
   iteratePanel.append(iterateForm);
+  // The slide's other AI tool, here since the ⋯ above the canvas went
+  // (B703 PR 3): fill this slide from the deck's source version.
+  if (onFillSlide) {
+    iteratePanel.append(
+      h('button', {
+        type: 'button',
+        class: 'btn btn-secondary btn-sm ai-fill-slide-btn',
+        text: t('editor.slide.fillTranslation', 'Fill slide…'),
+        title: t(
+          'editor.slide.fillTranslation.title',
+          'Fill this slide from the source version (with preview).',
+        ),
+        onclick: () => onFillSlide(),
+      }),
+    );
+  }
   return iteratePanel;
 }

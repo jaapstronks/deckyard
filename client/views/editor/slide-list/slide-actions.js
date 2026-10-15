@@ -1,19 +1,25 @@
 /**
- * Shared slide-list operations (duplicate / delete).
+ * Shared slide-list operations (copy / duplicate / delete / lock / save to
+ * library).
  *
- * These were previously inlined in the keyboard handlers; extracting them lets
- * the keyboard shortcuts, the right-click context menu and the form header's ⋯
- * menu drive one implementation, so "Duplicate" means the same everywhere: the
- * slide with its nested children (D118). The functions take a resolved set of
- * slide ids plus the editor callbacks they need — they own the mutation,
- * selection update, refresh and user feedback, but not the "which slides are
- * selected" resolution (the caller decides that).
+ * These were previously inlined in the keyboard handlers and the slide
+ * header's ⋯ menu; one module lets the keyboard shortcuts and the slide-list
+ * menu (right-click and the thumbnail's ⋯, B703 PR 3) drive one
+ * implementation, so "Duplicate" means the same everywhere: the slide with its
+ * nested children (D118). The functions take a resolved set of slide ids plus
+ * the editor callbacks they need — they own the mutation, selection update,
+ * refresh and user feedback, but not the "which slides are selected"
+ * resolution (the caller decides that).
  */
 
 import { cloneSlidesForInsert } from '../../../lib/slide-authoring/clone-slides.js';
+import { copySlides } from '../../../lib/slide-authoring/slide-clipboard.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { isLibrarySlideType } from '../../../../shared/slide-types/policy.js';
+import { slidePrimaryLabel } from '../editor-utils.js';
+import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { getChildIds } from './nested-helpers.js';
 
 /**
@@ -158,4 +164,88 @@ export async function deleteSlides({
   editorState?.dirtyRefreshAll?.();
   onMultiSelectionChange?.();
   return true;
+}
+
+/**
+ * Copy the given slides (with the children of a selected parent) to the
+ * slide clipboard, the one buffer ⌘V, the paste bar and the slide-list menu
+ * paste from, also into another deck (`slide-clipboard.js`).
+ * @returns {number} how many slides were copied (0 if nothing was written)
+ */
+export function copySlidesToClipboard({
+  ids,
+  pres,
+  onMultiSelectionChange,
+} = {}) {
+  const slides = pres?.slides || [];
+  const selectedIds = toIdSet(ids);
+  if (selectedIds.size === 0) return 0;
+  const toCopy = expandSelectionWithChildren(selectedIds, slides);
+  const slidesToCopy = slides.filter((s) => toCopy.has(s.id));
+  if (!slidesToCopy.length || !copySlides(slidesToCopy)) return 0;
+  toast?.success?.(
+    t(
+      'editor.slides.copiedToClipboard',
+      { one: '1 slide copied', many: '{count} slides copied' },
+      { count: slidesToCopy.length },
+    ),
+  );
+  // The paste bar reads the clipboard on a selection change.
+  onMultiSelectionChange?.();
+  return slidesToCopy.length;
+}
+
+/**
+ * Whether every given slide carries the author lock: the slide-list menu
+ * offers "Unlock" then, "Lock" otherwise.
+ * @returns {boolean}
+ */
+export function allAuthorLocked({ ids, pres } = {}) {
+  const selectedIds = toIdSet(ids);
+  const slides = (pres?.slides || []).filter((s) => selectedIds.has(s.id));
+  return slides.length > 0 && slides.every((s) => !!s.lockedByAuthor);
+}
+
+/**
+ * Set or clear the author lock on the given slides (author only; the caller
+ * decides who may). One save, one refresh.
+ * @param {Object} opts
+ * @param {boolean} opts.locked - the lock state to set
+ */
+export function setAuthorLock({ ids, pres, locked, editorState } = {}) {
+  const selectedIds = toIdSet(ids);
+  if (selectedIds.size === 0) return;
+  for (const slide of pres?.slides || []) {
+    if (selectedIds.has(slide.id)) slide.lockedByAuthor = !!locked;
+  }
+  editorState?.dirtyRefreshAll?.();
+}
+
+/**
+ * Whether a slide can be saved to the slide library. A type without content of
+ * its own declares `library: false` (the Follow-along invite); the rule lives
+ * on the type, not on its name (B401).
+ * @returns {boolean}
+ */
+export function canSaveSlideToLibrary({ slide, SLIDE_TYPES, api } = {}) {
+  return !!api && isLibrarySlideType(SLIDE_TYPES?.[slide?.type]);
+}
+
+/** Open the save-to-library dialog for one slide. */
+export function saveSlideToLibrary({
+  slide,
+  pres,
+  api,
+  SLIDE_TYPES,
+  openSlideLibraryModal,
+} = {}) {
+  if (!canSaveSlideToLibrary({ slide, SLIDE_TYPES, api })) return;
+  openSaveToLibraryModal({
+    root: document.body,
+    slide,
+    pres,
+    api,
+    suggestedName: slidePrimaryLabel(slide, SLIDE_TYPES) || '',
+    openSlideLibraryModal,
+  });
 }

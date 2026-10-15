@@ -15,7 +15,11 @@ import { createSlideItem, applySlideLockIndicator } from './render-item.js';
 import { attachDragHandlers } from './drag-handlers.js';
 import { attachLongPress } from '../../../lib/dom/long-press.js';
 import { attachClickHandler } from './click-handlers.js';
-import { showSlideContextMenu, closeSlideContextMenu } from './context-menu.js';
+import {
+  closeSlideContextMenu,
+  isSlideMenuOpenFrom,
+  showSlideContextMenu,
+} from './context-menu.js';
 import { closeVisibilityMenu } from '../slide-visibility-menu.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { h } from '../../../lib/dom/index.js';
@@ -45,6 +49,9 @@ export function setupSlideList({
   isAuthor,
   performUndo,
   performRedo,
+  // For "Save to slide library…" in the slide-list menu.
+  api,
+  openSlideLibraryModal,
 } = {}) {
   let draggingSlideId = null;
   let draggingSlideIds = []; // For multi-select drag
@@ -418,6 +425,8 @@ export function setupSlideList({
       rerenderPreview,
       toggleCollapsed,
       getSearchQuery,
+      // The thumbnail's ⋯ opens the slide-list menu under itself.
+      openSlideMenu: (anchor) => openSlideMenuFrom(anchor),
       // Drag state
       getDraggingSlideId: () => draggingSlideId,
       setDraggingSlideId: (id) => {
@@ -660,7 +669,7 @@ export function setupSlideList({
   // Right-click a slide row for a quick actions menu (duplicate / delete /
   // visibility). Delegated on the list container so a single listener covers
   // every row, including ones added on re-render.
-  const openSlideMenuAt = ({ target, x, y }) => {
+  const openSlideMenuAt = ({ target, x, y, fromButton = false }) => {
     const itemEl = target?.closest?.('.slide-item');
     if (!itemEl || !slideListEl.contains(itemEl)) return false;
     const slideId = itemEl.dataset.slideId;
@@ -675,10 +684,14 @@ export function setupSlideList({
     if (multi.size > 0 && multi.has(slideId)) {
       ids = new Set(multi);
     } else {
+      // Select it the way a click does: the canvas and the inspector follow,
+      // so the menu acts on the slide that is shown.
+      const changed = getSelectedSlideId?.() !== slideId;
       clearMultiSelection?.();
       setSelectedSlideId?.(slideId);
       onMultiSelectionChange?.();
-      rerenderSlideList();
+      if (changed) editorState.refreshAll();
+      else rerenderSlideList();
       ids = new Set([slideId]);
     }
 
@@ -687,10 +700,12 @@ export function setupSlideList({
       y,
       slide,
       ids,
+      fromButton,
       ctx: {
         pres,
         slideTypes: SLIDE_TYPES,
         editorState,
+        getSelectedSlideId,
         setSelectedSlideId,
         clearMultiSelection,
         markDirty,
@@ -699,9 +714,30 @@ export function setupSlideList({
         rerenderEditor,
         rerenderPreview,
         moveSlideToPosition,
+        api,
+        openSlideLibraryModal,
+        isAuthor,
       },
     });
     return true;
+  };
+
+  // The ⋯ on a thumbnail: the same menu, anchored under the button; a second
+  // press closes it.
+  const openSlideMenuFrom = (button) => {
+    const slideId = button?.closest?.('.slide-item')?.dataset?.slideId;
+    if (!slideId) return;
+    if (isSlideMenuOpenFrom(slideId)) {
+      closeSlideContextMenu();
+      return;
+    }
+    const rect = button.getBoundingClientRect();
+    openSlideMenuAt({
+      target: button,
+      x: rect.left,
+      y: rect.bottom + 4,
+      fromButton: true,
+    });
   };
 
   // Android fires a native contextmenu after a long press as well. Opening the
