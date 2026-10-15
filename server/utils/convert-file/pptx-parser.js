@@ -2,15 +2,23 @@
  * PPTX Parser
  * Extracts text content and images from PowerPoint files.
  * PPTX files are ZIP archives containing XML files.
+ *
+ * Slides come out in the order the deck shows them, with the notes their
+ * relationships point at: `pptx-notes.js` owns that reading, this module only
+ * walks its list (B702). Hidden slides are included, as before.
  */
 
 import JSZip from 'jszip';
 import { createLogger } from '../logger.js';
+import { readSlideNotesFromZip } from './pptx-notes.js';
+import { extractTextFromSlideXml, decodeXmlEntities } from './pptx-text.js';
 
 const log = createLogger('pptx-parser');
 
 /**
  * Extract text content and images from each slide in a PPTX file.
+ * `slideNumber` is the slide's position in the deck (1-based), not the number
+ * in its part name.
  * @param {Buffer} buffer - The PPTX file contents
  * @returns {Promise<{slides: Array<{slideNumber: number, textContent: string, notes: string, images?: Array<{data: Buffer, mimeType: string, filename: string}>, isImageOnly?: boolean}>, metadata: object, errors: string[]}>}
  */
@@ -32,20 +40,10 @@ export async function parsePptx(buffer) {
       errors.push(`Warning: Could not parse metadata: ${e.message}`);
     }
 
-    // Find all slide XML files (ppt/slides/slide1.xml, slide2.xml, etc.)
-    const slideFiles = Object.keys(zip.files)
-      .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
-      .sort((a, b) => {
-        const numA = parseInt(a.match(/slide(\d+)/i)?.[1] || '0', 10);
-        const numB = parseInt(b.match(/slide(\d+)/i)?.[1] || '0', 10);
-        return numA - numB;
-      });
+    const deck = await readSlideNotesFromZip(zip);
 
-    for (const slidePath of slideFiles) {
-      const slideNumber = parseInt(
-        slidePath.match(/slide(\d+)/i)?.[1] || '0',
-        10,
-      );
+    for (const [index, { part: slidePath, notes }] of deck.entries()) {
+      const slideNumber = index + 1;
 
       try {
         const slideXml = await zip.file(slidePath)?.async('string');
@@ -63,21 +61,6 @@ export async function parsePptx(buffer) {
           slideXml,
           slideNumber,
         );
-
-        // Try to get slide notes
-        let notes = '';
-        const notesPath = slidePath.replace(
-          'slides/slide',
-          'notesSlides/notesSlide',
-        );
-        try {
-          const notesXml = await zip.file(notesPath)?.async('string');
-          if (notesXml) {
-            notes = extractTextFromSlideXml(notesXml);
-          }
-        } catch {
-          // Notes are optional
-        }
 
         // Determine if this is an image-only slide
         // Criteria: has at least one image AND minimal text (< 50 chars, excluding whitespace)
@@ -233,64 +216,4 @@ function parseMetadata(xml) {
   if (subjectMatch) metadata.subject = decodeXmlEntities(subjectMatch[1]);
 
   return metadata;
-}
-
-/**
- * Extract text content from OOXML slide XML.
- * Handles <a:t> text elements within paragraphs.
- */
-export function extractTextFromSlideXml(xml) {
-  const textParts = [];
-
-  // Find all paragraph elements and extract text
-  // OOXML structure: <a:p> contains <a:r> (run) which contains <a:t> (text)
-  const paragraphRegex = /<a:p[^>]*>([\s\S]*?)<\/a:p>/gi;
-  let paraMatch;
-
-  while ((paraMatch = paragraphRegex.exec(xml)) !== null) {
-    const paraContent = paraMatch[1];
-
-    // Extract all text runs within this paragraph
-    // IMPORTANT: Don't trim individual runs - spaces are often at the end of runs
-    // e.g., <a:t>What </a:t><a:t>are </a:t><a:t>immersive </a:t>
-    const textRegex = /<a:t>([^<]*)<\/a:t>/gi;
-    let textMatch;
-    const paraTexts = [];
-
-    while ((textMatch = textRegex.exec(paraContent)) !== null) {
-      const text = decodeXmlEntities(textMatch[1]);
-      if (text) {
-        paraTexts.push(text);
-      }
-    }
-
-    if (paraTexts.length > 0) {
-      // Join runs directly (they contain their own spacing), then trim the paragraph
-      const paragraphText = paraTexts.join('').trim();
-      if (paragraphText) {
-        textParts.push(paragraphText);
-      }
-    }
-  }
-
-  return textParts.join('\n');
-}
-
-/**
- * Decode XML entities
- */
-function decodeXmlEntities(text) {
-  // `&amp;` is decoded LAST — decoding it before the others would turn
-  // `&amp;lt;` into `&lt;` and then into `<`, un-escaping text the document
-  // escaped on purpose (js/double-escaping).
-  return String(text || '')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) =>
-      String.fromCharCode(parseInt(code, 16)),
-    )
-    .replace(/&amp;/g, '&');
 }
