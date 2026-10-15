@@ -4,6 +4,14 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.69.1](https://github.com/jaapstronks/deckyard/compare/v1.69.0...v1.69.1) (2026-10-15)
+
+
+### Fixed
+
+* compare server addresses bare in the client, fold only typed input ([#1654](https://github.com/jaapstronks/deckyard/issues/1654)) ([6815abf](https://github.com/jaapstronks/deckyard/commit/6815abfa990fd5e3857edec7c4899e99cd6b8d15))
+* import a PDF as images without navigating to it ([#1656](https://github.com/jaapstronks/deckyard/issues/1656)) ([1cd4ba9](https://github.com/jaapstronks/deckyard/commit/1cd4ba9b1844d914857dd935057888028c42ddbb))
+
 ## [1.69.0](https://github.com/jaapstronks/deckyard/compare/v1.68.0...v1.69.0) (2026-10-15)
 
 
