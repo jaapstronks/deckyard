@@ -1257,6 +1257,8 @@ export async function createEditorController({
     isAuthor,
     performUndo,
     performRedo,
+    api,
+    openSlideLibraryModal,
   });
 
   const rawRerenderSlideList = slideListApi.rerenderSlideList;
@@ -1471,7 +1473,6 @@ export async function createEditorController({
     SLIDE_TYPES,
     api,
     toast,
-    openSlideLibraryModal,
     getSelectedSlideId: () => selectedSlideId,
     setSelectedSlideId: setSelectedSlideIdWithLock,
     editorState,
@@ -1495,13 +1496,12 @@ export async function createEditorController({
       ? ({ slideId, key }) => openTranslateFieldModal({ slideId, key })
       : null,
     user,
-    isAuthor: isAuthor(),
     disabledSlideTypes,
     features,
     setInspectorCollapsed,
-    // Canvas-header mounts for the slide-scoped toolbar (type chip, Layout,
-    // lock, actions). The `bulk` surface has neither toolbar nor
-    // header actions, so sharing this dep is harmless there.
+    // Canvas-header mount for the slide-scoped toolbar (the type pill and
+    // its badges). The `bulk` surface has no toolbar, so sharing this dep is
+    // harmless there.
     slideToolbar: previewPanel.slideToolbar,
   };
 
@@ -1563,8 +1563,8 @@ export async function createEditorController({
     editorForm.rerender();
     fieldsView.sync();
   };
-  // The inspector header's actions dropdown holds document-level listeners;
-  // rerender swaps them, unmount has to drop the last pair.
+  // The type pill's menu holds document-level listeners; rerender swaps
+  // them, unmount has to drop the last pair.
   cleanup.register('editorForm', editorForm.detach);
 
   // Set (or clear) the selection-aware inspector's current element and rebuild

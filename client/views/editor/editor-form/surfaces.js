@@ -11,14 +11,17 @@
  *   form without a single setting (`isSettingsField`, D335: content has two
  *   postures, a setting one home); `'all'` renders the full per-type form,
  *   settings included, for a surface with no inspector beside it.
- * - `toolbar`: the slide toolbar - type pill, retired/custom badges, layout
- *   chip. (The Canvas | Fields tabs beside it are deck-editor chrome, built
- *   once by the controller, not per render.)
- * - `typeConversion`: whether the layout chip may offer cross-type tiles
+ * - `toolbar`: the slide toolbar - type pill and retired/custom badges. (The
+ *   Canvas | Fields tabs beside it are deck-editor chrome, built once by the
+ *   controller, not per render.)
+ * - `layout`: the Layout row at the top of the form (four schematics plus
+ *   "All N →", B703 PR 3) for a type that declares `layoutVariants`.
+ * - `typeConversion`: whether the Layout row may offer cross-type tiles
  *   (`convertTo`). Off where the slide's type is fixed: a library item's
  *   `slideType` is not writable (D170).
- * - `headerActions`: the pane chrome that belongs to the deck editor - the
- *   inspector's collapse control and the slide-actions menu.
+ * - `headerActions`: the chrome that belongs to the deck editor - the
+ *   inspector's collapse control and the type pill's menu (Convert, AI
+ *   Convert, View JSON). The slide actions live in the slide list.
  * - `deckTools`: everything that needs a saved deck around the slide - data
  *   source bar, per-slide duration, AI panels. (The chart-data entry point
  *   is on every surface: each host passes its own `onEditChartData`, D338.)
@@ -31,6 +34,7 @@
  * @typedef {object} SurfaceCapabilities
  * @property {'keeps'|'content'|'all'} fields
  * @property {boolean} toolbar
+ * @property {boolean} layout
  * @property {boolean} typeConversion
  * @property {boolean} headerActions
  * @property {boolean} deckTools
@@ -44,6 +48,7 @@ export const FORM_SURFACES = Object.freeze({
   inspector: Object.freeze({
     fields: 'keeps',
     toolbar: true,
+    layout: true,
     typeConversion: true,
     headerActions: true,
     deckTools: true,
@@ -56,6 +61,7 @@ export const FORM_SURFACES = Object.freeze({
   bulk: Object.freeze({
     fields: 'content',
     toolbar: false,
+    layout: false,
     typeConversion: false,
     headerActions: false,
     deckTools: false,
@@ -66,6 +72,7 @@ export const FORM_SURFACES = Object.freeze({
   library: Object.freeze({
     fields: 'all',
     toolbar: true,
+    layout: true,
     typeConversion: false,
     headerActions: false,
     deckTools: false,

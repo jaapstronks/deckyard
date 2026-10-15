@@ -4,8 +4,10 @@
  * ⋯ menu used to share one label while the ⋯ menu copied the parent alone, so
  * a parent duplicated from the header lost its structure without a word.
  *
- * Both paths now run duplicateSlides(); this file drives each on the same
- * nested deck and asserts the same result.
+ * The ⋯ above the canvas is gone now (B703 PR 3) and Duplicate has one home,
+ * the slide-list menu (right-click and the thumbnail's ⋯), which runs
+ * duplicateSlides(). This file drives the routine and the menu on the same
+ * nested deck, and pins that the type pill's menu grew no copy of its own.
  *
  * Run with: node --test tests/duplicate-one-meaning.test.js
  */
@@ -23,12 +25,14 @@ globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
 globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
+// The menu positions itself on the next frame; nothing here measures it.
+globalThis.requestAnimationFrame = () => 0;
 
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { duplicateSlides } =
   await import('../client/views/editor/slide-list/slide-actions.js');
-const { buildHeaderActions } =
-  await import('../client/views/editor/editor-form/header-actions.js');
+const { showSlideContextMenu, closeSlideContextMenu } =
+  await import('../client/views/editor/slide-list/context-menu.js');
 
 function nestedDeck() {
   return {
@@ -89,42 +93,37 @@ test('slide list (context menu + Cmd+D): the parent is duplicated with its child
   assertSubtreeDuplicated(pres, stub.calls);
 });
 
-test('form header ⋯ menu: the parent is duplicated with its child', () => {
+test('slide-list menu: the parent is duplicated with its child', () => {
   const pres = nestedDeck();
   const stub = editorStub();
-  const { el } = buildHeaderActions({
+  showSlideContextMenu({
+    x: 0,
+    y: 0,
     slide: pres.slides[0],
-    pres,
-    api: null,
-    toast: { success() {}, error() {} },
-    SLIDE_TYPES,
-    openSlideLibraryModal: () => {},
-    setSelectedSlideId: stub.setSelectedSlideId,
-    editorState: stub.editorState,
-    rerenderEditor: () => {},
-    onTranslateSlide: null,
-    user: null,
-    markDirty: stub.markDirty,
-    rerenderPreview: () => {},
-    rerenderSlideList: () => {},
-    isAuthor: true,
+    ids: new Set(['p']),
+    ctx: {
+      pres,
+      slideTypes: SLIDE_TYPES,
+      editorState: stub.editorState,
+      setSelectedSlideId: stub.setSelectedSlideId,
+      markDirty: stub.markDirty,
+    },
   });
-  const button = [...el.querySelectorAll('button.dropdown-item')].find(
-    (b) => b.textContent === 'Duplicate',
-  );
-  assert.ok(button, 'the ⋯ menu offers Duplicate');
+  const button = [
+    ...document.querySelectorAll('.slide-context-menu-item'),
+  ].find((b) => b.textContent === 'Duplicate');
+  assert.ok(button, 'the slide-list menu offers Duplicate');
   button.click();
+  closeSlideContextMenu();
   assertSubtreeDuplicated(pres, stub.calls);
 });
 
-test('the ⋯ menu carries no copy recipe of its own', () => {
+test('the type pill menu carries no slide action of its own', () => {
   const src = readFileSync(
-    new URL(
-      '../client/views/editor/editor-form/header-actions.js',
-      import.meta.url,
-    ),
+    new URL('../client/views/editor/editor-form/type-menu.js', import.meta.url),
     'utf8',
   );
   assert.doesNotMatch(src, /cloneSlidesForInsert/);
-  assert.match(src, /duplicateSlides\(/);
+  assert.doesNotMatch(src, /duplicateSlides/);
+  assert.doesNotMatch(src, /lockedByAuthor/);
 });

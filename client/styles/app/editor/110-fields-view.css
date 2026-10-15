@@ -2,11 +2,9 @@
    column. It lies on the stage tone the canvas lies on, one column of at most
    ~760px; the field widgets keep the regular editor field styles. */
 
-/* The column shows one view: the canvas or this form. Canvas-only tools
-   (comment pin, zoom) exist only on the canvas. */
-.editor-shell.is-fields-view .preview-panel-body,
-.editor-shell.is-fields-view .pin-comment-btn,
-.editor-shell.is-fields-view .preview-zoom-btn {
+/* The column shows one view: the canvas or this form. The canvas tools
+   (comment pin, zoom) float on the stage, so they go with it. */
+.editor-shell.is-fields-view .preview-panel-body {
   display: none;
 }
 

@@ -1,14 +1,11 @@
-import {
-  copySlides,
-  getClipboardCount,
-} from '../../../lib/slide-authoring/slide-clipboard.js';
+import { getClipboardCount } from '../../../lib/slide-authoring/slide-clipboard.js';
 import { pasteSlidesFromClipboard } from '../../../lib/slide-authoring/clone-slides.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import {
+  copySlidesToClipboard,
   duplicateSlides,
   deleteSlides,
-  expandSelectionWithChildren,
 } from './slide-actions.js';
 
 export function attachSlideListKeyNavigation({
@@ -174,23 +171,12 @@ export function attachSlideListKeyNavigation({
       const selectedIds = getSelectedSlideIds?.() || new Set();
       if (selectedIds.size === 0) return; // Let browser handle normal copy
       e.preventDefault();
-
-      // Expand selection to include children of any selected parents
-      const toCopy = expandSelectionWithChildren(selectedIds, pres?.slides);
-
-      const slidesToCopy = (pres?.slides || []).filter((s) => toCopy.has(s.id));
-      if (slidesToCopy.length > 0 && copySlides(slidesToCopy)) {
-        toast?.success?.(
-          t(
-            'editor.slides.copiedToClipboard',
-            { one: '1 slide copied', many: '{count} slides copied' },
-            {
-              count: slidesToCopy.length,
-            },
-          ),
-        );
-        onMultiSelectionChange?.();
-      }
+      // Same routine as the slide-list menu's Copy (slide-actions.js).
+      copySlidesToClipboard({
+        ids: selectedIds,
+        pres,
+        onMultiSelectionChange,
+      });
     } else if (e.key === 'v' || e.key === 'V') {
       // Paste slides from clipboard. Same routine as the paste bar, so the two
       // entry points cannot drift (clone-slides.js).

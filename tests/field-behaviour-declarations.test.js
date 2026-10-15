@@ -199,21 +199,12 @@ test('neither editor module names a slide type any more', () => {
   // tests/slide-type-name-branching.test.js is coarser; this is exact.)
   for (const file of [
     'client/views/editor/editor-form/render-field.js',
-    'client/views/editor/editor-form/header-actions.js',
+    'client/views/editor/editor-form/type-menu.js',
   ]) {
     const src = readFileSync(resolve(ROOT, file), 'utf8');
     const named = CORE_TYPE_NAMES.filter((name) =>
       new RegExp(`(['"\`])${name}\\1`).test(src),
     );
-    // follow-invite-slide is the documented single-type exception in
-    // header-actions: the follow-invite slide has no content of its own, so
-    // there is nothing for the slide library to hold. Not a table — no future
-    // type can be missing from it.
-    const allowed = new Set(['follow-invite-slide']);
-    assert.deepEqual(
-      named.filter((n) => !allowed.has(n)),
-      [],
-      `${file} still names ${named.join(', ')}`,
-    );
+    assert.deepEqual(named, [], `${file} still names ${named.join(', ')}`);
   }
 });

@@ -514,8 +514,9 @@ test('image-set: element tab shows only the selected cell, slide form only slide
     'slim collection section on the Slide tab',
   );
   // The layout settings render as plain keep fields since step 5 (the "Layout
-  // options" wrapper is gone); `layout` itself is absent because the toolbar
-  // chip owns it — which is what the inspectorKeeps of both image types say.
+  // options" wrapper is gone); the `layout` enum itself is absent because the
+  // Layout row owns it (B703 PR 3) — which is what the inspectorKeeps of both
+  // image types say.
   assert.ok(
     sLabels.some((l) => l.includes('image position')),
     'image side on the Slide tab',
@@ -524,9 +525,16 @@ test('image-set: element tab shows only the selected cell, slide form only slide
     sLabels.some((l) => l.includes('image width')),
     'image width on the Slide tab',
   );
-  assert.ok(
-    !sLabels.some((l) => l === 'layout'),
-    'layout variant belongs to the toolbar chip',
+  const sForm = slideForm(mount);
+  assert.ok(sForm.querySelector('.layout-row'), 'the Layout row renders');
+  assert.equal(
+    [...sForm.querySelectorAll('label, .field-label')].filter(
+      (n) =>
+        n.textContent.trim().toLowerCase() === 'layout' &&
+        !n.closest('.layout-row'),
+    ).length,
+    0,
+    'the layout variant is the Layout row, not a field',
   );
 });
 
@@ -638,17 +646,24 @@ test('image-slide: the Slide tab opens on the image card; Slide tab == no-select
   );
 });
 
-// D336 (B705): an image slide's inspector starts with the image itself.
+// D336 (B705): an image slide's inspector starts with the image itself, right
+// under the Layout row that leads every `layoutVariants` type (D335, B703 PR
+// 3). The helpers below read the fields after that row.
+
+/** Outside the Layout row: the fields D336 orders. */
+const outsideLayoutRow = (n) => !n.closest('.layout-row');
 
 /** Field labels of a panel, in document order. */
 const labelsInOrder = (el) =>
-  [...el.querySelectorAll('.field-label, label')].map((n) =>
-    n.textContent.trim().toLowerCase(),
-  );
+  [...el.querySelectorAll('.field-label, label')]
+    .filter(outsideLayoutRow)
+    .map((n) => n.textContent.trim().toLowerCase());
 
 /** Button texts of a panel, in document order. */
 const buttonTexts = (el) =>
-  [...el.querySelectorAll('button')].map((b) => b.textContent.trim());
+  [...el.querySelectorAll('button')]
+    .filter(outsideLayoutRow)
+    .map((b) => b.textContent.trim());
 
 /** The alt warning, if the card rendered one. */
 const altWarning = (el) => el.querySelector('.help.is-warning');

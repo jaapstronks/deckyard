@@ -98,3 +98,47 @@
   outline-offset: -3px;
   border-radius: var(--ps-radius-sm);
 }
+
+/* The slide-list menu on the thumbnail (B703 PR 3): top-left, so the
+   thumbnail's bottom edge stays free for the insert affordance (B497). Shows
+   on hover, on the active slide and on keyboard focus. */
+.slide-item-menu-btn {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+  z-index: 7;
+}
+
+.slide-item-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.slide-item:hover .slide-item-menu-btn,
+.slide-item.is-active .slide-item-menu-btn,
+.slide-item-menu-btn:focus-visible {
+  opacity: 1;
+}
+
+.slide-item-menu-btn:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 1px;
+}
+
+.is-slides-collapsed .slide-item-menu-btn {
+  display: none;
+}

@@ -329,7 +329,8 @@ export const INVENTORY = {
   // single documented exception (follow-invite), below the three-name
   // threshold. That is the good outcome this gate exists to surface — the
   // per-type knowledge was derived away, not moved.
-  // render-field.js and header-actions.js left the inventory with A7.15 PR B.
+  // render-field.js and header-actions.js (now editor-form/type-menu.js)
+  // left the inventory with A7.15 PR B.
   // The generic field loop's two remaining per-type branches — which types
   // auto-fit a freshly picked image, which get the markdown heading button,
   // both on PR #451's missed list — are field declarations now
@@ -361,7 +362,7 @@ export const INVENTORY = {
     kind: sparse,
     why:
       'The v1 AI conversion pairs — a third expression of the knowledge in ' +
-      'convert.js and header-actions.js. Three copies of one map is the clearest ' +
+      'convert.js and editor-form/type-menu.js. Three copies of one map is the clearest ' +
       'argument in this inventory for deriving conversion from the structure facet.',
   },
   'server/utils/markdown-import/map.js': {

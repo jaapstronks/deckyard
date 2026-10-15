@@ -65,12 +65,12 @@ construction; filtering them out would complicate the
 parity-by-construction argument, and the one-list job benefits from having
 layout context next to text).
 
-**Exception - the structural `layout` enum:** the toolbar "Layout" chip is
-its canonical control, so the inspector no longer renders it for
+**Exception - the structural `layout` enum:** the inspector's Layout row is
+its canonical control, so the inspector no longer renders the enum for
 `image-text` (or the `content` slide, where the same field is relabelled
-"Text columns" because it only toggles 1/2 text columns there). The chip
-covers it on the canvas; the bulk modal keeps the enum (no chip there), so
-the parity invariant still holds.
+"Text columns" because it only toggles 1/2 text columns there). The row
+covers it; the bulk modal keeps the enum (no Layout row there), so the parity
+invariant still holds.
 
 For text-blocks, each row has an optional heading above its blocks, including the first row. The form follows that order: row heading and colour, blocks, then the arrow to the next row. Up and down describe the direction of that same between-row arrow; the final row has no outgoing arrow control. An empty row heading can be added directly on the canvas. The slide’s bottom subheading follows the rows in the form as well.
 
@@ -120,14 +120,30 @@ default 340px), and is a **toggleable rail with swappable panes**
 
 ## The slide toolbar and the topbar zones
 
-Everything scoped to the **current slide** lives with the slide, in the
-slide bar that heads the canvas column (mount points filled by
-`rerenderEditor` on every slide change): the type chip (+ retired/custom
-badges) and the Layout chip, then the **Canvas | Fields** tabs
-(`client/views/editor/canvas-tabs.js`, D335; Fields opens the all-fields
-dialog until the form moves into the column), and at the right the Comment
-pin, the zoom button, the author lock and the "…" slide-actions menu (Fill /
-Save to library / Convert / AI Convert / Duplicate / Delete).
+The slide bar that heads the canvas column holds two things (D335, B703
+PR 3): the **type pill** (+ retired/custom badges), rendered by
+`rerenderEditor` on every slide change, and the **Canvas | Fields** tabs
+(`client/views/editor/canvas-tabs.js`). The pill is a menu
+(`editor-form/type-menu.js`) with what changes or shows the type: Convert,
+AI Convert (only with `features.ai`) and the admin's View JSON; with nothing
+to offer it is a plain label. There is no slide-actions menu above the
+canvas any more; every action it held has one address:
+
+| Action                     | Where                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Layout                     | First row of the inspector: four schematics plus "All N →" (`layout-switcher.js`), on every `layoutVariants` type |
+| Convert, AI Convert        | The type pill's menu                                                                                              |
+| View JSON (admin)          | The type pill's menu                                                                                              |
+| Duplicate, Delete          | Slide-list menu (right-click / long-press, or the ⋯ on the thumbnail); ⌘D and Delete/Backspace stay               |
+| Lock / Unlock (author)     | Slide-list menu; the lock badge on the thumbnail shows it and unlocks on click                                    |
+| Save to slide library      | Slide-list menu (one slide)                                                                                       |
+| Copy, Paste (B308)         | Slide-list menu, through the same `copySlidesToClipboard` / `pasteSlidesFromClipboard` as ⌘C/⌘V                   |
+| Fill slide… (AI translate) | The AI box at the foot of the inspector, beside Refine                                                            |
+| Add comment, zoom          | Floating at the top right of the canvas (`.canvas-float-tools`), hidden with the canvas in Fields                 |
+
+The ⋯ on a thumbnail sits top-left and shows on hover, on the active slide
+and on keyboard focus; the thumbnail's bottom edge stays free for the insert
+affordance (B497).
 
 Three tones separate the zones (D335): the topbar is the deck's chrome
 (elevated, with shadow); the slides column and the inspector column share
@@ -364,7 +380,7 @@ Column semantics:
   the **item field** (`rows.arrow`, `metrics.note`). Top-level claimants, each
   from a declaration: `formText`, the keep-list, the descriptor's element knobs
   (`media` in flat mode, `focus`, `fit`, `bleed` - the ImageRef axes the "This
-  image" card renders), the **Layout chip** (every key a `layoutVariants`
+  image" card renders), the **Layout row** (every key a `layoutVariants`
   entry writes, plus a field group's `alignKey`), and a collection the canvas
   adds to and removes from (the `cards` list, a list-mode `media` list). An
   item field is homed when the canvas edits it (a `data-inline-field` or

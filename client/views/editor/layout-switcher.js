@@ -1,8 +1,8 @@
 /**
- * Layout switcher: a "Layout" chip in the slide toolbar (above the canvas)
- * that opens a tile popover with one mini-schematic per declared layout
- * variant. One click switches the variant; content stays put and the switch
- * is a single undo step.
+ * Layout switcher: the first row of the inspector (B703 PR 3, D335). Up to four
+ * mini-schematics inline, plus "All N →" that opens the full tile popover (every
+ * declared variant and the mirror / text-columns toggles). One click switches
+ * the variant; content stays put and the switch is a single undo step.
  *
  * Variants come from the slide-type definition (`layoutVariants`, see
  * shared/slide-types/types/image-text-slide.js) - nothing here is
@@ -11,7 +11,6 @@
  * (`convertTo`, e.g. "Text only" on image-text) go through the shared
  * convert seam and only render when the seam supports the conversion.
  */
-import { icon } from '../../lib/dom/icons.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
   getLayoutVariants,
@@ -105,8 +104,97 @@ function renderSchematic(variant, mirrored) {
   return renderSlideSchematic(variant?.schematic, { mirrored });
 }
 
+/** Inline tiles in the inspector row; the popover holds the rest. */
+const ROW_TILE_COUNT = 4;
+
 /**
- * Build the "Layout" toolbar chip for a slide, or null when its type
+ * Pick the variant set a surface may show: cross-type tiles (`convertTo`)
+ * only where the type may change, and only when the convert seam supports
+ * the conversion here (keeps custom types that override a core name working).
+ */
+function surfaceVariants({ variants, slide, typeConversion, SLIDE_TYPES }) {
+  return variants.filter(
+    (variant) =>
+      !variant.convertTo ||
+      (typeConversion &&
+        canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES)),
+  );
+}
+
+/** Display label of one variant tile. */
+function variantLabel(variant, SLIDE_TYPES) {
+  return variant.convertTo && !variant.labelKey && !variant.label
+    ? slideTypeLabel(variant.convertTo, SLIDE_TYPES)
+    : t(
+        variant.labelKey || `editor.layoutVariant.${variant.id}`,
+        variant.label || variant.id,
+      );
+}
+
+/**
+ * Apply one variant: a same-type `set`, or a cross-type tile through the
+ * shared convert seam.
+ */
+async function pickVariant({ variant, slide, pres, SLIDE_TYPES, editorState }) {
+  if (variant.convertTo) {
+    // Cross-type tile: the shared convert seam moves the type underneath
+    // (lossy confirm included); any `set` lands on the converted content.
+    const ok = await convertSlideWithConfirm({
+      slide,
+      toType: variant.convertTo,
+      pres,
+      editorState,
+      SLIDE_TYPES,
+    });
+    // Strip convertTo before applying: applyLayoutVariant rejects
+    // cross-type variants (those must go through the seam above), but
+    // after a successful conversion the remaining `set` is a plain
+    // same-type update on the converted content.
+    if (ok && applyLayoutVariant(slide, { set: variant.set })) {
+      editorState.dirtyRefreshWithItem();
+    }
+    return;
+  }
+  if (applyLayoutVariant(slide, variant)) {
+    editorState.dirtyRefreshWithItem();
+  }
+}
+
+/**
+ * One tile: schematic plus label, `is-active` on the current variant. The
+ * compact (inspector row) tile carries its label as title and aria-label.
+ */
+function buildTile({ variant, label, isActive, mirrored, compact, onPick }) {
+  return h(
+    'button',
+    {
+      type: 'button',
+      class: `layout-tile${isActive ? ' is-active' : ''}`,
+      'aria-pressed': isActive ? 'true' : 'false',
+      title: label,
+      ...(compact ? { 'aria-label': label } : {}),
+      onclick: onPick,
+    },
+    [
+      renderSchematic(variant, mirrored),
+      compact ? null : h('span', { class: 'layout-tile-label', text: label }),
+    ].filter(Boolean),
+  );
+}
+
+/**
+ * The inline tiles: the first four declared, with the active variant swapped
+ * into the last slot when it would fall outside them.
+ */
+function rowVariants(variants, activeId) {
+  const head = variants.slice(0, ROW_TILE_COUNT);
+  const active = variants.find((v) => !v.convertTo && v.id === activeId);
+  if (!active || head.includes(active)) return head;
+  return [...head.slice(0, ROW_TILE_COUNT - 1), active];
+}
+
+/**
+ * Build the inspector's Layout row for a slide, or null when its type
  * declares no layout variants.
  * @param {Object} opts
  * @param {Object} opts.slide - live slide object
@@ -118,7 +206,7 @@ function renderSchematic(variant, mirrored) {
  *   whose slide keeps its type (the library editor) gets none.
  * @returns {HTMLElement|null}
  */
-export function createLayoutSwitcherChip({
+export function createLayoutRow({
   slide,
   pres,
   SLIDE_TYPES,
@@ -126,21 +214,80 @@ export function createLayoutSwitcherChip({
   typeConversion,
 } = {}) {
   const def = SLIDE_TYPES?.[slide?.type];
-  const variants = getLayoutVariants(def);
+  const variants = surfaceVariants({
+    variants: getLayoutVariants(def),
+    slide,
+    typeConversion,
+    SLIDE_TYPES,
+  });
   if (!variants.length) return null;
 
-  const chip = h('button', {
-    type: 'button',
-    class: 'btn layout-switcher-chip',
-    title: t('editor.layoutSwitcher.title', 'Slide layout'),
-    'aria-haspopup': 'dialog',
-    'aria-expanded': 'false',
-  });
-  chip.append(
-    icon('columns-2', { size: 14 }),
-    h('span', { text: t('editor.layoutSwitcher.chip', 'Layout') }),
-  );
+  const activeId = activeLayoutVariantId(slide, def);
+  const mirrored = isMirrored(slide, def);
+  const tiles = h('div', { class: 'layout-row-tiles' });
+  for (const variant of rowVariants(variants, activeId)) {
+    tiles.append(
+      buildTile({
+        variant,
+        label: variantLabel(variant, SLIDE_TYPES),
+        isActive: !variant.convertTo && variant.id === activeId,
+        mirrored,
+        compact: true,
+        onPick: () =>
+          pickVariant({ variant, slide, pres, SLIDE_TYPES, editorState }),
+      }),
+    );
+  }
 
+  const head = h('div', { class: 'layout-row-head' }, [
+    h('span', {
+      class: 'field-label',
+      text: t('editor.layoutSwitcher.chip', 'Layout'),
+    }),
+  ]);
+  const row = h('div', { class: 'layout-row' }, [head, tiles]);
+
+  // "All N →": the full chooser, when it holds more than the row shows - more
+  // variants, or a mirror / text-columns toggle.
+  const hasToggles = !!getLayoutMirror(def) || !!getLayoutTextColumns(def);
+  if (variants.length > ROW_TILE_COUNT || hasToggles) {
+    const allBtn = h('button', {
+      type: 'button',
+      class: 'btn btn-secondary btn-sm layout-row-all',
+      text: t('editor.layoutSwitcher.all', 'All {count} →', {
+        count: variants.length,
+      }),
+      title: t('editor.layoutSwitcher.title', 'Slide layout'),
+      'aria-haspopup': 'dialog',
+      'aria-expanded': 'false',
+    });
+    attachLayoutPopover({
+      chip: allBtn,
+      slide,
+      def,
+      variants,
+      pres,
+      SLIDE_TYPES,
+      editorState,
+    });
+    head.append(allBtn);
+  }
+  return row;
+}
+
+/**
+ * The full tile popover (every variant the surface may show, plus the mirror
+ * and text-columns toggles), opened from the row's "All N →".
+ */
+function attachLayoutPopover({
+  chip,
+  slide,
+  def,
+  variants,
+  pres,
+  SLIDE_TYPES,
+  editorState,
+}) {
   let close = null;
   let unregisterCloser = null;
 
@@ -272,70 +419,24 @@ export function createLayoutSwitcherChip({
 
     popover.append(grid);
 
-    const pickVariant = async (variant) => {
-      close?.();
-      if (variant.convertTo) {
-        // Cross-type tile: the shared convert seam moves the type underneath
-        // (lossy confirm included); any `set` lands on the converted content.
-        const ok = await convertSlideWithConfirm({
-          slide,
-          toType: variant.convertTo,
-          pres,
-          editorState,
-          SLIDE_TYPES,
-        });
-        // Strip convertTo before applying: applyLayoutVariant rejects
-        // cross-type variants (those must go through the seam above), but
-        // after a successful conversion the remaining `set` is a plain
-        // same-type update on the converted content.
-        if (ok && applyLayoutVariant(slide, { set: variant.set })) {
-          editorState.dirtyRefreshWithItem();
-        }
-        return;
-      }
-      if (applyLayoutVariant(slide, variant)) {
-        editorState.dirtyRefreshWithItem();
-      }
-    };
-
     const renderGrid = () => {
       const activeId = activeLayoutVariantId(slide, def);
       const mirrored = isMirrored(slide, def);
       grid.replaceChildren();
       for (const variant of variants) {
-        // Cross-type tiles only on a surface that may change the type, and
-        // only when the seam supports the conversion here (keeps custom types
-        // that override a core name working).
-        if (
-          variant.convertTo &&
-          (!typeConversion ||
-            !canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES))
-        ) {
-          continue;
-        }
-        const label =
-          variant.convertTo && !variant.labelKey && !variant.label
-            ? slideTypeLabel(variant.convertTo, SLIDE_TYPES)
-            : t(
-                variant.labelKey || `editor.layoutVariant.${variant.id}`,
-                variant.label || variant.id,
-              );
-        const isActive = !variant.convertTo && variant.id === activeId;
-        const tile = h(
-          'button',
-          {
-            type: 'button',
-            class: `layout-tile${isActive ? ' is-active' : ''}`,
-            'aria-pressed': isActive ? 'true' : 'false',
-            title: label,
-            onclick: () => pickVariant(variant),
-          },
-          [
-            renderSchematic(variant, mirrored),
-            h('span', { class: 'layout-tile-label', text: label }),
-          ],
+        grid.append(
+          buildTile({
+            variant,
+            label: variantLabel(variant, SLIDE_TYPES),
+            isActive: !variant.convertTo && variant.id === activeId,
+            mirrored,
+            compact: false,
+            onPick: () => {
+              close?.();
+              pickVariant({ variant, slide, pres, SLIDE_TYPES, editorState });
+            },
+          }),
         );
-        grid.append(tile);
       }
     };
     renderGrid();
@@ -402,6 +503,4 @@ export function createLayoutSwitcherChip({
     if (close) close();
     else openPopover();
   });
-
-  return chip;
 }

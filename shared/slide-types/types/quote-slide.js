@@ -351,7 +351,7 @@ export default {
       };
       // Centre the WHOLE block - quote, byline and portraits - in the slide,
       // not just the text within a left-hung column. Driven by the quote-block
-      // group (Layout chip); `quoteAlign` is the only stored form.
+      // group (the inspector's Layout row); `quoteAlign` is the only stored form.
       const groupClass = groupAlignClass(QUOTE_BLOCK.group, content);
       const alignClass = groupClass ? ` ${groupClass}` : '';
       const inner = quoteBlockInnerHtml(

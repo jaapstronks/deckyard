@@ -14,6 +14,10 @@
   right: 4px;
   width: 18px;
   height: 18px;
+  /* A button for the author (click unlocks), a plain badge for others. */
+  padding: 0;
+  border: none;
+  font: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,4 +107,14 @@
   .thumb.thumb-mini {
   outline: 2px solid hsl(30 100% 50% / 0.6);
   outline-offset: -2px;
+}
+
+/* The author's badge is a button: clicking it unlocks the slide. */
+button.slide-author-lock-indicator {
+  cursor: pointer;
+}
+
+button.slide-author-lock-indicator:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 1px;
 }

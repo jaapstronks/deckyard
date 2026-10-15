@@ -19,7 +19,7 @@ The offer decides whether a control exists. The role narrows the values an
 offered alignment may take (a quote never aligns right, a list item never
 aligns). The group owns alignment for its members, so a member never offers
 `align` of its own; the inspector shows the block's alignment disabled with a
-pointer to the Layout chip. Role and group are described in
+pointer to the Layout row. Role and group are described in
 [`text-alignment.md`](text-alignment.md).
 
 ## The offer (D220)
@@ -167,7 +167,7 @@ title-slide `title` and `subheading`, chapter-title `title`, and quote
 `quotes[].quote` as one set (size).
 
 On the title slide, chapter title and quote the block owns alignment (the
-Layout chip), so those fields offer size only. The title slide's size composes
+Layout row), so those fields offer size only. The title slide's size composes
 with its content-aware cover scale: `coverFontScale()` budgets room for an L
 title or subtitle, so the fullest legal block still fits the frame; its meta
 line offers nothing (D241). The list slide offers no text-style size: its
