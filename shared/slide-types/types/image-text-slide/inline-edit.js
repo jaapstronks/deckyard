@@ -22,6 +22,9 @@ export const inlineEdit = {
     photoSelector: '.frame [data-inline-photo]',
     imageField: 'image',
     altField: 'alt',
+    // The role and the colour behind a letterboxed image describe a picture;
+    // side and width shape the empty slot too, so they stay (D336).
+    withImage: ['imageRole', 'imageBackground'],
   },
   // Draggable focal point on the image, but only in cover mode - contain (no
   // crop) has nothing to move, so the point stays hidden there and the element

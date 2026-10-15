@@ -1,7 +1,9 @@
 /**
  * The entry buttons of an image field: "Choose image…" through the picker
  * seam, and "Upload from computer" when the seam has a direct upload route
- * (B579). One builder so every image field offers the same pair.
+ * (B579). One builder so every image field offers the same pair. Over a
+ * picture the first one says "Replace…": picking there swaps the image, it
+ * does not add one (D336).
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { h } from '../../../../lib/dom/index.js';
@@ -9,9 +11,15 @@ import { h } from '../../../../lib/dom/index.js';
 /**
  * @param {Function & {providers?: Array, upload?: Function|null}} openImagePicker - the seam
  * @param {() => Object} pickerOpts - built per click, so the active language is current
+ * @param {Object} [opts]
+ * @param {boolean} [opts.replace] - the field already holds a picture
  * @returns {HTMLButtonElement[]} nothing when no source is configured
  */
-export function createImagePickerButtons(openImagePicker, pickerOpts) {
+export function createImagePickerButtons(
+  openImagePicker,
+  pickerOpts,
+  { replace = false } = {},
+) {
   if (
     typeof openImagePicker !== 'function' ||
     !openImagePicker.providers?.length
@@ -22,7 +30,9 @@ export function createImagePickerButtons(openImagePicker, pickerOpts) {
     h('button', {
       class: 'btn btn-secondary',
       type: 'button',
-      text: t('editor.image.choose', 'Choose image…'),
+      text: replace
+        ? t('editor.image.replace', 'Replace…')
+        : t('editor.image.choose', 'Choose image…'),
       onclick: () => openImagePicker(pickerOpts()),
     }),
   ];

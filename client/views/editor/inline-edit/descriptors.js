@@ -97,6 +97,13 @@
  *         `col{n}Image`). For a single-image type use plain keys and `<n>`=0.
  *         { photoSelector, imageField, altField, extraFields? }
  *     extraFields entries: `{key,type,label,i18nKey}`.
+ *     `withImage` (both modes, optional): slide-level inspector keeps that
+ *     describe the picture rather than the place it goes - its role, the
+ *     colour behind a letterboxed image, a zoom chain. The inspector renders
+ *     them only while the media holds a picture (`mediaHoldsImage`), so an
+ *     empty image slide opens on the picker instead of on settings for an
+ *     image that is not there (D336). Keys that shape the empty slot itself
+ *     (side, width) are not listed: they apply before a picture does.
  *
  *   icons: per-icon affordance. Clicking an element tagged
  *     `data-inline-icon="<path>"` opens the canonical icon-picker modal and
@@ -141,7 +148,7 @@
  * @property {Array<Object>} [ghosts]
  * @property {Array<Object>} [itemGhosts]
  * @property {{field:string, container:string, itemSelector:string}} [cards]
- * @property {{list?:string, slots?:number, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
+ * @property {{list?:string, slots?:number, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>, withImage?:string[]}} [media]
  * @property {{xField:string, yField:string, cropMode:(slide:Object, idx:number)=>('cover'|'contain'), containSelector?:string}} [focus]
  *   Draggable focal-point handle on filled images. Resolves the write target
  *   the same way `media` does (item in list mode, `slide.content` in flat mode
@@ -231,6 +238,40 @@ export function resolveMediaMember(
       : []
     ).map((f) => ({ ...f, key: sub(f.key) })),
   };
+}
+
+/**
+ * Whether a `media` entry holds at least one picture: in list mode any slot of
+ * any item, in flat mode the one image key. What `media.withImage` waits for.
+ *
+ * A flat key with a `{n}` token names a window this function cannot count, so
+ * it answers true: a declaration it cannot evaluate must not hide a setting.
+ *
+ * @param {Object} content - slide content
+ * @param {Object} media - the descriptor's `media` entry
+ * @returns {boolean}
+ */
+export function mediaHoldsImage(content, media) {
+  if (!media || typeof media.imageField !== 'string') return false;
+  const filled = (v) => typeof v === 'string' && v.trim() !== '';
+  if (media.list) {
+    const arr = getByPath(content, media.list);
+    if (!Array.isArray(arr)) return false;
+    const slots =
+      Number.isInteger(media.slots) && media.slots > 1 ? media.slots : 1;
+    const keys =
+      slots > 1
+        ? Array.from({ length: slots }, (_, i) =>
+            media.imageField.replace('{n}', String(i + 1)),
+          )
+        : [media.imageField];
+    return arr.some(
+      (item) =>
+        !!item && typeof item === 'object' && keys.some((k) => filled(item[k])),
+    );
+  }
+  if (media.imageField.includes('{n}')) return true;
+  return filled(content?.[media.imageField]);
 }
 
 /**

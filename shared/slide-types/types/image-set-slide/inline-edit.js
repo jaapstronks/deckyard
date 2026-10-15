@@ -22,6 +22,9 @@ export const inlineEdit = {
     photoSelector: '.frame [data-inline-photo]',
     imageField: 'src',
     altField: 'alt',
+    // The set's role and the colour behind a letterboxed cell wait for the
+    // first picture; side, width and columns shape the empty set too (D336).
+    withImage: ['imageRole', 'imageBackground'],
   },
   // Draggable focal point on each filled image (crop/cover mode only). Writes
   // the item's own focusX/focusY - the same keys the renderer reads - so a drag

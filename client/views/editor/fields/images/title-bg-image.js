@@ -70,7 +70,11 @@ export function createFieldTitleBgImage(ctx) {
         },
       };
     };
-    controls.append(...createImagePickerButtons(openImagePicker, pickerOpts));
+    controls.append(
+      ...createImagePickerButtons(openImagePicker, pickerOpts, {
+        replace: !!current,
+      }),
+    );
 
     wrap.append(controls);
     // D295: the upload copy exists where uploads do; the sandbox greys them

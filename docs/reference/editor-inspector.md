@@ -280,6 +280,19 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   selected card's icon + link. image-text has no entry of its own: since its
   plural layouts left (D100) it carries one flat image, which the shared card
   covers in full.
+- **The image comes first** (D336). A type whose image is one flat key
+  (image-slide, image-text) opens its Slide tab on that same card, selected or
+  not: empty, it offers only Choose / Upload; filled, it shows the thumbnail,
+  Replace, and the alt text directly under it. The alt carries a warning while
+  publishing would refuse the picture, read from the same `imagesMissingAlt()`
+  walk as the publish gate, so a decorative image or a team member named by
+  their heading is not flagged. Settings that describe the picture rather than
+  the slot wait for one: the media descriptor lists them as `withImage`
+  (image-text and image-set: role and image background; image-slide: role and
+  the zoom chain), and `mediaHoldsImage()` decides. Side and width shape the
+  empty slot too, so they stay. List types (image-set, gallery, team-cards)
+  have no one picture to open on; their per-element card follows the same
+  order.
 - **Scope:** every image type carries a "This image" tab - image-slide,
   image-text, image-set, gallery, team-cards, content-columns (per selected
   column), logo-wall, quote portraits - plus icon-cards. The shared card is

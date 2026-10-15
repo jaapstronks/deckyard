@@ -69,15 +69,6 @@ export function createFieldImage(ctx) {
     wrap.append(preview);
 
     const row = h('div', { class: 'row is-wrap' });
-    if (current) {
-      row.append(
-        h('button', {
-          class: 'btn btn-danger',
-          text: t('common.delete', 'Delete'),
-          onclick: () => onUploadedUrl(''),
-        }),
-      );
-    }
 
     // One set of picker options for both entry points: the seam decides the
     // source, the direct upload goes straight to the file dialog (B579).
@@ -136,7 +127,21 @@ export function createFieldImage(ctx) {
       };
     };
 
-    row.append(...createImagePickerButtons(openImagePicker, pickerOpts));
+    // Replace leads over a picture; the destructive Delete comes last.
+    row.append(
+      ...createImagePickerButtons(openImagePicker, pickerOpts, {
+        replace: !!current,
+      }),
+    );
+    if (current) {
+      row.append(
+        h('button', {
+          class: 'btn btn-danger',
+          text: t('common.delete', 'Delete'),
+          onclick: () => onUploadedUrl(''),
+        }),
+      );
+    }
     wrap.append(row);
 
     // Preset images
