@@ -1,5 +1,5 @@
 /**
- * Item settings get a home outside "All text" (B450, D313).
+ * Item settings get a home outside the Fields form (B450, D313).
  *
  * A collection item's settings - text-blocks' row colour and the arrow to the
  * next row, a matrix cell's tone - had the bulk modal as their only home. The

@@ -879,7 +879,7 @@ export async function createEditorController({
 
   // Chart data edits open their own roomy surface — a modal with the grid and a
   // live chart preview side by side (editing-surfaces §4.3). The inspector
-  // "Edit data…" button, a click on the chart on the canvas and the bulk
+  // "Edit data…" button, a click on the chart on the canvas and the Fields
   // form's data summary all route here. Edits land live; the session is one
   // undo step in either undo mode (D338).
   const chartDataUndoGroup = {
@@ -1465,7 +1465,7 @@ export async function createEditorController({
   // ============================================================
 
   // Shared between the panel form and the Fields view (which runs a second
-  // createRerenderEditor instance on the `bulk` surface on its own mount).
+  // createRerenderEditor instance on the `fields` surface on its own mount).
   const editorFormDeps = {
     saveRefusal,
     editorMount,
@@ -1500,26 +1500,31 @@ export async function createEditorController({
     features,
     setInspectorCollapsed,
     // Canvas-header mount for the slide-scoped toolbar (the type pill and
-    // its badges). The `bulk` surface has no toolbar, so sharing this dep is
-    // harmless there.
+    // its badges). The `fields` surface has no toolbar, so sharing this dep
+    // is harmless there.
     slideToolbar: previewPanel.slideToolbar,
   };
 
   // Fields: the content form in the canvas column (D335). A second
-  // createRerenderEditor instance on the `bulk` surface (content only, no
-  // settings) on the view's own mount; the inspector beside it is untouched.
+  // createRerenderEditor instance on the surface of the view's `deck` context
+  // (`fields`: content only, no settings) on the view's own mount; the
+  // inspector beside it is untouched.
   const fieldsView = createFieldsView({
+    context: 'deck',
     pres,
     getSelectedSlideId: () => selectedSlideId,
     getTheme: () => theme,
     getSlideLockKind,
     notesEl: notesStrip.el,
     onEditOnCanvas: (fieldKey) => setCanvasView('canvas', { fieldKey }),
-    createFormRenderer: (formMount, { refreshPreview, onRendered }) => {
+    createFormRenderer: (
+      formMount,
+      { surface, refreshPreview, onRendered },
+    ) => {
       const fieldsForm = createRerenderEditor({
         ...editorFormDeps,
         editorMount: formMount,
-        surface: 'bulk',
+        surface,
         onRendered,
         // Keep the slide list live too, and repaint the view's preview.
         scheduleUiRefresh: () => {
@@ -1540,7 +1545,7 @@ export async function createEditorController({
               refreshPreview();
             },
           }),
-        // The `bulk` surface has no header actions dropdown, so this instance
+        // The `fields` surface has no header actions dropdown, so this instance
         // owns no document listeners and needs no detach.
       });
       return fieldsForm.rerender;

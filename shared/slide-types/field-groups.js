@@ -107,9 +107,10 @@ export function alignGroup(id, alignKey, opts = {}) {
     alignClass: opts.alignClass || DEFAULT_ALIGN_CLASS,
   };
   // One tile per offered value. Deliberately NOT an inspector keep (see
-  // inspector-form.js): the toolbar "Layout" chip is the block's only control,
-  // the convention the structural `layout` enums already follow. The bulk-edit
-  // modal does render the enum, so the two surfaces read their copy from the
+  // inspector-form.js): the inspector's Layout row is the block's only control
+  // in the deck editor, the convention the structural `layout` enums already
+  // follow. The library editor's form does render the enum, so the two
+  // surfaces read their copy from the
   // same `editor.layoutVariant.block*` key — one text, one key, no per-type
   // mint of the raw `left`/`center` token (B145).
   const TILE = {

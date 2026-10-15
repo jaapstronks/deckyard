@@ -4,7 +4,7 @@ How the click-to-edit layer on the slide canvas works: users click rendered
 slide text and type in place, add empty optional fields via ghost chips,
 add/remove/reorder repeatable cards, edit images through an in-slide media
 popover, and edit Markdown in a modal. It is one of the three editing
-surfaces (canvas / bulk "Edit all text" modal / inspector rail) described in
+surfaces (canvas / Fields form / inspector rail) described in
 `docs/reference/editor-inspector.md`; this doc covers the canvas layer
 itself - the mechanism, the module layout, and the descriptor registry that
 future contributors extend.
@@ -310,7 +310,7 @@ they stay in the form.
 
 The Pass-6-era collapsed "Text" section in the side form no longer exists;
 it was superseded by the wysiwyg-first editor-UI overhaul. Where each field
-lives now - canvas / bulk modal / inspector rail - including the
+lives now - canvas / Fields form / inspector rail - including the
 keeps-model, the parity invariant, and the full per-type field
 audit, is documented in `docs/reference/editor-inspector.md`. This doc's
 coverage table below only summarizes what the _canvas_ offers per type.

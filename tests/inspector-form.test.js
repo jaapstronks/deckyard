@@ -2,8 +2,8 @@
  * Inspector settings pane (editor-UI track, phase 3): the default
  * (`inspector`) surface of createRerenderEditor renders ONLY settings/design
  * fields per the coverage-audit keeps map, plus Background and Accessibility.
- * Content fields live on the slide (wysiwyg) and in the bulk modal
- * (the `bulk` surface, covered by editor-form-surfaces.test.js).
+ * Content fields live on the slide (wysiwyg) and in the Fields form
+ * (the `fields` surface, covered by editor-form-surfaces.test.js).
  *
  * Run with: node --test tests/inspector-form.test.js
  */
@@ -148,7 +148,7 @@ test('inspector renders settings but no content text fields (content-slide)', ()
     labels.some((l) => l.includes('text size')),
     'density enum renders',
   );
-  // Content fields (title/body live on the slide + bulk modal) must not
+  // Content fields (title/body live on the slide + Fields form) must not
   // render. Inputs inside the Background/Accessibility sections
   // (.editor-advanced) are settings and don't count.
   const form = mount.querySelector('.editor-form');
@@ -264,8 +264,8 @@ test('chart inspector keeps the data editor but drops text and axis labels', () 
 
 // Coverage audit (2026-07-21), now DERIVED from the registry instead of a
 // hand-picked sample of eight (type, label) pins. The invariant is unchanged —
-// SETTINGS/CONFIG/METADATA may never rely on the bulk modal as their only
-// surface (content text may) — but it is asserted for every field of every
+// SETTINGS/CONFIG/METADATA may never rely on the Fields form as their only
+// surface (content text may; the Fields form renders no setting at all) — but it is asserted for every field of every
 // type, not one representative per group.
 //
 // The set of fields the inspector is supposed to keep is itself derived:
@@ -338,7 +338,7 @@ const RENDER_PRECONDITIONS = {
   ],
 };
 
-test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {
+test('every inspector-keep field renders (no config field is Fields-only)', () => {
   // Collected rather than asserted per key: the first failure used to hide the
   // rest, and a fork running this wants the whole list in one go.
   const orphaned = [];
@@ -367,8 +367,8 @@ test('every inspector-keep field renders (no config field is bulk-modal-only)', 
   assert.deepEqual(
     orphaned,
     [],
-    'these settings/config/metadata fields render nowhere but the bulk modal, so ' +
-      'the user cannot reach them from the inspector:\n' +
+    'these settings/config/metadata fields do not render in the inspector, and ' +
+      'the Fields form renders no setting, so the user cannot reach them:\n' +
       orphaned.join('\n'),
   );
 });
@@ -831,12 +831,12 @@ test('D336: mediaHoldsImage reads every media shape', async () => {
   assert.equal(mediaHoldsImage({}, { imageField: 'col{n}Image' }), true);
 });
 
-test('bulk modal (bulk surface) still renders the content fields the inspector dropped', () => {
-  const mount = renderForm({ type: 'content-slide', surface: 'bulk' });
+test('the Fields form (fields surface) still renders the content fields the inspector dropped', () => {
+  const mount = renderForm({ type: 'content-slide', surface: 'fields' });
   const labels = fieldLabels(mount);
   assert.ok(
     labels.some((l) => l.includes('title')),
-    'title renders in bulk modal',
+    'title renders in the Fields form',
   );
   assert.ok(
     mount.querySelector('textarea, [contenteditable]'),

@@ -7,7 +7,7 @@
  * this module where Tab goes. Schema order, not DOM order, because ghosts
  * live on the overlay and have no place in the slide's DOM; and because the
  * schema is the one order every surface already shares (the inspector and the
- * bulk text form list fields the same way).
+ * Fields form list fields the same way).
  */
 
 /**

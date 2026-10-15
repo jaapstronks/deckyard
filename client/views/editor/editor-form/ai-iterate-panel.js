@@ -16,6 +16,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { h } from '../../../lib/dom/index.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -30,7 +31,7 @@ import {
  * @param {(id: string) => void} [ctx.setSelectedSlideId]
  * @param {object} ctx.editorState
  * @param {object} ctx.toast
- * @param {(() => void)|null} [ctx.onFillSlide] Opens "Fill slide…" (translate
+ * @param {(() => (void|Promise<void>))|null} [ctx.onFillSlide] Opens "Fill slide…" (translate
  *   from the source version, with preview); absent where AI translation is off.
  * @returns {HTMLElement|null} The refine panel, or null when `api` is absent.
  */
@@ -203,7 +204,15 @@ export function buildAiIteratePanel({
           'editor.slide.fillTranslation.title',
           'Fill this slide from the source version (with preview).',
         ),
-        onclick: () => onFillSlide(),
+        // The modal shows its own errors; a rejection that still gets here
+        // is logged, not left unhandled.
+        onclick: async () => {
+          try {
+            await onFillSlide();
+          } catch (e) {
+            debugLog('[editor] fill slide failed', e);
+          }
+        },
       }),
     );
   }
