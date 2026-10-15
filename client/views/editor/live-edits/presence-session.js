@@ -65,7 +65,8 @@ export function createPresenceSession({
 } = {}) {
   if (!presentationId)
     throw new Error('createPresenceSession: presentationId is required');
-  const email = String(user?.email || '').toLowerCase();
+  // The signed-in user's address, already in the stored spelling (D200).
+  const email = user?.email || '';
   if (!email) throw new Error('createPresenceSession: user.email is required');
 
   const wsUrl =

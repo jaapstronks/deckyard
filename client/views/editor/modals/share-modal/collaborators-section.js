@@ -17,6 +17,7 @@ import {
 } from '../../../../lib/permission-labels.js';
 import { h } from '../../../../lib/dom/index.js';
 import { ALL_PERMISSIONS } from '../../../../../shared/constants/permissions.js';
+import { findEligibleOwner } from './utils.js';
 
 /**
  * Create the collaborators section component.
@@ -231,10 +232,7 @@ export function createCollaboratorsSection({
 
     if (!newOwner) return;
 
-    const trimmedEmail = newOwner.trim().toLowerCase();
-    const eligible = eligibleUsers.find(
-      (u) => u.userEmail.toLowerCase() === trimmedEmail,
-    );
+    const eligible = findEligibleOwner(eligibleUsers, newOwner);
 
     if (!eligible) {
       toast?.error(
@@ -253,7 +251,7 @@ export function createCollaboratorsSection({
         'share.collaborators.transferOwnershipConfirm',
         'Transfer ownership of this presentation to {email}?\n\nYou will become a collaborator with edit access.',
         {
-          email: trimmedEmail,
+          email: eligible.userEmail,
         },
       ),
       confirmLabel: t('share.collaborators.transferOwnership', 'Transfer'),
@@ -265,13 +263,13 @@ export function createCollaboratorsSection({
     try {
       await api(`/api/presentations/${presentationId}/transfer-ownership`, {
         method: 'POST',
-        body: { newOwnerEmail: trimmedEmail },
+        body: { newOwnerEmail: eligible.userEmail },
       });
       toast?.success(
         t(
           'share.collaborators.ownershipTransferred',
           'Ownership transferred to {email}',
-          { email: trimmedEmail },
+          { email: eligible.userEmail },
         ),
         { durationMs: 3000 },
       );
