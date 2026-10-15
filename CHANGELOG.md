@@ -4,6 +4,24 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.70.0](https://github.com/jaapstronks/deckyard/compare/v1.69.1...v1.70.0) (2026-10-15)
+
+
+### Added
+
+* head the canvas and inspector columns with tabs, three editor tones ([#1662](https://github.com/jaapstronks/deckyard/issues/1662)) ([3513afd](https://github.com/jaapstronks/deckyard/commit/3513afdc0620747a4a254ffac6d5637f0ca0a82d))
+* keep the speaker notes when importing slides as images (PDF + PowerPoint) ([ea77cbb](https://github.com/jaapstronks/deckyard/commit/ea77cbb3a77de629b686609bd6d27f9293618dde))
+* make the inspector a drawer at 1024px and below, the canvas keeps the height (B708) ([#1664](https://github.com/jaapstronks/deckyard/issues/1664)) ([4195dd2](https://github.com/jaapstronks/deckyard/commit/4195dd20a072ad42fbcd7df2f9dd20c0c629de3a))
+* open an image slide's inspector on the image itself (B705) ([#1665](https://github.com/jaapstronks/deckyard/issues/1665)) ([d0bcc39](https://github.com/jaapstronks/deckyard/commit/d0bcc39c98c61fa935ffa1732aa6f64072339cec))
+* tab through every canvas field and ghost, show ghosts while editing ([#1661](https://github.com/jaapstronks/deckyard/issues/1661)) ([242ba63](https://github.com/jaapstronks/deckyard/commit/242ba63278dd3e18a7b6c7fbda0175ae8c760301))
+
+
+### Fixed
+
+* name the image width 37% · 50% · 63% in the layout switcher and the inspector (B706) ([d3e2811](https://github.com/jaapstronks/deckyard/commit/d3e28116b032b7e25b40076513cdaa141957e8aa))
+* read a PowerPoint import in deck order and pair notes through the relationships ([#1660](https://github.com/jaapstronks/deckyard/issues/1660)) ([5b9333b](https://github.com/jaapstronks/deckyard/commit/5b9333b48bd26c0d9d8c7610cf613a5a175e5247))
+* stop the sandbox compose file defaulting to a removed theme ([#1658](https://github.com/jaapstronks/deckyard/issues/1658)) ([c901094](https://github.com/jaapstronks/deckyard/commit/c90109411d986ae04dbc4d5c3650c7e5ff34a8eb))
+
 ## [1.69.1](https://github.com/jaapstronks/deckyard/compare/v1.69.0...v1.69.1) (2026-10-15)
 
 
