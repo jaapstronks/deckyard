@@ -22,15 +22,15 @@ export const ai = {
   category: 'content',
   resolveInPhase1: false,
   description: `
-      A grid of image blocks — each block is an image with an optional Title
-      and Caption. Labelled "Image blocks" in the editor. Despite the name,
+      A grid of image cards — each card is an image with an optional Title
+      and Caption. Labelled "Image cards" in the editor. Despite the name,
       this is the general-purpose type for showing MULTIPLE separate images
       in one slide: people (portrait grids), product/UI screenshots,
-      testimonials, or any mix of images with short labels. Up to 25 blocks;
+      testimonials, or any mix of images with short labels. Up to 25 cards;
       3-6 is the sweet spot for detailed intros, larger sets form a compact grid.
 
       STRUCTURE:
-      - members: Array of blocks, each with { image, name (=Title),
+      - members: Array of cards, each with { image, name (=Title),
         byline (=Caption), body (=Description), alt, linkedin }. Every text
         and the image may be empty. body is optional markdown for a short bio
         or explanation under the caption (1-3 sentences); use it for speaker
@@ -45,7 +45,7 @@ export const ai = {
       - textPosition: 'below' (default, Title+Caption under the image) or
         'split' (Title above image, Caption below).
       - showPhotoFrame: 'on' | 'off' (default) — adds a card frame behind each image.
-      - columnSplit: '' | '1'..'5' — splits blocks into a left/right group with
+      - columnSplit: '' | '1'..'5' — splits cards into a left/right group with
         its own subheading (subheading2), e.g. two contrasting sets side by side.
 
       Use this whenever several distinct images belong together in one slide,
@@ -62,7 +62,7 @@ export const ai = {
     'A single hero image (use image-slide)',
     'One image beside a paragraph of text (use image-text-slide)',
     'A curated photo gallery with masonry/featured layout (use gallery-slide)',
-    'More than 25 blocks (split into multiple slides)',
+    'More than 25 cards (split into multiple slides)',
   ],
 };
 

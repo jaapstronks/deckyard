@@ -51,18 +51,18 @@ export const inlineEdit = {
     },
   ],
   // ensureMembers guarantees members[] in edit mode, so add/remove/reorder
-  // work from the first block.
+  // work from the first card.
   cards: {
     field: 'members',
     container: '.team-cards-grid',
     itemSelector: '.team-card',
     addLabelKey: 'editor.inline.addMember',
-    addLabel: 'Add block',
+    addLabel: 'Add card',
     removeLabelKey: 'editor.inline.removeMember',
-    removeLabel: 'Remove block',
+    removeLabel: 'Remove card',
   },
   // Clicking a card photo opens an in-slide media popover (image + alt +
-  // LinkedIn), so slide-view users can set the whole block without the side form.
+  // LinkedIn), so slide-view users can set the whole card without the side form.
   media: {
     list: 'members',
     photoSelector: '.team-card-photo[data-inline-photo]',

@@ -21,7 +21,7 @@ export default {
    * Short "what is this" line, shown as the picker tile's tooltip. English is
    * the fallback; translations live under `editor.slideTypeDesc.<type>`.
    */
-  description: 'Image blocks in a grid',
+  description: 'Photo with name and text per card',
 
   /**
    * Extra search terms (incl. Dutch) folded into the picker's search haystack.

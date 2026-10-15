@@ -155,6 +155,21 @@
   letter-spacing: 0;
 }
 
+/* A row subheading inside a shelf (Media: "One image" / "Collection", D343).
+   It is a grid item spanning the full width, so the shelf keeps one grid and
+   each row starts on a fresh line. Quieter than the shelf header above it. */
+.ps-type-row-title {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+}
+
+.ps-type-row-title:not(:first-child) {
+  margin-top: var(--ps-space-2);
+}
+
 /* Collapsed sections hide their grid, unless a search is active (then every
    section is force-expanded so matches stay visible). */
 .ps-type-group.is-collapsed .ps-type-grid {

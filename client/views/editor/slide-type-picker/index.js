@@ -37,6 +37,8 @@ import {
   SLIDE_TYPE_PRESETS,
   PICKER_GROUP_ORDER,
   PICKER_GROUP_KEYS,
+  PICKER_SHELF_ROWS,
+  ALWAYS_PREVIEW_TYPES,
 } from './data.js';
 import {
   slideTypeGroup,
@@ -151,6 +153,11 @@ export function createSlideTypePicker({
   // preview than it actually inserts (e.g. the two-column body).
   const previewOverridesFor = (preset) =>
     preset?.previewContent || preset?.content || null;
+
+  // A type tile shows its schematic only while the switch says so and the type
+  // is not one whose schematic hides what tells it apart (ALWAYS_PREVIEW_TYPES).
+  const showsSchematic = (type) =>
+    viewMode === 'schematic' && !ALWAYS_PREVIEW_TYPES.has(type);
 
   // Lazy thumbnail hydration + fluid scaling. Observers are recreated per
   // render pass and tracked so a fresh render can tear the old ones down.
@@ -357,7 +364,7 @@ export function createSlideTypePicker({
         thumbWrap.__presetContent = previewOverridesFor(preset);
         thumbWrap.__presetId = preset.id || null;
       }
-      if (viewMode === 'schematic') {
+      if (showsSchematic(type)) {
         // Cheap symbolic diagram — render now, skip observers entirely.
         fillSchematic(thumbWrap, SLIDE_TYPES);
       } else if (intersectionObserver) {
@@ -453,8 +460,22 @@ export function createSlideTypePicker({
       }
     };
 
+    // Split a shelf's types over its headed rows (PICKER_SHELF_ROWS), in the
+    // order the defs already carry. A type no row names joins the `rest` row.
+    const shelfRows = (rows, types) => {
+      const named = new Set(rows.flatMap((row) => row.types));
+      return rows.map((row) => ({
+        row,
+        types: types.filter(
+          (type) => row.types.includes(type) || (row.rest && !named.has(type)),
+        ),
+      }));
+    };
+
     // Build a category/strip group element (does not append it). `expandPresets`
-    // turns on per-variant tiles for the curated category grids.
+    // turns on per-variant tiles for the curated category grids. A shelf with
+    // rows keeps one grid: each row's subheading spans the grid's full width, so
+    // collapsing, searching and the keyboard nav see one shelf as before.
     const buildGroup = (key, title, defs, expandPresets = false) => {
       const present = defs.filter((q) => SLIDE_TYPES?.[q.type]);
       if (!present.length) return null;
@@ -465,7 +486,24 @@ export function createSlideTypePicker({
       });
 
       const grid = h('div', { class: 'ps-type-grid ps-type-grid-thumbs' });
-      for (const q of present) appendTypeTiles(grid, q.type, expandPresets);
+      const rows = expandPresets ? PICKER_SHELF_ROWS[key] : null;
+      if (rows) {
+        const types = present.map((q) => q.type);
+        for (const { row, types: rowTypes } of shelfRows(rows, types)) {
+          if (!rowTypes.length) continue;
+          grid.append(
+            h('h4', {
+              class: 'ps-type-row-title',
+              'data-row-key': row.key,
+              text: t(row.titleKey, row.title),
+            }),
+          );
+          for (const type of rowTypes)
+            appendTypeTiles(grid, type, expandPresets);
+        }
+      } else {
+        for (const q of present) appendTypeTiles(grid, q.type, expandPresets);
+      }
 
       const toggle = h('button', {
         class: 'ps-type-group-toggle',
@@ -654,6 +692,8 @@ export function createSlideTypePicker({
       const surfaceEl = controls.querySelector('.ps-surface-toggle');
       if (surfaceEl) surfaceEl.hidden = mode !== 'preview';
       for (const wrap of typesWrap.querySelectorAll(TYPE_THUMB_SELECTOR)) {
+        // Always-preview tiles do not follow the switch (D344).
+        if (ALWAYS_PREVIEW_TYPES.has(wrap.dataset.thumbType)) continue;
         cleanupSlideRuntimes(wrap);
         wrap.replaceChildren();
         wrap.classList.remove(
@@ -818,6 +858,19 @@ export function createSlideTypePicker({
         }
         group.hidden = !groupVisible;
         if (groupVisible) anyVisible = true;
+        // A row subheading goes with its row: hidden when none of the tiles
+        // up to the next subheading match.
+        for (const title of group.querySelectorAll('.ps-type-row-title')) {
+          let rowVisible = false;
+          for (
+            let el = title.nextElementSibling;
+            el && !el.classList.contains('ps-type-row-title');
+            el = el.nextElementSibling
+          ) {
+            if (!el.hidden) rowVisible = true;
+          }
+          title.hidden = !rowVisible;
+        }
       }
       noResults.hidden = anyVisible;
     };

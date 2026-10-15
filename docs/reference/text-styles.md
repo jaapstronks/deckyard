@@ -118,7 +118,7 @@ message naming the key and why.
 | `details.reason`                  | When                                                                                                              |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `text_style_per_instance`         | a concrete index (`quotes.1.quote`) or one set member, where the type offers the shared key; the message names it |
-| `text_style_not_offered`          | a key the type offers nothing for (`members.3.name` on Image blocks)                                              |
+| `text_style_not_offered`          | a key the type offers nothing for (`members.3.name` on Image cards)                                               |
 | `text_style_property_not_offered` | a property outside the offer, `color` always                                                                      |
 | `text_style_value_not_offered`    | a value outside the vocabulary, or an alignment the role rules out                                                |
 | `text_style_malformed`            | `textStyles` or one of its entries is not an object                                                               |
