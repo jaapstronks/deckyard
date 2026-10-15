@@ -25,10 +25,10 @@ services:
       # from the host, so it speaks plaintext.
       DATABASE_SSL: '${DATABASE_SSL:-false}'
       SANDBOX_TTL_HOURS: '${SANDBOX_TTL_HOURS:-24}'
-      # Must be a real theme id. Sandbox shows only the neutral built-in
-      # themes (corporate, deckyard, editorial, midnight, playful); an operator
-      # can narrow that to a curated set by adding sandbox-*.json themes.
-      SANDBOX_DEFAULT_THEME: '${SANDBOX_DEFAULT_THEME:-deckyard}'
+      # A seed theme slug for decks created without one. Empty leaves the
+      # server's own neutral default (server/config/sandbox.js), so the
+      # default lives in one place.
+      SANDBOX_DEFAULT_THEME: '${SANDBOX_DEFAULT_THEME:-}'
       SANDBOX_WATERMARK: '${SANDBOX_WATERMARK:-Sandbox export • Created by an anonymous user}'
       # Ensure sandbox writes into the mounted volumes (not /app/server/data-sandbox).
       SANDBOX_DATA_DIR: '/app/server/data'
