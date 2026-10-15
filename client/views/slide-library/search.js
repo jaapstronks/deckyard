@@ -164,7 +164,7 @@ export function getContentForLang(item, lang) {
  * `getContentForLang()` answers "which content for this language"; this is the
  * other direction — "which language is this content". The two are a pair: a
  * surface that renders `item.content` (the base version, what the edit modal
- * and the insert-picker's library strip show) must tell the slide renderer
+ * shows) must tell the slide renderer
  * which language that is, or the built-in copy of an interactive type falls
  * back to `DEFAULT_SLIDE_COPY_LANG` (`docs/reference/slide-copy-language.md`).
  *

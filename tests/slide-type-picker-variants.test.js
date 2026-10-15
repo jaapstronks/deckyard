@@ -95,11 +95,14 @@ function renderPicker({ insertSlide = () => {} } = {}) {
   return mount;
 }
 
+// The shelves, not the "Start here" strip above them (D342), which repeats
+// eight of their types as plain base tiles.
+const SHELF = '.ps-type-group:not([data-group-key="start"])';
 const shelfTiles = (mount) =>
-  mount.querySelectorAll('.ps-type-group > .ps-type-grid > .ps-type-card-wrap');
+  mount.querySelectorAll(`${SHELF} > .ps-type-grid > .ps-type-card-wrap`);
 const baseTile = (mount, type) =>
   mount.querySelector(
-    `.ps-type-group > .ps-type-grid > .ps-type-card-wrap[data-thumb-type-key="${type}"]`,
+    `${SHELF} > .ps-type-grid > .ps-type-card-wrap[data-thumb-type-key="${type}"]`,
   );
 const rowFor = (mount, type) =>
   mount.querySelector(`.ps-type-variants[data-variants-for="${type}"]`);

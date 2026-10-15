@@ -17,8 +17,8 @@ change history.
   mutable per-render state (view mode, preview surface, observers, the peek
   handle) and composes `data.js` (curated presets + tuning constants),
   `preferences.js` (every localStorage key), `thumbnails.js` (video/embed
-  mocks + schematic filler), `peek.js` (lightbox), `library-strip.js` and
-  `variants.js` (folded preset rows).
+  mocks + schematic filler), `peek.js` (lightbox) and `variants.js` (folded
+  preset rows).
 - **Sample content** — `client/views/editor/slide-type-sample-content.js`
   (`getSampleContent`). Per-type example content merged onto each type's
   `defaults` for the thumbnails.
@@ -77,7 +77,7 @@ sit above data by request). Rules:
 
 ### Quick-access strips
 
-Rendered above the categories, both local-only:
+Rendered above the categories, all local-only:
 
 - **Pinned** — a pin affordance per tile toggles a type in
   `ps-slide-type-pins`; pinned types get a "Pinned" strip. Pin changes update
@@ -85,6 +85,12 @@ Rendered above the categories, both local-only:
 - **Frequently used** — `bumpUsage(type)` increments `ps-slide-type-usage` on
   insert; the top types (excluding pinned) show once there's real signal
   (`FREQUENT_MIN_TOTAL` total inserts, ≥2 distinct types), capped to one row.
+- **Start here** — the empty state of Frequently used (D342). Until that strip
+  has signal, the picker opens on a "Start here" shelf with eight types in a
+  fixed order (`START_HERE_TYPES` in `data.js`): Title slide, Text slide, List,
+  Image + text, Gallery, Chart, Table, Quote. A type the deck disallows is
+  skipped. Once Frequently used shows, it takes this place: the picker never
+  renders both. The tiles are plain base tiles, without a variants corner.
 
 ## Layout-variant presets
 
@@ -142,17 +148,11 @@ preset), plus label/description and an Insert action. A **capture-phase** Escape
 listener closes the peek without also closing the picker modal; scrim-click and
 Close dismiss it; focus returns to the originating tile.
 
-## Inline "From your library" strip
+## The slide library is a tab
 
-When a modal context supplies `loadLibraryStripItems` + `onSeeAllLibrary`, a
-"From your library" strip loads async (never blocking the type grid) and is
-prepended above the categories: up to 8 insertable, non-trashed items split
-across your personal and organization shelves (favourites first). The budget is
-weighted by how many slides each shelf has but guarantees at least one tile
-from every non-empty shelf, so a lone personal slide is never buried under a
-large organization shelf. Each tile inserts the reused slide; "See all" jumps to the
-Slide library tab. Hidden entirely on empty/error, and skipped where no library
-tab exists (e.g. the quick-add drawer).
+Saved slides are not offered in the Slide types tab. "Slide library" is a tab
+of the same dialog (`slide-type-modal.js`), and the only way in from the
+insert flow (D342).
 
 ## Keyboard-first flow
 

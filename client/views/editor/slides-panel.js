@@ -7,10 +7,7 @@ import { newSlide } from '../../../shared/slide-types/presentation.js';
 import { migrateLibraryItem } from '../../../shared/slide-types/schema-version.js';
 import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/state/id.js';
-import {
-  createSlideLibraryPicker,
-  sortByPinnedThenName,
-} from '../slide-library/index.js';
+import { createSlideLibraryPicker } from '../slide-library/index.js';
 import { toast } from '../../lib/dom/toast.js';
 import { debugLog } from '../../lib/state/debug.js';
 import { isInsertableSlideType } from '../../../shared/slide-types/policy.js';
@@ -352,45 +349,6 @@ export function createSlidesPanel({
     insertSlideObject(s, { afterSlideId, parentId });
   };
 
-  // Recent/pinned library slides for the inline "From your library" strip
-  // (item 10). One shelf's worth: filtered to insertable, non-trashed items and
-  // sorted like the library tab (favourites first). The picker decides how many
-  // of each shelf to show, so this returns the full sorted list (uncapped).
-  // Errors -> empty, so a failing shelf simply drops out of the strip. Matches
-  // the library tab's non-theme-filtered fetch.
-  const loadLibraryStripShelf = async (endpoint) => {
-    try {
-      const r = await api(endpoint);
-      const items = Array.isArray(r?.items) ? r.items : [];
-      const usable = items.filter((it) => {
-        if (it?.isTrashed || it?.trashedAt) return false;
-        const type = String(it?.slideType || '').trim();
-        return (
-          type &&
-          isInsertableSlideType({
-            type,
-            def: SLIDE_TYPES?.[type],
-            theme,
-            disabledSlideTypes,
-          })
-        );
-      });
-      return sortByPinnedThenName(usable);
-    } catch {
-      return [];
-    }
-  };
-
-  // Fetch both shelves in parallel so the strip can show a mix of personal and
-  // organization slides (the picker splits the available tiles between them).
-  const loadLibraryStripItems = async () => {
-    const [personal, organization] = await Promise.all([
-      loadLibraryStripShelf('/api/slide-library/personal'),
-      loadLibraryStripShelf('/api/slide-library/organization'),
-    ]);
-    return { personal, organization };
-  };
-
   const { renderSlideTypePicker } = createSlideTypePicker({
     SLIDE_TYPES,
     theme,
@@ -404,10 +362,6 @@ export function createSlidesPanel({
       ? null
       : ({ afterSlideId, query } = {}) =>
           openAiAppendWizard({ afterSlideId, initialPrompt: query || '' }),
-    // Inline library strip. insertLibraryItem is a lazy arrow because
-    // insertFromLibraryItem is defined just below and only called at click time.
-    loadLibraryStripItems,
-    insertLibraryItem: (item, opts) => insertFromLibraryItem(item, opts),
   });
 
   // Record that this library slide was used (clears the Home "new to you"
