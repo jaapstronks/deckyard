@@ -87,6 +87,21 @@ After editing: `docker compose up -d` to apply, then check the result with
 `docker compose exec app node scripts/doctor.js`: one line per check, and the
 fix for each red one ([doctor.md](doctor.md)).
 
+### PowerPoint as images (optional)
+
+"Import slides as images" in the editor turns every page of a PDF into an image slide. With LibreOffice in the container it also takes a PowerPoint file, one image slide per shown slide, with each slide's speaker notes as its notes. LibreOffice adds about 600 MB to the image, so the default build leaves it out. To include it, build with the argument set, for example in `docker-compose.yml`:
+
+```yaml
+services:
+  app:
+    build:
+      context: .
+      args:
+        WITH_LIBREOFFICE: 'true'
+```
+
+Outside Docker, install LibreOffice on the host; the server finds `soffice` in the usual places, or set `SOFFICE_PATH`. The editor offers PowerPoint files only where the server has it.
+
 ### Storage: the bundled database
 
 `docker compose up` starts a `postgres:16` service alongside the app and points

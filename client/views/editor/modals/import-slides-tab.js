@@ -5,10 +5,16 @@ import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { getFeatures } from '../../../lib/state/features.js';
+
+const PPTX_MIME =
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 
 /**
  * Creates the "Import from file" tab content for the slide-type-modal.
- * Supports PDF files - each page becomes an image-slide.
+ * Each PDF page becomes an image-slide; so does each slide of a PowerPoint
+ * file, with its speaker notes as the slide's notes, where the server can
+ * convert one (`pptxRasterImport`, B700).
  *
  * @param {object} options
  * @param {function} options.api - API caller function
@@ -30,10 +36,15 @@ export function createImportSlidesTab({
   let selectedFile = null;
   let importing = false;
 
+  // PowerPoint is offered only where the server has LibreOffice to print it.
+  const withPptx = getFeatures()?.pptxRasterImport === true;
+
   // Hidden file input
   const inputFile = h('input', {
     type: 'file',
-    accept: 'application/pdf,.pdf',
+    accept: withPptx
+      ? `application/pdf,.pdf,${PPTX_MIME},.pptx`
+      : 'application/pdf,.pdf',
     style: 'display:none',
   });
 
@@ -44,18 +55,28 @@ export function createImportSlidesTab({
 
   const dropzoneText = h('div', {
     class: 'import-slides-dropzone-text',
-    text: t(
-      'editor.importSlides.dropzone.text',
-      'Drop PDF here or click to upload',
-    ),
+    text: withPptx
+      ? t(
+          'editor.importSlides.dropzone.textWithPptx',
+          'Drop a PDF or PowerPoint file here or click to upload',
+        )
+      : t(
+          'editor.importSlides.dropzone.text',
+          'Drop PDF here or click to upload',
+        ),
   });
 
   const dropzoneHint = h('div', {
     class: 'import-slides-dropzone-hint help',
-    text: t(
-      'editor.importSlides.dropzone.hint',
-      'Each page becomes an image slide',
-    ),
+    text: withPptx
+      ? t(
+          'editor.importSlides.dropzone.hintWithPptx',
+          'Each page or slide becomes an image slide; speaker notes come along',
+        )
+      : t(
+          'editor.importSlides.dropzone.hint',
+          'Each page becomes an image slide',
+        ),
   });
 
   const dropzone = h('div', { class: 'import-slides-dropzone' }, [
@@ -293,23 +314,30 @@ export function createImportSlidesTab({
     }
   }
 
-  // Handle file selection
-  inputFile.addEventListener('change', () => {
-    const file = inputFile.files?.[0];
-    if (file) {
-      if (
-        !file.type.includes('pdf') &&
-        !file.name.toLowerCase().endsWith('.pdf')
-      ) {
-        statusMessage.hidden = true;
-        refusal.show(
-          t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
-        );
-        return;
-      }
-      showFile(file);
+  /** Take a picked or dropped file, or say why not. */
+  function pickFile(file) {
+    if (!file) return;
+    const name = file.name.toLowerCase();
+    const isPdf = file.type.includes('pdf') || name.endsWith('.pdf');
+    const isPptx =
+      withPptx && (file.type === PPTX_MIME || name.endsWith('.pptx'));
+    if (!isPdf && !isPptx) {
+      statusMessage.hidden = true;
+      refusal.show(
+        withPptx
+          ? t(
+              'editor.importSlides.error.notPdfOrPptx',
+              'Please select a PDF or PowerPoint file',
+            )
+          : t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
+      );
+      return;
     }
-  });
+    showFile(file);
+  }
+
+  // Handle file selection
+  inputFile.addEventListener('change', () => pickFile(inputFile.files?.[0]));
 
   // Dropzone click
   dropzone.addEventListener('click', () => inputFile.click());
@@ -325,29 +353,21 @@ export function createImportSlidesTab({
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.classList.remove('is-dragover');
-    const file = e.dataTransfer?.files?.[0];
-    if (file) {
-      if (
-        !file.type.includes('pdf') &&
-        !file.name.toLowerCase().endsWith('.pdf')
-      ) {
-        statusMessage.hidden = true;
-        refusal.show(
-          t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
-        );
-        return;
-      }
-      showFile(file);
-    }
+    pickFile(e.dataTransfer?.files?.[0]);
   });
 
   // Help text
   const helpText = h('div', {
     class: 'import-slides-help help',
-    text: t(
-      'editor.importSlides.help',
-      'Import slides from a PDF file. Each page will be converted to an image slide at 1920x1080 resolution.',
-    ),
+    text: withPptx
+      ? t(
+          'editor.importSlides.helpWithPptx',
+          'Import slides from a PDF or PowerPoint file. Each page or slide becomes an image slide at 1920x1080 resolution; the speaker notes of a PowerPoint slide become the notes of its image slide.',
+        )
+      : t(
+          'editor.importSlides.help',
+          'Import slides from a PDF file. Each page will be converted to an image slide at 1920x1080 resolution.',
+        ),
   });
 
   // Assemble

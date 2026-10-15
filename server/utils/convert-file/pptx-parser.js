@@ -239,7 +239,7 @@ function parseMetadata(xml) {
  * Extract text content from OOXML slide XML.
  * Handles <a:t> text elements within paragraphs.
  */
-function extractTextFromSlideXml(xml) {
+export function extractTextFromSlideXml(xml) {
   const textParts = [];
 
   // Find all paragraph elements and extract text

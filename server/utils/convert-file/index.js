@@ -25,6 +25,8 @@ import { createLogger } from '../logger.js';
 
 const log = createLogger('convert-file');
 
+export { readPptxSlideNotes } from './pptx-notes.js';
+
 // Re-export constants
 export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
 

@@ -27,6 +27,7 @@ import {
   isImageLibraryEnabled,
   isNotionEnabled,
 } from './features.js';
+import { isPptxRasterAvailable } from '../render/pptx-to-pdf.js';
 import { getBranding } from './branding.js';
 import { trashRetentionDays } from './retention.js';
 
@@ -64,6 +65,10 @@ export function getFeatureFlags() {
     enableSharing: sharingEnabled(),
     imagekitOnly,
     imagekitConfigured,
+    // Whether LibreOffice is installed: the editor's "import slides as images"
+    // offers PowerPoint files only then (B700). A system package, not a
+    // setting, so it is runtime status like `imagekitConfigured`.
+    pptxRasterImport: isPptxRasterAvailable(),
     enableAi,
     enableUploads,
     enableImageLibrary,
