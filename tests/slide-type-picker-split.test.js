@@ -379,8 +379,8 @@ const mediaRows = (mount) => {
   for (const el of mediaShelf(mount).querySelector('.ps-type-grid').children) {
     if (el.classList.contains('ps-type-row-title'))
       rows.push({ key: el.dataset.rowKey, title: el, types: [] });
-    // One entry per type: image + text still unfolds into preset tiles.
-    else if (rows.at(-1).types.at(-1) !== el.dataset.thumbTypeKey)
+    // Image + text's folded variant row (D341) is not a tile of the row.
+    else if (el.classList.contains('ps-type-card-wrap'))
       rows.at(-1).types.push(el.dataset.thumbTypeKey);
   }
   return rows;
@@ -394,7 +394,7 @@ test('index: the Media shelf shows "One image" and "Collection" in one grid', ()
   makePicker({ SLIDE_TYPES: SLIDE_TYPES_MEDIA }).renderSlideTypePicker(mount);
 
   const shelf = mediaShelf(mount);
-  assert.equal(shelf.querySelectorAll('.ps-type-grid').length, 1);
+  assert.equal(shelf.querySelectorAll(':scope > .ps-type-grid').length, 1);
   const rows = mediaRows(mount);
   assert.deepEqual(
     rows.map((r) => [r.key, r.title.textContent]),
@@ -409,7 +409,10 @@ test('index: the Media shelf shows "One image" and "Collection" in one grid', ()
   // The count is tiles, not tiles plus subheadings.
   assert.equal(
     shelf.querySelector('.ps-type-group-count').textContent,
-    String(shelf.querySelectorAll('.ps-type-card-wrap').length),
+    String(
+      shelf.querySelectorAll(':scope > .ps-type-grid > .ps-type-card-wrap')
+        .length,
+    ),
   );
   // Only the Media shelf has rows.
   assert.equal(mount.querySelectorAll('.ps-type-row-title').length, 2);

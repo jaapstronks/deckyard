@@ -17,7 +17,8 @@ change history.
   mutable per-render state (view mode, preview surface, observers, the peek
   handle) and composes `data.js` (curated presets + tuning constants),
   `preferences.js` (every localStorage key), `thumbnails.js` (video/embed
-  mocks + schematic filler), `peek.js` (lightbox) and `library-strip.js`.
+  mocks + schematic filler), `peek.js` (lightbox), `library-strip.js` and
+  `variants.js` (folded preset rows).
 - **Sample content** — `client/views/editor/slide-type-sample-content.js`
   (`getSampleContent`). Per-type example content merged onto each type's
   `defaults` for the thumbnails.
@@ -87,10 +88,23 @@ Rendered above the categories, both local-only:
 
 ## Layout-variant presets
 
-`SLIDE_TYPE_PRESETS` (keyed by type) surfaces meaningful layout variants as
-their own tiles that insert pre-configured — a picker-level concern, **not** a
-schema change. Curated set: image-text left/right, content one/two-column,
-list bullets/numbers.
+`SLIDE_TYPE_PRESETS` (keyed by type) offers meaningful layout variants that
+insert pre-configured — a picker-level concern, **not** a schema change.
+Curated set: callout (five kinds), image + text (left, right, 63%, corner) and
+list (bullets, numbers).
+
+**One tile per type; the variants fold (D341).** A shelf shows the base tile,
+which inserts the type's default, with an always-visible corner button "N
+variants" (`variants.js`, `buildVariantsToggle`). The button unfolds a row of
+variant tiles inside the same shelf grid (`buildVariantRow`): a full-width grid
+item placed after the last tile on the base tile's visual row
+(`placeVariantRow`, measured with the row out of the flow, re-placed when the
+grid resizes), so the tiles after it keep their places. One row is open at a
+time; opening another closes it. The rows are built hidden up front, which is
+what lets search reach a variant directly (a query that matches a variant shows
+its row, open or not) and lets the keyboard nav walk into an open row in DOM
+order. Shelf counts and the "34 tiles or fewer" check count only a shelf's own
+tiles (`:scope > .ps-type-grid > .ps-type-card-wrap`).
 
 - A preset is `{ id, labelKey, label, content, previewContent? }`. `content` is
   the override applied on insert (threaded through `insertSlide` via a
@@ -105,8 +119,8 @@ list bullets/numbers.
   pinning any variant pins the whole type, and the Pinned/Frequently-used strips
   render one compact base tile. A preset tile's search haystack includes the
   base label too, so a query for the type name finds every variant.
-- Only curated category grids expand presets (`buildGroup(..., expandPresets)`);
-  the pinned/frequent/other strips stay one base tile per type.
+- Only curated category grids fold presets (`buildGroup(..., expandPresets)`);
+  the pinned/frequent/other strips show the base tile without a corner.
 
 ## Preview-background toggle
 
@@ -154,6 +168,9 @@ tab exists (e.g. the quick-add drawer).
   first/last visible card; Enter/Space inserts (native `<button>`).
 - Visibility is an `offsetParent !== null` check, so collapsed/hidden cards are
   skipped.
+- An open variant row (D341) sits in DOM order right after its base tile's
+  visual row, so the arrows walk into it and out again; a folded row is hidden
+  and skipped. The corner button itself is reached with Tab, like peek and pin.
 
 This follows the **image-library grid** convention (arrow-key focus movement
 among the primary card buttons, native button semantics) rather than a
@@ -177,5 +194,6 @@ buttons.)
 Flat dotted keys in `client/i18n/{en,nl}/editor.json`:
 `editor.slideTypeGroup.*` (section titles + strips), `editor.slideTypeDesc.<type>`
 (tile captions), `editor.slideTypePicker.*` (controls), and
-`editor.slideTypePreset.*` (variant tile labels). English fallbacks are inline
+`editor.slideTypePreset.*` (variant tile labels); the corner and the row hint
+are `editor.slideTypePicker.variants` (plural) and `.variantsHint`. English fallbacks are inline
 `t(key, 'English')` args, so the picker works untranslated.

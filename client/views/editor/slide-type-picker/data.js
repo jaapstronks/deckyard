@@ -144,13 +144,14 @@ export const PICKER_GROUP_KEYS = [
   'interaction',
 ];
 
-// Curated layout variants surfaced as their own picker tiles (item 15). Each
-// preset inserts the base slide type pre-configured with these content
-// overrides, so the alternative layout is discoverable without a schema change.
-// Usage counts and pins still track the *base* type (not the preset), so the
-// "frequently used" / "pinned" signal isn't fragmented across variants; those
-// strips render one base tile. Kept to a tight curated set so the grid doesn't
-// explode. A type absent here renders as a single base tile, as before.
+// Curated layout variants of a type (item 15). Each preset inserts the base
+// slide type pre-configured with these content overrides, so the alternative
+// layout is discoverable without a schema change. A shelf shows one tile per
+// type; its presets fold into a row under that tile, opened from a corner
+// button (D341, ./variants.js), and search still finds a variant by its label.
+// Usage counts and pins track the *base* type (not the preset), so the
+// "frequently used" / "pinned" signal isn't fragmented across variants. Kept to
+// a tight curated set. A type absent here renders as a single tile, as before.
 export const SLIDE_TYPE_PRESETS = {
   'image-text-slide': [
     {
