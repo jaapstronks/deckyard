@@ -9,10 +9,11 @@
  *
  * The grid serialises to exactly the CSV string the shared parser
  * (`shared/slide-types/types/chart-slide/parse.js`) already eats, so nothing downstream
- * changes: this is purely an editing-UX layer. Used from two call sites (one
- * implementation): the generic field renderer (`render-field.js`, as the
+ * changes: this is purely an editing-UX layer. The grid lives in one place,
+ * the wide data surface (`chart-data-modal.js`); a form shows a summary
+ * (`summarizeCsvData`) with an entry point into it (`render-field.js`, the
  * csv-grid widget of the `editor` vocabulary and the base editor of the `csv`
- * field type) and the wide data surface (`chart-data-modal.js`).
+ * field type).
  */
 
 import { h } from '../../../lib/dom/index.js';
@@ -128,6 +129,22 @@ export function applyHeaderPaste({
     }
   }
   return { header: nextHeader, body: nextBody, cols };
+}
+
+/**
+ * What a form shows in place of the grid (D338): the column names and how many
+ * data rows there are, read the way the grid reads them (row 0 is the header,
+ * all-empty rows do not count).
+ *
+ * @param {string} value - The CSV string
+ * @returns {{ columns: string[], rows: number }}
+ */
+export function summarizeCsvData(value) {
+  const [header = [], ...body] = parseCsvToGrid(String(value ?? ''));
+  return {
+    columns: header.map((c) => String(c).trim()).filter(Boolean),
+    rows: body.filter((r) => r.some((c) => String(c).trim())).length,
+  };
 }
 
 /**

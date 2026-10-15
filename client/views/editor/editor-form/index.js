@@ -78,8 +78,9 @@ export function createRerenderEditor({
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
   saveRefusal,
-  // Opens the bottom-panel Data tab for a chart slide (editing-surfaces §4.3).
-  // Inspector-only: the bulk modal has no bottom panel and keeps its inline grid.
+  // (fieldKey) => opens the chart-data editor for the selected slide
+  // (editing-surfaces §4.3, D338). Every surface passes it: the form shows
+  // only a data summary with this entry point.
   onEditChartData,
 } = {}) {
   const caps = surfaceCapabilities(surface);
@@ -455,10 +456,9 @@ export function createRerenderEditor({
       scheduleUiRefresh,
       updateSelectedSlideListItem,
       onTranslateField,
-      // Deck tools only: the csv-grid widget renders an "Edit data…" entry
-      // point into the bottom-panel Data tab; a surface without that panel
-      // keeps the inline grid.
-      onEditData: caps.deckTools ? onEditChartData : null,
+      // The csv-grid widget is a summary plus an "Edit data…" entry point into
+      // the host's data editor (D338); every surface passes one.
+      onEditData: onEditChartData,
     });
 
     const isA11yFieldKey = (key) =>

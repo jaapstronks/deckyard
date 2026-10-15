@@ -298,6 +298,36 @@ test('editor binder: two clients over a live mount', async (t) => {
     await waitFor(() => b.pres.slides[0].content.title === 'Alice undo-test');
   });
 
+  await t.test('an undo group is one step across pauses (D338)', async () => {
+    await sleep(500);
+    const slide = a.pres.slides[0];
+    const before = slide.content.title;
+    a.binder.beginUndoGroup();
+    slide.content.title = 'Data sessie 1';
+    a.binder.syncLocal();
+    await sleep(500); // longer than the capture timeout
+    slide.content.title = 'Data sessie 2';
+    a.binder.syncLocal();
+    await sleep(500);
+    slide.content.title = 'Data sessie 3';
+    a.binder.syncLocal();
+    a.binder.endUndoGroup();
+    await waitFor(() => b.pres.slides[0].content.title === 'Data sessie 3');
+
+    // After the group the timeout is back: a later edit is its own step.
+    await sleep(500);
+    slide.notes = 'na de sessie';
+    a.binder.syncLocal();
+    assert.ok(a.binder.undo());
+    assert.equal(a.pres.slides[0].content.title, 'Data sessie 3');
+
+    // One undo takes the whole session back.
+    assert.ok(a.binder.canUndo());
+    assert.ok(a.binder.undo());
+    assert.equal(a.pres.slides[0].content.title, before);
+    await waitFor(() => b.pres.slides[0].content.title === before);
+  });
+
   await t.test('undo restores a deleted slide', async () => {
     await sleep(500);
     const countBefore = a.pres.slides.length;

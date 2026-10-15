@@ -315,6 +315,13 @@ export function initEditorLiveEdits({
       }
       return ok;
     },
+    /** One undo step for every local edit until endUndoGroup() (D338). */
+    beginUndoGroup() {
+      if (ready) binder.beginUndoGroup();
+    },
+    endUndoGroup() {
+      if (ready) binder.endUndoGroup();
+    },
     canUndo: () => ready && binder.canUndo(),
     canRedo: () => ready && binder.canRedo(),
     /**

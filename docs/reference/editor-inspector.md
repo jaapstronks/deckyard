@@ -459,8 +459,8 @@ both in the safe direction:
   add/remove, not a control.
 
 Known residue (fields that keep a form-only or dedicated-surface home,
-deliberately): logo-wall add/remove logos (form), chart data (dedicated
-markdown modal), table-modal slide-view entry points (open follow-up).
+deliberately): logo-wall add/remove logos (form), chart data (the data
+editor, D338), table-modal slide-view entry points (open follow-up).
 
 ## Responsive model
 

@@ -875,21 +875,35 @@ export async function createEditorController({
   cleanup.register('notesStrip', notesStrip.detach);
 
   // Chart data edits open their own roomy surface — a modal with the grid and a
-  // live chart preview side by side (editing-surfaces §4.3). Both the inspector
-  // "Edit data…" button and a click on the chart on the canvas route here.
-  const openChartData = () => {
+  // live chart preview side by side (editing-surfaces §4.3). The inspector
+  // "Edit data…" button, a click on the chart on the canvas and the bulk
+  // form's data summary all route here. Edits land live; the session is one
+  // undo step in either undo mode (D338).
+  const chartDataUndoGroup = {
+    begin: () =>
+      liveEditsActive
+        ? liveEdits?.beginUndoGroup()
+        : undoManager.beginGroup(pres),
+    end: () =>
+      liveEditsActive ? liveEdits?.endUndoGroup() : undoManager.endGroup(pres),
+  };
+  const openChartData = ({ fieldKey, onClosed, mountRoot = root } = {}) => {
     const slide = pres.slides.find((s) => s.id === selectedSlideId);
-    if (!slide || slide.type !== 'chart-slide') return;
+    if (!slide) return;
     openChartDataModal({
-      root,
+      root: mountRoot,
       slide,
+      fieldKey,
       theme,
       presentationId: pres?.id,
       lang: resolveDeckLang(pres),
       markDirty,
-      requestSave,
-      rerenderEditor: () => rerenderEditor(),
-      rerenderPreview: () => rerenderPreview(),
+      rerenderPreview: () => scheduleUiRefresh(),
+      undoGroup: chartDataUndoGroup,
+      onClosed: () => {
+        rerenderEditor();
+        onClosed?.();
+      },
     });
   };
 
@@ -1503,8 +1517,8 @@ export async function createEditorController({
       canvasTabs.showCanvas();
       rerenderEditor();
     },
-    createFormRenderer: (formMount, refreshModalPreview) =>
-      createRerenderEditor({
+    createFormRenderer: (formMount, refreshModalPreview) => {
+      const bulkForm = createRerenderEditor({
         ...editorFormDeps,
         editorMount: formMount,
         surface: 'bulk',
@@ -1517,9 +1531,23 @@ export async function createEditorController({
           rerenderPreview();
           refreshModalPreview();
         },
+        // The data summary opens the one data editor on top; closing it
+        // refreshes this form's summary and the modal preview.
+        onEditChartData: (fieldKey) =>
+          openChartData({
+            fieldKey,
+            // On top of the bulk modal, which mounts on document.body.
+            mountRoot: document.body,
+            onClosed: () => {
+              bulkForm.rerender();
+              refreshModalPreview();
+            },
+          }),
         // The `bulk` surface has no header actions dropdown, so this instance
         // owns no document listeners and needs no detach.
-      }).rerender,
+      });
+      return bulkForm.rerender;
+    },
   });
 
   const editorForm = createRerenderEditor({
@@ -1527,9 +1555,8 @@ export async function createEditorController({
     surface: 'inspector',
     getSelectedElement: () => selectedElement,
     // Chart inspector's "Edit data…" entry point opens the chart-data modal
-    // (grid + live preview, editing-surfaces §4.3). Only the inspector instance
-    // gets this; the bulk modal keeps its inline grid.
-    onEditChartData: () => openChartData(),
+    // (grid + live preview, editing-surfaces §4.3).
+    onEditChartData: (fieldKey) => openChartData({ fieldKey }),
   });
   rerenderEditor = editorForm.rerender;
   // The inspector header's actions dropdown holds document-level listeners;
