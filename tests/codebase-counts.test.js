@@ -57,6 +57,20 @@ test('the counters see the codebase', () => {
   assert.ok(box.files > 0, 'box-sizing scan found no stylesheet');
 });
 
+test('public docs leave out what a fork manifest owns', () => {
+  const fixture = { owned: ['docs/reference/'], deviations: {} };
+  assert.ok(
+    publicDocs().some((f) => f.startsWith('docs/reference/')),
+    'sanity: without that manifest the tree is a public doc',
+  );
+  const docs = publicDocs(fixture);
+  assert.deepEqual(
+    docs.filter((f) => f.startsWith('docs/reference/')),
+    [],
+  );
+  assert.ok(docs.includes('docs/README.md'), 'core docs stay public');
+});
+
 test('the recipe count is the registry', () => {
   // The one counter with a registry behind it: a recipe module on disk that
   // RECIPES does not list would run nowhere, and the count would say it exists.

@@ -21,6 +21,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isForkOwned, readForkManifest } from './fork-manifest.js';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 /**
@@ -47,13 +49,19 @@ function read(file) {
  * planning tree (a symlink to a sibling repo, absent on a fresh clone), plus
  * the two root entry points. `CHANGELOG.md` is generated from PR titles and
  * `CLAUDE.md` is agent instructions; neither is prose someone navigates.
+ *
+ * A fork's own paths (`custom/fork.json` § owned) are not upstream's public
+ * docs, so they drop out here, the way the doc gate skips them: a fork keeps
+ * its private doc tree without a patch to this counter (B712). Upstream ships
+ * no manifest, which owns nothing under `docs/`.
+ * @param {import('./fork-manifest.js').ForkManifest} [manifest] - defaults to the checkout's
  * @returns {string[]}
  */
-export function publicDocs() {
+export function publicDocs(manifest = readForkManifest(ROOT)) {
   return [
     ...tracked('docs/*.md').filter((f) => !f.startsWith('docs/plans/')),
     ...tracked('README.md', 'AGENTS.md'),
-  ];
+  ].filter((f) => !isForkOwned(manifest, f));
 }
 
 /**
