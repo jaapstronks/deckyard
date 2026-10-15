@@ -8,6 +8,7 @@ import {
   isMediaProviderInitialized,
 } from '../../../media/index.js';
 import { pdfToImages } from '../../../render/pdf-to-images.js';
+import { readPptxSlideNotes } from '../../../utils/convert-file/index.js';
 import {
   methodNotAllowed,
   badRequest,
@@ -64,15 +65,55 @@ async function uploadImageBuffer({ buffer, fileName, mimeType, tags = [] }) {
 }
 
 /**
+ * The bytes of a base64 data URL when they start with `magic`, else null.
+ * The file is recognized by its bytes, not by the label the browser gave it.
+ * @param {string} dataUrl
+ * @param {string} magic - `%PDF-` for a PDF, `PK\x03\x04` for a zip (PPTX)
+ * @returns {Buffer|null}
+ */
+function dataUrlFile(dataUrl, magic) {
+  const comma = dataUrl.indexOf(',');
+  if (!dataUrl.startsWith('data:') || comma < 0) return null;
+  if (!dataUrl.slice(0, comma).endsWith(';base64')) return null;
+  const bytes = Buffer.from(dataUrl.slice(comma + 1), 'base64');
+  return bytes.subarray(0, magic.length).toString('latin1') === magic
+    ? bytes
+    : null;
+}
+
+/**
+ * The speaker notes to put beside `pageCount` pages, by position, or null
+ * when the counts do not match. A PDF exported from PowerPoint or Keynote
+ * leaves hidden slides out by default, so the shown slides are tried first;
+ * an export that kept them matches all slides.
+ * @param {Array<{ hidden: boolean, notes: string }>} slides
+ * @param {number} pageCount
+ * @returns {string[]|null}
+ */
+function notesForPages(slides, pageCount) {
+  const shown = slides.filter((s) => !s.hidden);
+  if (shown.length === pageCount) return shown.map((s) => s.notes);
+  if (slides.length === pageCount) return slides.map((s) => s.notes);
+  return null;
+}
+
+/**
  * Handle POST /api/presentations/:id/import-slides-as-images
  *
- * Accepts a PDF file (as dataUrl) and converts each page to an image slide.
- * Streams progress via SSE.
+ * Turns a deck into image slides, one per page, with the speaker notes of
+ * each source slide as its notes (B700, D334). The pixels come from a PDF the
+ * presentation app exported; the notes from the PowerPoint file beside it,
+ * paired by slide order. Either file may come alone: a PDF gives images
+ * without notes, a PowerPoint file gives notes on slides without an image.
+ * When both come and the counts differ, nothing is imported. Streams
+ * progress via SSE.
  *
  * Request body:
  * {
- *   dataUrl: "data:application/pdf;base64,...",
- *   filename: "source.pdf",
+ *   dataUrl: "data:application/pdf;base64,...",        // the pixels
+ *   filename: "talk.pdf",
+ *   pptxDataUrl: "data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,...", // the notes
+ *   pptxFilename: "talk.pptx",
  *   insertAfterSlideId: "slide-abc" // optional, null = end of deck
  * }
  */
@@ -94,15 +135,20 @@ export async function handlePresentationImportSlidesAsImages(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const { filename, insertAfterSlideId } = body || {};
+  const { filename, pptxFilename, insertAfterSlideId } = body || {};
   const dataUrl = getString(body, 'dataUrl');
+  const pptxDataUrl = getString(body, 'pptxDataUrl');
 
-  if (!dataUrl) {
-    return badRequest(res, 'dataUrl is required');
+  if (!dataUrl && !pptxDataUrl) {
+    return badRequest(res, 'A PDF or a PowerPoint file is required');
   }
-
-  if (!dataUrl.startsWith('data:application/pdf')) {
-    return badRequest(res, 'Only PDF files are supported');
+  const pdfBytes = dataUrl ? dataUrlFile(dataUrl, '%PDF-') : null;
+  if (dataUrl && !pdfBytes) {
+    return badRequest(res, 'dataUrl must be a PDF file');
+  }
+  const pptxBytes = pptxDataUrl ? dataUrlFile(pptxDataUrl, 'PK\x03\x04') : null;
+  if (pptxDataUrl && !pptxBytes) {
+    return badRequest(res, 'pptxDataUrl must be a PowerPoint (.pptx) file');
   }
 
   // Set up SSE
@@ -133,72 +179,115 @@ export async function handlePresentationImportSlidesAsImages(
   };
 
   try {
-    sendProgress('Starting PDF conversion...', {
-      stage: 'converting',
-      current: 0,
-      total: 0,
-    });
-
-    // Convert PDF to images
-    const images = await pdfToImages({
-      dataUrl,
-      width: 1920,
-      height: 1080,
-      signal,
-      onProgress: (page, total) => {
-        sendProgress(`Rendering page ${page} of ${total}...`, {
-          stage: 'converting',
-          current: page,
-          total,
-        });
-      },
-    });
-
-    if (!images || images.length === 0) {
-      sendError('No pages found in PDF');
-      return true;
+    // The notes first: a PowerPoint file that cannot be read stops the import
+    // before any page is rendered.
+    let sourceSlides = null;
+    if (pptxBytes) {
+      try {
+        sourceSlides = await readPptxSlideNotes(pptxBytes);
+        // eslint-disable-next-line no-restricted-syntax -- an unreadable zip is the user's file, not a server fault: it gets a sentence, not a stack
+      } catch {
+        sourceSlides = [];
+      }
+      if (sourceSlides.length === 0) {
+        sendError('No slides found in the PowerPoint file');
+        return true;
+      }
     }
 
-    sendProgress(`Converted ${images.length} pages. Uploading images...`, {
-      stage: 'uploading',
-      current: 0,
-      total: images.length,
-    });
+    let images = null;
+    if (pdfBytes) {
+      sendProgress('Starting PDF conversion...', {
+        stage: 'converting',
+        current: 0,
+        total: 0,
+      });
+      images = await pdfToImages({
+        buffer: pdfBytes,
+        width: 1920,
+        height: 1080,
+        signal,
+        onProgress: (page, total) => {
+          sendProgress(`Rendering page ${page} of ${total}...`, {
+            stage: 'converting',
+            current: page,
+            total,
+          });
+        },
+      });
+      if (!images || images.length === 0) {
+        sendError('No pages found in PDF');
+        return true;
+      }
+    }
+
+    // One entry per slide to create: a rendered page, or, from a PowerPoint
+    // file alone, a shown slide without an image.
+    let pages;
+    let notes = null;
+    if (images) {
+      pages = images;
+      if (sourceSlides) {
+        notes = notesForPages(sourceSlides, images.length);
+        if (!notes) {
+          const shown = sourceSlides.filter((s) => !s.hidden).length;
+          sendError(
+            `The PDF has ${images.length} pages but the PowerPoint file has ${shown} slides. Export the PDF from the same presentation and try again.`,
+          );
+          return true;
+        }
+      }
+    } else {
+      notes = sourceSlides.filter((s) => !s.hidden).map((s) => s.notes);
+      pages = notes.map((_, i) => ({ page: i + 1, buffer: null }));
+    }
+
+    if (images) {
+      sendProgress(`Converted ${images.length} pages. Uploading images...`, {
+        stage: 'uploading',
+        current: 0,
+        total: images.length,
+      });
+    }
 
     // Upload images to ImageKit and create slide objects
     const theme = await loadDeckTheme(repoRoot, pres.theme, storageScope);
     const slideTypes = await buildMergedSlideTypes(storageScope);
     const newSlides = [];
-    const baseFilename = (filename || 'imported').replace(/\.pdf$/i, '');
+    const baseFilename = String(
+      (images ? filename : pptxFilename) || 'imported',
+    ).replace(/\.(pdf|pptx)$/i, '');
 
-    for (let i = 0; i < images.length; i++) {
+    for (let i = 0; i < pages.length; i++) {
       // Each iteration uploads a page to the media library — a write for
       // whoever asked. Checked before the upload, not after.
       signal.throwIfAborted();
-      const img = images[i];
+      const img = pages[i];
       const pageNum = img.page;
 
-      sendProgress(`Uploading page ${pageNum} of ${images.length}...`, {
-        stage: 'uploading',
-        current: pageNum,
-        total: images.length,
-      });
-
-      // Upload image using best available method (ImageKit or media provider)
       let imageUrl = '';
-      try {
-        imageUrl = await uploadImageBuffer({
-          buffer: img.buffer,
-          fileName: `${baseFilename}-page-${String(pageNum).padStart(3, '0')}.png`,
-          mimeType: 'image/png',
-          tags: ['pdf-import', `source:${baseFilename}`],
+      if (img.buffer) {
+        sendProgress(`Uploading page ${pageNum} of ${pages.length}...`, {
+          stage: 'uploading',
+          current: pageNum,
+          total: pages.length,
         });
-      } catch (uploadErr) {
-        log.error(
-          `[import-slides] Failed to upload page ${pageNum}:`,
-          uploadErr?.message,
-        );
-        // Continue with empty URL - user can add image later
+
+        // Upload image using best available method (ImageKit or media provider)
+        try {
+          imageUrl = await uploadImageBuffer({
+            buffer: img.buffer,
+            fileName: `${baseFilename}-page-${String(pageNum).padStart(3, '0')}.png`,
+            mimeType: 'image/png',
+            tags: ['pdf-import', `source:${baseFilename}`],
+          });
+        } catch (uploadErr) {
+          log.error(
+            `[import-slides] Failed to upload page ${pageNum}:`,
+            uploadErr?.message,
+          );
+          // Continue with empty URL - user can add image later
+        }
       }
 
       // One page, one image-slide: the image as a patch over the type's
@@ -211,10 +300,13 @@ export async function handlePresentationImportSlidesAsImages(
         slideTypes,
         content: {
           image: imageUrl,
-          alt: `${baseFilename} - Page ${pageNum}`,
+          alt: img.buffer ? `${baseFilename} - Page ${pageNum}` : '',
           bleed: true,
         },
       });
+      // Speaker notes stay plain text: they are read from the upload, and the
+      // notes field is where the presenter reads them back.
+      if (notes) slide.notes = notes[i] || '';
 
       newSlides.push(slide);
     }
@@ -224,8 +316,8 @@ export async function handlePresentationImportSlidesAsImages(
 
     sendProgress('Updating presentation...', {
       stage: 'saving',
-      current: images.length,
-      total: images.length,
+      current: pages.length,
+      total: pages.length,
     });
 
     // Insert slides at the correct position: after the anchor, in its group
@@ -262,6 +354,8 @@ export async function handlePresentationImportSlidesAsImages(
     sendComplete({
       success: true,
       slidesAdded: newSlides.length,
+      withImages: Boolean(images),
+      withNotes: Boolean(notes),
       insertedAt: insertIndex,
       slideIds: newSlides.map((s) => s.id),
       presentation: updated,
@@ -275,7 +369,7 @@ export async function handlePresentationImportSlidesAsImages(
       return true;
     }
     log.error('[import-slides] Error:', err?.message, err?.stack);
-    sendError(err?.message || 'Failed to import PDF');
+    sendError(err?.message || 'Failed to import slides');
     return true;
   }
 }
