@@ -40,7 +40,9 @@ import { renderFollowInviteForm } from './slide-forms/follow-invite.js';
  * What remains, each a documented exception:
  * - follow-invite-slide: `fields: []` BY DESIGN (the translation layer only
  *   touches declared fields, and this slide must never flip language), so its
- *   enabled-toggle and custom-copy inputs cannot be schema-driven.
+ *   enabled-toggle and custom-copy inputs cannot be schema-driven. The
+ *   toggle is a setting, so the content-only surface (`omitSettings`) leaves
+ *   it to the inspector (INSPECTOR_EXTRAS in inspector-form.js).
  */
 const SLIDE_FORMS = new Map([['follow-invite-slide', renderFollowInviteForm]]);
 

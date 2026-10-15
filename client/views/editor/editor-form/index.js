@@ -33,6 +33,7 @@ import {
 import { buildAiIteratePanel } from './ai-iterate-panel.js';
 import { h } from '../../../lib/dom/index.js';
 import { surfaceCapabilities } from './surfaces.js';
+import { isSettingsField } from '../../../../shared/slide-types/settings-fields.js';
 import { featureEnabled } from '../../../lib/state/features.js';
 
 export function createRerenderEditor({
@@ -82,6 +83,10 @@ export function createRerenderEditor({
   // (editing-surfaces §4.3, D338). Every surface passes it: the form shows
   // only a data summary with this entry point.
   onEditChartData,
+  // Called after every render, the form's own included (a structural edit
+  // rerenders from inside). The Fields view uses it to place the title in
+  // its slide head.
+  onRendered = null,
 } = {}) {
   const caps = surfaceCapabilities(surface);
   const {
@@ -418,10 +423,13 @@ export function createRerenderEditor({
 
     // `fields: 'keeps'` (the inspector): the pane renders ONLY settings/design
     // fields (the audit's "Inspector keeps"). Content lives on the slide
-    // (wysiwyg) and - all of it, by construction - on the `fields: 'all'`
-    // surfaces (the bulk modal, the library editor).
+    // (wysiwyg) and - all of it, by construction - on the Fields form
+    // (`fields: 'content'`) and the library editor (`fields: 'all'`).
     const inspectorKeeps =
       caps.fields === 'keeps' ? getInspectorKeepKeys(slide.type, def) : null;
+    // `fields: 'content'` (the Fields form): no setting renders, at any
+    // level; the inspector beside it is their one home (D335).
+    const omitSettings = caps.fields === 'content';
 
     // Deck slides (minus the current one) for in-deck card-link pickers, in
     // both the per-type forms and the generic collection editor.
@@ -459,6 +467,7 @@ export function createRerenderEditor({
       // The csv-grid widget is a summary plus an "Edit data…" entry point into
       // the host's data editor (D338); every surface passes one.
       onEditData: onEditChartData,
+      omitSettings,
     });
 
     const isA11yFieldKey = (key) =>
@@ -496,8 +505,14 @@ export function createRerenderEditor({
         used.add(key);
         return;
       }
+      // Fields form: a setting never renders here, not even when a save was
+      // refused on it - the inspector beside the form shows that refusal.
+      if (omitSettings && isSettingsField(f)) {
+        used.add(key);
+        return;
+      }
       // Inspector mode: content fields don't render here (their homes are the
-      // slide surface and the bulk modal); only the per-type keeps pass.
+      // slide surface and the Fields form); only the per-type keeps pass.
       if (
         inspectorKeeps &&
         !isA11yFieldKey(key) &&
@@ -522,7 +537,7 @@ export function createRerenderEditor({
      * `formLayout: 'pair'` declaration: a run of consecutive paired fields
      * lands in one `.field-grid` row, everything else gets its own line.
      *
-     * The single generic form loop, shared by the bulk modal (via
+     * The single generic form loop, shared by the Fields form (via
      * renderSlideFormByType) and the inspector's remaining-keeps pass — so one
      * declaration on the type means one thing on both surfaces.
      *
@@ -575,8 +590,8 @@ export function createRerenderEditor({
       slide,
       def,
       add,
-      // The generic branch of the router renders through this, so the bulk
-      // modal and the inspector share one form loop and one reading of the
+      // The generic branch of the router renders through this, so the Fields
+      // form and the inspector share one form loop and one reading of the
       // type's `formLayout` declarations.
       renderFieldRows,
       used,
@@ -599,10 +614,14 @@ export function createRerenderEditor({
       rerenderPreview,
       scheduleUiRefresh,
       onEditChartData,
+      // A per-type form (follow-invite) leaves its settings out on the
+      // content-only surface, like add() does for schema fields.
+      omitSettings,
     };
 
-    if (caps.fields === 'all') {
-      // The full per-type content form (parity by construction).
+    if (caps.fields !== 'keeps') {
+      // The full per-type form (parity by construction); `add()` drops the
+      // settings on the content-only surface.
       renderSlideFormByType(formTypeCtx);
     } else {
       // Inspector: the shared image element card for any type declaring an
@@ -704,6 +723,9 @@ export function createRerenderEditor({
       if (closeSlot) editorMount.append(closeSlot);
       editorMount.append(form);
     }
+    // Before the refusal reveal: a host that moves a field (the Fields head
+    // lifts the title) must do so before anything takes focus in it.
+    onRendered?.();
     saveRefusal?.reveal();
   }
 

@@ -41,10 +41,10 @@ import {
 } from './_marketing-deck.js';
 
 /**
- * `editor-form-{nl,en}` — the editor's bulk-edit view on a typed slide: named
- * fields on the left, live preview on the right.
+ * `editor-form-{nl,en}` — the editor's Fields view on a typed slide: named
+ * fields in the canvas column under a live preview, the inspector beside it.
  *
- * The funnel slide rather than a title slide, and the bulk-edit modal rather
+ * The funnel slide rather than a title slide, and the Fields view rather
  * than the inspector, because the claim being illustrated is "a slide is a
  * form": the inspector shows background and accessibility, while this view
  * shows *Stage label / Value / Description* per funnel stage. That is the
@@ -91,8 +91,8 @@ export function editorFormShot(lang) {
           { timeout: 15_000 },
         )
         .catch(() => {});
-      await page.click('.editor-bulk-edit-btn');
-      await page.waitForSelector('.modal.bulk-edit-modal', {
+      await page.click('.canvas-tabs [data-value="fields"]');
+      await page.waitForSelector('.fields-view .editor-form', {
         visible: true,
         timeout: 10_000,
       });
@@ -104,7 +104,7 @@ export function editorFormShot(lang) {
  * `editor-canvas-{nl,en}` — the ordinary editor on the KPI slide: thumbnails
  * left, the slide on the canvas, the inspector right. No modal.
  *
- * Where `editor-form` shows the bulk-edit view, this is the editor as someone
+ * Where `editor-form` shows the Fields view, this is the editor as someone
  * opens it every day, so nothing is opened or overwritten after render.
  *
  * Three choices, each for a stated reason:
