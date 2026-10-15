@@ -62,6 +62,7 @@ Types without both are completely untouched.
 | Markdown edit modal                                                                                         | `client/views/editor/inline-edit/markdown-modal.js`                                  |
 | Drag-to-reorder controller                                                                                  | `client/views/editor/inline-edit/reorder-drag.js`                                    |
 | Pure reorder geometry (pointer → insertion gap + indicator line)                                            | `client/views/editor/inline-edit/reorder-geometry.js`                                |
+| Pure Tab order (schema order over fields and ghosts)                                                        | `client/views/editor/inline-edit/tab-order.js`                                       |
 | Focal-point drag on images                                                                                  | `client/views/editor/inline-edit/focus-drag.js`                                      |
 | Selection toolbar (+ its pure positioning logic)                                                            | `client/views/editor/inline-edit/selection-toolbar.js`, `selection-toolbar-logic.js` |
 | One-time "click any text to edit" coach mark                                                                | `client/views/editor/inline-edit/coach-mark.js`                                      |
@@ -154,9 +155,19 @@ is on its way, the spawn drops its sentinel and stops. Pinned by
   fills that column in place; pasting a TSV/CSV block into a body cell fills
   outward from it (Sheets/Excel paste).
 - **Empty optional field** → hover-revealed "+ Label" ghost chip at an
-  anchor; click spawns via the sentinel and starts editing. An empty
-  `essential` field asks for itself without hover instead; see
+  anchor; click spawns via the sentinel and starts editing. While any field
+  of the slide is being edited, the slide-level chips show without hover;
+  a per-item chip shows for the item being edited, as on hover (B704). An
+  empty `essential` field asks for itself without hover instead; see
   [Empty fields](#empty-fields-essential-or-optional) below.
+- **Tab / Shift-Tab** during an edit → commit, then edit the next (or
+  previous) field of the slide, ghosts included: a ghost reached by Tab
+  spawns its field like a click, and leaving it empty adds nothing. The order
+  is the schema's (`tab-order.js`: on a list-slide title → subheading →
+  each item's title and text), not the DOM's, since ghosts live on the
+  overlay. Both ends wrap; Enter and Escape leave the edit. Chart data is no
+  stop (it opens the bottom panel). The ghosts come from one collection
+  (`collectGhosts`) that both the chips and the Tab order read (B704).
 - **Filled optional field** → hover-revealed clear (×, `.ie-clear`) that
   empties the value; the renderer omits it, layout reclaims the space, the
   ghost returns.

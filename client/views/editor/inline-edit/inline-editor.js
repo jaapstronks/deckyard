@@ -27,6 +27,7 @@
 
 import { getInlineDescriptor, resolveMediaMember } from './descriptors.js';
 import { slideTypeElementTab } from '../../../../shared/slide-types/inline-edit-companions.js';
+import { nextTabStop, orderTabStops } from './tab-order.js';
 import {
   getByPath,
   setByPath,
@@ -235,6 +236,17 @@ export function createInlineEditor({
 
   function onEditKeydown(e) {
     if (!editing) return;
+    if (
+      e.key === 'Tab' &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !e.altKey &&
+      !e.isComposing
+    ) {
+      e.preventDefault();
+      tabFromEdit(e.shiftKey);
+      return;
+    }
     if (editing.rich) {
       // Multi-line rich edit: Enter makes a new paragraph/list item (browser
       // default; a line typed as `1. …` or `- …` becomes a list first),
@@ -352,6 +364,54 @@ export function createInlineEditor({
     overlay.reposition(); // keep the active ring on the field as it grows
   }
 
+  /**
+   * Tab/Shift-Tab during an edit (B704): commit, then edit the next field or
+   * ghost of this slide in schema order (tab-order.js). The stops are taken
+   * before the commit, while the field being left is still one of them. Chart
+   * data is no stop: it opens the bottom panel, which would end the walk.
+   */
+  function tabFromEdit(backwards) {
+    const root = slideEl();
+    const slide = getSlide?.();
+    const def = currentDef();
+    const descriptor = slide ? getInlineDescriptor(slide.type, def) : null;
+    if (!editing || !root || !def || !descriptor) return;
+    const fields = [...root.querySelectorAll('[data-inline-field]')]
+      .filter((el) => {
+        const path = el.getAttribute('data-inline-field');
+        return fieldKind(fieldMetaForPath(def, path), el) !== 'csv';
+      })
+      .map((el) => ({ path: el.getAttribute('data-inline-field'), el }));
+    const ghosts = collectGhosts(root, def, descriptor)
+      .filter((g) => fieldKind(g.meta) !== 'csv')
+      .map((g) => ({ path: g.path, ghost: g }));
+    const target = nextTabStop(
+      orderTabStops(def, [...fields, ...ghosts]),
+      editing.path,
+      backwards,
+    );
+    endTextEdit();
+    if (!target) return;
+    if (target.ghost) activateGhost(target.ghost);
+    else if (target.el.isConnected) enterField(target.el);
+  }
+
+  /**
+   * While a field is edited, the slide's ghosts stay on the overlay beside its
+   * active ring, so an empty optional field is visible without hovering
+   * (B704): the CSS reveals them during an edit, and Tab walks them.
+   */
+  function showGhostsDuringEdit() {
+    const root = slideEl();
+    const slide = getSlide?.();
+    const def = currentDef();
+    const descriptor = slide ? getInlineDescriptor(slide.type, def) : null;
+    if (!root || !def || !descriptor) return;
+    for (const g of collectGhosts(root, def, descriptor)) {
+      if (g.path !== editing?.path) placeGhostChip(g);
+    }
+  }
+
   function beginTextEdit(el, path, meta, { isNew = false } = {}) {
     if (editing) endTextEdit();
     cancelCommitRerender();
@@ -376,6 +436,7 @@ export function createInlineEditor({
     textSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
+    showGhostsDuringEdit();
     overlay.reposition();
     // Seed with the raw stored value (not the rendered text, which may differ
     // due to transforms like curly quotes or single-line collapsing).
@@ -419,6 +480,7 @@ export function createInlineEditor({
     textSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
+    showGhostsDuringEdit();
     overlay.reposition();
     // A ghost-spawned field renders only the spawn sentinel; start blank.
     if (isNew) el.replaceChildren();
@@ -541,9 +603,27 @@ export function createInlineEditor({
     return null;
   }
 
-  function insertGhosts(root, def, descriptor) {
+  /**
+   * Every ghost the slide offers right now, in the order its chips are placed:
+   * the descriptor's `ghosts` for empty optional fields, its `itemGhosts` for
+   * empty optional subfields of each rendered item, then the nested
+   * `cards.child.ghosts` (collectChildGhosts). One list
+   * for both readers: the chips on the overlay and the Tab order (B704).
+   *
+   * Per-item ghosts: optional item subfields (e.g. a timeline item's
+   * description) whose element the renderer omits when empty. For each rendered
+   * item (identified by `data-inline-item-index`), if that item's subfield is
+   * empty, a chip is anchored to the item element.
+   * Shape: `{ list, field, item, within?, pos? }` where
+   * `list` is the primary collection key (aliases resolved via the cards
+   * config), `item` the item-element selector, and `within` an optional inner
+   * element the field is inserted into - which is also where its chip stands.
+   * @returns {Array<{path:string, meta:Object, anchor:{el:HTMLElement,pos:string}, reanchor:()=>({el:HTMLElement,pos:string}|null)}>}
+   */
+  function collectGhosts(root, def, descriptor) {
     const slide = getSlide?.();
-    if (!slide) return;
+    if (!slide) return [];
+    const out = [];
     for (const g of descriptor.ghosts || []) {
       const value = getByPath(slide.content, g.field);
       if (!isEmptyValue(value)) continue;
@@ -558,25 +638,13 @@ export function createInlineEditor({
       if (!anchor) continue;
       // reanchor re-resolves against the CURRENT slide DOM: the spawn path
       // rerenders the preview first, which orphans this refresh's elements.
-      placeGhostChip(g.field, meta, anchor, () =>
-        resolveGhostAnchor(slideEl() || root, g),
-      );
+      out.push({
+        path: g.field,
+        meta,
+        anchor,
+        reanchor: () => resolveGhostAnchor(slideEl() || root, g),
+      });
     }
-  }
-
-  /**
-   * Per-item ghosts: optional item subfields (e.g. a timeline item's
-   * description) whose element the renderer omits when empty. For each rendered
-   * item (identified by `data-inline-item-index`), if that item's subfield is
-   * empty, a chip is anchored to the item element.
-   * Shape: `{ list, field, item, within?, pos? }` where
-   * `list` is the primary collection key (aliases resolved via the cards
-   * config), `item` the item-element selector, and `within` an optional inner
-   * element the field is inserted into - which is also where its chip stands.
-   */
-  function insertItemGhosts(root, def, descriptor) {
-    const slide = getSlide?.();
-    if (!slide) return;
     for (const g of descriptor.itemGhosts || []) {
       const listKey = g.list;
       const arr = getByPath(slide.content, listKey);
@@ -599,14 +667,20 @@ export function createInlineEditor({
             ? { el: host(freshItem), pos: g.pos || 'append' }
             : null;
         };
-        placeGhostChip(
+        out.push({
           path,
           meta,
-          { el: host(itemEl), pos: g.pos || 'append' },
+          anchor: { el: host(itemEl), pos: g.pos || 'append' },
           reanchor,
-        );
+        });
       }
     }
+    collectChildGhosts(root, def, descriptor.cards, slide, out);
+    return out;
+  }
+
+  function insertGhosts(root, def, descriptor) {
+    for (const g of collectGhosts(root, def, descriptor)) placeGhostChip(g);
   }
 
   /**
@@ -627,6 +701,12 @@ export function createInlineEditor({
         type: 'button',
         'aria-label': label,
         ...attrs,
+        // During an edit the chip is visible too (B704). Pressing it must not
+        // blur the edit first: the blur commit can rebuild the overlay and
+        // remove this chip before its click lands. The click ends the edit.
+        onmousedown: (e) => {
+          if (editing) e.preventDefault();
+        },
         onclick: (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -641,22 +721,37 @@ export function createInlineEditor({
     return overlay.ghost(chip, describeSeam(anchor.el, anchor.pos));
   }
 
-  function placeGhostChip(path, meta, anchor, reanchor) {
-    const kind =
-      meta?.type === 'csv'
-        ? 'csv'
-        : meta?.type === 'markdown'
-          ? 'markdown'
-          : 'text';
+  /** How a field is edited: in place as text or markdown, or chart data. */
+  function fieldKind(meta, el) {
+    if (meta?.type === 'csv') return 'csv';
+    if (meta?.type === 'markdown' || el?.dataset?.inlineKind === 'markdown')
+      return 'markdown';
+    return 'text';
+  }
+
+  function placeGhostChip(g) {
     ghostChip(
-      fieldLabel(path, meta),
-      anchor,
-      () =>
-        spawnFromGhost(path, reanchor || (() => anchor), meta, kind).catch(
-          (err) => debugLog('[inline-editor] ghost spawn failed', path, err),
-        ),
-      { 'data-ie-ghost': path },
-      meta?.essential === true,
+      fieldLabel(g.path, g.meta),
+      g.anchor,
+      () => activateGhost(g),
+      { 'data-ie-ghost': g.path },
+      g.meta?.essential === true,
+    );
+  }
+
+  /**
+   * Add a ghost's field and edit it: from its chip, or from Tab (B704). A
+   * running edit commits first, so its text lands before the spawn rerenders.
+   */
+  function activateGhost(g) {
+    if (editing) endTextEdit();
+    spawnFromGhost(
+      g.path,
+      g.reanchor || (() => g.anchor),
+      g.meta,
+      fieldKind(g.meta),
+    ).catch((err) =>
+      debugLog('[inline-editor] ghost spawn failed', g.path, err),
     );
   }
 
@@ -887,7 +982,6 @@ export function createInlineEditor({
         reorder: child.reorder,
         reorderPlacement: child.reorderPlacement,
       });
-      insertChildGhosts(parentEl, def, cards, idx, childPath);
     }
   }
 
@@ -1099,46 +1193,53 @@ export function createInlineEditor({
    * Ghosts for optional subfields of nested child items (a block's title/body
    * inside rows.{i}.blocks.{j}): declared as `cards.child.ghosts`, anchored to
    * the child item element. The spawn goes through the sentinel path, so the
-   * renderer emits the field's real element.
+   * renderer emits the field's real element. Part of `collectGhosts`.
    */
-  function insertChildGhosts(parentEl, def, cards, parentIdx, childPath) {
-    const child = cards.child;
+  function collectChildGhosts(root, def, cards, slide, out) {
+    const child = cards?.child;
     if (!child?.ghosts?.length) return;
-    const slide = getSlide?.();
-    if (!slide) return;
-    for (const childEl of parentEl.querySelectorAll(child.itemSelector)) {
-      const childIdx = Number(childEl.getAttribute('data-inline-item-index'));
-      if (!Number.isInteger(childIdx)) continue;
-      for (const g of child.ghosts) {
-        const path = `${childPath}.${childIdx}.${g.field}`;
-        if (!isEmptyValue(getByPath(slide.content, path))) continue;
-        const meta = fieldMetaForPath(
-          def,
-          `${cards.field}.0.${child.field}.0.${g.field}`,
-        );
-        if (!meta || !meta.key) continue;
-        const reanchor = () => {
-          const freshParent = [
-            ...(slideEl()?.querySelectorAll(cards.itemSelector) || []),
-          ].find(
-            (el) =>
-              Number(el.getAttribute('data-inline-item-index')) === parentIdx,
+    const arr = getByPath(slide.content, cards.field);
+    if (!Array.isArray(arr)) return;
+    for (const parentEl of root.querySelectorAll(cards.itemSelector)) {
+      const parentIdx = Number(parentEl.getAttribute('data-inline-item-index'));
+      if (!Number.isInteger(parentIdx) || !arr[parentIdx]) continue;
+      const childPath = `${cards.field}.${parentIdx}.${child.field}`;
+      for (const childEl of parentEl.querySelectorAll(child.itemSelector)) {
+        const childIdx = Number(childEl.getAttribute('data-inline-item-index'));
+        if (!Number.isInteger(childIdx)) continue;
+        for (const g of child.ghosts) {
+          const path = `${childPath}.${childIdx}.${g.field}`;
+          if (!isEmptyValue(getByPath(slide.content, path))) continue;
+          const meta = fieldMetaForPath(
+            def,
+            `${cards.field}.0.${child.field}.0.${g.field}`,
           );
-          const freshChild = freshParent
-            ? [...freshParent.querySelectorAll(child.itemSelector)].find(
-                (el) =>
-                  Number(el.getAttribute('data-inline-item-index')) ===
-                  childIdx,
-              )
-            : null;
-          return freshChild ? { el: freshChild, pos: g.pos || 'append' } : null;
-        };
-        placeGhostChip(
-          path,
-          meta,
-          { el: childEl, pos: g.pos || 'append' },
-          reanchor,
-        );
+          if (!meta || !meta.key) continue;
+          const reanchor = () => {
+            const freshParent = [
+              ...(slideEl()?.querySelectorAll(cards.itemSelector) || []),
+            ].find(
+              (el) =>
+                Number(el.getAttribute('data-inline-item-index')) === parentIdx,
+            );
+            const freshChild = freshParent
+              ? [...freshParent.querySelectorAll(child.itemSelector)].find(
+                  (el) =>
+                    Number(el.getAttribute('data-inline-item-index')) ===
+                    childIdx,
+                )
+              : null;
+            return freshChild
+              ? { el: freshChild, pos: g.pos || 'append' }
+              : null;
+          };
+          out.push({
+            path,
+            meta,
+            anchor: { el: childEl, pos: g.pos || 'append' },
+            reanchor,
+          });
+        }
       }
     }
   }
@@ -1718,7 +1819,6 @@ export function createInlineEditor({
     }
     insertEssentialPlaceholders(root, def);
     insertGhosts(root, def, descriptor);
-    insertItemGhosts(root, def, descriptor);
     insertClearButtons(root, def, descriptor);
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
@@ -1848,17 +1948,20 @@ export function createInlineEditor({
     coach.dismiss();
     e.preventDefault();
     e.stopPropagation();
+    enterField(fieldEl);
+  }
 
+  /**
+   * Start editing a rendered field: from a click on it, or from Tab (B704).
+   * It also selects what the inspector shows for it.
+   * @param {HTMLElement} fieldEl - an element carrying `data-inline-field`
+   */
+  function enterField(fieldEl) {
     const def = currentDef();
     if (!def) return;
     const path = fieldEl.getAttribute('data-inline-field');
     const meta = fieldMetaForPath(def, path);
-    const kind =
-      meta?.type === 'csv'
-        ? 'csv'
-        : meta?.type === 'markdown' || fieldEl.dataset.inlineKind === 'markdown'
-          ? 'markdown'
-          : 'text';
+    const kind = fieldKind(meta, fieldEl);
     // Selection for the inspector element tab: a card's text selects the card
     // (its declared item settings); a stylable text field (plain or markdown) selects
     // itself for block-level alignment/colour ("This text"); csv (chart data)
