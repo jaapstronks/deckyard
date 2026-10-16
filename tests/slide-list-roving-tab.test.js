@@ -26,7 +26,7 @@ globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.MouseEvent = dom.window.MouseEvent;
-globalThis.CSS = { escape: (s) => String(s).replace(/"/g, '\\"') };
+globalThis.CSS = { escape: (s) => String(s).replace(/["\\]/g, '\\$&') };
 // Frames run when the test flushes them, after the re-render they wait for.
 let frames = [];
 globalThis.requestAnimationFrame = (fn) => frames.push(fn);
