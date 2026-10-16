@@ -336,11 +336,6 @@
       "count": 1
     }
   },
-  "client/views/editor/modals/analyze-modal.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/editor/modals/description-modal.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -459,14 +454,6 @@
   "client/views/editor/slide-type-picker/index.js": {
     "no-restricted-syntax": {
       "count": 5
-    }
-  },
-  "client/views/editor/slide-type-picker/library-strip.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "no-useless-assignment": {
-      "count": 1
     }
   },
   "client/views/editor/slide-type-picker/peek.js": {
