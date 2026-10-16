@@ -54,8 +54,10 @@ Rich content on the line:
   (`event.slide = { id, type, content }`) plus `event.themeId`, resolved from
   the presentation it already loads for the title/access check. The rail renders
   it client-side with the shared `renderSlideElement({ mode: 'thumb' })` +
-  `attachThumbScale` + `loadThemeById` — the same path the presentation cards
-  use, so there is **no server-side image render and no caching**. Custom slide
+  `attachThumbScale` + `loadThemeById`, so there is **no server-side image
+  render and no caching**: the commented slide is not slide 1 of a deck, which
+  is the one case the deck cards' raster covers
+  ([deck-thumbnails.md](deck-thumbnails.md)). Custom slide
   types degrade to a type-name placeholder. Thumb cleanup callbacks go into the
   shared `detachThumbs` collector.
 

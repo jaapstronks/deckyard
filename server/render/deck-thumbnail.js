@@ -30,9 +30,16 @@ const log = createLogger('deck-thumbnail');
  *   through the debounce in ./thumbnail-warm-queue.js, and only when it actually
  *   changed slide 1. Warming a deck on every save would put a Chrome render on
  *   the autosave treadmill.
- * - **Degrades to placeholders.** Both dependencies are optional: if headless
- *   Chrome or sharp is missing (or a render fails) generation returns false and
- *   the card just keeps its placeholder. Never throws to the caller.
+ * - **Remembers a failure, and says so.** When headless Chrome is missing or
+ *   crashes, or the resize or cache write fails, generation returns false, logs
+ *   the cause once and remembers a display reason per cache key for
+ *   {@link FAILURE_TTL_MS} (see {@link thumbnailFailure}). Until then the route
+ *   answers `thumbnail_unavailable` instead of `thumbnail_pending`, and no new
+ *   launch is attempted for that key: a broken browser costs one launch per
+ *   deck per TTL, not two per card per page load. Never throws to the caller.
+ *
+ * Which surfaces use this raster and which render live is decided in
+ * docs/reference/deck-thumbnails.md.
  */
 
 /** Served width; ~2.5× a ~320px card so it stays crisp on retina. */
@@ -40,6 +47,9 @@ const THUMB_WIDTH = 800;
 /** Cap concurrent headless-Chrome renders so opening a cold list of N decks
  *  doesn't spawn N pages at once. */
 const MAX_CONCURRENT = 3;
+
+/** How long a failed generation is remembered before the next attempt. */
+export const FAILURE_TTL_MS = 5 * 60 * 1000;
 
 const cacheDir = (repoRoot) => path.join(dataDir(repoRoot), 'deck-thumbs');
 
@@ -210,6 +220,50 @@ export async function readCachedThumbnail(repoRoot, filename) {
   }
 }
 
+// ── Remembered failures ─────────────────────────────────────────────────────
+const failures = new Map(); // filename -> { reason, until }
+
+/**
+ * The display reason the last generation for this cache key failed, or null
+ * when it did not fail (or the failure is older than {@link FAILURE_TTL_MS}).
+ *
+ * @param {string} filename - As produced by {@link thumbCacheKey}.
+ * @param {number} [now]
+ * @returns {string|null}
+ */
+export function thumbnailFailure(filename, now = Date.now()) {
+  const entry = failures.get(filename);
+  if (!entry) return null;
+  if (entry.until <= now) {
+    failures.delete(filename);
+    return null;
+  }
+  return entry.reason;
+}
+
+/**
+ * Remember that generation for `filename` failed, and log the cause. An
+ * attempt only runs once the previous failure for its key expired, so the log
+ * carries one line per deck per TTL instead of one per request.
+ *
+ * @param {string} filename
+ * @param {string} reason - Display sentence for the route's `message`.
+ * @param {unknown} [err] - The underlying error, for the log only.
+ */
+function rememberFailure(filename, reason, err) {
+  const now = Date.now();
+  for (const [key, entry] of failures) {
+    if (entry.until <= now) failures.delete(key);
+  }
+  failures.set(filename, { reason, until: now + FAILURE_TTL_MS });
+  log.warn(`${filename}: ${reason}`, err ? err?.message || String(err) : '');
+}
+
+/** Forget every remembered failure. Test seam. */
+export function clearThumbnailFailures() {
+  failures.clear();
+}
+
 // ── Single-flight + a small concurrency gate ────────────────────────────────
 const inFlight = new Map(); // filename -> Promise<boolean>
 let active = 0;
@@ -234,22 +288,36 @@ function releaseSlot() {
 
 /**
  * Rasterize `slide` and write the cached WebP. Returns false (never throws) when
- * a dependency is missing or a render fails, leaving the card on its placeholder.
+ * the render, resize or write fails, after remembering why.
  * @returns {Promise<boolean>}
  */
-async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
+async function generateAndCache(
+  repoRoot,
+  filename,
+  slide,
+  theme,
+  slideTypes,
+  render,
+) {
   let pngBuffer;
   try {
-    pngBuffer = await renderSlideToPngBuffer(repoRoot, slide, {
+    pngBuffer = await render(repoRoot, slide, {
       scale: 1,
       theme,
       slideTypes,
     });
   } catch (err) {
-    log.warn('png render failed (headless Chrome missing?):', err?.message);
+    rememberFailure(
+      filename,
+      'The browser that renders thumbnails did not start or crashed.',
+      err,
+    );
     return false;
   }
-  if (!pngBuffer) return false;
+  if (!pngBuffer) {
+    rememberFailure(filename, 'Rendering slide 1 produced no image.');
+    return false;
+  }
 
   let out;
   try {
@@ -258,7 +326,7 @@ async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
       .webp({ quality: 80 })
       .toBuffer();
   } catch (err) {
-    log.warn('resize failed:', err?.message);
+    rememberFailure(filename, 'The rendered slide could not be resized.', err);
     return false;
   }
 
@@ -270,7 +338,11 @@ async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
     await fs.writeFile(tmp, out);
     await fs.rename(tmp, path.join(dir, filename));
   } catch (err) {
-    log.warn('cache write failed:', err?.message);
+    rememberFailure(
+      filename,
+      'The thumbnail cache directory is not writable.',
+      err,
+    );
     return false;
   }
   return true;
@@ -279,14 +351,17 @@ async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
 /**
  * Ensure a thumbnail exists for this deck, generating it asynchronously if not.
  * Deduped per cache-key (single-flight) and throttled by a concurrency gate, so
- * this is safe to fire per card without blocking the request. Fire-and-forget:
- * the returned promise is mostly for tests.
+ * this is safe to fire per card without blocking the request. A key whose last
+ * attempt failed less than {@link FAILURE_TTL_MS} ago is not retried.
+ * Fire-and-forget: the returned promise is mostly for tests.
  *
  * @param {string} repoRoot
  * @param {object} presentation
  * @param {object} slide - The slide to rasterize (slide 1).
  * @param {object|null} theme
  * @param {object|null} slideTypes
+ * @param {object} [options]
+ * @param {typeof renderSlideToPngBuffer} [options.render] - Test seam.
  * @returns {Promise<boolean>} whether a raster now exists.
  */
 export function requestThumbnailGeneration(
@@ -295,9 +370,11 @@ export function requestThumbnailGeneration(
   slide,
   theme,
   slideTypes,
+  { render = renderSlideToPngBuffer } = {},
 ) {
   const { filename } = thumbCacheKey(presentation, theme);
   if (inFlight.has(filename)) return inFlight.get(filename);
+  if (thumbnailFailure(filename)) return Promise.resolve(false);
 
   const promise = (async () => {
     // Another request may have generated it between the route's read and here.
@@ -305,7 +382,14 @@ export function requestThumbnailGeneration(
     await acquireSlot();
     let ok;
     try {
-      ok = await generateAndCache(repoRoot, filename, slide, theme, slideTypes);
+      ok = await generateAndCache(
+        repoRoot,
+        filename,
+        slide,
+        theme,
+        slideTypes,
+        render,
+      );
     } finally {
       releaseSlot();
     }
@@ -316,7 +400,7 @@ export function requestThumbnailGeneration(
     return ok;
   })()
     .catch((err) => {
-      log.warn('generation failed:', err?.message);
+      rememberFailure(filename, 'Generating the thumbnail failed.', err);
       return false;
     })
     .finally(() => {

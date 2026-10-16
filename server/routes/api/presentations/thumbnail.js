@@ -7,8 +7,11 @@
  * the same read-access gate as the deck itself — these are private author decks,
  * NOT the public OG previews. On a cache miss the request never blocks on
  * headless Chrome: it kicks generation off asynchronously and falls back to the
- * deck's previous raster (stale-while-revalidate), or to a 404 → placeholder
- * when there is no previous one at all.
+ * deck's previous raster (stale-while-revalidate). With no raster at all the
+ * 404 says which kind of nothing it is: `thumbnail_pending` with a
+ * `Retry-After` while generation runs, `thumbnail_unavailable` with the reason
+ * when it failed (remembered for a few minutes) or the deck has no slides.
+ * Contract and the client's side of it: docs/reference/deck-thumbnails.md.
  *
  * **Freshness is content-addressed, not time-boxed.** The URL is stable, so the
  * browser has to ask before reusing what it has; `Cache-Control: private,
@@ -28,6 +31,7 @@ import {
   readCachedThumbnail,
   readStaleThumbnail,
   requestThumbnailGeneration,
+  thumbnailFailure,
 } from '../../../render/deck-thumbnail.js';
 import {
   jsonError,
@@ -39,6 +43,12 @@ import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 /** Cache directive for every raster this route serves. See the module note. */
 const THUMB_CACHE_CONTROL = 'private, no-cache';
+
+/**
+ * Seconds a `thumbnail_pending` answer asks the client to wait. A warm render
+ * takes ~0.5 s; a cold Chromium in a small container takes seconds.
+ */
+const THUMB_RETRY_AFTER_S = 3;
 
 export async function handlePresentationThumbnail(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -82,9 +92,11 @@ export async function handlePresentationThumbnail(
   if (cached) return sendImage(cached, filename);
 
   // Cache miss: rasterize slide 1 in the background (deduped + throttled), never
-  // on the request thread. Empty decks (no slide) just stay a placeholder.
+  // on the request thread. A key whose last attempt failed is not retried until
+  // the failure expires (deck-thumbnail.js).
   const firstSlide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
-  if (firstSlide && typeof firstSlide === 'object') {
+  const hasSlide = Boolean(firstSlide && typeof firstSlide === 'object');
+  if (hasSlide) {
     const slideTypes = await buildMergedSlideTypes(storageScope);
     requestThumbnailGeneration(repoRoot, pres, firstSlide, theme, slideTypes);
   }
@@ -96,6 +108,21 @@ export async function handlePresentationThumbnail(
   const stale = await readStaleThumbnail(repoRoot, prefix, filename);
   if (stale) return sendImage(stale.buffer, stale.filename);
 
-  // Nothing to show yet — `no-store` so the client's retry actually re-requests.
-  return jsonError(res, 404, 'thumbnail_pending');
+  // Nothing to show. Say which kind of nothing, so the card never has to
+  // guess: "never" settles on the placeholder now, "not yet" waits as told.
+  if (!hasSlide) {
+    return jsonError(
+      res,
+      404,
+      'thumbnail_unavailable',
+      'This deck has no slides.',
+    );
+  }
+  const failure = thumbnailFailure(filename);
+  if (failure) {
+    return jsonError(res, 404, 'thumbnail_unavailable', failure);
+  }
+  return jsonError(res, 404, 'thumbnail_pending', undefined, {
+    headers: { 'Retry-After': String(THUMB_RETRY_AFTER_S) },
+  });
 }

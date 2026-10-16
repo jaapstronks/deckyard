@@ -24,6 +24,9 @@ import {
   readStaleThumbnail,
   pruneDeckThumbnails,
   requestThumbnailGeneration,
+  thumbnailFailure,
+  clearThumbnailFailures,
+  FAILURE_TTL_MS,
 } from '../server/render/deck-thumbnail.js';
 import { dataDir } from '../server/config/storage-paths.js';
 import { loadThemeAssets } from '../server/utils/themes.js';
@@ -611,4 +614,134 @@ test("a permanent delete removes the deck's cached rasters", async () => {
     ['other-deck-x.webp'],
     "every raster for the deleted deck is gone, nobody else's is",
   );
+});
+
+// ── A failure is remembered, and the route says which kind of nothing ───────
+
+/** A stored one-slide deck, its resolved theme and its cache filename. */
+async function seedUncachedDeck(repoRoot, title) {
+  const created = await createPresentation(testScope(), {
+    title,
+    ownerEmail: 'owner@example.com',
+    visibility: 'private',
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
+  });
+  const pres = await getPresentation(testScope(), created.id);
+  const theme = await loadThemeAssets(repoRoot, pres.theme);
+  return { pres, theme, filename: thumbCacheKey(pres, theme).filename };
+}
+
+const crashingBrowser = () => {
+  let launches = 0;
+  return {
+    get launches() {
+      return launches;
+    },
+    render: async () => {
+      launches++;
+      throw new Error('Failed to launch the browser process: Code: 1');
+    },
+  };
+};
+
+test('a failed generation is remembered: no second launch until the TTL ends', async () => {
+  clearThumbnailFailures();
+  const repoRoot = await tmpRoot();
+  const { pres, theme, filename } = await seedUncachedDeck(repoRoot, 'Broken');
+  const browser = crashingBrowser();
+  const opts = { render: browser.render };
+  const slide = pres.slides[0];
+
+  assert.equal(
+    await requestThumbnailGeneration(repoRoot, pres, slide, theme, null, opts),
+    false,
+  );
+  assert.equal(
+    await requestThumbnailGeneration(repoRoot, pres, slide, theme, null, opts),
+    false,
+  );
+  assert.equal(browser.launches, 1, 'one launch, not one per request');
+  assert.match(thumbnailFailure(filename), /browser/);
+  assert.equal(
+    thumbnailFailure(filename, Date.now() + FAILURE_TTL_MS + 1),
+    null,
+    'the failure expires, so a repaired browser is tried again',
+  );
+  clearThumbnailFailures();
+});
+
+test('route answers thumbnail_unavailable with the reason once generation failed', async () => {
+  clearThumbnailFailures();
+  const repoRoot = await tmpRoot();
+  const { pres, theme } = await seedUncachedDeck(repoRoot, 'Broken route');
+  await requestThumbnailGeneration(
+    repoRoot,
+    pres,
+    pres.slides[0],
+    theme,
+    null,
+    {
+      render: crashingBrowser().render,
+    },
+  );
+
+  const res = await getThumbnail(repoRoot, pres.id);
+  assert.equal(res.statusCode, 404);
+  const body = JSON.parse(res.body);
+  assert.equal(body.error, 'thumbnail_unavailable');
+  assert.match(body.message, /browser/);
+  assert.equal(res.headers['Retry-After'], undefined, 'nothing to wait for');
+  clearThumbnailFailures();
+});
+
+test('route answers thumbnail_pending with a Retry-After while generation runs', async () => {
+  clearThumbnailFailures();
+  const repoRoot = await tmpRoot();
+  const { pres, theme } = await seedUncachedDeck(repoRoot, 'Rendering');
+  // Hold the single-flight slot for this key with a render that has not
+  // finished, so the route joins it instead of launching a real browser.
+  let finish;
+  const running = requestThumbnailGeneration(
+    repoRoot,
+    pres,
+    pres.slides[0],
+    theme,
+    null,
+    { render: () => new Promise((resolve) => (finish = resolve)) },
+  );
+
+  const res = await getThumbnail(repoRoot, pres.id);
+  assert.equal(res.statusCode, 404);
+  assert.equal(JSON.parse(res.body).error, 'thumbnail_pending');
+  assert.equal(res.headers['Retry-After'], '3');
+
+  while (!finish) await new Promise((resolve) => setImmediate(resolve));
+  finish(null);
+  await running;
+  clearThumbnailFailures();
+});
+
+test('route answers thumbnail_unavailable for a deck without slides', async () => {
+  const repoRoot = await tmpRoot();
+  const created = await createPresentation(testScope(), {
+    title: 'Empty',
+    ownerEmail: 'owner@example.com',
+    visibility: 'private',
+    slides: [],
+  });
+  const seeded = await getPresentation(testScope(), created.id);
+  await updatePresentation(
+    testScope(),
+    created.id,
+    { ...seeded, slides: [] },
+    { expectedRevision: seeded.revision },
+  );
+
+  const res = await getThumbnail(repoRoot, created.id);
+  assert.equal(res.statusCode, 404);
+  assert.deepEqual(JSON.parse(res.body), {
+    ok: false,
+    error: 'thumbnail_unavailable',
+    message: 'This deck has no slides.',
+  });
 });

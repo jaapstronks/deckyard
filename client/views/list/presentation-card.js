@@ -9,17 +9,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { createAvatar, getUserProfile } from '../user/index.js';
 import { icon } from '../../lib/dom/icons.js';
 import { nav } from '../../lib/state/router.js';
-
-// Safety-net window: if a card's thumbnail hasn't reached any terminal state
-// within this long, force one. It covers the cases the image's own events
-// can't: the IntersectionObserver callback never firing for a visible card, a
-// response that resolves neither `load` nor `error` (a 204, or a 200 whose
-// body won't decode), and a self-host without Chrome/sharp where generation
-// never completes. It is *not* the normal path — the request is issued the
-// moment the card scrolls in. Sits just past the single onerror retry
-// (2500ms + the second load) so it never preempts a retry that is still
-// running; a raster that lands later still upgrades the card.
-const THUMB_SETTLE_TIMEOUT_MS = 5000;
+import { requestDeckThumbnail } from './thumbnail-request.js';
 
 /**
  * Creates a presentation card renderer with shared context
@@ -38,15 +28,11 @@ export function createCardRenderer({
   // for every off-screen deck. One shared observer for the whole list.
   const thumbLoader = createInViewLoader({ rootMargin: '400px 0px' });
 
-  // One shared, bounded registry of the cards' still-pending thumbnail timers
-  // (onerror retry + the safety net). Cards add a timer on arm and drop it when
-  // it fires or the card settles, so this set never grows across re-renders —
-  // unlike the old approach of pushing a fresh cleanup closure into
-  // `detachThumbs` per card, which leaked one entry on every render.
-  const pendingThumbTimers = new Set();
+  // One controller for every card's thumbnail fetch and wait: unmounting the
+  // list aborts them all with a single cleanup entry, not one per card.
+  const thumbAbort = new AbortController();
   detachThumbs.push(() => {
-    for (const id of pendingThumbTimers) clearTimeout(id);
-    pendingThumbTimers.clear();
+    thumbAbort.abort();
     thumbLoader.disconnect();
   });
 
@@ -188,60 +174,16 @@ export function createCardRenderer({
     // Store reference to update function for external updates
     item._updateSelection = updateSelectionState;
 
-    // Skeleton shimmer until the PNG thumbnail loads (or the card scrolls into
-    // view). Fase B: the list no longer renders a live slide DOM per card — it
-    // lazy-loads a server-rasterized PNG→WebP of slide 1 and falls back to a
-    // cheap title placeholder when none exists yet (never blank).
+    // Skeleton shimmer until the card scrolls into view and the server
+    // answers. Fase B: the list renders no live slide DOM per card; it fetches
+    // a server-rasterized WebP of slide 1, and the server says whether to
+    // wait or to show the placeholder (thumbnail-request.js). Which surfaces
+    // render live instead is decided in docs/reference/deck-thumbnails.md.
     const thumb = h('div', { class: 'thumb is-loading' });
 
-    // "The shimmer always lands somewhere" is a guarantee, not a lucky property
-    // of the happy path. Every terminal state (image, placeholder, "no slides")
-    // routes through `settle()`, which flips this flag and cancels the card's
-    // pending timers; a safety-net timer armed below forces a terminal state if
-    // nothing else does.
-    let settled = false;
-    const cardTimers = new Set();
-    // Arm a timeout tracked in the renderer-wide set (cleared on detach) and,
-    // unless `survivesSettle`, in the card's own set (cleared by `settle()`).
-    // Self-removing when it fires, so neither set outlives the timer. The
-    // unref keeps a leftover fallback timer from holding a Node process open in
-    // tests (no-op in the browser, where setTimeout returns a number).
-    const arm = (fn, ms, { survivesSettle = false } = {}) => {
-      const id = setTimeout(() => {
-        cardTimers.delete(id);
-        pendingThumbTimers.delete(id);
-        fn();
-      }, ms);
-      if (typeof id?.unref === 'function') id.unref();
-      if (!survivesSettle) cardTimers.add(id);
-      pendingThumbTimers.add(id);
-      return id;
-    };
-    const settle = () => {
-      settled = true;
-      for (const id of cardTimers) {
-        clearTimeout(id);
-        pendingThumbTimers.delete(id);
-      }
-      cardTimers.clear();
-    };
-
-    // The raster currently in flight, if any. It lives in the box from the
-    // moment its `src` is set, so emptying the box must spare it: a card may
-    // degrade to the placeholder while its image is still loading, and that
-    // image must still be able to upgrade the card when it lands.
-    let pendingImg = null;
-    const clearThumbContent = () => {
-      for (const child of [...thumb.children]) {
-        if (child !== pendingImg) child.remove();
-      }
-    };
-
     const showEmpty = () => {
-      settle();
       thumb.classList.remove('is-loading');
-      clearThumbContent();
-      thumb.append(
+      thumb.replaceChildren(
         h('div', {
           class: 'help thumb-overlay is-muted',
           text: t('list.thumb.empty', 'No slides yet'),
@@ -249,73 +191,41 @@ export function createCardRenderer({
       );
     };
 
-    // Cheap fallback while no raster exists (generation pending, disabled, or
-    // failed): a flat field in the deck's own theme color, or a neutral surface
-    // when that is unknown. No text — the title is already on the card right
-    // below, and repeating it read as the final state rather than a pending
-    // one. Deliberately not a live slide render either: speed is the whole
-    // point of Fase B.
+    // Fallback when the server says there is no raster to come: a flat field
+    // in the deck's own theme color, or a neutral surface when that is
+    // unknown. No text — the title is already on the card right below.
+    // Deliberately not a live slide render either: speed is the whole point
+    // of Fase B.
     const showPlaceholder = () => {
-      settle();
       thumb.classList.remove('is-loading');
       thumb.classList.add('is-placeholder');
-      clearThumbContent();
+      thumb.replaceChildren();
       thumb.style.background = p.thumbBg || '';
     };
 
-    const showThumbImage = () => {
-      // No cache buster: the endpoint is content-addressed. It answers with an
-      // ETag derived from the raster's own cache key (deck + slide 1 + theme)
-      // and a `no-cache` directive, so the browser revalidates on every load and
-      // gets a bodiless 304 whenever slide 1 is unchanged. The old
-      // `?v=<revision>` re-downloaded the raster after *any* save, including the
-      // saves that never touched the slide the card shows.
-      const thumbUrl = `/api/presentations/${p.id}/thumbnail`;
-      const img = h('img', {
-        class: 'thumb-img is-pending',
-        alt: '',
-        decoding: 'async',
+    const showThumbImage = async () => {
+      const result = await requestDeckThumbnail(p.id, {
+        signal: thumbAbort.signal,
       });
-      // Attach *before* assigning `src`, and without `loading="lazy"`. A
-      // detached lazy image never starts its fetch in Chromium — no request,
-      // no `load`, no `error` — so every card fell through to the safety net
-      // and the retry path below was unreachable. The lazy work is already
-      // done one level up by the shared IntersectionObserver (in-view.js,
-      // 400px rootMargin), which is what decides when this runs at all.
-      pendingImg = img;
-      thumb.append(img);
-      let retried = false;
+      if (!result) return; // the list unmounted meanwhile
+      if (!result.blob) {
+        showPlaceholder();
+        return;
+      }
+      const src = URL.createObjectURL(result.blob);
+      const img = h('img', { class: 'thumb-img', alt: '', decoding: 'async' });
+      // The decoded image stays on screen after its blob URL is released.
       img.onload = () => {
-        settle();
+        URL.revokeObjectURL(src);
         thumb.classList.remove('is-loading', 'is-placeholder');
         thumb.style.background = '';
-        clearThumbContent();
-        img.classList.remove('is-pending');
+        thumb.replaceChildren(img);
       };
       img.onerror = () => {
-        // A 404 means generation is likely still in flight — retry once, then
-        // settle on the placeholder. The image stays in the box while it
-        // retries, so a raster that lands after the placeholder still wins.
-        // The retry survives `settle()`: if the first 404 arrives late and the
-        // safety net degrades the card first, the retry must still fire, or
-        // the card is stuck on the placeholder until the next page load.
-        // `?r=` is the one buster that stays: re-assigning the identical `src`
-        // is not guaranteed to re-issue the request, and this URL has to be
-        // fetched again by definition — it is the retry.
-        if (!retried) {
-          retried = true;
-          arm(
-            () => {
-              img.src = `${thumbUrl}?r=${Date.now()}`;
-            },
-            2500,
-            { survivesSettle: true },
-          );
-          return;
-        }
+        URL.revokeObjectURL(src);
         showPlaceholder();
       };
-      img.src = thumbUrl;
+      img.src = src;
     };
 
     // p.hasSlides tells us cheaply whether the deck has any slide, so empty
@@ -328,19 +238,6 @@ export function createCardRenderer({
       }
       showThumbImage();
     });
-
-    // Safety net: the skeleton must never spin forever. If none of the terminal
-    // paths ran within the grace window — the IntersectionObserver callback
-    // never fired for this card, a thumbnail response resolved neither `load`
-    // nor `error` (a 204, or a 200 whose body won't decode as an image), or
-    // generation simply never completed — force a real end state. A card that
-    // only scrolls into view later still upgrades: showThumbImage's onload
-    // swaps the real raster in over the placeholder.
-    arm(() => {
-      if (settled) return;
-      if (p.hasSlides) showPlaceholder();
-      else showEmpty();
-    }, THUMB_SETTLE_TIMEOUT_MS);
 
     const author = authorForPresentation(p);
     const profile = author.id ? getUserProfile(author.id) : null;

@@ -125,7 +125,7 @@ test.after(() => {
 
 /**
  * A stored deck. No slides on purpose: the thumbnail route then has nothing to
- * rasterize and lands on its deterministic `thumbnail_pending` 404, which is
+ * rasterize and lands on its deterministic `thumbnail_unavailable` 404, which is
  * the answer this file needs to be able to tell apart from a 403.
  *
  * @param {string} organizationId - The organization that owns the deck.
@@ -308,7 +308,11 @@ for (const { name, handler, granted, method } of ENDPOINTS) {
     if (handler === handlePresentationThumbnail) {
       assert.deepEqual(
         body,
-        { ok: false, error: 'thumbnail_pending' },
+        {
+          ok: false,
+          error: 'thumbnail_unavailable',
+          message: 'This deck has no slides.',
+        },
         'refused at rendering, not at the door',
       );
     }

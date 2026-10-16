@@ -440,6 +440,7 @@ test('themes: red on a fork seed that boot would refuse', async () => {
 // ── chromium ────────────────────────────────────────────────────────────────
 
 const importOk = async () => ({});
+const launchOk = async () => 'HeadlessChrome/140.0.0.0';
 
 test('chromium: red without puppeteer-core or without a browser, green with both', async () => {
   const noPackage = await run(
@@ -466,9 +467,13 @@ test('chromium: red without puppeteer-core or without a browser, green with both
     {
       importPuppeteer: importOk,
       resolveChrome: async () => '/usr/bin/chromium',
+      launchBrowser: launchOk,
     },
   );
-  assert.deepEqual(green, { status: 'ok', message: '/usr/bin/chromium' });
+  assert.deepEqual(green, {
+    status: 'ok',
+    message: '/usr/bin/chromium (HeadlessChrome/140.0.0.0)',
+  });
 });
 
 test('chromium: a configured path that is not there warns about the fallback', async () => {
@@ -478,10 +483,39 @@ test('chromium: a configured path that is not there warns about the fallback', a
     {
       importPuppeteer: importOk,
       resolveChrome: async () => '/usr/bin/chromium',
+      launchBrowser: launchOk,
     },
   );
   assert.equal(found.status, 'warn');
   assert.match(found.message, /\/nope\/chrome/);
+});
+
+test('chromium: an executable that does not start as a browser is red (B283)', async () => {
+  const failed = await run(
+    chromiumCheck,
+    {},
+    {
+      importPuppeteer: importOk,
+      resolveChrome: async () => '/usr/bin/chromium',
+      launchBrowser: async () => {
+        throw new Error('Failed to launch the browser process: Code: 1\nlog');
+      },
+    },
+  );
+  assert.equal(failed.status, 'fail');
+  assert.match(failed.message, /does not start as a browser/);
+  assert.match(failed.message, /Code: 1\./, 'only the first line of the log');
+});
+
+test('chromium: the real check launches the binary, so a stub that exits is red', async () => {
+  // The shape of the Ubuntu `chromium-browser` shim (B499): executable, passes
+  // `X_OK`, exits at once. The default `launchBrowser` starts it for real.
+  const stub = path.join(scratch, 'stub-chromium');
+  writeFileSync(stub, '#!/bin/sh\nexit 1\n');
+  chmodSync(stub, 0o755);
+  const failed = await run(chromiumCheck, { PUPPETEER_EXECUTABLE_PATH: stub });
+  assert.equal(failed.status, 'fail');
+  assert.match(failed.message, /does not start as a browser/);
 });
 
 // ── uploads ─────────────────────────────────────────────────────────────────
