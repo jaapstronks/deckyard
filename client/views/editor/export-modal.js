@@ -12,6 +12,13 @@
  * when that render fails or times out. The two used to be two co-equal menu
  * items ("PDF" and "PDF (print in browser)"), which conflated an
  * implementation detail (which renderer) with a user choice.
+ *
+ * Every other file row fetches its file itself (B715): the button says it is
+ * busy while the server builds it and a failure sits under the row. A row
+ * used to open its download URL in a new tab, which stayed blank for the
+ * minute a large PowerPoint or handoff takes, and showed a `202` JSON blob on
+ * an instance with a job queue. Only the two preview pages (PNG, text
+ * handout) still open in a tab: they are pages to look at, not files.
  */
 
 import { h } from '../../lib/dom/index.js';
@@ -38,12 +45,14 @@ const PDF_FETCH_TIMEOUT_MS = 90_000;
 
 /**
  * Describe the export format groups. Called at open time so labels pick up the
- * current locale. `path` is the export route segment; `open` is how a plain
- * export is triggered ('tab' → new tab, 'download' → same-tab navigation).
+ * current locale. `path` is the export route segment. A `preview` row opens a
+ * page in a new tab; every other row downloads a file, saved as the server
+ * names it or, failing that, the deck title plus `file`. `busy` is the
+ * button's label while the file is built, `afterDownload` reads the response
+ * headers of a successful download. Notes carries two downloads in `actions`.
  * `allLanguages` marks a format that carries every language version itself
  * (the portable deck, D89): its URL takes no `?lang=`, since the route ignores
- * one. PDF, the editable PowerPoint and Notes are special-cased in the row
- * builder.
+ * one. PDF is special-cased in the row builder.
  * @returns {Array<{key:string,title:string,formats:Array<object>}>}
  */
 function exportGroups() {
@@ -66,7 +75,7 @@ function exportGroups() {
           icon: 'image',
           color: 'green',
           path: 'png',
-          open: 'tab',
+          preview: true,
         },
         // The two PowerPoint intents (D141): a file to show, and a file to
         // work in. Neither is the default, so they are two rows, not a mode.
@@ -80,7 +89,8 @@ function exportGroups() {
           icon: 'presentation',
           color: 'amber',
           path: 'pptx',
-          open: 'tab',
+          file: '.pptx',
+          busy: t('editor.export.pptxBusy', 'Building PowerPoint…'),
         },
         {
           key: 'pptxEditable',
@@ -91,6 +101,10 @@ function exportGroups() {
           ),
           icon: 'presentation',
           color: 'amber',
+          path: 'pptx-editable',
+          file: '-editable.pptx',
+          busy: t('editor.export.pptxBusy', 'Building PowerPoint…'),
+          afterDownload: announceImageSlides,
         },
         {
           key: 'html',
@@ -99,7 +113,7 @@ function exportGroups() {
           icon: 'code-xml',
           color: 'blue',
           path: 'html',
-          open: 'download',
+          file: '.html',
         },
       ],
     },
@@ -117,7 +131,7 @@ function exportGroups() {
           icon: 'sticky-note',
           color: 'teal',
           path: 'pdf',
-          open: 'tab',
+          preview: true,
         },
         {
           key: 'notes',
@@ -126,11 +140,11 @@ function exportGroups() {
           icon: 'notebook',
           color: 'purple',
           actions: [
-            { label: 'Markdown', path: 'notes.md', open: 'tab' },
+            { label: 'Markdown', path: 'notes.md', file: '-notes.md' },
             {
               label: t('editor.export.notesWordShort', 'Word'),
               path: 'notes.docx',
-              open: 'tab',
+              file: '-notes.docx',
             },
           ],
         },
@@ -150,7 +164,7 @@ function exportGroups() {
           icon: 'archive',
           color: 'indigo',
           path: 'deck.zip',
-          open: 'download',
+          file: '.deck',
           allLanguages: true,
         },
         {
@@ -160,7 +174,7 @@ function exportGroups() {
           icon: 'database',
           color: 'slate',
           path: 'json',
-          open: 'download',
+          file: '.json',
           allLanguages: true,
         },
         {
@@ -173,21 +187,32 @@ function exportGroups() {
           icon: 'package',
           color: 'indigo',
           path: 'handoff.zip',
-          open: 'tab',
+          file: '-handoff.zip',
         },
       ],
     },
   ];
 }
 
-/** Trigger a plain (non-PDF) export in a new tab or same-tab download. */
-function runExport(id, path, lang, open) {
-  const url = buildExportUrl(`/api/presentations/${id}/export/${path}`, lang);
-  if (open === 'download') {
-    location.href = url;
-  } else {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
+/**
+ * Open one of the preview pages (PNG, text handout) in a new tab: a page the
+ * reader looks at and prints from, served at once, not a file to wait for.
+ */
+function openPreview(id, path, lang) {
+  window.open(
+    buildExportUrl(`/api/presentations/${id}/export/${path}`, lang),
+    '_blank',
+    'noopener,noreferrer',
+  );
+}
+
+/**
+ * The URL a download row fetches. `?sync=1` makes a queue-backed route answer
+ * with the file rather than a `202` job hand-off nobody here polls; a route
+ * without a queue ignores it.
+ */
+function downloadUrl(id, path, lang) {
+  return buildExportUrl(`/api/presentations/${id}/export/${path}?sync=1`, lang);
 }
 
 /** Pull a filename out of a Content-Disposition header, else a fallback. */
@@ -235,45 +260,64 @@ async function downloadExport(url, fallbackName, signal) {
 }
 
 /**
- * The editable PowerPoint flow: fetch the file synchronously, save it, and say
- * which slides became pictures. The pixel-perfect row opens in a tab and needs
- * none of this; "editable" that is partly images has to say where (D141). A
- * failure is a state of this row, shown under it, like the PDF row's fallback.
+ * After the editable PowerPoint: say which slides became pictures, read from
+ * the response header, since "editable" that is partly images has to say
+ * where (D141). Silent when every slide is editable.
+ *
+ * @param {Headers} headers
  */
-async function exportEditablePptx({ id, getLang, title, button, error }) {
+function announceImageSlides(headers) {
+  const imageSlides = (headers.get(IMAGE_SLIDES_HEADER) || '')
+    .split(',')
+    .filter(Boolean);
+  if (imageSlides.length === 1) {
+    toast.info(
+      t(
+        'editor.export.imageSlidesOne',
+        'Slide {n} is an image: its type has no editable form yet.',
+        { n: imageSlides[0] },
+      ),
+    );
+  } else if (imageSlides.length > 1) {
+    toast.info(
+      t(
+        'editor.export.imageSlidesMany',
+        'Slides {list} are images: their type has no editable form yet.',
+        { list: imageSlides.join(', ') },
+      ),
+    );
+  }
+}
+
+/**
+ * The download flow of every file row but PDF: the button says it is busy and
+ * takes no second click while the server builds the file, then the file is
+ * saved. A failure (a refused deck, `503 browser_unavailable`) is a state of
+ * this row, shown under it until the next attempt, not a toast.
+ *
+ * @param {Object} opts
+ * @param {string} opts.url - from {@link downloadUrl}
+ * @param {string} opts.fallbackName - used when the response names no file
+ * @param {HTMLButtonElement} opts.button
+ * @param {{ clear: Function, show: Function }} opts.error - the row's inline error
+ * @param {string} [opts.busy] - the button's label meanwhile
+ * @param {(headers: Headers) => void} [opts.afterDownload]
+ */
+async function exportDownload({
+  url,
+  fallbackName,
+  button,
+  error,
+  busy,
+  afterDownload,
+}) {
   error.clear();
   const originalLabel = button.textContent;
   button.disabled = true;
-  button.textContent = t('editor.export.pptxBusy', 'Building PowerPoint…');
-  const url = buildExportUrl(
-    `/api/presentations/${id}/export/pptx-editable?sync=1`,
-    getLang(),
-  );
+  button.textContent = busy || t('editor.export.downloadBusy', 'Preparing…');
   try {
-    const headers = await downloadExport(
-      url,
-      `${title || 'export'}-editable.pptx`,
-    );
-    const imageSlides = (headers.get(IMAGE_SLIDES_HEADER) || '')
-      .split(',')
-      .filter(Boolean);
-    if (imageSlides.length === 1) {
-      toast.info(
-        t(
-          'editor.export.imageSlidesOne',
-          'Slide {n} is an image: its type has no editable form yet.',
-          { n: imageSlides[0] },
-        ),
-      );
-    } else if (imageSlides.length > 1) {
-      toast.info(
-        t(
-          'editor.export.imageSlidesMany',
-          'Slides {list} are images: their type has no editable form yet.',
-          { list: imageSlides.join(', ') },
-        ),
-      );
-    }
+    const headers = await downloadExport(url, fallbackName);
+    afterDownload?.(headers);
   } catch (err) {
     error.show(err.message, { focus: false });
   } finally {
@@ -294,13 +338,7 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
   fallbackWrap.hidden = true;
   fallbackWrap.replaceChildren();
 
-  const lang = getLang();
-  // ?sync=1 forces the synchronous render path, so the response is the PDF
-  // bytes (or an error) rather than a 202 job hand-off we'd have to poll.
-  const url = buildExportUrl(
-    `/api/presentations/${id}/export/pdf-slides.pdf?sync=1`,
-    lang,
-  );
+  const url = downloadUrl(id, 'pdf-slides.pdf', getLang());
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PDF_FETCH_TIMEOUT_MS);
@@ -385,45 +423,51 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
     return h('div', { class: 'export-format-rowwrap' }, [row, fallbackWrap]);
   }
 
-  if (fmt.key === 'pptxEditable') {
-    const error = createInlineError();
-    const btn = h('button', {
-      class: 'btn btn-secondary btn-sm',
-      type: 'button',
-      text: t('editor.export.exportAction', 'Export'),
-      onclick: () =>
-        exportEditablePptx({ id, getLang, title, button: btn, error }),
-    });
-    actions.append(btn);
-    makeClickable(() => btn.click());
-    return h('div', { class: 'export-format-rowwrap' }, [row, error.el]);
-  }
+  const lang = () => (fmt.allLanguages ? null : getLang());
 
-  if (Array.isArray(fmt.actions)) {
-    for (const action of fmt.actions) {
-      actions.append(
-        h('button', {
-          class: 'btn btn-secondary btn-sm',
-          type: 'button',
-          text: action.label,
-          onclick: () => runExport(id, action.path, getLang(), action.open),
-        }),
-      );
-    }
+  if (fmt.preview) {
+    const open = () => openPreview(id, fmt.path, lang());
+    actions.append(
+      h('button', {
+        class: 'btn btn-secondary btn-sm',
+        type: 'button',
+        text: t('editor.export.exportAction', 'Export'),
+        onclick: open,
+      }),
+    );
+    makeClickable(open);
     return row;
   }
 
-  const exportThis = () =>
-    runExport(id, fmt.path, fmt.allLanguages ? null : getLang(), fmt.open);
-  actions.append(
-    h('button', {
+  // A file row: one button per file (Notes has two), one inline error under
+  // the row for whichever of them failed last.
+  const error = createInlineError();
+  const downloads = fmt.actions || [
+    {
+      label: t('editor.export.exportAction', 'Export'),
+      path: fmt.path,
+      file: fmt.file,
+    },
+  ];
+  for (const download of downloads) {
+    const btn = h('button', {
       class: 'btn btn-secondary btn-sm',
       type: 'button',
-      text: t('editor.export.exportAction', 'Export'),
-      onclick: exportThis,
-    }),
-  );
-  makeClickable(exportThis);
+      text: download.label,
+      onclick: () =>
+        exportDownload({
+          url: downloadUrl(id, download.path, lang()),
+          fallbackName: `${title || 'export'}${download.file}`,
+          button: btn,
+          error,
+          busy: fmt.busy,
+          afterDownload: fmt.afterDownload,
+        }),
+    });
+    actions.append(btn);
+    if (downloads.length === 1) makeClickable(() => btn.click());
+  }
+  const below = [error.el];
 
   // The self-contained HTML export is the offline twin of Publish (same build).
   // Point users at the hosted, always-current alternative, and at the embed
@@ -444,10 +488,10 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
         onclick: openPublic,
       }),
     ]);
-    return h('div', { class: 'export-format-rowwrap' }, [row, hint]);
+    below.push(hint);
   }
 
-  return row;
+  return h('div', { class: 'export-format-rowwrap' }, [row, ...below]);
 }
 
 /**

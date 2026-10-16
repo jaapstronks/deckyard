@@ -300,6 +300,7 @@
   "editor.export.descPng": "Immagine di ogni slide",
   "editor.export.descPptx": "PowerPoint, ogni slide come immagine",
   "editor.export.descTextPdf": "Dispensa leggibile, senza il layout delle slide",
+  "editor.export.downloadBusy": "Preparazione…",
   "editor.export.exportAction": "Esporta",
   "editor.export.groupData": "Dati e pacchetto",
   "editor.export.groupDocuments": "Documenti",

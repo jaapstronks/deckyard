@@ -302,6 +302,7 @@
   "editor.export.descPng": "Kuva jokaisesta diasta",
   "editor.export.descPptx": "PowerPoint, jokainen dia kuvana",
   "editor.export.descTextPdf": "Luettava moniste ilman diojen asettelua",
+  "editor.export.downloadBusy": "Valmistellaan…",
   "editor.export.exportAction": "Vie",
   "editor.export.groupData": "Data ja paketti",
   "editor.export.groupDocuments": "Asiakirjat",

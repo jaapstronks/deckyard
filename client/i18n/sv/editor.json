@@ -299,6 +299,7 @@
   "editor.export.descPng": "Bild av varje slide",
   "editor.export.descPptx": "PowerPoint, varje slide som bild",
   "editor.export.descTextPdf": "Läsbart underlag, utan slidelayout",
+  "editor.export.downloadBusy": "Förbereder…",
   "editor.export.exportAction": "Exportera",
   "editor.export.groupData": "Data och paket",
   "editor.export.groupDocuments": "Dokument",

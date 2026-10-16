@@ -324,6 +324,7 @@
   "editor.export.descPptx": "Pixel-perfect: every slide as an image, videos play",
   "editor.export.descPptxEditable": "Text and pictures you can edit, on the theme's layouts",
   "editor.export.descTextPdf": "Readable handout, no slide layout",
+  "editor.export.downloadBusy": "Preparing…",
   "editor.export.exportAction": "Export",
   "editor.export.groupData": "Data & bundle",
   "editor.export.groupDocuments": "Documents",

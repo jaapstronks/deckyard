@@ -300,6 +300,7 @@
   "editor.export.descPng": "Obraz każdego slajdu",
   "editor.export.descPptx": "PowerPoint, każdy slajd jako obraz",
   "editor.export.descTextPdf": "Czytelny materiał, bez układu slajdów",
+  "editor.export.downloadBusy": "Przygotowywanie…",
   "editor.export.exportAction": "Eksportuj",
   "editor.export.groupData": "Dane i paczka",
   "editor.export.groupDocuments": "Dokumenty",
