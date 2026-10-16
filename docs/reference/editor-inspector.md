@@ -372,6 +372,34 @@ The offer model, the `content.textStyles` storage keys, the refusals on the
 write path and which core fields offer what are normative in
 **[`text-styles.md`](text-styles.md)**.
 
+### The visible default
+
+A choice control with a declared default shows which option that is: a dot on
+the default segment, menu row or focus cell, and "(Default)" in its tooltip and
+accessible name (a dropdown says it in the option text). While the value
+deviates, a **"Back to default"** text button sits under the control; without
+a deviation there is none. The mark lives in the control only: the tabs, the
+Fields form and the slide list carry no override indicator (D346).
+
+One helper draws it for every control, `client/views/editor/fields/default-mark.js`,
+and the reset is the same act as choosing the default, so each write path keeps
+its own rule:
+
+- **Text size and alignment** ("This text"): the type's offer default; the
+  entry is pruned from `content.textStyles` by `normalizeTextStyles`.
+- **Schema enums** (background colour, image background and every other `enum`
+  with a value in the type's `defaults`): the type default is written back. It
+  is not deleted, because renderers read the stored value without consulting
+  `defaults` (a missing `background` renders as `lime`, also on types whose
+  default is `mist`).
+- **Image fit** with a type default (`imageDefaults.fit`): the default option is
+  marked and choosing it empties the field, so a later default change still
+  reaches the deck ([`image-property-ownership.md`](image-property-ownership.md)).
+- **Crop focus**: the centre cell is the default; the reset returns to 50/50.
+
+On/off fields are not marked: their storage already clears the key at the type
+default, and a dot on every "Off" would be noise.
+
 ## Per-type coverage audit
 
 **Generated, not audited by hand.** The table below is derived from the

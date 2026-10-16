@@ -3,6 +3,12 @@ import { h } from '../../../lib/dom/index.js';
 import { mergeBackgroundOptions } from '../../../../shared/theme-slide-backgrounds.js';
 import { optionCopy } from './option-copy.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
+import {
+  createResetToDefault,
+  defaultDot,
+  hasDefaultOption,
+  withDefaultMark,
+} from './default-mark.js';
 
 export function createBackgroundFields({ theme } = {}) {
   const themeVars =
@@ -61,7 +67,9 @@ export function createBackgroundFields({ theme } = {}) {
     return raw || null;
   };
 
-  const fieldBackground = (field, value, onChange) => {
+  // With a `defaultValue` among the options, its menu row carries the default
+  // dot and a deviating choice offers "Back to default" (D346).
+  const fieldBackground = (field, value, onChange, { defaultValue } = {}) => {
     // Theme-defined background variants (theme.slideBackgrounds, normalized in
     // client/lib/theme.js) extend every background picker. The merge lives in
     // shared/ because the theme:preview contact sheet walks the same set.
@@ -77,6 +85,9 @@ export function createBackgroundFields({ theme } = {}) {
     // Local UI state: the editor form doesn't re-render this field on every change,
     // so we must update the trigger/menu immediately when an option is picked.
     let current = values.includes(v) ? v : String(options?.[0]?.value ?? '');
+    const d = hasDefaultOption(options, defaultValue)
+      ? String(defaultValue)
+      : null;
 
     let open = false;
     const wrap = h('div', { class: 'stack is-field' });
@@ -176,10 +187,7 @@ export function createBackgroundFields({ theme } = {}) {
         btn.addEventListener('pointerdown', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          current = o;
-          renderTrigger();
-          renderMenu();
-          onChange(o);
+          choose(o);
           close();
           try {
             trigger.focus?.();
@@ -194,14 +202,41 @@ export function createBackgroundFields({ theme } = {}) {
         sw.classList.toggle('is-transparent', o === 'transparent');
         btn.classList.toggle('is-active', o === current);
         btn.append(sw, h('span', { text: labelForOpt(opt) }));
+        if (o === d) {
+          btn.title = withDefaultMark(labelForOpt(opt));
+          btn.setAttribute('aria-label', btn.title);
+          btn.append(defaultDot());
+        }
         menu.append(btn);
       }
     };
 
+    const choose = (o) => {
+      current = o;
+      renderTrigger();
+      renderMenu();
+      reset?.sync(o);
+      onChange(o);
+    };
+    const reset =
+      d == null
+        ? null
+        : createResetToDefault({
+            defaultValue: d,
+            value: current,
+            apply: choose,
+          });
+
     renderTrigger();
     renderMenu();
 
-    wrap.append(label, h('div', { class: 'bg-picker' }, [trigger, menu]));
+    wrap.append(
+      ...[
+        label,
+        h('div', { class: 'bg-picker' }, [trigger, menu]),
+        reset?.el,
+      ].filter(Boolean),
+    );
     return wrap;
   };
 
