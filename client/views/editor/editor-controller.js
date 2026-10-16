@@ -24,6 +24,7 @@ import {
   renderSlideElement,
   slideRendered,
 } from '../../lib/slide-runtime/slide-render.js';
+import { restyleLiveSlide } from '../../lib/slide-runtime/live-restyle.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
@@ -601,6 +602,10 @@ export async function createEditorController({
   let updateSelectedSlideListItem = () => {};
   let updateSlideLockIndicators = () => {};
   let lastNotesSlideId = null;
+  // The canvas slide as it was last mounted, so a commit during an inline edit
+  // can be applied as a class/style delta instead of a remount (B719).
+  let mountedCanvasSlide = null;
+  let mountedCanvasEl = null;
 
   const scheduleUiRefresh = () => {
     if (uiRefreshTimer) clearTimeout(uiRefreshTimer);
@@ -1676,10 +1681,23 @@ export async function createEditorController({
   // ============================================================
 
   rerenderPreview = () => {
-    // Never wipe the DOM while an inline edit is active — it would destroy the
-    // element the user is typing in (and their caret/selection).
-    if (inlineEditor.isEditing()) return;
     const slide = pres.slides.find((s) => s.id === selectedSlideId);
+    // Never wipe the DOM while an inline edit is active — it would destroy the
+    // element the user is typing in (and their caret/selection). A style or
+    // layout commit still shows: its classes land on the living element, and
+    // the deferred re-render after the edit catches whatever that cannot.
+    if (inlineEditor.isEditing()) {
+      if (slide?.id === mountedCanvasSlide?.id) {
+        restyleLiveSlide(mountedCanvasEl, mountedCanvasSlide, slide, {
+          mode: 'edit',
+          theme,
+          presentationId: pres?.id,
+          lang: resolveDeckLang(pres),
+        });
+        mountedCanvasSlide = structuredClone(slide);
+      }
+      return;
+    }
     // `mode: 'edit'` marks this as the inline-editable canvas so slide types can
     // suppress non-editing affordances (e.g. icon-card link overlays that would
     // otherwise intercept click-to-edit). Behaves like the default mode for all
@@ -1694,6 +1712,8 @@ export async function createEditorController({
       // interactive types cannot know the deck's language.
       lang: resolveDeckLang(pres),
     });
+    mountedCanvasEl = mounted;
+    mountedCanvasSlide = slide ? structuredClone(slide) : null;
     // A server-rendered type (fork type, fork override) mounts a placeholder
     // and gets its real DOM afterwards: re-apply the inline-edit affordances
     // then, unless this slide was remounted or the editor left in the meantime
