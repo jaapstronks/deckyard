@@ -719,30 +719,10 @@
    ANALYZE MODAL STYLES
    ============================================================ */
 
-.analyze-progress {
-  padding: var(--ps-space-4) 0;
-}
-
 .analyze-status {
   font-size: var(--ps-text-base);
   margin-bottom: var(--ps-space-3);
   color: hsl(var(--app-text-primary));
-}
-
-.analyze-progress-bar {
-  height: 8px;
-  background: hsl(var(--app-border-default));
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: var(--ps-space-4);
-}
-
-.analyze-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, hsl(270 60% 60%), hsl(200 60% 60%));
-  border-radius: 4px;
-  width: 0%;
-  transition: width 0.3s ease;
 }
 
 .analyze-suggestions-list {

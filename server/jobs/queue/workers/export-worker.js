@@ -27,47 +27,9 @@ import { buildStandaloneHtml } from '../../../export/html.js';
 import { prepareQueuedExportContext } from '../../../services/exports.js';
 import { jobScope } from '../../../storage/scope.js';
 import { createLogger } from '../../../utils/logger.js';
+import { storeExportResult } from '../../../export/result-store.js';
 
 const log = createLogger('export-worker');
-
-// Store completed job results temporarily for download
-const jobResults = new Map();
-const RESULT_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-/**
- * Store a job result for later retrieval.
- * @param {string} jobId - Job ID
- * @param {Object} result - Result data
- */
-function storeResult(jobId, result) {
-  jobResults.set(jobId, {
-    result,
-    storedAt: Date.now(),
-  });
-
-  // Schedule cleanup; unref'd so it never keeps the process alive.
-  setTimeout(() => {
-    jobResults.delete(jobId);
-  }, RESULT_TTL_MS).unref();
-}
-
-/**
- * Get a stored job result.
- * @param {string} jobId - Job ID
- * @returns {Object|null} Result or null
- */
-export function getStoredResult(jobId) {
-  const entry = jobResults.get(jobId);
-  if (!entry) return null;
-
-  // Check TTL
-  if (Date.now() - entry.storedAt > RESULT_TTL_MS) {
-    jobResults.delete(jobId);
-    return null;
-  }
-
-  return entry.result;
-}
 
 /**
  * Process an export job.
@@ -205,7 +167,7 @@ async function processExportJob(job) {
   // Store result for download. `ownerEmail` gates the download/status routes
   // against enumeration of other users' exports (security-audit H3).
   const result = {
-    buffer: buffer.toString('base64'),
+    buffer,
     contentType,
     extension,
     filename: ctx.filteredPres.title || 'presentation',
@@ -213,7 +175,7 @@ async function processExportJob(job) {
     ownerEmail: job.data.ownerEmail || null,
   };
 
-  storeResult(job.id, result);
+  storeExportResult(String(job.id), result);
   await job.updateProgress(100);
 
   return {

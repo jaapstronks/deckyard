@@ -15,7 +15,10 @@ import {
   QUEUE_NAMES,
 } from '../../jobs/queue/connection.js';
 import { getJobFailureMessage } from '../../jobs/queue/job-failure.js';
-import { getStoredResult } from '../../jobs/queue/workers/export-worker.js';
+import {
+  getExportResult,
+  releaseExportResult,
+} from '../../export/result-store.js';
 import { getStoredTranslationResult } from '../../jobs/queue/workers/translate-worker.js';
 import { getStoredBulkResult } from '../../jobs/queue/workers/bulk-export-worker.js';
 import {
@@ -63,7 +66,7 @@ function parseJobId(jobId) {
  * @returns {Object|null} Stored result, or null if absent/expired
  */
 function getStoredResultForQueue(queueName, id) {
-  if (queueName === QUEUE_NAMES.EXPORT) return getStoredResult(id);
+  if (queueName === QUEUE_NAMES.EXPORT) return getExportResult(id);
   if (queueName === QUEUE_NAMES.TRANSLATE)
     return getStoredTranslationResult(id);
   if (queueName === QUEUE_NAMES.HEAVY) return getStoredBulkResult(id);
@@ -156,14 +159,7 @@ async function handleJobDownload({ res, authedUser }, fullJobId) {
   const { queueName, id } = parseJobId(fullJobId);
 
   // Get stored result based on queue type
-  let result = null;
-  if (queueName === QUEUE_NAMES.EXPORT) {
-    result = getStoredResult(id);
-  } else if (queueName === QUEUE_NAMES.TRANSLATE) {
-    result = getStoredTranslationResult(id);
-  } else if (queueName === QUEUE_NAMES.HEAVY) {
-    result = getStoredBulkResult(id);
-  }
+  const result = getStoredResultForQueue(queueName, id);
 
   if (!result) {
     return notFound(res, 'Job result not found or expired');
@@ -211,15 +207,17 @@ async function handleJobDownload({ res, authedUser }, fullJobId) {
     return true;
   }
 
-  // For standard export jobs, return the buffered file
-  const buffer = Buffer.from(result.buffer, 'base64');
-
+  // An export file held in memory: a queued job's, or a streamed export's
+  // (`export/pipeline.js`), which is released by this one download.
+  const { buffer } = result;
   res.writeHead(200, {
+    ...result.headers,
     'Content-Type': result.contentType,
     'Content-Disposition': `attachment; filename="${encodeURIComponent(fullFilename)}"`,
     'Content-Length': buffer.length,
   });
   res.end(buffer);
+  releaseExportResult(id);
   return true;
 }
 

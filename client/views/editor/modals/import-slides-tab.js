@@ -5,6 +5,8 @@ import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { showLoadingModal } from '../../../lib/dom/loading-modal.js';
+import { processSSEStream } from '../../../lib/net/sse.js';
 
 const PPTX_MIME =
   'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -14,6 +16,10 @@ const PPTX_MIME =
  * Each page of a PDF becomes an image-slide; the PowerPoint file beside it
  * gives each slide its speaker notes, paired by slide order (B700, D334).
  * Either file may come alone.
+ *
+ * The import itself is a long task: it runs in the loading modal, page by
+ * page, and its Cancel closes the stream, which stops the page renders on the
+ * server (B716).
  *
  * @param {object} options
  * @param {function} options.api - API caller function
@@ -107,18 +113,6 @@ export function createImportSlidesTab({
     ),
   });
 
-  // Progress section
-  const progressBar = h('div', { class: 'import-slides-progress-bar' });
-  const progressTrack = h('div', { class: 'import-slides-progress-track' }, [
-    progressBar,
-  ]);
-  const progressText = h('div', { class: 'import-slides-progress-text help' });
-  const progressSection = h(
-    'div',
-    { class: 'import-slides-progress', hidden: true },
-    [progressTrack, progressText],
-  );
-
   // Import button
   const btnImport = h('button', {
     class: 'btn btn-primary',
@@ -131,7 +125,7 @@ export function createImportSlidesTab({
     btnImport,
   ]);
 
-  // Progress and the "n slides imported" confirmation. A refusal (not a PDF,
+  // The "n slides imported" confirmation. A refusal (not a PDF,
   // the import itself failed) is a state of this form and gets the inline
   // element beside the button.
   const statusMessage = h('div', {
@@ -160,7 +154,6 @@ export function createImportSlidesTab({
   function clearFile(kind) {
     selected[kind] = null;
     inputFile.value = '';
-    progressSection.hidden = true;
     btnImport.textContent = t(
       'editor.importSlides.importButton',
       'Import slides',
@@ -170,15 +163,24 @@ export function createImportSlidesTab({
     render();
   }
 
-  function setProgress(current, total, message) {
-    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-    progressBar.style.width = `${pct}%`;
-    progressText.textContent = message || `${pct}%`;
-  }
-
   function showStatus(message) {
     statusMessage.textContent = message;
     statusMessage.hidden = false;
+  }
+
+  /**
+   * The bar position of one server `progress` event: rendering the pages is
+   * the first half of the work, uploading them the second.
+   */
+  function progressOf({ stage, current, total }) {
+    if (stage === 'converting' && total > 0) {
+      return 10 + Math.round((current / total) * 40);
+    }
+    if (stage === 'uploading' && total > 0) {
+      return 50 + Math.round((current / total) * 40);
+    }
+    if (stage === 'saving') return 95;
+    return 10;
   }
 
   async function startImport() {
@@ -186,14 +188,20 @@ export function createImportSlidesTab({
 
     importing = true;
     btnImport.disabled = true;
-    btnImport.textContent = t('editor.importSlides.importing', 'Importing…');
     for (const row of Object.values(fileRows)) row.clear.disabled = true;
-    progressSection.hidden = false;
-    setProgress(
-      0,
-      100,
-      t('editor.importSlides.progress.reading', 'Reading file…'),
-    );
+    refusal.clear();
+    statusMessage.hidden = true;
+
+    const controller = new AbortController();
+    const modal = showLoadingModal({
+      root: document.body,
+      title: t('editor.importSlides.progressTitle', 'Importing slides'),
+      initialMessage: t(
+        'editor.importSlides.progress.reading',
+        'Reading file…',
+      ),
+      onCancel: () => controller.abort(),
+    });
 
     try {
       // Read the files as data URLs
@@ -203,12 +211,12 @@ export function createImportSlidesTab({
       const pptxDataUrl = selected.pptx
         ? await readFileAsDataUrl(selected.pptx)
         : null;
+      controller.signal.throwIfAborted();
 
-      setProgress(
-        5,
-        100,
-        t('editor.importSlides.progress.uploading', 'Uploading…'),
-      );
+      modal.setProgress(5);
+      modal.update(t('editor.importSlides.progress.uploading', 'Uploading…'), {
+        immediate: true,
+      });
 
       // Call the API with SSE for progress
       const url = `/api/presentations/${encodeURIComponent(presentationId)}/import-slides-as-images`;
@@ -229,6 +237,7 @@ export function createImportSlidesTab({
           insertAfterSlideId: afterSlideId,
         }),
         credentials: 'include',
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -236,94 +245,49 @@ export function createImportSlidesTab({
         throw new Error(errorText(errorData, `HTTP ${response.status}`));
       }
 
-      // Handle SSE response
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        let event = '';
-        let data = '';
-
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            event = line.slice(7).trim();
-          } else if (line.startsWith('data: ')) {
-            data = line.slice(6);
-          } else if (line === '' && data) {
-            // Parse first, handle after: an `error` event throws to the
-            // refusal below, so it must not land in the parse guard.
-            let parsed;
-            try {
-              parsed = JSON.parse(data);
-            } catch (parseErr) {
-              console.error(
-                '[import-slides] Failed to parse SSE data:',
-                parseErr,
-              );
-              event = '';
-              data = '';
-              continue;
-            }
-
-            if (event === 'progress') {
-              const { stage, current, total, message } = parsed;
-              let pct = 10;
-              if (stage === 'converting' && total > 0) {
-                pct = 10 + Math.round((current / total) * 40);
-              } else if (stage === 'uploading' && total > 0) {
-                pct = 50 + Math.round((current / total) * 40);
-              } else if (stage === 'saving') {
-                pct = 95;
-              }
-              setProgress(pct, 100, message);
-            } else if (event === 'error') {
-              throw new Error(
-                parsed.message || t('editor.import.failed', 'Import failed'),
-              );
-            } else if (event === 'complete') {
-              setProgress(
-                100,
-                100,
-                t('editor.importSlides.progress.complete', 'Complete!'),
-              );
-              showStatus(
-                t(
-                  'editor.importSlides.success',
-                  {
-                    one: '1 slide imported',
-                    many: '{count} slides imported',
-                  },
-                  { count: parsed.slidesAdded || 0 },
-                ),
-              );
-              onComplete?.(parsed);
-              return;
-            }
-            event = '';
-            data = '';
-          }
-        }
+      let result = null;
+      await processSSEStream(response.body, {
+        onProgress: (data) => {
+          modal.setProgress(progressOf(data));
+          if (data.message) modal.update(data.message, { immediate: true });
+        },
+        onError: (data) => {
+          throw new Error(
+            data?.message || t('editor.import.failed', 'Import failed'),
+          );
+        },
+        onComplete: (data) => {
+          result = data;
+        },
+      });
+      if (!result) {
+        throw new Error(t('editor.import.failed', 'Import failed'));
       }
+
+      modal.setProgress(100);
+      showStatus(
+        t(
+          'editor.importSlides.success',
+          {
+            one: '1 slide imported',
+            many: '{count} slides imported',
+          },
+          { count: result.slidesAdded || 0 },
+        ),
+      );
+      onComplete?.(result);
     } catch (err) {
-      console.error('[import-slides] Error:', err);
-      statusMessage.hidden = true;
-      refusal.show(err.message || t('editor.import.failed', 'Import failed'));
-      onError?.(err);
+      // Cancel aborted the request: the user knows, and the server stopped.
+      if (err?.name !== 'AbortError') {
+        console.error('[import-slides] Error:', err);
+        statusMessage.hidden = true;
+        refusal.show(err.message || t('editor.import.failed', 'Import failed'));
+        onError?.(err);
+      }
     } finally {
+      modal.close();
       importing = false;
       btnImport.disabled = false;
-      btnImport.textContent = t(
-        'editor.importSlides.importButton',
-        'Import slides',
-      );
       for (const row of Object.values(fileRows)) row.clear.disabled = false;
       render();
     }
@@ -396,7 +360,6 @@ export function createImportSlidesTab({
     fileRows.pdf.el,
     fileRows.pptx.el,
     pptxOnlyNotice,
-    progressSection,
     actionsSection,
     refusal.el,
     statusMessage,

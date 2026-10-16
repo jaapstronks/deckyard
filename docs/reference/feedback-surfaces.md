@@ -162,6 +162,35 @@ how you know you picked the wrong one.
   Removing a row by navigating away (a deck moved to trash) needs neither —
   the route places focus.
 
+## Long tasks
+
+**A long task is the loading modal** (B716). Work the user waits for in the
+window that started it, longer than a button can honestly say "busy" for,
+runs in `showLoadingModal()` ([`client/lib/dom/loading-modal.js`](../../client/lib/dom/loading-modal.js)):
+AI generation, file conversion, the Notion import, a PDF imported as slides,
+the AI analysis, and every export that renders in Chrome (PDF, PNG ZIP, both
+PowerPoints, the handoff ZIP).
+
+- **One bar.** The modal owns it, with the two rules of
+  [`import-progress.md`](./import-progress.md): it never walks back, and a
+  phase without events creeps. A feature does not draw a bar of its own;
+  `tests/long-task-surface.test.js` refuses a `*-progress-bar` class anywhere
+  but the modal and the presenter's deck progress (a position in a talk, not
+  a task).
+- **The counter is the server's.** "Slide 12 of 54" comes from the work
+  itself, over SSE; the client words it.
+- **A task that can stop has Cancel.** `onCancel` gives the modal a Cancel
+  button (Escape presses it); the caller aborts its request, and the closed
+  connection is how the server learns to stop (`clientDisconnectSignal`). A
+  cancel is not a failure: it closes the modal and says nothing.
+- **A failure goes where the task was started**, by the table above: under the
+  export row, in the import form, in the analysis dialog.
+
+Not a long task: a quick file (HTML, notes, a .deck) keeps its busy button,
+and a job the user can leave (the settings backup, polled under "Hide
+progress") is a background state with its own bar in the card, not a window
+that waits.
+
 ## Stacking: toasts above modals
 
 `--z-toast` (1200) sits above `--z-modal` (1100), so a toast is visible over an

@@ -1,11 +1,19 @@
 /**
  * AI Analysis Modal
  *
- * Triggers AI analysis of the presentation and shows progress.
+ * Triggers AI analysis of the presentation and shows the result.
  * Suggestions are created as comments that appear in the comments panel.
+ *
+ * The analysis itself is a long task: while it runs, the loading modal stands
+ * in front of this dialog with the progress and a Cancel that aborts the
+ * request, which stops the model call and the comment writes on the server
+ * (B716). This dialog keeps what is left when it is done: the summary and the
+ * suggestions that were added.
  */
 
 import { createPromiseModal } from '../../../lib/dom/modal.js';
+import { showLoadingModal } from '../../../lib/dom/loading-modal.js';
+import { processSSEStream } from '../../../lib/net/sse.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { stripMentionMarkup } from '../../../../shared/comment-mentions.js';
 import { h } from '../../../lib/dom/index.js';
@@ -22,19 +30,13 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
   });
 
   // State
-  let controller = null;
   let isRunning = false;
 
-  // Progress display
-  const progressContainer = h('div', { class: 'analyze-progress' });
+  // The result: the summary line and the suggestions that were added.
+  const resultsContainer = h('div', { class: 'analyze-results' });
   const statusText = h('div', { class: 'analyze-status', text: '' });
-  const progressBar = h('div', { class: 'analyze-progress-bar' });
-  const progressFill = h('div', { class: 'analyze-progress-fill' });
-  progressBar.append(progressFill);
-
   const suggestionsList = h('div', { class: 'analyze-suggestions-list' });
-
-  progressContainer.append(statusText, progressBar, suggestionsList);
+  resultsContainer.append(statusText, suggestionsList);
 
   // Initial state - show options
   const optionsContainer = h('div', { class: 'analyze-options' });
@@ -53,15 +55,7 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
   const btnCancel = h('button', {
     class: 'btn btn-secondary',
     text: t('common.cancel', 'Cancel'),
-    onclick: () => {
-      // Abort the in-flight analysis (if any) so the server request and the
-      // client reader stop instead of running on after the modal closes.
-      if (controller) {
-        controller.abort();
-        controller = null;
-      }
-      modal.close({ ok: false });
-    },
+    onclick: () => modal.close({ ok: false }),
   });
 
   const btnAnalyze = h('button', {
@@ -80,10 +74,20 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
   btnRow.append(btnCancel, btnAnalyze, btnClose);
 
   optionsContainer.append(infoText);
-  modal.content.append(optionsContainer, progressContainer, btnRow);
+  modal.content.append(optionsContainer, resultsContainer, btnRow);
 
-  // Initially hide progress
-  progressContainer.style.display = 'none';
+  // Nothing to show until the analysis ran
+  resultsContainer.style.display = 'none';
+
+  /** Swap the dialog to its result: the summary, the list, Close. */
+  function showResult(message) {
+    statusText.textContent = message;
+    optionsContainer.style.display = 'none';
+    resultsContainer.style.display = '';
+    btnAnalyze.style.display = 'none';
+    btnCancel.style.display = 'none';
+    btnClose.style.display = '';
+  }
 
   /**
    * Start the analysis via SSE
@@ -91,24 +95,22 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
   async function startAnalysis() {
     if (isRunning) return;
     isRunning = true;
-
-    // Switch UI to progress mode
-    optionsContainer.style.display = 'none';
-    progressContainer.style.display = '';
-    btnAnalyze.style.display = 'none';
-    btnCancel.textContent = t('common.cancel', 'Cancel');
-
-    statusText.textContent = t(
-      'editor.analyzeModal.starting',
-      'Starting analysis…',
-    );
-    progressFill.style.width = '0%';
     suggestionsList.replaceChildren();
 
-    controller = new AbortController();
+    const controller = new AbortController();
+    const progress = showLoadingModal({
+      root: document.body,
+      title: t('editor.analyzeModal.title', 'AI Analysis'),
+      initialMessage: t('editor.analyzeModal.starting', 'Starting analysis…'),
+      // Abort the analysis so the server request and the client reader stop
+      // instead of running on after the dialog closes.
+      onCancel: () => {
+        controller.abort();
+        modal.close({ ok: false });
+      },
+    });
 
     try {
-      // Use fetch with SSE parsing since EventSource doesn't support POST
       // SSE stream (POST, so EventSource is out): reads response.body.
       // eslint-disable-next-line no-restricted-syntax
       const response = await fetch(`/api/presentations/${id}/analyze`, {
@@ -125,98 +127,73 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
         throw new Error(`Analysis failed: ${response.status}`);
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        let currentEvent = null;
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7).trim();
-          } else if (line.startsWith('data: ') && currentEvent) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              handleSSEEvent(currentEvent, data);
-            } catch {
-              // Ignore parse errors
-            }
-            currentEvent = null;
-          }
-        }
-      }
+      await processSSEStream(response.body, eventHandlers(progress));
     } catch (error) {
-      // Cancel aborts the fetch: the modal is already closing, so stay silent.
+      // Cancel aborts the fetch: the dialog is already closing, so stay silent.
       if (error?.name === 'AbortError') return;
       console.error('[analyze] Error:', error);
-      statusText.textContent = t(
-        'editor.analyzeModal.error',
-        'Analysis failed: {message}',
-        {
+      showResult(
+        t('editor.analyzeModal.error', 'Analysis failed: {message}', {
           message: error?.message || t('common.unknownError', 'Unknown error'),
-        },
+        }),
       );
-      btnCancel.style.display = 'none';
-      btnClose.style.display = '';
     } finally {
+      progress.close();
       isRunning = false;
-      controller = null;
     }
   }
 
   /**
-   * Handle SSE events
+   * The stream's events, read into the loading modal while it runs and into
+   * this dialog when it is done.
+   *
+   * @param {ReturnType<typeof showLoadingModal>} progress
    */
-  function handleSSEEvent(event, data) {
-    switch (event) {
-      case 'connected':
-        statusText.textContent = t(
-          'editor.analyzeModal.connected',
-          'Connected, analyzing…',
+  function eventHandlers(progress) {
+    return {
+      connected: () => {
+        progress.update(
+          t('editor.analyzeModal.connected', 'Connected, analyzing…'),
         );
-        break;
+      },
 
-      case 'progress':
+      progress: (data) => {
         if (data.phase === 'analyzing') {
-          statusText.textContent = t(
-            'editor.analyzeModal.analyzing',
-            { one: 'Analyzing 1 slide…', many: 'Analyzing {count} slides…' },
-            { count: data.slideCount || 0 },
+          progress.update(
+            t(
+              'editor.analyzeModal.analyzing',
+              { one: 'Analyzing 1 slide…', many: 'Analyzing {count} slides…' },
+              { count: data.slideCount || 0 },
+            ),
           );
-          progressFill.style.width = '30%';
+          // One model call: it creeps toward the parse step, it cannot count.
+          progress.setProgress(10);
+          progress.creepTo(55);
         } else if (data.phase === 'parsing') {
-          statusText.textContent = t(
-            'editor.analyzeModal.parsing',
-            'Processing suggestions…',
+          progress.update(
+            t('editor.analyzeModal.parsing', 'Processing suggestions…'),
           );
-          progressFill.style.width = '60%';
+          progress.setProgress(60);
         } else if (data.phase === 'creating') {
-          statusText.textContent = t(
-            'editor.analyzeModal.creating',
-            'Creating suggestions…',
+          progress.update(
+            t('editor.analyzeModal.creating', 'Creating suggestions…'),
           );
-          progressFill.style.width = '70%';
-        } else if (data.phase === 'complete') {
-          progressFill.style.width = '100%';
+          progress.setProgress(70);
         }
-        break;
+      },
 
-      case 'suggestion': {
-        progressFill.style.width = `${70 + (30 * data.index) / data.total}%`;
-        statusText.textContent = t(
-          'editor.analyzeModal.creatingN',
-          'Creating suggestion {n} of {total}…',
-          {
-            n: String(data.index),
-            total: String(data.total),
-          },
+      suggestion: (data) => {
+        progress.setProgress(70 + (30 * data.index) / data.total);
+        progress.update(
+          t(
+            'editor.analyzeModal.creatingN',
+            'Creating suggestion {n} of {total}…',
+            {
+              n: String(data.index),
+              total: String(data.total),
+            },
+          ),
+          { immediate: true },
         );
 
         // Add suggestion to list
@@ -231,49 +208,38 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
         });
         suggestionEl.append(categoryBadge, bodyText);
         suggestionsList.append(suggestionEl);
-        break;
-      }
+      },
 
-      case 'complete':
-        isRunning = false;
-        progressFill.style.width = '100%';
-
-        if (data.suggestionCount === 0) {
-          statusText.textContent = t(
-            'editor.analyzeModal.noSuggestions',
-            'No suggestions found. Your presentation looks great!',
-          );
-        } else {
-          statusText.textContent = t(
-            'editor.analyzeModal.complete',
-            {
-              one: 'Analysis complete! 1 suggestion added as a comment.',
-              many: 'Analysis complete! {count} suggestions added as comments.',
-            },
-            { count: data.suggestionCount },
-          );
-        }
-
-        btnCancel.style.display = 'none';
-        btnClose.style.display = '';
+      complete: (data) => {
+        progress.setProgress(100);
+        showResult(
+          data.suggestionCount === 0
+            ? t(
+                'editor.analyzeModal.noSuggestions',
+                'No suggestions found. Your presentation looks great!',
+              )
+            : t(
+                'editor.analyzeModal.complete',
+                {
+                  one: 'Analysis complete! 1 suggestion added as a comment.',
+                  many: 'Analysis complete! {count} suggestions added as comments.',
+                },
+                { count: data.suggestionCount },
+              ),
+        );
 
         // Notify parent to refresh comments
         onComplete?.({ suggestionCount: data.suggestionCount });
-        break;
+      },
 
-      case 'error':
-        isRunning = false;
-        statusText.textContent = t(
-          'editor.analyzeModal.error',
-          'Analysis failed: {message}',
-          {
+      error: (data) => {
+        showResult(
+          t('editor.analyzeModal.error', 'Analysis failed: {message}', {
             message: data.message || t('common.unknownError', 'Unknown error'),
-          },
+          }),
         );
-        btnCancel.style.display = 'none';
-        btnClose.style.display = '';
-        break;
-    }
+      },
+    };
   }
 
   modal.show(root);

@@ -2,7 +2,12 @@
  * Loading Modal
  *
  * A slick loading modal with blur background and animated status messages.
- * Used during AI generation, file conversion and Notion import.
+ *
+ * It is the one carrier of a long task (`docs/reference/feedback-surfaces.md`
+ * § Long tasks): AI generation, file conversion, Notion import, importing a
+ * PDF as slides, the AI analysis and every export that renders in Chrome. A
+ * feature does not draw a progress bar of its own; it opens this modal and
+ * feeds it (`tests/long-task-surface.test.js`).
  *
  * The modal owns the progress bar. Two rules keep it honest
  * (`docs/reference/import-progress.md`):
@@ -18,26 +23,43 @@
 
 import { spinner } from './spinner.js';
 import { h } from './index.js';
+import { t } from '../ui-i18n.js';
+import { takeEscape } from './escape.js';
 
 /**
  * Create and show a loading modal
+ *
+ * A task that can be stopped passes `onCancel`: the modal then carries a
+ * Cancel button (and Escape presses it), closes itself and calls `onCancel`
+ * once, where the caller aborts its request. Closing the request is how the
+ * server learns to stop (`server/utils/client-disconnect.js`); the modal does
+ * not wait for that.
  *
  * @param {Object} options
  * @param {HTMLElement} options.root - Root element to append to
  * @param {string} options.initialMessage - Initial status message
  * @param {string} options.title - Modal title (optional)
- * @returns {Object} Controller with update(), setProgress(), close() methods
+ * @param {() => void} [options.onCancel] - Makes the task cancellable
+ * @returns {Object} Controller with update(), setProgress(), creepTo(),
+ *   setTitle(), close() methods
  */
 export function showLoadingModal({
   root,
   initialMessage = '',
   title = '',
+  onCancel = null,
 } = {}) {
   // Create backdrop with blur
   const backdrop = h('div', { class: 'loading-modal-backdrop' });
 
-  // Create modal
-  const modal = h('div', { class: 'loading-modal' });
+  // Create modal: a dialog while it stands in front of the page, busy until
+  // it closes.
+  const modal = h('div', {
+    class: 'loading-modal',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-busy': 'true',
+  });
 
   // Spinner animation
   const spinnerWrap = h('div', { class: 'loading-modal-spinner' });
@@ -50,9 +72,12 @@ export function showLoadingModal({
   });
   if (!title) titleEl.style.display = 'none';
 
+  if (title) modal.setAttribute('aria-label', title);
+
   // Status message
   const messageEl = h('div', {
     class: 'loading-modal-message',
+    'aria-live': 'polite',
     text: initialMessage || '',
   });
 
@@ -67,8 +92,27 @@ export function showLoadingModal({
 
   // Assemble
   modal.append(spinnerWrap, titleEl, messageEl, progressWrap, progressText);
+
+  let closed = false;
+  let cancelButton = null;
+  if (onCancel) {
+    cancelButton = h('button', {
+      class: 'btn btn-secondary loading-modal-cancel',
+      type: 'button',
+      text: t('common.cancel', 'Cancel'),
+      onclick: () => cancel(),
+    });
+    modal.append(cancelButton);
+  }
+  const onKeydown = (e) => {
+    if (onCancel && takeEscape(e)) cancel();
+  };
+  backdrop.addEventListener('keydown', onKeydown);
+
   backdrop.appendChild(modal);
   root.appendChild(backdrop);
+  // Focus goes into the dialog, onto the one thing a user can do in it.
+  cancelButton?.focus();
 
   // Animate in
   requestAnimationFrame(() => {
@@ -190,10 +234,13 @@ export function showLoadingModal({
   };
 
   /**
-   * Close the modal with animation
+   * Close the modal with animation. Idempotent.
    */
   const close = () => {
+    if (closed) return;
+    closed = true;
     stopCreep();
+    modal.setAttribute('aria-busy', 'false');
     backdrop.classList.remove('is-visible');
     backdrop.classList.add('is-closing');
 
@@ -201,6 +248,13 @@ export function showLoadingModal({
       backdrop.remove();
     }, 300);
   };
+
+  /** Cancel the task: close, then let the caller abort its work. */
+  function cancel() {
+    if (closed) return;
+    close();
+    onCancel?.();
+  }
 
   /**
    * Set the title
@@ -216,6 +270,7 @@ export function showLoadingModal({
     creepTo,
     setTitle,
     close,
+    cancel,
     el: backdrop,
   };
 }

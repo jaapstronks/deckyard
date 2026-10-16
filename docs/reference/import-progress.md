@@ -70,6 +70,30 @@ exception is deliberate: two 500ms beats between the closing milestones
 (`finalize`, `save`), so the snapped closing messages are perceptible at all —
 they separate work that is already done.
 
+## Exports
+
+The exports that render in Chrome stream over SSE too, on a ladder of their
+own beside this one: `EXPORT_PROGRESS` in `server/export/progress.js`
+(B716). An export is a loop over slides, so the measurable unit is a rendered
+slide, and the builders report it (`onProgress({ done, total })`):
+
+| Phase                         | Range  | Driven by                    |
+| ----------------------------- | ------ | ---------------------------- |
+| Accepted, first render starts | 3      | one event                    |
+| Rendering slides              | 5 → 90 | one event per rendered slide |
+| Packing the file (zip, pptx)  | 95     | the event for the last slide |
+| Done                          | 100    | the client, after the file   |
+
+The two rules hold here as well: the bar never walks back, and the PDF, one
+Chrome document with nothing inside it that can report, creeps toward 90
+instead of standing still. The handoff ZIP renders the deck more than once
+(PowerPoint, PDF, PNG folder), so it counts steps against one total
+(`unit: 'step'`) rather than restarting a slide counter per artifact.
+
+The client words the counter ("Slide 12 of 54", "Step 40 of 109"); the server
+sends numbers, not sentences. The route and its cancel are
+[`export-menu.md`](./export-menu.md) § How a row gets its file.
+
 ## The event shapes
 
 `status`:
@@ -83,6 +107,14 @@ they separate work that is already done.
 ```js
 { statusMessages, intervalMs?, loop? }
 ```
+
+An export's `status`:
+
+```js
+{ phase: 'start'|'render'|'pack', progress, done?, total?, unit?, creepTo?, creepMs? }
+```
+
+and its `complete` is `{ downloadUrl }`.
 
 Both are SSE import events, not the `/api/*` error envelope; an `error` event
 carries `{ message }` (`api-error-format.md` § SSE error events).

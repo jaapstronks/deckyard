@@ -13,12 +13,18 @@
  * items ("PDF" and "PDF (print in browser)"), which conflated an
  * implementation detail (which renderer) with a user choice.
  *
- * Every other file row fetches its file itself (B715): the button says it is
- * busy while the server builds it and a failure sits under the row. A row
- * used to open its download URL in a new tab, which stayed blank for the
- * minute a large PowerPoint or handoff takes, and showed a `202` JSON blob on
- * an instance with a job queue. Only the two preview pages (PNG, text
- * handout) still open in a tab: they are pages to look at, not files.
+ * Every other file row fetches its file itself (B715) and a failure sits
+ * under the row. A row used to open its download URL in a new tab, which
+ * stayed blank for the minute a large PowerPoint or handoff takes, and showed
+ * a `202` JSON blob on an instance with a job queue. Only the two preview
+ * pages (PNG, text handout) still open in a tab: they are pages to look at,
+ * not files.
+ *
+ * An export that renders in Chrome is a long task (B716): PDF, the PNG ZIP,
+ * both PowerPoints and the handoff ZIP run in the loading modal, with the
+ * slide counter and a Cancel that stops the server
+ * (`publish-export/export-download.js`). The quick files (HTML, notes, .deck,
+ * JSON) keep the busy button.
  */
 
 import { h } from '../../lib/dom/index.js';
@@ -26,10 +32,13 @@ import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { toast } from '../../lib/dom/toast.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
-import { downloadBlob } from '../../lib/dom/download.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { buildExportUrl } from './publish-export/urls.js';
+import {
+  downloadExport,
+  streamExport,
+} from './publish-export/export-download.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { getLangShortLabel } from '../../lib/dom/lang-selector.js';
@@ -47,9 +56,11 @@ const PDF_FETCH_TIMEOUT_MS = 90_000;
  * Describe the export format groups. Called at open time so labels pick up the
  * current locale. `path` is the export route segment. A `preview` row opens a
  * page in a new tab; every other row downloads a file, saved as the server
- * names it or, failing that, the deck title plus `file`. `busy` is the
- * button's label while the file is built, `afterDownload` reads the response
- * headers of a successful download. Notes carries two downloads in `actions`.
+ * names it or, failing that, the deck title plus `file`. A `stream` row is a
+ * long task: it asks the route's streamed twin and runs in the loading modal
+ * (B716). `afterDownload` reads the response headers of a successful
+ * download. A row with two buttons (PNG, Notes) carries them in `actions`,
+ * each with the same fields.
  * `allLanguages` marks a format that carries every language version itself
  * (the portable deck, D89): its URL takes no `?lang=`, since the route ignores
  * one. PDF is special-cased in the row builder.
@@ -74,8 +85,19 @@ function exportGroups() {
           desc: t('editor.export.descPng', 'Image of each slide'),
           icon: 'image',
           color: 'green',
-          path: 'png',
-          preview: true,
+          actions: [
+            {
+              label: t('editor.export.pngView', 'View'),
+              path: 'png',
+              preview: true,
+            },
+            {
+              label: 'ZIP',
+              path: 'png.zip',
+              file: '-png.zip',
+              stream: true,
+            },
+          ],
         },
         // The two PowerPoint intents (D141): a file to show, and a file to
         // work in. Neither is the default, so they are two rows, not a mode.
@@ -90,7 +112,7 @@ function exportGroups() {
           color: 'amber',
           path: 'pptx',
           file: '.pptx',
-          busy: t('editor.export.pptxBusy', 'Building PowerPoint…'),
+          stream: true,
         },
         {
           key: 'pptxEditable',
@@ -103,7 +125,7 @@ function exportGroups() {
           color: 'amber',
           path: 'pptx-editable',
           file: '-editable.pptx',
-          busy: t('editor.export.pptxBusy', 'Building PowerPoint…'),
+          stream: true,
           afterDownload: announceImageSlides,
         },
         {
@@ -188,6 +210,7 @@ function exportGroups() {
           color: 'indigo',
           path: 'handoff.zip',
           file: '-handoff.zip',
+          stream: true,
         },
       ],
     },
@@ -215,48 +238,9 @@ function downloadUrl(id, path, lang) {
   return buildExportUrl(`/api/presentations/${id}/export/${path}?sync=1`, lang);
 }
 
-/** Pull a filename out of a Content-Disposition header, else a fallback. */
-function filenameFromDisposition(cd, fallback) {
-  if (!cd) return fallback;
-  const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
-  if (!m) return fallback;
-  try {
-    return decodeURIComponent(m[1]);
-  } catch {
-    return m[1];
-  }
-}
-
-/**
- * Fetch a synchronous export and save it under the server's filename.
- *
- * Binary download: the response is file bytes read as a blob, which api()'s
- * json/text contract cannot express. Resolves to the response's headers, so a
- * caller can read a finding the file itself cannot carry; throws on a failed
- * or aborted fetch.
- *
- * @param {string} url
- * @param {string} fallbackName - used when the response names no file
- * @param {AbortSignal} [signal]
- * @returns {Promise<Headers>}
- */
-async function downloadExport(url, fallbackName, signal) {
-  // eslint-disable-next-line no-restricted-syntax
-  const res = await fetch(url, { signal, credentials: 'same-origin' });
-  if (!res.ok) {
-    // The error envelope's sentence when the server sent one.
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.message || `HTTP ${res.status}`);
-  }
-  const blob = await res.blob();
-  downloadBlob(
-    blob,
-    filenameFromDisposition(
-      res.headers.get('Content-Disposition'),
-      fallbackName,
-    ),
-  );
-  return res.headers;
+/** The streamed twin of a Chrome export route (B716). */
+function streamUrl(id, path, lang) {
+  return buildExportUrl(`/api/presentations/${id}/export/${path}/stream`, lang);
 }
 
 /**
@@ -290,34 +274,50 @@ function announceImageSlides(headers) {
 }
 
 /**
- * The download flow of every file row but PDF: the button says it is busy and
- * takes no second click while the server builds the file, then the file is
- * saved. A failure (a refused deck, `503 browser_unavailable`) is a state of
- * this row, shown under it until the next attempt, not a toast.
+ * The download flow of every file row but PDF. A quick file: the button says
+ * it is busy and takes no second click while the server builds it. A long
+ * task (`stream`): the loading modal says how far it is and can cancel it.
+ * Either way a failure (a refused deck, `503 browser_unavailable`) is a state
+ * of this row, shown under it until the next attempt, not a toast.
  *
  * @param {Object} opts
- * @param {string} opts.url - from {@link downloadUrl}
+ * @param {string} opts.id - presentation id
+ * @param {{ path: string, file: string, stream?: boolean }} opts.download
+ * @param {string|null} opts.lang
  * @param {string} opts.fallbackName - used when the response names no file
+ * @param {string} opts.title - the loading modal's title for a long task
  * @param {HTMLButtonElement} opts.button
  * @param {{ clear: Function, show: Function }} opts.error - the row's inline error
- * @param {string} [opts.busy] - the button's label meanwhile
  * @param {(headers: Headers) => void} [opts.afterDownload]
  */
 async function exportDownload({
-  url,
+  id,
+  download,
+  lang,
   fallbackName,
+  title,
   button,
   error,
-  busy,
   afterDownload,
 }) {
   error.clear();
   const originalLabel = button.textContent;
   button.disabled = true;
-  button.textContent = busy || t('editor.export.downloadBusy', 'Preparing…');
+  if (!download.stream) {
+    button.textContent = t('editor.export.downloadBusy', 'Preparing…');
+  }
   try {
-    const headers = await downloadExport(url, fallbackName);
-    afterDownload?.(headers);
+    const headers = download.stream
+      ? await streamExport({
+          url: streamUrl(id, download.path, lang),
+          title,
+          fallbackName,
+        })
+      : await downloadExport(
+          downloadUrl(id, download.path, lang),
+          fallbackName,
+        );
+    if (headers) afterDownload?.(headers);
   } catch (err) {
     error.show(err.message, { focus: false });
   } finally {
@@ -327,23 +327,24 @@ async function exportDownload({
 }
 
 /**
- * The PDF flow: fetch the server-rendered PDF synchronously (so we can detect
- * success/failure directly), download it, and only on error/timeout reveal the
- * browser-print fallback.
+ * The PDF flow: the server-rendered PDF as a long task (one Chrome document,
+ * so its bar creeps), downloaded when it completes; only on a failure or a
+ * timeout does the browser-print fallback appear. A cancel is neither.
  */
 async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
-  const originalLabel = button.textContent;
   button.disabled = true;
-  button.textContent = t('editor.export.pdfBusy', 'Generating PDF…');
   fallbackWrap.hidden = true;
   fallbackWrap.replaceChildren();
 
-  const url = downloadUrl(id, 'pdf-slides.pdf', getLang());
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PDF_FETCH_TIMEOUT_MS);
   try {
-    await downloadExport(url, `${title || 'export'}.pdf`, controller.signal);
+    await streamExport({
+      url: streamUrl(id, 'pdf-slides.pdf', getLang()),
+      title: t('editor.export.progressTitle', 'Exporting {format}', {
+        format: 'PDF',
+      }),
+      fallbackName: `${title || 'export'}.pdf`,
+      timeoutMs: PDF_FETCH_TIMEOUT_MS,
+    });
   } catch (err) {
     // Reveal the browser-print fallback: open the printable slide page in a new
     // tab, where the user does Cmd/Ctrl-P → Save as PDF.
@@ -368,14 +369,12 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
       fallbackBtn,
     );
     fallbackWrap.hidden = false;
-    if (err?.name !== 'AbortError') {
-      // downloadExport throws the envelope's sentence when the server sent one.
+    if (err?.code !== 'timeout') {
+      // streamExport throws the server's sentence when it sent one.
       toast.error(err);
     }
   } finally {
-    clearTimeout(timer);
     button.disabled = false;
-    button.textContent = originalLabel;
   }
 }
 
@@ -425,28 +424,17 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
 
   const lang = () => (fmt.allLanguages ? null : getLang());
 
-  if (fmt.preview) {
-    const open = () => openPreview(id, fmt.path, lang());
-    actions.append(
-      h('button', {
-        class: 'btn btn-secondary btn-sm',
-        type: 'button',
-        text: t('editor.export.exportAction', 'Export'),
-        onclick: open,
-      }),
-    );
-    makeClickable(open);
-    return row;
-  }
-
-  // A file row: one button per file (Notes has two), one inline error under
-  // the row for whichever of them failed last.
+  // One button per action (PNG and Notes have two), one inline error under
+  // the row for whichever download failed last. A preview action opens its
+  // page; every other one fetches a file.
   const error = createInlineError();
   const downloads = fmt.actions || [
     {
       label: t('editor.export.exportAction', 'Export'),
       path: fmt.path,
       file: fmt.file,
+      preview: fmt.preview,
+      stream: fmt.stream,
     },
   ];
   for (const download of downloads) {
@@ -455,14 +443,20 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
       type: 'button',
       text: download.label,
       onclick: () =>
-        exportDownload({
-          url: downloadUrl(id, download.path, lang()),
-          fallbackName: `${title || 'export'}${download.file}`,
-          button: btn,
-          error,
-          busy: fmt.busy,
-          afterDownload: fmt.afterDownload,
-        }),
+        download.preview
+          ? openPreview(id, download.path, lang())
+          : exportDownload({
+              id,
+              download,
+              lang: lang(),
+              fallbackName: `${title || 'export'}${download.file}`,
+              title: t('editor.export.progressTitle', 'Exporting {format}', {
+                format: fmt.name,
+              }),
+              button: btn,
+              error,
+              afterDownload: fmt.afterDownload,
+            }),
     });
     actions.append(btn);
     if (downloads.length === 1) makeClickable(() => btn.click());

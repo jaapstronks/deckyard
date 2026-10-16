@@ -123,3 +123,8 @@
   font-variant-numeric: tabular-nums;
   margin-top: var(--ps-space-1);
 }
+
+/* Cancel: present only for a task that can be stopped (`onCancel`) */
+.loading-modal-cancel {
+  margin-top: var(--ps-space-2);
+}

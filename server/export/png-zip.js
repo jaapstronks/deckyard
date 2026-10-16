@@ -3,6 +3,7 @@ import { renderSlideToPngBuffer } from '../render/png.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { progressCounter } from './progress.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -21,12 +22,22 @@ function safeScale(n) {
  * @param {Object|null} [options.theme] - Resolved theme
  * @param {number} [options.scale=2] - PNG render scale (clamped 1-3)
  * @param {Object|null} [options.slideTypes] - Merged slide types
+ * @param {(step: { done: number, total: number }) => void} [options.onProgress]
+ *   - called after each rendered slide (`export/progress.js`)
+ * @param {AbortSignal} [options.signal] - stops the loop and the slide in
+ *   flight when the client went away
  * @returns {Promise<Buffer>} ZIP archive as a Node buffer
  */
 export async function buildSlidesPngZipBuffer(
   repoRoot,
   pres,
-  { theme = null, scale = 2, slideTypes = null } = {},
+  {
+    theme = null,
+    scale = 2,
+    slideTypes = null,
+    onProgress,
+    signal = null,
+  } = {},
 ) {
   const filteredPres = stripLiveOnlySlidesFromPresentation(pres);
   const slides = Array.isArray(filteredPres?.slides) ? filteredPres.slides : [];
@@ -35,6 +46,7 @@ export async function buildSlidesPngZipBuffer(
   const docLang = resolveDocLangFromPresentation(pres);
 
   const zip = new JSZip();
+  const rendered = progressCounter(onProgress, slides.length);
 
   for (let i = 0; i < slides.length; i += 1) {
     const buf = await renderSlideToPngBuffer(repoRoot, slides[i], {
@@ -43,9 +55,11 @@ export async function buildSlidesPngZipBuffer(
       slideTypes,
       lang,
       docLang,
+      signal,
     });
     const name = `slide-${String(i + 1).padStart(2, '0')}.png`;
     zip.file(name, buf);
+    rendered();
   }
 
   return zip.generateAsync({

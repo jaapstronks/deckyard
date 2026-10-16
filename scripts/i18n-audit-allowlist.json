@@ -18,6 +18,7 @@
     "client/views/theme-select/index.js :: Aa": "Typographic specimen — the letterforms are the content, not a word to translate.",
     "client/views/editor/ai-append.js :: LLM": "Acronym used as-is in every locale.",
     "client/views/editor/export-modal.js :: Markdown": "Format name.",
+    "client/views/editor/export-modal.js :: ZIP": "Format name.",
     "client/views/editor/image-library/giphy-search.js :: Powered by GIPHY": "Required attribution string — GIPHY brand guidelines mandate the English wording.",
     "client/views/editor/image-library/unsplash-search.js :: Unsplash": "Brand name.",
     "client/views/settings/font-editor/google-panel.js :: Raleway:400,700": "Syntax example for the Google Fonts field.",

@@ -139,6 +139,25 @@ export async function buildSlidePngHtml(
 </html>`;
 }
 
+/**
+ * Render one slide to a PNG in the shared export browser.
+ *
+ * `signal` cancels it: an aborted signal opens no page, and an abort while the
+ * page renders closes it, which rejects the render in flight. A cancelled
+ * export (the client closed its stream) therefore stops at the slide it was
+ * on instead of finishing it for nobody (B716).
+ *
+ * @param {string} repoRoot
+ * @param {Object} slide
+ * @param {Object} [options]
+ * @param {number} [options.scale=2] - device scale factor, clamped 1-3
+ * @param {Object|null} [options.theme]
+ * @param {Object|null} [options.slideTypes]
+ * @param {string|null} [options.lang]
+ * @param {string} [options.docLang]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<Buffer>}
+ */
 export async function renderSlideToPngBuffer(
   repoRoot,
   slide,
@@ -148,12 +167,18 @@ export async function renderSlideToPngBuffer(
     slideTypes = null,
     lang = null,
     docLang = '',
+    signal = null,
   } = {},
 ) {
   const s = Math.max(1, Math.min(3, Number(scale) || 2));
+  signal?.throwIfAborted();
   const browser = await getPuppeteerBrowser({ featureName: 'PNG export' });
   const page = await browser.newPage();
+  const closeOnAbort = () => page.close().catch(() => {});
+  signal?.addEventListener('abort', closeOnAbort, { once: true });
   try {
+    // An abort while newPage() ran fired before the listener existed.
+    signal?.throwIfAborted();
     await page.setViewport({
       width: 1600,
       height: 900,
@@ -172,7 +197,12 @@ export async function renderSlideToPngBuffer(
       fullPage: false,
     });
     return toNodeBuffer(buf);
+  } catch (err) {
+    // The page closed under the render: report the cancel, not the crash.
+    signal?.throwIfAborted();
+    throw err;
   } finally {
+    signal?.removeEventListener('abort', closeOnAbort);
     try {
       await page.close();
     } catch {

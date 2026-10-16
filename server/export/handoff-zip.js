@@ -7,6 +7,7 @@ import { renderSlidesToPdfBuffer } from '../render/pdf.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { progressCounter } from './progress.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -49,10 +50,37 @@ function buildReadmeMd({ title, slideCount, lang, scale, filenames }) {
   return lines.join('\n');
 }
 
+/**
+ * The handoff bundle: PowerPoint, PDF, standalone HTML, notes and one PNG per
+ * slide, in one ZIP.
+ *
+ * It renders the deck more than once, so its progress counts steps, not
+ * slides: every PowerPoint slide, the PDF as one step, and every PNG, against
+ * one total (`unit: 'step'`, `export/progress.js`). `signal` reaches every
+ * render, so a cancel stops the PowerPoint, the PDF and the PNG loop alike.
+ *
+ * @param {string} repoRoot
+ * @param {Object} pres - the stored deck
+ * @param {Object} [options]
+ * @param {Object|null} [options.theme]
+ * @param {number} [options.scale=2]
+ * @param {string} [options.lang] - the README's language label
+ * @param {Object|null} [options.slideTypes]
+ * @param {(step: { done: number, total: number, unit: string }) => void} [options.onProgress]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<Buffer>}
+ */
 export async function buildHandoffZipBuffer(
   repoRoot,
   pres,
-  { theme = null, scale = 2, lang = '', slideTypes = null } = {},
+  {
+    theme = null,
+    scale = 2,
+    lang = '',
+    slideTypes = null,
+    onProgress,
+    signal = null,
+  } = {},
 ) {
   const filteredPres = stripLiveOnlySlidesFromPresentation(pres);
   const slides = Array.isArray(filteredPres?.slides) ? filteredPres.slides : [];
@@ -72,13 +100,30 @@ export async function buildHandoffZipBuffer(
   };
 
   const zip = new JSZip();
+  // Every PowerPoint slide, the PDF, every PNG.
+  const step = progressCounter(onProgress, slides.length * 2 + 1, {
+    unit: 'step',
+  });
 
   // Build core artifacts
   const notesMd = buildNotesMarkdown(filteredPres, { includeEmpty: true });
   const [pptxResult, pdfBuf, html, notesDocxBuf] = await Promise.all([
     // The stored deck: PPTX reads a slide jump against it, then strips.
-    buildPptxBuffer(repoRoot, pres, { scale: s, theme, slideTypes }),
-    renderSlidesToPdfBuffer(repoRoot, filteredPres, { theme, slideTypes }),
+    buildPptxBuffer(repoRoot, pres, {
+      scale: s,
+      theme,
+      slideTypes,
+      onProgress: step,
+      signal,
+    }),
+    renderSlidesToPdfBuffer(repoRoot, filteredPres, {
+      theme,
+      slideTypes,
+      signal,
+    }).then((buf) => {
+      step();
+      return buf;
+    }),
     buildStandaloneHtml(repoRoot, filteredPres, { theme, slideTypes }),
     buildNotesDocxBuffer(notesMd),
   ]);
@@ -98,9 +143,11 @@ export async function buildHandoffZipBuffer(
       slideTypes,
       lang: deckLang,
       docLang,
+      signal,
     });
     const name = `slide-${String(i + 1).padStart(2, '0')}.png`;
     pngFolder.file(name, buf);
+    step();
   }
 
   zip.file(

@@ -26,11 +26,115 @@ import {
   createExportRoute,
   createHtmlPreviewRoute,
   createAsyncExportRoute,
+  createExportStreamRoute,
   exportContextFor,
   parseScaleParam,
   sendExportResponse,
   handleExportError,
 } from '../../export/pipeline.js';
+
+/**
+ * The five exports that render in Chrome, one config each. Each serves twice:
+ * as its file route, and as that route's streamed twin at `…/stream`
+ * (`createExportStreamRoute`, B716), which reports every rendered slide and
+ * stops when its client goes away. One config, so the two cannot drift.
+ * Every builder takes the `onProgress` and `signal` the twin hands it; the
+ * file routes hand it only the disconnect signal.
+ */
+const PDF_SLIDES = {
+  format: 'pdf-slides',
+  pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf-slides\.pdf$/,
+  contentType: 'application/pdf',
+  extension: '.pdf',
+  exportType: 'pdf-slides',
+  // One Chrome document for the deck: nothing to count, so it creeps.
+  creep: true,
+  buildContent: async (ctx, { repoRoot, signal }) =>
+    renderSlidesToPdfBuffer(repoRoot, ctx.filteredPres, {
+      theme: ctx.theme,
+      slideTypes: ctx.slideTypes,
+      signal,
+    }),
+};
+
+const PNG_ZIP = {
+  format: 'png-zip',
+  pattern: /^\/api\/presentations\/([^/]+)\/export\/png\.zip$/,
+  contentType: 'application/zip',
+  extension: '-png.zip',
+  buildContent: async (ctx, { repoRoot, url, onProgress, signal }) =>
+    buildSlidesPngZipBuffer(repoRoot, ctx.filteredPres, {
+      scale: parseScaleParam(url),
+      theme: ctx.theme,
+      slideTypes: ctx.slideTypes,
+      onProgress,
+      signal,
+    }),
+};
+
+const PPTX = {
+  format: 'pptx',
+  pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx$/,
+  contentType:
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  extension: '.pptx',
+  exportType: 'pptx',
+  buildContent: async (ctx, { repoRoot, url, onProgress, signal }) => {
+    const result = await buildPptxBuffer(repoRoot, ctx.pres, {
+      scale: parseScaleParam(url),
+      theme: ctx.theme,
+      slideTypes: ctx.slideTypes,
+      onProgress,
+      signal,
+    });
+    // Store warnings on context for potential logging/debugging
+    ctx.pptxWarnings = result.warnings;
+    return result.buffer;
+  },
+};
+
+// `?compose=generic` sends every slide through layer 0, for the comparison at
+// gate A2.8.
+const PPTX_EDITABLE = {
+  format: 'pptx-editable',
+  pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx-editable$/,
+  contentType:
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  extension: '-editable.pptx',
+  exportType: 'pptx-editable',
+  jobOptions: (url) => ({ compose: parseComposeParam(url) }),
+  buildContent: async (ctx, { repoRoot, url, onProgress, signal }) => {
+    const result = await buildEditablePptxBuffer(repoRoot, ctx.pres, {
+      scale: parseScaleParam(url),
+      theme: ctx.theme,
+      slideTypes: ctx.slideTypes,
+      compose: parseComposeParam(url),
+      onProgress,
+      signal,
+    });
+    ctx.imageSlides = result.imageSlides;
+    return result.buffer;
+  },
+  // Which slides became pictures, for the export menu's notice.
+  responseHeaders: (ctx) => imageSlidesHeaders(ctx.imageSlides),
+};
+
+const HANDOFF = {
+  format: 'handoff',
+  pattern: /^\/api\/presentations\/([^/]+)\/export\/handoff\.zip$/,
+  contentType: 'application/zip',
+  extension: '-handoff.zip',
+  exportType: 'handoff-zip',
+  buildContent: async (ctx, { repoRoot, url, onProgress, signal }) =>
+    buildHandoffZipBuffer(repoRoot, ctx.pres, {
+      scale: parseScaleParam(url),
+      theme: ctx.theme,
+      lang: ctx.exportLang || '',
+      slideTypes: ctx.slideTypes,
+      onProgress,
+      signal,
+    }),
+};
 
 // Export routes built by the pipeline factories — each one a route row.
 const exportRoutes = [
@@ -100,18 +204,7 @@ const exportRoutes = [
 
   // Server-rendered PDF download (deterministic across browsers/OS).
   // Pattern does not clash with the pdf-slides$ preview route thanks to the $ anchors.
-  createAsyncExportRoute({
-    format: 'pdf-slides',
-    pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf-slides\.pdf$/,
-    contentType: 'application/pdf',
-    extension: '.pdf',
-    exportType: 'pdf-slides',
-    buildContent: async (ctx, { repoRoot }) =>
-      renderSlidesToPdfBuffer(repoRoot, ctx.filteredPres, {
-        theme: ctx.theme,
-        slideTypes: ctx.slideTypes,
-      }),
-  }),
+  createAsyncExportRoute(PDF_SLIDES),
 
   // PNG slides preview
   createHtmlPreviewRoute({
@@ -125,89 +218,22 @@ const exportRoutes = [
   }),
 
   // PNG slides bundled as a single ZIP ("Download all PNGs")
-  createExportRoute({
-    format: 'png-zip',
-    pattern: /^\/api\/presentations\/([^/]+)\/export\/png\.zip$/,
-    contentType: 'application/zip',
-    extension: '-png.zip',
-    buildContent: async (ctx, { repoRoot, url }) => {
-      const scale = parseScaleParam(url);
-      return buildSlidesPngZipBuffer(repoRoot, ctx.filteredPres, {
-        scale,
-        theme: ctx.theme,
-        slideTypes: ctx.slideTypes,
-      });
-    },
-  }),
+  createExportRoute(PNG_ZIP),
 
   // PPTX export (supports async via queue)
-  createAsyncExportRoute({
-    format: 'pptx',
-    pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx$/,
-    contentType:
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    extension: '.pptx',
-    exportType: 'pptx',
-    buildContent: async (ctx, { repoRoot, url }) => {
-      const scale = parseScaleParam(url);
-      const result = await buildPptxBuffer(repoRoot, ctx.pres, {
-        scale,
-        theme: ctx.theme,
-        slideTypes: ctx.slideTypes,
-      });
-      // Store warnings on context for potential logging/debugging
-      ctx.pptxWarnings = result.warnings;
-      return result.buffer;
-    },
-  }),
+  createAsyncExportRoute(PPTX),
 
   // PPTX, editable (B290, D141): the theme's layouts, each slide as text and
   // pictures as far as its type's `fidelity.pptx` allows. A route of its own,
-  // not a mode on `pptx`: two intents are two artifacts. `?compose=generic`
-  // sends every slide through layer 0, for the comparison at gate A2.8.
-  createAsyncExportRoute({
-    format: 'pptx-editable',
-    pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx-editable$/,
-    contentType:
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    extension: '-editable.pptx',
-    exportType: 'pptx-editable',
-    jobOptions: (url) => ({ compose: parseComposeParam(url) }),
-    buildContent: async (ctx, { repoRoot, url }) => {
-      const result = await buildEditablePptxBuffer(repoRoot, ctx.pres, {
-        scale: parseScaleParam(url),
-        theme: ctx.theme,
-        slideTypes: ctx.slideTypes,
-        compose: parseComposeParam(url),
-      });
-      ctx.imageSlides = result.imageSlides;
-      return result.buffer;
-    },
-    // Which slides became pictures, for the export menu's notice.
-    responseHeaders: (ctx) => imageSlidesHeaders(ctx.imageSlides),
-  }),
+  // not a mode on `pptx`: two intents are two artifacts.
+  createAsyncExportRoute(PPTX_EDITABLE),
 
   // The theme as a PPTX template used to hang off the deck here, because the
   // deck was what named the theme. It is a theme's artifact, so it moved to
   // `GET /api/themes/:id/template.pptx` and the v1 route beside it (B274).
 
   // Handoff ZIP export (supports async via queue)
-  createAsyncExportRoute({
-    format: 'handoff',
-    pattern: /^\/api\/presentations\/([^/]+)\/export\/handoff\.zip$/,
-    contentType: 'application/zip',
-    extension: '-handoff.zip',
-    exportType: 'handoff-zip',
-    buildContent: async (ctx, { repoRoot, url }) => {
-      const scale = parseScaleParam(url);
-      return buildHandoffZipBuffer(repoRoot, ctx.pres, {
-        scale,
-        theme: ctx.theme,
-        lang: ctx.exportLang || '',
-        slideTypes: ctx.slideTypes,
-      });
-    },
-  }),
+  createAsyncExportRoute(HANDOFF),
 
   // Notes Markdown export
   createExportRoute({
@@ -237,6 +263,11 @@ const exportRoutes = [
       return buildNotesDocxBuffer(md);
     },
   }),
+
+  // The streamed twins of the Chrome exports (B716).
+  ...[PDF_SLIDES, PNG_ZIP, PPTX, PPTX_EDITABLE, HANDOFF].map(
+    createExportStreamRoute,
+  ),
 ];
 
 /**
