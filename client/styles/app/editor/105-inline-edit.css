@@ -102,6 +102,19 @@
   background: hsl(var(--app-accent-primary) / 0.07);
 }
 
+/* A field focused from the keyboard (B725): the field itself is scaled with
+   the slide, so its outline box on the overlay carries the focus ring. */
+.thumb.is-inline-edit [data-inline-field]:focus {
+  outline: none;
+}
+.ie-overlay .ie-ol-outline.is-focused {
+  opacity: 1;
+  border-style: solid;
+  border-width: 2px;
+  border-color: hsl(var(--app-border-focus));
+  background: hsl(var(--app-accent-primary) / 0.07);
+}
+
 /* Drag & drop file hover — a placeholder is a live drop target for an image
    file being dragged in from the desktop. Solid, tinted, always visible. */
 .ie-overlay .ie-ol-outline.is-drop-active {
