@@ -65,12 +65,26 @@ Consequences worth knowing:
 browser and asserts the end-to-end split (grid item shrinks, full-bleed does not)
 behind a Chrome gate.
 
-## The PNG route shares the transform and the load wait
+## The PNG and HTML routes share the transform
 
 `server/render/png.js` (PNG, PNG zip, PPTX "every slide as an image", thumbnails)
 embeds its images through the same two passes: the flat cap on theme assets and
 slide fields, the display-aware cap on `<img src>`. Its canvas is 1600×900 at a
 `deviceScaleFactor` of at most 3, which the retina margin already covers.
+
+`buildStandaloneHtml` (`server/export/html.js`), behind both the HTML download
+and the published `/p/` page, uses the same two passes (B717). Before it did, a
+deck of 48 photos of 4.8 MB came out at 307 MB as a download and 322 MB per
+visitor as a published page; with the flat cap both are 51 MB, in the same
+1.3 s. The display-aware measurement runs only for the download: a `/p/` page
+is built per visitor on a public route, and the measurement would start
+headless Chrome there (and warn on every request on an install without it).
+The published page therefore gets the flat cap on `<img src>` too. What is left
+is one ~0.8 MB data URL per slide that shows a photo (48 here, of 12 distinct
+noise-textured test images, JPEG's worst case): the HTML repeats a photo for
+every slide that uses it, where the PDF of the same deck (9 MB) stores it once.
+
+## The PNG route shares the load wait
 
 Both routes load their document through `loadExportDocument()`
 (`server/render/load-export-document.js`), which waits for `load`, never

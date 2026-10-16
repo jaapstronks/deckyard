@@ -83,11 +83,17 @@ Everything the page needs is embedded into the one HTML file:
 
 | Asset                                                        | How                                   | Where                                                             |
 | ------------------------------------------------------------ | ------------------------------------- | ----------------------------------------------------------------- |
-| Slide images / uploads                                       | base64 data URLs                      | `embedSlideImages`, `embedImgSrcDataUrls` (`html-utils.js`)       |
+| Slide images / uploads                                       | base64 data URLs, downsampled         | `embedSlideImages`, `embedImgSrcDataUrls` (`html-utils.js`)       |
 | Lucide icon SVGs                                             | base64 data URLs                      | same image-embed pass (`isRenderAssetRef`)                        |
 | Theme fonts (curated + uploaded)                             | base64 `@font-face` data URLs         | `buildEmbeddedFontCss` from `theme.embedFonts` (`embed-fonts.js`) |
 | Any other `/assets/...` font a bundled stylesheet references | base64 data URLs, in place            | `inlineLocalFontUrls` (`embed-fonts.js`)                          |
 | Viewer chrome + slide CSS                                    | inlined `<style>` (imports flattened) | `readCssWithImports`, `loadExportCssBundle`                       |
+
+Raster images go through the same compression transform as the PDF and PNG
+routes, so a photo is embedded at most at `EXPORT_IMAGE_MAX_PX` (2600 px), not
+at source resolution; [`pdf-export-performance.md`](./pdf-export-performance.md)
+§ The PNG and HTML routes share the transform has the passes and the published-page
+exception.
 
 ### Which CSS ships — the viewer boundary
 

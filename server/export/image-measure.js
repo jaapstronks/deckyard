@@ -116,6 +116,15 @@ export function hasMeasurableImages(slidesHtml) {
   );
 }
 
+/** The 1600x900 canvas every measured slide sits on. The PDF and PNG cascades
+ *  already size their stage this way; the standalone HTML export scales its
+ *  stage with a transform instead, so the measurement pins the canvas itself
+ *  and every caller measures the same box. */
+const MEASURE_STAGE_CSS = `
+      .pdf-stage { position: relative; width: 1600px; height: 900px; }
+      .pdf-stage .slide { width: 1600px !important; height: 900px !important; max-width: none; max-height: none; }
+`;
+
 /**
  * Open an offline page on the shared browser, or `null` when none is available.
  *
@@ -181,7 +190,7 @@ export async function measureImageDisplayPx({ slidesHtml, styleContent }) {
       .join('\n');
     await page.setViewport({ width: 1600, height: 900 });
     await page.setContent(
-      `<!doctype html><meta charset="utf-8"><style>${styleContent}</style>${body}`,
+      `<!doctype html><meta charset="utf-8"><style>${styleContent}${MEASURE_STAGE_CSS}</style>${body}`,
       // Local <img src> cannot resolve under setContent (no base URL), so waiting
       // for `load` would only wait for them to fail. The box is CSS-driven and
       // available at `domcontentloaded`.

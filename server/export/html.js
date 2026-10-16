@@ -14,7 +14,16 @@ import {
   buildScriptChain,
   detectSlideRuntimeNeeds,
 } from '../utils/script-chain.js';
-import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
+import {
+  loadExportCssBundle,
+  embedSlideImages,
+  buildExportStyleContent,
+} from './css-bundle.js';
+import { exportImageEmbedTransform } from './image-compress.js';
+import {
+  measureImageDisplayPx,
+  displayAwareEmbedTransform,
+} from './image-measure.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
@@ -539,9 +548,18 @@ export async function buildStandaloneHtml(
         ? pres.description
         : ''
   ).trim();
+  // Images are downsampled as they are inlined, exactly as on the PDF and PNG
+  // routes (B302): a deck of 48 full-resolution photos made a 307 MB download
+  // and a 322 MB published page per visitor (B717). The flat cap covers theme
+  // assets and top-level image fields (near full-bleed); the <img src> pass
+  // below gets the display-aware cap. One embed cache for the whole run.
+  const imageTransform = exportImageEmbedTransform();
+  const embedCache = new Map();
   const css = await loadExportCssBundle(repoRoot, theme, watermark, {
     slides: pres.slides || [],
     slideTypes,
+    transform: imageTransform,
+    cache: embedCache,
   });
 
   // Inline any root-relative local font file a bundled stylesheet still
@@ -585,8 +603,8 @@ export async function buildStandaloneHtml(
   // Embed uploads + /client assets (Lucide icon SVGs), so the downloaded
   // standalone HTML works without a server. Shared cache dedupes the same
   // source across this pass and the rendered-HTML pass below.
-  const embedCache = new Map();
   const slides = await embedSlideImages(repoRoot, pres.slides, {
+    transform: imageTransform,
     cache: embedCache,
   });
 
@@ -614,6 +632,15 @@ export async function buildStandaloneHtml(
   // Per-slide heading depth for the document outline: the deck title below is
   // the single <h1>; chapter sections push their slides one level deeper.
   const headingShifts = computeHeadingShifts(slides);
+  const renderedSlides = slides.map((s, i) =>
+    renderSlideHtml(s, {
+      theme,
+      slideTypes,
+      stripEditorAttrs: true,
+      headingShift: headingShifts[i],
+      lang: deckLang,
+    }),
+  );
   let slidesHtml = slides
     .map((s, i) => {
       const c = s?.content && typeof s.content === 'object' ? s.content : {};
@@ -629,10 +656,24 @@ export async function buildStandaloneHtml(
         : '';
       return `<section class="deck-slide" data-slide-id="${escapeHtml(
         s.id,
-      )}" data-slide-type="${escapeHtml(s.type)}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
+      )}" data-slide-type="${escapeHtml(s.type)}"${a11yTitleAttr}${a11ySummaryAttr}>${renderedSlides[i]}</section>`;
     })
     .join('\n');
+  // Cap each <img src> at a retina margin over the size it is drawn at on the
+  // 1600x900 canvas, so a gallery thumbnail does not embed at full-bleed
+  // resolution (image-measure.js). Only on a download: the measurement opens a
+  // page in headless Chrome, and a published /p/ page is built per visitor on a
+  // public route, which must not start Chrome or warn per request on an install
+  // without one. There the flat cap applies, which is what bounds the size.
+  const displayPx =
+    imageTransform && context !== 'published'
+      ? await measureImageDisplayPx({
+          slidesHtml: renderedSlides,
+          styleContent: buildExportStyleContent(css),
+        })
+      : new Map();
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
+    transform: displayAwareEmbedTransform(displayPx) ?? imageTransform,
     cache: embedCache,
   });
   const title = escapeHtml(pres.title || 'Presentation');
