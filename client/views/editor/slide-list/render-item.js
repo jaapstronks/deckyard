@@ -127,9 +127,13 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     if (!isCollapsed) item.classList.add('slide-item--expanded');
   }
 
-  // Make items programmatically focusable for arrow-key navigation
-  item.tabIndex = -1;
+  // The list is one Tab stop (B726, D349): the active row carries the roving
+  // tabindex, arrows move it (keyboard-nav.js) and Enter or the menu key opens
+  // the row's actions. The buttons inside a row stay out of the Tab order;
+  // the menu reaches what they do.
+  item.tabIndex = s.id === selectedSlideId ? 0 : -1;
   item.setAttribute('role', 'button');
+  if (openSlideMenu) item.setAttribute('aria-haspopup', 'menu');
   const originalIdx = indexById.has(s.id) ? indexById.get(s.id) : 0;
   item.setAttribute(
     'aria-label',
@@ -161,6 +165,7 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
         toggleCollapsed(s.id);
       },
     });
+    collapseToggle.tabIndex = -1;
     collapseToggle.appendChild(icon('chevron-right', { size: 12 }));
     item.append(collapseToggle);
   }
@@ -234,6 +239,7 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
       showVisibilityMenuAt({ anchor: e.currentTarget, menu });
     },
   });
+  visibilityToggle.tabIndex = -1;
   thumbMini.append(visibilityToggle);
 
   // The slide-list menu on the thumbnail itself (B703 PR 3): the actions that
@@ -251,6 +257,7 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
         openSlideMenu(e.currentTarget);
       },
     });
+    menuBtn.tabIndex = -1;
     menuBtn.append(icon('ellipsis', { size: 14 }));
     thumbMini.append(menuBtn);
   }
@@ -279,6 +286,7 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
           class: 'slide-author-lock-indicator',
           title: lockTitle,
         });
+    if (isCurrentUserAuthor) authorLockIndicator.tabIndex = -1;
     thumbMini.append(authorLockIndicator);
     const authorLockIndicatorCollapsed = h('div', {
       class: 'slide-author-lock-indicator-collapsed',
