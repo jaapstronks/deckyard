@@ -4,6 +4,28 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.71.0](https://github.com/jaapstronks/deckyard/compare/v1.70.0...v1.71.0) (2026-10-16)
+
+
+### Added
+
+* edit a slide's content as a form in the canvas column, the Fields tab replaces the All text modal (B703) ([#1668](https://github.com/jaapstronks/deckyard/issues/1668)) ([86f73a0](https://github.com/jaapstronks/deckyard/commit/86f73a0914509948f4d75532b1e881c02137acfd))
+* fold slide-type presets into one tile per type with a variants row (B709) ([#1670](https://github.com/jaapstronks/deckyard/issues/1670)) ([453c9e6](https://github.com/jaapstronks/deckyard/commit/453c9e6bdb11caac79567a723ba66a3f6c4e5cbe))
+* fold the library editor into the Fields form and drop the bulk surface (B703 PR 4) ([#1674](https://github.com/jaapstronks/deckyard/issues/1674)) ([c612f15](https://github.com/jaapstronks/deckyard/commit/c612f15946860403806fb0dcf8e672d3b58acaeb))
+* give chart data one route, live in the data editor with Done (B707) ([#1666](https://github.com/jaapstronks/deckyard/issues/1666)) ([0024ced](https://github.com/jaapstronks/deckyard/commit/0024ced08477a3ed907a97ea1ea651d483b19480))
+* move Layout into the inspector, make the type pill a menu and give the slide actions to the slide list (B703 PR 3) ([#1673](https://github.com/jaapstronks/deckyard/issues/1673)) ([afcfdbd](https://github.com/jaapstronks/deckyard/commit/afcfdbd815d637c87733e917a58434c24fc22038))
+* open the slide picker on "Start here" and drop the library strip (B710) ([#1671](https://github.com/jaapstronks/deckyard/issues/1671)) ([9a36abd](https://github.com/jaapstronks/deckyard/commit/9a36abd6273324825225176c9f1216aa5377e6bd))
+* split the Media shelf into "One image" and "Collection", and name team cards "Image cards" (B711) ([#1669](https://github.com/jaapstronks/deckyard/issues/1669)) ([8dec54e](https://github.com/jaapstronks/deckyard/commit/8dec54ebd1e11f016ca59dfbe2c53d6abbcc8a5a))
+
+
+### Fixed
+
+* let deck-card thumbnails say pending or unavailable, and the doctor launch the browser (B283) ([#1676](https://github.com/jaapstronks/deckyard/issues/1676)) ([b797476](https://github.com/jaapstronks/deckyard/commit/b79747612b71ebf02cb5b0e0bbb25d9da3c06387))
+* let every export modal row fetch its own file instead of opening a blank tab (B715) ([#1678](https://github.com/jaapstronks/deckyard/issues/1678)) ([457dbac](https://github.com/jaapstronks/deckyard/commit/457dbace121925db0d47b9fa194ead946a042910))
+* let the core prose guards skip fork-owned paths (B712) ([#1672](https://github.com/jaapstronks/deckyard/issues/1672)) ([af34189](https://github.com/jaapstronks/deckyard/commit/af3418907bf7bf676c7707316213f1217fa0ad4b))
+* let the shared export browser remember only a live Chrome (B714) ([#1677](https://github.com/jaapstronks/deckyard/issues/1677)) ([64a36d0](https://github.com/jaapstronks/deckyard/commit/64a36d09d7f606710ce484735a906bddaacc9bd1))
+* point capture recipes at the column tabs, the Fields view and the AI box ([#1675](https://github.com/jaapstronks/deckyard/issues/1675)) ([dbceca1](https://github.com/jaapstronks/deckyard/commit/dbceca1dfb6ee4eaa0af4e85ba2e1c0d9fb3dfff))
+
 ## [1.70.0](https://github.com/jaapstronks/deckyard/compare/v1.69.1...v1.70.0) (2026-10-15)
 
 
