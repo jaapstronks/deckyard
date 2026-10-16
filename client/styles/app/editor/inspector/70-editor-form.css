@@ -54,3 +54,8 @@
 .editor-advanced[open] > .editor-advanced-summary {
   border-radius: 10px 10px 0 0;
 }
+/* "Change under Layout →" on a block-owned alignment (D345): a way to the
+   Layout row, not the field's own control, so it keeps its own width. */
+.group-align-action {
+  align-self: flex-start;
+}

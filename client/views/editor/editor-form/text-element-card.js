@@ -123,7 +123,7 @@ function renderGroupAlignLine({ def, group, slide, onShowLayout }) {
       onShowLayout
         ? h('button', {
             type: 'button',
-            class: 'btn btn-secondary btn-sm',
+            class: 'btn btn-secondary btn-sm group-align-action',
             text: t(
               'editor.textStyle.align.groupAction',
               'Change under Layout →',
