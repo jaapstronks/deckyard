@@ -41,15 +41,17 @@ globalThis.ResizeObserver =
     disconnect() {}
   };
 
-const { createFieldsView } =
+const { createFieldsView, FIELDS_CONTEXTS } =
   await import('../client/views/editor/fields-view.js');
+const { FORM_SURFACES } =
+  await import('../client/views/editor/editor-form/surfaces.js');
 
 /**
  * A view over two slides with a stand-in form renderer: it renders a title
  * field and a body field the way the editor form does (wrappers carrying
  * `data-collab-field-key` inside `.editor-form`) and counts its renders.
  */
-function setup({ lockedIds = [] } = {}) {
+function setup({ lockedIds = [], context } = {}) {
   const pres = {
     id: 'p1',
     slides: [
@@ -66,6 +68,7 @@ function setup({ lockedIds = [] } = {}) {
   document.body.append(home);
 
   const view = createFieldsView({
+    context,
     pres,
     getSelectedSlideId: () => selectedId,
     getSlideLockKind: (id) => (lockedIds.includes(id) ? 'author' : null),
@@ -231,4 +234,51 @@ test('the slide head folds and remembers it', () => {
     'a new editor opens with the head folded',
   );
   localStorage.clear();
+});
+
+/**
+ * One form, two contexts (B703 PR 4): the context names the form surface, and
+ * only the deck has a canvas to go back to and a deck to count in.
+ */
+test('the context names the surface: content only beside an inspector, everything alone', () => {
+  assert.equal(FIELDS_CONTEXTS.deck.surface, 'fields');
+  assert.equal(FIELDS_CONTEXTS.library.surface, 'library');
+  for (const { surface } of Object.values(FIELDS_CONTEXTS)) {
+    assert.ok(Object.hasOwn(FORM_SURFACES, surface), `${surface} is declared`);
+  }
+  assert.equal(FORM_SURFACES.fields.fields, 'content');
+  assert.equal(FORM_SURFACES.library.fields, 'all');
+  assert.equal(Object.hasOwn(FORM_SURFACES, 'bulk'), false, 'bulk is gone');
+
+  const deck = setup();
+  deck.view.show();
+  assert.equal(deck.state.hooks.surface, 'fields');
+  deck.view.detach();
+  deck.home.remove();
+});
+
+test('the library context has no canvas to go back to and no deck to count in', () => {
+  const { view, state, home } = setup({ context: 'library' });
+  view.show();
+  assert.equal(state.hooks.surface, 'library');
+  assert.ok(view.el.classList.contains('is-library'));
+  assert.equal(view.el.querySelector('.fields-view-to-canvas'), null);
+  const preview = view.el.querySelector('.fields-view-preview');
+  assert.equal(preview.tagName, 'DIV', 'the preview is a picture, no button');
+  assert.equal(view.el.querySelector('.fields-view-counter').hidden, true);
+  assert.ok(
+    view.el.querySelector(
+      '.fields-view-title-slot [data-collab-field-key="title"]',
+    ),
+    'the title still heads the form',
+  );
+  view.detach();
+  home.remove();
+});
+
+test('an unknown context throws instead of rendering a form nobody declared', () => {
+  assert.throws(
+    () => createFieldsView({ context: 'bulk', pres: { slides: [] } }),
+    /Unknown Fields context/,
+  );
 });

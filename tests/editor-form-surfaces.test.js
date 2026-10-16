@@ -3,14 +3,15 @@
  * the declared table in client/views/editor/editor-form/surfaces.js and every
  * surface-dependent part of the form reads one capability from that row.
  *
- * - `bulk` (the Fields form in the canvas column, D335) renders ONLY the
+ * - `fields` (the Fields form in the canvas column, D335) renders ONLY the
  *   per-type content fields - no header, no Background/Accessibility
  *   sections, and no setting at any level - and inline-covered text fields
  *   render in place instead of tucked behind the collapsed Text section.
  *   These assertions ARE the Fields contract.
  * - `inspector` keeps the rail chrome and the settings sections.
- * - `library` (the slide-library editor) renders all fields plus Background
- *   and Accessibility, and none of the deck-bound chrome.
+ * - `library` (the Fields form in the slide-library editor, with nothing
+ *   beside it) renders all fields plus Background and Accessibility, and none
+ *   of the deck-bound chrome.
  *
  * Run with: node --test tests/editor-form-surfaces.test.js
  */
@@ -98,9 +99,9 @@ function renderForm({
   return editorMount;
 }
 
-test('bulk renders content fields without panel chrome or settings sections', () => {
+test('the fields surface renders content fields without panel chrome or settings sections', () => {
   const mount = renderForm({
-    surface: 'bulk',
+    surface: 'fields',
     setInspectorCollapsed: () => {},
   });
 
@@ -127,7 +128,7 @@ test('bulk renders content fields without panel chrome or settings sections', ()
   );
 
   // Inline-covered text fields (title/subheading) render IN PLACE - the whole
-  // point of the bulk surface. Background/a11y fields must not render at all.
+  // point of the fields surface. Background/a11y fields must not render at all.
   const labels = [...mount.querySelectorAll('label, .field-label')].map((el) =>
     el.textContent.trim().toLowerCase(),
   );
@@ -280,13 +281,13 @@ function renderTypeWithSpies(type, surface) {
 }
 
 // The Fields rule (D335) as a property of every core type: a setting has one
-// home, the inspector beside the form, so the `bulk` surface renders none -
+// home, the inspector beside the form, so the `fields` surface renders none -
 // no settings-shaped schema field, no setting widget inside a collection item,
 // no checkbox.
-test('the Fields form (bulk surface) renders no settings field on any core type', () => {
+test('the Fields form (fields surface) renders no settings field on any core type', () => {
   const offenders = [];
   for (const type of CORE_SLIDE_TYPE_NAMES) {
-    const { editorMount, calls, def } = renderTypeWithSpies(type, 'bulk');
+    const { editorMount, calls, def } = renderTypeWithSpies(type, 'fields');
     const byKey = new Map((def.fields || []).map((f) => [f.key, f]));
     for (const el of editorMount.querySelectorAll('[data-collab-field-key]')) {
       const key = el.getAttribute('data-collab-field-key');
@@ -307,15 +308,15 @@ test('the full form renders the settings the Fields form leaves to the inspector
     full.calls.some((c) => c.startsWith('fieldEnum')),
     'the library form renders the row colour/arrow enums',
   );
-  const fields = renderTypeWithSpies('text-blocks-slide', 'bulk');
+  const fields = renderTypeWithSpies('text-blocks-slide', 'fields');
   assert.ok(
     fields.editorMount.querySelector('textarea, [contenteditable], input'),
     'the Fields form still renders the row text',
   );
 });
 
-test('bulk renders a11y keys nowhere', () => {
-  const mount = renderForm({ surface: 'bulk' });
+test('the fields surface renders a11y keys nowhere', () => {
+  const mount = renderForm({ surface: 'fields' });
   assert.equal(mount.querySelector('.editor-a11y-section'), null);
   const names = [...mount.querySelectorAll('[name], [data-key]')].map(
     (el) => el.getAttribute('name') || el.getAttribute('data-key'),
@@ -336,7 +337,7 @@ test('the surface table declares every capability on every row', () => {
     'a11y',
   ];
   assert.deepEqual(Object.keys(FORM_SURFACES).sort(), [
-    'bulk',
+    'fields',
     'inspector',
     'library',
   ]);
@@ -459,7 +460,7 @@ test('the Layout row leads the inspector for every type with layout variants', a
     }
     editorMount.remove();
   }
-  const { editorMount } = renderTypeWithSpies('content-slide', 'bulk');
+  const { editorMount } = renderTypeWithSpies('content-slide', 'fields');
   assert.equal(
     editorMount.querySelector('.layout-row'),
     null,

@@ -622,7 +622,7 @@ test('a type-level `scale` is refused when malformed and warns on an end label t
 
 /**
  * B600: the parity invariant of B450 for a fork type. Core is held to "every
- * field has a home outside All text" by `tests/slide-type-docs.test.js`; a
+ * field has a home outside the Fields form" by `tests/slide-type-docs.test.js`; a
  * fork type that narrows its inspector without giving the dropped fields a
  * canvas or element-tab home gets a warning, not a refusal.
  */
@@ -666,14 +666,14 @@ function narrowedDef(extra = {}) {
 }
 
 const homeWarnings = (report) =>
-  report.warnings.filter((w) => w.includes('"All text" modal'));
+  report.warnings.filter((w) => w.includes('outside the Fields form'));
 
-test('a fork type with a field only "All text" edits gets a warning', () => {
+test('a fork type with a field only the Fields form edits gets a warning', () => {
   const report = validateSlideTypeDefinition(narrowedDef(), 'fixture');
   assert.deepEqual(report.errors, []);
   const [warning, ...rest] = homeWarnings(report);
   assert.deepEqual(rest, []);
-  assert.ok(warning?.startsWith('fixture: `tone`, `rows.color` can only'));
+  assert.ok(warning?.startsWith('fixture: `tone`, `rows.color` have no home'));
 });
 
 test('a home on the inspector or the element tab clears the warning', () => {

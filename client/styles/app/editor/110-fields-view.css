@@ -116,3 +116,32 @@
   margin-top: var(--ps-space-4);
   border-top: 1px solid hsl(var(--app-border-subtle));
 }
+
+/* The library context (`single-slide-editor.js`): the form is the modal's one
+   pane, with no canvas to go back to, so the sheet takes more width and the
+   preview more room. The preview is a picture there, not a button. */
+.fields-view.is-library {
+  padding: 0;
+}
+
+.fields-view.is-library .fields-view-sheet {
+  max-width: 1040px;
+}
+
+.fields-view.is-library .fields-view-head:not(.is-collapsed) {
+  grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+}
+
+.fields-view-preview.is-static {
+  cursor: default;
+}
+
+.fields-view-preview.is-static:hover {
+  border-color: hsl(var(--app-border-default));
+}
+
+@media (max-width: 768px) {
+  .fields-view.is-library .fields-view-head:not(.is-collapsed) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

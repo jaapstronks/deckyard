@@ -38,7 +38,7 @@ import {
   SLIDE_TYPE_INSPECTOR_KEEPS,
 } from '../../shared/slide-types/inline-edit.js';
 import {
-  bulkOnlyFields,
+  fieldsOnlyFields,
   familyPattern,
 } from '../../shared/slide-types/field-homes.js';
 import { textStyleOffers } from '../../shared/slide-types/text-styles.js';
@@ -103,15 +103,17 @@ function markdownFieldKeys(def) {
 /**
  * One row's worth of facts about a type's editing surfaces.
  *
- * `bulkOnly` and `itemBulkOnly` are the interesting derivations: the fields
- * whose only home is the bulk "Edit all text" modal. They are computed by
- * `bulkOnlyFields()` in `shared/slide-types/field-homes.js`, which the
+ * `fieldsOnly` and `itemFieldsOnly` are the interesting derivations: the
+ * fields whose only home is the Fields form. They are computed by
+ * `fieldsOnlyFields()` in `shared/slide-types/field-homes.js`, which the
  * definition validator also asks about a fork type (B600); here it gets core's
- * aggregator entries.
+ * aggregator entries, and `tests/slide-type-docs.test.js` holds them to the
+ * Fields rule (no setting, no item field) instead of printing a column that
+ * the rule keeps empty.
  *
  * @param {string} type
  * @returns {{type: string, def: Object, descriptor: Object|null, keeps: string[]|null,
- *   formText: string[], bulkOnly: string[], itemBulkOnly: string[],
+ *   formText: string[], fieldsOnly: string[], itemFieldsOnly: string[],
  *   markdown: string[]}}
  */
 export function coverageFor(type) {
@@ -125,7 +127,7 @@ export function coverageFor(type) {
     descriptor,
     keeps,
     formText: Array.isArray(descriptor?.formText) ? descriptor.formText : [],
-    ...bulkOnlyFields(def, { descriptor, keeps, tab }),
+    ...fieldsOnlyFields(def, { descriptor, keeps, tab }),
     markdown: markdownFieldKeys(def),
   };
 }
@@ -255,17 +257,10 @@ export function renderCoverageTable() {
       r.keeps === null
         ? '*(no declaration — conservative fallback)*'
         : codeList(r.keeps);
-    const onlyHome = codeList([...r.bulkOnly, ...r.itemBulkOnly]);
-    return `| \`${r.type}\` | ${codeList(r.formText)} | ${onlyHome} | ${keeps} | ${textStyleCell(r.def)} |`;
+    return `| \`${r.type}\` | ${codeList(r.formText)} | ${keeps} | ${textStyleCell(r.def)} |`;
   });
   return table(
-    [
-      'Type',
-      'Canvas (wysiwyg)',
-      'Bulk modal (only home)',
-      'Inspector keeps',
-      'Text style offer',
-    ],
+    ['Type', 'Canvas (wysiwyg)', 'Inspector keeps', 'Text style offer'],
     rows,
   ).join('\n');
 }

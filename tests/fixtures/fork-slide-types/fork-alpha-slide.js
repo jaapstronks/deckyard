@@ -16,7 +16,7 @@
  *
  * Keep the fields renderable-as-settings (string/enum, no `inline`): the audit
  * asserts every kept field surfaces somewhere in the inspector DOM, so a
- * bulk-modal-only field here would be a fixture bug, not a real finding.
+ * Fields-only field here would be a fixture bug, not a real finding.
  *
  * The bareness stops at `renderHtml`: every file-JS type needs one, and
  * `tests/custom-slide-type-validity.test.js` asserts these fixtures validate

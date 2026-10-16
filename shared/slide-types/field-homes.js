@@ -1,14 +1,17 @@
 /**
  * Where each field of a slide type can be edited, and which fields have no
- * home but the bulk "All text" modal.
+ * home but the Fields form.
  *
  * WHY THIS EXISTS
- * The bulk modal renders every surfaced field by construction, so it is the
- * fallback home of everything. A field *relies* on it exactly when nothing else
- * claims it: not the canvas (`inline.formText`, a `data-inline-field` the
- * renderer emits, the descriptor's element knobs, the Layout row), not the
- * inspector keep-list and not an element tab. That is the parity invariant of
- * B450: every field has a home outside "All text".
+ * Content has two postures on the same fields, the canvas and the Fields form
+ * (D335); a setting has one home, the inspector, and the Fields form in the
+ * deck editor renders none. A field *relies* on the Fields form exactly when
+ * nothing else claims it: not the canvas (`inline.formText`, a
+ * `data-inline-field` the renderer emits, the descriptor's element knobs, the
+ * Layout row), not the inspector keep-list and not an element tab. For content
+ * that is a gap in the canvas posture (B450 closed the item-level ones); for a
+ * setting it means the field renders nowhere in the deck editor, which is what
+ * the guards in `tests/slide-type-docs.test.js` refuse.
  *
  * The derivation used to live in `scripts/lib/slide-type-doc-tables.js`, where
  * it fed the editing-surface tables and the core guard in
@@ -215,7 +218,7 @@ function canvasItemPaths(def) {
 }
 
 /**
- * Item paths a declaration claims for a surface other than the bulk modal:
+ * Item paths a declaration claims for a surface other than the Fields form:
  *
  * - `itemGhosts` and a nested level's `cards.child.ghosts` (canvas chips that
  *   restore a cleared item field);
@@ -261,10 +264,10 @@ function declaredItemPaths(d, tab) {
 }
 
 /**
- * The item fields of a type's collections that rely on the bulk modal alone,
- * as dotted paths (`rows.arrow`, `rows.blocks.title`).
+ * The item fields of a type's collections that rely on the Fields form
+ * alone, as dotted paths (`rows.arrow`, `rows.blocks.title`).
  *
- * The list-level derivation (`bulkOnly`) counts a collection as homed once the
+ * The list-level derivation (`fieldsOnly`) counts a collection as homed once the
  * list itself is claimed, which is how text-blocks' row arrows and colours hid
  * (B450). This one walks `itemFields`: a subfield is homed when the canvas
  * edits it ({@link canvasItemPaths}), a declaration claims it
@@ -306,7 +309,7 @@ function itemOnlyHomePaths(def, d, keeps, tab) {
 }
 
 /**
- * The fields of one slide type whose only editing home is the bulk modal.
+ * The fields of one slide type whose only editing home is the Fields form.
  *
  * The declarations are passed in rather than looked up, so the caller decides
  * whose answer counts: the doc tables hand in core's aggregator entries, the
@@ -323,10 +326,10 @@ function itemOnlyHomePaths(def, d, keeps, tab) {
  * @param {Object|null} [declared.descriptor] - inline-edit descriptor
  * @param {string[]|null} [declared.keeps] - inspector keep-list
  * @param {Object|null} [declared.tab] - element-tab declaration
- * @returns {{bulkOnly: string[], itemBulkOnly: string[]}} top-level keys and
- *   dotted item paths (`rows.arrow`), in schema order
+ * @returns {{fieldsOnly: string[], itemFieldsOnly: string[]}} top-level keys
+ *   and dotted item paths (`rows.arrow`), in schema order
  */
-export function bulkOnlyFields(
+export function fieldsOnlyFields(
   def,
   { descriptor = null, keeps = null, tab = null } = {},
 ) {
@@ -344,7 +347,7 @@ export function bulkOnlyFields(
     ...canvasCollectionKeys(descriptor),
   ]);
   return {
-    bulkOnly: surfacedFieldKeys(def).filter((k) => !covered.has(k)),
-    itemBulkOnly: itemOnlyHomePaths(def, descriptor, effectiveKeeps, tab),
+    fieldsOnly: surfacedFieldKeys(def).filter((k) => !covered.has(k)),
+    itemFieldsOnly: itemOnlyHomePaths(def, descriptor, effectiveKeeps, tab),
   };
 }

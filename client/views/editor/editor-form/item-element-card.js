@@ -3,8 +3,8 @@
  * item counterpart of image-element-card.js.
  *
  * The editing-surface principle (docs/reference/editing-surfaces.md): content
- * goes on the canvas, settings go in the inspector, and the bulk "All text"
- * modal is never the only home of a field. An item's settings — text-blocks'
+ * goes on the canvas and in the Fields form, settings go in the inspector, and
+ * the Fields form, which renders no setting, is never a setting's home. An item's settings — text-blocks'
  * row colour and the arrow to the next row, a matrix cell's tone — are not
  * content you can point at, so they render here when the item is selected on
  * the canvas (B450, D313).

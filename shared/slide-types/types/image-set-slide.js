@@ -41,9 +41,9 @@ export default {
   fidelity: { pptx: 'raster' },
   label: 'Images + text',
   fields: [
-    // Text first: `fields[]` order IS the form order on both surfaces (the bulk
-    // "Edit all text" modal and the inspector's keeps pass), and the bulk modal
-    // is a text-editing surface. The image machinery follows below.
+    // Text first: `fields[]` order IS the form order on both surfaces (the
+    // Fields form and the inspector's keeps pass), and the Fields form is a
+    // text-editing surface. The image machinery follows below.
     {
       key: 'title',
       essential: true,

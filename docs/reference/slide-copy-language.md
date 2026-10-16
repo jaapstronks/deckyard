@@ -131,7 +131,7 @@ English throughout, and never reaches a reader.
 Client render surfaces go through `renderSlideElement` / `mountSlideInto`
 (`client/lib/slide-runtime/slide-render.js`), which take a `lang` option:
 editor canvas and thumbnails, slide list, deck grid, presenter, share viewer,
-viewer panel, the bulk-edit and chart-data previews, and the slide library
+viewer panel, the Fields form and chart-data previews, and the slide library
 (which passes the library item's own language, not a deck's).
 
 Server-side: standalone HTML, PDF, PNG, PPTX, the handoff zip, the embed

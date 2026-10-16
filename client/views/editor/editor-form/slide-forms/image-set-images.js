@@ -3,8 +3,8 @@
  *
  * DOCUMENTED EXCEPTION (editor-behaviour-abstraction step 5). Everything else
  * this module used to hold is gone: the per-cell card is the shared "This
- * image" element card (image-element-card.js, descriptor-driven), and the bulk
- * "Edit all text" modal renders `images` through the one generic collection
+ * image" element card (image-element-card.js, descriptor-driven), and the
+ * Fields form renders `images` through the one generic collection
  * editor, driven by the field's `itemFields` declarations. What is left is the
  * slim manager for the inspector's Slide tab: thumbnails plus
  * reorder/remove/add, and DELIBERATELY no per-image settings — those live in

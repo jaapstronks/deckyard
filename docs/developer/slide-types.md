@@ -998,8 +998,8 @@ fields: [
 
 The vocabulary is closed (`shared/slide-types/form-layout.js`) and unknown
 values degrade to the default, so a fork cannot land a hint the editor has no
-rendering for. Both editing surfaces — the inspector and the bulk "Edit all
-text" modal — read the same declaration.
+rendering for. Both form surfaces — the inspector and the Fields form — read
+the same declaration.
 
 `formLayout` also works on `itemFields`: when any item field declares it, the
 generic collection editor renders the item body in declared rows (kpi-metrics

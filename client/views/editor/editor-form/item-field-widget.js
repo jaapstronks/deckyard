@@ -1,7 +1,7 @@
 /**
  * The widget for ONE item field of a collection item — the per-item half of
  * the field vocabulary, shared by the two surfaces that edit an item's fields:
- * the generic collection editor (every item, on the bulk surfaces) and the
+ * the generic collection editor (every item, in the Fields form) and the
  * "This card" element tab (the selected item, in the inspector;
  * item-element-card.js). One dispatch, so an item field reads the same on both
  * and a widget added to the vocabulary reaches both at once.

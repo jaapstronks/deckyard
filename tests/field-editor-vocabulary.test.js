@@ -2,8 +2,8 @@
  * Step 4 of the editor-behaviour-abstraction brief, end to end: chart and
  * table no longer have hand-built side forms — the generic field loop renders
  * their declarations. `editor: 'table-grid'` swaps in the table widget, the
- * csv `data` field renders the grid (bulk) or the "Edit data…" entry point
- * (inspector), and `visibleWhen` shows each chart control only on the chart
+ * csv `data` field renders a summary with the "Edit data…" entry point on
+ * every surface, and `visibleWhen` shows each chart control only on the chart
  * types that draw it.
  *
  * Run with: node --test tests/field-editor-vocabulary.test.js
@@ -165,7 +165,7 @@ test('chart: the Fields form shows a data summary and the one data editor (D338)
   let openedWith = null;
   const { editorMount } = renderForm({
     type: 'chart-slide',
-    surface: 'bulk',
+    surface: 'fields',
     onEditChartData: (fieldKey) => {
       openedWith = fieldKey;
     },

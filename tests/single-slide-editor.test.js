@@ -139,6 +139,26 @@ test('the library surface renders Background and Accessibility, no deck chrome',
   editor.el.remove();
 });
 
+test('it mounts the Fields form in its library context', async () => {
+  const { editor } = await mountEditor(
+    structuredClone(SLIDE_TYPES['content-slide'].defaults),
+  );
+  const view = editor.el.querySelector('.fields-view.is-library');
+  assert.ok(view, 'the Fields form is the editor');
+  assert.equal(view.hidden, false);
+  assert.ok(
+    view.querySelector('.fields-view-head .fields-view-title-slot input'),
+    'the title heads the form beside the preview',
+  );
+  assert.ok(
+    view.querySelector('.fields-view-thumb'),
+    'live preview in the head',
+  );
+  assert.equal(view.querySelector('.fields-view-to-canvas'), null);
+  editor.detach();
+  editor.el.remove();
+});
+
 test('nothing it does reaches /api/presentations', () => {
   assert.ok(requested.length > 0, 'the stubs saw the requests');
   const deckCalls = requested.filter((u) => u.includes('/api/presentations'));

@@ -250,15 +250,17 @@ writer that bypasses the route still meets them.
   server does not validate it against the type's schema, but it must be a plain
   object.
 
-**The editor (D171, B336).** Edit in the library lightbox opens the full slide
-form for the item's type (`client/views/slide-library/edit-modal.js`): nested
-members and cards, images through the normal picker, background, layout and
-accessibility. It mounts `createSingleSlideEditor`
-(`client/views/editor/single-slide-editor.js`), which wraps the one slide in a
-presentation that exists only in memory and renders the form on the `library`
-surface (`client/views/editor/editor-form/surfaces.js`: all fields, background
-and a11y, no deck tools, and no cross-type layout tiles, because `slideType`
-is fixed). Nothing is written until Save, which is one PATCH of
+**The editor (D171, B336, B703).** Edit in the library lightbox opens the
+Fields form for the item's type (`client/views/slide-library/edit-modal.js`),
+the same form the deck editor shows in its canvas column, in its `library`
+context: a live preview and the title on top, then nested members and cards,
+images through the normal picker, background, layout and accessibility. With
+no canvas and no inspector beside it, it carries the settings as well. It mounts
+`createSingleSlideEditor` (`client/views/editor/single-slide-editor.js`), which
+wraps the one slide in a presentation that exists only in memory and renders
+the form on the `library` surface (`client/views/editor/editor-form/surfaces.js`:
+all fields, background and a11y, no deck tools, and no cross-type layout tiles,
+because `slideType` is fixed). Nothing is written until Save, which is one PATCH of
 `{ name, content }` with `If-Match`; a `409` or `403` is shown beside Save, and
 closing with changes asks first. Cancel, a refused save and closing leave no
 deck and no library row behind. The Edit button reads `canEdit`: without it the

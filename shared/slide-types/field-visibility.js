@@ -6,8 +6,8 @@
  * anything right now?": a chart's pie-label mode is dead UI on a bar chart,
  * axis labels do nothing on a pie. The per-type forms used to encode that as
  * imperative show/hide branches; the field now declares the condition and the
- * one generic form loop reads it — on both surfaces (bulk modal and
- * inspector), so the two cannot drift.
+ * one generic form loop reads it — on every surface (the Fields form and
+ * the inspector), so they cannot drift.
  *
  * The vocabulary is deliberately one operator:
  *
