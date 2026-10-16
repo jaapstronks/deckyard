@@ -18,6 +18,7 @@ import {
   buildExportStyleContent,
   embedSlideImages,
 } from './css-bundle.js';
+import { exportImageEmbedTransform } from './image-compress.js';
 
 /** PNG export is static; disable animated gradients so the result is deterministic. */
 const GRADIENT_OFF_CSS = `.ps-theme { --t-gradient-enabled: 0; }`;
@@ -190,18 +191,27 @@ export async function buildSlidesPngExportHtml(
 ) {
   pres = stripLiveOnlySlidesFromPresentation(pres);
   const docLang = resolveDocLangFromPresentation(pres);
+  // Images are downsampled as they are inlined, with the same flat cap as the
+  // PDF route and the standalone HTML (B302, B717): this sheet only shows
+  // thumbnails, yet it carried every photo at source resolution, 307 MB for a
+  // deck of 48 photos (B729). No display-aware pass: that one measures in
+  // headless Chrome, and this page is built without a browser.
+  const imageTransform = exportImageEmbedTransform();
+  const embedCache = new Map();
   const css = await loadExportCssBundle(repoRoot, theme, watermark, {
     slides: pres.slides || [],
     slideTypes,
+    transform: imageTransform,
+    cache: embedCache,
   });
 
   const titleRaw = pres.title || 'Presentation';
   const title = escapeHtml(titleRaw);
 
   // Embed uploads referenced as field values (shared cache dedupes the same
-  // source across this pass and the rendered-HTML pass below).
-  const embedCache = new Map();
+  // source across the CSS pass, this pass and the rendered-HTML pass below).
   const slides = await embedSlideImages(repoRoot, pres.slides, {
+    transform: imageTransform,
     cache: embedCache,
   });
 
@@ -230,6 +240,7 @@ export async function buildSlidesPngExportHtml(
 
   // Embed any remaining <img src="/uploads|/assets|/client/..."> into data URLs.
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
+    transform: imageTransform,
     cache: embedCache,
   });
 
