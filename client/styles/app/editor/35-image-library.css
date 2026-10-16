@@ -591,7 +591,8 @@
 }
 
 .image-batch-drop:is(:focus-visible, .is-dragover) {
-  outline: 2px solid hsl(var(--app-text-primary));
+  outline: var(--app-focus-ring);
+  outline-color: hsl(var(--app-text-primary));
   outline-offset: 2px;
 }
 

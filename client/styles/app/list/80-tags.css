@@ -87,7 +87,8 @@
 }
 
 .tag-filter-search:focus {
-  outline: none;
+  outline: var(--app-focus-ring);
+  outline-offset: -2px;
   background: hsl(var(--app-bg-sunken));
 }
 
@@ -173,8 +174,8 @@
 
 .tag-editor:focus-within {
   border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
-    hsl(var(--app-accent-primary) / 0.2);
+  outline: var(--app-focus-ring);
+  outline-offset: -1px;
 }
 
 .tag-editor-tags {
@@ -379,7 +380,7 @@
 }
 
 .ownership-filter-btn:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary));
+  outline: var(--app-focus-ring);
   outline-offset: -2px;
 }
 

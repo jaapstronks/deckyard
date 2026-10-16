@@ -191,7 +191,10 @@
 .slide-context-menu-item:hover,
 .slide-context-menu-item:focus-visible {
   background: hsl(var(--app-bg-hover));
-  outline: none;
+}
+
+.slide-context-menu-item:focus-visible {
+  outline-offset: -2px;
 }
 
 .slide-context-menu-item.is-danger {

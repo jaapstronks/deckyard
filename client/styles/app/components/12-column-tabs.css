@@ -50,6 +50,6 @@
 }
 
 .column-tab:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline: var(--app-focus-ring);
   outline-offset: -2px;
 }

@@ -68,7 +68,7 @@
 /* The toast row is focusable and dismissable from the keyboard, so it needs a
    visible focus ring of its own. */
 .toast:focus-visible {
-  outline: 2px solid hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
   outline-offset: 2px;
 }
 .toast-text {
@@ -95,7 +95,7 @@
   border-color: hsl(var(--app-border-focus));
 }
 .toast-action:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline: var(--app-focus-ring);
   outline-offset: 1px;
 }
 .toast.is-leaving {

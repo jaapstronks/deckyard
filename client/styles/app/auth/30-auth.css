@@ -103,9 +103,9 @@
 }
 
 .auth-input:focus {
-  outline: none;
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+  border-color: hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
+  outline-offset: -1px;
   background: hsl(var(--app-bg-elevated));
 }
 
@@ -122,7 +122,7 @@
 
 .auth-input[aria-invalid='true']:focus {
   border-color: hsl(var(--app-danger));
-  box-shadow: 0 0 0 3px hsl(var(--app-danger) / 0.15);
+  outline-color: hsl(var(--app-danger));
 }
 
 /* Auth Button - Primary action with gradient */

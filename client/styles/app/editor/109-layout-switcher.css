@@ -63,7 +63,7 @@
   background: hsl(var(--app-bg-hover));
 }
 .layout-tile:focus-visible {
-  outline: 2px solid hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
   outline-offset: 1px;
 }
 .layout-tile.is-active {

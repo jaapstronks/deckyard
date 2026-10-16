@@ -127,7 +127,7 @@
 }
 
 .presentation-section-link:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary));
+  outline: var(--app-focus-ring);
   outline-offset: 2px;
 }
 
@@ -428,7 +428,7 @@
 }
 
 .home-block-card:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary));
+  outline: var(--app-focus-ring);
   outline-offset: 2px;
 }
 
@@ -615,7 +615,7 @@
 }
 
 .onboarding-checklist-dismiss:focus-visible {
-  outline: 2px solid hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
   outline-offset: 1px;
 }
 
@@ -647,7 +647,7 @@
 }
 
 .onboarding-checklist-step-btn:focus-visible {
-  outline: 2px solid hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
   outline-offset: 1px;
 }
 

@@ -28,6 +28,7 @@
 }
 
 .published-alt-warning-go:focus-visible {
-  outline: 2px solid currentColor;
+  outline: var(--app-focus-ring);
+  outline-color: currentColor;
   outline-offset: 2px;
 }

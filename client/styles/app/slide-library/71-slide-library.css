@@ -325,8 +325,8 @@
 }
 
 .ps-lib-overlay-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.5);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 /* Favorite button - top right */
@@ -560,9 +560,8 @@
 }
 
 .ps-lib-use-option:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 .ps-lib-use-option-icon {

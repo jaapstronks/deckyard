@@ -70,7 +70,7 @@
   background: hsl(var(--app-bg-hover));
 }
 .presenter-start-windowed:focus-visible {
-  outline: 2px solid hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
   outline-offset: 2px;
 }
 

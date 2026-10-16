@@ -124,7 +124,7 @@
 }
 
 .ps-type-group-toggle:focus-visible {
-  outline: 2px solid hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
   outline-offset: 2px;
   border-radius: var(--ps-radius-sm);
 }
@@ -230,9 +230,8 @@
 }
 
 .ps-type-card:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.2);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 /* ============================================
@@ -314,8 +313,8 @@
 }
 
 .ps-surface-swatch:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.5);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 /* Schematic / preview view toggle: a compact segmented control. */
@@ -357,8 +356,8 @@
 }
 
 .ps-view-toggle-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.5);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 /* Denser tiles for schematics (they read clearly small); roomier for the

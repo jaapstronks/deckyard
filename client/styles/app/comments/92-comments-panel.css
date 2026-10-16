@@ -264,8 +264,9 @@
 }
 
 .comment-reply-textarea:focus {
-  outline: none;
-  border-color: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
+  outline-offset: -1px;
 }
 
 .comments-panel-input {
@@ -287,8 +288,9 @@
 }
 
 .comments-input-textarea:focus {
-  outline: none;
-  border-color: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
+  outline-offset: -1px;
 }
 
 /* Rich composer: a contenteditable standing in for the old textarea, so it
@@ -303,8 +305,9 @@
 }
 
 .comment-rich-input:focus {
-  outline: none;
-  border-color: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
+  outline-offset: -1px;
 }
 
 .comment-rich-input:empty::before {
@@ -534,7 +537,7 @@
 }
 
 .comment-marker:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary));
+  outline: var(--app-focus-ring);
   outline-offset: 2px;
 }
 
