@@ -570,33 +570,6 @@
   color: hsl(var(--app-text-secondary));
 }
 
-.import-slides-progress {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-2);
-}
-
-.import-slides-progress-track {
-  height: 8px;
-  background: hsl(var(--app-bg-hover));
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.import-slides-progress-bar {
-  height: 100%;
-  background: hsl(var(--app-accent-primary));
-  border-radius: 4px;
-  transition: width 0.3s ease-out;
-  width: 0%;
-}
-
-.import-slides-progress-text {
-  text-align: center;
-  font-size: var(--ps-text-sm);
-  color: hsl(var(--app-text-secondary));
-}
-
 .import-slides-actions {
   display: flex;
   justify-content: center;
@@ -1267,4 +1240,9 @@
 .subscription-level-help {
   font-size: 12px;
   color: hsl(var(--app-text-secondary));
+}
+
+/* AI analysis: the result once it ran; its progress is the loading modal's */
+.analyze-results {
+  padding: var(--ps-space-4) 0;
 }

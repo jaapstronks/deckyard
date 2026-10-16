@@ -208,9 +208,11 @@ test('an app export counts its format; a refused one counts nothing', async () =
 test('every export row names a format the axis knows', () => {
   // The factories refuse a missing format when the table is built, so the
   // table importing at all is half the proof; this is the other half.
-  // Fourteen rows, not fifteen: `pptx-template` left this table with B274 and
-  // is counted by `prepareThemeTemplate`, which the theme routes call.
-  assert.equal(EXPORT_ROUTES.length, 14);
+  // Fourteen file rows, not fifteen: `pptx-template` left this table with
+  // B274 and is counted by `prepareThemeTemplate`, which the theme routes
+  // call. Plus the five streamed twins of the Chrome exports (B716), which
+  // count under their file route's format.
+  assert.equal(EXPORT_ROUTES.length, 19);
   assert.throws(
     () =>
       createExportRoute({

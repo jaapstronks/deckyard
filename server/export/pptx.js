@@ -22,6 +22,7 @@ import {
   layerZeroCovers,
   finishEditablePackage,
 } from './pptx-generic.js';
+import { progressCounter } from './progress.js';
 import { composeImageSlide } from './pptx-image-slide.js';
 import { composeQuoteSlide } from './pptx-quote-slide.js';
 import { composeChapterTitleSlide } from './pptx-chapter-title-slide.js';
@@ -190,13 +191,21 @@ export const PPTX_EDITABLE_COMPOSE = Object.freeze(['fidelity', 'generic']);
 export async function buildPptxBuffer(
   repoRoot,
   pres,
-  { scale = 2, theme = null, slideTypes = null } = {},
+  {
+    scale = 2,
+    theme = null,
+    slideTypes = null,
+    onProgress,
+    signal = null,
+  } = {},
 ) {
   const { buffer, warnings } = await buildDeckPptx(repoRoot, pres, {
     scale,
     theme,
     slideTypes,
     editable: null,
+    onProgress,
+    signal,
   });
   return { buffer, warnings };
 }
@@ -224,7 +233,14 @@ export async function buildPptxBuffer(
 export async function buildEditablePptxBuffer(
   repoRoot,
   pres,
-  { scale = 2, theme = null, slideTypes = null, compose = 'fidelity' } = {},
+  {
+    scale = 2,
+    theme = null,
+    slideTypes = null,
+    compose = 'fidelity',
+    onProgress,
+    signal = null,
+  } = {},
 ) {
   if (!PPTX_EDITABLE_COMPOSE.includes(compose)) {
     throw new TypeError(`unknown PPTX compose '${compose}'`);
@@ -234,6 +250,8 @@ export async function buildEditablePptxBuffer(
     theme,
     slideTypes,
     editable: { compose },
+    onProgress,
+    signal,
   });
 }
 
@@ -254,14 +272,15 @@ export function imageSlidesHeaders(imageSlides) {
  * The one loop behind both PPTX intents. `editable` is null for the
  * pixel-perfect file and `{ compose }` for the editable one; the two differ
  * only in which composer a slide gets and in the theme's layouts being in the
- * file.
+ * file. `onProgress` hears every finished slide and `signal` stops the loop
+ * (`export/progress.js`, B716), for both intents alike.
  *
  * @returns {Promise<{ buffer: Buffer, warnings: string[], imageSlides: number[] }>}
  */
 async function buildDeckPptx(
   repoRoot,
   pres,
-  { scale, theme, slideTypes, editable },
+  { scale, theme, slideTypes, editable, onProgress, signal },
 ) {
   const warnings = [];
   const imageSlides = [];
@@ -291,8 +310,10 @@ async function buildDeckPptx(
   const deckLang = resolveDeckLang(pres);
   const docLang = resolveDocLangFromPresentation(pres);
   const slideJumps = slideJumpsFor(deckSlides, slides);
+  const composed = progressCounter(onProgress, slides.length);
 
   for (let i = 0; i < slides.length; i++) {
+    signal?.throwIfAborted();
     const slide = slides[i];
     const slideNum = i + 1;
     const def = registry[slide?.type];
@@ -345,6 +366,7 @@ async function buildDeckPptx(
         slideTypes,
         lang: deckLang,
         docLang,
+        signal,
       });
 
       pptxSlide.addImage({
@@ -362,6 +384,7 @@ async function buildDeckPptx(
     }
 
     addSpeakerNotes(pptxSlide, slide);
+    composed();
   }
 
   if (editable && imageSlides.length) {

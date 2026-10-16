@@ -1,7 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { safeFilename } from '../utils/filename.js';
 import { jsonError, serveJson } from '../utils/http.js';
 import { isAppError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
+import { clientDisconnectSignal } from '../utils/client-disconnect.js';
+import { openSseStream, sseError, sseWrite } from '../utils/sse.js';
 import {
   addJob,
   isQueueAvailable,
@@ -9,6 +12,12 @@ import {
 } from '../jobs/queue/connection.js';
 import { INSTANCE_HEALTH_KEYS } from '../storage/instance-health.js';
 import { prepareExportContext } from '../services/exports.js';
+import {
+  DOCUMENT_CREEP_MS_PER_SLIDE,
+  EXPORT_PROGRESS,
+  exportStatus,
+} from './progress.js';
+import { STREAM_RESULT_TTL_MS, storeExportResult } from './result-store.js';
 
 const log = createLogger('export');
 
@@ -108,6 +117,17 @@ function sendHtmlPreviewResponse(res, html) {
 }
 
 /**
+ * The path of a route's streamed twin: the same pattern with `/stream`
+ * appended, so `export/png.zip` streams at `export/png.zip/stream`.
+ *
+ * @param {RegExp} pattern
+ * @returns {RegExp}
+ */
+export function streamPattern(pattern) {
+  return new RegExp(pattern.source.replace(/\$$/, '\\/stream$'));
+}
+
+/**
  * Turn a thrown export failure into the canonical error envelope.
  *
  * An `AppError` is a deliberate, user-facing answer — its status and message
@@ -129,6 +149,25 @@ export function handleExportError(res, error) {
   }
   log.error('Export failed:', error);
   return jsonError(res, 500, 'export_failed', 'Export failed');
+}
+
+/**
+ * The catch of a file export route: a client that left cancelled the export,
+ * so it is an info line and no answer (its socket is gone); anything else is
+ * {@link handleExportError}.
+ *
+ * @param {Object} res - Response object
+ * @param {Error} error - Error object
+ * @param {AbortSignal} signal - The route's {@link clientDisconnectSignal}
+ * @param {string} format - Export format, for the log line
+ * @returns {true}
+ */
+function answerFileExportError(res, error, signal, format) {
+  if (signal.aborted) {
+    log.info(`${format} export cancelled by the client`);
+    return true;
+  }
+  return handleExportError(res, error);
 }
 
 /**
@@ -193,13 +232,15 @@ export function createExportRoute(config) {
       { repoRoot, storageScope, res, url, authedUser },
       presentationId,
     ) {
+      // A client that leaves stops the render, and its catch is a cancel.
+      const signal = clientDisconnectSignal(res);
       try {
         const ctx = await exportContextFor(
           { storageScope, authedUser, url },
           presentationId,
           { format, stripLiveOnly, allLanguages },
         );
-        const data = await buildContent(ctx, { repoRoot, url });
+        const data = await buildContent(ctx, { repoRoot, url, signal });
         const filename = getFilename(ctx);
 
         sendExportResponse(res, {
@@ -211,8 +252,7 @@ export function createExportRoute(config) {
         });
         return true;
       } catch (e) {
-        handleExportError(res, e);
-        return true;
+        return answerFileExportError(res, e, signal, format);
       }
     },
   );
@@ -293,6 +333,9 @@ export function createAsyncExportRoute(config) {
     ) {
       // Check if user prefers sync (query param ?sync=1)
       const forceSync = url.searchParams.get('sync') === '1';
+      // A client that leaves stops a synchronous render, and its catch is a
+      // cancel.
+      const signal = clientDisconnectSignal(res);
 
       try {
         const ctx = await exportContextFor(
@@ -334,7 +377,7 @@ export function createAsyncExportRoute(config) {
         }
 
         // Synchronous export: forced, or no queue to take it.
-        const data = await buildContent(ctx, { repoRoot, url });
+        const data = await buildContent(ctx, { repoRoot, url, signal });
         const filename = getFilename(ctx);
 
         sendExportResponse(res, {
@@ -347,9 +390,140 @@ export function createAsyncExportRoute(config) {
         });
         return true;
       } catch (e) {
+        return answerFileExportError(res, e, signal, format);
+      }
+    },
+  );
+}
+
+/**
+ * The streamed twin of a Chrome export route, at `<pattern>/stream` (B716).
+ *
+ * The file routes answer with the file, which tells the waiting user nothing
+ * for the minute a 54-slide PowerPoint takes. This twin answers with an event
+ * stream instead:
+ *
+ * - `status` `{ phase, progress, done?, total?, unit?, creepTo?, creepMs? }`,
+ *   on the export ladder (`export/progress.js`): once at the start, then one
+ *   per rendered slide. A route that cannot count (`creep: true`, the PDF)
+ *   sends one status that creeps.
+ * - `complete` `{ downloadUrl }`: the file is held in the export result store
+ *   for its one download through `/api/jobs/export-<id>/download`, owner-gated
+ *   as a queued export is.
+ * - `error` `{ message, error }` (`api-error-format.md` § SSE error events):
+ *   an `AppError`'s sentence and code, or `export_failed` for a crash.
+ *
+ * Closing the stream is cancelling: the stream's signal reaches the builder,
+ * which stops before the next slide and closes the page in flight, and the
+ * log says how far it got (`png-zip export cancelled after 3/54`). A refusal
+ * before the work starts (no access, unknown deck) is the ordinary JSON
+ * envelope, because no stream is open yet.
+ *
+ * The config is the file route's own, so the two cannot drift: the same
+ * builder, filename and response headers.
+ *
+ * @param {Object} config - as for {@link createExportRoute}, plus `creep`
+ * @returns {import('../utils/router.js').Route}
+ */
+export function createExportStreamRoute(config) {
+  const {
+    format,
+    pattern,
+    contentType,
+    extension,
+    stripLiveOnly = true,
+    buildContent,
+    responseHeaders = () => ({}),
+    getFilename = (ctx) => ctx.title,
+    creep = false,
+  } = config;
+  assertExportFormat(format, pattern);
+
+  return exportRow(
+    'GET',
+    streamPattern(pattern),
+    async function handler(
+      { repoRoot, storageScope, req, res, url, authedUser },
+      presentationId,
+    ) {
+      let ctx;
+      try {
+        ctx = await exportContextFor(
+          { storageScope, authedUser, url },
+          presentationId,
+          { format, stripLiveOnly },
+        );
+      } catch (e) {
         handleExportError(res, e);
         return true;
       }
+
+      // Authenticated, and it ends with the export it reports on: the
+      // public-stream cap is not its bound.
+      const stream = openSseStream(req, res, { guard: false });
+      if (!stream.ok) return true;
+
+      const slideCount = ctx.filteredPres?.slides?.length || 0;
+      let last = { done: 0, total: slideCount };
+      sseWrite(res, {
+        event: 'status',
+        data: creep
+          ? {
+              phase: 'render',
+              progress: EXPORT_PROGRESS.start,
+              creepTo: EXPORT_PROGRESS.renderCeiling,
+              creepMs: Math.max(3000, slideCount * DOCUMENT_CREEP_MS_PER_SLIDE),
+            }
+          : { phase: 'start', progress: EXPORT_PROGRESS.start },
+      });
+      const onProgress = (step) => {
+        last = step;
+        sseWrite(res, { event: 'status', data: exportStatus(step) });
+      };
+
+      try {
+        const data = await buildContent(ctx, {
+          repoRoot,
+          url,
+          onProgress,
+          signal: stream.signal,
+        });
+        stream.signal.throwIfAborted();
+        const id = `stream-${randomUUID()}`;
+        storeExportResult(
+          id,
+          {
+            buffer: Buffer.isBuffer(data) ? data : Buffer.from(data),
+            contentType,
+            extension,
+            filename: getFilename(ctx),
+            langSuffix: ctx.langSuffix,
+            ownerEmail: authedUser?.email || null,
+            headers: responseHeaders(ctx),
+            once: true,
+          },
+          { ttlMs: STREAM_RESULT_TTL_MS },
+        );
+        sseWrite(res, {
+          event: 'complete',
+          data: { downloadUrl: `/api/jobs/export-${id}/download` },
+        });
+      } catch (e) {
+        if (stream.signal.aborted) {
+          log.info(
+            `${format} export cancelled after ${last.done}/${last.total}`,
+          );
+        } else if (isAppError(e)) {
+          sseError(res, e.message, { error: e.code });
+        } else {
+          log.error('Export failed:', e);
+          sseError(res, 'Export failed', { error: 'export_failed' });
+        }
+      } finally {
+        stream.close();
+        if (!res.writableEnded) res.end();
+      }
+      return true;
     },
   );
 }

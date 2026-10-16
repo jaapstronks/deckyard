@@ -13,7 +13,7 @@ overlapping PDF entries and a duplicated "other language" section.
 | Group         | Format                  | Route (`/api/presentations/:id/export/…`) | Builder                                                                         |
 | ------------- | ----------------------- | ----------------------------------------- | ------------------------------------------------------------------------------- |
 | Slides        | PDF                     | `pdf-slides.pdf`                          | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer)                   |
-| Slides        | PNG                     | `png`                                     | `buildSlidesPngExportHtml` (opens in a tab)                                     |
+| Slides        | PNG (View / ZIP)        | `png` / `png.zip`                         | `buildSlidesPngExportHtml` (opens in a tab) / `buildSlidesPngZipBuffer`         |
 | Slides        | PowerPoint              | `pptx`                                    | `buildPptxBuffer` (each slide an image, [see below](#what-the-pptx-hands-back)) |
 | Slides        | PowerPoint, editable    | `pptx-editable`                           | `buildEditablePptxBuffer` ([see below](#what-the-editable-pptx-hands-back))     |
 | Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                                                |
@@ -28,27 +28,31 @@ The full server-side pipeline (routes, async queue, builders) is in
 
 ## How a row gets its file
 
-Two kinds of row, decided by what the route serves (B715):
+Three kinds of row action, decided by what the route serves (B715, B716):
 
-- **A page** (PNG, Text handout): the route is a `createHtmlPreviewRoute`, a page the reader looks at and prints from, answered at once. The row opens it in a new tab.
-- **A file** (every other row): the modal fetches the route with `?sync=1` and saves the response under the name from its `Content-Disposition` header (`exportDownload` in `export-modal.js`). Meanwhile the button says it is busy and takes no second click; a failure, such as `503 browser_unavailable`, is an inline error under the row (`createInlineError()`) until the next attempt, not a toast. `?sync=1` matters on an instance with a job queue: without it a queue-backed route (`pptx`, `handoff.zip`, `pptx-editable`, `pdf-slides.pdf`) answers `202 {queued, pollUrl}`, and the editor polls no job. A route without a queue ignores the parameter.
+- **A page** (PNG's View, Text handout): the route is a `createHtmlPreviewRoute`, a page the reader looks at and prints from, answered at once. The action opens it in a new tab.
+- **A quick file** (HTML, Notes, .deck, JSON): the modal fetches the route with `?sync=1` and saves the response under the name from its `Content-Disposition` header (`downloadExport` in `publish-export/export-download.js`). Meanwhile the button says it is busy and takes no second click. `?sync=1` matters on an instance with a job queue: without it a queue-backed route answers `202 {queued, pollUrl}`, and the editor polls no job. A route without a queue ignores the parameter.
+- **A long task** (PDF, PNG's ZIP, both PowerPoints, Handoff ZIP: every export that renders in Chrome; descriptor `stream: true`): the modal asks the route's streamed twin, `…/<path>/stream`, and runs it in the loading modal (`streamExport`). The stream sends a `status` per rendered slide ("Slide 12 of 54", on the export ladder of [`import-progress.md`](./import-progress.md) § Exports) and ends with `complete {downloadUrl}`; the modal then fetches that URL (`/api/jobs/export-stream-<id>/download`, the owner's, once) and saves the file. **Cancel** aborts the stream, and a closed stream stops the server before the next slide (`createExportStreamRoute` in `server/export/pipeline.js`, which logs `<format> export cancelled after 3/54`).
 
-A file row never opens a tab: a tab stays blank for as long as the server builds the file (a minute or more for a large PowerPoint or handoff) and showed the `202` JSON on a queued instance. `tests/export-modal-downloads.test.js` clicks every row and pins which URLs may open a tab, derived from the route table; `tests/export-sync-with-queue.test.js` pins the queued contract with and without `?sync=1`. The PDF row is a file row with one addition, its browser-print fallback (below).
+Either kind of file shows a failure, such as `503 browser_unavailable`, as an inline error under the row (`createInlineError()`) until the next attempt, not a toast; a cancel is not a failure and shows nothing.
+
+A file row never opens a tab: a tab stays blank for as long as the server builds the file (a minute or more for a large PowerPoint or handoff) and showed the `202` JSON on a queued instance. `tests/export-modal-downloads.test.js` clicks every row and pins which URLs may open a tab (derived from the route table), which rows stream, and the modal's counter and Cancel; `tests/export-sync-with-queue.test.js` pins the queued contract with and without `?sync=1`; `tests/export-progress-stream.test.js` pins the stream (ladder, `complete`, one owner-gated download, the cancel). The PDF row is a long task with one addition, its browser-print fallback (below).
+
+The streamed twin is a second row in the route table built from the file route's own config (`PDF_SLIDES`, `PNG_ZIP`, `PPTX`, `PPTX_EDITABLE`, `HANDOFF` in `server/routes/api/export.js`), so the two cannot drift. The file routes stay for API callers and the queue; a client that leaves a file route also stops its render now, since every builder takes the request's disconnect signal.
 
 ## Direct export routes (no menu row)
 
-`server/routes/api/export.js` registers two more export routes that the modal
-does **not** surface — they are reachable by URL but have no button. Documented
-here so the route inventory is complete, not because they are user-facing today.
+`server/routes/api/export.js` registers one more export route that the modal
+does **not** surface — reachable by URL (the PNG page's per-slide download
+uses it) but with no button. Documented here so the route inventory is
+complete.
 
-| Format           | Route (`/api/presentations/:id/export/…`) | Builder                                                                                                     |
-| ---------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| PNG ZIP          | `png.zip`                                 | `buildSlidesPngZipBuffer` (`server/export/png-zip.js`) — every slide as PNG in one ZIP; `?scale=` supported |
-| Single-slide PNG | `png/:n.png` (1-based)                    | `renderSlideToPngBuffer` (`server/render/png.js`) — one slide as PNG; `?scale=` supported                   |
+| Format           | Route (`/api/presentations/:id/export/…`) | Builder                                                                                   |
+| ---------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Single-slide PNG | `png/:n.png` (1-based)                    | `renderSlideToPngBuffer` (`server/render/png.js`) — one slide as PNG; `?scale=` supported |
 
-Implementation status: the routes are live and covered by the export pipeline.
-Whether the PNG-ZIP earns a menu row is an open product question, not a
-promise — treat these URLs as internal until the modal exposes them.
+The PNG ZIP (`png.zip`, every slide as PNG in one ZIP, `?scale=` supported)
+has a menu row (B716): the PNG row's **ZIP** action, a long task.
 
 ## The single PDF entry
 
@@ -56,12 +60,13 @@ There is one **PDF** row, not two. It downloads the deterministic
 server-rendered PDF, and only reveals a **Print in browser** fallback when that
 render fails or times out.
 
-- Clicking **Export** fetches `pdf-slides.pdf?sync=1`. `?sync=1` forces the
-  synchronous render path, so the response is the PDF bytes (or an error)
-  rather than a `202` job hand-off that would need polling. The blob is saved
-  with the filename from the `Content-Disposition` header.
+- Clicking **Export** runs `pdf-slides.pdf/stream` as a long task (above).
+  The PDF is one Chrome document for the whole deck, so it has no slide
+  counter: its bar creeps toward the end of the render phase
+  (`DOCUMENT_CREEP_MS_PER_SLIDE`), and `complete` hands over the file.
 - A client-side timeout (`PDF_FETCH_TIMEOUT_MS`, 90s; the server's own cap is
-  `EXPORT_RENDER_TIMEOUT_MS`, 120s) aborts a stuck render.
+  `EXPORT_RENDER_TIMEOUT_MS`, 120s) aborts a stuck render. A Cancel is not a
+  timeout: it closes the modal and shows no fallback.
 - On error or timeout, an inline fallback appears under the PDF row: a short
   message plus a button that opens the browser-print page (`pdf-slides`, the
   same 16:9 slide HTML) in a new tab, where the user does Cmd/Ctrl-P → Save as
