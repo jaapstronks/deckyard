@@ -23,7 +23,7 @@
  */
 import { renderFocusGridField } from './focus-picker.js';
 import { renderImagePositionPicker } from './image-position-picker.js';
-import { imageFitOptions } from '../fields/image-fit.js';
+import { renderImageFitField } from '../fields/image-fit.js';
 import {
   getInlineDescriptor,
   resolveMediaMember,
@@ -279,31 +279,27 @@ export function renderImageElementCard({
   }
 
   // Fit choice (discrete → inspector). Types whose fit has a type-level
-  // default (descriptor fit.fallback) get the silent-default empty option: it
-  // shows the derived default - looked up from the type's imageDefaults
-  // config, never hard-coded here - and doubles as back-to-default by
-  // emptying the field. Types with a plain per-image fit get just Fill / Fit.
+  // default (descriptor fit.fallback) mark that default - looked up from the
+  // type's imageDefaults config, never hard-coded here - and choosing it
+  // empties the field (D346). Types with a plain per-image fit get just
+  // Fill / Fit.
   if (hasImage && fit && typeof fieldEnum === 'function') {
     const typeDefaultFit = fit.hasDefault
       ? def?.imageDefaults?.fit === 'contain'
         ? 'contain'
         : 'cover'
       : '';
-    const current =
-      typeof member[fit.key] === 'string'
-        ? member[fit.key]
-        : fit.hasDefault
-          ? ''
-          : 'cover';
     container.append(
-      fieldEnum(
-        {
+      renderImageFitField({
+        fieldEnum,
+        field: {
           key: fit.key,
-          label: t('editor.imageText.imageFit', 'Image fit'),
-          options: imageFitOptions({ typeDefault: typeDefaultFit }),
+          labelKey: 'editor.imageText.imageFit',
+          label: 'Image fit',
         },
-        current,
-        (v) => {
+        target: member,
+        typeDefault: typeDefaultFit,
+        onChange: (v) => {
           member[fit.key] = v;
           markDirty?.();
           // Rebuild the element tab so the cover-only focus grid appears /
@@ -311,7 +307,7 @@ export function renderImageElementCard({
           rerenderEditor?.();
           rerenderPreview?.();
         },
-      ),
+      }),
     );
   }
 

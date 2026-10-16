@@ -1,5 +1,13 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
+import {
+  createResetToDefault,
+  defaultDot,
+  withDefaultMark,
+} from '../fields/default-mark.js';
+
+/** The default focus: the centre cell (D346 marks it like any default). */
+const FOCUS_DEFAULT = '50,50';
 
 function toNumberOrNull(v) {
   if (v == null) return null;
@@ -56,6 +64,7 @@ export function renderFocusGridField({
   });
 
   const setActive = ({ x, y }) => {
+    reset.sync(`${x},${y}`);
     for (const child of grid.children) {
       const is =
         child?.dataset?.x != null &&
@@ -67,13 +76,28 @@ export function renderFocusGridField({
     }
   };
 
+  const reset = createResetToDefault({
+    defaultValue: FOCUS_DEFAULT,
+    value: `${activeX},${activeY}`,
+    apply: () => {
+      if (disabled) return;
+      setActive({ x: 50, y: 50 });
+      onChange?.({ focusX: 50, focusY: 50 });
+    },
+  });
+  reset.el.disabled = disabled;
+
   for (const y of opts) {
     for (const x of opts) {
+      const isDefault = `${x},${y}` === FOCUS_DEFAULT;
+      const name = isDefault
+        ? withDefaultMark(posLabelFor(x, y))
+        : posLabelFor(x, y);
       const btn = h('button', {
         type: 'button',
         class: 'sb-focus-btn',
-        title: posLabelFor(x, y),
-        'aria-label': posLabelFor(x, y),
+        title: name,
+        'aria-label': name,
         'aria-pressed':
           Number(activeX) === Number(x) && Number(activeY) === Number(y)
             ? 'true'
@@ -90,28 +114,17 @@ export function renderFocusGridField({
       if (Number(activeX) === Number(x) && Number(activeY) === Number(y))
         btn.classList.add('is-active');
       btn.append(h('span', { class: 'sb-focus-dot', 'aria-hidden': 'true' }));
+      if (isDefault) {
+        btn.classList.add('is-default');
+        btn.append(defaultDot());
+      }
       grid.append(btn);
     }
   }
 
-  const actions = h('div', { class: 'row sb-focus-actions' });
-  const resetBtn = h('button', {
-    type: 'button',
-    class: 'btn btn-secondary btn-xs',
-    text: t('editor.focusPicker.center', 'Center'),
-    disabled,
-    title: t('editor.focusPicker.reset', 'Reset focus to center'),
-    onclick: () => {
-      if (disabled) return;
-      setActive({ x: 50, y: 50 });
-      onChange?.({ focusX: 50, focusY: 50 });
-    },
-  });
-  actions.append(resetBtn);
-
   wrap.append(
     grid,
-    actions,
+    reset.el,
     helpText ? h('div', { class: 'help', text: helpText }) : null,
   );
   return wrap;
