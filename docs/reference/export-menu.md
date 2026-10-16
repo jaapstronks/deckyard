@@ -26,6 +26,15 @@ overlapping PDF entries and a duplicated "other language" section.
 The full server-side pipeline (routes, async queue, builders) is in
 `server/routes/api/export.js` and `server/export/`.
 
+## How a row gets its file
+
+Two kinds of row, decided by what the route serves (B715):
+
+- **A page** (PNG, Text handout): the route is a `createHtmlPreviewRoute`, a page the reader looks at and prints from, answered at once. The row opens it in a new tab.
+- **A file** (every other row): the modal fetches the route with `?sync=1` and saves the response under the name from its `Content-Disposition` header (`exportDownload` in `export-modal.js`). Meanwhile the button says it is busy and takes no second click; a failure, such as `503 browser_unavailable`, is an inline error under the row (`createInlineError()`) until the next attempt, not a toast. `?sync=1` matters on an instance with a job queue: without it a queue-backed route (`pptx`, `handoff.zip`, `pptx-editable`, `pdf-slides.pdf`) answers `202 {queued, pollUrl}`, and the editor polls no job. A route without a queue ignores the parameter.
+
+A file row never opens a tab: a tab stays blank for as long as the server builds the file (a minute or more for a large PowerPoint or handoff) and showed the `202` JSON on a queued instance. `tests/export-modal-downloads.test.js` clicks every row and pins which URLs may open a tab, derived from the route table; `tests/export-sync-with-queue.test.js` pins the queued contract with and without `?sync=1`. The PDF row is a file row with one addition, its browser-print fallback (below).
+
 ## Direct export routes (no menu row)
 
 `server/routes/api/export.js` registers two more export routes that the modal
@@ -81,7 +90,7 @@ PowerPoint has two rows because there are two intents, and neither is the defaul
 | PowerPoint           | Pixel-perfect: every slide as an image, videos play    | `export/pptx`          |
 | PowerPoint, editable | Text and pictures you can edit, on the theme's layouts | `export/pptx-editable` |
 
-The pixel-perfect row opens the file in a tab, like the other downloads. The editable row fetches it (`?sync=1`), saves it, and then says which slides became pictures, as an `info` toast built from the `X-Image-Slides` response header (`IMAGE_SLIDES_HEADER` in `shared/export-headers.js`): "Slides 3, 7 are images: their type has no editable form yet." No toast when every slide is editable. The v1 API offers the same two routes (`exportPresentationPptx`, `exportPresentationPptxEditable`) and sends the same header on the editable one.
+Both rows fetch their file like every file row ([above](#how-a-row-gets-its-file)). The editable row then says which slides became pictures, as an `info` toast built from the `X-Image-Slides` response header (`IMAGE_SLIDES_HEADER` in `shared/export-headers.js`): "Slides 3, 7 are images: their type has no editable form yet." No toast when every slide is editable. The v1 API offers the same two routes (`exportPresentationPptx`, `exportPresentationPptxEditable`) and sends the same header on the editable one.
 
 The editor says it before the export too. The inspector of a slide whose type the editable export photographs ends with "In the editable PowerPoint, this slide is an image." The hint reads the type's `fidelity` facet off the `/api/slide-types` response, resolved per target (`resolvedFidelities()` in `shared/slide-types/fidelity.js`), through the predicate the export dispatches on (`needsNativeComposition()`), never a type name. A fork type's declaration is therefore heard, and a database type is served the `raster` the export uses.
 

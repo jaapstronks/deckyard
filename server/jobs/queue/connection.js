@@ -64,6 +64,22 @@ export function isQueueAvailable() {
 }
 
 /**
+ * Install queue doubles, keyed by queue name (each with BullMQ's `add()`), or
+ * `null` to uninstall. Lets a route test take the queued branch without Redis.
+ *
+ * Test-only: production code must never call this. The app's own queues are
+ * only ever created by initializeQueues().
+ *
+ * @param {Object|null} testQueues
+ * @returns {void}
+ */
+export function __setTestQueues(testQueues) {
+  queues = testQueues;
+  isInitialized = testQueues !== null;
+  initPromise = null;
+}
+
+/**
  * Get Redis connection options for BullMQ.
  * @returns {Object} Connection options
  */

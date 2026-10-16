@@ -324,6 +324,7 @@
   "editor.export.descPptx": "Pixel-perfect: elke slide als beeld, video's spelen af",
   "editor.export.descPptxEditable": "Tekst en beeld bewerkbaar, op de layouts van het thema",
   "editor.export.descTextPdf": "Leesbare hand-out, geen slide-opmaak",
+  "editor.export.downloadBusy": "Voorbereiden…",
   "editor.export.exportAction": "Exporteren",
   "editor.export.groupData": "Data & bundel",
   "editor.export.groupDocuments": "Documenten",

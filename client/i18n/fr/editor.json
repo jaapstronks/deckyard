@@ -298,6 +298,7 @@
   "editor.export.descPng": "Image de chaque diapositive",
   "editor.export.descPptx": "PowerPoint, chaque diapositive en image",
   "editor.export.descTextPdf": "Document à distribuer, sans mise en page de diapositive",
+  "editor.export.downloadBusy": "Préparation…",
   "editor.export.exportAction": "Exporter",
   "editor.export.groupData": "Données et archive",
   "editor.export.groupSlides": "Diapositives",
