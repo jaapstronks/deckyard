@@ -124,7 +124,43 @@ export function createRerenderEditor({
   let activeElementTab = true;
   let lastElementKey = null;
 
+  // A rebuild between `pointerdown` and `click` replaces the button under the
+  // pointer, and the browser then drops the click (B730). That is exactly what
+  // a blur-commit does: pressing a control after typing on the canvas blurs
+  // the field, and the commit rerenders this form. So while a press that
+  // started in the form (or its slide toolbar) is held, a rerender waits and
+  // runs once the press is released, after the click has landed. A click
+  // handler's own rerender runs synchronously as before: by then the press
+  // is over.
+  let pressHeld = false;
+  let renderPending = false;
+  const pressRoots = [
+    editorMount,
+    caps.toolbar ? slideToolbar?.leftEl : null,
+  ].filter(Boolean);
+  const releasePress = () => {
+    window.removeEventListener('pointerup', releasePress, true);
+    window.removeEventListener('pointercancel', releasePress, true);
+    pressHeld = false;
+    // Next task: `click` follows `pointerup` in the same input sequence.
+    if (renderPending) setTimeout(() => renderPending && rerenderEditor(), 0);
+  };
+  const onPressStart = () => {
+    if (pressHeld) return;
+    pressHeld = true;
+    window.addEventListener('pointerup', releasePress, true);
+    window.addEventListener('pointercancel', releasePress, true);
+  };
+  for (const root of pressRoots) {
+    root.addEventListener('pointerdown', onPressStart, true);
+  }
+
   function rerenderEditor() {
+    if (pressHeld) {
+      renderPending = true;
+      return;
+    }
+    renderPending = false;
     // Clean up previous dropdown listeners
     detachTypeMenu();
 
@@ -727,5 +763,14 @@ export function createRerenderEditor({
     saveRefusal?.reveal();
   }
 
-  return { rerender: rerenderEditor, detach: detachTypeMenu };
+  function detach() {
+    detachTypeMenu();
+    for (const root of pressRoots) {
+      root.removeEventListener('pointerdown', onPressStart, true);
+    }
+    releasePress();
+    renderPending = false;
+  }
+
+  return { rerender: rerenderEditor, detach };
 }
