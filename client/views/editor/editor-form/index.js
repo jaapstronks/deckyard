@@ -123,6 +123,14 @@ export function createRerenderEditor({
   // rerenders (so editing a slide-wide field doesn't yank you back).
   let activeElementTab = true;
   let lastElementKey = null;
+  // Set by "Change under Layout →" (D345): the next render lands on the Slide
+  // tab and moves focus to the Layout row.
+  let focusLayoutRow = false;
+  const showLayoutRow = () => {
+    activeElementTab = false;
+    focusLayoutRow = true;
+    rerenderEditor();
+  };
 
   // A rebuild between `pointerdown` and `click` replaces the button under the
   // pointer, and the browser then drops the click (B730). That is exactly what
@@ -348,8 +356,9 @@ export function createRerenderEditor({
     // Layout: the form's first row (B703 PR 3, D335), only for a type that
     // declares layout variants (type-agnostic; forks that override a type
     // control their own set).
+    let layoutRow = null;
     if (caps.layout) {
-      const layoutRow = createLayoutRow({
+      layoutRow = createLayoutRow({
         slide,
         pres,
         SLIDE_TYPES,
@@ -679,6 +688,7 @@ export function createRerenderEditor({
           markDirty,
           rerenderPreview,
           scheduleUiRefresh,
+          onShowLayout: layoutRow ? showLayoutRow : null,
         });
       }
     }
@@ -760,6 +770,13 @@ export function createRerenderEditor({
     // Before the refusal reveal: a host that moves a field (the Fields head
     // lifts the title) must do so before anything takes focus in it.
     onRendered?.();
+    if (focusLayoutRow) {
+      focusLayoutRow = false;
+      const tile =
+        layoutRow?.querySelector('.layout-tile.is-active') ||
+        layoutRow?.querySelector('.layout-tile');
+      tile?.focus();
+    }
     saveRefusal?.reveal();
   }
 

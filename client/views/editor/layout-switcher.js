@@ -162,9 +162,12 @@ async function pickVariant({ variant, slide, pres, SLIDE_TYPES, editorState }) {
 
 /**
  * One tile: schematic plus label, `is-active` on the current variant. The
- * compact (inspector row) tile carries its label as title and aria-label.
+ * compact (inspector row) tile carries its label as title and aria-label, and
+ * shows it only when the variant asks (`rowLabel`: schematics too alike to
+ * tell apart, such as a block's left and centred tiles).
  */
 function buildTile({ variant, label, isActive, mirrored, compact, onPick }) {
+  const showLabel = !compact || variant.rowLabel === true;
   return h(
     'button',
     {
@@ -177,7 +180,7 @@ function buildTile({ variant, label, isActive, mirrored, compact, onPick }) {
     },
     [
       renderSchematic(variant, mirrored),
-      compact ? null : h('span', { class: 'layout-tile-label', text: label }),
+      showLabel ? h('span', { class: 'layout-tile-label', text: label }) : null,
     ].filter(Boolean),
   );
 }

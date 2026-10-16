@@ -850,7 +850,7 @@
   "editor.table.tip": "Tips: klistra in direkt från Sheets/Excel som en Markdown pipe-tabell, eller använd en tabell från en innehållsslide.",
   "editor.table.title": "Tabell",
   "editor.textStyle.align": "Justering",
-  "editor.textStyle.align.center": "Centrerat",
+  "editor.textStyle.align.center": "Centrerad",
   "editor.textStyle.align.left": "Vänster",
   "editor.textStyle.align.right": "Höger",
   "editor.textStyle.size": "Textstorlek",

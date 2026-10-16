@@ -349,7 +349,6 @@ function openLibraryModal({
   // Layout containers (defined early so they can be referenced in show/hide)
   const layout = h('div', { class: 'media-lib-layout' });
   const mainContent = h('div', { class: 'media-lib-main' });
-  const libraryView = h('div', { class: 'media-lib-library-view' });
   const externalView = h('div', {
     class: 'media-lib-external-view',
     hidden: true,
@@ -387,8 +386,10 @@ function openLibraryModal({
 
   // Assemble library view — upload first, then search and the grid. Uploading
   // is the most common reason this modal opens, and it used to sit under the
-  // whole thumbnail grid.
-  libraryView.append(
+  // whole thumbnail grid. The children go through h(), which skips the null
+  // of an absent batch entry; a native append() would print it as "null"
+  // (B720).
+  const libraryView = h('div', { class: 'media-lib-library-view' }, [
     uploadComponent.el,
     uploadsEnabled && user && libraryOnly
       ? h('button', {
@@ -413,7 +414,7 @@ function openLibraryModal({
     toolbar,
     sectionHeader,
     gridComponent.grid,
-  );
+  ]);
 
   // Handle external section clicks (Unsplash/Giphy)
   const handleExternalSection = (section) => {
