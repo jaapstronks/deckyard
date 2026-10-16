@@ -322,8 +322,8 @@ export function slideRootVars(slideHtml) {
  * Open a page on the shared browser, or `null` when no browser is available.
  *
  * Opening the page belongs in the same guard as launching the browser.
- * `getPuppeteerBrowser` caches its launch promise for the process lifetime, so a
- * Chrome that dies after the first export leaves a resolved-but-dead Browser
+ * `getPuppeteerBrowser` forgets a Chrome that died only once its `disconnected`
+ * event has fired, so a call in between gets a resolved-but-dead Browser
  * whose `newPage()` rejects. Letting that escape would fail the whole export —
  * and worse, the `/export/pdf-slides` HTML preview route, which reaches this
  * module without otherwise needing a browser at all.
