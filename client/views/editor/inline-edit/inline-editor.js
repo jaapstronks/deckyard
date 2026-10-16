@@ -165,6 +165,14 @@ export function createInlineEditor({
 
   /** @type {null | {el:HTMLElement, path:string, meta:Object, original:string, isNew:boolean}} */
   let editing = null;
+  // Keyboard stops of the canvas between edits (B725): the ordered fields and
+  // ghosts, the one that holds tabindex 0 (roving), and the field to focus
+  // again once an edit ended from the keyboard.
+  /** @type {Array<{path:string, el:HTMLElement}>} */
+  let canvasStops = [];
+  let rovingPath = null;
+  let rovingSlideId = null;
+  let refocusPath = null;
   let pendingRerenderRaf = 0;
 
   // The richer-than-inline markdown editor lives in its own modal concern; the
@@ -268,10 +276,10 @@ export function createInlineEditor({
         overlay.reposition();
       } else if (takeEscape(e)) {
         editing.cancel = true;
-        editing.el.blur();
+        endEditToField();
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
-        editing.el.blur();
+        endEditToField();
       } else if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
         e.preventDefault();
         document.execCommand('bold');
@@ -283,11 +291,22 @@ export function createInlineEditor({
     }
     if (e.key === 'Enter') {
       e.preventDefault();
-      editing.el.blur();
+      endEditToField();
     } else if (takeEscape(e)) {
       editing.cancel = true;
-      editing.el.blur();
+      endEditToField();
     }
+  }
+
+  /**
+   * End the edit from the keyboard (Enter commits, Escape cancels) and leave
+   * the focus on the field (B725, D349), so Tab goes on from there. The blur
+   * commits; the field gets the focus back once the canvas has settled
+   * (refresh), which may have remounted it.
+   */
+  function endEditToField() {
+    refocusPath = editing.path;
+    editing.el.blur();
   }
 
   /** Rich edits accept plain text only on paste (formatting comes from the
@@ -378,17 +397,8 @@ export function createInlineEditor({
     const def = currentDef();
     const descriptor = slide ? getInlineDescriptor(slide.type, def) : null;
     if (!editing || !root || !def || !descriptor) return;
-    const fields = [...root.querySelectorAll('[data-inline-field]')]
-      .filter((el) => {
-        const path = el.getAttribute('data-inline-field');
-        return fieldKind(fieldMetaForPath(def, path), el) !== 'csv';
-      })
-      .map((el) => ({ path: el.getAttribute('data-inline-field'), el }));
-    const ghosts = collectGhosts(root, def, descriptor)
-      .filter((g) => fieldKind(g.meta) !== 'csv')
-      .map((g) => ({ path: g.path, ghost: g }));
     const target = nextTabStop(
-      orderTabStops(def, [...fields, ...ghosts]),
+      collectTabStops(root, def, descriptor, { withCsv: false }),
       editing.path,
       backwards,
     );
@@ -396,6 +406,26 @@ export function createInlineEditor({
     if (!target) return;
     if (target.ghost) activateGhost(target.ghost);
     else if (target.el.isConnected) enterField(target.el);
+  }
+
+  /**
+   * The slide's rendered fields and ghosts in schema order (tab-order.js): the
+   * one list both Tab walks read, inside an edit (B704) and between fields
+   * (B725). Chart data (`csv`) is a stop only between fields, where Enter
+   * opens the Data tab; inside an edit it would end the walk.
+   * @returns {Array<{path:string, el?:HTMLElement, ghost?:Object}>}
+   */
+  function collectTabStops(root, def, descriptor, { withCsv }) {
+    const fields = [...root.querySelectorAll('[data-inline-field]')]
+      .filter((el) => {
+        const path = el.getAttribute('data-inline-field');
+        return withCsv || fieldKind(fieldMetaForPath(def, path), el) !== 'csv';
+      })
+      .map((el) => ({ path: el.getAttribute('data-inline-field'), el }));
+    const ghosts = collectGhosts(root, def, descriptor)
+      .filter((g) => withCsv || fieldKind(g.meta) !== 'csv')
+      .map((g) => ({ path: g.path, ghost: g }));
+    return orderTabStops(def, [...fields, ...ghosts]);
   }
 
   /**
@@ -1787,6 +1817,7 @@ export function createInlineEditor({
     overlay.clear();
     imageSelectables = [];
     textSelectables = [];
+    canvasStops = [];
     if (!root) return;
     thumb.classList.remove('is-inline-edit');
     restoreThumbTitle();
@@ -1828,6 +1859,7 @@ export function createInlineEditor({
     focusDrag.insertFocusAffordances(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
+    applyCanvasStops(root, def, descriptor, slide);
     syncSelection();
 
     // Measure now, then again after layout settles (fonts/images can reflow).
@@ -1888,6 +1920,106 @@ export function createInlineEditor({
 
   thumb.addEventListener('pointermove', onThumbPointerMove);
   thumb.addEventListener('pointerleave', onThumbPointerLeave);
+
+  // ----------------------------------------------------------------
+  // Keyboard: the canvas fields in the Tab order (B725, D349)
+  // ----------------------------------------------------------------
+  /**
+   * Make the slide's fields and ghosts reachable with Tab, in schema order.
+   * One roving stop holds `tabindex="0"`, the rest `-1`: the browser lands on
+   * it from the slide bar (and back on it with Shift-Tab from the inspector),
+   * and onThumbKeydown walks the others in schema order, not DOM order (the
+   * ghosts live on the overlay). Past either end the browser's own Tab takes
+   * over, so the next stop after the last field is whatever follows the
+   * canvas. A new slide starts at its first stop.
+   */
+  function applyCanvasStops(root, def, descriptor, slide) {
+    canvasStops = collectTabStops(root, def, descriptor, { withCsv: true })
+      .map((s) => ({
+        path: s.path,
+        el: s.ghost
+          ? [...overlay.layer.querySelectorAll('[data-ie-ghost]')].find(
+              (chip) => chip.getAttribute('data-ie-ghost') === s.path,
+            )
+          : s.el,
+      }))
+      .filter((s) => s.el);
+    if (rovingSlideId !== slide?.id) rovingPath = null;
+    rovingSlideId = slide?.id ?? null;
+    if (refocusPath) rovingPath = refocusPath;
+    if (!canvasStops.some((s) => s.path === rovingPath))
+      rovingPath = canvasStops[0]?.path ?? null;
+    for (const s of canvasStops) {
+      s.el.setAttribute('tabindex', s.path === rovingPath ? '0' : '-1');
+    }
+    const refocus = refocusPath;
+    refocusPath = null;
+    if (refocus) {
+      // After the blur that ended the edit has finished; focusing inside it
+      // would be undone by the browser.
+      requestAnimationFrame(() => {
+        const stop = canvasStops.find((s) => s.path === rovingPath);
+        if (!editing && stop?.el.isConnected) stop.el.focus();
+      });
+    }
+  }
+
+  /** Move the roving stop to `stop` and focus it. */
+  function focusCanvasStop(stop) {
+    setRovingStop(stop);
+    stop.el.focus();
+  }
+
+  /** Give `stop` the one `tabindex="0"` of the canvas. */
+  function setRovingStop(stop) {
+    for (const s of canvasStops) {
+      s.el.setAttribute('tabindex', s === stop ? '0' : '-1');
+    }
+    rovingPath = stop.path;
+  }
+
+  /**
+   * Tab between canvas stops walks them in schema order and leaves the canvas
+   * past either end (no wrap: that is the edit's own Tab, B704). Enter on a
+   * focused field edits it, as a click does; a ghost is a button, so Enter
+   * already activates it.
+   */
+  function onThumbKeydown(e) {
+    if (editing || mdModal.isOpen() || e.defaultPrevented || e.isComposing)
+      return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const at = canvasStops.findIndex((s) => s.el === e.target);
+    if (at < 0) return;
+    if (e.key === 'Tab') {
+      const next = canvasStops[at + (e.shiftKey ? -1 : 1)];
+      if (!next) return; // past the end: the browser's Tab leaves the canvas
+      e.preventDefault();
+      focusCanvasStop(next);
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      if (!e.target.hasAttribute('data-inline-field')) return;
+      e.preventDefault();
+      coach.dismiss();
+      enterField(e.target);
+    }
+  }
+
+  /**
+   * A focused field shows its outline as the focus ring (the overlay's). When
+   * the focus leaves the canvas stops for another element, the roving stop
+   * goes back to the first, so Tab from the slide bar always starts there.
+   */
+  function onThumbFocusChange(e) {
+    const box = outlineByField.get(e.target);
+    if (box) box.classList.toggle('is-focused', e.type === 'focusin');
+    if (e.type !== 'focusout' || editing || !e.relatedTarget) return;
+    const isStop = (el) => canvasStops.some((s) => s.el === el);
+    if (isStop(e.target) && !isStop(e.relatedTarget) && canvasStops[0])
+      setRovingStop(canvasStops[0]);
+  }
+
+  thumb.addEventListener('keydown', onThumbKeydown);
+  thumb.addEventListener('focusin', onThumbFocusChange);
+  thumb.addEventListener('focusout', onThumbFocusChange);
 
   // ----------------------------------------------------------------
   // Click routing (capture phase so we pre-empt the lightbox handler)
@@ -2034,6 +2166,9 @@ export function createInlineEditor({
     document.removeEventListener('keydown', onDocumentKeydown);
     thumb.removeEventListener('pointermove', onThumbPointerMove);
     thumb.removeEventListener('pointerleave', onThumbPointerLeave);
+    thumb.removeEventListener('keydown', onThumbKeydown);
+    thumb.removeEventListener('focusin', onThumbFocusChange);
+    thumb.removeEventListener('focusout', onThumbFocusChange);
     if (repositionRaf) cancelAnimationFrame(repositionRaf);
     overlay.detach();
     coach.detach();

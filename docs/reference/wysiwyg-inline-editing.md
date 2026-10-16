@@ -168,6 +168,17 @@ is on its way, the spawn drops its sentinel and stops. Pinned by
   overlay. Both ends wrap; Enter and Escape leave the edit. Chart data is no
   stop (it opens the bottom panel). The ghosts come from one collection
   (`collectGhosts`) that both the chips and the Tab order read (B704).
+- **Tab between edits** (B725, D349) → the same fields and ghosts, in the
+  same schema order, are Tab stops of the page: from the slide bar Tab
+  reaches the first field, then each next one, and past the last stop the
+  browser's own Tab carries on to the canvas tools and the inspector (no
+  wrap). One roving stop holds `tabindex="0"`; leaving the canvas puts it
+  back on the first field. Enter on a focused field edits it as a click does
+  (and selects it, so "This text" opens); Escape (cancel) or Enter (commit)
+  ends the edit with the focus back on the field. Chart data is a stop here:
+  Enter opens the Data tab. The focused field's overlay outline carries the
+  focus ring (`.ie-ol-outline.is-focused`). Covered by
+  `tests/inline-canvas-tab-order.test.js`.
 - **Filled optional field** → hover-revealed clear (×, `.ie-clear`) that
   empties the value; the renderer omits it, layout reclaims the space, the
   ghost returns.
