@@ -15,6 +15,7 @@ import {
   detectSlideRuntimeNeeds,
 } from '../utils/script-chain.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
+import { exportImageEmbedTransform } from './image-compress.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
@@ -539,9 +540,18 @@ export async function buildStandaloneHtml(
         ? pres.description
         : ''
   ).trim();
+  // Images are downsampled as they are inlined, with the same flat cap as the
+  // PDF and PNG routes (B302): a deck of 48 full-resolution photos made a
+  // 307 MB download and a 322 MB published page per visitor (B717). No
+  // display-aware pass here: that one measures in headless Chrome, and this
+  // document is built without a browser, per visitor for a /p/ page.
+  const imageTransform = exportImageEmbedTransform();
+  const embedCache = new Map();
   const css = await loadExportCssBundle(repoRoot, theme, watermark, {
     slides: pres.slides || [],
     slideTypes,
+    transform: imageTransform,
+    cache: embedCache,
   });
 
   // Inline any root-relative local font file a bundled stylesheet still
@@ -585,8 +595,8 @@ export async function buildStandaloneHtml(
   // Embed uploads + /client assets (Lucide icon SVGs), so the downloaded
   // standalone HTML works without a server. Shared cache dedupes the same
   // source across this pass and the rendered-HTML pass below.
-  const embedCache = new Map();
   const slides = await embedSlideImages(repoRoot, pres.slides, {
+    transform: imageTransform,
     cache: embedCache,
   });
 
@@ -633,6 +643,7 @@ export async function buildStandaloneHtml(
     })
     .join('\n');
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
+    transform: imageTransform,
     cache: embedCache,
   });
   const title = escapeHtml(pres.title || 'Presentation');
