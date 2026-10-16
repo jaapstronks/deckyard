@@ -3,6 +3,7 @@ import {
   getPuppeteerBrowser,
   toNodeBuffer,
 } from '../utils/puppeteer-browser.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 import { settleRenderedPage } from '../utils/settle-rendered-page.js';
 import {
   exportRenderTimeoutMs,
@@ -31,7 +32,8 @@ export async function renderSlidesToPdfBuffer(
   signal?.throwIfAborted();
   const browser = await getPuppeteerBrowser({ featureName: 'PDF export' });
   const page = await browser.newPage();
-  const closeOnAbort = () => page.close().catch(() => {});
+  const closeOnAbort = () =>
+    fireAndForget(page.close(), 'PDF export: close page on abort');
   signal?.addEventListener('abort', closeOnAbort, { once: true });
   try {
     // An abort while newPage() ran fired before the listener existed.

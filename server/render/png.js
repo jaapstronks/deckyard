@@ -17,6 +17,7 @@ import {
   buildScriptChain,
   detectLayoutRuntimeNeeds,
 } from '../utils/script-chain.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 import { settleRenderedPage } from '../utils/settle-rendered-page.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -174,7 +175,8 @@ export async function renderSlideToPngBuffer(
   signal?.throwIfAborted();
   const browser = await getPuppeteerBrowser({ featureName: 'PNG export' });
   const page = await browser.newPage();
-  const closeOnAbort = () => page.close().catch(() => {});
+  const closeOnAbort = () =>
+    fireAndForget(page.close(), 'PNG export: close page on abort');
   signal?.addEventListener('abort', closeOnAbort, { once: true });
   try {
     // An abort while newPage() ran fired before the listener existed.
