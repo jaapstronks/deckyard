@@ -36,6 +36,11 @@ const ALLOWLIST = [
     reason:
       'local image previews use object URLs so thirty files are not decoded as base64 before their upload turn; the batch modal revokes each URL on removal or close',
   },
+  {
+    file: 'client/views/list/presentation-card.js',
+    reason:
+      'the deck-card raster is fetched so the card can read the thumbnail 404 envelope (B283, docs/reference/deck-thumbnails.md); the blob URL feeds the <img> and is revoked on load or error',
+  },
 ];
 
 /** Third-party code we neither wrote nor patch. */

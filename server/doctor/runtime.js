@@ -11,13 +11,18 @@ import {
   getEffectiveMediaProvider,
   mediaConfigWarnings,
 } from '../media/config.js';
-import { resolveChromeExecutablePath } from '../utils/puppeteer-browser.js';
+import {
+  closePuppeteerBrowser,
+  getPuppeteerBrowser,
+  resolveChromeExecutablePath,
+} from '../utils/puppeteer-browser.js';
 import { ok, warn, fail, skip } from './finding.js';
 
 /**
  * @typedef {import('./finding.js').DoctorContext & {
  *   importPuppeteer?: () => Promise<unknown>,
  *   resolveChrome?: () => Promise<string>,
+ *   launchBrowser?: () => Promise<string>,
  * }} ChromiumContext
  */
 
@@ -29,6 +34,7 @@ export const chromiumCheck = {
   async run({
     importPuppeteer = () => import('puppeteer-core'),
     resolveChrome = resolveChromeExecutablePath,
+    launchBrowser = launchSharedBrowser,
   }) {
     try {
       await importPuppeteer();
@@ -45,6 +51,18 @@ export const chromiumCheck = {
         'Install Chromium (the Docker image has it), or set PUPPETEER_EXECUTABLE_PATH.',
       );
     }
+    // An executable is not yet a browser: a stub that exits at launch (the
+    // Ubuntu `chromium-browser` snap shim, B499) passes `X_OK`. So start it,
+    // through the same helper the exports and thumbnails use.
+    let version;
+    try {
+      version = await launchBrowser();
+    } catch (err) {
+      return fail(
+        `${path} does not start as a browser: ${firstLine(err)}. PDF, PNG and thumbnail exports fail.`,
+        'Point PUPPETEER_EXECUTABLE_PATH at a working Chrome or Chromium, and check that it runs in this container.',
+      );
+    }
     // The resolver falls back to the usual install paths, so a configured
     // path that is not there only shows as a different browser than meant.
     const configured =
@@ -55,9 +73,33 @@ export const chromiumCheck = {
         'Fix PUPPETEER_EXECUTABLE_PATH (or CHROME_BIN), or unset it.',
       );
     }
-    return ok(path);
+    return ok(version ? `${path} (${version})` : path);
   },
 };
+
+/** First line of an error message; a launch error carries the whole log. */
+function firstLine(err) {
+  return String(err?.message || err)
+    .split('\n')[0]
+    .trim();
+}
+
+/**
+ * Start the shared browser, open and close one page, and shut it down again.
+ * The doctor runs as its own process, so closing the shared browser here
+ * takes nothing from a running server.
+ * @returns {Promise<string>} The browser's version string.
+ */
+async function launchSharedBrowser() {
+  try {
+    const browser = await getPuppeteerBrowser({ featureName: 'Doctor' });
+    const page = await browser.newPage();
+    await page.close();
+    return await browser.version();
+  } finally {
+    await closePuppeteerBrowser();
+  }
+}
 
 /** One transparent pixel: the smallest body every provider accepts. */
 const PROBE_PNG = Buffer.from(
