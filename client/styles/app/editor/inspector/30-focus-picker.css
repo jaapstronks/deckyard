@@ -63,10 +63,6 @@
   background: hsl(var(--app-accent-primary));
 }
 
-.sb-focus-actions {
-  margin-top: var(--ps-space-2);
-}
-
 .stack.is-field.is-disabled .field-label {
   opacity: 0.7;
 }

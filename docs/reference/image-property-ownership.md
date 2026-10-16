@@ -205,11 +205,11 @@ imageDefaults = {
   never overrode it — like a theme. That is usually what you want, but it is a
   behaviour change relative to stored values, so it is a deliberate, documented
   property, not a side effect.
-- **Inspector UX for a silent default:** show the effective value as _derived_
-  (ghost/placeholder, distinct from an explicit selection), label its origin
-  ("Contain · from slide type"), and give an explicit "back to default" that
-  **empties** the field (saving the default value would be a fan-out by another
-  name).
+- **Inspector UX for a silent default:** the type default is the marked option
+  (a dot and "(Default)" in its name), and both choosing it and the "Back to
+  default" button **empty** the field (saving the default value would be a
+  fan-out by another name). See
+  [`editor-inspector.md`](editor-inspector.md) § The visible default.
 
 > **Audit criterion (add to the scorecard):** _every default is lookupable in
 > the type definition_, not hard-coded in a renderer or an inspector. The old

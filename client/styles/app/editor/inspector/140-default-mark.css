@@ -1,0 +1,47 @@
+/* The visible default of a choice control (D346,
+   views/editor/fields/default-mark.js): a dot on the default option and,
+   only while the value deviates, a "Back to default" text button under the
+   control. */
+.sb-segmented-btn.is-default,
+.sb-focus-btn.is-default {
+  position: relative;
+}
+
+.field-default-dot {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-text-secondary));
+}
+
+.sb-segmented-btn.is-default .field-default-dot,
+.sb-focus-btn.is-default .field-default-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+}
+
+.bg-picker-option .field-default-dot {
+  margin-left: auto;
+}
+
+.field-reset-default {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.field-reset-default:hover:not(:disabled) {
+  color: hsl(var(--app-text-primary));
+}
+
+.field-reset-default[hidden] {
+  display: none;
+}

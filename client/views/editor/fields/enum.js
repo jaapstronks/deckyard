@@ -2,6 +2,12 @@ import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { optionCopy } from './option-copy.js';
 import { enumControl, optionGlyph } from './enum-fit.js';
+import {
+  createResetToDefault,
+  defaultDot,
+  hasDefaultOption,
+  withDefaultMark,
+} from './default-mark.js';
 
 /**
  * The translated visible label for an enum field. Enum fields resolve their
@@ -33,7 +39,14 @@ export function createEnumFields({ fieldSelect } = {}) {
     return opt.labelBeside ? [glyph, label] : [glyph];
   };
 
-  const fieldSegmented = (field, value, options, onChange, sizeClass) => {
+  const fieldSegmented = (
+    field,
+    value,
+    options,
+    onChange,
+    sizeClass,
+    defaultValue,
+  ) => {
     const group = h('div', {
       class: 'sb-segmented',
       role: 'radiogroup',
@@ -49,47 +62,102 @@ export function createEnumFields({ fieldSelect } = {}) {
       }
     };
 
+    const choose = (v) => {
+      setActive(v);
+      reset?.sync(v);
+      onChange(v);
+    };
+    const reset =
+      defaultValue == null
+        ? null
+        : createResetToDefault({ defaultValue, value, apply: choose });
+
     for (const opt of options) {
+      const isDefault = defaultValue != null && opt.value === defaultValue;
+      const name = opt.ariaLabel ?? opt.label ?? opt.value;
       const btn = h('button', {
         type: 'button',
         class: 'sb-segmented-btn',
-        title: opt.title,
-        'aria-label': opt.ariaLabel,
+        title: isDefault ? withDefaultMark(opt.title ?? name) : opt.title,
+        'aria-label': isDefault ? withDefaultMark(name) : opt.ariaLabel,
         'aria-pressed': String(value ?? '') === opt.value ? 'true' : 'false',
-        onclick: () => {
-          setActive(opt.value);
-          onChange(opt.value);
-        },
+        onclick: () => choose(opt.value),
       });
       btn.dataset.value = opt.value;
       if (String(value ?? '') === opt.value) btn.classList.add('is-active');
       if (optionGlyph(opt) && opt.labelBeside)
         btn.classList.add('has-icon-beside');
       btn.append(...enumButtonContent(opt));
+      if (isDefault) {
+        btn.classList.add('is-default');
+        btn.append(defaultDot());
+      }
       group.append(btn);
     }
     // Use `stack is-field` so label/control spacing matches other editor fields
     // (e.g. background picker) and doesn't inherit the larger default stack gap.
-    return h('div', { class: `stack is-field${sizeClass}` }, [
-      h('div', { class: 'field-label', text: enumFieldLabel(field) }),
-      group,
-    ]);
+    return h(
+      'div',
+      { class: `stack is-field${sizeClass}` },
+      [
+        h('div', { class: 'field-label', text: enumFieldLabel(field) }),
+        group,
+        reset?.el,
+      ].filter(Boolean),
+    );
+  };
+
+  // The dropdown form of the same mark: a native <option> cannot carry a dot,
+  // so the default option says so in words, and the reset sits under it.
+  const fieldDropdown = (field, value, options, onChange, defaultValue) => {
+    const marked =
+      defaultValue == null
+        ? options
+        : options.map((o) =>
+            o.value === defaultValue
+              ? { ...o, label: withDefaultMark(o.label ?? o.value) }
+              : o,
+          );
+    let reset = null;
+    const el = fieldSelect(enumFieldLabel(field), value, marked, (v) => {
+      reset?.sync(v);
+      onChange(v);
+    });
+    if (defaultValue != null) {
+      const select = el.querySelector('select');
+      reset = createResetToDefault({
+        defaultValue,
+        value,
+        apply: (v) => {
+          if (select) select.value = v;
+          reset.sync(v);
+          onChange(v);
+        },
+      });
+      el.append(reset.el);
+    }
+    return el;
   };
 
   // The control follows from what the options need (enum-fit.js): one
   // segmented row when it fits the narrowest inspector column, a dropdown
-  // otherwise, and the size intent from the same width estimate.
-  const fieldEnum = (field, value, onChange) => {
+  // otherwise, and the size intent from the same width estimate. With a
+  // `defaultValue` among the options, that option is marked and a deviating
+  // value offers "Back to default" (D346, default-mark.js).
+  const fieldEnum = (field, value, onChange, { defaultValue } = {}) => {
     const options = (Array.isArray(field?.options) ? field.options : []).map(
       optionCopy,
     );
     const v = value ?? '';
+    const d = hasDefaultOption(options, defaultValue)
+      ? String(defaultValue)
+      : null;
     const { control, size } = enumControl(options);
     const sizeClass = size ? ` is-field-${size}` : '';
     if (control === 'segmented') {
-      return fieldSegmented(field, v, options, onChange, sizeClass);
+      return fieldSegmented(field, v, options, onChange, sizeClass, d);
     }
-    const el = fieldSelect(enumFieldLabel(field), v, options, onChange);
+    const el = fieldDropdown(field, v, options, onChange, d);
     if (size) el.classList.add(`is-field-${size}`);
     return el;
   };

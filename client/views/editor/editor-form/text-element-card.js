@@ -12,7 +12,7 @@
  * `@<set>`); the shared render post-pass turns that into `tf-*` classes on
  * every covered element, so the preview, present mode and exports reflect it
  * from one code path. Defaults are pruned on write, so a click-to-default
- * leaves stored JSON clean.
+ * (or "Back to default", D346) leaves stored JSON clean.
  */
 
 import { t } from '../../../lib/ui-i18n.js';
@@ -282,6 +282,7 @@ export function renderTextElementCard({
           setTextStyle(slide, offer.key, 'align', v, slideTypeDef);
           commit();
         },
+        { defaultValue: defaultAlign },
       )
     : null;
   if (alignEl && alignHasNoEffect(slideTypeDef, offer, slide?.content)) {
@@ -309,6 +310,7 @@ export function renderTextElementCard({
           setTextStyle(slide, offer.key, 'size', v, slideTypeDef);
           commit();
         },
+        { defaultValue: SIZE_DEFAULT },
       )
     : null;
 

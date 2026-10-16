@@ -397,15 +397,24 @@ export function createRenderField({
         field?.key === 'background' && fieldBackground
           ? fieldBackground
           : fieldEnum;
-      return renderer(field, val, (v) => {
-        slide.content[field.key] = v;
-        markDirty?.();
-        // A driver of some other field's `visibleWhen` (chart type, image role,
-        // zoom steps, …) changes which controls exist, so the form is rebuilt
-        // rather than repainted.
-        if (visibilityDrivers.has(field.key)) rerenderEditor?.();
-        scheduleUiRefresh?.();
-      });
+      // The type default is the marked option (D346). "Back to default"
+      // writes it back rather than deleting the key: renderers read the
+      // stored value without consulting `defaults` (a missing `background`
+      // renders lime, not a type's mist).
+      return renderer(
+        field,
+        val,
+        (v) => {
+          slide.content[field.key] = v;
+          markDirty?.();
+          // A driver of some other field's `visibleWhen` (chart type, image
+          // role, zoom steps, …) changes which controls exist, so the form is
+          // rebuilt rather than repainted.
+          if (visibilityDrivers.has(field.key)) rerenderEditor?.();
+          scheduleUiRefresh?.();
+        },
+        { defaultValue: def.defaults?.[field.key] },
+      );
     }
 
     if (field.type === 'boolean') {

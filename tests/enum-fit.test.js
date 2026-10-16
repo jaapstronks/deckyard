@@ -122,8 +122,8 @@ test('no two options of a built-in enum share a label (en, nl)', () => {
   assert.deepEqual(failures, [], failures.join('\n'));
 });
 
-test('the image-fit widget is one segmented row with three distinct labels', () => {
-  const options = imageFitOptions({ typeDefault: 'cover' });
+test('the image-fit widget is one segmented row with distinct labels', () => {
+  const options = imageFitOptions();
   const labels = options.map((o) => o.label);
   assert.equal(new Set(labels).size, labels.length, labels.join(' | '));
   assert.equal(enumControl(options).control, 'segmented');
