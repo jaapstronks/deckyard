@@ -142,13 +142,13 @@ function createTypographySection({ config, onChange }) {
     t('settings.themes.config.typography', 'Typography'),
     t(
       'settings.themes.config.typographyHint',
-      'Text size applies to every slide type; capitalisation and weight apply to headings. The fonts themselves are set above.',
+      'Text scale applies to every slide type; capitalisation and weight apply to headings. The fonts themselves are set above.',
     ),
   );
 
   el.append(
     choiceRow({
-      label: t('settings.themes.config.textScale', 'Text size'),
+      label: t('settings.themes.config.textScale', 'Text scale'),
       value: readValue(config, 'typography', 'textScale'),
       options: Object.keys(TEXT_SCALES).map((key) => ({
         value: key,

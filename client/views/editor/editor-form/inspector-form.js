@@ -107,7 +107,7 @@ export function getInspectorKeepKeys(type, def) {
  *   Slide tab when no card is selected — an editing-surface choice, not a
  *   field property; the selected card's own controls are the shared
  *   "This card" card (slide-forms/icon-card-links.js).
- * - list-slide: the "Text size" step-down note — needs live layout
+ * - list-slide: the "Text density" step-down note — needs live layout
  *   resolution, which the JSON-safe field vocabulary cannot carry
  *   (slide-forms/list-density.js).
  * - follow-invite-slide: the "Use this slide while presenting" toggle —

@@ -650,7 +650,6 @@
   "editor.slideField.body.label": "Brødtekst",
   "editor.slideField.bottomSubheading.label": "Underoverskrift nederst",
   "editor.slideField.caption.label": "Bildetekst",
-  "editor.slideField.density.label": "Tekststørrelse",
   "editor.slideField.density.option.comfortable": "Stor",
   "editor.slideField.density.option.compact": "Liten",
   "editor.slideField.description.label": "Beskrivelse",

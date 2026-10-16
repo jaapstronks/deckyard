@@ -32,16 +32,20 @@ export const inlineEdit = {
  * Fields the inspector keeps rendering even though the inline layer covers the
  * rest of the slide.
  *
+ * `density`: slide-wide text density, no canvas surface — config.
+ *
  * `actions`: CTA buttons (label/url/style) have no canvas surface — config.
  *
  * `asideVariant` / `asideText`: the aside inset (shared/slide-types/aside-field.js).
  * Its body is click-to-edit on the canvas once it exists, but only once — the
  * inspector is where an author picks the kind, and that choice is what makes
  * the text field appear at all.
+ *
+ * Not `layout`: the Layout row's one-column / two-column tiles write it, so a
+ * second control for it in the form below would be two homes (D348).
  * @type {string[]}
  */
 export const inspectorKeeps = [
-  'layout',
   'density',
   'actions',
   'asideVariant',

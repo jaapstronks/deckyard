@@ -634,7 +634,6 @@
   "editor.slideField.body.label": "Corps",
   "editor.slideField.bottomSubheading.label": "Sous-titre du bas",
   "editor.slideField.caption.label": "Légende",
-  "editor.slideField.density.label": "Taille du texte",
   "editor.slideField.density.option.comfortable": "Grande",
   "editor.slideField.density.option.compact": "Petite",
   "editor.slideField.headerAlign.label": "Alignement de l'en-tête",

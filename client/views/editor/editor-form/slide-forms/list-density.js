@@ -1,5 +1,5 @@
 /**
- * The list slide's "Text size" field with its step-down note.
+ * The list slide's "Text density" field with its step-down note.
  *
  * DOCUMENTED EXCEPTION (route 4 PR D, editor-per-type-behaviour brief). "Text
  * size" is the one list setting the renderer can overrule: a list long AND

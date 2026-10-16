@@ -655,7 +655,6 @@
   "editor.slideField.body.label": "Sisältö",
   "editor.slideField.bottomSubheading.label": "Alaotsikko alhaalla",
   "editor.slideField.caption.label": "Kuvateksti",
-  "editor.slideField.density.label": "Tekstin koko",
   "editor.slideField.density.option.comfortable": "Suuri",
   "editor.slideField.density.option.compact": "Pieni",
   "editor.slideField.description.label": "Kuvaus",
