@@ -127,13 +127,18 @@ render all pages in one process.
 
 ## Knobs
 
-| Env var                     | Default | Effect                                                                             |
-| --------------------------- | ------- | ---------------------------------------------------------------------------------- |
-| `EXPORT_IMAGE_COMPRESSION`  | on      | `0`/`off`/`false`/`no` disables the transform entirely                             |
-| `EXPORT_IMAGE_MAX_PX`       | 2600    | Flat longest-edge ceiling; `0` disables                                            |
-| `EXPORT_IMAGE_RETINA_SCALE` | 2       | Margin over the measured display size on the `<img src>` pass; clamped to `[1, 4]` |
-| `EXPORT_IMAGE_QUALITY`      | 80      | JPEG quality (mozjpeg)                                                             |
-| `EXPORT_RENDER_TIMEOUT_MS`  | 120000  | `setContent` + capture cap, PDF and PNG; `0` disables                              |
+| Env var                            | Default | Effect                                                                             |
+| ---------------------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `EXPORT_IMAGE_COMPRESSION`         | on      | `0`/`off`/`false`/`no` disables the transform entirely                             |
+| `EXPORT_IMAGE_MAX_PX`              | 2600    | Flat longest-edge ceiling; `0` disables                                            |
+| `EXPORT_IMAGE_RETINA_SCALE`        | 2       | Margin over the measured display size on the `<img src>` pass; clamped to `[1, 4]` |
+| `EXPORT_IMAGE_QUALITY`             | 80      | JPEG quality (mozjpeg)                                                             |
+| `EXPORT_RENDER_TIMEOUT_MS`         | 120000  | `setContent` + capture cap, PDF and PNG; `0` disables                              |
+| `EXPORT_BROWSER_LAUNCH_TIMEOUT_MS` | 30000   | Cap on starting the shared headless Chrome; `0` disables                           |
+
+## The shared browser
+
+Every Chrome route (PDF, PNG and PNG-zip, PPTX, PDF import, deck thumbnails, the sandbox OG image) shares one headless Chrome, launched on first use by `getPuppeteerBrowser()` in `server/utils/puppeteer-browser.js` and reused for the process lifetime. The cache remembers success, not failure (B714): a launch that fails or times out is dropped, so the next request tries once more, and a Chrome that crashes or is killed later is dropped on its `disconnected` event, so the next request starts a fresh one. There is no retry loop inside a request. A failed launch answers `503 browser_unavailable` with "The export browser could not start; try again." and logs the real launch error once as a warning; `npm run doctor` shows that error under the `chromium` check.
 
 ## Known open edge
 

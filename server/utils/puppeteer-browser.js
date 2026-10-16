@@ -1,7 +1,11 @@
 import fs from 'node:fs/promises';
 import { once } from 'node:events';
-import { envStr, envBool } from '../config/utils.js';
+import { envStr, envBool, envInt } from '../config/utils.js';
 import { debugLog } from './debug-log.js';
+import { AppError } from './errors.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('puppeteer');
 
 let browserPromise = null;
 
@@ -107,54 +111,144 @@ export async function resolveChromeExecutablePath({
   );
 }
 
+/** Default for `EXPORT_BROWSER_LAUNCH_TIMEOUT_MS`. */
+export const BROWSER_LAUNCH_TIMEOUT_MS = 30_000;
+
+/**
+ * How long a launch may take before it counts as failed. Puppeteer's own
+ * default is the same 30 s; naming it makes it an operator's knob. `0`
+ * disables the cap.
+ * @returns {number}
+ */
+export function browserLaunchTimeoutMs() {
+  return envInt('EXPORT_BROWSER_LAUNCH_TIMEOUT_MS', BROWSER_LAUNCH_TIMEOUT_MS, {
+    min: 0,
+  });
+}
+
+/** The display sentence of {@link browserUnavailable}. */
+export const BROWSER_UNAVAILABLE_MESSAGE =
+  'The export browser could not start; try again.';
+
+/**
+ * The user-facing answer to a browser that did not start. The launch error
+ * itself carries the binary's path and its whole log, so it rides along as
+ * `cause` for the log and the doctor, never as the response text.
+ * @param {unknown} cause
+ * @returns {AppError}
+ */
+function browserUnavailable(cause) {
+  const err = new AppError(
+    BROWSER_UNAVAILABLE_MESSAGE,
+    503,
+    null,
+    'browser_unavailable',
+  );
+  err.cause = cause;
+  return err;
+}
+
+/**
+ * The shared headless browser, launched on first use and reused after.
+ *
+ * The cache remembers success, not failure (B714). A launch that rejects
+ * drops it, so the next call tries once more instead of answering every
+ * export with the same stale error until the server restarts; a browser that
+ * disconnects later (Chrome killed or crashed) drops it too, so the next call
+ * launches a fresh one rather than handing out a dead Browser. Each call makes
+ * at most one attempt: a broken binary costs one launch per request, never a
+ * retry loop.
+ *
+ * A failed launch rejects with an `AppError` `503 browser_unavailable` (the
+ * real error as `cause`, logged once as a warning), which every caller's
+ * error path passes through as the envelope.
+ *
+ * @param {object} [options]
+ * @param {string} [options.featureName] Names the feature in the launch error.
+ * @returns {Promise<import('puppeteer-core').Browser>}
+ */
 export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
   if (browserPromise) return browserPromise;
-  browserPromise = (async () => {
-    let puppeteer;
-    try {
-      puppeteer = await import('puppeteer-core');
-    } catch {
-      const err = new Error(
-        `${featureName} requires puppeteer-core. Install it with: npm i puppeteer-core`,
+  const launching = launchBrowser(featureName).then(
+    (browser) => {
+      browser.once('disconnected', () => {
+        // Only forget the browser this promise is still the cache for:
+        // closePuppeteerBrowser() clears the cache before it closes.
+        if (browserPromise !== launching) return;
+        browserPromise = null;
+        log.warn('the export browser disconnected; the next export starts one');
+        // A disconnect with Chrome still running would leave it orphaned, and
+        // its pipes keep the event loop alive; take both down. There is no
+        // connection left to close over, so no grace period either.
+        shutDownBrowser(browser, { timeoutMs: 0 }).catch((err) => {
+          debugLog('[puppeteer] shutdown after disconnect failed', err);
+        });
+      });
+      return browser;
+    },
+    (err) => {
+      if (browserPromise === launching) browserPromise = null;
+      log.warn(
+        `${featureName}: the browser did not start:`,
+        err?.message || err,
       );
-      err.code = 'PUPPETEER_MISSING';
-      throw err;
-    }
+      throw browserUnavailable(err);
+    },
+  );
+  browserPromise = launching;
+  return launching;
+}
 
-    const executablePath = await resolveChromeExecutablePath();
-    if (!executablePath) {
-      const err = new Error(
-        `${featureName} needs a Chrome/Chromium executable. Install Chrome (locally) or Chromium (in Docker), or set PUPPETEER_EXECUTABLE_PATH to the browser binary.`,
-      );
-      err.code = 'CHROME_MISSING';
-      throw err;
-    }
+/**
+ * Launch one browser, no caching.
+ * @param {string} featureName
+ * @returns {Promise<import('puppeteer-core').Browser>}
+ */
+async function launchBrowser(featureName) {
+  let puppeteer;
+  try {
+    puppeteer = await import('puppeteer-core');
+  } catch {
+    const err = new Error(
+      `${featureName} requires puppeteer-core. Install it with: npm i puppeteer-core`,
+    );
+    err.code = 'PUPPETEER_MISSING';
+    throw err;
+  }
 
-    // Sandbox posture. See docs/reference/security-posture.md
-    // § Headless-browser sandbox posture.
-    //
-    // The container image runs Chromium as a non-root user, so the old
-    // "renderer escape == root in the container" risk is gone. Chromium's own
-    // sandbox stays OFF by default because its namespace sandbox needs syscalls
-    // that Docker's DEFAULT seccomp profile blocks (CLONE_NEWPID/NEWNET); with
-    // the stock profile a sandboxed launch fails outright, breaking export.
-    //
-    // Operators who harden the runtime (e.g. `--cap-add=SYS_ADMIN` or a
-    // Chromium seccomp profile) can re-enable the in-browser sandbox for
-    // defense-in-depth by setting PUPPETEER_SANDBOX=true.
-    const enableSandbox = envBool('PUPPETEER_SANDBOX');
-    const args = ['--disable-dev-shm-usage'];
-    if (!enableSandbox) {
-      args.unshift('--no-sandbox', '--disable-setuid-sandbox');
-    }
+  const executablePath = await resolveChromeExecutablePath();
+  if (!executablePath) {
+    const err = new Error(
+      `${featureName} needs a Chrome/Chromium executable. Install Chrome (locally) or Chromium (in Docker), or set PUPPETEER_EXECUTABLE_PATH to the browser binary.`,
+    );
+    err.code = 'CHROME_MISSING';
+    throw err;
+  }
 
-    return puppeteer.launch({
-      headless: true,
-      executablePath,
-      args,
-    });
-  })();
-  return browserPromise;
+  // Sandbox posture. See docs/reference/security-posture.md
+  // § Headless-browser sandbox posture.
+  //
+  // The container image runs Chromium as a non-root user, so the old
+  // "renderer escape == root in the container" risk is gone. Chromium's own
+  // sandbox stays OFF by default because its namespace sandbox needs syscalls
+  // that Docker's DEFAULT seccomp profile blocks (CLONE_NEWPID/NEWNET); with
+  // the stock profile a sandboxed launch fails outright, breaking export.
+  //
+  // Operators who harden the runtime (e.g. `--cap-add=SYS_ADMIN` or a
+  // Chromium seccomp profile) can re-enable the in-browser sandbox for
+  // defense-in-depth by setting PUPPETEER_SANDBOX=true.
+  const enableSandbox = envBool('PUPPETEER_SANDBOX');
+  const args = ['--disable-dev-shm-usage'];
+  if (!enableSandbox) {
+    args.unshift('--no-sandbox', '--disable-setuid-sandbox');
+  }
+
+  return puppeteer.launch({
+    headless: true,
+    executablePath,
+    args,
+    timeout: browserLaunchTimeoutMs(),
+  });
 }
 
 /** How long {@link shutDownBrowser} waits for a clean close before killing. */

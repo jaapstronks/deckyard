@@ -77,9 +77,13 @@ export const chromiumCheck = {
   },
 };
 
-/** First line of an error message; a launch error carries the whole log. */
+/**
+ * First line of an error message; a launch error carries the whole log. The
+ * helper's `browser_unavailable` holds the launch error as its `cause`.
+ */
 function firstLine(err) {
-  return String(err?.message || err)
+  const real = err?.cause ?? err;
+  return String(real?.message || real)
     .split('\n')[0]
     .trim();
 }
