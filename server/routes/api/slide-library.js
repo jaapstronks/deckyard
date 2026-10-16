@@ -28,7 +28,7 @@ import {
 } from '../../storage/slide-library-usage.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { getRequestOrigin } from '../../utils/request-url.js';
-import { loadThemeAssets } from '../../utils/themes.js';
+import { findTheme, loadThemeAssets } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -106,6 +106,31 @@ async function refuseNonLibraryType(storageScope, res, slideType) {
 }
 
 /**
+ * Refuse a create whose `themeId` is not a theme this organization has (B718):
+ * the one spelling a stored reference has (D237), `default` or a visible record
+ * UUID, checked the way a deck's theme switch checks it. A slug stored here
+ * would fail every render of the item, and the theme is fixed at create, so
+ * this is the only door. An absent theme stays absent. Answers itself and
+ * returns true on a refusal (400 `invalid`, field `themeId`).
+ *
+ * @param {string} repoRoot
+ * @param {object} storageScope
+ * @param {import('node:http').ServerResponse} res
+ * @param {unknown} themeId
+ * @returns {Promise<boolean>}
+ */
+async function refuseUnknownTheme(repoRoot, storageScope, res, themeId) {
+  if (themeId === undefined || themeId === null || themeId === '') return false;
+  if (await findTheme(repoRoot, themeId, storageScope)) return false;
+  mutationError(res, {
+    reason: 'invalid',
+    field: 'themeId',
+    message: `${JSON.stringify(themeId)} is not a theme of this organization: use "default" or a theme record UUID`,
+  });
+  return true;
+}
+
+/**
  * The save-contract options a PATCH hands to storage (D170): the `If-Match`
  * revision. Answers itself and returns null for a patch
  * outside the closed key set (400 `invalid` with the field) and for a
@@ -175,12 +200,21 @@ async function handlePersonalList({ storageScope, res, url, authedUser }) {
 }
 
 // POST /api/slide-library/personal - Save a slide to the personal library
-async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
+async function handlePersonalCreate({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
   if (await refuseNonLibraryType(storageScope, res, body?.slideType)) {
+    return true;
+  }
+  if (await refuseUnknownTheme(repoRoot, storageScope, res, body?.themeId)) {
     return true;
   }
   const r = await createPersonalLibraryItem(storageScope, email, body, {
@@ -264,6 +298,9 @@ async function handleOrganizationCreate({
   if (!parsed.ok) return true;
   const body = parsed.body;
   if (await refuseNonLibraryType(storageScope, res, body?.slideType)) {
+    return true;
+  }
+  if (await refuseUnknownTheme(repoRoot, storageScope, res, body?.themeId)) {
     return true;
   }
   const r = await createOrganizationLibraryItem(storageScope, body, {

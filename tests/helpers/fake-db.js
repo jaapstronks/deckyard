@@ -201,6 +201,13 @@ function evaluateRawExpression(value, row, column) {
   if ((node.parameters || []).length === 0 && /^now\(\)$/i.test(text)) {
     return new Date().toISOString();
   }
+  // `'{}'::text[]` — an empty array literal (a new library item's favorites).
+  if (
+    (node.parameters || []).length === 0 &&
+    /^'\{\}'::[a-z]+\[\]$/i.test(text)
+  ) {
+    return [];
+  }
   const arithmetic = text.match(/^"?([a-z_]+)"?\s*([+-])\s*(\d+)$/i);
   if (arithmetic && (node.parameters || []).length === 0) {
     const [, operand, operator, amount] = arithmetic;

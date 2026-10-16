@@ -20,6 +20,12 @@
  *   the trigger disarms itself. There is no import path any more (B385): the
  *   guard reports the situation, it does not offer to fix it.
  *
+ * - {@link unmigratedThemeReferencesError}: decks or library slides still name
+ *   their theme by slug, from before the UUID cutover (D237), on a database
+ *   where the one-time `scripts/migrate-theme-references.js` never ran. Each
+ *   such deck fails to open (`Invalid theme ID`) while the rest of the install
+ *   works, so this one warns instead of refusing the boot (B718).
+ *
  * Order matters in server.js: the schema check runs first, because "is this
  * database empty?" is only a meaningful question once the tables exist.
  */
@@ -136,5 +142,58 @@ export async function strandedFileDataError(repoRoot) {
     `Your files have not been touched, but Deckyard cannot read them: disk-JSON storage was ` +
     `removed in 1.x and the one-time file->Postgres import was retired with it.\n` +
     `Back the directory up and move it aside (or point DATA_DIR elsewhere) to continue.`
+  );
+}
+
+/**
+ * Report stored theme references that are neither `default` nor a record UUID.
+ *
+ * Nothing writes such a reference any more: every create settles its theme
+ * (`settleNewDeckTheme`), a switch goes through `findTheme`, and the shared
+ * update path never touches `theme`. What is left is data from before the
+ * cutover on an install that skipped the cutover command, and that command is
+ * the fix: it resolves seed slugs itself and takes a map for the rest. The
+ * read path stays strict (D237), so this is the place the operator hears it.
+ *
+ * @returns {Promise<string|null>} Warning message, or null when every
+ *   reference is `default` or a UUID.
+ */
+export async function unmigratedThemeReferencesError() {
+  if (!isDatabaseAvailable()) return null;
+  const { resolveThemeId } = await import('../utils/themes.js');
+  let decks;
+  let library;
+  try {
+    [decks, library] = await Promise.all([
+      getDb().selectFrom('presentations').select('theme').execute(),
+      getDb().selectFrom('slide_library').select('theme_id').execute(),
+    ]);
+  } catch {
+    // Unreachable or unmigrated: refused before this check runs.
+    return null;
+  }
+  /** @type {Map<string, number>} */
+  const counts = new Map();
+  for (const value of [
+    ...decks.map((row) => row.theme),
+    ...library.map((row) => row.theme_id),
+  ]) {
+    if (resolveThemeId(value) !== null) continue;
+    const key = JSON.stringify(value);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  if (counts.size === 0) return null;
+
+  const total = [...counts.values()].reduce((sum, n) => sum + n, 0);
+  const list = [...counts]
+    .sort((a, b) => b[1] - a[1])
+    .map(([ref, n]) => `${ref} (${n})`)
+    .join(', ');
+  return (
+    `${total} stored theme reference${total === 1 ? ' is' : 's are'} not a theme record UUID: ${list}.\n` +
+    `Those decks and library slides fail to open (\`Invalid theme ID\`) until the one-time cutover converts them (D237).\n` +
+    `Check, then apply with the same arguments (seed slugs resolve on their own; map any other slug to a record UUID):\n` +
+    `    node scripts/migrate-theme-references.js --check --map <map.json> --settings-org <organization UUID>\n` +
+    `  Runbook: docs/reference/theme-config.md`
   );
 }

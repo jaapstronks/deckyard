@@ -1,6 +1,6 @@
 # Theme config (database themes)
 
-For the one-time cutover from stored theme slugs to record UUIDs, run `node scripts/migrate-theme-references.js --check --map /path/to/map.json --settings-org <uuid>` before `--apply` with the same arguments. The mapping file names each organization's old slug and its prepared theme-record UUID; the command validates all references before writing.
+For the one-time cutover from stored theme slugs to record UUIDs, run `node scripts/migrate-theme-references.js --check --map /path/to/map.json --settings-org <uuid>` before `--apply` with the same arguments. The mapping file names each organization's old slug and its prepared theme-record UUID; the command validates all references before writing. Core seed slugs resolve without a map entry, so `{}` is a valid map when every stored slug is a seed. An install that skipped the cutover warns at boot (`[WARN] [server] THEMES:`) and fails `npm run doctor` (`theme-references`) with the count per slug; those decks fail to open until the command has run (B718).
 
 A database theme is a record: a label, two logo URLs, `colors`, `fonts` and
 `config`. From the four colour roles and two fonts

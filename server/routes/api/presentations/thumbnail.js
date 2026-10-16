@@ -10,7 +10,8 @@
  * deck's previous raster (stale-while-revalidate). With no raster at all the
  * 404 says which kind of nothing it is: `thumbnail_pending` with a
  * `Retry-After` while generation runs, `thumbnail_unavailable` with the reason
- * when it failed (remembered for a few minutes) or the deck has no slides.
+ * when it failed (remembered for a few minutes), the deck has no slides or its
+ * stored theme cannot be loaded.
  * Contract and the client's side of it: docs/reference/deck-thumbnails.md.
  *
  * **Freshness is content-addressed, not time-boxed.** The URL is stable, so the
@@ -66,7 +67,21 @@ export async function handlePresentationThumbnail(
   });
   if (!pres) return true;
 
-  const theme = await loadThemeAssets(repoRoot, pres?.theme, storageScope);
+  // A stored theme that cannot load (a slug left from before the cutover,
+  // B718; a record deleted under the deck) is not the request's fault: there
+  // is no raster to make, so the card settles on its placeholder. The boot and
+  // the doctor name the cutover command for the first case.
+  let theme;
+  try {
+    theme = await loadThemeAssets(repoRoot, pres?.theme, storageScope);
+  } catch (err) {
+    return jsonError(
+      res,
+      404,
+      'thumbnail_unavailable',
+      `The deck's theme cannot be loaded: ${err?.message || err}`,
+    );
+  }
   const { filename, prefix } = thumbCacheKey(pres, theme);
 
   /**
