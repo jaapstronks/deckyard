@@ -92,8 +92,8 @@ Everything the page needs is embedded into the one HTML file:
 Raster images go through the same compression transform as the PDF and PNG
 routes, so a photo is embedded at most at `EXPORT_IMAGE_MAX_PX` (2600 px), not
 at source resolution; [`pdf-export-performance.md`](./pdf-export-performance.md)
-§ The PNG and HTML routes share the transform has the passes and the published-page
-exception.
+§ The PNG and HTML routes share the transform has the numbers and why there is
+no display-aware pass here.
 
 ### Which CSS ships — the viewer boundary
 

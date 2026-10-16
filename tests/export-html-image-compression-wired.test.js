@@ -1,4 +1,4 @@
-import test, { after } from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -7,10 +7,6 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 import { buildStandaloneHtml } from '../server/export/html.js';
-import {
-  resolveChromeExecutablePath,
-  closePuppeteerBrowser,
-} from '../server/utils/puppeteer-browser.js';
 
 /**
  * Regression guard for the *seam*, not the transform (B717).
@@ -134,18 +130,7 @@ test('compression can be switched off for the standalone HTML', async () => {
   }
 });
 
-// --- display-aware cap on <img src>: the download measures, the /p/ page not --
-
-const chromePath = await resolveChromeExecutablePath();
-const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
-const skip =
-  chromePath || isCi
-    ? false
-    : 'no Chrome/Chromium found — install Chrome or set PUPPETEER_EXECUTABLE_PATH';
-
-after(async () => {
-  await closePuppeteerBrowser();
-});
+// --- no display-aware pass: the document is built without a browser ---------
 
 /** Longest-edge px of every embedded JPEG in the document. */
 async function embeddedJpegLongestEdges(html) {
@@ -157,58 +142,50 @@ async function embeddedJpegLongestEdges(html) {
   return edges;
 }
 
-/** A six-up gallery grid: each item is drawn ~480px wide on the canvas. */
-async function withGridDeck(fn) {
-  const cleanups = [];
-  try {
-    const images = [];
-    for (let i = 0; i < 6; i++) {
-      const raw = await sharp(await bigOpaquePng(2400))
-        .jpeg({ quality: 92 })
-        .toBuffer();
-      const [url, cleanup] = await withUpload(raw);
-      cleanups.push(cleanup);
-      images.push({ src: url, caption: '', alt: '' });
-    }
-    await fn({
-      id: 'html-display-aware',
-      title: 'Display aware',
-      theme: 'default',
-      lang: 'en',
-      slides: [
-        { id: 'g', type: 'gallery-slide', content: { layout: 'grid', images } },
-      ],
-    });
-  } finally {
-    for (const c of cleanups) await c();
-  }
-}
-
-test('HTML download caps a grid image at its display size', { skip }, () =>
-  withGridDeck(async (pres) => {
-    const html = await buildStandaloneHtml(repoRoot, pres, {
-      context: 'export',
-    });
-    const edges = await embeddedJpegLongestEdges(html);
-    assert.equal(edges.length, 6, 'six grid items');
-    for (const e of edges) {
-      assert.ok(
-        e <= 1200,
-        `grid item embedded at ${e}px, expected display-aware (<=1200), not the flat 2600 cap`,
+/**
+ * A six-up gallery grid: rendered `<img src>` that the PDF route would measure
+ * in Chrome and cap near its ~480px display size. Here they get the flat cap,
+ * so a 2400px source stays at 2400px. If this starts failing because the items
+ * shrink, a measurement pass came in: that starts Chrome on a route that builds
+ * a /p/ page per visitor, and keeps every test process that builds HTML alive.
+ */
+for (const context of ['export', 'published']) {
+  test(`standalone HTML (${context}) gives rendered <img src> the flat cap, without Chrome`, async () => {
+    const cleanups = [];
+    try {
+      const images = [];
+      for (let i = 0; i < 6; i++) {
+        const raw = await sharp(await bigOpaquePng(2400))
+          .jpeg({ quality: 92 })
+          .toBuffer();
+        const [url, cleanup] = await withUpload(raw);
+        cleanups.push(cleanup);
+        images.push({ src: url, caption: '', alt: '' });
+      }
+      const html = await buildStandaloneHtml(
+        repoRoot,
+        {
+          id: `grid-${context}`,
+          title: 'Grid',
+          theme: 'default',
+          lang: 'en',
+          slides: [
+            {
+              id: 'g',
+              type: 'gallery-slide',
+              content: { layout: 'grid', images },
+            },
+          ],
+        },
+        { context },
       );
+      const edges = await embeddedJpegLongestEdges(html);
+      assert.equal(edges.length, 6, 'six grid items, each recompressed');
+      for (const e of edges) {
+        assert.ok(e >= 2000, `grid item embedded at ${e}px, expected flat cap`);
+      }
+    } finally {
+      for (const c of cleanups) await c();
     }
-  }),
-);
-
-test('published page keeps the flat cap and does not measure in Chrome', () =>
-  withGridDeck(async (pres) => {
-    const html = await buildStandaloneHtml(repoRoot, pres, {
-      context: 'published',
-    });
-    const edges = await embeddedJpegLongestEdges(html);
-    assert.equal(edges.length, 6, 'six grid items');
-    for (const e of edges) {
-      // Source-limited (2400px) under the flat 2600 cap: no measurement ran.
-      assert.ok(e >= 2000, `grid item embedded at ${e}px, expected flat cap`);
-    }
-  }));
+  });
+}
