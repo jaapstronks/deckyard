@@ -147,10 +147,10 @@ test('the first take moves the camera from the field to what it changed', async 
   assert.deepEqual(labels, ['field', 'preview']);
 });
 
-test('the second take moves the camera from the menu to the preview', async () => {
+test('the second take moves the camera from the button to the preview', async () => {
   const steps = await replay(agentFillsFields);
   const labels = steps.filter((s) => s.label).map((s) => s.label);
-  assert.deepEqual(labels, ['menu', 'preview']);
+  assert.deepEqual(labels, ['button', 'preview']);
 });
 
 test('every take opens on a hold and closes on one', async () => {

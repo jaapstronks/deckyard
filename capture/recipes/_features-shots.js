@@ -300,7 +300,7 @@ export function commentsShot(lang) {
 
     async action(page) {
       await editorReady(page);
-      await page.click('.pane-tabs .pane-tab[data-value="comments"]');
+      await page.click('.pane-tabs .column-tab[data-value="comments"]');
       await page.waitForSelector('.comments-panel .comments-panel-list', {
         visible: true,
         timeout: 10_000,
@@ -494,12 +494,7 @@ export function aiFillsFieldsShot(lang) {
 
     async action(page, ctx) {
       await aiFillsFieldsSetup(page, ctx);
-      await page.click(AI_FILLS_FIELDS_SELECTORS.menuButton);
-      await page.waitForSelector(AI_FILLS_FIELDS_SELECTORS.menuItem, {
-        visible: true,
-        timeout: 10_000,
-      });
-      await page.click(AI_FILLS_FIELDS_SELECTORS.menuItem);
+      await page.click(AI_FILLS_FIELDS_SELECTORS.button);
       await page.waitForSelector(AI_FILLS_FIELDS_SELECTORS.preview, {
         visible: true,
         timeout: 15_000,
@@ -509,7 +504,8 @@ export function aiFillsFieldsShot(lang) {
 }
 
 /**
- * The three elements the fill-from-translation flow runs through, named once.
+ * The two elements the fill-from-translation flow runs through, named once:
+ * "Fill slide…" in the inspector's AI box and the preview it opens.
  *
  * The shot clicks them to *arrive* at the preview; the take built on the same
  * shape (`recipes/agent-fills-fields.js`) clicks them to *show* the arriving.
@@ -517,8 +513,7 @@ export function aiFillsFieldsShot(lang) {
  * buttons after a rename.
  */
 export const AI_FILLS_FIELDS_SELECTORS = {
-  menuButton: '.slide-actions-btn',
-  menuItem: '.slide-actions-menu .slide-fill-translation-item',
+  button: '.ai-iterate-panel .ai-fill-slide-btn',
   preview: '.modal.translate-slide-modal .translate-preview-list',
 };
 
@@ -527,8 +522,8 @@ export const AI_FILLS_FIELDS_SELECTORS = {
  * the request stub in place and the editor past its skeleton.
  *
  * Split out of the shot's `action` so a take can start filming exactly here —
- * with the app ready and the menu still closed — and drive the clicks itself.
- * The stub has to be installed before the menu item is clicked: the modal only
+ * with the app ready and nothing clicked yet — and drive the click itself.
+ * The stub has to be installed before the button is clicked: the modal only
  * renders once the response is in hand.
  *
  * @param {import('puppeteer-core').Page} page

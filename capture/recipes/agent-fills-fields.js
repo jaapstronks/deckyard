@@ -3,9 +3,10 @@
  * factory, and the one that proves the format generalises.
  *
  * The first take (`form-drives-slide`) is a typing clip: one field, one live
- * preview. This one is a *click* clip — a menu opens, an item is chosen, a
- * modal fills itself in — so between the two the recorder's whole vocabulary
- * (`hold` / `move` / `click` / `type`) is exercised by something that ships.
+ * preview. This one is a *click* clip — "Fill slide…" in the AI box is
+ * pressed and a modal fills itself in — so between the two the recorder's
+ * whole vocabulary (`hold` / `move` / `click` / `type`) is exercised by
+ * something that ships.
  *
  * Built **on top of** `aiFillsFieldsShot('nl')`, the same way the first take
  * is built on `editorFormShot('nl')`: state, route, readiness selector and the
@@ -22,9 +23,9 @@
  * live model would be neither reproducible nor cheap.
  *
  * Two labelled steps, so the camera makes a move rather than one push-in: the
- * menu it opens, then the preview that appears. The second is overridden to
- * stay wide in `deckyard-video`'s spec — a modal is the shot, and zooming into
- * a thing that just arrived at full size is fighting it.
+ * button in the inspector's AI box, then the preview it opens. The second is
+ * overridden to stay wide in `deckyard-video`'s spec — a modal is the shot,
+ * and zooming into a thing that just arrived at full size is fighting it.
  */
 
 import { VIDEO_VIEWPORT } from '../lib/record.js';
@@ -59,15 +60,13 @@ export default {
     fps: 30,
     /** @param {import('../lib/recipe.js').Recorder} rec */
     async sequence(rec) {
-      // A breath on the untouched editor. Without it the clip opens on a menu
+      // A breath on the untouched editor. Without it the clip opens on a modal
       // already opening and the viewer never sees what it opened *from*.
       await rec.hold(700);
-      await rec.click(AI_FILLS_FIELDS_SELECTORS.menuButton, { label: 'menu' });
-      // Long enough that the menu is a thing you read, not a flicker — and
-      // long enough that the next step's selector wait is already satisfied
-      // when it runs, which is what keeps the schedule from slipping.
+      await rec.move(AI_FILLS_FIELDS_SELECTORS.button, { label: 'button' });
+      // Long enough that the button is a thing you read before it is pressed.
       await rec.hold(500);
-      await rec.click(AI_FILLS_FIELDS_SELECTORS.menuItem, { label: 'preview' });
+      await rec.click(AI_FILLS_FIELDS_SELECTORS.button, { label: 'preview' });
       // The payoff: the modal renders the per-field preview. This hold is also
       // the clip's slack — the composition cuts to a whole number of bars, so
       // the last hold is scripted long and gets trimmed rather than the clip
