@@ -12,8 +12,10 @@
  *   controller calls after each mount - the same pattern as comment markers.
  * - Plain string fields are edited in place with contentEditable. To avoid the
  *   rerender wiping an active edit, the controller skips `rerenderPreview()`
- *   while `isEditing()` is true, and commits trigger a *deferred* rerender that
- *   is cancelled if the user immediately starts editing another field.
+ *   while `isEditing()` is true (it applies a style or layout commit as a
+ *   class/style delta instead, B719), and commits trigger a *deferred*
+ *   rerender that is cancelled if the user immediately starts editing another
+ *   field.
  * - Markdown fields edit their RENDERED HTML in place (rich contenteditable,
  *   editing-surfaces text phase) and commit through the HTML→markdown
  *   serializer — but only when the round-trip gate proves the serializer can
