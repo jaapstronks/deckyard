@@ -131,6 +131,13 @@ const DOM_ROUNDTRIP_SITES = [
       'the live placeholder. No new markup is introduced.',
   },
   {
+    file: 'client/lib/slide-runtime/live-restyle.js',
+    rhs: 'html',
+    reason:
+      'Same contract boundary: parses renderSlideHtml() output into a detached ' +
+      '<template> to diff its classes and style. Never attached to the document.',
+  },
+  {
     file: 'client/lib/slide-authoring/markdown-serialize.js',
     rhs: 'html',
     reason:
