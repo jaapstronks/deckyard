@@ -627,3 +627,37 @@ test('uploads: off is absent, only the sandbox greys out (D295)', async () => {
   }
   setFeatures(null);
 });
+
+test('image library: an absent batch entry prints no "null" (B720)', async () => {
+  const { openImageLibraryPicker } =
+    await import('../client/views/editor/image-library/picker.js');
+  // With onPick the modal picks one image, so the batch entry is absent; with
+  // uploads off it is absent too. Both were a literal "null" above the search.
+  for (const [features, onPick] of [
+    [{ enableUploads: true }, () => {}],
+    [{ enableUploads: false }, undefined],
+    [{ enableUploads: true }, undefined],
+  ]) {
+    setFeatures(features);
+    document.body.innerHTML = '';
+    openImageLibraryPicker({
+      root: document.body,
+      user: { email: 'a@b.c' },
+      api: async () => ({ items: [] }),
+      onPick,
+    });
+    const view = document.body.querySelector('.media-lib-library-view');
+    assert.ok(view, 'the library view is mounted');
+    const strays = [...view.childNodes].filter(
+      (n) => n.nodeType === 3 && n.textContent.includes('null'),
+    );
+    assert.deepEqual(strays, [], 'no text node "null" in the library view');
+    assert.ok(!view.textContent.includes('null'));
+    assert.equal(
+      !!view.querySelector('.image-batch-library-entry'),
+      features.enableUploads && !onPick,
+    );
+  }
+  document.body.innerHTML = '';
+  setFeatures(null);
+});
