@@ -247,8 +247,10 @@ export function createVisibilityToggle({ slide, onToggle }) {
  * @param {{ getBoundingClientRect: Function, contains: Function }} options.anchor
  *   - The element (or rect-bearing stand-in) to anchor to
  * @param {HTMLElement} options.menu - The menu from `createVisibilityMenu`
+ * @param {Function} [options.returnFocus] - Opened by the keyboard: the
+ *   current preset takes the focus, and Escape calls this to hand it back
  */
-export function showVisibilityMenuAt({ anchor, menu }) {
+export function showVisibilityMenuAt({ anchor, menu, returnFocus = null }) {
   closeVisibilityMenu();
 
   // Append to body to escape stacking context of slides panel
@@ -301,8 +303,16 @@ export function showVisibilityMenuAt({ anchor, menu }) {
   // Capture phase: the menu is a layer, so it hears the key before the
   // surface it opened over (the slides drawer, the editor).
   const closeOnEscape = (e) => {
-    if (takeEscape(e)) closeVisibilityMenu(menu);
+    if (!takeEscape(e)) return;
+    closeVisibilityMenu(menu);
+    returnFocus?.();
   };
+  if (returnFocus) {
+    (
+      menu.querySelector('.visibility-menu-option.is-active') ||
+      menu.querySelector('.visibility-menu-option')
+    )?.focus();
+  }
   document.addEventListener('keydown', closeOnEscape, true);
 
   active = {

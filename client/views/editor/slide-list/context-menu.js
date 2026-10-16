@@ -72,6 +72,21 @@ function anchorButton() {
   );
 }
 
+/**
+ * The row of the slide whose menu is open: where the focus goes back to, since
+ * the row is the list's one Tab stop (B726) and the ⋯ is not.
+ */
+function anchorRow() {
+  return activeAnchorSlideId ? slideRow(activeAnchorSlideId) : null;
+}
+
+/** The slide list's row for `slideId`, if it is in the DOM. */
+function slideRow(slideId) {
+  return document.querySelector(
+    `.slide-item[data-slide-id="${CSS.escape(slideId)}"]`,
+  );
+}
+
 /** Keep the menu inside the viewport, anchored near the cursor. */
 function positionAt(menu, x, y) {
   menu.style.position = 'fixed';
@@ -102,7 +117,8 @@ function positionAt(menu, x, y) {
  *   rerenders) plus `api`, `openSlideLibraryModal` and `isAuthor` for the
  *   library and lock items
  * @param {boolean} [options.fromButton] - Opened from the slide's thumbnail
- *   ⋯: focus moves into the menu and returns to the button on Escape
+ *   ⋯ or by the keyboard on its row: focus moves into the menu and returns
+ *   to the row on Escape
  */
 export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
   closeSlideContextMenu();
@@ -300,6 +316,11 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
         // the existing visibility menu a synthetic anchor so it can position.
         const rect = visItem.getBoundingClientRect();
         closeSlideContextMenu();
+        // Reached by the keyboard (B726): the presets take the focus, and it
+        // returns to the row, which a pick re-renders.
+        const returnFocus = fromButton
+          ? () => requestAnimationFrame(() => slideRow(slide.id)?.focus())
+          : null;
         const vm = createVisibilityMenu({
           slide,
           onVisibilityChange: () => {
@@ -307,11 +328,13 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
             ctx.rerenderSlideList?.();
             ctx.rerenderEditor?.();
             ctx.rerenderPreview?.();
+            returnFocus?.();
           },
         });
         showVisibilityMenuAt({
           anchor: { getBoundingClientRect: () => rect, contains: () => false },
           menu: vm,
+          returnFocus,
         });
       },
     });
@@ -356,9 +379,9 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
   // otherwise hear the key first and close both.
   const onKey = (e) => {
     if (!takeEscape(e)) return;
-    const button = anchorButton();
+    const row = anchorRow();
     closeSlideContextMenu();
-    button?.focus();
+    row?.focus();
   };
   const onScrollOrResize = () => closeSlideContextMenu();
   // Defer binding the click listener so the opening click doesn't close it.

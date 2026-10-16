@@ -543,6 +543,13 @@ export function setupSlideList({
       }
     }
 
+    // One Tab stop (B726): the active row has it; when the active slide is
+    // not on screen (a search, a folded parent), the first row does.
+    if (!slideListEl.querySelector('.slide-item[tabindex="0"]')) {
+      const first = slideListEl.querySelector('.slide-item:not(.is-hidden)');
+      if (first) first.tabIndex = 0;
+    }
+
     return {
       total: allSlides.length,
       shown: slides.length,
@@ -664,6 +671,7 @@ export function setupSlideList({
       markDirty,
       performUndo,
       performRedo,
+      openRowMenu: (row) => openSlideMenuFromKeyboard(row),
     });
 
   // Right-click a slide row for a quick actions menu (duplicate / delete /
@@ -740,13 +748,28 @@ export function setupSlideList({
     });
   };
 
-  // Android fires a native contextmenu after a long press as well. Opening the
-  // menu twice tears down and rebuilds it mid-dispatch, so ignore a contextmenu
-  // that arrives on the heels of one we opened ourselves.
+  // Android fires a native contextmenu after a long press as well, and so does
+  // the menu key (and Shift+F10) after its keydown. Opening the menu twice
+  // tears down and rebuilds it mid-dispatch, so ignore a contextmenu that
+  // arrives on the heels of one we opened ourselves.
   let lastLongPressAt = 0;
+  let lastKeyMenuAt = 0;
+
+  // Enter or the menu key on a focused row (B726): the ⋯'s menu, with the
+  // focus inside it and back on the row after Escape.
+  const openSlideMenuFromKeyboard = (row) => {
+    lastKeyMenuAt = Date.now();
+    // The ⋯ is not rendered on the collapsed rail; anchor on the row there.
+    const button = row.querySelector('.slide-item-menu-btn');
+    const shown = button && button.getBoundingClientRect().width > 0;
+    openSlideMenuFrom(shown ? button : row);
+  };
 
   const onContextMenu = (e) => {
-    if (Date.now() - lastLongPressAt < 1000) {
+    if (
+      Date.now() - lastLongPressAt < 1000 ||
+      Date.now() - lastKeyMenuAt < 1000
+    ) {
       e.preventDefault();
       return;
     }

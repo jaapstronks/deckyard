@@ -24,6 +24,8 @@ export function attachSlideListKeyNavigation({
   markDirty,
   performUndo,
   performRedo,
+  // Opens the slide-list menu for a focused row (Enter, menu key, Shift+F10).
+  openRowMenu,
 } = {}) {
   let lastNavSlideId = null; // Anchor for shift-navigation
 
@@ -71,8 +73,6 @@ export function attachSlideListKeyNavigation({
   const shouldIgnoreKeyEvent = (e) => {
     const el = e?.target;
     if (!el || typeof el !== 'object') return false;
-    // Allow arrow navigation on the slide-insert "+" button (special case).
-    if (el?.closest?.('.slide-insert-btn')) return false;
     const tag = String(el.tagName || '').toUpperCase();
     if (
       tag === 'INPUT' ||
@@ -85,74 +85,103 @@ export function attachSlideListKeyNavigation({
     return false;
   };
 
-  const keyHandler = (e) => {
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-    const activeEl = document.activeElement;
-    const inList = activeEl && slideListEl?.contains?.(activeEl);
-    const isShift = e.shiftKey;
+  // The rows a keyboard walks: every slide row on screen, never the "+"
+  // insert rows (B726) and never the children of a collapsed parent.
+  const navRows = () =>
+    Array.from(
+      slideListEl?.querySelectorAll?.('.slide-item:not(.is-hidden)') || [],
+    );
 
-    // Default behavior (global): keep the existing "select slides" keyboard UX.
-    if (!inList) {
-      if (shouldIgnoreKeyEvent(e)) return;
+  // Focus the row of `slideId` once the list has re-rendered under it.
+  const focusRowLater = (slideId) => {
+    requestAnimationFrame(() => {
+      const el = slideListEl.querySelector(
+        `.list-item.slide-item[data-slide-id="${slideId}"]`,
+      );
+      el?.focus?.();
+      el?.scrollIntoView?.({ block: 'nearest' });
+    });
+  };
+
+  // Keys on a focused row (B726, D349): arrows, Home and End move the
+  // selection and the roving stop over the slides; Enter, the menu key and
+  // Shift+F10 open the row's actions; Left and Right fold a parent.
+  const rowKeyHandler = (e, row) => {
+    const isMenuKey =
+      e.key === 'Enter' ||
+      e.key === 'ContextMenu' ||
+      (e.key === 'F10' && e.shiftKey);
+    if (isMenuKey) {
+      if (!openRowMenu || e.metaKey || e.ctrlKey || e.altKey) return;
       e.preventDefault();
-      const slides =
-        typeof getSlides === 'function' ? getSlides() : pres?.slides || [];
-      const curIdx = slides.findIndex((s) => s.id === getSelectedSlideId?.());
-      if (curIdx < 0) return;
-      if (e.key === 'ArrowUp')
-        selectSlideByIndex(curIdx - 1, { extend: isShift });
-      if (e.key === 'ArrowDown')
-        selectSlideByIndex(curIdx + 1, { extend: isShift });
+      openRowMenu(row);
       return;
     }
 
-    // When focus is inside the list: include the "+" insert rows in the navigation.
-    const currentNav =
-      activeEl?.closest?.('.slide-item') ||
-      activeEl?.closest?.('.slide-insert-btn');
-    if (!currentNav) return;
-    // Only hijack when navigating list items / insert buttons.
-    if (
-      !currentNav.classList?.contains?.('slide-item') &&
-      !currentNav.classList?.contains?.('slide-insert-btn')
-    )
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const toggle = row.querySelector('.slide-collapse-toggle');
+      if (!toggle) return;
+      const expanded = row.classList.contains('slide-item--expanded');
+      if ((e.key === 'ArrowLeft') !== expanded) return;
+      e.preventDefault();
+      toggle.click();
+      focusRowLater(row.dataset.slideId);
       return;
+    }
+
+    const nav = navRows();
+    const cur = nav.indexOf(row);
+    if (cur < 0) return;
+    let next;
+    if (e.key === 'ArrowUp') next = nav[Math.max(0, cur - 1)];
+    else if (e.key === 'ArrowDown')
+      next = nav[Math.min(nav.length - 1, cur + 1)];
+    else if (e.key === 'Home') next = nav[0];
+    else if (e.key === 'End') next = nav[nav.length - 1];
+    else return;
 
     e.preventDefault();
-    const nav = Array.from(
-      slideListEl.querySelectorAll('.slide-item, .slide-insert-btn'),
-    );
-    const cur = nav.indexOf(currentNav);
-    if (cur < 0) return;
-    const delta = e.key === 'ArrowUp' ? -1 : 1;
-    const nextEl = nav[Math.max(0, Math.min(nav.length - 1, cur + delta))];
-    if (!nextEl || nextEl === currentNav) return;
+    if (!next || next === row) return;
+    const sid = String(next.dataset.slideId || '').trim();
+    const slides =
+      typeof getSlides === 'function' ? getSlides() : pres?.slides || [];
+    if (!sid || !slides.some((s) => String(s?.id || '') === sid)) return;
+    clearMultiSelection?.();
+    lastNavSlideId = sid;
+    setSelectedSlideId?.(sid);
+    editorState.refreshAll();
+    focusRowLater(sid);
+  };
 
-    // Focus insert button (selection remains on the current slide).
-    if (nextEl.classList.contains('slide-insert-btn')) {
-      nextEl.focus?.();
-      nextEl.scrollIntoView?.({ block: 'nearest' });
+  const keyHandler = (e) => {
+    const activeEl = document.activeElement;
+    const row =
+      activeEl && slideListEl?.contains?.(activeEl)
+        ? activeEl.closest?.('.slide-item')
+        : null;
+    // A row's own keys; a button inside it keeps Enter and its click.
+    if (row) {
+      if (activeEl === row || (e.key !== 'Enter' && e.key !== ' ')) {
+        rowKeyHandler(e, row);
+      }
       return;
     }
+    if (activeEl && slideListEl?.contains?.(activeEl)) return;
 
-    // Focus slide item and select it.
-    if (nextEl.classList.contains('slide-item')) {
-      const sid = String(nextEl.dataset.slideId || '').trim();
-      if (!sid) return;
-      const slides =
-        typeof getSlides === 'function' ? getSlides() : pres?.slides || [];
-      const exists = slides.some((s) => String(s?.id || '') === sid);
-      if (!exists) return;
-      setSelectedSlideId?.(sid);
-      editorState.refreshAll();
-      requestAnimationFrame(() => {
-        const el = slideListEl.querySelector(
-          `.list-item.slide-item[data-slide-id="${sid}"]`,
-        );
-        el?.focus?.();
-        el?.scrollIntoView?.({ block: 'nearest' });
-      });
-    }
+    // Outside the list: up and down still walk the slides ("select slides"
+    // keyboard UX), unless a control has the key.
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    if (shouldIgnoreKeyEvent(e)) return;
+    e.preventDefault();
+    const slides =
+      typeof getSlides === 'function' ? getSlides() : pres?.slides || [];
+    const curIdx = slides.findIndex((s) => s.id === getSelectedSlideId?.());
+    if (curIdx < 0) return;
+    const isShift = e.shiftKey;
+    if (e.key === 'ArrowUp')
+      selectSlideByIndex(curIdx - 1, { extend: isShift });
+    if (e.key === 'ArrowDown')
+      selectSlideByIndex(curIdx + 1, { extend: isShift });
   };
 
   // Copy/paste keyboard handlers

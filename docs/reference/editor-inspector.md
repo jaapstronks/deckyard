@@ -155,9 +155,11 @@ canvas any more; every action it held has one address:
 | Fill slide… (AI translate) | The AI box at the foot of the inspector, beside Refine                                                                                                                           |
 | Add comment, zoom          | Floating at the top right of the canvas (`.canvas-float-tools`), hidden with the canvas in Fields                                                                                |
 
-The ⋯ on a thumbnail sits top-left and shows on hover, on the active slide
-and on keyboard focus; the thumbnail's bottom edge stays free for the insert
-affordance (B497).
+The ⋯ on a thumbnail sits top-left and shows on hover and on the active
+slide; the thumbnail's bottom edge stays free for the insert affordance
+(B497).
+
+The slide list is **one Tab stop** (B726, D349): the active row holds the roving `tabindex="0"` (the first row when the active slide is not on screen), and the buttons inside a row (⋯, visibility eye, fold chevron, lock badge) and the "+" insert rows stay out of the Tab order. On a focused row, Up/Down and Home/End walk the visible slides and select them, never the "+" rows; Left folds and Right unfolds a parent; Enter, the menu key or Shift+F10 open the slide-list menu with the focus in it, and Escape returns it to the row. Visibility is the menu's "Change visibility": the presets take the focus, and Escape or a pick hands it back to the row (`keyboard-nav.js`, covered by `tests/slide-list-roving-tab.test.js`). Inserting by keyboard goes through "+ Slide" in the panel header.
 
 Three tones separate the zones (D335): the topbar is the deck's chrome
 (elevated, with shadow); the slides column and the inspector column share
