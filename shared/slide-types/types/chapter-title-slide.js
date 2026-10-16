@@ -52,9 +52,12 @@ export default {
       group: 'title-block',
     },
     {
+      // Where the title sits vertically. Not labelled "Layout": the
+      // inspector's Layout row above it is the title-block alignment, and one
+      // word may name one control (D348). Its own per-type key, since no other
+      // type has this choice.
       key: 'layout',
-      label: 'Layout',
-      labelKey: 'editor.slideField.layout.label',
+      label: 'Title position',
       type: 'enum',
       required: false,
       // Note: values are persisted in decks; keep them stable.
