@@ -2,7 +2,7 @@
  * The list slide's "Text density" field with its step-down note.
  *
  * DOCUMENTED EXCEPTION (route 4 PR D, editor-per-type-behaviour brief). "Text
- * size" is the one list setting the renderer can overrule: a list long AND
+ * density" is the one list setting the renderer can overrule: a list long AND
  * wordy enough to spill even across two columns steps down a size. That used
  * to happen silently, so an author who picked Large saw nothing change and no
  * reason why. The field renders here (instead of via the generic keeps loop)

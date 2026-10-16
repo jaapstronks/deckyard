@@ -80,7 +80,8 @@ const optionValues = (f) =>
  * Doubles D348 does not decide, each with its reason. Shrink, never grow.
  * - image-text-slide.imageWidth: the three split tiles reach narrow/half/wide,
  *   but the "Image width" keep predates them and D348 only rules on the text
- *   slide's columns; left for the reviewer (B724 PR).
+ *   slide's columns. Dropping the keep is B731 (after B723, which edits the
+ *   same keeps).
  */
 const UNDECIDED_DOUBLES = new Set(['image-text-slide.imageWidth']);
 
