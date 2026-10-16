@@ -41,6 +41,7 @@ import {
   notModified,
 } from '../../../utils/http.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
+import { isAppError } from '../../../utils/errors.js';
 
 /** Cache directive for every raster this route serves. See the module note. */
 const THUMB_CACHE_CONTROL = 'private, no-cache';
@@ -70,11 +71,13 @@ export async function handlePresentationThumbnail(
   // A stored theme that cannot load (a slug left from before the cutover,
   // B718; a record deleted under the deck) is not the request's fault: there
   // is no raster to make, so the card settles on its placeholder. The boot and
-  // the doctor name the cutover command for the first case.
+  // the doctor name the cutover command for the first case. Only the loader's
+  // own refusal is that case; a database failure stays the 500 it is.
   let theme;
   try {
     theme = await loadThemeAssets(repoRoot, pres?.theme, storageScope);
   } catch (err) {
+    if (!isAppError(err)) throw err;
     return jsonError(
       res,
       404,

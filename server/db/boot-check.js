@@ -34,6 +34,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { dataDir } from '../config/storage-paths.js';
 import { getDb, isDatabaseAvailable } from './client.js';
+import { resolveThemeId } from '../utils/themes.js';
 
 /**
  * Number of deck JSON files in the legacy data directory.
@@ -160,7 +161,6 @@ export async function strandedFileDataError(repoRoot) {
  */
 export async function unmigratedThemeReferencesError() {
   if (!isDatabaseAvailable()) return null;
-  const { resolveThemeId } = await import('../utils/themes.js');
   let decks;
   let library;
   try {
