@@ -46,6 +46,7 @@ import { bootstrapFirstAdmin } from './auth/first-admin.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
+  unmigratedThemeReferencesError,
 } from './db/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
 import { warnUnbackedFidelityClaims } from './export/pptx.js';
@@ -334,6 +335,12 @@ async function main() {
       await closeStorage();
       process.exit(1);
     }
+  }
+  // Theme references from before the UUID cutover: those decks fail to open,
+  // the rest of the install works, so say it once here and keep serving.
+  {
+    const themeErr = await unmigratedThemeReferencesError();
+    if (themeErr) log.warn(`THEMES: ${themeErr}`);
   }
   await initializeMediaProvider(repoRoot);
   await initSanitizer(); // Enable sync HTML sanitization for markdown rendering

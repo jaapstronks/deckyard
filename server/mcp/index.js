@@ -37,6 +37,7 @@ import { initSanitizer } from '../../shared/sanitize.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
+  unmigratedThemeReferencesError,
 } from '../db/boot-check.js';
 import { initializeThemeSeeds } from '../utils/theme-seeds.js';
 import { assertExtensionDeclared } from '../export/extension-name.js';
@@ -108,6 +109,10 @@ async function main() {
       process.stderr.write(`[MCP] ${strandedErr}\n`);
       process.exit(1);
     }
+  }
+  {
+    const themeErr = await unmigratedThemeReferencesError();
+    if (themeErr) process.stderr.write(`[MCP] ${themeErr}\n`);
   }
 
   // Enable sync HTML sanitization, exactly as the HTTP server does
