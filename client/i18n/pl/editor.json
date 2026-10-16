@@ -647,7 +647,6 @@
   "editor.slideField.body.label": "Treść",
   "editor.slideField.bottomSubheading.label": "Podtytuł u dołu",
   "editor.slideField.caption.label": "Podpis",
-  "editor.slideField.density.label": "Rozmiar tekstu",
   "editor.slideField.density.option.comfortable": "Duży",
   "editor.slideField.density.option.compact": "Mały",
   "editor.slideField.description.label": "Opis",

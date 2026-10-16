@@ -42,14 +42,14 @@ export default {
     },
     {
       // On the text slide this enum only toggles 1 vs 2 *text* columns
-      // (renderHtml maps it to is-one-col/is-two-col). The toolbar "Layout"
-      // chip owns the structural variant choice, so this inspector control is
-      // labelled "Text columns" - reserving the word "Layout" for the chip.
-      // Copy only this type uses, so it keeps its generated per-type key: the
-      // `editor.slideField.*` namespace is for type-INDEPENDENT copy (D60), and
-      // `editor.field.*` was a one-key third spelling of the same idea (B146).
+      // (renderHtml maps it to is-one-col/is-two-col). Its first two Layout
+      // tiles write exactly this key, so the inspector's Layout row is its one
+      // home there and it is no inspector keep (D348). The label only shows
+      // where the full form renders (the library editor): "Columns", the same
+      // word as the list slide's column choice.
       key: 'layout',
-      label: 'Text columns',
+      label: 'Columns',
+      labelKey: 'editor.slideField.columns.label',
       type: 'enum',
       required: false,
       options: [

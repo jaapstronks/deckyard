@@ -76,10 +76,15 @@ Its runtime half, that the `fields` surface renders no setting on any core
 type, is `tests/editor-form-surfaces.test.js`.
 
 **The structural `layout` enum:** the inspector's Layout row is its canonical
-control, so the inspector does not render the enum for `image-text` (or the
-`content` slide, where the same field is relabelled "Text columns" because it
-only toggles 1/2 text columns there). The library editor's form, with no
-inspector beside it, renders both the Layout row and the enum.
+control, so the inspector does not render the enum for `image-text` or the
+`content` slide (whose one/two-column tiles write it, D348). The library
+editor's form, with no inspector beside it, renders both the Layout row and the
+enum, labelled "Columns" on the text slide. Where a type keeps a second enum
+beside the row, it is named for its own scope, never "Layout": "Columns" on the
+list slide, "Title position" on the chapter title.
+`tests/inspector-label-per-scope.test.js` holds both halves over every type
+with layout variants: no two controls in the inspector share a name, and no
+keep repeats a choice the row's tiles already offer in full.
 
 For text-blocks, each row has an optional heading above its blocks, including the first row. The form follows that order: row heading and colour, blocks, then the arrow to the next row. Up and down describe the direction of that same between-row arrow; the final row has no outgoing arrow control. An empty row heading can be added directly on the canvas. The slide’s bottom subheading follows the rows in the form as well.
 
@@ -482,7 +487,7 @@ rather than getting a home of its own.
 | ---------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `title-slide`          | `title`, `subheading`, `meta`                                                                            | `logoCorner`                                                                                                                | `title`: size; `subheading`: size         |
 | `chapter-title-slide`  | `title`, `subheading`                                                                                    | `layout`                                                                                                                    | `title`: size                             |
-| `content-slide`        | `title`, `subheading`, `body`                                                                            | `layout`, `density`, `actions`, `asideVariant`, `asideText`                                                                 | `title`: align, size; `body`: align, size |
+| `content-slide`        | `title`, `subheading`, `body`                                                                            | `density`, `actions`, `asideVariant`, `asideText`                                                                           | `title`: align, size; `body`: align, size |
 | `callout-slide`        | `label`, `body`, `source`                                                                                | `variant`                                                                                                                   | `body`: align, size                       |
 | `table-slide`          | `title`, `caption`                                                                                       | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell`                                                                    | –                                         |
 | `list-slide`           | `title`, `subheading`, `items`                                                                           | `variant`, `layout`, `density`, `asideVariant`, `asideText`                                                                 | –                                         |

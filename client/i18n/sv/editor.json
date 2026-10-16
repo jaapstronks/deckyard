@@ -641,7 +641,6 @@
   "editor.slideField.body.label": "Brödtext",
   "editor.slideField.bottomSubheading.label": "Underrubrik längst ner",
   "editor.slideField.caption.label": "Bildtext",
-  "editor.slideField.density.label": "Textstorlek",
   "editor.slideField.density.option.comfortable": "Stor",
   "editor.slideField.density.option.compact": "Liten",
   "editor.slideField.description.label": "Beskrivning",

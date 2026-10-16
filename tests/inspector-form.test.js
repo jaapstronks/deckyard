@@ -138,14 +138,14 @@ test('inspector renders settings but no content text fields (content-slide)', ()
   );
 
   const labels = fieldLabels(mount);
-  // The content slide's layout enum only toggles 1/2 text columns, so it's
-  // labelled "Text columns" (the toolbar chip owns the structural "Layout").
+  // The layout enum's one/two-column values are the Layout row's own tiles,
+  // so the form below the row renders no second control for it (D348).
   assert.ok(
-    labels.some((l) => l.includes('text columns')),
-    'text-columns enum renders',
+    !labels.some((l) => l.includes('columns')),
+    'no columns enum beside the Layout row',
   );
   assert.ok(
-    labels.some((l) => l.includes('text size')),
+    labels.some((l) => l.includes('text density')),
     'density enum renders',
   );
   // Content fields (title/body live on the slide + Fields form) must not

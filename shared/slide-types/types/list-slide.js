@@ -249,7 +249,7 @@ export default {
       maxLength: 160,
       group: 'header-block',
     },
-    // Style (bullets/numbers) and Layout (auto/one/two columns) are two small
+    // Style (bullets/numbers) and Columns (auto/one/two) are two small
     // enum selects that read as one choice, so they share a form row (see
     // form-layout.js) — the column choice stays visible next to the style
     // instead of dropping to the bottom of the form.
@@ -267,10 +267,12 @@ export default {
       ],
       formLayout: 'pair',
     },
+    // "Columns", not "Layout": the inspector's Layout row above the form is
+    // the header-alignment variants, and one word may name one control (D348).
     {
       key: 'layout',
-      label: 'Layout',
-      labelKey: 'editor.slideField.layout.label',
+      label: 'Columns',
+      labelKey: 'editor.slideField.columns.label',
       type: 'enum',
       required: false,
       options: [

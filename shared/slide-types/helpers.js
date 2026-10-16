@@ -352,7 +352,7 @@ export function densityField(offered) {
   const values = DENSITY_VALUES.filter((v) => offered.includes(v));
   return {
     key: 'density',
-    label: 'Text size',
+    label: 'Text density',
     labelKey: 'editor.slideField.density.label',
     type: 'enum',
     required: false,
