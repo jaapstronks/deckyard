@@ -18,8 +18,8 @@ This is a reference page: it describes what is, not what will change.
 The offer decides whether a control exists. The role narrows the values an
 offered alignment may take (a quote never aligns right, a list item never
 aligns). The group owns alignment for its members, so a member never offers
-`align` of its own; the inspector shows the block's alignment disabled with a
-pointer to the Layout row. Role and group are described in
+`align` of its own; the inspector names the block's alignment and offers a
+"Change under Layout →" action to the Layout row (D345). Role and group are described in
 [`text-alignment.md`](text-alignment.md).
 
 ## The offer (D220)

@@ -27,9 +27,9 @@ import { fieldAlignAffordance } from '../../../../shared/slide-types/text-roles.
 import { resolveFieldDef } from '../../../../shared/slide-types/field-lookup.js';
 import {
   getFieldGroup,
-  groupAlignValues,
   resolveGroupAlign,
 } from '../../../../shared/slide-types/field-groups.js';
+import { getLayoutVariants } from '../../../../shared/slide-types/layout-variants.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
 import { isListOnlyMarkdown } from '../../../../shared/markdown.js';
 import { h } from '../../../lib/dom/index.js';
@@ -68,33 +68,70 @@ function alignField(key, values) {
 }
 
 /**
- * The "Alignment" block for a field whose alignment belongs to its field group:
- * the real control, disabled, plus one line naming where the setting lives.
- *
- * Values and current selection come from the GROUP itself, not from a local
- * list: the group is the thing that owns them, and a second copy here would be
- * exactly the per-type hardcode this model removes. Showing the live value also
- * keeps the disabled control honest — a centred block reads as centred rather
- * than as unset.
+ * The block's alignment in words: the label of the Layout tile that sets the
+ * group's current value, so "This text" and the Layout row say one word
+ * (D345). Falls back to the raw value for a fork whose type declares the
+ * group without matching tiles.
+ * @param {Object} def - slide-type definition
+ * @param {Object} group - the field group that owns the alignment
+ * @param {string} value - the group's current alignment
+ * @returns {string}
+ */
+function groupAlignLabel(def, group, value) {
+  const tile = getLayoutVariants(def).find(
+    (v) => !v?.convertTo && v?.set?.[group?.alignKey] === value,
+  );
+  return tile?.labelKey ? t(tile.labelKey, tile.label || value) : value;
+}
+
+/**
+ * The "Alignment" line for a field whose alignment belongs to its field group
+ * (D345): the block's current value and its scope in words, plus an action
+ * that opens the Layout row, the setting's one home (D335). No disabled copy
+ * of the control: a dead button reads as broken, and a live one here would be
+ * a second address for the block's alignment.
  *
  * @param {Object} opts
- * @param {{fieldEnum: Function}} opts.fieldRenderers
+ * @param {Object} opts.def - slide-type definition
  * @param {Object|null} opts.group - the field group that owns the alignment
  * @param {Object} opts.slide
+ * @param {Function} [opts.onShowLayout] - opens the Slide tab on the Layout row
  * @returns {HTMLElement}
  */
-function renderGroupAlignHint({ fieldRenderers, group, slide }) {
-  const el = fieldRenderers.fieldEnum(
-    alignField('textAlignGroup', groupAlignValues(group)),
+function renderGroupAlignLine({ def, group, slide, onShowLayout }) {
+  const value = groupAlignLabel(
+    def,
+    group,
     resolveGroupAlign(group, slide?.content),
-    () => {},
   );
-  return disableWithHelp(
-    el,
-    t(
-      'editor.textStyle.align.groupOwned',
-      'This text moves with the whole block. Set its alignment under Layout in the Slide tab.',
-    ),
+  return h(
+    'div',
+    { class: 'stack is-field' },
+    [
+      h('div', {
+        class: 'field-label',
+        text: t('editor.textStyle.align', 'Alignment'),
+      }),
+      h('div', {
+        class: 'help',
+        text: t(
+          'editor.textStyle.align.groupValue',
+          '{value}, set for the whole block this text moves with.',
+          { value },
+        ),
+      }),
+      onShowLayout
+        ? h('button', {
+            type: 'button',
+            class: 'btn btn-secondary btn-sm',
+            text: t(
+              'editor.textStyle.align.groupAction',
+              'Change under Layout →',
+            ),
+            onclick: () => onShowLayout(),
+          })
+        : null,
+    ].filter(Boolean),
   );
 }
 
@@ -175,6 +212,8 @@ function renderScopeHeading(typeDef, offer, content) {
  * @param {Function} opts.markDirty
  * @param {Function} [opts.rerenderPreview]
  * @param {Function} [opts.scheduleUiRefresh]
+ * @param {Function} [opts.onShowLayout] - opens the Slide tab on the Layout
+ *   row; the action on a block-owned alignment (D345)
  * @returns {boolean} whether anything was rendered
  */
 export function renderTextElementCard({
@@ -185,6 +224,7 @@ export function renderTextElementCard({
   markDirty,
   rerenderPreview,
   scheduleUiRefresh,
+  onShowLayout,
 }) {
   const fieldEnum = fieldRenderers?.fieldEnum;
   if (!fieldEnum || !fieldKey) return false;
@@ -198,18 +238,19 @@ export function renderTextElementCard({
   };
 
   // A field in a declared visual block hands its alignment to the block:
-  // show the control disabled with a pointer to the Layout row rather than
-  // hiding it, because there the answer is "elsewhere", not "never".
+  // say what the block does and offer the way there rather than hiding it,
+  // because there the answer is "elsewhere", not "never".
   const { owner: alignOwner, groupId } = fieldAlignAffordance(
     slideTypeDef,
     fieldKey,
   );
   const groupHintEl =
     alignOwner === 'group'
-      ? renderGroupAlignHint({
-          fieldRenderers,
+      ? renderGroupAlignLine({
+          def: slideTypeDef,
           group: getFieldGroup(slideTypeDef, groupId),
           slide,
+          onShowLayout,
         })
       : null;
 

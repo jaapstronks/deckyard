@@ -838,7 +838,7 @@
   "editor.table.tip": "Astuce : collez directement depuis Sheets/Excel comme tableau Markdown à barres, ou utilisez un tableau d'une diapositive de contenu.",
   "editor.table.title": "Tableau",
   "editor.textStyle.align": "Alignement",
-  "editor.textStyle.align.center": "Centre",
+  "editor.textStyle.align.center": "Centré",
   "editor.textStyle.align.left": "Gauche",
   "editor.textStyle.align.right": "Droite",
   "editor.textStyle.size": "Taille du texte",

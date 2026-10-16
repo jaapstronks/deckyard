@@ -147,8 +147,11 @@ export function alignGroup(id, alignKey, opts = {}) {
   // mints its own. Passed in rather than derived from the label so the key is
   // a full literal at the call site — see sharedOption() in ui-i18n-keys.js.
   if (opts.labelKey) field.labelKey = opts.labelKey;
+  // `rowLabel`: a block's left and centred schematics differ by a few pixels,
+  // so the inspector's compact Layout row shows these tiles' names too (D345).
   const variants = align.map((value) => ({
     ...TILE[value],
+    rowLabel: true,
     set: { [alignKey]: value },
     schematic: { kind: opts.schematicKind || 'title', align: value },
   }));

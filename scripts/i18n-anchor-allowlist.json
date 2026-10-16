@@ -34,10 +34,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Center": {
-      "forms": ["Centreret", "Midten"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Changes applied": {
       "forms": ["Ændringer anvendt", "Ændringerne er anvendt"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -166,10 +162,6 @@
         "Balkendiagramm der Aufrufe im Zeitverlauf",
         "Balkendiagramm mit Aufrufen im Zeitverlauf"
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Center": {
-      "forms": ["Mitte", "Zentriert"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Clear": {
@@ -457,10 +449,6 @@
     },
     "fi  Body": {
       "forms": ["Leipäteksti", "Sisältö"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Center": {
-      "forms": ["Keskelle", "Keskellä"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Collapse": {
@@ -1108,10 +1096,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Center": {
-      "forms": ["Midten", "Midtstilt"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Clear search": {
       "forms": ["Tøm søk", "Tøm søket"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1252,10 +1236,6 @@
     },
     "pl  Anonymous": {
       "forms": ["Anonimowo", "Anonimowy"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  Center": {
-      "forms": ["Do środka", "Środek"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Custom": {
@@ -1547,10 +1527,6 @@
         "Stapeldiagram som visar visningar över tid",
         "Stapeldiagram över visningar över tid"
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Center": {
-      "forms": ["Centrerat", "Mitten"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Clear search": {

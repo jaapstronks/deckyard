@@ -858,7 +858,7 @@
   "editor.table.tip": "Suggerimento: incolla direttamente da Sheets/Excel come tabella Markdown con le barre verticali, oppure usa una tabella da una slide di contenuto.",
   "editor.table.title": "Tabella",
   "editor.textStyle.align": "Allineamento",
-  "editor.textStyle.align.center": "Al centro",
+  "editor.textStyle.align.center": "Centrato",
   "editor.textStyle.align.left": "A sinistra",
   "editor.textStyle.align.right": "A destra",
   "editor.textStyle.size": "Dimensione del testo",
