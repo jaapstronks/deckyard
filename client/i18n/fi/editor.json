@@ -866,7 +866,7 @@
   "editor.table.tip": "Vinkki: liitä suoraan Sheets/Excelistä Markdown-putkitaulukkona tai käytä taulukkoa sisältödiasta.",
   "editor.table.title": "Taulukko",
   "editor.textStyle.align": "Tasaus",
-  "editor.textStyle.align.center": "Keskelle",
+  "editor.textStyle.align.center": "Keskitetty",
   "editor.textStyle.align.left": "Vasemmalle",
   "editor.textStyle.align.right": "Oikealle",
   "editor.textStyle.size": "Tekstin koko",

@@ -860,7 +860,7 @@
   "editor.table.tip": "Tips: lim inn direkte fra Sheets/Excel som en Markdown pipe-tabell, eller bruk en tabell fra et innholdslysbilde.",
   "editor.table.title": "Tabell",
   "editor.textStyle.align": "Justering",
-  "editor.textStyle.align.center": "Midtstilt",
+  "editor.textStyle.align.center": "Sentrert",
   "editor.textStyle.align.left": "Venstre",
   "editor.textStyle.align.right": "Høyre",
   "editor.textStyle.size": "Tekststørrelse",

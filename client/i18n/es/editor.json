@@ -862,7 +862,7 @@
   "editor.table.tip": "Consejo: pegue directamente desde Sheets/Excel como tabla Markdown con barras, o use una tabla de una diapositiva de contenido.",
   "editor.table.title": "Tabla",
   "editor.textStyle.align": "Alineación",
-  "editor.textStyle.align.center": "Centro",
+  "editor.textStyle.align.center": "Centrado",
   "editor.textStyle.align.left": "Izquierda",
   "editor.textStyle.align.right": "Derecha",
   "editor.textStyle.size": "Tamaño del texto",

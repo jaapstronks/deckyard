@@ -323,16 +323,57 @@ test('"This text" on one quote styles every quote under one key', () => {
     fieldKey: 'quotes.1.quote',
   });
   const form = elementForm(mount);
-  // Alignment is the quote block's, shown disabled with a pointer to Layout.
+  // Alignment is the quote block's: a line naming it, no control (D345).
   assert.deepEqual(labelsOf(form), [
     'All "Quote" (2)',
     'Alignment',
     'Text size',
   ]);
-  assert.ok(enumField(form, 'Alignment').classList.contains('is-disabled'));
+  assert.equal(form.querySelectorAll('[disabled]').length, 0);
   pick(enumField(form, 'Text size'), 'sm');
   assert.deepEqual(slide.content.textStyles, {
     'quotes.*.quote': { size: 'sm' },
   });
+  mount.remove();
+});
+
+/*
+ * A text in a block hands its alignment to the block (D345): "This text" names
+ * the block's value in the Layout tile's own word and offers the way there, no
+ * disabled control. The action opens the Slide tab with focus on the Layout
+ * row, whose block tiles carry visible labels.
+ */
+
+test('"This text" in a block names the block value and offers the Layout row', () => {
+  const slide = textSlide('title-slide', { titleBlockAlign: 'center' });
+  const mount = renderInspector(slide, { kind: 'text', fieldKey: 'title' });
+  const form = elementForm(mount);
+  assert.equal(form.querySelectorAll('[disabled]').length, 0);
+  assert.equal(form.querySelector('[data-value="center"]'), null);
+  assert.match(form.textContent, /Centred, set for the whole block/);
+  const action = [...form.querySelectorAll('button')].find((b) =>
+    /Change under Layout/.test(b.textContent),
+  );
+  assert.ok(action, 'the action renders');
+
+  action.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  assert.equal(activeTab(mount), 'Slide');
+  const focused = document.activeElement;
+  assert.ok(
+    focused?.closest('.layout-row') && mount.contains(focused),
+    'focus lands in the Layout row',
+  );
+  assert.ok(focused.classList.contains('is-active'), 'on the active tile');
+  assert.match(focused.textContent, /Centred/);
+  mount.remove();
+});
+
+test('the block tiles in the Layout row show their labels', () => {
+  const slide = textSlide('title-slide', {});
+  const mount = renderInspector(slide, null);
+  const labels = [
+    ...mount.querySelectorAll('.layout-row-tiles .layout-tile-label'),
+  ].map((l) => l.textContent.trim());
+  assert.deepEqual(labels, ['Left', 'Centred']);
   mount.remove();
 });

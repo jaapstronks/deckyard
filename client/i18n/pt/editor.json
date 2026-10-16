@@ -864,7 +864,7 @@
   "editor.table.tip": "Dica: cole diretamente do Sheets/Excel como tabela Markdown com barras, ou use uma tabela de um diapositivo de conteúdo.",
   "editor.table.title": "Tabela",
   "editor.textStyle.align": "Alinhamento",
-  "editor.textStyle.align.center": "Centro",
+  "editor.textStyle.align.center": "Centrado",
   "editor.textStyle.align.left": "Esquerda",
   "editor.textStyle.align.right": "Direita",
   "editor.textStyle.size": "Tamanho do texto",

@@ -139,11 +139,11 @@ both call it, so they cannot disagree.
 { values: string[], owner: 'field' | 'role' | 'group', groupId: string | null }
 ```
 
-| owner   | meaning                | editor draws                                 |
-| ------- | ---------------------- | -------------------------------------------- |
-| `field` | the field decides      | the control, with `values`                   |
-| `role`  | nothing can align this | no control — the answer is "never"           |
-| `group` | the block decides      | the control **disabled**, pointing at Layout |
+| owner   | meaning                | editor draws                                                      |
+| ------- | ---------------------- | ----------------------------------------------------------------- |
+| `field` | the field decides      | the control, with `values`                                        |
+| `role`  | nothing can align this | no control — the answer is "never"                                |
+| `group` | the block decides      | the block's value in words and an action to the Layout row (D345) |
 
 `values` is empty for both non-field owners. Returning the _owner_ is what makes
 "cannot be aligned" distinguishable from "aligned somewhere else"; with only an

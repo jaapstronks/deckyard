@@ -864,7 +864,7 @@
   "editor.table.tip": "Wskazówka: wklej bezpośrednio z Sheets/Excel jako tabelę Markdown z kreskami lub użyj tabeli ze slajdu treści.",
   "editor.table.title": "Tabela",
   "editor.textStyle.align": "Wyrównanie",
-  "editor.textStyle.align.center": "Do środka",
+  "editor.textStyle.align.center": "Wyśrodkowane",
   "editor.textStyle.align.left": "Do lewej",
   "editor.textStyle.align.right": "Do prawej",
   "editor.textStyle.size": "Rozmiar tekstu",

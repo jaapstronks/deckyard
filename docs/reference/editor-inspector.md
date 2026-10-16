@@ -138,17 +138,17 @@ AI Convert (only with `features.ai`) and the admin's View JSON; with nothing
 to offer it is a plain label. There is no slide-actions menu above the
 canvas any more; every action it held has one address:
 
-| Action                     | Where                                                                                                             |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Layout                     | First row of the inspector: four schematics plus "All N →" (`layout-switcher.js`), on every `layoutVariants` type |
-| Convert, AI Convert        | The type pill's menu                                                                                              |
-| View JSON (admin)          | The type pill's menu                                                                                              |
-| Duplicate, Delete          | Slide-list menu (right-click / long-press, or the ⋯ on the thumbnail); ⌘D and Delete/Backspace stay               |
-| Lock / Unlock (author)     | Slide-list menu; the lock badge on the thumbnail shows it and unlocks on click                                    |
-| Save to slide library      | Slide-list menu (one slide)                                                                                       |
-| Copy, Paste (B308)         | Slide-list menu, through the same `copySlidesToClipboard` / `pasteSlidesFromClipboard` as ⌘C/⌘V                   |
-| Fill slide… (AI translate) | The AI box at the foot of the inspector, beside Refine                                                            |
-| Add comment, zoom          | Floating at the top right of the canvas (`.canvas-float-tools`), hidden with the canvas in Fields                 |
+| Action                     | Where                                                                                                                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout                     | First row of the inspector: four schematics plus "All N →" (`layout-switcher.js`), on every `layoutVariants` type; a variant with `rowLabel: true` shows its name in the row too |
+| Convert, AI Convert        | The type pill's menu                                                                                                                                                             |
+| View JSON (admin)          | The type pill's menu                                                                                                                                                             |
+| Duplicate, Delete          | Slide-list menu (right-click / long-press, or the ⋯ on the thumbnail); ⌘D and Delete/Backspace stay                                                                              |
+| Lock / Unlock (author)     | Slide-list menu; the lock badge on the thumbnail shows it and unlocks on click                                                                                                   |
+| Save to slide library      | Slide-list menu (one slide)                                                                                                                                                      |
+| Copy, Paste (B308)         | Slide-list menu, through the same `copySlidesToClipboard` / `pasteSlidesFromClipboard` as ⌘C/⌘V                                                                                  |
+| Fill slide… (AI translate) | The AI box at the foot of the inspector, beside Refine                                                                                                                           |
+| Add comment, zoom          | Floating at the top right of the canvas (`.canvas-float-tools`), hidden with the canvas in Fields                                                                                |
 
 The ⋯ on a thumbnail sits top-left and shows on hover, on the active slide
 and on keyboard focus; the thumbnail's bottom edge stays free for the insert
@@ -354,6 +354,19 @@ nothing else: a field without an offer gets one sentence, "This text follows
 the slide's layout". A field whose siblings share the offer (array items, a
 declared set) is styled as one, under a heading such as "All "Quote" (3)".
 There is no per-field colour (D221).
+
+A field in a declared block (a title and subtitle that move together, a quote
+block) has no alignment of its own: the block owns it, and its one home is the
+Layout row (D335). "This text" shows no control for it, disabled or live, but
+one line with the block's current value in the Layout tile's own word
+("Centred, set for the whole block this text moves with.") and a **"Change
+under Layout →"** action that switches to the Slide tab and focuses the active
+Layout tile (D345). One word per value on both surfaces: the line reads the
+tile's label. Those block tiles carry `rowLabel: true` (set by `alignGroup()`
+in `shared/slide-types/field-groups.js`), so the compact Layout row shows their
+names under the schematics; a list-only markdown body keeps its disabled
+alignment with the reason (D315), because there the answer is "not yet", not
+"elsewhere".
 
 The offer model, the `content.textStyles` storage keys, the refusals on the
 write path and which core fields offer what are normative in
