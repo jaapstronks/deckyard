@@ -127,6 +127,10 @@ function resolveImageElement(slide, def, idx) {
  * @param {Object} opts.def - slide-type definition (for the descriptor fallback)
  * @param {number} opts.idx - selected element index (list index or 1-based {n})
  * @param {Object} opts.fieldRenderers - { fieldImage, fieldText, fieldEnum, fieldGrid }
+ * @param {Function} [opts.renderField] - the form's schema-field renderer, for
+ *   the image role (a slide field the card shows beside the alt text)
+ * @param {Set<string>} [opts.used] - the form's rendered-keys set; the card
+ *   claims the role key so the keeps loop does not render it a second time
  * @param {Function} opts.markDirty
  * @param {Function} opts.rerenderEditor
  * @param {Function} opts.rerenderPreview
@@ -140,6 +144,8 @@ export function renderImageElementCard({
   def,
   idx,
   fieldRenderers = {},
+  renderField = null,
+  used = null,
   markDirty,
   rerenderEditor,
   rerenderPreview,
@@ -153,6 +159,19 @@ export function renderImageElementCard({
   const { fieldImage, fieldText, fieldEnum } = fieldRenderers;
 
   const hasImage = !!String(member[imageField] || '').trim();
+  const media = getInlineDescriptor(slide?.type, def)?.media;
+  // The role field beside the picture (`<key>Role` or `imageRole`, the
+  // sibling spelling of field-types), in the slide schema or the item schema.
+  const roleKeys = new Set([`${imageField}Role`, 'imageRole']);
+  const itemFields = media?.list
+    ? (def?.fields || []).find((f) => f.key === media.list)?.itemFields
+    : null;
+  // A flat image's role is the picture's own: the card shows it (D347). A
+  // list type's slide-level role governs every image, so it stays a Slide-tab
+  // setting.
+  const roleField = media?.list
+    ? null
+    : (def?.fields || []).find((f) => roleKeys.has(f?.key)) || null;
 
   // Image picker (replace + delete + preview) via the proxy-slide pattern: the
   // shared fieldImage edits member[imageField] and seeds alt into altField.
@@ -184,13 +203,8 @@ export function renderImageElementCard({
   // It sits right under the picture, with a warning while publishing would
   // refuse it (D336); typing a name clears the warning without a rebuild.
   if (hasImage && typeof fieldText === 'function') {
-    const media = getInlineDescriptor(slide?.type, def)?.media;
     // Name the way out only where the type has one: a role field beside the
-    // picture (`<key>Role` or `imageRole`, the sibling spelling of field-types).
-    const roleKeys = new Set([`${imageField}Role`, 'imageRole']);
-    const itemFields = media?.list
-      ? (def?.fields || []).find((f) => f.key === media.list)?.itemFields
-      : null;
+    // picture.
     const canBeDecorative = [
       ...(def?.fields || []),
       ...(Array.isArray(itemFields) ? itemFields : []),
@@ -227,12 +241,20 @@ export function renderImageElementCard({
     );
   }
 
+  // The image role, right under the alt text it decides about: Decorative is
+  // the other way to satisfy publishing. Rendered through the form's own
+  // field renderer, so it marks its default and rebuilds what depends on it.
+  if (roleField) {
+    used?.add(roleField.key);
+    const roleEl = hasImage && renderField ? renderField(roleField) : null;
+    if (roleEl) container.append(roleEl);
+  }
+
   // Extra per-item metadata (a team member's LinkedIn URL, a logo's name and
   // link). In list mode the key is an item field, so it renders through the
   // shared per-item widget and gets its declared editor (a logo link is a
   // `card-link`); the descriptor's label, when given, wins.
   if (hasImage) {
-    const media = getInlineDescriptor(slide?.type, def)?.media;
     const itemSchema = media?.list
       ? new Map(
           (

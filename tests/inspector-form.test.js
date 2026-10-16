@@ -538,11 +538,24 @@ test('image-set: element tab shows only the selected cell, slide form only slide
   );
 });
 
+/**
+ * A label list minus the image card's labels, one occurrence each: the
+ * background section is labelled "Image" too, and it stays.
+ */
+function withoutCard(labels, cardLabels) {
+  const rest = [...labels];
+  for (const label of cardLabels) {
+    const at = rest.indexOf(label);
+    if (at !== -1) rest.splice(at, 1);
+  }
+  return rest;
+}
+
 test('image-text: the element tab is the one image, and it carries the ImageRef', () => {
   // The singleton counterpart of the block above: image-text has exactly one
   // cell, so index 0 is the only selectable element and its controls are the
   // slide-level flat keys - the same shape image-slide has (D100). Since D336
-  // the Slide tab opens on the same card, so it carries them too.
+  // the Slide tab opens on the same card while no image is selected (D347).
   const noSel = renderForm({
     type: 'image-text-slide',
     content: structuredClone(TEXT_CONTENT),
@@ -572,10 +585,12 @@ test('image-text: the element tab is the one image, and it carries the ImageRef'
     'a singleton has no collection manager',
   );
 
+  // One card per picture (D347): with "This image" open the Slide tab is the
+  // no-selection view minus the card, which lives in the element tab alone.
   assert.deepEqual(
     fieldLabels(slideForm(withSel)),
-    fieldLabels(slideForm(noSel)),
-    'Slide tab and no-selection view render identical fields',
+    withoutCard(fieldLabels(slideForm(noSel)), elLabels),
+    'Slide tab is the no-selection view without the image card',
   );
 });
 
@@ -604,7 +619,7 @@ test('image-text: layout settings render as plain fields, behind no collapsible'
   );
 });
 
-test('image-slide: the Slide tab opens on the image card; Slide tab == no-selection view', () => {
+test('image-slide: the Slide tab opens on the image card; with the image selected it is in the tab alone', () => {
   const content = { title: '', image: '/uploads/a.jpg', alt: 'a' };
   const noSel = renderForm({
     type: 'image-slide',
@@ -639,10 +654,12 @@ test('image-slide: the Slide tab opens on the image card; Slide tab == no-select
     'alt renders in element tab',
   );
 
+  // One card per picture (D347): with "This image" open the Slide tab is the
+  // no-selection view minus the card, which lives in the element tab alone.
   assert.deepEqual(
     fieldLabels(slideForm(withSel)),
-    fieldLabels(slideForm(noSel)),
-    'Slide tab and no-selection view render identical fields',
+    withoutCard(fieldLabels(slideForm(noSel)), elLabels),
+    'Slide tab is the no-selection view without the image card',
   );
 });
 

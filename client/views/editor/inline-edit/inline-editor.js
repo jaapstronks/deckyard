@@ -156,9 +156,11 @@ export function createInlineEditor({
   // field element -> its dashed outline box, for the stronger direct-hover.
   const outlineByField = new WeakMap();
   // What the canvas can show as selected, rebuilt on every refresh: filled
-  // images (ring + toolbar) and text fields (ring). syncSelection() mirrors the
-  // controller's selectedElement onto exactly one of them.
+  // images (ring + toolbar + focal point) and text fields (ring).
+  // syncSelection() mirrors the controller's selectedElement onto exactly one
+  // of them.
   let imageSelectables = [];
+  let focusPoints = [];
   let textSelectables = [];
   let hotField = null;
   let repositionRaf = 0;
@@ -465,6 +467,7 @@ export function createInlineEditor({
     // Swap the affordances for a single active ring that tracks this field.
     overlay.clear();
     imageSelectables = [];
+    focusPoints = [];
     textSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
@@ -509,6 +512,7 @@ export function createInlineEditor({
     el.classList.add('ie-editing', 'ie-editing-rich');
     overlay.clear();
     imageSelectables = [];
+    focusPoints = [];
     textSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
@@ -1351,6 +1355,11 @@ export function createInlineEditor({
       outlineBox?.classList.toggle('is-selected', on);
       bar.hidden = !on;
     }
+    // The focal point is a handle on the selected image, not on every image:
+    // the first click selects, only then is the point draggable (D347).
+    for (const { idx, el } of focusPoints) {
+      el.hidden = !(sel?.kind === 'image' && sel.idx === idx);
+    }
     for (const { fieldKey, outlineBox } of textSelectables) {
       const on =
         (sel?.kind === 'text' || sel?.kind === 'card') &&
@@ -1816,6 +1825,7 @@ export function createInlineEditor({
     const root = slideEl();
     overlay.clear();
     imageSelectables = [];
+    focusPoints = [];
     textSelectables = [];
     canvasStops = [];
     if (!root) return;
@@ -1856,7 +1866,7 @@ export function createInlineEditor({
     insertClearButtons(root, def, descriptor);
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
-    focusDrag.insertFocusAffordances(root, def, descriptor);
+    focusPoints = focusDrag.insertFocusAffordances(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
     applyCanvasStops(root, def, descriptor, slide);

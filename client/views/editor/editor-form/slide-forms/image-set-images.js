@@ -262,11 +262,14 @@ function renderImageSetCollectionSection({
  * image-set declares `elementTab: { image: … }` like every other image type,
  * so the shared "This image" card comes from the declaration-driven rule.
  *
- * @param {Object} ctx - Same context shape as renderSlideFormByType
+ * @param {Object} ctx - Same context shape as renderSlideFormByType, plus
+ *   `placeImageCard` (inspector-form.js), which puts the section first while
+ *   no cell holds an image
  */
 export function renderImageSetCollectionExtra(ctx) {
   const {
     form,
+    placeImageCard,
     slide,
     used,
     markDirty,
@@ -288,5 +291,9 @@ export function renderImageSetCollectionExtra(ctx) {
     getSelectedSlideId,
     openImagePicker: fieldRenderers?.openImagePicker,
   });
-  if (section) form.append(section);
+  if (!section) return;
+  // The collection is this type's image card: it leads the form while every
+  // cell is empty (D347, inspector-form.js).
+  if (placeImageCard) placeImageCard(section);
+  else form.append(section);
 }

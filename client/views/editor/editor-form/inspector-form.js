@@ -138,9 +138,14 @@ const INSPECTOR_EXTRAS = new Map([
  *    collection item gets the "This card" card the same way, from a `card`
  *    element tab that names item `fields` (item-element-card.js).
  *    The Slide tab of a type whose image is ONE flat key (image-slide,
- *    image-text) opens on that same card, so an empty image slide starts with
- *    the picker and a filled one with the picture and its alt text (D336).
- *    A list type has no one picture to open on; its cards stay per element.
+ *    image-text) carries that same card (D336), and only while no "This
+ *    image" tab is open: one card per picture, so with the image selected the
+ *    card lives in its element tab alone (D347). A list type has no one
+ *    picture to open on; its cards stay per element.
+ *    While the image is empty the Slide tab's card is what to do next, so it
+ *    leads the form, before the Layout row; once there is a picture the fixed
+ *    order holds and Layout leads (D347). image-set's collection section
+ *    follows the same rule through `placeImageCard`.
  *    Either way, the keeps the media's `withImage` names wait for a picture.
  * 2. THE EXCEPTIONS — the INSPECTOR_EXTRAS table above.
  *
@@ -165,47 +170,48 @@ export function renderInspectorExtrasByType(ctx) {
   } = ctx;
 
   const media = getInlineDescriptor(slide.type, def)?.media;
+  const holdsImage = mediaHoldsImage(slide.content, media);
+  const offersImageTab = !!slideTypeElementTab(slide.type, def)?.image;
+  const imageTabOpen = offersImageTab && selectedElement?.kind === 'image';
+  // The Slide tab's image card: first row while the image is empty, after the
+  // Layout row (already in the form) once there is one (D347).
+  const placeImageCard = (node) => {
+    if (holdsImage) form.append(node);
+    else form.prepend(node);
+  };
+  const cardOpts = {
+    slide,
+    def,
+    fieldRenderers,
+    renderField: ctx.renderField,
+    used,
+    deckSlides: ctx.deckSlides,
+    markDirty,
+    rerenderEditor,
+    rerenderPreview,
+    scheduleUiRefresh,
+  };
+
   if (
     media &&
     !media.list &&
     !String(media.imageField).includes('{n}') &&
-    slideTypeElementTab(slide.type, def)?.image
+    offersImageTab &&
+    !imageTabOpen
   ) {
-    renderImageElementCard({
-      container: form,
-      slide,
-      def,
-      idx: 0,
-      fieldRenderers,
-      deckSlides: ctx.deckSlides,
-      markDirty,
-      rerenderEditor,
-      rerenderPreview,
-      scheduleUiRefresh,
-    });
+    const card = document.createDocumentFragment();
+    renderImageElementCard({ ...cardOpts, container: card, idx: 0 });
+    placeImageCard(card);
   }
-  if (
-    Array.isArray(media?.withImage) &&
-    !mediaHoldsImage(slide.content, media)
-  ) {
+  if (Array.isArray(media?.withImage) && !holdsImage) {
     for (const key of media.withImage) used?.add(key);
   }
 
-  if (
-    selectedElement?.kind === 'image' &&
-    slideTypeElementTab(slide.type, def)?.image
-  ) {
+  if (imageTabOpen) {
     renderImageElementCard({
+      ...cardOpts,
       container: elementForm,
-      slide,
-      def,
       idx: selectedElement.idx,
-      fieldRenderers,
-      deckSlides: ctx.deckSlides,
-      markDirty,
-      rerenderEditor,
-      rerenderPreview,
-      scheduleUiRefresh,
     });
   }
 
@@ -226,5 +232,5 @@ export function renderInspectorExtrasByType(ctx) {
     });
   }
 
-  INSPECTOR_EXTRAS.get(slide.type)?.(ctx);
+  INSPECTOR_EXTRAS.get(slide.type)?.({ ...ctx, placeImageCard });
 }
