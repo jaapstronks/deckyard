@@ -117,4 +117,5 @@ An export's `status`:
 and its `complete` is `{ downloadUrl }`.
 
 Both are SSE import events, not the `/api/*` error envelope; an `error` event
-carries `{ message }` (`api-error-format.md` § SSE error events).
+carries `{ message }`, and the export streams add `error: '<code>'`
+(`api-error-format.md` § SSE error events).

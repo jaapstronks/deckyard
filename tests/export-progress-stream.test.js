@@ -43,7 +43,7 @@ const { createPresentation } =
   await import('../server/storage/presentations/index.js');
 const { handleExports } = await import('../server/routes/api/export.js');
 const { handleJobs } = await import('../server/routes/api/jobs.js');
-const { createExportStreamRoute } =
+const { createExportRoute, createExportStreamRoute } =
   await import('../server/export/pipeline.js');
 const { EXPORT_PROGRESS, exportStatus, progressCounter } =
   await import('../server/export/progress.js');
@@ -153,15 +153,21 @@ function contextFor(pathname, res, email = OWNER) {
   };
 }
 
-/** Capture the `[export]` info lines while `fn` runs. */
-async function captureLog(fn) {
+/**
+ * Capture the `[export]` info lines while `fn` runs; pass `errors` to collect
+ * the `console.error` lines there too.
+ */
+async function captureLog(fn, errors = null) {
   const lines = [];
   const original = console.log;
+  const originalError = console.error;
   console.log = (...args) => lines.push(args.join(' '));
+  if (errors) console.error = (...args) => errors.push(args.join(' '));
   try {
     await fn();
   } finally {
     console.log = original;
+    console.error = originalError;
   }
   return lines;
 }
@@ -273,6 +279,45 @@ test('closing the stream after slide 3 stops the export and logs how far it got'
       (l) =>
         l.includes('[export]') &&
         l.includes('png-zip export cancelled after 3/54'),
+    ),
+    `logged: ${lines.join(' | ')}`,
+  );
+});
+
+test('a client that leaves a file export is a cancel: no error line, no answer', async () => {
+  const pres = await seedDeck(1);
+  const res = streamResponse();
+  const route = createExportRoute({
+    ...fiftyFourSlides,
+    buildContent: async (ctx, { signal }) => {
+      // The client leaves mid-render.
+      res.destroyed = true;
+      res.writable = false;
+      res.emit('close');
+      await new Promise((r) => setImmediate(r));
+      signal.throwIfAborted();
+      return Buffer.from('PK-double');
+    },
+  });
+
+  const errors = [];
+  const lines = await captureLog(
+    () =>
+      dispatchRoutes(
+        [route],
+        contextFor(`/api/presentations/${pres.id}/export/png.zip`, res),
+      ),
+    errors,
+  );
+
+  assert.deepEqual(errors, [], 'no [ERROR] line for a closed tab');
+  assert.equal(res.statusCode, null, 'no status written');
+  assert.deepEqual(res.chunks, [], 'no body written');
+  assert.ok(
+    lines.some(
+      (l) =>
+        l.includes('[export]') &&
+        l.includes('png-zip export cancelled by the client'),
     ),
     `logged: ${lines.join(' | ')}`,
   );

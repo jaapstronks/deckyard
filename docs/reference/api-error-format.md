@@ -191,7 +191,10 @@ an already-open stream is a named event, so its payload is:
 
 If a client ever does need to branch on the cause, add
 `error: '<snake_case_code>'` next to `message`, with the same meaning it has
-here. That upgrade is additive; it never renames a field a client reads.
+here. That upgrade is additive; it never renames a field a client reads. The
+export streams (`/api/presentations/:id/export/<fmt>/stream`) already carry it
+(`export_failed`, or the refusal's own code), though no client branches on it
+yet.
 
 ## Failed background jobs
 
