@@ -218,7 +218,7 @@ export function openCreationView({
         api,
         onChange: () => syncUI(),
         onImportDeck: () => {
-          importMethod.showSubtab('images');
+          importMethod.showSubtab('pptx-pdf');
           selectMethod('import');
         },
       })
@@ -381,7 +381,7 @@ export function openCreationView({
       'paste-text': t('list.aiWizard.generate', 'Generate'),
       'convert-file': t('list.fileConverter.convert', 'Convert'),
       notion: t('list.newPresentation.notion.import', 'Import'),
-      'import-images': t('editor.importSlides.importButton', 'Import slides'),
+      'import-pptx-pdf': t('editor.importSlides.importButton', 'Import slides'),
       'import-deck': t('list.importDeck', 'Import .deck'),
       'import-json': t('list.importJson', 'Import JSON'),
       'import-markdown': t('list.importMarkdown', 'Import Markdown'),
@@ -535,7 +535,7 @@ export function openCreationView({
           themeId: themeSelect.getTheme(),
         });
         break;
-      case 'import-images':
+      case 'import-pptx-pdf':
       case 'import-deck':
       case 'import-json':
       case 'import-markdown':

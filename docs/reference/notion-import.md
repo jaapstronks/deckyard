@@ -140,11 +140,15 @@ both structurally and as a pipe-delimited text rendering; images are lifted into
      _Implementation status_).
    - `formatNotionContentForAi()` — flatten to the `NOTION PAGE: …` /
      `=== CONTENT ===` text block.
-   - Run the two-phase pipeline: `generateOutline` →
-     `separateSlidesForProcessing` → `refineAllSlideGroups` →
-     `validateAndFixRefinedSlides`, forwarding the pipeline's own status
-     messages onto the SSE stream.
-5. On a deck with no errors, `createPresentation` + `updatePresentation`, stamping
+   - Run the one generation pipeline, `generateSlides()` in
+     `server/utils/ai/generate-deck.js` (see
+     [`ai-pipeline.md`](ai-pipeline.md) § Flows), with the theme context and
+     title slide type `loadAiThemeContext()` loaded, forwarding its status
+     messages onto the SSE stream. The adapter assembles around it with
+     `assembleDeck()`: the first image becomes the title background, the
+     other images become image slides before a closing slide.
+5. On a deck with no errors, `generatedDeckToParts()` (presenter notes and the
+   review metadata kept) and `createImportedPresentation`, stamping
    `notionSourcePageId`, then a `complete` event carrying the presentation and
    the conversion report.
 

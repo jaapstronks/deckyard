@@ -1,7 +1,7 @@
 /**
  * File Converter
- * Converts PowerPoint and PDF files into the presentation system format.
- * Uses AI V2 (two-phase) to intelligently map content to appropriate slide types.
+ * Converts PowerPoint and PDF files into the presentation system format,
+ * through the one generation pipeline (`ai-convert.js`, B757).
  */
 
 import { parsePptx } from './pptx-parser.js';
@@ -52,6 +52,9 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  *   may not insert; kept out of the catalog the model chooses from (B659).
  * @param {Array} [options.customSlideTypes] - The organization's published
  *   custom types, offered next to the core catalog (B659).
+ * @param {Object|null} [options.themeContext] - The theme context the model
+ *   sees in phase 2 (`loadAiThemeContext()`).
+ * @param {string} [options.titleSlideType] - The theme's title slide type.
  * @returns {Promise<{deck: object|null, report: object}>}
  */
 export async function convertFile(buffer, options = {}) {
@@ -67,6 +70,8 @@ export async function convertFile(buffer, options = {}) {
     slideTypes,
     disabledSlideTypes = [],
     customSlideTypes = [],
+    themeContext = null,
+    titleSlideType = 'title-slide',
   } = options;
 
   const report = {
@@ -195,7 +200,7 @@ export async function convertFile(buffer, options = {}) {
       ? Math.min(...regularSlides.map((s) => s._originalIndex ?? 0))
       : 0;
 
-  // Use AI V2 to convert to deck format
+  // The one generation pipeline, assembled around the file's own slides.
   try {
     const deck = await convertWithAi(formattedContent, {
       lang,
@@ -213,6 +218,8 @@ export async function convertFile(buffer, options = {}) {
       slideTypes,
       disabledSlideTypes,
       customSlideTypes,
+      themeContext,
+      titleSlideType,
     });
 
     // Include status messages in report

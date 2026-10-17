@@ -50,7 +50,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../utils/errors.js';
-import { generateDeckV2 } from '../utils/ai/index.js';
+import { generateDeck, generatedDeckToParts } from '../utils/ai/index.js';
 import {
   validateAndFixRefinedSlides,
   validateRefinedSlidesStrict,
@@ -68,6 +68,7 @@ import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js'
 import {
   loadDeckTheme,
   loadThemeAssets,
+  loadAiThemeContext,
   settleNewDeckTheme,
 } from '../utils/themes.js';
 import { listThemes } from '../storage/themes.js';
@@ -440,31 +441,36 @@ export function registerTools(
       // the deck is the session owner's (B521).
       assertCreatableDeckInput(args);
       // Checked before the generation, so an unknown theme costs no LLM call.
-      const { themeId: theme, theme: themeObj } = await settleNewDeckTheme(
+      const {
+        themeId: theme,
+        theme: themeObj,
+        titleSlideType,
+        themeContext,
+      } = await loadAiThemeContext(
         repoRoot,
         requestedTheme,
         storageScopeOf(context),
       );
-      const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
 
       const slideTypes = await sessionSlideTypes(context);
-      const deck = await generateDeckV2(content, {
+      // The one generation pipeline the wizard runs too (B756); a caller that
+      // hangs up cancels it (`context.signal`, HTTP transport only).
+      const deck = await generateDeck(content, {
         userName: speaker,
         targetLang: lang || null,
         theme,
         titleSlideType,
+        themeContext,
         vendor: vendor || null,
         slideTypes,
         ...(await sessionSlideTypeOffer(context)),
+        signal: context?.signal || null,
       });
 
       // One create carries the generated slides (B609); no empty deck is
-      // written first and filled afterwards.
-      const parts = deckToPresentationParts(deck, {
-        theme: themeObj,
-        lang,
-        slideTypes,
-      });
+      // written first and filled afterwards. The review metadata comes along,
+      // as on every generation path (B757).
+      const parts = generatedDeckToParts(deck, { theme: themeObj, slideTypes });
       if (title) parts.title = title;
 
       const created = await createPresentation(
@@ -474,7 +480,7 @@ export function registerTools(
           title: parts.title,
           slides: parts.slides,
           theme,
-          lang: lang || undefined,
+          lang: deck.lang,
         },
       );
 

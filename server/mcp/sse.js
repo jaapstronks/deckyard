@@ -18,6 +18,7 @@ import { jsonError } from '../utils/http.js';
 import { randomUUID } from 'node:crypto';
 import { validateApiKey } from '../storage/api-keys.js';
 import { openSseStream, sseWrite } from '../utils/sse.js';
+import { clientDisconnectSignal } from '../utils/client-disconnect.js';
 
 // ─── Constants ───────────────────────────────────────────────────────────
 
@@ -318,6 +319,9 @@ async function handlePost(server, req, res, basePath) {
       permissions: auth.apiKey.permissions,
     },
     transport: 'sse',
+    // A caller that hangs up mid-call cancels the work its tool started (an
+    // AI generation's model calls), as a closed browser stream does.
+    signal: clientDisconnectSignal(res),
   };
 
   // Handle JSON-RPC (single or batch)

@@ -167,7 +167,7 @@ server/mcp/
 
 Each tool maps directly to existing Deckyard functionality:
 
-- `create_presentation` → `generateDeckV2()` + `createPresentation()` (the service in `server/services/presentations.js`, B521)
+- `create_presentation` → `generateDeck()` (the one generation pipeline the creation wizard runs too, with the theme context and the caller's cancel signal, B756) + `createPresentation()` (the service in `server/services/presentations.js`, B521)
 - `create_presentation_from_slides` → `validateRefinedSlidesStrict()` / `validateAndFixRefinedSlides()` + `createPresentation()` (no AI pass; the slides ride in the create, so a refused payload leaves no deck behind, B609)
 - `add_slide` / `update_slide` → `addSlide()` / `updateSlide()` in `server/services/slides.js`, which hold the composed slide to `validateSlide()`, the answer the REST contract gives too. Agent content is checked, not repaired: no fix pass runs first, so an over-long list is refused rather than cut (D121 B4)
 - `convert_slide` → `convertSlideWithAi()`

@@ -18,8 +18,8 @@ import { extractPageId, notionEnabled } from '../../../utils/notion/index.js';
 import { convertNotionPage } from '../../../utils/convert-notion.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { createImportedPresentation } from '../../../services/import-json.js';
-import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { settleNewDeckTheme } from '../../../utils/themes.js';
+import { generatedDeckToParts } from '../../../utils/ai/index.js';
+import { loadAiThemeContext } from '../../../utils/themes.js';
 import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
@@ -66,11 +66,13 @@ export async function handleNotionImport({
     return badRequest(res, 'Invalid Notion URL or page ID format');
   }
   // Checked before the conversion, so an unknown theme costs no work (B486).
-  const { themeId: theme, theme: themeConfig } = await settleNewDeckTheme(
-    repoRoot,
-    body?.theme,
-    storageScope,
-  );
+  // The theme context and title slide type go to the model too (B757).
+  const {
+    themeId: theme,
+    theme: themeConfig,
+    themeContext,
+    titleSlideType,
+  } = await loadAiThemeContext(repoRoot, body?.theme, storageScope);
 
   // Cancelling is dropping the request: the signal aborts the model calls
   // and the image uploads, and is checked before the presentation is written.
@@ -93,6 +95,8 @@ export async function handleNotionImport({
       signal,
       slideTypes,
       ...slideTypeOffer,
+      themeContext,
+      titleSlideType,
     });
 
     if (!deck || report.errors.length > 0) {
@@ -107,11 +111,10 @@ export async function handleNotionImport({
     }
 
     // Create the presentation from the deck
-    const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
-    const parts = deckToPresentationParts(deck, {
+    // The language the generation settled on; review metadata kept (B757).
+    const effectiveLang = deck.lang || DEFAULT_DECK_LANG;
+    const parts = generatedDeckToParts(deck, {
       theme: themeConfig,
-      lang: effectiveLang,
       slideTypes,
     });
 
@@ -182,11 +185,13 @@ export async function handleNotionImportStream({
     return badRequest(res, 'Invalid Notion URL or page ID format');
   }
   // Checked before the conversion, so an unknown theme costs no work (B486).
-  const { themeId: theme, theme: themeConfig } = await settleNewDeckTheme(
-    repoRoot,
-    body?.theme,
-    storageScope,
-  );
+  // The theme context and title slide type go to the model too (B757).
+  const {
+    themeId: theme,
+    theme: themeConfig,
+    themeContext,
+    titleSlideType,
+  } = await loadAiThemeContext(repoRoot, body?.theme, storageScope);
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
@@ -258,6 +263,8 @@ export async function handleNotionImportStream({
       signal,
       slideTypes,
       ...slideTypeOffer,
+      themeContext,
+      titleSlideType,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         // Message only: the bar is owned by the creep until the first section
@@ -357,11 +364,10 @@ export async function handleNotionImportStream({
     signal.throwIfAborted();
 
     // Create the presentation
-    const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
-    const parts = deckToPresentationParts(deck, {
+    // The language the generation settled on; review metadata kept (B757).
+    const effectiveLang = deck.lang || DEFAULT_DECK_LANG;
+    const parts = generatedDeckToParts(deck, {
       theme: themeConfig,
-      lang: effectiveLang,
       slideTypes,
     });
 

@@ -42,7 +42,12 @@ function readPdfjsSources() {
  * @param {Buffer} [options.buffer] - PDF as a buffer (alternative to dataUrl)
  * @param {number} [options.width=1920] - Render width in pixels
  * @param {number} [options.height=1080] - Render height in pixels
- * @param {function} [options.onProgress] - Callback for progress updates: (page, totalPages) => void
+ * @param {number[]} [options.pages] - Only these 1-based page numbers, in
+ *   page order (numbers past the last page are skipped); default every page.
+ *   The import as editable slides rasters only the pages it could not map
+ *   (B752).
+ * @param {function} [options.onProgress] - Callback for progress updates:
+ *   (nth, count) => void, the nth of the count pages to render
  * @param {AbortSignal} [options.signal] - Checked before every page render, so
  *   a caller whose reader left stops driving the browser.
  * @returns {Promise<Array<{page: number, buffer: Buffer}>>} Array of page images
@@ -52,6 +57,7 @@ export async function pdfToImages({
   buffer,
   width = 1920,
   height = 1080,
+  pages = null,
   onProgress,
   signal = null,
 } = {}) {
@@ -185,11 +191,17 @@ export async function pdfToImages({
       return await window.getPageCount(pdfData);
     }, pdfDataUrl);
 
+    const toRender = Array.isArray(pages)
+      ? [...new Set(pages)]
+          .filter((n) => Number.isInteger(n) && n >= 1 && n <= totalPages)
+          .sort((a, b) => a - b)
+      : Array.from({ length: totalPages }, (_v, i) => i + 1);
+
     // Render each page
-    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+    for (const [index, pageNum] of toRender.entries()) {
       signal?.throwIfAborted();
       if (onProgress) {
-        onProgress(pageNum, totalPages);
+        onProgress(index + 1, toRender.length);
       }
 
       // Render the page

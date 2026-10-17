@@ -11,14 +11,7 @@
  * stream and the write; this module reads the files and builds the slides.
  */
 
-import {
-  uploadImageKitBuffer,
-  getImageKitConfigFromEnv,
-} from '../media/imagekit.js';
-import {
-  getMediaProvider,
-  isMediaProviderInitialized,
-} from '../media/index.js';
+import { uploadImageBuffer } from '../media/upload-buffer.js';
 import { pdfToImages } from '../render/pdf-to-images.js';
 import { readPptxSlideNotes } from '../utils/convert-file/index.js';
 import { getString } from '../utils/request-validators.js';
@@ -31,46 +24,6 @@ const log = createLogger('deck-images-import');
  * its message as the stream's `error` event. Anything else is a server fault.
  */
 export class DeckImagesRefusal extends Error {}
-
-/**
- * Upload an image buffer using the best available method:
- * 1. ImageKit (if configured) - preferred for managed image hosting
- * 2. Media provider (S3/local) - fallback
- * @param {object} options
- * @param {Buffer} options.buffer - Image buffer
- * @param {string} options.fileName - File name
- * @param {string} options.mimeType - MIME type
- * @param {string[]} [options.tags] - Optional tags
- * @returns {Promise<string>} - Uploaded image URL
- */
-async function uploadImageBuffer({ buffer, fileName, mimeType, tags = [] }) {
-  // Try ImageKit first (consistent with existing PPTX import)
-  const imagekitConfig = getImageKitConfigFromEnv();
-  if (imagekitConfig.configured) {
-    const result = await uploadImageKitBuffer({
-      buffer,
-      fileName,
-      mimeType,
-      tags,
-    });
-    return result?.url || '';
-  }
-
-  // Fall back to generic media provider (S3 or local)
-  if (isMediaProviderInitialized()) {
-    const provider = getMediaProvider();
-    const result = await provider.uploadBuffer({
-      buffer,
-      filename: fileName,
-      contentType: mimeType,
-    });
-    return result?.publicUrl || '';
-  }
-
-  throw new Error(
-    'No media provider configured (neither ImageKit nor S3/local)',
-  );
-}
 
 /**
  * The bytes of a base64 data URL when they start with `magic`, else null.
@@ -145,6 +98,39 @@ export function deckImageBaseName(files) {
 }
 
 /**
+ * The slides of a PowerPoint file with their speaker notes, in deck order.
+ * @param {Buffer} pptxBytes
+ * @returns {Promise<Array<{ hidden: boolean, notes: string }>>}
+ * @throws {DeckImagesRefusal} the file is no readable deck or holds no slides.
+ */
+export async function readSourceSlides(pptxBytes) {
+  let slides;
+  try {
+    slides = await readPptxSlideNotes(pptxBytes);
+    // eslint-disable-next-line no-restricted-syntax -- an unreadable zip is the user's file, not a server fault: it gets a sentence, not a stack
+  } catch {
+    slides = [];
+  }
+  if (slides.length === 0) {
+    throw new DeckImagesRefusal('No slides found in the PowerPoint file');
+  }
+  return slides;
+}
+
+/**
+ * The refusal for a PDF and a PowerPoint file that do not pair.
+ * @param {number} pageCount
+ * @param {Array<{ hidden: boolean }>} slides
+ * @returns {DeckImagesRefusal}
+ */
+export function countMismatch(pageCount, slides) {
+  const shown = slides.filter((s) => !s.hidden).length;
+  return new DeckImagesRefusal(
+    `The PDF has ${pageCount} pages but the PowerPoint file has ${shown} slides. Export the PDF from the same presentation and try again.`,
+  );
+}
+
+/**
  * The speaker notes to put beside `pageCount` pages, by position, or null
  * when the counts do not match. A PDF exported from PowerPoint or Keynote
  * leaves hidden slides out by default, so the shown slides are tried first;
@@ -153,7 +139,7 @@ export function deckImageBaseName(files) {
  * @param {number} pageCount
  * @returns {string[]|null}
  */
-function notesForPages(slides, pageCount) {
+export function notesForPages(slides, pageCount) {
   const shown = slides.filter((s) => !s.hidden);
   if (shown.length === pageCount) return shown.map((s) => s.notes);
   if (slides.length === pageCount) return slides.map((s) => s.notes);
@@ -190,18 +176,7 @@ export async function buildDeckImageSlides({
 
   // The notes first: a PowerPoint file that cannot be read stops the import
   // before any page is rendered.
-  let sourceSlides = null;
-  if (pptxBytes) {
-    try {
-      sourceSlides = await readPptxSlideNotes(pptxBytes);
-      // eslint-disable-next-line no-restricted-syntax -- an unreadable zip is the user's file, not a server fault: it gets a sentence, not a stack
-    } catch {
-      sourceSlides = [];
-    }
-    if (sourceSlides.length === 0) {
-      throw new DeckImagesRefusal('No slides found in the PowerPoint file');
-    }
-  }
+  const sourceSlides = pptxBytes ? await readSourceSlides(pptxBytes) : null;
 
   let images = null;
   if (pdfBytes) {
@@ -236,12 +211,7 @@ export async function buildDeckImageSlides({
     pages = images;
     if (sourceSlides) {
       notes = notesForPages(sourceSlides, images.length);
-      if (!notes) {
-        const shown = sourceSlides.filter((s) => !s.hidden).length;
-        throw new DeckImagesRefusal(
-          `The PDF has ${images.length} pages but the PowerPoint file has ${shown} slides. Export the PDF from the same presentation and try again.`,
-        );
-      }
+      if (!notes) throw countMismatch(images.length, sourceSlides);
     }
   } else {
     notes = sourceSlides.filter((s) => !s.hidden).map((s) => s.notes);

@@ -1,250 +1,167 @@
 /**
- * AI Conversion
- * Uses AI V2 (two-phase) to convert formatted content into a deck.
+ * AI conversion of a parsed file: the one generation pipeline, assembled
+ * around what the file brings of its own.
+ *
+ * `generateSlides()` runs the model phases (B756); this module only decides
+ * what a file adds (B757): the first slide's image as the title background,
+ * no automatic title slide when the source opens with one, and the
+ * image-only slides that bypassed the model put back at their source
+ * position.
  */
 
-import {
-  generateOutline,
-  separateSlidesForProcessing,
-} from '../ai/generate-outline.js';
-import { refineAllSlideGroups } from '../ai/refine-slides.js';
-import { validateAndFixRefinedSlides } from '../ai/validate-slides/index.js';
+import { generateSlides, assembleDeck } from '../ai/generate-deck.js';
 import { createSessionLogger, generateSessionId } from '../ai/logging.js';
-import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
-import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { firstSlideIsTitle } from './helpers.js';
 import { createLogger } from '../logger.js';
-import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
-} from '../../../shared/i18n-utils.js';
 
 const log = createLogger('convert-file');
 
 /**
- * Use AI V2 (two-phase) to convert the formatted content into a deck
+ * Convert the formatted content of a file into a deck.
+ *
+ * @param {string} formattedContent - The regular slides, formatted for the model.
+ * @param {object} options
+ * @param {string} [options.lang] - `auto` (detect from the content) or a deck language.
+ * @param {string|null} [options.vendor]
+ * @param {number} [options.slideCount] - Regular slides the model was given.
+ * @param {object} [options.metadata] - The file's metadata (`title`, `author`).
+ * @param {Function} [options.onStatusMessage]
+ * @param {Function} [options.onOutlineComplete] - `(outline, { sections, lang })`
+ *   once the outline is ready.
+ * @param {Function} [options.onGroupDone] - `({ done, total })` per finished group.
+ * @param {string|null} [options.firstSlideContent] - The first source slide's
+ *   text, for the title-slide decision.
+ * @param {Array} [options.imageOnlySlides] - Slides converted without the
+ *   model, with their source index (`processImageOnlySlides`).
+ * @param {number} [options.aiSlideIndexOffset] - Source index of the first
+ *   regular slide, so model indices (0-based) merge with the image slides.
+ * @param {{ title: string, imageUrl: string }|null} [options.titleSlideCandidate]
+ *   - The first slide's image, when it had one.
+ * @param {AbortSignal|null} [options.signal]
+ * @param {Record<string, Object>} options.slideTypes - The organization's merged type map (B247).
+ * @param {string[]} [options.disabledSlideTypes] - Kept out of the offered catalog (B659).
+ * @param {Object[]} [options.customSlideTypes] - The org's published types, offered too (B659).
+ * @param {Object|null} [options.themeContext] - From `loadAiThemeContext()`.
+ * @param {string} [options.titleSlideType] - The theme's title slide type.
+ * @returns {Promise<Object>} Deck JSON with `lang` and `_generationMeta`.
  */
 export async function convertWithAi(formattedContent, options = {}) {
   const {
-    lang = 'auto', // 'auto' = detect from content, otherwise 'nl' or 'en-GB'
+    lang = 'auto',
     vendor = null,
     slideCount = 0,
     metadata = {},
     onStatusMessage = null,
     onOutlineComplete = null,
-    onGroupDone = null, // ({ done, total }) => void, one tick per finished group
-    firstSlideContent = null, // Content from the first source slide
-    imageOnlySlides = [], // Pre-processed image-only slides to merge back in
-    aiSlideIndexOffset = 0, // Offset to apply to AI slide indices for correct source ordering
-    titleSlideCandidate = null, // Pre-extracted title slide from first image-only slide
-    signal = null, // Aborts both model phases when the caller's reader left
-    slideTypes, // The organization's merged type map (B247)
-    disabledSlideTypes = [], // Kept out of the offered catalog (B659)
-    customSlideTypes = [], // The org's published types, offered too (B659)
+    onGroupDone = null,
+    firstSlideContent = null,
+    imageOnlySlides = [],
+    aiSlideIndexOffset = 0,
+    titleSlideCandidate = null,
+    signal = null,
+    slideTypes,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+    themeContext = null,
+    titleSlideType = 'title-slide',
   } = options;
 
-  const sessionId = generateSessionId();
-  const logger = createSessionLogger(sessionId);
+  const logger = createSessionLogger(generateSessionId());
+  log.info(`Starting conversion, session ${logger.sessionId}`);
 
-  log.info(`Starting V2 conversion, session ${sessionId}`);
-
-  // Phase 1: Generate outline from the formatted content
-  // Pass the raw title from first slide (if available) so the LLM can use it
-  // to determine a better title based on context vs actual presentation topic
-  const outline = await generateOutline(formattedContent, {
+  // The file's own first title goes along as context, so the model can tell
+  // a contextual first line (event name, date) from the presentation's topic.
+  const {
+    outline,
+    slides,
+    lang: deckLang,
+    meta,
+  } = await generateSlides(formattedContent, {
     userName: metadata?.author || '',
     targetLang: lang,
     vendor,
     rawFirstSlideTitle:
       titleSlideCandidate?.title || firstSlideContent?.split('\n')[0] || '',
-    onLog: (data) => logger.logPhase1(data),
-    signal,
-  });
-
-  log.info(`Phase 1 complete: ${outline.slides.length} slides outlined`);
-
-  // Get the detected language for use in Phase 2 (if lang was 'auto')
-  const detectedLang = outline.metadata?.detectedLang;
-  const effectiveLang =
-    normalizeLang(lang) || normalizeLang(detectedLang) || DEFAULT_DECK_LANG;
-
-  // Call onOutlineComplete immediately when outline is ready
-  // This allows the caller to send status messages to the client early
-  if (typeof onOutlineComplete === 'function') {
-    onOutlineComplete(outline);
-  }
-
-  // Notify individual status messages if callback provided
-  if (typeof onStatusMessage === 'function' && outline.statusMessages?.length) {
-    for (const msg of outline.statusMessages) {
-      onStatusMessage(msg);
-    }
-  }
-
-  // Phase 2: Separate structural vs content slides (like the wizard does)
-  const { structuralSlides, contentGroups } = separateSlidesForProcessing(
-    outline.slides,
-  );
-  log.info(
-    `Structural: ${structuralSlides.length}, Content groups: ${contentGroups.length}`,
-  );
-
-  // Refine content slides with presentation context
-  let refinedContentSlides = [];
-  if (contentGroups.length > 0) {
-    refinedContentSlides = await refineAllSlideGroups(contentGroups, {
-      lang: effectiveLang, // Use detected language for status messages
-      vendor,
-      batchSize: 6,
-      presentationContext: {
-        title: outline.title,
-        summary: outline.summary,
-      },
-      onLog: (data) => logger.logPhase2Call(data),
-      onStatusMessage,
-      onGroupDone,
-      signal,
-      disabledSlideTypes,
-      customSlideTypes,
-      slideTypes,
-    });
-  }
-
-  log.info(
-    `Phase 2 complete: ${refinedContentSlides.length} content slides refined`,
-  );
-
-  // Combine structural + content slides, sorted by original index
-  const allSlides = [...structuralSlides, ...refinedContentSlides].sort(
-    (a, b) => a.originalIndex - b.originalIndex,
-  );
-
-  // Validate and fix slides
-  const validatedSlides = validateAndFixRefinedSlides(allSlides, {
     slideTypes,
+    disabledSlideTypes,
+    customSlideTypes,
+    themeContext,
+    signal,
+    onOutline: onOutlineComplete,
+    onStatusMessage,
+    onGroupDone,
+    logger,
   });
 
-  // Assemble the deck
-  const deck = {
-    format: DECK_FORMAT_ID,
-    version: 1,
-    title: outline.title || metadata?.title || 'Converted Presentation',
-    theme: 'default',
-    settings: {
-      stepParagraphs: true, // Enable step-by-step reveal by default for converted presentations
-      transitions: { preset: 'fade' }, // Fade transition by default
-    },
-    slides: [],
-  };
-
-  // Title slide logic:
-  // 1. If we have a titleSlideCandidate (first slide was image+title), use it
-  // 2. Otherwise check if the first source slide already looked like a title
-  // 3. If neither, add an automatic title slide
+  // Title slide: the first slide's image becomes its background; a source
+  // that already opens with a title slide gets no automatic one.
+  const subheading = outline.subtitle || metadata?.author || '';
+  let titleSlide;
   if (titleSlideCandidate) {
-    // Use the image from the first slide as the title slide background
-    // Use the LLM-generated title (based on full content analysis) rather than
-    // the raw PPTX title which may be contextual (event name, date, etc.)
-    deck.slides.push({
-      id: cryptoUuid(),
-      type: 'title-slide',
-      content: {
-        title: outline.title || titleSlideCandidate.title,
-        subheading: outline.subtitle || metadata?.author || '',
-        background: titleSlideCandidate.imageUrl,
-      },
-      notes: '',
-      _aiReasoning: `Title slide with image from source first slide. Original title: "${titleSlideCandidate.title}"`,
-    });
-  } else if (!firstSlideIsTitle(firstSlideContent, outline)) {
-    // No title slide in source - add automatic one
-    deck.slides.push({
-      id: cryptoUuid(),
-      type: 'title-slide',
-      content: {
-        title: outline.title || metadata?.title || 'Presentation',
-        subheading: outline.subtitle || metadata?.author || '',
-        background: 'lime',
-      },
-      notes: '',
-      _aiReasoning:
-        'Automatic title slide (source file did not have a clear title slide)',
-    });
+    titleSlide = {
+      title: outline.title || titleSlideCandidate.title,
+      subheading,
+      background: titleSlideCandidate.imageUrl,
+    };
+  } else if (firstSlideIsTitle(firstSlideContent, outline)) {
+    titleSlide = null;
+  } else {
+    titleSlide = {
+      title: outline.title || metadata?.title || 'Presentation',
+      subheading,
+    };
   }
 
-  // Merge AI-processed slides with pre-processed image-only slides
-  // Both need to be combined in the correct original order
-  const allProcessedSlides = [];
-
-  // Add AI-processed slides with their tracked indices
-  // Apply the offset to convert AI indices (0-based) to source indices
-  for (const refined of validatedSlides) {
-    const aiIndex = refined.originalIndex ?? 0;
-    allProcessedSlides.push({
-      originalIndex: aiIndex + aiSlideIndexOffset,
-      slide: {
-        id: cryptoUuid(),
-        type: refined.type,
-        content: refined.content,
-        notes: '',
-        _aiReasoning: refined.reasoning,
-      },
-    });
-  }
-
-  // Add pre-processed image-only slides
-  for (const imgSlide of imageOnlySlides) {
-    allProcessedSlides.push({
+  // The model's slides and the image-only slides share one source order:
+  // model indices are 0-based over the regular slides, the image slides keep
+  // their source index.
+  const inSourceOrder = [
+    ...slides.map((refined) => ({
+      ...refined,
+      originalIndex: (refined.originalIndex ?? 0) + aiSlideIndexOffset,
+    })),
+    ...imageOnlySlides.map((imgSlide) => ({
+      type: imgSlide.slideData.type,
+      content: imgSlide.slideData.content,
+      reasoning: imgSlide.slideData._aiReasoning,
       originalIndex: imgSlide.originalIndex,
-      slide: {
-        id: cryptoUuid(),
-        type: imgSlide.slideData.type,
-        content: imgSlide.slideData.content,
-        notes: '',
-        _aiReasoning: imgSlide.slideData._aiReasoning,
-      },
-    });
+    })),
+  ].sort((a, b) => a.originalIndex - b.originalIndex);
+
+  const deck = assembleDeck(outline, inSourceOrder, {
+    titleSlideType,
+    lang: deckLang,
+    titleSlide,
+  });
+  deck.title = outline.title || metadata?.title || 'Converted Presentation';
+  // Step-by-step reveal and a fade by default for a converted presentation.
+  deck.settings = {
+    stepParagraphs: true,
+    transitions: { preset: 'fade' },
+  };
+  if (titleSlideCandidate) {
+    deck.slides[0]._aiReasoning = `Title slide with image from source first slide. Original title: "${titleSlideCandidate.title}"`;
+  } else if (titleSlide) {
+    deck.slides[0]._aiReasoning =
+      'Automatic title slide (source file did not have a clear title slide)';
   }
 
-  // Sort by original index and add to deck
-  allProcessedSlides
-    .sort((a, b) => a.originalIndex - b.originalIndex)
-    .forEach(({ slide }) => deck.slides.push(slide));
-
-  // Determine if we added a title slide (for metadata)
-  const addedTitleSlide = titleSlideCandidate
-    ? true // Used image+title from first slide
-    : !firstSlideIsTitle(firstSlideContent, outline); // Added automatic title
-
-  // Already canonical: `effectiveLang` came out of normalizeLang().
-  const deckLang = effectiveLang;
-
-  // Add generation metadata
   deck._generationMeta = {
-    sessionId,
-    version: 'v2',
+    ...meta,
     source: 'file-convert',
     originalSlideCount: slideCount + imageOnlySlides.length,
-    structuralSlides: structuralSlides.length,
-    contentGroups: contentGroups.length,
     imageOnlySlides: imageOnlySlides.length,
-    addedTitleSlide,
+    addedTitleSlide: titleSlide !== null,
     usedTitleSlideCandidate: !!titleSlideCandidate,
-    statusMessages: outline.statusMessages || [],
-    detectedLang, // The language detected from the content
-    effectiveLang: deckLang, // The language used for the deck (nl or en-GB)
   };
 
-  // Store the deck language for the client
-  deck.lang = deckLang;
-
-  // Finalize logging
   logger.finalize(deck, {
     source: 'file-convert',
     originalSlideCount: slideCount,
   });
-
-  log.info(`Session ${sessionId} complete, ${deck.slides.length} slides`);
+  log.info(
+    `Session ${logger.sessionId} complete, ${deck.slides.length} slides`,
+  );
 
   return deck;
 }

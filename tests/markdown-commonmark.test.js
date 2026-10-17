@@ -103,10 +103,15 @@ describe('backslash escapes', () => {
     assert.equal(markdownToSafeHtml('a \\< b'), markdownToSafeHtml('a < b'));
     assert.ok(!render('a \\< b').includes('\\'), render('a \\< b'));
   });
-  it('does NOT honour an escaped backtick (accepted boundary)', () => {
-    // Escapes run after code extraction, so \` cannot suppress a code span;
-    // this documents the boundary rather than pretending to support it.
-    assert.ok(render('a \\`x\\` b').includes('<code'), render('a \\`x\\` b'));
+  it('honours an escaped backtick and an escaped dollar sign', () => {
+    // An escaped delimiter is a character, never the start of a code span or
+    // inline math: the import of an existing deck relies on it to land text
+    // literally (B752, escapeMarkdownText). Inside a code span the backslash
+    // stays literal, as CommonMark says.
+    assert.ok(!render('a \\`x\\` b').includes('<code'), render('a \\`x\\` b'));
+    assert.ok(render('a \\`x\\` b').includes('`x`'), render('a \\`x\\` b'));
+    assert.ok(!render('\\$x\\$ y').includes('md-math'), render('\\$x\\$ y'));
+    assert.ok(render('`C:\\` and `y`').includes('C:\\</code>'));
   });
   it('leaves a backslash before a non-punctuation char alone', () => {
     assert.ok(render('a \\word b').includes('\\word'));

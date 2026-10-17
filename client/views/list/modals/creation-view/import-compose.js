@@ -5,8 +5,8 @@
  * .md file / paste markdown) is a self-contained sub-feature: pick a sub-tab,
  * select a file or paste markdown, and import a deck directly — no AI. The
  * route is the intent (B306, D235): a PowerPoint or PDF chosen here is taken
- * over as images, never interpreted; generating from a document is the
- * content method's. Its active sub-tab, the two selected files, the
+ * over, as editable slides or as images, never interpreted; generating from a
+ * document is the content method's. Its active sub-tab, the two selected files, the
  * sub-tab DOM, and the inline import-warnings renderer all live here, exclusive
  * to this concern; the creation view only wires it in.
  *
@@ -19,8 +19,9 @@
  *
  * The `.deck` sub-tab is its own module (import-deck.js): it owns the install
  * choice, which the others do not have. The "PowerPoint or PDF" sub-tab is
- * import-images.js, on the shared slide-import chooser. What was left out of
- * an import shows through the same warnings block as Markdown.
+ * import-pptx-pdf.js, on the shared slide-import chooser. What was left out of
+ * an import (Markdown, `.deck`) or which pages became images (PowerPoint or
+ * PDF as editable slides) shows through the one warnings block.
  *
  * Every sub-tab refuses the same way: an inline error at its file input or
  * textarea, cleared at the start of the next attempt, never a footer line or
@@ -38,7 +39,7 @@ import { h } from '../../../../lib/dom/index.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { nav } from '../../../../lib/state/router.js';
 import { createDeckImportPanel } from './import-deck.js';
-import { createImagesImportPanel } from './import-images.js';
+import { createPptxPdfImportPanel } from './import-pptx-pdf.js';
 
 /**
  * @param {object} opts
@@ -52,7 +53,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
 
   // ===== State =====
   // A PowerPoint or PDF is what most existing decks are, so it is the default.
-  let importSubtab = 'images'; // images | deck | json | import-md | paste-md
+  let importSubtab = 'pptx-pdf'; // pptx-pdf | deck | json | import-md | paste-md
   let selectedImportFile = null;
   let selectedImportMdFile = null;
 
@@ -62,7 +63,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     'data-method': 'import',
   });
   const importSubtabs = h('div', { class: 'sb-segmented' });
-  const btnImpImages = h('button', {
+  const btnImpPptxPdf = h('button', {
     type: 'button',
     class: 'sb-segmented-btn is-active',
     text: t('list.creationView.importImages.tab', 'PowerPoint or PDF'),
@@ -88,15 +89,15 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     text: t('list.newPresentation.mode.pasteMarkdown', 'Paste Markdown'),
   });
   importSubtabs.append(
-    btnImpImages,
+    btnImpPptxPdf,
     btnImpDeck,
     btnImpJson,
     btnImpMd,
     btnImpPasteMd,
   );
 
-  const imagesImport = createImagesImportPanel();
-  const panelImages = imagesImport.el;
+  const pptxPdfImport = createPptxPdfImportPanel();
+  const panelPptxPdf = pptxPdfImport.el;
 
   const deckImport = createDeckImportPanel({
     canInstall: !!canInstallDefinitions,
@@ -178,7 +179,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   );
 
   const importSubWrap = h('div', { class: 'creation-subpanels' }, [
-    panelImages,
+    panelPptxPdf,
     panelDeck,
     panelJson,
     panelImportMd,
@@ -190,7 +191,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     importSubtab = key;
     syncUI();
   };
-  btnImpImages.addEventListener('click', () => showSubtab('images'));
+  btnImpPptxPdf.addEventListener('click', () => showSubtab('pptx-pdf'));
   btnImpDeck.addEventListener('click', () => {
     importSubtab = 'deck';
     syncUI();
@@ -211,8 +212,8 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   // Update the panel's own sub-tabs to match the active sub-tab. Called from the
   // host's syncUI (the sub-tabs and their panels live inside this panel).
   const syncPanel = () => {
-    btnImpImages.classList.toggle('is-active', importSubtab === 'images');
-    panelImages.classList.toggle('is-hidden', importSubtab !== 'images');
+    btnImpPptxPdf.classList.toggle('is-active', importSubtab === 'pptx-pdf');
+    panelPptxPdf.classList.toggle('is-hidden', importSubtab !== 'pptx-pdf');
     btnImpDeck.classList.toggle('is-active', importSubtab === 'deck');
     btnImpJson.classList.toggle('is-active', importSubtab === 'json');
     btnImpMd.classList.toggle('is-active', importSubtab === 'import-md');
@@ -226,7 +227,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   // Resolve which concrete create-flow the active sub-tab runs.
   const getMode = () =>
     ({
-      images: 'import-images',
+      'pptx-pdf': 'import-pptx-pdf',
       deck: 'import-deck',
       json: 'import-json',
       'import-md': 'import-markdown',
@@ -238,25 +239,31 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     panel_,
     { setStatus, setBusy, btnAction, close },
   ) => {
-    return ({ warnings, navUrl }) => {
+    // `intro` replaces the counted lead-in when the import has its own
+    // sentence for the outcome (the PowerPoint or PDF report).
+    return ({ warnings, navUrl, intro }) => {
       panel_.replaceChildren();
       panel_.append(
         h('div', {
           class: 'help modal-hint',
-          text: t(
-            'list.newPresentation.importMarkdown.warningsIntro',
-            {
-              one: 'Import succeeded, but 1 issue was detected:',
-              many: 'Import succeeded, but {count} issues were detected:',
-            },
-            { count: warnings.length },
-          ),
+          text:
+            intro ||
+            t(
+              'list.newPresentation.importMarkdown.warningsIntro',
+              {
+                one: 'Import succeeded, but 1 issue was detected:',
+                many: 'Import succeeded, but {count} issues were detected:',
+              },
+              { count: warnings.length },
+            ),
         }),
       );
-      const list = h('ul', { class: 'import-warnings' });
-      for (const w of warnings)
-        list.append(h('li', { class: 'help', text: w }));
-      panel_.append(list);
+      if (warnings.length) {
+        const list = h('ul', { class: 'import-warnings' });
+        for (const w of warnings)
+          list.append(h('li', { class: 'help', text: w }));
+        panel_.append(list);
+      }
       setStatus('');
       setBusy(false);
       btnAction.textContent = t(
@@ -288,8 +295,13 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
       return (message) => error.show(message, { control });
     };
     switch (importSubtab) {
-      case 'images':
-        await imagesImport.run({ ...commonOpts, langMode, themeId });
+      case 'pptx-pdf':
+        await pptxPdfImport.run({
+          ...commonOpts,
+          langMode,
+          themeId,
+          showWarnings: makeWarningShower(panelPptxPdf, warnCtx),
+        });
         break;
       case 'deck':
         await deckImport.run({
@@ -335,7 +347,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     syncPanel,
     /** Effective create-mode for the active sub-tab. */
     getMode,
-    /** Switch to a sub-tab (the content method's cross-link opens `images`). */
+    /** Switch to a sub-tab (the content method's cross-link opens `pptx-pdf`). */
     showSubtab,
     /** Whether the active sub-tab brings its own theme (.deck and JSON do). */
     carriesOwnTheme: () => importSubtab === 'deck' || importSubtab === 'json',
