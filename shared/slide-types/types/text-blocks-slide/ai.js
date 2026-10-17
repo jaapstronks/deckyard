@@ -36,6 +36,11 @@ export const ai = {
       SIGNAL TEST: if you would leave every row's arrow on "none", the content
       almost certainly does NOT belong on a text-blocks-slide.
 
+      HOMOGENEITY TEST: the blocks of one row are all the kind of thing the
+      row title names. A block that positions or comments on the others
+      ("complementary to other programmes" under "Intended effect") belongs
+      in the subheading or presenterNotes, not in the row.
+
       STRUCTURE: rows[] array with 1-3 row objects. Each row has:
       - title: Optional heading for the row (usually empty for row 1)
       - color: "yellow" (accent, good for inputs/activities) or "black" (dark, good for outputs)

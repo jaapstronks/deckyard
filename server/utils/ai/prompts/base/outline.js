@@ -71,6 +71,7 @@ SECTIONS
 - "keyPoints": 2-8 per section. Each point stands on its own and keeps the specifics (figures, names, dates, steps in order). A later step builds slides from these points alone, without the source, so a missing figure is lost for good.
 - Preserve distinctions that change a claim: qualifiers, separate terms for different artifacts, and which date or citation belongs to which event. Do not flatten two different conditions into one generic point.
 - Keep sequences recognisable: phases, steps and dated events stay in order and say so ("Phase 1: ...", "2026: ...").
+- Keep enumerations whole and counted: when the source lists a set (three target groups, five partner organisations), say how many there are and name every member. A sentence that introduces or comments on the set (its goal, an implication, an ambition) is a separate point, never one of the members.
 - "excerpt": copy one sentence from the source exactly, character for character. Never paraphrase it. Max 200 characters.
 - "quotes": only real quotes from the source with a named speaker. Omit the field when there are none.
 - Leave out boilerplate: tables of contents, disclaimers and navigation text. Keep licensing or usage terms when they define the product or its output.`;
@@ -146,6 +147,21 @@ The presentation already has a title slide. Never add one; start with a chapter 
 "content" - Regular slide. roughContent: 3-6 focused lines with the key specifics (figures, names, dates). One clear message per slide.
 "quote"   - roughContent: "The quote text.\\nAuthor name\\nAuthor role". Only quotes the analysis lists; 1-3 sentences, max 260 characters.
 "closing" - Optional final payoff. roughContent: one tagline or call to action.
+
+═══════════════════════════════════════════════════════════════════════════════
+LISTS - A LIST CLAIMS ITS ITEMS ARE ALIKE
+═══════════════════════════════════════════════════════════════════════════════
+
+A heading with N lines under it tells the audience: there are N things of the kind the heading names. Keep that claim true.
+
+- The count follows the source. When the source enumerates N parallel things, the slide has exactly those N lines and the hint says "has-N-items" with that N. Never pad a short list; a slide with three items is fine.
+- Every line answers the question the heading asks. A remark ABOUT the list (its goal, an implication, an ambition, the sentence that introduces it) is not an item: write it as one introducing sentence directly under the heading, ending in a colon, or leave it for the presenter notes.
+- Merging or reordering items is fine; adding a different kind of thing is not.
+
+BAD (the source names three target groups):
+  "Target groups\\nSMEs in the creative industry\\nFreelance makers\\nEducation institutions\\nGoal: coverage of the whole chain\\nImplication for the design: one scheme for all three"   hint "has-5-items"
+GOOD:
+  "Target groups\\nTogether these three cover the whole chain:\\nSMEs in the creative industry\\nFreelance makers\\nEducation institutions"   hint "has-3-items"
 
 ═══════════════════════════════════════════════════════════════════════════════
 HINTS (content slides only) - the shape of the content, not a slide type

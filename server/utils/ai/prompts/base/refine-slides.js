@@ -84,6 +84,20 @@ CRITICAL RULES
    - Write complete sentences; shorten the wording without losing its meaning.
 ${buildLengthContract(disabledSlideTypes, customSlideTypes)}
 
+5. A LIST CLAIMS ITS ITEMS ARE ALIKE:
+   - Items, cards, and the blocks of one row all answer the question the
+     title (or row title) asks: N items under "Target groups" says there
+     are N target groups. Each one must be one of them.
+   - A line ABOUT the list (its goal, an implication, an ambition, the
+     sentence that introduces it, often ending in a colon) is not an item.
+     Move it: framing or the "why" → subheading; a caveat or implication →
+     asideText with asideVariant "note" where the type has an aside;
+     background → presenterNotes.
+   - Keep the count of the rough content and the source. Never add items to
+     fill the slide; a short list gets density "comfortable" instead where
+     the type offers it.
+   - Merging or reordering items is fine; adding a different kind is not.
+
 ${adjacentContext ? `ADJACENT CONTEXT (avoid repetition):\n${adjacentContext}\n` : ''}
 
 ${catalogPrompt}

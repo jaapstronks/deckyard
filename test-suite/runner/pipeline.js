@@ -21,6 +21,7 @@ import { refineAllSlideGroups } from '../../server/utils/ai/refine-slides.js';
 import { validateAndFixRefinedSlides } from '../../server/utils/ai/validate-slides/index.js';
 import { assembleDeck } from '../../server/utils/ai/generate-deck-v2.js';
 import { reviseOutline } from '../../server/utils/ai/revise-outline.js';
+import { SLIDE_TYPES } from '../../shared/slide-types/registry.js';
 
 /**
  * Phase 1 only: source document -> outline.
@@ -104,6 +105,7 @@ export async function runRefineStage(
       onLog: null,
       batchSize: 6,
       presentationContext: { title: outline.title, summary: outline.summary },
+      slideTypes: SLIDE_TYPES,
     });
   }
 
@@ -113,9 +115,13 @@ export async function runRefineStage(
     partial: groups.length !== contentGroups.length,
   });
 
-  const deck = assembleDeck(outline, validateAndFixRefinedSlides(allSlides), {
-    theme,
-  });
+  const deck = assembleDeck(
+    outline,
+    validateAndFixRefinedSlides(allSlides, { slideTypes: SLIDE_TYPES }),
+    {
+      theme,
+    },
+  );
 
   return {
     deck,
