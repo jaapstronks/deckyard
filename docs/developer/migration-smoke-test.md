@@ -1,6 +1,6 @@
 # The `migrations` CI job
 
-Two checks share one PostgreSQL service container: the migration smoke test
+Two checks share one PostgreSQL database: the migration smoke test
 below, and the test-double schema conformance check that runs on the schema it
 leaves behind.
 
@@ -58,7 +58,7 @@ migration" out of production and into CI.
 
 It also does not run in `npm test`. The suite has no database, deliberately —
 see [dev-setup.md](dev-setup.md) § Testing storage behaviour without PostgreSQL.
-This is a separate CI job with a service container.
+This is a separate CI job with its own PostgreSQL.
 
 ### Running it locally
 
@@ -75,20 +75,23 @@ Everything else comes from the usual `DATABASE_*` variables
 
 ### How it gets a database in CI
 
-`.github/workflows/ci.yml` runs it as its own `migrations` job with a
-`services: postgres` container — the same shape as the Chrome install in the
-`test` job, and for the same reason: a real dependency in CI because a double
-cannot find this class of bug.
+`.github/workflows/ci.yml` runs it as its own `migrations` job, which starts the
+PostgreSQL 16 preinstalled on the runner image through the local action
+`.github/actions/postgres` — the same shape as the Chrome install in the `test`
+job, and for the same reason: a real dependency in CI because a double cannot
+find this class of bug. It is not a `services: postgres` container any more:
+the anonymous image pull hit a registry quota shared per runner IP and failed
+most runs before a test ran (B736).
 
 It is a separate job rather than a step in `test`, which costs ~0 wall-clock on
 the critical path (GitHub runs jobs in parallel, so it lands beside `test`, not
 behind it) and makes a red mark read as "a migration broke" without opening the
 run. `test-fork` set that precedent.
 
-The healthcheck on the service is not optional. The runner starts the step as
-soon as the container exists, which is earlier than the server accepting
-connections, so without `--health-cmd pg_isready` the first migration loses a
-race it will never lose twice — the worst kind of flake.
+The readiness wait in the action is not optional. `systemctl start` returns
+earlier than the server accepts connections, so without the `pg_isready` loop
+the first migration loses a race it will never lose twice — the worst kind of
+flake.
 
 ### The runner is importable
 
