@@ -10,7 +10,7 @@
  * dominant version and leaves `active` and every other version alone.
  *
  * The store: OWNER's Dutch deck with a German version, edited last in German
- * (`active = de`), in the shape of the B620 test.
+ * (`active = de`), shaped like the active-language preservation test (B620).
  *
  * Run with: node --test tests/storage-dominant-version-write.test.js
  */
