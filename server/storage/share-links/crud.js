@@ -136,45 +136,6 @@ export async function createShareLink(scope, presentationId, options) {
 }
 
 /**
- * Get a share link by its token.
- * Does not check expiration or revocation - use validateShareLink for access checks.
- * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
- * @param {string} token - The share token
- * @returns {Promise<Object|null>} - The share link or null
- */
-export async function getShareLinkByToken(scope, token) {
-  const context = toStorageContext(
-    scope,
-    'getShareLinkByToken',
-    {},
-    {
-      allowCrossOrganization: true,
-    },
-  );
-  const t = norm(token);
-  if (!t) return null;
-
-  return withDbGuard(null, async (db) => {
-    let query = db
-      .selectFrom('presentation_share_links')
-      .selectAll()
-      .where('token', '=', t);
-
-    // A cross-organization scope is the token-authorized read (the token is
-    // globally unique and IS the authorization); a session scope keeps the
-    // organization filter.
-    if (!context.crossOrganization) {
-      query = query.where('organization_id', '=', getOrgId(scope));
-    }
-
-    const row = await query.executeTakeFirst();
-    return row
-      ? formatShareLink(row, await shareLinkCreatorNames(scope, [row]))
-      : null;
-  });
-}
-
-/**
  * Get a share link by its ID (org-scoped), without expiry/revocation filtering.
  *
  * Used to bind a linkId to the presentation the caller is authorized for before

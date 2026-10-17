@@ -83,7 +83,6 @@ export async function cleanupExpiredShareLinks(scope) {
 // CRUD operations
 export {
   createShareLink,
-  getShareLinkByToken,
   getShareLinkById,
   validateShareLink,
   verifyShareLinkAccess,
