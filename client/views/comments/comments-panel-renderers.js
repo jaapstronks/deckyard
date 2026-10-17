@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { renderCommentBodyNodes } from './comment-body.js';
+import { commentAuthorName, renderCommentBodyNodes } from './comment-body.js';
 import { createRichCommentInput } from './comment-rich-input.js';
 import { createCommentLinkButton } from './comment-toolbar.js';
 import { h } from '../../lib/dom/index.js';
@@ -141,9 +141,7 @@ export function createCommentRenderers({
     const headerEl = h('div', { class: 'comment-item-header' });
     const authorEl = h('span', {
       class: `comment-author ${isAiSuggestion ? 'comment-author-ai' : ''}`,
-      text: isAiSuggestion
-        ? t('comments.aiAuthor', 'AI Assistant')
-        : comment.author?.displayName || t('comments.unknownAuthor', 'Unknown'),
+      text: commentAuthorName(comment),
     });
     const timeEl = h('span', {
       class: 'comment-time',

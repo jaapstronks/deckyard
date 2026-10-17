@@ -50,6 +50,7 @@
   "comments.link.message": "Paste a URL. It will show as a link.",
   "comments.link.messageWithSelection": "Link \"{text}\" to:",
   "comments.link.short": "Link",
+  "comments.markerLabel": "Comment by {author}: {excerpt}",
   "comments.originalDeleted": "Original slide deleted",
   "comments.pinCommentLabel": "Comment",
   "comments.pinModeHint": "Click on the slide to place comment",
