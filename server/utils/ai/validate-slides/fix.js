@@ -173,7 +173,9 @@ export function validateAndFixSlide(slide, { slideTypes, theme = null } = {}) {
           title: checkedContent.title || 'Content',
           body: buildBodyFromItems(arr, checkedContent),
           layout: 'one-column',
-          background: checkedContent.background || 'lime',
+          ...(checkedContent.background
+            ? { background: checkedContent.background }
+            : {}),
         },
         reasoning:
           (fixedSlide.reasoning || '') +
@@ -197,7 +199,9 @@ export function validateAndFixSlide(slide, { slideTypes, theme = null } = {}) {
           title: checkedContent.title || 'Timeline',
           body: buildBodyFromTimelineItems(arr),
           layout: 'one-column',
-          background: checkedContent.background || 'lime',
+          ...(checkedContent.background
+            ? { background: checkedContent.background }
+            : {}),
         },
         reasoning:
           (fixedSlide.reasoning || '') +

@@ -138,7 +138,7 @@ export default {
     bunnyLibraryId: '',
   },
   renderHtml: (content, slide, ctx) => {
-    const bg = bgClass(content?.background || 'mist');
+    const bg = bgClass(content?.background);
     const isThumb = ctx?.mode === 'thumb';
     const autoplayOn = !isThumb && content?.autoplay === 'on';
     const title =

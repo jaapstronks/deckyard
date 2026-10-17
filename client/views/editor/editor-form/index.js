@@ -480,6 +480,7 @@ export function createRerenderEditor({
 
     const renderField = createRenderField({
       saveRefusal,
+      theme,
       pres,
       getSelectedSlideId,
       slide,

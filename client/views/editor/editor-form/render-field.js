@@ -15,6 +15,7 @@ import { fieldCardLink } from '../fields/card-link-field.js';
 import { renderImageFitField } from '../fields/image-fit.js';
 import { createCollectionEditor } from './collection-editor.js';
 import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
+import { typeDefaultBackground } from '../../../../shared/slide-types/type-defaults.js';
 import {
   applyAutoContainFit,
   fieldAutoFit,
@@ -125,6 +126,9 @@ export function createRenderField({
   omitSettings = false,
   getSelectedSlideId,
   saveRefusal,
+  // The active theme: its `defaultBackground` is part of a type's standard
+  // ground. Absent means the type's own default.
+  theme = null,
 } = {}) {
   const {
     fieldText,
@@ -392,20 +396,29 @@ export function createRenderField({
     }
 
     if (field.type === 'enum') {
-      const val = slide.content[field.key] ?? def.defaults[field.key];
+      const isBackground = field?.key === 'background';
+      // The type default is the marked option (D346). For `background` it is
+      // the theme-aware standard the render pipeline fills an empty value
+      // with (B733), so choosing it — "Back to default" included — deletes
+      // the key and a later change to the standard reaches this slide. Other
+      // content enums write the default back: their renderers read the
+      // stored value without consulting `defaults`.
+      const defaultValue = isBackground
+        ? typeDefaultBackground(def, theme) || undefined
+        : def.defaults?.[field.key];
+      const stored = slide.content[field.key];
+      const val = isBackground
+        ? stored || defaultValue
+        : (stored ?? def.defaults[field.key]);
       const renderer =
-        field?.key === 'background' && fieldBackground
-          ? fieldBackground
-          : fieldEnum;
-      // The type default is the marked option (D346). "Back to default"
-      // writes it back rather than deleting the key: renderers read the
-      // stored value without consulting `defaults` (a missing `background`
-      // renders lime, not a type's mist).
+        isBackground && fieldBackground ? fieldBackground : fieldEnum;
       return renderer(
         field,
         val,
         (v) => {
-          slide.content[field.key] = v;
+          if (isBackground && v === defaultValue)
+            delete slide.content[field.key];
+          else slide.content[field.key] = v;
           markDirty?.();
           // A driver of some other field's `visibleWhen` (chart type, image
           // role, zoom steps, …) changes which controls exist, so the form is
@@ -413,7 +426,7 @@ export function createRenderField({
           if (visibilityDrivers.has(field.key)) rerenderEditor?.();
           scheduleUiRefresh?.();
         },
-        { defaultValue: def.defaults?.[field.key] },
+        { defaultValue },
       );
     }
 

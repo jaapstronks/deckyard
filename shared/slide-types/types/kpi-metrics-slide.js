@@ -311,7 +311,7 @@ export default {
     ],
   },
   renderHtml: (content, slide, ctx) => {
-    const bg = bgClass(content?.background || 'mist');
+    const bg = bgClass(content?.background);
     const title = isNonEmptyString(content?.title)
       ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
       : '';

@@ -6,7 +6,10 @@ import {
   escapeHtml,
 } from './helpers.js';
 import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
-import { resolveTypeDefaults } from './type-defaults.js';
+import {
+  resolveTypeDefaults,
+  withTypeDefaultBackground,
+} from './type-defaults.js';
 import { applyInstanceKeyDefaults } from './instance-keys.js';
 import {
   SLIDE_BG_ID_RE,
@@ -475,7 +478,14 @@ export function renderSlideHtml(slide, ctx = {}) {
   // Doing it here rather than in each type's bgClass() call covers the injected
   // background and logo in the same pass. Stored slide data is untouched — this
   // is a filtered view, so unlocking restores every slide's own value.
-  const content = applyLocksToContent(slide?.content || {}, ctx?.theme);
+  // An empty `background` is the type's standard ground (theme-aware), so the
+  // type renders what the editor marks as its default and a reset can store
+  // nothing (B733). After the locks: a locked ground falls back the same way.
+  const content = withTypeDefaultBackground(
+    applyLocksToContent(slide?.content || {}, ctx?.theme),
+    def,
+    ctx?.theme,
+  );
   let out = def.renderHtml(content, slide, ctx);
   // Per-field text styling (alignment, size) where the type offers it: adds
   // tf-* classes to every data-inline-field element a stored key covers. Runs

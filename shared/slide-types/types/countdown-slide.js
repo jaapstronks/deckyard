@@ -176,7 +176,7 @@ export default {
   },
   // Signature must be (content, slide, ctx) – see `shared/slide-types/presentation.js`.
   renderHtml: (content, slide, _ctx = {}) => {
-    const bg = bgClassExtended(content?.background || 'dark');
+    const bg = bgClassExtended(content?.background);
     const seconds = durationSeconds(
       MINUTES_FIELD,
       [SECONDS_FIELD],

@@ -1,5 +1,6 @@
 import { renderSlideToPngBuffer } from '../render/png.js';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { withTypeDefaultBackground } from '../../shared/slide-types/type-defaults.js';
 import {
   exportFidelity,
   needsNativeComposition,
@@ -344,7 +345,14 @@ async function buildDeckPptx(
       pptxSlide = result.pptxSlide;
       warnings.push(...result.warnings);
     } else if (composeNative) {
-      const result = await composeNative(pptx, slide, {
+      // A native composer paints the slide's ground itself, so it reads the
+      // same view the HTML pipeline renders: an empty `background` is the
+      // type's standard under this theme (B733).
+      const view = {
+        ...slide,
+        content: withTypeDefaultBackground(slide?.content || {}, def, theme),
+      };
+      const result = await composeNative(pptx, view, {
         repoRoot,
         spec,
         theme,
@@ -469,9 +477,9 @@ async function composeVideo(
   const title = String(content.title || '').trim();
   const bunnyLibraryId = resolveBunnyLibraryId(content);
   // The slide's own ground under the deck's theme, read the way the theme
-  // master reads its own (B656); `mist` is the type's default, as in
-  // renderHtml.
-  const ground = resolveGroundColors(theme, content.background || 'mist');
+  // master reads its own (B656); the dispatch already filled an empty one with
+  // the type's standard (B733).
+  const ground = resolveGroundColors(theme, content.background);
   const copy = getSlideCopy(docLang);
 
   const parsed = parseVideoSource(source, bunnyLibraryId);
