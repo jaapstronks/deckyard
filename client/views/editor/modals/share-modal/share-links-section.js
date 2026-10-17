@@ -26,7 +26,10 @@ import { h } from '../../../../lib/dom/index.js';
  * @param {Function} [options.onChange] - Called after a link is created or
  *   revoked: the deck's audience changed, so the editor re-reads what depends
  *   on it (the Analytics control, B617)
- * @returns {Object} { element, loadShareLinks }
+ * @param {(links: Object[]) => void} [options.onLinksLoaded] - Called with the
+ *   deck's links each time the list is (re)loaded; feeds the dialog's status
+ *   line
+ * @returns {{ el: HTMLElement, loadShareLinks: Function }}
  */
 export function createShareLinksSection({
   api,
@@ -35,6 +38,7 @@ export function createShareLinksSection({
   toast,
   modalRoot,
   onChange,
+  onLinksLoaded,
 }) {
   let shareLinks = [];
   let isCreating = false;
@@ -103,18 +107,20 @@ export function createShareLinksSection({
     placeholder: t('share.password.placeholder', 'Optional password'),
   });
 
-  // Registration mode toggle (for comment permission links)
+  // Registration mode toggle (for comment permission links). The default is
+  // `open`, as the section heading promises and as the server assumes when
+  // the field is left out; inviting specific people is the opt-in (D354).
   const registrationModeSelect = h('select', {
     class: 'form-input share-registration-mode-select',
   });
   registrationModeSelect.append(
     h('option', {
-      value: 'invite_only',
-      text: t('share.registration.inviteOnly', 'Invite specific people'),
-    }),
-    h('option', {
       value: 'open',
       text: t('share.registration.open', 'Anyone with the link'),
+    }),
+    h('option', {
+      value: 'invite_only',
+      text: t('share.registration.inviteOnly', 'Invite specific people'),
     }),
   );
 
@@ -142,6 +148,28 @@ export function createShareLinksSection({
     text: t('share.create.button', 'Create Link'),
   });
 
+  // Who gets in and for how long stay in view; the optional extras fold
+  // (D354), so the routine view link is still Share → Create Link.
+  const moreOptions = h('details', { class: 'share-more-options' }, [
+    h('summary', { text: t('share.create.moreOptions', 'More options') }),
+    h('div', { class: 'share-more-options-body' }, [
+      h('div', { class: 'share-form-row' }, [
+        h('label', {
+          class: 'share-form-label',
+          text: t('share.label.label', 'Label'),
+        }),
+        labelInput,
+      ]),
+      h('div', { class: 'share-form-row' }, [
+        h('label', {
+          class: 'share-form-label',
+          text: t('share.password.label', 'Password'),
+        }),
+        passwordInput,
+      ]),
+    ]),
+  ]);
+
   const createForm = h('div', { class: 'share-create-form' }, [
     h('div', { class: 'share-form-row' }, [
       h('label', {
@@ -158,20 +186,7 @@ export function createShareLinksSection({
       }),
       expirationSelect,
     ]),
-    h('div', { class: 'share-form-row' }, [
-      h('label', {
-        class: 'share-form-label',
-        text: t('share.label.label', 'Label'),
-      }),
-      labelInput,
-    ]),
-    h('div', { class: 'share-form-row' }, [
-      h('label', {
-        class: 'share-form-label',
-        text: t('share.password.label', 'Password'),
-      }),
-      passwordInput,
-    ]),
+    moreOptions,
     h('div', { class: 'share-form-actions' }, [createBtn]),
   ]);
 
@@ -267,8 +282,10 @@ export function createShareLinksSection({
       labelInput.value = '';
       passwordInput.value = '';
       permissionSelect.value = 'view';
+      registrationModeSelect.value = 'open';
       expirationSelect.value = '';
       registrationModeRow.style.display = 'none';
+      moreOptions.open = false;
 
       // Refresh list
       await loadShareLinks();
@@ -289,6 +306,7 @@ export function createShareLinksSection({
       );
       shareLinks = resp?.shareLinks || [];
       renderLinksList();
+      onLinksLoaded?.(shareLinks);
     } catch {
       // See collaborators-section.js: the list says so itself, politely.
       const loadError = createInlineError({ live: 'polite' });
@@ -340,14 +358,19 @@ export function createShareLinksSection({
       if (link.hasPassword) {
         meta.append(icon('lock', { size: 16, className: 'share-link-badge' }));
       }
-      if (link.expiresAt) {
-        const expDate = new Date(link.expiresAt);
-        const expText =
-          expDate < new Date()
-            ? t('share.link.expired', 'Expired')
-            : formatExpiration(expDate);
-        meta.append(h('span', { class: 'share-link-expires', text: expText }));
+      // Every row says how long it lives, "never" included (D354).
+      const expDate = link.expiresAt ? new Date(link.expiresAt) : null;
+      let expText;
+      if (!expDate) {
+        expText = t('share.link.neverExpires', 'Never expires');
+      } else if (expDate < new Date()) {
+        expText = t('share.link.expired', 'Expired');
+      } else {
+        expText = t('share.link.expiresIn', 'Expires in {time}', {
+          time: formatExpiration(expDate),
+        });
       }
+      meta.append(h('span', { class: 'share-link-expires', text: expText }));
       if (link.useCount > 0) {
         meta.append(
           h('span', {

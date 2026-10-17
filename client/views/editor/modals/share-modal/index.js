@@ -8,6 +8,10 @@
  *   - Guests: token links for people without an account, chosen by you
  *   - Public: anyone; put it on the open web, as a page and as an embed
  *
+ * It opens on Guests, the most common errand (a link for someone without an
+ * account); Team stays first in the tab order. A status line above the tabs
+ * says where the deck stands on all three at once (D354).
+ *
  * This replaces the old two-item split ("Share links…" + "Share to workspace")
  * and the separate publish/unpublish/notion dropdown entries.
  */
@@ -21,6 +25,7 @@ import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
 import { createVisibilitySection } from './visibility-section.js';
 import { createPublishSection } from './publish-section.js';
+import { createShareStatus, countActiveLinks } from './share-status.js';
 import { h } from '../../../../lib/dom/index.js';
 import {
   createSharingOffNote,
@@ -56,7 +61,8 @@ import {
  * @param {Function} options.notionAvailable - Returns true if Notion is enabled
  * @param {Function} options.openExport - Opens the Export modal
  * @param {'organization'|'guests'|'public'} [options.initialTab] - Tab to open
- *   on; `'organization'` is the tab labelled Team
+ *   on, Guests unless asked otherwise; `'organization'` is the tab labelled
+ *   Team
  * @returns {{ close: Function, refresh: Function }}
  */
 export function openShareModal({
@@ -81,7 +87,7 @@ export function openShareModal({
   handleNotionPublish,
   notionAvailable,
   openExport,
-  initialTab = 'organization',
+  initialTab = 'guests',
 } = {}) {
   if (!root) return { close: () => {}, refresh: () => {} };
 
@@ -107,6 +113,18 @@ export function openShareModal({
   // owner's address is displayed.
   const canTransfer = isOwner(currentUser, pres);
 
+  // Status line: re-rendered from `pres` and the last loaded link list
+  // whenever visibility, links or publishing change.
+  const publishAvailable = !getFeatures()?.sandboxMode;
+  const status = createShareStatus();
+  let activeLinks = null;
+  const renderStatus = () =>
+    status.update({
+      visibility: pres?.visibility,
+      activeLinks,
+      published: publishAvailable ? !!pres?.published?.id : null,
+    });
+
   // --- Organization tab (labelled "Team" in the UI) ---
   const visibility = createVisibilitySection({
     api,
@@ -119,6 +137,7 @@ export function openShareModal({
     syncShareUi: () => {
       syncShareUi?.();
       publish?.refresh();
+      renderStatus();
     },
     isAdmin,
     modalRoot: root,
@@ -156,6 +175,10 @@ export function openShareModal({
     toast,
     modalRoot: root,
     onChange: syncShareUi,
+    onLinksLoaded: (links) => {
+      activeLinks = countActiveLinks(links);
+      renderStatus();
+    },
   });
   const guestsPanel = h(
     'div',
@@ -168,7 +191,6 @@ export function openShareModal({
   // --- Public tab ---
   // Sandbox stance: no public published URLs, so the Public tab is omitted
   // entirely (no dead button). Mirrors the server-side 403 on /publish.
-  const publishAvailable = !getFeatures()?.sandboxMode;
   const publish = publishAvailable
     ? createPublishSection({
         api,
@@ -182,7 +204,10 @@ export function openShareModal({
         openPreviewAddress,
         handleNotionPublish,
         notionAvailable,
-        syncShareUi,
+        syncShareUi: () => {
+          syncShareUi?.();
+          renderStatus();
+        },
         openExport,
         requestClose: close,
       })
@@ -207,7 +232,7 @@ export function openShareModal({
     outlined: true,
     className: 'share-tabs',
     ariaLabel: t('share.modal.title', 'Share'),
-    value: panels[initialTab] ? initialTab : 'organization',
+    value: panels[initialTab] ? initialTab : 'guests',
     segments: [
       { value: 'organization', label: t('share.tab.organization', 'Team') },
       { value: 'guests', label: t('share.tab.guests', 'Guests') },
@@ -224,7 +249,8 @@ export function openShareModal({
     ...(publicPanel ? [publicPanel] : []),
   ]);
 
-  modal.append(tabs.el, body);
+  renderStatus();
+  modal.append(status.el, tabs.el, body);
   modal.show(root);
 
   showTab(tabs.getValue());
@@ -238,6 +264,7 @@ export function openShareModal({
     refresh: () => {
       visibility.refresh();
       publish?.refresh();
+      renderStatus();
     },
   };
 }

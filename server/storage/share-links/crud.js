@@ -42,7 +42,7 @@ export function formatShareLink(row, lookup = NO_DISPLAY_NAMES) {
     revokedAt: row.revoked_at,
     revokedBy: row.revoked_by,
     revocationMessage: row.revocation_message || null,
-    registrationMode: row.registration_mode || 'invite_only',
+    registrationMode: row.registration_mode || 'open',
   };
 }
 
@@ -78,6 +78,9 @@ export function shareLinkCreatorNames(scope, rows) {
  * @param {string} [options.expiresAt] - Optional expiration timestamp
  * @param {number} [options.maxUses] - Optional max use limit
  * @param {string} [options.createdBy] - Email of creator
+ * @param {'open'|'invite_only'} [options.registrationMode] - Who may join as a
+ *   guest; defaults to `open`, which is what "Anyone with the link" promises.
+ *   Inviting specific people is the opt-in (D354).
  * @returns {Promise<Object>} - The created share link
  */
 export async function createShareLink(scope, presentationId, options) {
@@ -92,8 +95,9 @@ export async function createShareLink(scope, presentationId, options) {
     return { ok: false, reason: 'invalid', field: 'permission' };
   }
 
-  // Registration mode: 'open' allows anyone, 'invite_only' requires pre-registration
-  const registrationMode = options?.registrationMode || 'invite_only';
+  // Registration mode: 'open' allows anyone, 'invite_only' requires
+  // pre-registration. The default lives here and nowhere else (D354).
+  const registrationMode = options?.registrationMode || 'open';
   if (!['open', 'invite_only'].includes(registrationMode)) {
     return { ok: false, reason: 'invalid', field: 'registration_mode' };
   }
