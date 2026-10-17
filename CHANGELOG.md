@@ -4,6 +4,24 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.74.0](https://github.com/jaapstronks/deckyard/compare/v1.73.0...v1.74.0) (2026-10-17)
+
+
+### Added
+
+* import an existing slide PDF as editable slides (B752) ([#1717](https://github.com/jaapstronks/deckyard/issues/1717)) ([ab67b31](https://github.com/jaapstronks/deckyard/commit/ab67b31e95a7e8eb90cf605d1b3898a39a9eb290))
+* offer "as editable slides" beside "as images" when importing a deck (B753) ([#1718](https://github.com/jaapstronks/deckyard/issues/1718)) ([e99b319](https://github.com/jaapstronks/deckyard/commit/e99b3199b1d5bb7c563e3529f51c9cf2a26b61f2))
+* read a slide PDF's page structure without a browser (B751) ([30d1acd](https://github.com/jaapstronks/deckyard/commit/30d1acd0e5f08961f78b670d1fd82f53460be1be))
+
+
+### Fixed
+
+* file and Notion imports keep notes, theme context and review metadata (B757) ([#1720](https://github.com/jaapstronks/deckyard/issues/1720)) ([0f19887](https://github.com/jaapstronks/deckyard/commit/0f198877133f2351ee9788d2c708dc829b40aed7))
+* make the two comment scopes visible in the pane, on the canvas and for readers (B747) ([#1714](https://github.com/jaapstronks/deckyard/issues/1714)) ([431c0e5](https://github.com/jaapstronks/deckyard/commit/431c0e5ad2c2135eb14aecf715dfee1e2d16cdf0))
+* name comment markers by author and comment start (B746) ([#1712](https://github.com/jaapstronks/deckyard/issues/1712)) ([8c63e41](https://github.com/jaapstronks/deckyard/commit/8c63e411367605b2ef6abf82b5df51b3dd6aedfc))
+* one generation pipeline behind the wizard and MCP (B756) ([ce47a6d](https://github.com/jaapstronks/deckyard/commit/ce47a6daf2c76019a5ae70d9bd5b3a989399ef30))
+* slide-type hints, countdown controls and list names follow the deck language (B749) ([#1716](https://github.com/jaapstronks/deckyard/issues/1716)) ([b5a1043](https://github.com/jaapstronks/deckyard/commit/b5a104395a46c9abe15068947751f6ec4e61a551))
+
 ## [1.73.0](https://github.com/jaapstronks/deckyard/compare/v1.72.0...v1.73.0) (2026-10-17)
 
 
