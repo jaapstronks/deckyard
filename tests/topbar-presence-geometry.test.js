@@ -52,7 +52,7 @@ const skip =
  * where a band is tightest; the high edge is one pixel before the next rung
  * brings a control back.
  */
-const WIDTHS = [341, 480, 481, 640, 641, 768, 769, 1024, 1025, 1280, 1281];
+const WIDTHS = [341, 480, 481, 640, 641, 768, 769, 1023, 1024, 1280, 1281];
 
 /** One peer (no chip), five (the most avatars; capped, +4), and a +103. */
 const PEER_COUNTS = [1, 5, 104];

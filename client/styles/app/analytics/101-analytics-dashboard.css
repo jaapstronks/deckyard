@@ -244,7 +244,7 @@
   gap: var(--ps-space-4);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .dashboard-bottom-row {
     grid-template-columns: minmax(0, 1fr);
   }

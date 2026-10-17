@@ -76,7 +76,7 @@
 .slide-comparison .body {
   font-family: var(--font-body);
   /* The columns are narrow, so the copy runs a step above body (22px → `md`);
-     the 1024px tier below drops it back to the body role. */
+     the ≤1023px tier below drops it back to the body role. */
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-normal);
   flex: 1;
@@ -89,7 +89,7 @@
 
 /* Markdown subheading: ## renders as h3 (since slide title is h2). It sits one
    scale step above the column prose so a `##` reads as a heading, not a bold
-   line: body is `md` here, so the subheading is `lg` (the 1024px tier drops
+   line: body is `md` here, so the subheading is `lg` (the ≤1023px tier drops
    both a step to keep the same one-step relationship). */
 .slide-comparison .body .md-subheading {
   font-family: var(--font-heading);
@@ -157,7 +157,7 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .slide-comparison .comparison-split {
     gap: 0;
   }

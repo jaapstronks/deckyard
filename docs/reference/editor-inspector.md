@@ -178,8 +178,8 @@ title, save status, presence) - deck editing (undo/redo, language) - deck
 actions (Export, Share, deck grid, Present as the primary CTA with a
 caret menu holding Companion) - utilities (user menu, ⋯ with AI analysis,
 Translate, Versions, Settings, Keyboard shortcuts). At narrow widths the
-bar sheds progressively (title shrinks; deck grid mirrors into ⋯ at ≤1024;
-undo/redo ≤1024; avatar ≤640; the fold rungs live in
+bar sheds progressively (title shrinks; deck grid mirrors into ⋯ at <1024;
+undo/redo <1024; avatar ≤640; the fold rungs live in
 `client/views/editor/topbar/index.js`).
 
 ## What the settings pane renders (the keeps-model)
@@ -559,15 +559,16 @@ editor, D338), table-modal slide-view entry points (open follow-up).
 
 Full editing is designed for **1024×700 and up**; below that the editor works
 without a design guarantee (D339). One boundary carries the model: the `lg`
-rung of the [breakpoint ladder](css-breakpoints.md), 1024px, in
+rung of the [breakpoint ladder](css-breakpoints.md), `<1024`
+(`max-width: 1023px`, so a 1024px-wide iPad in landscape gets the desktop), in
 `20-editor-layout.css` and in `COMPACT_EDITOR_QUERY`
 (`client/views/editor/responsive-drawers.js`), the only place editor JS names
 a width.
 
-- **>1024px (desktop)**: the 3-column grid above. The inspector width
+- **≥1024px (desktop)**: the 3-column grid above. The inspector width
   handle lives here, and dismissing the rail is remembered
   (`ps:inspector-collapsed`).
-- **≤1024px (compact)**: the canvas keeps the height (at least half the
+- **<1024px (compact)**: the canvas keeps the height (at least half the
   editor with the presenter notes open) and the **inspector is a drawer**
   over the right edge of the canvas. Row 1 keeps both column heads; the rail
   head's Inspector | Comments tabs (icons only here) open the drawer, and the
@@ -576,7 +577,7 @@ a width.
   and whenever the viewport crosses the boundary, so the remembered desktop
   dismissal neither opens it nor is overwritten by it. The presenter notes
   start folded unless opened in this browser session. The slides column
-  auto-collapses to its rail (769-1024px).
+  auto-collapses to its rail (769-1023px).
 - **≤768px (`md`)**: the slides column becomes a drawer from the left
   (`SLIDES_DRAWER_QUERY`, same module, one drawer mechanism for both), and
   the rail head moves to a row of its own so the slide bar keeps the full

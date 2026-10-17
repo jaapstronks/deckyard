@@ -30,9 +30,9 @@ const stylesDir = path.join(repoRoot, 'client', 'styles');
 
 /** The ladder. Keep in sync with docs/reference/css-breakpoints.md. */
 const LADDER = {
-  max: [480, 640, 768, 1024, 1280],
+  max: [480, 640, 768, 1023, 1280],
   /** Rung counterparts are one pixel up, plus the ultra-wide scale. */
-  min: [481, 641, 769, 1025, 1281, 1400, 1600, 1800],
+  min: [481, 641, 769, 1024, 1281, 1400, 1600, 1800],
 };
 
 /**
@@ -184,7 +184,7 @@ describe('css breakpoints', () => {
       off.map((c) => `${c.where}  ${c.key}`).sort(),
       [],
       `${off.length} width condition(s) off the breakpoint ladder.\n` +
-        `Use 480/640/768/1024/1280 (or min-width 481/641/769/1025/1281, or the\n` +
+        `Use 480/640/768/1023/1280 (or min-width 481/641/769/1024/1281, or the\n` +
         `ultra-wide 1400/1600/1800). See docs/reference/css-breakpoints.md.\n` +
         `Do not extend the ALLOWLIST in this file — it may only shrink.`,
     );
@@ -239,6 +239,46 @@ describe('editor JS breakpoints', () => {
       assert.ok(
         LADDER[side].includes(Number(px)),
         `${side}-width: ${px}px is not a rung of the ladder`,
+      );
+    }
+  });
+
+  // D351: an iPad in landscape is exactly 1024px wide and gets the full
+  // three-column editor; the inspector becomes a drawer one pixel below.
+  // Evaluated on both sides, in JS and in the stylesheet that draws it.
+  it('keeps 1024 on the desktop side and 1023 compact', async () => {
+    const { COMPACT_EDITOR_QUERY } =
+      await import('../client/views/editor/responsive-drawers.js');
+    /** @param {string} query @param {number} width */
+    const matches = (query, width) =>
+      [...query.matchAll(/\((max|min)-width: (\d+)px\)/g)].every(
+        ([, side, px]) =>
+          side === 'max' ? width <= Number(px) : width >= Number(px),
+      );
+    assert.strictEqual(matches(COMPACT_EDITOR_QUERY, 1024), false);
+    assert.strictEqual(matches(COMPACT_EDITOR_QUERY, 1023), true);
+
+    const layout = await fs.readFile(
+      path.join(stylesDir, 'app', 'editor', '20-editor-layout.css'),
+      'utf8',
+    );
+    const queries = [...layout.matchAll(/@media ([^{]*width[^{]*)\{/g)].map(
+      ([, q]) => q.trim(),
+    );
+    assert.ok(
+      queries.includes(COMPACT_EDITOR_QUERY),
+      `20-editor-layout.css has a ${COMPACT_EDITOR_QUERY} block`,
+    );
+    // Every block bounded at the lg rung agrees with the JS: the compact
+    // side stops at 1023, the desktop side starts at 1024.
+    for (const q of queries.filter((q) => /max-width: 102\dpx/.test(q))) {
+      assert.strictEqual(matches(q, 1024), false, `${q} reaches 1024`);
+    }
+    for (const q of queries.filter((q) => /min-width: 102\dpx/.test(q))) {
+      assert.deepStrictEqual(
+        [matches(q, 1023), matches(q, 1024)],
+        [false, true],
+        `${q} starts at 1024`,
       );
     }
   });

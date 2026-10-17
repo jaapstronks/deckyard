@@ -3,7 +3,7 @@
  *
  * - Slides drawer: slide-over panel from the left at ≤768px (`md`), opened
  *   by a floating button.
- * - Inspector drawer: the right-hand rail slides over the canvas at ≤1024px
+ * - Inspector drawer: the right-hand rail slides over the canvas below 1024px
  *   (`lg`), opened from the Inspector | Comments tabs in `.rail-head` (D339:
  *   below 1024×700 the canvas keeps the height, the inspector comes to it).
  *
@@ -27,7 +27,7 @@ export const SLIDES_DRAWER_QUERY = '(max-width: 768px)';
  * The D339 boundary (CSS `lg` rung): below it the inspector is a drawer and
  * the presenter notes start folded.
  */
-export const COMPACT_EDITOR_QUERY = '(max-width: 1024px)';
+export const COMPACT_EDITOR_QUERY = '(max-width: 1023px)';
 
 /**
  * Whether a media query matches now; false where `matchMedia` is missing.

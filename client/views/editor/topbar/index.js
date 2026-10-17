@@ -313,7 +313,7 @@ export function createEditorTopbar({
 
   /**
    * Analytics is a control with two conditions, not one: the fold ladder says
-   * *where* it lives (bar above 1024px, ⋯ menu below), and this says whether
+   * *where* it lives (bar from 1024px up, ⋯ menu below), and this says whether
    * it exists at all — analytics only counts external viewers, so a deck with
    * neither a publication nor a share link has nothing to show.
    *

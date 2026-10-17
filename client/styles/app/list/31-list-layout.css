@@ -345,7 +345,7 @@
   margin-bottom: var(--ps-space-4);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .home-columns {
     grid-template-columns: 1fr;
     gap: var(--ps-space-4);
