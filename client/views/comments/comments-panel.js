@@ -10,8 +10,7 @@ import { createSegmented } from '../../lib/dom/segmented.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { isCommentOwner, isCommentAuthor } from './comment-authz.js';
 import { attachMentionAutocomplete } from './mention-autocomplete.js';
-import { createRichCommentInput } from './comment-rich-input.js';
-import { createCommentLinkButton } from './comment-toolbar.js';
+import { createCommentComposer } from './comment-composer.js';
 import { storage } from '../../lib/storage.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
@@ -23,7 +22,6 @@ import {
   collectUnreadThreadIds,
 } from './comments-read-state.js';
 import { h } from '../../lib/dom/index.js';
-import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**
  * Creates a comments panel component.
@@ -39,6 +37,10 @@ import { createInlineError } from '../../lib/dom/inline-error.js';
  * @param {Function} [options.onCommentCountChange] - Callback when open comment count changes
  * @param {Function} [options.onSlideCommentCountsChange] - Callback when per-slide comment counts change
  * @param {Function} [options.onJumpToSlide] - Callback when clicking a slide link (receives slideId)
+ * @param {Function} [options.onMarkSpot] - Starts placing a pin on the
+ *   canvas; offered in the empty state. Omitted where no canvas takes pins.
+ * @param {Function} [options.onShowOnSlide] - Shows an anchored comment's pin
+ *   on its slide (receives the comment).
  * @returns {Object} Panel API with panelEl, show, hide, toggle, refresh, and other methods
  */
 export function createCommentsPanel({
@@ -52,6 +54,8 @@ export function createCommentsPanel({
   onCommentCountChange,
   onSlideCommentCountsChange,
   onJumpToSlide,
+  onMarkSpot,
+  onShowOnSlide,
   onRequestClose,
 }) {
   // State
@@ -307,31 +311,34 @@ export function createCommentsPanel({
     return err?.message || fallback;
   }
 
-  async function submitComment() {
-    const body = commentInput.getValue().trim();
-    postError.clear();
-    if (!body) return;
-
+  /**
+   * Post a comment on the selected slide, at a spot when `position` is given.
+   * Throws an Error whose message is the sentence to show under the
+   * composer.
+   * @param {string} body
+   * @param {{ positionX: number, positionY: number }} [position]
+   */
+  async function postComment(body, position = null) {
     try {
       await checkMentionAccess(body);
       await commentsApi.createComment({
         body,
         slideId: getSelectedSlideId?.() || null,
+        ...(position || {}),
       });
-      commentInput.clear();
-      // The `comment:created` echo reloads the panel; only reload directly as
-      // a fallback when SSE is down, otherwise the post triggers a second,
-      // redundant load (and slide-list rebuild).
-      if (!sse.isConnected()) loadComments();
     } catch (err) {
-      postError.show(
+      throw new Error(
         createRefusalMessage(
           err,
           t('comments.error.postFailed', 'Failed to post comment'),
         ),
-        { control: commentInput.el },
+        { cause: err },
       );
     }
+    // The `comment:created` echo reloads the panel; only reload directly as
+    // a fallback when SSE is down, otherwise the post triggers a second,
+    // redundant load (and slide-list rebuild).
+    if (!sse.isConnected()) loadComments();
   }
 
   async function handleReply(parentId, body, replyInput) {
@@ -343,7 +350,7 @@ export function createCommentsPanel({
         slideId: getSelectedSlideId?.() || null,
       });
       replyInput.clear();
-      // See submitComment: the SSE echo reloads; direct reload is the
+      // See postComment: the SSE echo reloads; direct reload is the
       // fallback for a dropped connection only.
       if (!sse.isConnected()) loadComments();
     } catch (err) {
@@ -376,9 +383,15 @@ export function createCommentsPanel({
    * Reply inputs pass `ephemeral: true`: they are created on every Reply
    * toggle and destroyed by each list re-render, so their document-level
    * dismiss listeners must be released with them (drained per render;
-   * the toggle path calls `host._detachMentions` directly).
+   * the toggle path calls `host._detachMentions` directly). The anchored
+   * composer passes `owned: true` and detaches it itself: a list render must
+   * not take the popover from a card that is still open on the slide.
    */
-  function attachMentions(richInput, host, { ephemeral = false } = {}) {
+  function attachMentions(
+    richInput,
+    host,
+    { ephemeral = false, owned = false } = {},
+  ) {
     if (!user?.email) return null;
     const ac = attachMentionAutocomplete({
       adapter: richInput,
@@ -389,7 +402,9 @@ export function createCommentsPanel({
     host.append(ac.el);
     // Warm the priority list in the background on first attach.
     loadAccessEmails();
-    if (ephemeral) {
+    if (owned) {
+      // The caller releases it (the anchored composer, on close).
+    } else if (ephemeral) {
       const detach = () => {
         ephemeralMentionDetachers.delete(detach);
         try {
@@ -434,6 +449,10 @@ export function createCommentsPanel({
     isOwner,
     isAuthor,
     onJumpToSlide,
+    onShowOnSlide,
+    // The empty state's two ways in: write here, or mark a spot on the slide.
+    onCommentHere: () => composer.focus(),
+    onMarkSpot,
     onReply: handleReply,
     attachMentions,
     onResolve: actions.resolveComment,
@@ -611,31 +630,13 @@ export function createCommentsPanel({
 
   // Input area. Mentions show as chips while typing; `getValue()` serialises
   // back to the canonical `@[Name](user:email)` markup the server parses.
-  let mainMentionAc = null;
-  const commentInput = createRichCommentInput({
-    className: 'comments-input-textarea',
-    placeholder: t('comments.addPlaceholder', 'Add a comment…'),
-    onSubmit: () => submitComment(),
-    // With the mention popover open, Enter picks a user instead.
-    isSubmitBlocked: () => !!mainMentionAc?.isOpen(),
-  });
-  const inputSubmitBtn = h('button', {
-    class: 'btn btn-primary btn-sm',
-    type: 'button',
-    text: t('comments.post', 'Post'),
-    onclick: () => submitComment(),
-  });
-  const inputControls = h('div', {
-    class: 'comments-input-controls is-between',
-  });
-  inputControls.append(
-    createCommentLinkButton({ input: commentInput }),
-    inputSubmitBtn,
-  );
   // The refusal of a post sits under the composer until the next attempt.
-  const postError = createInlineError({ callout: true });
-  inputEl.append(commentInput.el, postError.el, inputControls);
-  mainMentionAc = attachMentions(commentInput, inputEl);
+  const composer = createCommentComposer({
+    host: inputEl,
+    inputClass: 'comments-input-textarea',
+    onSubmit: (body) => postComment(body),
+    attachMentions: (input, host) => attachMentions(input, host),
+  });
 
   // Assemble panel
   panelEl.append(headerEl, filterEl, listEl, inputEl);
@@ -788,6 +789,13 @@ export function createCommentsPanel({
     getSlideCommentCounts,
     highlightComment,
     onSlideChanged,
+    // What the card on a spot of the slide needs to post like the pane does:
+    // the same mention lookup and the same refusal sentences.
+    anchoredComposerSupport: {
+      onSubmit: (body, position) => postComment(body, position),
+      attachMentions: (input, host) =>
+        attachMentions(input, host, { owned: true }),
+    },
     setScope,
     startPolling: sse.startPolling,
     stopPolling: sse.stopPolling,

@@ -8,6 +8,20 @@ import { commentAuthorName, renderCommentBodyNodes } from './comment-body.js';
 import { createRichCommentInput } from './comment-rich-input.js';
 import { createCommentLinkButton } from './comment-toolbar.js';
 import { h } from '../../lib/dom/index.js';
+import { icon } from '../../lib/dom/icons.js';
+
+/**
+ * Whether a comment is anchored to a spot on its slide (D355): the two
+ * scopes are told apart by the stored position, nothing else.
+ * @param {Object} comment
+ * @returns {boolean}
+ */
+export function isAnchoredComment(comment) {
+  return (
+    typeof comment?.positionX === 'number' &&
+    typeof comment?.positionY === 'number'
+  );
+}
 
 /**
  * Creates comment rendering functions with bound dependencies.
@@ -20,6 +34,9 @@ import { h } from '../../lib/dom/index.js';
  * @param {Function} deps.isOwner - Check if current user is owner
  * @param {Function} deps.isAuthor - Check if current user is author of a comment
  * @param {Function} deps.onJumpToSlide - Callback when clicking slide link
+ * @param {Function} [deps.onShowOnSlide] - Shows an anchored comment's pin
+ * @param {Function} [deps.onCommentHere] - Empty state: focus the composer
+ * @param {Function} [deps.onMarkSpot] - Empty state: start placing a pin
  * @param {Function} deps.onReply - Callback when replying
  * @param {Function} deps.onResolve - Callback to resolve comment
  * @param {Function} deps.onReopen - Callback to reopen comment
@@ -35,6 +52,9 @@ export function createCommentRenderers({
   isOwner,
   isAuthor,
   onJumpToSlide,
+  onShowOnSlide,
+  onCommentHere,
+  onMarkSpot,
   onReply,
   attachMentions,
   onResolve,
@@ -50,20 +70,7 @@ export function createCommentRenderers({
     listEl.replaceChildren();
 
     if (comments.length === 0) {
-      const emptyEl = h('div', {
-        class: 'empty-note',
-        text: filter.slideMissing
-          ? t('comments.empty.noSlide', 'Select a slide to see its comments')
-          : filter.attention === 'waiting'
-            ? t('comments.empty.waiting', 'Nothing waiting for you here')
-            : filter.status === 'resolved'
-              ? t('comments.empty.resolved', 'No resolved comments')
-              : t(
-                  'comments.empty.none',
-                  'No comments yet. Be the first to add one!',
-                ),
-      });
-      listEl.append(emptyEl);
+      listEl.append(renderEmptyState());
       return;
     }
 
@@ -71,6 +78,57 @@ export function createCommentRenderers({
       const threadEl = renderCommentThread(comment);
       listEl.append(threadEl);
     }
+  }
+
+  /**
+   * The empty list. On a slide with no comments yet it names both scopes as
+   * the two ways in (D355): a comment on this slide, or a mark on a spot.
+   */
+  function renderEmptyState() {
+    const emptyEl = h('div', {
+      class: 'empty-note',
+      text: filter.slideMissing
+        ? t('comments.empty.noSlide', 'Select a slide to see its comments')
+        : filter.attention === 'waiting'
+          ? t('comments.empty.waiting', 'Nothing waiting for you here')
+          : filter.status === 'resolved'
+            ? t('comments.empty.resolved', 'No resolved comments')
+            : t(
+                'comments.empty.none',
+                'No comments yet. Be the first to add one!',
+              ),
+    });
+    const offersWaysIn =
+      filter.slideId &&
+      filter.status !== 'resolved' &&
+      filter.attention !== 'waiting';
+    if (!offersWaysIn || (!onCommentHere && !onMarkSpot)) return emptyEl;
+
+    const ways = h('div', { class: 'row comment-ways-in' });
+    if (onCommentHere) {
+      ways.append(
+        h('button', {
+          class: 'btn btn-secondary btn-sm',
+          type: 'button',
+          text: t('comments.empty.commentHere', 'Comment on this slide'),
+          onclick: () => onCommentHere(),
+        }),
+      );
+    }
+    if (onMarkSpot) {
+      const markBtn = h('button', {
+        class: 'btn btn-secondary btn-sm',
+        type: 'button',
+        onclick: () => onMarkSpot(),
+      });
+      markBtn.append(
+        icon('map-pin', { size: 14 }),
+        h('span', { text: t('comments.addLabel', 'Mark a spot') }),
+      );
+      ways.append(markBtn);
+    }
+    emptyEl.append(ways);
+    return emptyEl;
   }
 
   /**
@@ -84,6 +142,7 @@ export function createCommentRenderers({
     // Mail convention: someone else's unseen activity bolds the thread and
     // dots it. The server computes unreadForUser; guests never get the flag.
     if (comment.unreadForUser === true) threadEl.classList.add('is-unread');
+    if (isAnchoredComment(comment)) threadEl.classList.add('is-anchored');
     const mainComment = renderComment(comment, false, threadEl);
     threadEl.append(mainComment);
 
@@ -148,6 +207,20 @@ export function createCommentRenderers({
       text: formatTime(comment.createdAt),
     });
     headerEl.append(authorEl, timeEl);
+
+    // An anchored thread carries the pin it has on the slide, so the two
+    // scopes are told apart in the list too (D355).
+    if (!isReply && isAnchoredComment(comment)) {
+      const pinLabel = t('comments.anchored', 'Marked on a spot of the slide');
+      const pinEl = h('span', {
+        class: 'comment-anchor-glyph',
+        role: 'img',
+        title: pinLabel,
+        'aria-label': pinLabel,
+      });
+      pinEl.append(icon('map-pin', { size: 13 }));
+      headerEl.append(pinEl);
+    }
 
     // Unread dot on the thread header (top-level only)
     if (!isReply && comment.unreadForUser === true) {
@@ -220,6 +293,17 @@ export function createCommentRenderers({
       actionsEl.append(dismissBtn);
     } else {
       // Regular comment actions
+
+      if (!isReply && isAnchoredComment(comment) && onShowOnSlide) {
+        actionsEl.append(
+          h('button', {
+            class: 'btn btn-xs btn-secondary comment-show-on-slide',
+            type: 'button',
+            text: t('comments.showOnSlide', 'Show on slide'),
+            onclick: () => onShowOnSlide(comment),
+          }),
+        );
+      }
 
       // Reply button (only for top-level comments)
       if (!isReply && threadEl) {

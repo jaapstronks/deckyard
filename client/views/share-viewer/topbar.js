@@ -167,5 +167,5 @@ export function buildShareViewerTopbar({
 
   topbar.append(titleEl, permissionBadge, controls);
 
-  return { topbar, commentsSection, openJoinPrompt };
+  return { topbar, commentsSection, commentsApi, openJoinPrompt };
 }

@@ -9,7 +9,11 @@ export {
   isCommentOwner,
   isGuestCommentAuthor,
 } from './comment-authz.js';
-export { renderCommentBodyNodes } from './comment-body.js';
+export { commentAuthorName, renderCommentBodyNodes } from './comment-body.js';
+export {
+  createAnchoredComposer,
+  createCommentComposer,
+} from './comment-composer.js';
 export { createRichCommentInput } from './comment-rich-input.js';
 export { createCommentLinkButton } from './comment-toolbar.js';
 export { attachMentionAutocomplete } from './mention-autocomplete.js';
