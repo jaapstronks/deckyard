@@ -54,8 +54,9 @@ const log = createLogger('generate-deck');
  * @property {AbortSignal|null} [signal] - Reaches every model call; checked
  *   between the phases.
  * @property {number} [batchSize] - Parallel refine calls (default 6).
- * @property {(outline: Object, info: { sections: number }) => void} [onOutline]
- *   - Called once the (revised) outline is ready, before phase 2.
+ * @property {(outline: Object, info: { sections: number, lang: string }) => void} [onOutline]
+ *   - Called once the (revised) outline is ready, before phase 2, with the
+ *   number of content groups and the deck language the one rule settled on.
  * @property {(message: string) => void} [onStatusMessage]
  * @property {(progress: { done: number, total: number }) => void} [onGroupDone]
  * @property {ReturnType<typeof createSessionLogger>} [logger] - A session
@@ -150,7 +151,7 @@ export async function generateSlides(
     outline.slides,
   );
   if (typeof onOutline === 'function') {
-    onOutline(outline, { sections: contentGroups.length });
+    onOutline(outline, { sections: contentGroups.length, lang });
   }
 
   // ── Phase 2: refine the content slides ──────────────────────────────────

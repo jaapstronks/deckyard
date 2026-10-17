@@ -198,6 +198,9 @@ test('the wizard stream runs the one pipeline', async (t) => {
   });
   const out = res.chunks.join('');
   assert.match(out, /^event: complete$/m, out);
+  // The outline status line reads the language off the hook, in the deck's
+  // language (`en-GB` here), not off a rule of the route's own.
+  assert.match(out, /Outline ready: \d+ slides in \d+ sections/, out);
   assert.doesNotMatch(out, /"budget"/, 'complete carries no budget');
   assertOnePipeline(prompts, 'wizard');
 });

@@ -52,7 +52,7 @@ Pipeline (`server/utils/ai/`). The top level:
   One option set for every caller: `userName`, `targetLang`, `vendor`,
   `targetLength`, `rawFirstSlideTitle`, `reviseOutline` (default on),
   `slideTypes`, `disabledSlideTypes`, `customSlideTypes`, `themeContext`,
-  `signal`, `batchSize`, and the hooks `onOutline(outline, { sections })`,
+  `signal`, `batchSize`, and the hooks `onOutline(outline, { sections, lang })`,
   `onStatusMessage(msg)`, `onGroupDone({ done, total })`. One language rule:
   the requested language, else the detected one, else `DEFAULT_DECK_LANG`,
   stored in `deck.lang`. Only this module imports the three step modules below

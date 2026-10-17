@@ -93,7 +93,8 @@ export async function handleAiWizardV2Stream({
       },
     });
 
-    // The progress copy follows the deck language, known once the outline is.
+    // The progress copy follows the deck language, which the service settles
+    // once the outline is in and hands to `onOutline`.
     let nl = false;
     // The one generation pipeline (B756); this route only reports on it.
     const deck = await generateDeck(raw, {
@@ -108,7 +109,7 @@ export async function handleAiWizardV2Stream({
       ...slideTypeOffer,
       signal,
       logger,
-      onOutline: (outline, { sections }) => {
+      onOutline: (outline, { sections, lang: deckLang }) => {
         // The rotator on the client replays these while sections are being
         // written; the per-section events below take over as groups finish.
         sseWrite(res, {
@@ -120,8 +121,7 @@ export async function handleAiWizardV2Stream({
         });
         // Informational (phase 'refine'): shown only until the rotator has
         // its messages.
-        const { requestedLang, detectedLang } = outline.metadata || {};
-        nl = (requestedLang || detectedLang) === 'nl';
+        nl = deckLang === 'nl';
         sseWrite(res, {
           event: 'status',
           data: {
