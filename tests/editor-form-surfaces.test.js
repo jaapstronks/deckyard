@@ -427,7 +427,9 @@ test('the Layout row offers cross-type tiles only where typeConversion is on', a
 });
 
 // The Layout row is the form's first row on the surfaces that declare
-// `layout`, for exactly the types that declare layoutVariants (B703 PR 3).
+// `layout`, for exactly the types that declare layoutVariants (B703 PR 3) -
+// except while an image type's picture is empty: then the image card leads
+// and Layout is second (D347, tested on its own below).
 test('the Layout row leads the inspector for every type with layout variants', async () => {
   const { getLayoutVariants } = await import('../shared/slide-types.js');
   const withVariants = Object.keys(SLIDE_TYPES).filter(
@@ -449,11 +451,14 @@ test('the Layout row leads the inspector for every type with layout variants', a
   for (const type of Object.keys(SLIDE_TYPES)) {
     const { editorMount } = renderTypeWithSpies(type, 'inspector');
     const form = editorMount.querySelector('.editor-form');
-    const first = form?.firstElementChild;
+    const imageFirst = IMAGE_CARD_TYPES.includes(type);
+    const lead = imageFirst
+      ? form?.firstElementChild?.nextElementSibling
+      : form?.firstElementChild;
     if (withVariants.includes(type)) {
       assert.ok(
-        first?.classList.contains('layout-row'),
-        `${type}: Layout is the first inspector row`,
+        lead?.classList.contains('layout-row'),
+        `${type}: Layout is the ${imageFirst ? 'second' : 'first'} inspector row`,
       );
     } else {
       assert.equal(form?.querySelector('.layout-row'), null, type);
@@ -467,4 +472,164 @@ test('the Layout row leads the inspector for every type with layout variants', a
     'Fields carries no Layout row',
   );
   editorMount.remove();
+});
+
+// D347 (B723): on an image slide the first inspector row is what to do next.
+// The five image types: the two flat ones carry the shared image card on the
+// Slide tab, image-set its collection section; gallery and team-cards have no
+// Slide-tab card, their image card is the "This image" tab alone.
+const IMAGE_CARD_TYPES = ['image-set-slide', 'image-text-slide'];
+const IMAGE_TYPES = [
+  'image-text-slide',
+  'image-slide',
+  'image-set-slide',
+  'gallery-slide',
+  'team-cards-slide',
+];
+const PHOTO = 'https://example.com/photo.jpg';
+
+/** Put a picture in the first image slot of a default slide. */
+function withPhoto(type, content) {
+  if (type === 'image-slide' || type === 'image-text-slide') {
+    content.image = PHOTO;
+  } else if (type === 'team-cards-slide') {
+    content.members[0].image = PHOTO;
+  } else {
+    if (!Array.isArray(content.images) || !content.images.length) {
+      content.images = [{ src: '', alt: '' }];
+    }
+    content.images[0].src = PHOTO;
+  }
+  return content;
+}
+
+/** Render the inspector for a slide, optionally with a canvas selection. */
+function renderInspector(type, { photo = false, selected = null } = {}) {
+  const editorMount = document.createElement('div');
+  document.body.append(editorMount);
+  const content = structuredClone(SLIDE_TYPES[type].defaults);
+  const slide = {
+    id: 's1',
+    type,
+    content: photo ? withPhoto(type, content) : content,
+  };
+  const pres = { id: 'p1', slides: [slide], settings: {} };
+  const noop = () => {};
+  const deps = {
+    pres,
+    user: {},
+    markDirty: noop,
+    scheduleUiRefresh: noop,
+    rerenderEditor: noop,
+    updateSelectedSlideListItem: noop,
+    normalizeLang: (l) => l,
+  };
+  createRerenderEditor({
+    ...deps,
+    editorMount,
+    SLIDE_TYPES,
+    api: null,
+    getSelectedSlideId: () => 's1',
+    setSelectedSlideId: noop,
+    getSelectedElement: () => selected,
+    editorState: {},
+    requestSave: noop,
+    rerenderSlideList: noop,
+    rerenderPreview: noop,
+    fieldRenderers: createFieldRenderers(deps),
+    surface: 'inspector',
+  }).rerender();
+  editorMount.remove();
+  const forms = [...editorMount.querySelectorAll('.editor-form')];
+  return {
+    slideForm: forms.find((f) => !f.classList.contains('editor-element-form')),
+    elementForm: forms.find((f) => f.classList.contains('editor-element-form')),
+  };
+}
+
+// A collapsed section is named as one ("Background image" summarises as
+// "Image"), so it cannot pass for the image card.
+const rowLabel = (el) => {
+  if (el?.classList.contains('layout-row')) return 'Layout row';
+  if (el?.tagName === 'DETAILS') return `section: ${el.className}`;
+  return el?.querySelector('.field-label')?.textContent || el?.className;
+};
+const rows = (form) => [...(form?.children || [])].map(rowLabel);
+
+test('an empty image leads the inspector, a filled one follows Layout (D347)', () => {
+  for (const type of IMAGE_TYPES) {
+    const empty = rows(renderInspector(type).slideForm);
+    const filled = rows(renderInspector(type, { photo: true }).slideForm);
+    const card = type === 'image-set-slide' ? 'Images' : 'Image';
+    const hasCard = type !== 'gallery-slide' && type !== 'team-cards-slide';
+    const hasLayout = IMAGE_CARD_TYPES.includes(type);
+    if (hasCard && hasLayout) {
+      assert.deepEqual(
+        empty.slice(0, 2),
+        [card, 'Layout row'],
+        `${type} empty`,
+      );
+      assert.deepEqual(
+        filled.slice(0, 2),
+        ['Layout row', card],
+        `${type} filled`,
+      );
+    } else if (hasCard) {
+      // image-slide declares no layout variants: the card is first either way.
+      assert.equal(empty[0], card, `${type} empty`);
+      assert.equal(filled[0], card, `${type} filled`);
+    } else {
+      // No Slide-tab card: nothing image-shaped leads the Slide tab.
+      assert.ok(!empty.includes('Image'), `${type}: no Slide-tab card`);
+    }
+  }
+});
+
+test('with "This image" open the Slide tab renders no second card (D347)', () => {
+  for (const type of IMAGE_TYPES) {
+    const { slideForm, elementForm } = renderInspector(type, {
+      photo: true,
+      selected: { kind: 'image', idx: 0 },
+    });
+    assert.equal(
+      rows(elementForm)[0],
+      'Image',
+      `${type}: the card is in the tab`,
+    );
+    assert.ok(
+      !rows(slideForm).includes('Image') &&
+        !rows(slideForm).includes('Alt text'),
+      `${type}: the Slide tab carries no copy of the card`,
+    );
+  }
+});
+
+test('the image role sits in the image card, under the alt text (D347)', () => {
+  for (const type of ['image-slide', 'image-text-slide']) {
+    const open = renderInspector(type, {
+      photo: true,
+      selected: { kind: 'image', idx: 0 },
+    });
+    const tab = rows(open.elementForm);
+    assert.ok(
+      tab.indexOf('Image role') > tab.indexOf('Alt text'),
+      `${type}: role follows the alt text in "This image"`,
+    );
+    assert.ok(!rows(open.slideForm).includes('Image role'), `${type}: once`);
+    const closed = rows(renderInspector(type, { photo: true }).slideForm);
+    assert.equal(
+      closed.filter((r) => r === 'Image role').length,
+      1,
+      `${type}: one role control on the Slide tab card`,
+    );
+    assert.equal(
+      closed.indexOf('Image role'),
+      closed.indexOf('Alt text') + 2,
+      `${type}: role right under the alt text and its warning`,
+    );
+    assert.ok(
+      !rows(renderInspector(type).slideForm).includes('Image role'),
+      `${type}: no role before there is a picture`,
+    );
+  }
 });

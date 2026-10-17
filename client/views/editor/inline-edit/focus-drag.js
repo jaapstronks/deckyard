@@ -29,7 +29,7 @@ import { t } from '../../../lib/ui-i18n.js';
  * @param {(type: string) => (Object|null)} opts.getSlideDef - slide-type definition.
  * @param {() => void} opts.markDirty - mark the deck dirty.
  * @param {() => void} opts.requestSave - request a save.
- * @returns {{ insertFocusAffordances: (root: HTMLElement, def: Object, descriptor: Object) => void }}
+ * @returns {{ insertFocusAffordances: (root: HTMLElement, def: Object, descriptor: Object) => Array<{idx:number, el:HTMLElement}> }}
  */
 export function createFocusDrag({
   overlay,
@@ -83,9 +83,17 @@ export function createFocusDrag({
     };
   }
 
-  /** A draggable focal point on each filled image whose current mode crops. */
+  /**
+   * A draggable focal point on each filled image whose current mode crops.
+   * The handles are returned, not shown: the host reveals one only while its
+   * image is selected, so a click on the middle of an unselected image (where
+   * the handle sits by default) selects the image instead of grabbing the
+   * focal point (D347).
+   * @returns {Array<{idx:number, el:HTMLElement}>}
+   */
   function insertFocusAffordances(root, _def, descriptor) {
-    if (!descriptor.focus || !descriptor.media?.photoSelector) return;
+    const points = [];
+    if (!descriptor.focus || !descriptor.media?.photoSelector) return points;
     for (const photo of root.querySelectorAll(descriptor.media.photoSelector)) {
       if (photo.classList.contains('is-empty')) continue; // filled images only
       const ft = resolveFocusTarget(photo);
@@ -96,7 +104,9 @@ export function createFocusDrag({
         'Drag or use arrow keys to set image focus',
       );
       wireFocusDrag(pt, photo, ft);
+      points.push({ idx: ft.idx, el: pt });
     }
+    return points;
   }
 
   function wireFocusDrag(pt, photo, ft) {

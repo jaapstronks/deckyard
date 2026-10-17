@@ -13,9 +13,10 @@ one of three surfaces:
 1. **The slide canvas (wysiwyg)** - the primary editing surface. In-place
    text editing, ghost chips for empty optional fields, add/remove/reorder
    of repeatable items (two-level for text-blocks rows/blocks), and direct
-   manipulation of images: a draggable focal point, a single click that
-   selects a filled image (solid ring + a toolbar below it with Replace and
-   Settings), double-click to replace it directly, and a desktop file-drop
+   manipulation of images: a single click that selects a filled image (solid
+   ring + a toolbar below it with Replace and Settings), a draggable focal
+   point on the selected image only, because the handle sits mid-picture where
+   that first click lands (D347), double-click to replace it directly, and a desktop file-drop
    onto any image. Empty slots keep a "+ Add image" affordance (they have
    nothing to occlude). Everything
    _settable_ on an image (replace, alt, fit, focus grid, per-item metadata)
@@ -315,10 +316,19 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   selected card's icon + link. image-text has no entry of its own: since its
   plural layouts left (D100) it carries one flat image, which the shared card
   covers in full.
-- **The image comes first** (D336). A type whose image is one flat key
-  (image-slide, image-text) opens its Slide tab on that same card, selected or
-  not: empty, it offers only Choose / Upload; filled, it shows the thumbnail,
-  Replace, and the alt text directly under it. The alt carries a warning while
+- **The image comes first while it is empty** (D336, D347). The first
+  inspector row is what to do next: on an image slide whose picture is empty
+  the image card leads and the Layout row is second; once there is a picture
+  the fixed order holds and Layout leads. `mediaHoldsImage()` decides, and
+  `placeImageCard` in `inspector-form.js` places the card (image-set's Images
+  section follows the same rule). A type whose image is one flat key
+  (image-slide, image-text) carries that same card on its Slide tab, but only
+  while no "This image" tab is open: one card per picture, so with the image
+  selected the card lives in the element tab alone. Empty, it offers only
+  Choose / Upload; filled, it shows the thumbnail, Replace, the alt text
+  directly under it and the image role under that (the role decides about the
+  alt, so it sits in the card, not among the slide's settings; image-set's
+  role governs all its images and stays on the Slide tab). The alt carries a warning while
   publishing would refuse the picture, read from the same `imagesMissingAlt()`
   walk as the publish gate, so a decorative image or a team member named by
   their heading is not flagged. Settings that describe the picture rather than
