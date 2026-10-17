@@ -80,87 +80,10 @@
   border-radius: 3px;
 }
 
-/* Theme thumbnail item */
-.theme-picker-item {
-  flex: 0 0 auto;
-  width: 160px;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
+/* The cards themselves are theme-select's (13-theme-picker.css, D353); the
+   row only snaps them. */
+.theme-picker-list > .theme-picker-item {
   scroll-snap-align: start;
-  border-radius: var(--ps-radius-lg);
-  transition: transform var(--ps-transition-fast);
-}
-
-.theme-picker-item:hover {
-  transform: translateY(-2px);
-}
-
-.theme-picker-item:focus-visible {
-  outline: var(--app-focus-ring);
-  outline-offset: 2px;
-}
-
-/* Theme thumbnail preview container */
-.theme-picker-preview {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--ps-radius-md);
-  overflow: hidden;
-  border: 2px solid hsl(var(--app-border-subtle));
-  transition:
-    border-color var(--ps-transition-fast),
-    box-shadow var(--ps-transition-fast);
-  position: relative;
-  background: hsl(var(--app-bg-sunken));
-}
-
-.theme-picker-item:hover .theme-picker-preview {
-  border-color: hsl(var(--app-accent-primary) / 0.5);
-  box-shadow: var(--app-shadow-md);
-}
-
-/* Slide thumbnail inside preview */
-.theme-picker-thumb {
-  width: 100%;
-  height: 100%;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  margin: 0;
-  padding: 0;
-}
-
-.theme-picker-thumb .slide {
-  font-size: calc(16px * var(--thumb-scale, 0.1));
-}
-
-/* Fallback when slide rendering fails */
-.theme-picker-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  color: hsl(var(--app-text-tertiary));
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Theme name label */
-.theme-picker-name {
-  display: block;
-  margin-top: var(--ps-space-2);
-  font-size: var(--ps-text-xs);
-  font-weight: 500;
-  color: hsl(var(--app-text-secondary));
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* "More themes" button */

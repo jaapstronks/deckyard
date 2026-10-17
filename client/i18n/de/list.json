@@ -97,6 +97,7 @@
   "list.creationView.method.libraryDesc": "Wiederverwendbare Folien",
   "list.creationView.methodsLabel": "Erstellungsmethoden",
   "list.creationView.nameLabel": "Geben Sie ihr einen Namen",
+  "list.creationView.themeChangeLater": "Später änderbar unter Einstellungen → Design.",
   "list.creationView.themeOptionalHint": "Behält das Theme des Workspace bei, sofern Sie kein anderes wählen.",
   "list.creationView.themeSandboxHint": "In Ihrem eigenen Deckyard können Sie ein Theme mit eigenen Farben, Schriften und Logo gestalten.",
   "list.creationView.title": "Neue Präsentation",

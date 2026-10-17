@@ -146,7 +146,6 @@
   "common.settings": "Settings",
   "common.signOut": "Sign out",
   "common.theme": "Theme",
-  "common.themeCard.bodySpecimen": "Body text",
   "common.themeDefault": "Workspace default",
   "common.themeDefaultNamed": "Workspace default ({name})",
   "common.toggleTheme": "Toggle dark/light mode",

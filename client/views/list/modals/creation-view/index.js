@@ -79,6 +79,8 @@ export function openCreationView({
     modalClass: 'creation-view',
     fill: true,
     closeButton: false,
+    // The theme cards hold resize and in-view observers.
+    onClose: () => themeSelect.detach(),
     isDirty: () => isDirty(),
     confirmMessage: t(
       'list.newPresentation.confirmDiscard',
@@ -270,6 +272,13 @@ export function openCreationView({
   const themeDisclosure = h('details', { class: 'creation-theme-disclosure' }, [
     themeSummary,
     themeSelect.wrap,
+    h('div', {
+      class: 'help',
+      text: t(
+        'list.creationView.themeChangeLater',
+        'You can change this later in Settings → Theme.',
+      ),
+    }),
   ]);
   themeDisclosure.open = true;
   // The hint lives outside the disclosure so it stays visible while collapsed —

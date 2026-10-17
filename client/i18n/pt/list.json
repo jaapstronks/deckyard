@@ -98,6 +98,7 @@
   "list.creationView.method.libraryDesc": "Diapositivos reutilizáveis",
   "list.creationView.methodsLabel": "Formas de criar",
   "list.creationView.nameLabel": "Dê-lhe um nome",
+  "list.creationView.themeChangeLater": "Pode alterá-lo mais tarde em Definições → Tema.",
   "list.creationView.themeOptional": "Tema (opcional)",
   "list.creationView.themeOptionalHint": "Mantém o tema do espaço de trabalho, a não ser que escolha outro.",
   "list.creationView.themeSandboxHint": "No seu próprio Deckyard pode criar um tema com as suas cores, as suas fontes e o seu logótipo.",

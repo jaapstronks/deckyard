@@ -566,11 +566,6 @@
       "count": 2
     }
   },
-  "client/views/list/theme-picker-row.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/list/view-routing.js": {
     "no-restricted-syntax": {
       "count": 1

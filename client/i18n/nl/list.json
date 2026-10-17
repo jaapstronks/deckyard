@@ -170,6 +170,7 @@
   "list.creationView.method.libraryDesc": "Herbruikbare slides",
   "list.creationView.methodsLabel": "Manieren om te starten",
   "list.creationView.nameLabel": "Geef het een naam",
+  "list.creationView.themeChangeLater": "Later te wijzigen via Instellingen → Thema.",
   "list.creationView.themeOptional": "Thema (optioneel)",
   "list.creationView.themeOptionalHint": "Houdt het workspace-thema aan, tenzij je een ander kiest.",
   "list.creationView.themeSandboxHint": "In je eigen Deckyard bouw je een gebrand thema met eigen kleuren, fonts en logo.",

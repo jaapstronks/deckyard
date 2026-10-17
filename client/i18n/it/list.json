@@ -98,6 +98,7 @@
   "list.creationView.method.libraryDesc": "Slide riutilizzabili",
   "list.creationView.methodsLabel": "Metodi di creazione",
   "list.creationView.nameLabel": "Dalle un nome",
+  "list.creationView.themeChangeLater": "Modificabile in seguito da Impostazioni → Tema.",
   "list.creationView.themeOptional": "Tema (facoltativo)",
   "list.creationView.themeOptionalHint": "Mantiene il tema dello spazio di lavoro se non ne sceglie un altro.",
   "list.creationView.themeSandboxHint": "Nel tuo Deckyard puoi creare un tema personalizzato con colori, caratteri e logo del tuo marchio.",

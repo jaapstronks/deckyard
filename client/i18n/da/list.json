@@ -96,6 +96,7 @@
   "list.creationView.method.libraryDesc": "Slides, der kan genbruges",
   "list.creationView.methodsLabel": "Måder at oprette på",
   "list.creationView.nameLabel": "Giv den et navn",
+  "list.creationView.themeChangeLater": "Kan ændres senere under Indstillinger → Tema.",
   "list.creationView.themeOptional": "Tema (valgfrit)",
   "list.creationView.themeOptionalHint": "Beholder arbejdsområdets tema, medmindre du vælger et andet.",
   "list.creationView.themeSandboxHint": "I dit eget Deckyard kan du bygge et brandet tema med egne farver, skrifttyper og logo.",

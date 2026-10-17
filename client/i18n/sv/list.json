@@ -97,6 +97,7 @@
   "list.creationView.method.libraryDesc": "Slides som går att återanvända",
   "list.creationView.methodsLabel": "Sätt att skapa på",
   "list.creationView.nameLabel": "Ge den ett namn",
+  "list.creationView.themeChangeLater": "Kan ändras senare under Inställningar → Tema.",
   "list.creationView.themeOptional": "Tema (valfritt)",
   "list.creationView.themeOptionalHint": "Behåller arbetsytans tema om du inte väljer ett annat.",
   "list.creationView.themeSandboxHint": "I ditt eget Deckyard kan du bygga ett tema med ditt varumärkes färger, typsnitt och logotyp.",

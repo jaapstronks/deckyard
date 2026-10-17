@@ -136,6 +136,19 @@ describe('the companions travel', () => {
     );
   });
 
+  it('a type that seeds a background preset says so on the wire (D353)', () => {
+    // The editor's insert path and the theme card compose new slides from this
+    // response; without the flag they never seed the preset the server does.
+    for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+      assert.equal(
+        META[name]?.autoBackgroundPreset === true,
+        def.autoBackgroundPreset === true,
+        name,
+      );
+    }
+    assert.equal(META['title-slide'].autoBackgroundPreset, true);
+  });
+
   it('a deprecated type is served no shelf', () => {
     const stale = Object.entries(SLIDE_TYPES)
       .filter(([name, def]) => def?.deprecated && META[name]?.group)

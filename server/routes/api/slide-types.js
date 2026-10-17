@@ -96,6 +96,14 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // shared/slide-types/fidelity.js.
       fidelity: resolvedFidelities(def),
       themeOnly: def.themeOnly === true || undefined,
+      // Whether a new slide of this type takes the theme's first background
+      // preset (shared/theme-background-presets.js). Same seam half as
+      // `inspectorKeeps`: the editor's insert path, its Background section and
+      // the theme card compose from this response, so without the flag a new
+      // title slide made in the browser came out flat while the same slide
+      // made by the server wore the preset, and the theme card could not show
+      // the photo the deck gets (D353).
+      autoBackgroundPreset: def.autoBackgroundPreset === true || undefined,
       defaultsByLang:
         def.defaultsByLang && typeof def.defaultsByLang === 'object'
           ? def.defaultsByLang

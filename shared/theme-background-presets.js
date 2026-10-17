@@ -25,16 +25,20 @@ export function getBackgroundPresets(theme) {
 }
 
 /**
- * Pick a background image for a new title slide.
+ * Pick the background image for a new title slide: the theme's FIRST preset.
+ *
+ * Deterministic on purpose (D353). The theme card in the creation view and on
+ * Home renders the title slide a new deck starts with, so the photo it shows
+ * has to be the photo the deck gets; a random pick made the preview a guess.
+ * Decks that already carry a preset keep it: this only runs when a slide is
+ * created.
  *
  * @param {Object} [theme] - the active theme, when the caller has one
  * @returns {string} a preset URL, or '' when there is no theme context or the
  *   theme declares no presets — callers should treat '' as "leave it empty"
  */
 export function pickBackgroundPreset(theme) {
-  const presets = getBackgroundPresets(theme);
-  if (!presets.length) return '';
-  return presets[Math.floor(Math.random() * presets.length)];
+  return getBackgroundPresets(theme)[0] || '';
 }
 
 /**
@@ -47,7 +51,7 @@ export function pickBackgroundPreset(theme) {
  *
  * One helper because the two callers (server-side `newSlide`, the editor's
  * insert path) used to disagree: both wrote the legacy `bgImage` key, but only
- * one of them gated on the key already existing — so the same type got a random
+ * one of them gated on the key already existing — so the same type got a
  * photo from one surface and a flat slide from the other.
  *
  * @param {Object} content - slide content, mutated in place

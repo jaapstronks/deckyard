@@ -98,6 +98,7 @@
   "list.creationView.method.libraryDesc": "Lysbilder som kan gjenbrukes",
   "list.creationView.methodsLabel": "Måter å opprette på",
   "list.creationView.nameLabel": "Gi den et navn",
+  "list.creationView.themeChangeLater": "Kan endres senere under Innstillinger → Tema.",
   "list.creationView.themeOptional": "Tema (valgfritt)",
   "list.creationView.themeOptionalHint": "Beholder temaet til arbeidsområdet med mindre du velger et annet.",
   "list.creationView.themeSandboxHint": "I ditt eget Deckyard kan du bygge et tema med merkevarens farger, skrifter og logo.",

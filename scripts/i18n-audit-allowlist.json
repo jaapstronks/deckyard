@@ -15,7 +15,6 @@
   ],
   "orphans": {},
   "hardcoded": {
-    "client/views/theme-select/index.js :: Aa": "Typographic specimen — the letterforms are the content, not a word to translate.",
     "client/views/editor/ai-append.js :: LLM": "Acronym used as-is in every locale.",
     "client/views/editor/export-modal.js :: Markdown": "Format name.",
     "client/views/editor/export-modal.js :: ZIP": "Format name.",

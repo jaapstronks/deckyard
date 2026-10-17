@@ -38,6 +38,7 @@ globalThis.fetch = async () => {
   throw new Error('no network in this test');
 };
 
+const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 const { createVisualThemePicker, createAndPopulateThemeSelect } =
   await import('../client/views/theme-select/index.js');
 const { buildThemeSection } =
@@ -65,6 +66,8 @@ const LABELS = {
 function fakeThemesApi({ allowed, all = [BRAND, EDITORIAL, MIDNIGHT] }) {
   const paths = [];
   const api = async (path) => {
+    // The card grid also reads the type map; only theme requests are asserted.
+    if (path === '/api/slide-types') return SLIDE_TYPES;
     paths.push(path);
     const current = new URL(path, 'http://localhost').searchParams.get(
       'current',
@@ -102,14 +105,10 @@ test('the visual picker renders one grid, with no "show all" escape hatch', asyn
     'no toggle to reveal withdrawn themes',
   );
 
-  const labels = [...grids[0].querySelectorAll('.theme-card-label')].map(
+  const labels = [...grids[0].querySelectorAll('.theme-picker-name')].map(
     (el) => el.textContent,
   );
-  assert.deepEqual(labels, [
-    'Workspace default (Forest)',
-    'Forest',
-    'Editorial',
-  ]);
+  assert.deepEqual(labels, ['Forest', 'Editorial'], 'one card per theme');
 });
 
 test('the visual picker asks for the deck theme it was opened on', async () => {
@@ -118,12 +117,12 @@ test('the visual picker asks for the deck theme it was opened on', async () => {
   await picker.populated;
 
   assert.deepEqual(paths, [`/api/themes?current=${MIDNIGHT}`]);
-  const labels = [...picker.wrap.querySelectorAll('.theme-card-label')].map(
+  const labels = [...picker.wrap.querySelectorAll('.theme-picker-name')].map(
     (el) => el.textContent,
   );
   assert.deepEqual(
     labels,
-    ['Workspace default (Forest)', 'Forest', 'Midnight'],
+    ['Forest', 'Midnight'],
     'the withdrawn theme is offered here, and only here',
   );
 });
@@ -168,18 +167,54 @@ test('the deck-settings select drops a theme the workspace withdrew', async () =
   );
 });
 
-test('both pickers name the theme "Workspace default" resolves to (B584)', async () => {
+test('the deck-settings select names the theme "Workspace default" resolves to (B584)', async () => {
   const { api } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
   const selector = createAndPopulateThemeSelect({ api, initialTheme: BRAND });
   await selector.populated;
   assert.equal(selector.select.options[0].text, 'Workspace default (Forest)');
+});
 
-  const picker = createVisualThemePicker({ api });
+test('the default theme is one card, badged, and writes `default` (D353, D232)', async () => {
+  const { api } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
+  const changes = [];
+  const picker = createVisualThemePicker({
+    api,
+    onChange: (id) => changes.push(id),
+  });
   await picker.populated;
-  assert.equal(
-    picker.wrap.querySelector('.theme-card-label').textContent,
-    'Workspace default (Forest)',
+
+  const cards = [...picker.wrap.querySelectorAll('.theme-picker-item')];
+  assert.equal(cards.length, 2, 'no separate "Workspace default" card');
+  const badged = cards.filter((card) =>
+    card.querySelector('.theme-picker-badge'),
   );
+  assert.equal(badged.length, 1);
+  assert.equal(
+    badged[0].querySelector('.theme-picker-name').textContent,
+    'Forest',
+  );
+  assert.equal(
+    badged[0].querySelector('.theme-picker-badge').textContent,
+    'Workspace default',
+  );
+  assert.equal(picker.getTheme(), 'default');
+  assert.ok(badged[0].classList.contains('is-selected'));
+
+  cards[1].click();
+  assert.equal(picker.getTheme(), EDITORIAL);
+  badged[0].click();
+  assert.deepEqual(changes, [EDITORIAL, 'default']);
+  picker.detach();
+});
+
+test('opening on the default theme by id selects its card, which writes `default`', async () => {
+  // Home's theme row hands the creation view the record it was clicked on, so
+  // the workspace default arrives as its id.
+  const { api } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
+  const picker = createVisualThemePicker({ api, initialTheme: BRAND });
+  await picker.populated;
+  assert.equal(picker.getTheme(), 'default');
+  picker.detach();
 });
 
 test('without a marked default the select keeps the bare label', async () => {
