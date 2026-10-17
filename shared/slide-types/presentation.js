@@ -6,7 +6,10 @@ import {
   escapeHtml,
 } from './helpers.js';
 import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
-import { resolveTypeDefaults, typeDefaultBackground } from './type-defaults.js';
+import {
+  resolveTypeDefaults,
+  withTypeDefaultBackground,
+} from './type-defaults.js';
 import { applyInstanceKeyDefaults } from './instance-keys.js';
 import {
   SLIDE_BG_ID_RE,
@@ -455,18 +458,6 @@ export function computeHeadingShifts(slides, { isSectionOpener } = {}) {
   });
 }
 
-// The content view with the type's standard ground under an empty
-// `background`. Returns the same object when there is nothing to fill, so the
-// common path allocates nothing; stored slide data is never touched.
-function withDefaultBackground(content, def, theme) {
-  const own =
-    typeof content?.background === 'string' ? content.background.trim() : '';
-  if (own) return content;
-  const fallback = typeDefaultBackground(def, theme);
-  if (!fallback) return content;
-  return { ...content, background: fallback };
-}
-
 export function renderSlideHtml(slide, ctx = {}) {
   // Allow callers to provide their own slide types (e.g., client using server-fetched types).
   // This is essential for custom slide types that aren't bundled in the client build.
@@ -490,7 +481,7 @@ export function renderSlideHtml(slide, ctx = {}) {
   // An empty `background` is the type's standard ground (theme-aware), so the
   // type renders what the editor marks as its default and a reset can store
   // nothing (B733). After the locks: a locked ground falls back the same way.
-  const content = withDefaultBackground(
+  const content = withTypeDefaultBackground(
     applyLocksToContent(slide?.content || {}, ctx?.theme),
     def,
     ctx?.theme,

@@ -80,6 +80,27 @@ export function typeDefaultBackground(def, theme = null) {
 }
 
 /**
+ * The content view with the type's standard ground under an empty
+ * `background` ({@link typeDefaultBackground}). Every renderer of a slide's
+ * ground reads this view — the HTML pipeline and the native PPTX composers —
+ * so an empty value means the same ground in each output. Returns the same
+ * object when there is nothing to fill; stored slide data is never touched.
+ *
+ * @param {Object} content
+ * @param {{defaults?: Object, fields?: Array}|null|undefined} def
+ * @param {Object|null} [theme]
+ * @returns {Object}
+ */
+export function withTypeDefaultBackground(content, def, theme = null) {
+  const own =
+    typeof content?.background === 'string' ? content.background.trim() : '';
+  if (own) return content;
+  const fallback = typeDefaultBackground(def, theme);
+  if (!fallback) return content;
+  return { ...content, background: fallback };
+}
+
+/**
  * Put the theme's ground under a type's defaults, where the type offers it.
  *
  * The one test is the union the editor's background picker already builds:
