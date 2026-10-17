@@ -1961,6 +1961,8 @@ export function createInlineEditor({
       rovingPath = canvasStops[0]?.path ?? null;
     for (const s of canvasStops) {
       s.el.setAttribute('tabindex', s.path === rovingPath ? '0' : '-1');
+      if (s.el.hasAttribute('data-inline-field'))
+        nameEmptyField(s.el, s.path, def, slide);
     }
     const refocus = refocusPath;
     refocusPath = null;
@@ -1971,6 +1973,27 @@ export function createInlineEditor({
         const stop = canvasStops.find((s) => s.path === rovingPath);
         if (!editing && stop?.el.isConnected) stop.el.focus();
       });
+    }
+  }
+
+  /**
+   * A field stop is named by its text; an empty one has none to read, and its
+   * in-box placeholder is CSS, which a screen reader does not hear (B732). It
+   * takes the placeholder's words ("Add Title"), so the name holds what is on
+   * screen, or else the field's label. A ghost is a button named by its label
+   * already. Only names it set itself are taken back once the field fills.
+   */
+  function nameEmptyField(el, path, def, slide) {
+    if (isEmptyValue(getByPath(slide?.content, path))) {
+      el.setAttribute(
+        'aria-label',
+        el.getAttribute('data-ie-placeholder') ||
+          fieldLabel(path, fieldMetaForPath(def, path)),
+      );
+      el.setAttribute('data-ie-named', '');
+    } else if (el.hasAttribute('data-ie-named')) {
+      el.removeAttribute('aria-label');
+      el.removeAttribute('data-ie-named');
     }
   }
 
