@@ -84,7 +84,7 @@ table.csv-grid {
 }
 
 .csv-grid-input:focus {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline: var(--app-focus-ring);
   outline-offset: -2px;
   background: hsl(var(--app-accent-primary) / 0.06);
 }
@@ -275,9 +275,8 @@ table.csv-grid {
   pointer-events: none;
 }
 .bg-picker-trigger:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 .bg-picker-label {
@@ -390,7 +389,7 @@ table.csv-grid {
   border-color: hsl(var(--app-border-strong));
 }
 .icon-picker-trigger:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary));
+  outline: var(--app-focus-ring);
   outline-offset: 1px;
 }
 .icon-picker-trigger-name {
@@ -486,7 +485,7 @@ table.csv-grid {
   border-color: hsl(var(--app-border-default));
 }
 .icon-picker-cell:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary));
+  outline: var(--app-focus-ring);
   outline-offset: 1px;
 }
 .icon-picker-cell.is-selected {
@@ -678,9 +677,8 @@ table.csv-grid {
 }
 
 .md-toolbar-btn:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 .md-toolbar-sep {
@@ -921,7 +919,7 @@ table.csv-grid {
 }
 
 .sb-segmented.is-outlined .sb-segmented-btn:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline: var(--app-focus-ring);
   outline-offset: -1px;
   box-shadow: none;
 }

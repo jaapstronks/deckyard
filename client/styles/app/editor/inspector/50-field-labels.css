@@ -41,8 +41,8 @@
 
 /* Script-focused when no control is named, so the ring has to be visible. */
 .inline-error:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-danger) / 0.25);
+  outline: var(--app-focus-ring);
+  outline-color: hsl(var(--app-danger));
 }
 
 .form-input[aria-invalid='true'] {
@@ -51,5 +51,5 @@
 
 .form-input[aria-invalid='true']:focus {
   border-color: hsl(var(--app-danger));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-danger) / 0.2);
+  outline-color: hsl(var(--app-danger));
 }

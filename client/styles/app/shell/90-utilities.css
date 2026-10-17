@@ -68,7 +68,7 @@
 
 .skip-link:focus {
   top: 0;
-  outline: 2px solid hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
   outline-offset: 2px;
 }
 

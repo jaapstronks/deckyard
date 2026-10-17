@@ -274,6 +274,31 @@ Two things stay literal by construction:
 - **`slides/**`.** Same trap as spacing — a `--ps-text-*` inside
   `client/styles/slides/**` resolves to nothing in the MCP preview bundle.
 
+## Focus ring — one ring on every stop
+
+Every keyboard stop draws the same ring (D349): `--app-focus-ring`, a
+`--ps-focus-ring-width` (2px) solid outline in `--app-border-focus`, which
+lightens in dark mode. `client/styles/shared/primitives.css` sets it as a
+zero-specificity baseline, `:where(:focus-visible)`, so no stop falls back to
+the browser's `outline: auto` and a component that needs another offset only
+restates `outline-offset` (an inset `-2px` for a row in a clipping list, `-1px`
+for a text field, where the ring lies over its own border).
+
+- **Restate the offset or the colour, never the ring.** A focus rule that sets
+  `outline` uses `var(--app-focus-ring)`; an error state restates
+  `outline-color` in `--app-danger`, the dark coach bubble in white. No accent
+  `box-shadow` halo in its place.
+- **Text fields show it on any focus.** They hold a caret, so `.form-input`
+  and its siblings put the ring on `:focus`, not only `:focus-visible`.
+- **Canvas stops are the exception in colour, not in shape.** A stop on the
+  slide (`.ie-overlay`) sits on deck colours the UI mode does not change, so
+  it takes the mode-invariant `--app-focus-canvas` with a white band on both
+  sides (WCAG technique C40): at least 3:1 against any slide background.
+
+`tests/focus-ring.test.js` pins the token, the baseline and every focus rule in
+`shared/`, `app/` and `viewer/`, with a two-entry allowlist for `outline: none`
+where another element draws the ring.
+
 ## Where the other tokens are
 
 The remaining scales in `ui-tokens.css` carry no migration rule and are used
