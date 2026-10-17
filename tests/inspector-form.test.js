@@ -319,8 +319,9 @@ const RENDER_PRECONDITIONS = {
   'poll-slide': [{ content: { onClose: 'goto' } }],
   'likert-slide': [{ content: { onClose: 'goto' } }],
   // The aside's text field only means something once a kind is chosen; the
-  // default ('none') hides it, which is what makes "Aside" read as one control
-  // instead of an always-present empty box (shared/slide-types/aside-field.js).
+  // default ('none') hides it, which is what makes "Side note" read as one
+  // control instead of an always-present empty box
+  // (shared/slide-types/aside-field.js).
   'content-slide': [{ content: { asideVariant: 'note' } }],
   'list-slide': [{ content: { asideVariant: 'note' } }],
   // The image role and the colour behind a letterboxed image wait for a
@@ -379,7 +380,7 @@ test('video/embed source fields render in the inspector (no orphaned fields)', (
   // them — before this they were orphaned to the bulk "All text" modal.
   const video = fieldLabels(renderForm({ type: 'video-slide' }));
   assert.ok(
-    video.some((l) => l.replace('*', '') === 'video'),
+    video.some((l) => l.replaceAll('*', '').trim() === 'video'),
     'video source renders',
   );
   assert.ok(
