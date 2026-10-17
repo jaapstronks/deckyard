@@ -1,9 +1,12 @@
 /**
  * Import concern for the creation view.
  *
- * The "Import" method (.deck / .json / .md file / paste markdown) is a self-contained
- * sub-feature: pick a sub-tab, select a file or paste markdown, and import a
- * deck directly — no AI. Its active sub-tab, the two selected files, the
+ * The "Import an existing deck" method (PowerPoint or PDF / .deck / .json /
+ * .md file / paste markdown) is a self-contained sub-feature: pick a sub-tab,
+ * select a file or paste markdown, and import a deck directly — no AI. The
+ * route is the intent (B306, D235): a PowerPoint or PDF chosen here is taken
+ * over as images, never interpreted; generating from a document is the
+ * content method's. Its active sub-tab, the two selected files, the
  * sub-tab DOM, and the inline import-warnings renderer all live here, exclusive
  * to this concern; the creation view only wires it in.
  *
@@ -15,8 +18,9 @@
  *     reads the active sub-tab).
  *
  * The `.deck` sub-tab is its own module (import-deck.js): it owns the install
- * choice, which the other three do not have. What was left out of an import
- * shows through the same warnings block as Markdown.
+ * choice, which the others do not have. The "PowerPoint or PDF" sub-tab is
+ * import-images.js, on the shared slide-import chooser. What was left out of
+ * an import shows through the same warnings block as Markdown.
  *
  * Every sub-tab refuses the same way: an inline error at its file input or
  * textarea, cleared at the start of the next attempt, never a footer line or
@@ -34,6 +38,7 @@ import { h } from '../../../../lib/dom/index.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { nav } from '../../../../lib/state/router.js';
 import { createDeckImportPanel } from './import-deck.js';
+import { createImagesImportPanel } from './import-images.js';
 
 /**
  * @param {object} opts
@@ -46,8 +51,8 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   const syncUI = () => onChange?.();
 
   // ===== State =====
-  // The portable deck is the lossless format, so it is the default.
-  let importSubtab = 'deck'; // deck | json | import-md | paste-md
+  // A PowerPoint or PDF is what most existing decks are, so it is the default.
+  let importSubtab = 'images'; // images | deck | json | import-md | paste-md
   let selectedImportFile = null;
   let selectedImportMdFile = null;
 
@@ -57,9 +62,14 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     'data-method': 'import',
   });
   const importSubtabs = h('div', { class: 'sb-segmented' });
-  const btnImpDeck = h('button', {
+  const btnImpImages = h('button', {
     type: 'button',
     class: 'sb-segmented-btn is-active',
+    text: t('list.creationView.importImages.tab', 'PowerPoint or PDF'),
+  });
+  const btnImpDeck = h('button', {
+    type: 'button',
+    class: 'sb-segmented-btn',
     text: t('list.newPresentation.mode.importDeck', 'Import .deck'),
   });
   const btnImpJson = h('button', {
@@ -77,12 +87,22 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     class: 'sb-segmented-btn',
     text: t('list.newPresentation.mode.pasteMarkdown', 'Paste Markdown'),
   });
-  importSubtabs.append(btnImpDeck, btnImpJson, btnImpMd, btnImpPasteMd);
+  importSubtabs.append(
+    btnImpImages,
+    btnImpDeck,
+    btnImpJson,
+    btnImpMd,
+    btnImpPasteMd,
+  );
+
+  const imagesImport = createImagesImportPanel();
+  const panelImages = imagesImport.el;
 
   const deckImport = createDeckImportPanel({
     canInstall: !!canInstallDefinitions,
   });
   const panelDeck = deckImport.el;
+  panelDeck.classList.add('is-hidden');
 
   const panelJson = h('div', { class: 'creation-subpanel is-hidden' });
   const importFileInput = h('input', {
@@ -158,6 +178,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   );
 
   const importSubWrap = h('div', { class: 'creation-subpanels' }, [
+    panelImages,
     panelDeck,
     panelJson,
     panelImportMd,
@@ -165,6 +186,11 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   ]);
   panel.append(importSubtabs, importSubWrap);
 
+  const showSubtab = (key) => {
+    importSubtab = key;
+    syncUI();
+  };
+  btnImpImages.addEventListener('click', () => showSubtab('images'));
   btnImpDeck.addEventListener('click', () => {
     importSubtab = 'deck';
     syncUI();
@@ -185,6 +211,8 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   // Update the panel's own sub-tabs to match the active sub-tab. Called from the
   // host's syncUI (the sub-tabs and their panels live inside this panel).
   const syncPanel = () => {
+    btnImpImages.classList.toggle('is-active', importSubtab === 'images');
+    panelImages.classList.toggle('is-hidden', importSubtab !== 'images');
     btnImpDeck.classList.toggle('is-active', importSubtab === 'deck');
     btnImpJson.classList.toggle('is-active', importSubtab === 'json');
     btnImpMd.classList.toggle('is-active', importSubtab === 'import-md');
@@ -198,6 +226,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   // Resolve which concrete create-flow the active sub-tab runs.
   const getMode = () =>
     ({
+      images: 'import-images',
       deck: 'import-deck',
       json: 'import-json',
       'import-md': 'import-markdown',
@@ -259,6 +288,9 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
       return (message) => error.show(message, { control });
     };
     switch (importSubtab) {
+      case 'images':
+        await imagesImport.run({ ...commonOpts, langMode, themeId });
+        break;
       case 'deck':
         await deckImport.run({
           ...commonOpts,
@@ -303,6 +335,8 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     syncPanel,
     /** Effective create-mode for the active sub-tab. */
     getMode,
+    /** Switch to a sub-tab (the content method's cross-link opens `images`). */
+    showSubtab,
     /** Whether the active sub-tab brings its own theme (.deck and JSON do). */
     carriesOwnTheme: () => importSubtab === 'deck' || importSubtab === 'json',
     /** Whether the active sub-tab names its own language (.deck does, D89). */

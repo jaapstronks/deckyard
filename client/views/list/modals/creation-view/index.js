@@ -6,10 +6,13 @@
  * the right pane scrolls. Replaces the single overflowing new-presentation
  * modal (create-flow track, Slice 1).
  *
- * Methods live behind rail items: Blank, From the library (Slice 2 — shown
- * disabled here), From content · AI (paste / upload / Notion), and — after a
- * divider — Import (.json / .md). The Content · AI and Import flows reuse the
- * existing handlers in ../new-presentation/handlers.js unchanged.
+ * Methods live behind rail items: Blank, From the library, Generate from
+ * content · AI (paste / upload / Notion), and — after a divider — Import an
+ * existing deck (PowerPoint or PDF / .deck / .json / .md). The two routes are
+ * the two intents of D235, chosen before any file: generating interprets the
+ * source with AI (the convert route, behind feature `ai`), importing takes
+ * the deck over (the presentation import routes) and needs no AI (B306). The
+ * flows reuse the handlers in ../new-presentation/handlers.js.
  */
 
 import { t, getUiLocale } from '../../../../lib/ui-i18n.js';
@@ -137,12 +140,12 @@ export function openCreationView({
     rail.append(
       makeRailItem(
         'content',
-        t('list.creationView.method.content', 'From content'),
+        t('list.creationView.method.generate', 'Generate from content'),
         {
           badge: 'AI',
           desc: t(
-            'list.creationView.method.contentDesc',
-            'Paste, upload, or Notion',
+            'list.creationView.method.generateDesc',
+            'Text, document or Notion',
           ),
         },
       ),
@@ -150,9 +153,16 @@ export function openCreationView({
   }
   rail.append(h('div', { class: 'creation-rail-divider' }));
   rail.append(
-    makeRailItem('import', t('list.creationView.method.import', 'Import'), {
-      desc: t('list.creationView.method.importDesc', '.deck, .json or .md'),
-    }),
+    makeRailItem(
+      'import',
+      t('list.creationView.method.importDeck', 'Import an existing deck'),
+      {
+        desc: t(
+          'list.creationView.method.importDeckDesc',
+          'PowerPoint, PDF, .deck or Markdown',
+        ),
+      },
+    ),
   );
 
   // ===== Right pane =====
@@ -202,10 +212,17 @@ export function openCreationView({
   // Not built where AI is off (D179): the rail offers no "From content" there,
   // and the wizard and convert routes behind it are not mounted.
   const content = featureEnabled('ai')
-    ? createContentCompose({ api, onChange: () => syncUI() })
+    ? createContentCompose({
+        api,
+        onChange: () => syncUI(),
+        onImportDeck: () => {
+          importMethod.showSubtab('images');
+          selectMethod('import');
+        },
+      })
     : null;
 
-  // --- Import panel (.deck / .json / .md file / paste markdown) ---
+  // --- Import panel (PowerPoint or PDF / .deck / .json / .md file / paste markdown) ---
   // A third self-contained concern: the active sub-tab, the two selected files,
   // and the inline import-warnings renderer live in the module. syncUI drives
   // its panel, getEffectiveMode/isDirty/themeApplies read its state, and Create
@@ -355,6 +372,7 @@ export function openCreationView({
       'paste-text': t('list.aiWizard.generate', 'Generate'),
       'convert-file': t('list.fileConverter.convert', 'Convert'),
       notion: t('list.newPresentation.notion.import', 'Import'),
+      'import-images': t('editor.importSlides.importButton', 'Import slides'),
       'import-deck': t('list.importDeck', 'Import .deck'),
       'import-json': t('list.importJson', 'Import JSON'),
       'import-markdown': t('list.importMarkdown', 'Import Markdown'),
@@ -508,6 +526,7 @@ export function openCreationView({
           themeId: themeSelect.getTheme(),
         });
         break;
+      case 'import-images':
       case 'import-deck':
       case 'import-json':
       case 'import-markdown':

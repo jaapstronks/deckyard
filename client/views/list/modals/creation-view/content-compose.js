@@ -1,16 +1,22 @@
 /**
  * Content-compose concern for the creation view.
  *
- * The "From content · AI" method is a self-contained sub-feature: paste text,
- * upload a document, or import a Notion page, and let the AI wizard turn it into
- * a deck. All of its state — the active sub-tab and the selected upload file —
- * lives here, exclusive to this concern; the creation view only wires it in.
+ * The "Generate from content · AI" method is a self-contained sub-feature:
+ * paste text, upload a document, or import a Notion page, and let the AI turn
+ * it into a new deck. Every format the upload takes is source material here,
+ * a PowerPoint or PDF too (D235): the route is the intent, not the file type.
+ * Taking an existing deck over is the import method's; a quiet line above the
+ * file input points there before any file is chosen (B306). All of its
+ * state — the active sub-tab and the selected upload file — lives here,
+ * exclusive to this concern; the creation view only wires it in.
  *
  * Split out of creation-view/index.js (B10 P4 seam), behaviour-preserving.
  *
  * The host provides two things:
  *   - onChange()   — re-run the host's syncUI (the Create button label reads the
  *     active sub-tab; the shared theme picker applies to every sub-tab).
+ *   - onImportDeck() — switch to the import method on its "PowerPoint or PDF"
+ *     sub-tab (the cross-link).
  *
  * The host builds this only where AI is on (D179), so nothing in here asks.
  */
@@ -28,9 +34,10 @@ import { featureEnabled } from '../../../../lib/state/features.js';
  * @param {object} opts
  * @param {Function} opts.api - fetch wrapper.
  * @param {() => void} opts.onChange - re-run host syncUI.
+ * @param {() => void} opts.onImportDeck - open the deck import instead.
  * @returns {object} content-compose controller
  */
-export function createContentCompose({ api, onChange }) {
+export function createContentCompose({ api, onChange, onImportDeck }) {
   const syncUI = () => onChange?.();
 
   // ===== State =====
@@ -98,14 +105,31 @@ export function createContentCompose({ api, onChange }) {
       convertFileInfo.textContent = '';
     }
   });
+  // Before the file is chosen, not after: whoever wants an existing deck
+  // taken over one to one finds the import here, without a detector or a
+  // question after the upload (B306).
+  const importDeckLink = h('p', { class: 'help creation-crosslink' }, [
+    t(
+      'list.creationView.importDeckHint',
+      'Want to bring in an existing presentation as it is?',
+    ),
+    ' ',
+    h('button', {
+      type: 'button',
+      class: 'link-button',
+      text: t('list.creationView.importDeckLink', 'Import it as a deck'),
+      onclick: () => onImportDeck?.(),
+    }),
+  ]);
   panelUpload.append(
     h('div', {
       class: 'help modal-hint',
       text: t(
-        'list.fileConverter.help',
-        'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides. Review the result afterwards.',
+        'list.creationView.generateFile.help',
+        'Upload a .pptx, .pdf, .docx, .rtf or .odt file as source material. Deckyard reads the content and writes a new presentation from it with AI; it does not copy the slides over. Review the result afterwards.',
       ),
     }),
+    importDeckLink,
     convertFileInput,
     convertFileInfo,
   );
