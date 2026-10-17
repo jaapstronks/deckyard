@@ -8,6 +8,7 @@ import { handlePresentationsCreate } from './create.js';
 import { handlePresentationsImportJson } from './import-json.js';
 import { handlePresentationsImportDeck } from './import-deck.js';
 import { handlePresentationsImportMarkdown } from './import-markdown.js';
+import { handlePresentationsImportImages } from './import-images.js';
 import { handlePresentationVisibility } from './visibility.js';
 import {
   handlePresentationItem,
@@ -236,6 +237,12 @@ export const ROUTES = [
     method: 'POST',
     pattern: '/api/presentations/import/markdown',
     handler: handlePresentationsImportMarkdown,
+  },
+  // Import (an existing deck as image slides from PDF/PPTX — SSE, no AI; B306)
+  {
+    method: 'POST',
+    pattern: '/api/presentations/import/images',
+    handler: handlePresentationsImportImages,
   },
 
   {

@@ -9,6 +9,12 @@
  * shown slides are paired first. Either file may come alone; when both come
  * and the counts differ, nothing is imported.
  *
+ * The same import also creates a new deck (`POST /api/presentations/import/
+ * images`, B306): the "import an existing deck" route of the creation view.
+ * It builds the slides through the same service, so the cases below drive the
+ * insert route for the pairing rules and the create route for what differs:
+ * a new deck, no AI, nothing written on a refusal.
+ *
  * Run with: node --test tests/import-slides-as-images-pptx.test.js
  */
 
@@ -22,6 +28,7 @@ import {
   resolveChromeExecutablePath,
   toNodeBuffer,
 } from '../server/utils/puppeteer-browser.js';
+import { seedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.SANDBOX_MODE;
@@ -35,6 +42,10 @@ const OWNER = {
   organizationId: ORG,
 };
 
+// The create route settles its theme like every create: absent is the
+// installation default, which has to be a seeded theme row.
+const BRAND = await seedRow('brand');
+
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/db/lifecycle.js');
@@ -43,6 +54,8 @@ const { readPptxSlideNotes } =
   await import('../server/utils/convert-file/index.js');
 const { handlePresentationImportSlidesAsImages } =
   await import('../server/routes/api/presentations/import-slides-as-images.js');
+const { handlePresentationsImportImages } =
+  await import('../server/routes/api/presentations/import-images.js');
 
 let PptxGenJS = null;
 try {
@@ -115,6 +128,7 @@ function seed() {
     ],
     presentation_collaborators: [],
     presentation_comments: [],
+    themes: [BRAND],
   });
   __setTestDb(db);
 }
@@ -193,6 +207,32 @@ async function runImport({ pdf = null, pptx = null, body = {} } = {}) {
   );
   return res;
 }
+
+/** Drive the create route with a PDF, a PowerPoint file, or both. */
+async function runCreate({ pdf = null, pptx = null, body = {} } = {}) {
+  const res = makeSseRes();
+  await handlePresentationsImportImages({
+    repoRoot: process.cwd(),
+    storageScope: scope(),
+    req: makeReq({
+      ...(pdf && {
+        dataUrl: `data:application/pdf;base64,${pdf.toString('base64')}`,
+        filename: 'talk.pdf',
+      }),
+      ...(pptx && {
+        pptxDataUrl: `data:${PPTX_MIME};base64,${pptx.toString('base64')}`,
+        pptxFilename: 'talk.pptx',
+      }),
+      lang: 'nl',
+      ...body,
+    }),
+    res,
+    authedUser: OWNER,
+  });
+  return res;
+}
+
+const deckIds = () => (db.__tables.presentations || []).map((p) => p.id);
 
 /** The `complete` payload, or the `error` message, of a finished stream. */
 function lastEvent(res) {
@@ -431,4 +471,113 @@ test('a zip that holds no slides is refused, and the deck is left alone', async 
     deckSlides().map((s) => s.id),
     ['s1'],
   );
+});
+
+test(
+  'create: a PDF with its PowerPoint file becomes a new deck, named after the file, one image slide per page',
+  { skip: noPptxgen || noChrome },
+  async () => {
+    seed();
+    const res = await runCreate({
+      pdf: await printPdf(['One', 'Two', 'Four']),
+      pptx: await sampleDeck(),
+    });
+    const done = lastEvent(res);
+    assert.equal(done.event, 'complete', res.chunks.join(''));
+    assert.equal(done.data.slidesAdded, 3);
+    assert.equal(done.data.withImages, true);
+    assert.equal(done.data.withNotes, true);
+    const created = done.data.presentation;
+    assert.notEqual(created.id, DECK);
+    assert.equal(created.title, 'talk');
+    assert.equal(created.lang, 'nl');
+    assert.deepEqual(
+      created.slides.map((s) => [s.type, s.notes, s.content.alt]),
+      [
+        ['image-slide', NOTES.one, 'talk - Page 1'],
+        ['image-slide', '', 'talk - Page 2'],
+        ['image-slide', NOTES.four, 'talk - Page 3'],
+      ],
+    );
+    // The deck it was not asked about is left alone.
+    assert.deepEqual(
+      deckSlides().map((s) => s.id),
+      ['s1'],
+    );
+  },
+);
+
+test(
+  'create: a PowerPoint file alone becomes a deck of shown slides with their notes, without a browser',
+  { skip: noPptxgen },
+  async () => {
+    seed();
+    const res = await runCreate({ pptx: await sampleDeck() });
+    const done = lastEvent(res);
+    assert.equal(done.event, 'complete', res.chunks.join(''));
+    assert.equal(done.data.withImages, false);
+    assert.deepEqual(
+      done.data.presentation.slides.map((s) => [s.type, s.notes]),
+      [
+        ['image-slide', NOTES.one],
+        ['image-slide', ''],
+        ['image-slide', NOTES.four],
+      ],
+    );
+    assert.equal(deckIds().length, 2);
+  },
+);
+
+test(
+  'create: counts that match neither are refused with both numbers, and no deck is created',
+  { skip: noPptxgen || noChrome },
+  async () => {
+    seed();
+    const res = await runCreate({
+      pdf: await printPdf(['One', 'Two']),
+      pptx: await sampleDeck(),
+    });
+    const done = lastEvent(res);
+    assert.equal(done.event, 'error');
+    assert.match(done.data.message, /2 pages.*3 slides/);
+    assert.deepEqual(deckIds(), [DECK]);
+  },
+);
+
+test('create: files that are not what their field says are refused before the stream opens', async () => {
+  const text = `data:application/pdf;base64,${Buffer.from('hello').toString('base64')}`;
+  for (const body of [{}, { dataUrl: text }, { pptxDataUrl: text }]) {
+    seed();
+    const res = await runCreate({ body });
+    assert.equal(res.statusCode, 400, JSON.stringify(Object.keys(body)));
+    assert.deepEqual(res.events, []);
+    assert.deepEqual(deckIds(), [DECK]);
+  }
+});
+
+test('create: an unknown theme is refused before any work, and no deck is created', async () => {
+  seed();
+  const zip = new JSZip();
+  zip.file('word/document.xml', '<w:document/>');
+  await assert.rejects(
+    runCreate({
+      pptx: await zip.generateAsync({ type: 'nodebuffer' }),
+      body: { theme: 'no-such-theme' },
+    }),
+    (err) => err?.statusCode === 400 && err?.details?.field === 'theme',
+  );
+  assert.deepEqual(deckIds(), [DECK]);
+});
+
+test('create: a zip that holds no slides is refused, and no deck is created', async () => {
+  seed();
+  const zip = new JSZip();
+  zip.file('word/document.xml', '<w:document/>');
+  const res = await runCreate({
+    pptx: await zip.generateAsync({ type: 'nodebuffer' }),
+  });
+  const done = lastEvent(res);
+  assert.equal(done.event, 'error');
+  assert.match(done.data.message, /No slides found/);
+  assert.deepEqual(deckIds(), [DECK]);
 });
