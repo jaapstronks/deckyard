@@ -88,7 +88,7 @@ export function createNotesStrip({
       h('button', {
         class: 'btn btn-secondary btn-sm',
         type: 'button',
-        text: t('editor.notes.qr', 'Notes (QR)'),
+        text: t('editor.notes.qr', 'On your phone'),
         title: t(
           'editor.companion.title',
           'Open speaker notes companion on your phone (QR code).',
@@ -110,7 +110,7 @@ export function createNotesStrip({
     'data-collab-field-key': 'notes',
     placeholder: t(
       'editor.notes.placeholder',
-      "Text you write here shows on your phone. Click 'Notes (QR)' to show a QR code for your phone.",
+      "Text you write here shows on your phone. Click 'On your phone' to show a QR code for your phone.",
     ),
   });
   textarea.addEventListener('input', () => {

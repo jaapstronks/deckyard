@@ -379,7 +379,7 @@ test('video/embed source fields render in the inspector (no orphaned fields)', (
   // them — before this they were orphaned to the bulk "All text" modal.
   const video = fieldLabels(renderForm({ type: 'video-slide' }));
   assert.ok(
-    video.some((l) => l.includes('video url')),
+    video.some((l) => l.replace('*', '') === 'video'),
     'video source renders',
   );
   assert.ok(

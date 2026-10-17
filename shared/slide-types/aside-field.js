@@ -95,7 +95,7 @@ function kindOption(key, kind, label) {
  */
 export const ASIDE_VARIANT_FIELD = {
   key: 'asideVariant',
-  label: 'Aside',
+  label: 'Side note',
   labelKey: 'editor.slideField.asideVariant.label',
   type: 'enum',
   required: false,
@@ -121,7 +121,7 @@ export const ASIDE_VARIANT_FIELD = {
  */
 export const ASIDE_TEXT_FIELD = {
   key: 'asideText',
-  label: 'Aside text',
+  label: 'Side note text',
   labelKey: 'editor.slideField.asideText.label',
   type: 'markdown',
   required: false,
