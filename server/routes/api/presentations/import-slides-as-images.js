@@ -161,8 +161,10 @@ export async function handlePresentationImportSlidesAsImages(
       sendError(err.message);
       return true;
     }
+    // A refusal of the files has its sentence above; anything else is a
+    // server fault, logged here and not repeated to the client.
     log.error('[import-slides] Error:', err?.message, err?.stack);
-    sendError(err?.message || 'Failed to import slides');
+    sendError('Failed to import slides');
     return true;
   }
 }
