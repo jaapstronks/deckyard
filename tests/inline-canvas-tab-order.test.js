@@ -306,3 +306,106 @@ test('Tab inside an edit still walks the fields and wraps (B704)', () => {
     env.teardown();
   }
 });
+
+/**
+ * B732: an empty field is a stop too, and its placeholder is CSS a screen
+ * reader does not hear, so it carries a name: the placeholder's words, or else
+ * the field's label, in the UI language. A filled field reads its own text.
+ */
+const EMPTY_TITLE = {
+  id: 'te',
+  type: 'title-slide',
+  content: { title: '', subheading: '' },
+};
+const EMPTY_LIST = {
+  id: 'le',
+  type: 'list-slide',
+  content: { title: '', items: [{ title: '', text: 'First' }] },
+};
+
+/** The accessible name a walk meets on each canvas stop, in Tab order. */
+function stopNames(env) {
+  env.slideBar.focus();
+  const names = [];
+  for (let i = 0; i < 30; i++) {
+    pressTab();
+    const el = document.activeElement;
+    if (el === env.inspector) break;
+    names.push(el.getAttribute('aria-label') ?? `text:${el.textContent}`);
+  }
+  return names;
+}
+
+test('every canvas stop has a name: an empty field its placeholder or label, a filled one its text (B732)', () => {
+  const title = mount(structuredClone(EMPTY_TITLE));
+  try {
+    assert.deepEqual(stopNames(title), ['Add Title', 'Subtitle', 'Meta']);
+  } finally {
+    title.teardown();
+  }
+  const list = mount(structuredClone(EMPTY_LIST));
+  try {
+    // The empty first item title has no in-box placeholder: its label names
+    // it. The "+ Add item" button after the list reads its own text.
+    assert.deepEqual(stopNames(list), [
+      'Add Title',
+      'Subheading',
+      'Title',
+      'text:First',
+      'text:+Add item',
+    ]);
+  } finally {
+    list.teardown();
+  }
+});
+
+test('the name goes once the field is filled, and stays off a filled field (B732)', async () => {
+  const env = mount(structuredClone(EMPTY_TITLE));
+  try {
+    assert.equal(env.field('title').getAttribute('aria-label'), 'Add Title');
+    env.field('title').focus();
+    press('Enter');
+    env.field('title').textContent = 'Now filled';
+    press('Enter');
+    await settle();
+    await settle();
+    assert.equal(env.slide.content.title, 'Now filled');
+    assert.equal(env.field('title').hasAttribute('aria-label'), false);
+  } finally {
+    env.teardown();
+  }
+});
+
+test('ghost chip and empty-field names follow the UI language (B732)', async () => {
+  const { setUiLocale } = await import('../client/lib/ui-i18n.js');
+  const fs = await import('node:fs/promises');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const file = new URL(`..${url}`, import.meta.url);
+    try {
+      const body = await fs.readFile(file, 'utf8');
+      return { ok: true, status: 200, json: async () => JSON.parse(body) };
+    } catch {
+      return { ok: false, status: 404, json: async () => ({}) };
+    }
+  };
+  await setUiLocale('nl', { persist: false, announce: false });
+  const env = mount({
+    id: 'c',
+    type: 'chapter-title-slide',
+    content: { title: '', subheading: '' },
+  });
+  try {
+    const chip = document.querySelector('[data-ie-ghost="subheading"]');
+    assert.equal(chip.getAttribute('aria-label'), 'Subkop');
+    assert.equal(chip.querySelector('.ie-ghost-label').textContent, 'Subkop');
+    assert.equal(
+      env.field('title').getAttribute('aria-label'),
+      'Titel toevoegen',
+    );
+  } finally {
+    env.teardown();
+    await setUiLocale('en', { persist: false, announce: false });
+    globalThis.fetch = realFetch;
+  }
+});
