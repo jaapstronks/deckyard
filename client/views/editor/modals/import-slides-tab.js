@@ -2,8 +2,8 @@ import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
-  createDeckImagesPicker,
-  importDeckImages,
+  createDeckFilesPicker,
+  importDeckFiles,
 } from '../../slide-import/index.js';
 
 /**
@@ -39,7 +39,7 @@ export function createImportSlidesTab({
   });
   const refusal = createInlineError({ callout: true });
 
-  const picker = createDeckImagesPicker({
+  const picker = createDeckFilesPicker({
     onChange: () => {
       statusMessage.hidden = true;
       render();
@@ -68,7 +68,7 @@ export function createImportSlidesTab({
     statusMessage.hidden = true;
 
     try {
-      const result = await importDeckImages({
+      const result = await importDeckFiles({
         url: `/api/presentations/${encodeURIComponent(presentationId)}/import-slides-as-images`,
         files: picker.getFiles(),
         body: { insertAfterSlideId: afterSlideId },

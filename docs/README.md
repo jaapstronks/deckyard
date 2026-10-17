@@ -133,6 +133,7 @@ nothing is discoverable only by `ls`.
 | [`bundled-gradients.md`](reference/bundled-gradients.md)               | The licence-free image source that ships with the app                      |
 | [`insert-slide-picker.md`](reference/insert-slide-picker.md)           | The insert-slide picker                                                    |
 | [`deck-creation-and-reuse.md`](reference/deck-creation-and-reuse.md)   | Slide library, collections, reuse                                          |
+| [`deck-import-editable.md`](reference/deck-import-editable.md)         | A PDF deck as editable slides: page model, mapping, fallback reasons       |
 | [`home-view.md`](reference/home-view.md)                               | The home view                                                              |
 | [`deck-thumbnails.md`](reference/deck-thumbnails.md)                   | Raster or live render for a slide miniature, and the thumbnail route       |
 | [`export-menu.md`](reference/export-menu.md)                           | The editor export menu                                                     |

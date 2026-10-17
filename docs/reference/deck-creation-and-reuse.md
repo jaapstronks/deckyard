@@ -23,8 +23,8 @@ Left rail methods:
   Notion. Deckyard interprets the source and writes a new deck; it does not
   copy slides over. Only where feature `ai` is on.
 - **Import an existing deck** - take a deck over as it is. Sub-tabs:
-  **PowerPoint or PDF** (the default), `.deck`, JSON, Markdown file and pasted
-  Markdown. No AI. The theme picker is hidden where the file carries its own
+  **PowerPoint or PDF** (the default; as editable slides or as images),
+  `.deck`, JSON, Markdown file and pasted Markdown. No AI. The theme picker is hidden where the file carries its own
   theme (`.deck`, JSON), the whole setup block where it carries its language
   too (`.deck`).
 
@@ -35,18 +35,33 @@ PowerPoint file can be either source material or the deck itself, so both
 routes accept one, and each route is its own endpoint, so a request never
 lands in the other route silently:
 
-| Route (rail)                                 | Upload                                                                | Endpoint                                                    | Path                                                                                                            | Feature |
-| -------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------- |
-| Generate from content → Upload file          | `.pptx`, `.pdf`, `.docx`, `.rtf`, `.odt`                              | `POST /api/convert/stream` (fallback `/api/convert`)        | text extraction + AI outline and refine; a new deck                                                             | `ai`    |
-| Import an existing deck → PowerPoint or PDF  | a PDF for the images, the `.pptx` for the speaker notes, either alone | `POST /api/presentations/import/images` (SSE)               | one `image-slide` per PDF page, notes paired by slide order (D334); a new deck in the chosen theme and language | none    |
-| Editor → slide type modal → Import from file | the same two slots                                                    | `POST /api/presentations/:id/import-slides-as-images` (SSE) | the same, inserted after the current slide                                                                      | none    |
+| Route (rail)                                                               | Upload                                                                | Endpoint                                                    | Path                                                                                                                                                                                                                                                               | Feature |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| Generate from content → Upload file                                        | `.pptx`, `.pdf`, `.docx`, `.rtf`, `.odt`                              | `POST /api/convert/stream` (fallback `/api/convert`)        | text extraction + AI outline and refine; a new deck                                                                                                                                                                                                                | `ai`    |
+| Import an existing deck → PowerPoint or PDF → As editable slides (default) | a PDF for the slides (required), the `.pptx` for the speaker notes    | `POST /api/presentations/import/slides` (SSE)               | one slide per PDF page of the type its structure asks for, text letter for letter; a page that fits no type becomes an `image-slide` with a reason in the report ([deck-import-editable.md](deck-import-editable.md)); a new deck in the chosen theme and language | none    |
+| Import an existing deck → PowerPoint or PDF → As images                    | a PDF for the images, the `.pptx` for the speaker notes, either alone | `POST /api/presentations/import/images` (SSE)               | one `image-slide` per PDF page, notes paired by slide order (D334); a new deck in the chosen theme and language                                                                                                                                                    | none    |
+| Editor → slide type modal → Import from file                               | the same two slots                                                    | `POST /api/presentations/:id/import-slides-as-images` (SSE) | the same, inserted after the current slide                                                                                                                                                                                                                         | none    |
 
-The import route is honest about its result: every page becomes an image
-slide whose text is not editable. The rendering and pairing behind both image
-endpoints is one service, `server/services/deck-images-import.js`; the two-slot
-chooser and the streamed import with its Cancel are one client feature,
-`client/views/slide-import/` (`createDeckImagesPicker`, `importDeckImages`),
-used by the editor tab and the creation sub-tab alike.
+The PowerPoint or PDF sub-tab offers the two ways as a choice above the
+chooser, each with one sentence that says what comes out (B753): **as
+editable slides** (the default) keeps the text editable and turns a page it
+cannot map, such as a chart, into an image of itself; **as images** keeps
+every page exactly as it looked, with text that is not editable (path B stays
+its own choice, D334). The editable import ends in a report: when every page
+became an editable slide the deck opens with a one-line confirmation;
+otherwise the sub-tab shows one line naming the pages taken over as images
+and why ("3 of 12 pages were taken over as images: 5 (chart), 7 (table), 9
+(no text)"), any image that failed to upload, and turns Create into "Open
+presentation". The editor's Import from file tab stays images only;
+inserting editable slides into an open deck is still to come (B307).
+
+The rendering and pairing behind both image endpoints is one service,
+`server/services/deck-images-import.js`; the editable route is
+`server/services/deck-slides-import.js`. The two-slot chooser, the streamed
+import with its Cancel and the words for the editable report are one client
+feature, `client/views/slide-import/` (`createDeckFilesPicker`,
+`importDeckFiles`, `slidesImportOutcome`), used by the editor tab and the
+creation sub-tab alike.
 
 The generate route does not detect "this looks like a slide deck" and does not
 ask after the upload. Instead, the Upload file sub-tab carries one quiet line
