@@ -39,8 +39,10 @@ import {
   deckMetrics,
   numberFidelity,
   specialTypeUsage,
+  listFidelity,
 } from '../eval/metrics.js';
 import { compareToReference } from '../eval/reference.js';
+import { SLIDE_TYPES } from '../../shared/slide-types/registry.js';
 import {
   aggregateScores,
   appendHistory,
@@ -205,6 +207,9 @@ async function main() {
         deck = await generateDeckV2(sourceText, {
           targetLang: testCase.language === 'nl' ? 'nl' : 'en-GB',
           vendor: options.vendor,
+          // The suite measures core: an organisation without types of its
+          // own generates against the registry (B247).
+          slideTypes: SLIDE_TYPES,
         });
         const durationMs = Date.now() - startedGeneration;
         await fs.mkdir(caseDir, { recursive: true });
@@ -234,6 +239,7 @@ async function main() {
         deck,
         testCase.expectedSlideTypes || [],
       );
+      const lists = listFidelity(deck, testCase.expectedLists || []);
       const referenceComparison = referenceDeck
         ? compareToReference(deck, referenceDeck)
         : null;
@@ -264,12 +270,28 @@ async function main() {
         );
       }
 
+      if (lists.expected) {
+        const failed = lists.lists
+          .filter((l) => !l.ok)
+          .map((l) =>
+            l.found
+              ? `${l.label} (${l.count} items for ${l.members})`
+              : `${l.label} (missing: ${l.matched}/${l.members} members in one list)`,
+          )
+          .join(', ');
+        console.log(
+          `    source lists kept whole: ${lists.passed}/${lists.expected}` +
+            (failed ? ` — ${failed}` : ''),
+        );
+      }
+
       repeats.push({
         repeat: repeat + 1,
         deckPath: path.relative(RUNS_DIR, deckPath),
         metrics,
         numberFidelity: fidelity,
         specialTypes,
+        lists,
         referenceComparison,
         verdict,
         meanScore: verdict ? meanScore(verdict.scores) : null,

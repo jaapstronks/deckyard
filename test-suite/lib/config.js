@@ -2,6 +2,7 @@
  * Shared configuration and paths for the AI test suite.
  */
 
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -95,27 +96,24 @@ export const PROMPT_SOURCE_FILES = [
   'server/utils/ai/prompts/base/refine-slides.js',
   'server/utils/ai/prompts/base/revise-outline.js',
   'server/utils/ai/slide-catalog/builders.js',
-  'server/utils/ai/slide-catalog/basic-content-slides.js',
-  'server/utils/ai/slide-catalog/structural-slides.js',
-  'server/utils/ai/slide-catalog/visual-content-slides.js',
-  'server/utils/ai/slide-catalog/card-slides.js',
-  'server/utils/ai/slide-catalog/diagram-slides.js',
-  'server/utils/ai/slide-catalog/content-slides.js',
-  'server/utils/ai/slide-catalog/people-slides.js',
-  'server/utils/ai/slide-catalog/media-slides.js',
-  'server/utils/ai/slide-catalog/interactive-slides.js',
   'server/utils/ai/slide-catalog/global-options.js',
-  // The JSON examples are part of the prompt the model sees, and are exactly
-  // where a prompt change is most likely to land -- round 1 edited only these
-  // and the version hash did not move, which made the report claim nothing had
-  // changed.
-  'server/utils/ai/slide-catalog/examples/index.js',
-  'server/utils/ai/slide-catalog/examples/basic-slides.js',
-  'server/utils/ai/slide-catalog/examples/card-slides.js',
-  'server/utils/ai/slide-catalog/examples/data-slides.js',
-  'server/utils/ai/slide-catalog/examples/diagram-slides.js',
-  'server/utils/ai/slide-catalog/examples/text-blocks-slide.js',
+  // The catalog copy and its JSON examples live next to each slide type. They
+  // are part of the prompt the model sees and exactly where a prompt change is
+  // most likely to land, so every type's ai.js counts. Listing them by hand
+  // went stale once already: the paths moved and the hash stopped moving with
+  // the copy (B596).
+  ...slideTypeAiFiles(),
 ];
+
+/** Every `shared/slide-types/types/<type>/ai.js`, repo-relative. */
+function slideTypeAiFiles() {
+  const typesDir = path.join(REPO_ROOT, 'shared/slide-types/types');
+  return fs
+    .readdirSync(typesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `shared/slide-types/types/${entry.name}/ai.js`)
+    .filter((relative) => fs.existsSync(path.join(REPO_ROOT, relative)));
+}
 
 /** Rubric dimensions scored 1-5 by the judge for every case. */
 export const RUBRIC_DIMENSIONS = [

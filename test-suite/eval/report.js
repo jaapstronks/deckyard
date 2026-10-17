@@ -323,6 +323,34 @@ export async function writeReport(run, previous, outputPath) {
     lines.push('');
   }
 
+  // Source lists kept whole, for probe cases that declare their members.
+  const listProbes = run.results.filter((r) => r.repeats?.[0]?.lists?.expected);
+  if (listProbes.length) {
+    lines.push('## Source lists kept whole');
+    lines.push('');
+    lines.push(
+      'Whether a list the source enumerates arrives with exactly its members, ' +
+        'no remarks about the list posing as items.',
+    );
+    lines.push('');
+    lines.push('| Case | Repeat | List | Items / members | Strays |');
+    lines.push('| --- | ---: | --- | ---: | --- |');
+    for (const result of listProbes) {
+      for (const repeat of result.repeats) {
+        for (const list of repeat.lists?.lists || []) {
+          const size = list.found
+            ? `${list.count}/${list.members}`
+            : `missing (${list.matched}/${list.members} in one list)`;
+          lines.push(
+            `| ${result.caseId} | ${repeat.repeat} | ${list.label} | ${size} | ` +
+              `${list.strays.map((s) => s.replace(/\|/g, '/')).join('; ') || '—'} |`,
+          );
+        }
+      }
+    }
+    lines.push('');
+  }
+
   // Lowest-scoring dimensions with rationales — the actionable part.
   const weakest = [...RUBRIC_DIMENSIONS, REFERENCE_DIMENSION]
     .filter((d) => Number.isFinite(scores[d]))

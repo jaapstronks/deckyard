@@ -25,6 +25,13 @@ export const ai = {
       A "fancy list" slide with structured items. Each item has a title and short explanation.
       Visually cleaner than content-slide bullets. 2-8 items.
 
+      HOMOGENEITY TEST: N items under title T claims "there are N T's". Every
+      item must be one of them. A remark ABOUT the items (their goal, an
+      implication, an ambition, the sentence that introduces them) is not an
+      item: put framing in the subheading, a caveat in the aside, background
+      in presenterNotes. Keep the source's count; three items with
+      density:"comfortable" beat five items padded with commentary.
+
       SUBHEADING (optional): a single-sentence intro that sets up the list, like a
       hero/lead paragraph on a web page - NOT a second title. Use it to frame WHY
       these items or WHERE they come from. Example: title "5 trends in duurzaam
@@ -66,6 +73,7 @@ export const ai = {
     'Parallel categories that should be compared side-by-side (use card slides)',
     'Timeline/roadmap with phases over time (use timeline-slide)',
     'Simple bullets without title+text structure (use content-slide)',
+    'Padding a short list: a goal, implication or intro sentence is never an item (subheading, aside or notes)',
   ],
 };
 

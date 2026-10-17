@@ -344,3 +344,108 @@ export function specialTypeUsage(deck, expected = []) {
     substitutes,
   };
 }
+
+/**
+ * Did each list the source enumerates arrive whole and alone?
+ *
+ * A list claims its items are alike: a title with N items says "there are N of
+ * these". The generation pipeline used to pad short lists with remarks about
+ * the list (its goal, an implication, the sentence that introduced it), so a
+ * source naming three target groups became a slide of five (B596). Probe cases
+ * declare `expectedLists`: a label and the members the source names, each as a
+ * keyword or a set of alternatives. A list passes when one item collection on
+ * one slide names every member and holds nothing else.
+ *
+ * @param {object} deck
+ * @param {{label: string, members: (string|string[])[], because?: string}[]} expected
+ * @returns {{expected: number, passed: number, lists: object[]}}
+ */
+export function listFidelity(deck, expected = []) {
+  const slides = Array.isArray(deck?.slides) ? deck.slides : [];
+  const groups = slides.flatMap((slide, index) =>
+    slideItemGroups(slide).map((items) => ({ slide: index, items })),
+  );
+
+  const lists = expected.map((entry) => {
+    const members = entry.members.map((m) =>
+      (Array.isArray(m) ? m : [m]).map((k) => k.toLowerCase()),
+    );
+    const membersIn = (text) =>
+      members.filter((keys) => keys.some((k) => text.includes(k))).length;
+
+    let best = null;
+    for (const group of groups) {
+      const texts = group.items.map((item) => item.toLowerCase());
+      const matched = members.filter((keys) =>
+        texts.some((text) => keys.some((k) => text.includes(k))),
+      ).length;
+      if (!best || matched > best.matched) best = { ...group, texts, matched };
+    }
+
+    const found = Boolean(best) && best.matched === members.length;
+    // An item that names no member, or several at once, is not one of them:
+    // it is a remark about the list wearing an item's clothes.
+    const strays = found
+      ? best.items.filter((_, i) => membersIn(best.texts[i]) !== 1)
+      : [];
+    return {
+      label: entry.label,
+      because: entry.because,
+      members: members.length,
+      matched: best ? best.matched : 0,
+      found,
+      slide: best ? best.slide : null,
+      count: best ? best.items.length : 0,
+      strays,
+      ok: found && best.items.length === members.length && !strays.length,
+    };
+  });
+
+  return {
+    expected: lists.length,
+    passed: lists.filter((list) => list.ok).length,
+    lists,
+  };
+}
+
+/**
+ * The item collections on a slide, one array of item texts per collection.
+ * An array of objects is a collection unless its entries hold collections of
+ * their own (text-blocks rows hold blocks), in which case those count, one per
+ * row. A slide without structured items falls back to its markdown bullets.
+ *
+ * @param {object} slide
+ * @returns {string[][]}
+ */
+function slideItemGroups(slide) {
+  const groups = [];
+  const textOf = (value) =>
+    typeof value === 'string'
+      ? value
+      : value && typeof value === 'object'
+        ? Object.values(value)
+            .filter((v) => typeof v === 'string')
+            .join(' ')
+        : '';
+  const nestedArrays = (item) =>
+    Object.values(item || {}).filter(
+      (v) => Array.isArray(v) && v.some((e) => e && typeof e === 'object'),
+    );
+  const visit = (value) => {
+    if (!Array.isArray(value)) {
+      if (value && typeof value === 'object')
+        Object.values(value).forEach(visit);
+      return;
+    }
+    if (!value.some((e) => e && typeof e === 'object')) return;
+    const nested = value.flatMap(nestedArrays);
+    if (nested.length) nested.forEach(visit);
+    else groups.push(value.map((e) => textOf(e).trim()).filter(Boolean));
+  };
+  visit(slide?.content || {});
+  if (!groups.length) {
+    const { bullets } = extractSlideText(slide);
+    if (bullets.length) groups.push(bullets);
+  }
+  return groups;
+}

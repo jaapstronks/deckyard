@@ -107,6 +107,14 @@ cases are a matched pair — the same findings at 700 words and at 127 pages —
 a deck built from the long source can be checked against the headline message
 CBS itself chose for the short one.
 
+Category C cases are **probes**: short sources authored for the suite, so the
+ground truth is known rather than inferred (`probe-*`, source in `fixtures/`).
+A probe declares what a good deck must do in a form the suite checks without a
+judge: `expectedSlideTypes` (the specialised layout the content calls for) and
+`expectedLists` (a list the source enumerates, by its members, which must arrive
+whole and without remarks about the list posing as items; B596). Run probes
+with `--repeat 3`; one generation is not a reading.
+
 **No case material is committed.** Licences vary (most sources are
 all-rights-reserved but free to download) and some files are large. `case.json`
 records the origin URL, licence and expected characteristics; the fetch script

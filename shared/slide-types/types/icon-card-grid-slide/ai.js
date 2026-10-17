@@ -38,6 +38,10 @@ export const ai = {
       LAYOUT TIP: 4 cards = 2x2 grid, 5-6 cards = 2x3 grid. Very clean and professional.
 
       PREFER THIS over content-slide bullets when you have 4-6 distinct categories!
+
+      HOMOGENEITY TEST: N cards claim "there are N of these". Every card is
+      one member of the set the title names; a goal, implication or framing
+      remark goes in the subheading, never on a card. Keep the source's count.
     `,
   bestFor: [
     '4-6 parallel categories or pillars',

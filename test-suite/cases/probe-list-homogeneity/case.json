@@ -1,0 +1,44 @@
+{
+  "id": "probe-list-homogeneity",
+  "title": "Probe: short source lists with framing sentences around them",
+  "category": "C",
+  "language": "nl",
+  "domain": "public funding scheme",
+  "structure": "structured",
+  "note": "Authored probe for B596, shaped after a real import that turned three target groups into a list of five. The source names exactly three target groups and five organisations; each list is wrapped in sentences about it (a goal, an implication, the ambition that introduces it). A list claims its items are alike, so those sentences belong in a subheading, aside or presenter notes, never among the items.",
+  "sources": [
+    {
+      "local": "test-suite/fixtures/probe-list-homogeneity.md",
+      "file": "source.md",
+      "type": "markdown"
+    }
+  ],
+  "licence": "Authored for this suite; MIT with the repository. All organisations are fictional.",
+  "expectedLists": [
+    {
+      "label": "Doelgroepen",
+      "because": "the source names exactly three target groups; chain coverage and the design implication are remarks about them",
+      "members": [
+        ["mkb"],
+        ["zelfstandig", "zzp"],
+        ["mbo", "hbo", "onderwijsinstelling"]
+      ]
+    },
+    {
+      "label": "Uitvoeringsorganisaties",
+      "because": "five organisations, introduced by an ambition sentence that is not one of them",
+      "members": [
+        ["leerroute"],
+        ["vakkracht"],
+        ["kennisdeling"],
+        ["subsidiepunt"],
+        ["leren werkt"]
+      ]
+    }
+  ],
+  "expectedCharacteristics": [
+    "The target-group slide shows exactly three items, with chain coverage and the design implication outside the items",
+    "The organisations slide shows exactly five items, without the ambition sentence as an item",
+    "The single decision stays one decision"
+  ]
+}
