@@ -28,9 +28,8 @@ import {
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { loadSlideTypeOffer } from '../../utils/org-slide-types.js';
 import {
-  OUTLINE_CREEP_MS,
-  PROGRESS,
-  REFINE_CREEP_MS,
+  createSseProgress,
+  SOURCE_MESSAGES,
 } from '../../utils/import-progress.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 
@@ -197,6 +196,31 @@ async function handleConvertFile({
   return true;
 }
 
+/**
+ * The kind of file, for the rotator's list while the source is read.
+ * @param {string} ext
+ * @param {string} mimeType
+ * @returns {'pptx'|'pdf'|'document'|'file'}
+ */
+function sourceKind(ext, mimeType) {
+  if (ext === 'pptx' || ext === 'ppt' || mimeType.includes('presentation')) {
+    return 'pptx';
+  }
+  if (ext === 'pdf' || mimeType === 'application/pdf') return 'pdf';
+  if (
+    ext === 'docx' ||
+    ext === 'rtf' ||
+    ext === 'odt' ||
+    mimeType.includes('wordprocessingml') ||
+    mimeType.includes('opendocument.text') ||
+    mimeType === 'application/rtf' ||
+    mimeType === 'text/rtf'
+  ) {
+    return 'document';
+  }
+  return 'file';
+}
+
 // POST /api/convert/stream - Convert a file, streaming progress over SSE
 async function handleConvertStream({
   repoRoot,
@@ -269,105 +293,13 @@ async function handleConvertStream({
   // the image uploads, and is checked before the presentation is written.
   const { signal } = stream;
 
-  // Determine file type for contextual messages
-  const isPptx =
-    ext === 'pptx' || ext === 'ppt' || mimeType.includes('presentation');
-  const isPdf = ext === 'pdf' || mimeType === 'application/pdf';
-  const isDocument =
-    ext === 'docx' ||
-    ext === 'rtf' ||
-    ext === 'odt' ||
-    mimeType.includes('wordprocessingml') ||
-    mimeType.includes('opendocument.text') ||
-    mimeType === 'application/rtf' ||
-    mimeType === 'text/rtf';
-  // For initial messages, use Dutch (default UI) - actual content language is auto-detected
-  const isNl = true;
-
-  // Initial status messages shown in sequence (file parsing phase). The PDF
-  // parser reads text only, so its list promises no image detection (B306).
-  const initialMessages = isPptx
-    ? isNl
-      ? [
-          'PowerPoint-bestand laden...',
-          'Slides analyseren...',
-          'Tekst extraheren...',
-          'Afbeeldingen zoeken...',
-        ]
-      : [
-          'Loading PowerPoint file...',
-          'Analyzing slides...',
-          'Extracting text content...',
-          'Looking for images...',
-        ]
-    : isPdf
-      ? isNl
-        ? [
-            'PDF-bestand laden...',
-            "Pagina's analyseren...",
-            'Tekst extraheren...',
-          ]
-        : [
-            'Loading PDF file...',
-            'Analyzing pages...',
-            'Extracting text content...',
-          ]
-      : isDocument
-        ? isNl
-          ? [
-              'Document laden...',
-              'Tekst extraheren...',
-              'Structuur analyseren...',
-              'Secties identificeren...',
-            ]
-          : [
-              'Loading document...',
-              'Extracting text...',
-              'Analyzing structure...',
-              'Identifying sections...',
-            ]
-        : isNl
-          ? ['Bestand laden...', 'Inhoud extraheren...']
-          : ['Loading file...', 'Extracting content...'];
-
   try {
-    // The parse messages are handed to the client's rotator instead of being
-    // paced here with sleeps: parsing and the outline call start immediately,
-    // and the rotator fills the wait. Sleeping on the server only made the
-    // import longer (B595).
     signal.throwIfAborted();
-    sseWrite(res, {
-      event: 'messages',
-      data: { statusMessages: initialMessages, intervalMs: 6000, loop: true },
+    // The one progress writer (B758): this route reports nothing itself.
+    const progress = createSseProgress(res, {
+      lang,
+      initialMessages: SOURCE_MESSAGES[sourceKind(ext, mimeType)],
     });
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: initialMessages[0],
-        phase: 'parse',
-        progress: PROGRESS.parse,
-      },
-    });
-
-    // Parsing plus the outline call is one long stretch without events, so the
-    // bar creeps toward the refine floor instead of standing still.
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl
-          ? 'Inhoud analyseren en structuur bepalen...'
-          : 'Analyzing content and structure...',
-        phase: 'analyze',
-        progress: PROGRESS.parse,
-        creepTo: PROGRESS.refineFloor,
-        creepMs: OUTLINE_CREEP_MS,
-      },
-    });
-
-    // Convert with streaming status callback
-    // The convertFile function will call onStatusMessage as it generates content-aware messages
-    const statusMessages = [];
-    let statusMessagesSent = false;
     // One map for the AI fix pipeline and the deck import (B247).
     const slideTypes = await buildMergedSlideTypes(storageScope);
     // The catalog the model chooses from is the org's (B659).
@@ -383,64 +315,10 @@ async function handleConvertStream({
       ...slideTypeOffer,
       themeContext,
       titleSlideType,
-      onStatusMessage: (msg) => {
-        statusMessages.push(msg);
-        // Message only: the bar is owned by the creep until the first section
-        // group finishes, so an arriving message may not move it.
-        if (!statusMessagesSent) {
-          sseWrite(res, {
-            event: 'status',
-            data: { message: msg, phase: 'convert' },
-          });
-        }
-      },
-      onOutlineComplete: (outline) => {
-        // When outline is ready, send all status messages at once for client rotation
-        if (outline?.statusMessages?.length > 0) {
-          statusMessagesSent = true;
-          sseWrite(res, {
-            event: 'messages',
-            data: {
-              statusMessages: outline.statusMessages,
-            },
-          });
-          // The outline is a real milestone, so the bar lands on the refine
-          // floor; from there the phase creeps until a group reports.
-          sseWrite(res, {
-            event: 'status',
-            data: {
-              phase: 'refine',
-              progress: PROGRESS.refineFloor,
-              creepTo: PROGRESS.refineCeiling,
-              creepMs: REFINE_CREEP_MS,
-            },
-          });
-        }
-      },
-      // Real progress: one event per finished section group, the same shape
-      // the wizard stream uses.
-      onGroupDone: ({ done, total }) => {
-        sseWrite(res, {
-          event: 'status',
-          data: {
-            message: isNl
-              ? `Sectie ${done} van ${total} geschreven…`
-              : `Wrote section ${done} of ${total}…`,
-            progress: Math.round(
-              PROGRESS.refineFloor +
-                (done / total) *
-                  (PROGRESS.refineCeiling - PROGRESS.refineFloor),
-            ),
-            phase: 'refine-progress',
-          },
-        });
-      },
+      onOutline: progress.onOutline,
+      onStatusMessage: progress.onStatusMessage,
+      onGroupDone: progress.onGroupDone,
     });
-
-    // If no messages were streamed during conversion, send what we have
-    if (statusMessages.length > 0 && !statusMessagesSent) {
-      sseWrite(res, { event: 'messages', data: { statusMessages } });
-    }
 
     if (!deck || report.errors.length > 0) {
       sseError(res, report.errors.join('; ') || 'Conversion failed', {
@@ -450,39 +328,7 @@ async function handleConvertStream({
       return true;
     }
 
-    // Post-conversion messages
-    const slideCount = deck?.slides?.length || 0;
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl
-          ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
-          : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
-        progress: PROGRESS.refineCeiling,
-        phase: 'finalize',
-      },
-    });
-    await new Promise((r) => setTimeout(r, 500));
-
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
-        progress: PROGRESS.building,
-        phase: 'finalize',
-      },
-    });
-    await new Promise((r) => setTimeout(r, 500));
-
-    // Create presentation
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
-        progress: PROGRESS.save,
-        phase: 'save',
-      },
-    });
+    progress.finalize(deck.slides?.length || 0);
 
     // Review metadata kept, as on every generation path (B757).
     const parts = generatedDeckToParts(deck, {
@@ -496,6 +342,7 @@ async function handleConvertStream({
 
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
+    progress.save();
 
     const updated = await createImportedPresentation(
       storageScope,
