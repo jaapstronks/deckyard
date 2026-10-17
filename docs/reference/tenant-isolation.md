@@ -386,7 +386,7 @@ missing is listed under _What is not done yet_ below.
 
   - **A public token is the authorization.** A published deck, an embed, a share
     link, a follow-along audience and the public feed resolve a globally unique
-    token first (`getPublishedById`, `getShareLinkByToken`, the follow code) and
+    token first (`getPublishedById`, `validateShareLink`, the follow code) and
     fetch the deck by the id that lookup yielded. Those declare
     `crossOrganizationScope(repoRoot, '<reason>')`, which skips the organization
     filter — necessary, because filtering them on an organization nobody stated

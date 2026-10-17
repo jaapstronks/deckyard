@@ -2,9 +2,14 @@ import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { countDeckView } from '../../storage/instance-health.js';
-import { getShareLinkByToken } from '../../storage/share-links/index.js';
+import { validateShareLink } from '../../storage/share-links/index.js';
 import { getAppName, getOgImageUrl } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+import {
+  getSlideCopy,
+  fillCopy,
+} from '../../../shared/slide-types/slide-copy.js';
 import {
   readIndexHtml,
   injectSeoDebugAnalytics,
@@ -16,6 +21,10 @@ import {
 /**
  * Share-link viewer (public, token-based). Serves the app shell with
  * presentation-specific og: metadata injected for rich link previews.
+ *
+ * Only a live link unfurls with its deck: a revoked, expired or spent token
+ * keeps the shell's generic preview, so pasting a withdrawn link names no deck.
+ * The fallback description is in the deck's language (`shareLinkDescription`).
  * @param {import('./static-files.js').StaticContext} ctx
  * @returns {Promise<boolean>} true if handled.
  */
@@ -23,13 +32,8 @@ async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
   // Try to get presentation info for og: tags (best-effort, don't fail if unavailable)
   let ogHeadHtml = '';
   try {
-    const shareLink = await getShareLinkByToken(
-      crossOrganizationScope(
-        repoRoot,
-        'share link: the share token is the authorization',
-      ),
-      token,
-    );
+    const validation = await validateShareLink(token);
+    const shareLink = validation.ok ? validation.shareLink : null;
     if (shareLink?.presentationId) {
       const pres = await getPresentation(
         crossOrganizationScope(
@@ -49,11 +53,13 @@ async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
         const canonicalUrl = new URL(url.pathname, origin).href;
         const ogImageAbs = new URL(getOgImageUrl(), origin).href;
 
-        const title = escapeHtml(pres.title || 'Presentation');
+        const copy = getSlideCopy(resolveDeckLang(pres));
+        const rawTitle = pres.title || copy.readerDocument;
+        const title = escapeHtml(rawTitle);
         const rawDesc =
           typeof pres?.description === 'string' ? pres.description.trim() : '';
         const description = escapeHtml(
-          rawDesc || `Bekijk de presentatie "${pres.title || 'Presentation'}".`,
+          rawDesc || fillCopy(copy.shareLinkDescription, { title: rawTitle }),
         );
 
         ogHeadHtml = `
