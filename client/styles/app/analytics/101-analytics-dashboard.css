@@ -88,9 +88,9 @@
 }
 
 .dashboard-period-select:focus {
-  outline: none;
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+  border-color: hsl(var(--app-border-focus));
+  outline: var(--app-focus-ring);
+  outline-offset: -1px;
 }
 
 /* Metric Cards */

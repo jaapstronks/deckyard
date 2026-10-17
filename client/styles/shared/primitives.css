@@ -9,6 +9,16 @@
    Editor-only primitives (modals, field labels, `.stack`, `.is-*`) stay in
    `app/components.css`; they never reach a viewer. */
 
+/* ---- Focus ring ---- */
+
+/* The one keyboard focus ring (D349). Zero specificity, so a component that
+   needs another offset only restates `outline-offset`; no stop falls back to
+   the browser's `outline: auto`. `tests/focus-ring.test.js` holds the line. */
+:where(:focus-visible) {
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
+}
+
 /* ---- Box model ---- */
 
 /* Every box measures its padding and border inside its width (B230). Without
@@ -53,10 +63,8 @@
 }
 
 .btn:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
-    hsl(var(--app-accent-primary) / 0.25);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 /* Inline spinner: any button can flip to a busy/cancel state with a spinner
@@ -172,19 +180,19 @@
   color: hsl(var(--app-text-primary));
   font-size: var(--ps-text-base);
   line-height: 1.5;
-  outline: none;
   transition: all var(--ps-transition-fast);
   box-shadow: inset 0 1px 3px hsl(var(--app-text-primary) / 0.06);
 }
 .form-input::placeholder {
   color: hsl(var(--app-text-tertiary));
 }
+/* A text field holds a caret, so it shows the ring on any focus; laid over
+   its own border (offset -1px) it reads as a 2px border in the ring colour. */
 .form-input:focus {
   border-color: hsl(var(--app-border-focus));
   background: hsl(var(--app-bg-elevated));
-  box-shadow:
-    inset 0 1px 2px hsl(var(--app-text-primary) / 0.03),
-    0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+  outline: var(--app-focus-ring);
+  outline-offset: -1px;
 }
 
 /* Input size ladder. Until now `form-input-sm`/`-xs` had no base definition:
@@ -299,8 +307,8 @@
 }
 
 .sb-segmented-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
+  outline: var(--app-focus-ring);
+  outline-offset: -2px;
 }
 
 /* The viewers' language switch (embed and published page): bordered, tighter,

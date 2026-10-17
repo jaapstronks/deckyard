@@ -682,10 +682,9 @@
   }
 
   .slides-drawer-toggle:focus-visible {
-    outline: none;
-    box-shadow:
-      var(--app-shadow-lg),
-      0 0 0 3px hsl(var(--app-accent-primary) / 0.3);
+    outline: var(--app-focus-ring);
+    outline-offset: var(--ps-focus-ring-offset);
+    box-shadow: var(--app-shadow-lg);
   }
 }
 

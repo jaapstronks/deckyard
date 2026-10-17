@@ -56,11 +56,6 @@
   box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
 }
 
-.deck-grid-tile-btn:focus-visible {
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.2);
-}
-
 .deck-grid-tile.is-selected .deck-grid-tile-btn {
   border-color: hsl(var(--app-accent-primary));
   box-shadow: 0 0 0 2px hsl(var(--app-accent-primary));

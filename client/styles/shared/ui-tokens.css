@@ -64,6 +64,7 @@
   --ps-transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --ps-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
+  --ps-focus-ring-width: 2px;
   --ps-focus-ring-offset: 2px;
 
   /* Z-index scale (app chrome).
@@ -129,6 +130,14 @@
   --app-border-subtle: 220 13% 94%;
   --app-border-strong: 220 13% 80%;
   --app-border-focus: 160 45% 33%;
+  /* The one keyboard focus ring (D349): every stop draws this outline, with
+     `--ps-focus-ring-offset` unless the stop sits in a clipping parent. */
+  --app-focus-ring: var(--ps-focus-ring-width) solid
+    hsl(var(--app-border-focus));
+  /* The ring on a canvas stop: it sits on the slide, which the UI mode does
+     not change, so it keeps the light-mode colour (with a white band, see
+     `105-inline-edit.css`). */
+  --app-focus-canvas: 160 45% 33%; /* mode-invariant */
 
   /* Accent comes in three flavours and they are not interchangeable:
      `-primary` paints shapes (fills, borders, accent-color) and holds the same
@@ -191,6 +200,8 @@
   --app-border-subtle: 222 15% 18%;
   --app-border-strong: 222 15% 30%;
   --app-border-focus: 160 45% 50%;
+  --app-focus-ring: var(--ps-focus-ring-width) solid
+    hsl(var(--app-border-focus));
 
   --app-accent-primary: 160 45% 33%;
   --app-accent-primary-hover: 160 45% 36%;

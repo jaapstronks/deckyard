@@ -75,10 +75,8 @@
     .presenter-shell
   )
   .list-item:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
-    hsl(var(--app-accent-primary) / 0.2);
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
 }
 
 :where(
