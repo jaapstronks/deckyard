@@ -1,0 +1,248 @@
+/**
+ * Read the structure of a slide PDF: one page model per page (B751).
+ *
+ * The import of an existing deck as editable slides (B737) needs more than
+ * `parsePdf()`'s plain text or `pdfToImages()`'s pixels: it needs the lines
+ * in reading order, which of them is the heading, a list, a table, and the
+ * embedded pictures with their place on the page. pdf.js yields all of that
+ * in Node, without a browser; this module turns it into one model, whichever
+ * way the page was produced:
+ *
+ * - a tagged page (PowerPoint, Chrome) gets its roles from the structure
+ *   tree (`struct-detector.js`);
+ * - an untagged page (Keynote) gets them from size and position
+ *   (`geometry-detector.js`).
+ *
+ * Both give the same shape, so a mapper downstream knows only the model.
+ * The text is literal (see `lines.js`): what is not on the slide is listed
+ * under `dropped` with a reason, never silently lost. Pure computation: no
+ * uploads, no storage, no HTTP.
+ */
+
+import { openPdf } from './pdfjs.js';
+import { readTextRuns, isOnPage } from './text-runs.js';
+import { assembleLines } from './lines.js';
+import { detectStruct } from './struct-detector.js';
+import { detectGeometry, findDrawingLabels } from './geometry-detector.js';
+import { readPageGraphics } from './images.js';
+
+export { assembleLines, joinLineText, normalizeText } from './lines.js';
+export { isBoldFont } from './text-runs.js';
+export {
+  detectGeometry,
+  findDrawingLabels,
+  findHeadingLines,
+  splitListMarker,
+} from './geometry-detector.js';
+export { detectStruct } from './struct-detector.js';
+
+/** Text below this size (pt) in the bottom of the page is a footnote. */
+export const FOOTNOTE_MAX_SIZE = 7;
+
+/** The bottom fraction of the page where small text counts as a footnote. */
+export const FOOTNOTE_ZONE = 0.15;
+
+/**
+ * @typedef {object} PageLine
+ * @property {string} text
+ * @property {number} x
+ * @property {number} y - baseline, from the top of the page
+ * @property {number} width
+ * @property {number} size - font size in page units (pt)
+ * @property {boolean} bold - every run on the line is set in a bold font
+ * @property {'heading'|'subheading'|'para'|'list-item'|'list-label'|'table-cell'|'caption'|'quote'|'card-title'|'card-body'|'label'} role
+ */
+
+/**
+ * Blocks, in reading order; each carries `y`, the baseline of its first line.
+ *
+ * - `{ kind: 'para', text, bold, subheading? }`
+ * - `{ kind: 'list', variant: 'bullets'|'numbers', items: [{ text, parts }] }`
+ *   (`parts`: the item's paragraphs; `text` is them joined)
+ * - `{ kind: 'table', headerRow, rows: string[][] }`
+ * - `{ kind: 'cards', cards: [{ title, body }] }`
+ * - `{ kind: 'caption', text }`, `{ kind: 'quote', text }`
+ *
+ * @typedef {object} PageBlock
+ */
+
+/**
+ * @typedef {object} PageModel
+ * @property {number} page - 1-based
+ * @property {number} width
+ * @property {number} height
+ * @property {boolean} tagged - roles come from the structure tree
+ * @property {string | null} heading
+ * @property {'struct' | 'geometry' | null} headingSource
+ * @property {PageLine[]} lines - every kept line: heading, block text,
+ *   list labels and drawing labels
+ * @property {PageBlock[]} blocks
+ * @property {Array<{ png: Buffer, box: { x: number, y: number, width: number, height: number }, pixels: { width: number, height: number }, alt?: string }>} images
+ * @property {{ paths: number, labels: Array<{ text: string, x: number, y: number }> }} drawing
+ * @property {Array<{ text: string, reason: 'artifact' | 'off-page' | 'footnote' }>} dropped
+ */
+
+/**
+ * Extract one page model per page.
+ *
+ * @param {Uint8Array} buffer - the PDF bytes
+ * @param {object} [opts]
+ * @param {AbortSignal} [opts.signal] - checked before the document opens and
+ *   between pages; an abort rejects with the signal's reason
+ * @param {boolean} [opts.useStructTree=true] - false reads every page by
+ *   geometry, as if it were untagged (measurement, tests)
+ * @returns {Promise<{ pages: PageModel[], tagged: boolean, pageCount: number, size: { width: number, height: number } | null }>}
+ */
+export async function extractPdfPages(
+  buffer,
+  { signal, useStructTree = true } = {},
+) {
+  signal?.throwIfAborted();
+  const task = openPdf(buffer);
+  try {
+    const doc = await task.promise;
+    const pages = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+      signal?.throwIfAborted();
+      const page = await doc.getPage(n);
+      try {
+        pages.push(await readPage(page, n, { useStructTree }));
+      } finally {
+        page.cleanup();
+      }
+    }
+    signal?.throwIfAborted();
+    return {
+      pages,
+      tagged: pages.some((p) => p.tagged),
+      pageCount: doc.numPages,
+      size: pages.length
+        ? { width: pages[0].width, height: pages[0].height }
+        : null,
+    };
+  } finally {
+    await task.destroy();
+  }
+}
+
+async function readPage(page, n, { useStructTree }) {
+  const viewport = page.getViewport({ scale: 1 });
+  const box = { width: viewport.width, height: viewport.height };
+  // Fonts are only loaded (and their names readable) after the operator list.
+  const operatorList = await page.getOperatorList();
+  const textContent = await page.getTextContent({ includeMarkedContent: true });
+  const runs = readTextRuns(textContent, {
+    viewport,
+    fontNameOf: (id) => fontName(page, id),
+  });
+  const graphics = await readPageGraphics(page, operatorList, viewport);
+  const tree = useStructTree ? await page.getStructTree() : null;
+
+  const { body, dropped } = dropNonSlideText(runs, box);
+  let detected = tree ? detectStruct(tree, body, box) : null;
+  const tagged = Boolean(detected);
+  if (!detected) detected = detectByGeometry(body, box, graphics);
+
+  return {
+    page: n,
+    width: box.width,
+    height: box.height,
+    tagged,
+    heading: detected.heading,
+    headingSource: detected.headingSource,
+    lines: detected.lines.map(publicLine),
+    blocks: detected.blocks,
+    images: attachAlt(graphics.images, detected.figures),
+    drawing: {
+      paths: graphics.paths,
+      labels: detected.labels.map(({ text, x, y }) => ({ text, x, y })),
+    },
+    dropped,
+  };
+}
+
+function fontName(page, id) {
+  try {
+    return page.commonObjs.has(id) ? page.commonObjs.get(id)?.name || '' : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Split off what does not belong on the slide: `Artifact` content (footer,
+ * page number), runs outside the page box, and small text at the bottom
+ * (footnotes). The rest is the body the detectors read.
+ */
+function dropNonSlideText(runs, box) {
+  const dropped = [];
+  const note = (selected, reason) => {
+    for (const line of assembleLines(selected))
+      dropped.push({ text: line.text, reason });
+  };
+  note(
+    runs.filter((r) => r.artifact),
+    'artifact',
+  );
+  const inFlow = runs.filter((r) => !r.artifact);
+  note(
+    inFlow.filter((r) => !isOnPage(r, box)),
+    'off-page',
+  );
+  const onPage = inFlow.filter((r) => isOnPage(r, box));
+  const footnotes = assembleLines(onPage).filter(
+    (l) => l.size < FOOTNOTE_MAX_SIZE && l.y > (1 - FOOTNOTE_ZONE) * box.height,
+  );
+  for (const line of footnotes)
+    dropped.push({ text: line.text, reason: 'footnote' });
+  const footnoteRuns = new Set(footnotes.flatMap((l) => l.runs));
+  return { body: onPage.filter((r) => !footnoteRuns.has(r)), dropped };
+}
+
+function detectByGeometry(runs, box, graphics) {
+  const lines = assembleLines(runs);
+  const labels = findDrawingLabels(lines, {
+    paths: graphics.paths,
+    boxes: graphics.pathBoxes,
+  });
+  const result = detectGeometry(lines, box, { exclude: labels });
+  return {
+    heading: result.heading,
+    headingSource: result.heading ? 'geometry' : null,
+    lines: lines.map((line, i) => ({ ...line, role: result.roles[i] })),
+    blocks: result.blocks,
+    labels: [...labels].map((i) => lines[i]),
+    figures: [],
+  };
+}
+
+function publicLine({ text, x, y, width, size, bold, role }) {
+  return { text, x, y, width, size, bold, role };
+}
+
+const mcNumber = (id) => {
+  const match = /_mc(\d+)$/.exec(String(id));
+  return match ? Number(match[1]) : null;
+};
+
+/**
+ * Give each image the `alt` of the `Figure` it is painted in, matched by
+ * marked-content id; a page with one figure and one image pairs them.
+ */
+function attachAlt(images, figures) {
+  const withAlt = figures.filter((f) => f.alt);
+  const altOf = (img) => {
+    const hit = withAlt.find((f) =>
+      f.ids.some((id) => mcNumber(id) === img.mcid),
+    );
+    if (hit) return hit.alt;
+    if (withAlt.length === 1 && images.length === 1) return withAlt[0].alt;
+    return null;
+  };
+  return images.map((img) => {
+    const alt = altOf(img);
+    const out = { png: img.png, box: img.box, pixels: img.pixels };
+    if (alt) out.alt = alt;
+    return out;
+  });
+}
