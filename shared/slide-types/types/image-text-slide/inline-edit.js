@@ -23,7 +23,7 @@ export const inlineEdit = {
     imageField: 'image',
     altField: 'alt',
     // The role and the colour behind a letterboxed image describe a picture;
-    // side and width shape the empty slot too, so they stay (D336).
+    // the side shapes the empty slot too, so it stays (D336).
     withImage: ['imageRole', 'imageBackground'],
   },
   // Draggable focal point on the image, but only in cover mode - contain (no
@@ -63,8 +63,10 @@ export const inlineEdit = {
  * rest of the slide.
  *
  * `layout` (structural variant) is intentionally NOT kept: the toolbar
- * "Layout" chip is its canonical control in the inspector. imageSide /
- * imageWidth stay as precise, distinctly-named sub-settings. `fit` is absent
+ * "Layout" chip is its canonical control in the inspector, and so is
+ * `imageWidth`: the three split tiles write narrow/half/wide, so a keep would
+ * be a second home for the same choice (D348). imageSide stays as a precise,
+ * distinctly-named sub-setting. `fit` is absent
  * because it is an ImageRef property of the image ELEMENT, declared on the
  * descriptor above and rendered by the shared "This image" card — listing it
  * here would render it a second time in the slide form.
@@ -79,7 +81,6 @@ export const inspectorKeeps = [
   'imageRole',
   'density',
   'imageSide',
-  'imageWidth',
   'imageBackground',
   'actions',
   'asideVariant',
