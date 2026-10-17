@@ -144,7 +144,7 @@
   "list.bulk.restore.failed.one": "Failed to restore 1 presentation.",
   "list.bulk.selected": "{count} selected",
   "list.creationView.generateFile.help": "Upload a .pptx, .pdf, .docx, .rtf or .odt file as source material. Deckyard reads the content and writes a new presentation from it with AI; it does not copy the slides over. Review the result afterwards.",
-  "list.creationView.importDeckHint": "Want to take over an existing presentation one to one?",
+  "list.creationView.importDeckHint": "Want to bring in an existing presentation as it is?",
   "list.creationView.importDeckLink": "Import it as a deck",
   "list.creationView.importImages.help": "Each page becomes an image slide. The text is not editable afterwards; the speaker notes from the .pptx come along. Export the PDF from PowerPoint or Keynote.",
   "list.creationView.importImages.tab": "PowerPoint or PDF",

@@ -19,8 +19,8 @@
  *
  * The `.deck` sub-tab is its own module (import-deck.js): it owns the install
  * choice, which the others do not have. The "PowerPoint or PDF" sub-tab is
- * import-images.js, on the shared slide-import chooser. What was left out of an import
- * shows through the same warnings block as Markdown.
+ * import-images.js, on the shared slide-import chooser. What was left out of
+ * an import shows through the same warnings block as Markdown.
  *
  * Every sub-tab refuses the same way: an inline error at its file input or
  * textarea, cleared at the start of the next attempt, never a footer line or

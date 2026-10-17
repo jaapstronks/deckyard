@@ -11,8 +11,8 @@
  * existing deck (PowerPoint or PDF / .deck / .json / .md). The two routes are
  * the two intents of D235, chosen before any file: generating interprets the
  * source with AI (the convert route, behind feature `ai`), importing takes
- * the deck over (the presentation import routes) and needs no AI (B306). The flows reuse the
- * handlers in ../new-presentation/handlers.js.
+ * the deck over (the presentation import routes) and needs no AI (B306). The
+ * flows reuse the handlers in ../new-presentation/handlers.js.
  */
 
 import { t, getUiLocale } from '../../../../lib/ui-i18n.js';

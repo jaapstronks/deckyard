@@ -50,8 +50,8 @@ used by the editor tab and the creation sub-tab alike.
 
 The generate route does not detect "this looks like a slide deck" and does not
 ask after the upload. Instead, the Upload file sub-tab carries one quiet line
-above the file input ("Want to take over an existing presentation one to
-one? Import it as a deck") that switches to the import rail on its PowerPoint
+above the file input ("Want to bring in an existing presentation as it
+is? Import it as a deck") that switches to the import rail on its PowerPoint
 or PDF sub-tab, before any file is chosen. With feature `ai` off the generate
 rail is absent and the import route works unchanged.
 

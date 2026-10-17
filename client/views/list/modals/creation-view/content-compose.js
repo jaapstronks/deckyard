@@ -6,8 +6,9 @@
  * it into a new deck. Every format the upload takes is source material here,
  * a PowerPoint or PDF too (D235): the route is the intent, not the file type.
  * Taking an existing deck over is the import method's; a quiet line above the
- * file input points there before any file is chosen (B306). All of its state — the active sub-tab and the selected upload file —
- * lives here, exclusive to this concern; the creation view only wires it in.
+ * file input points there before any file is chosen (B306). All of its
+ * state — the active sub-tab and the selected upload file — lives here,
+ * exclusive to this concern; the creation view only wires it in.
  *
  * Split out of creation-view/index.js (B10 P4 seam), behaviour-preserving.
  *
@@ -110,7 +111,7 @@ export function createContentCompose({ api, onChange, onImportDeck }) {
   const importDeckLink = h('p', { class: 'help creation-crosslink' }, [
     t(
       'list.creationView.importDeckHint',
-      'Want to take over an existing presentation one to one?',
+      'Want to bring in an existing presentation as it is?',
     ),
     ' ',
     h('button', {
