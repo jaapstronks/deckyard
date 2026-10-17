@@ -10,6 +10,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { insertAfterAnchor } from '../../../services/slides.js';
+import { dominantSlidesBody } from '../../../services/deck-versions.js';
 import {
   buildDeckImageSlides,
   DeckImagesRefusal,
@@ -127,14 +128,12 @@ export async function handlePresentationImportSlidesAsImages(
       existingSlides.push(...newSlides);
     }
 
-    // Update the presentation
+    // The loaded deck's top level is the dominant version: write it back as
+    // a new dominant buffer, so another language version stays as stored.
     const updated = await updatePresentation(
       storageScope,
       id,
-      {
-        ...pres,
-        slides: existingSlides,
-      },
+      dominantSlidesBody(pres, existingSlides),
       {
         actorEmail: authedUser?.email || null,
       },
