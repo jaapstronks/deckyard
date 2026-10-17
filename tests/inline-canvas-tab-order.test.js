@@ -339,7 +339,11 @@ function stopNames(env) {
 test('every canvas stop has a name: an empty field its placeholder or label, a filled one its text (B732)', () => {
   const title = mount(structuredClone(EMPTY_TITLE));
   try {
-    assert.deepEqual(stopNames(title), ['Add Title', 'Subtitle', 'Meta']);
+    assert.deepEqual(stopNames(title), [
+      'Add Title',
+      'Subtitle',
+      'Detail line',
+    ]);
   } finally {
     title.teardown();
   }

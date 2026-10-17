@@ -4,7 +4,7 @@
   "slideType.chart-slide.field.chartType.option.bar.label": "Balken",
   "slideType.chart-slide.field.chartType.option.line.label": "Linie",
   "slideType.chart-slide.field.chartType.option.pie.label": "Kreis",
-  "slideType.chart-slide.field.data.label": "Daten (CSV/TSV)",
+  "slideType.chart-slide.field.data.label": "Daten",
   "slideType.chart-slide.field.pieLabelMode.label": "Kreisbeschriftungen",
   "slideType.chart-slide.field.pieLabelMode.option.both.label": "Beides",
   "slideType.chart-slide.field.pieLabelMode.option.none.label": "Keine",
@@ -187,12 +187,12 @@
   "slideType.title-slide.field.logoCorner.label": "Logo-Ecke",
   "slideType.title-slide.field.logoCorner.option.left.label": "Links",
   "slideType.title-slide.field.logoCorner.option.right.label": "Rechts",
+  "slideType.title-slide.field.meta.label": "Detailzeile",
   "slideType.title-slide.field.subheading.label": "Untertitel",
   "slideType.title-slide.label": "Titelfolie",
   "slideType.video-slide.field.autoplay.label": "Automatische Wiedergabe",
   "slideType.video-slide.field.autoplay.option.off.label": "Aus",
   "slideType.video-slide.field.autoplay.option.on.label": "An",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny Library ID",
-  "slideType.video-slide.field.source.label": "Video-URL oder Bunny-ID (YouTube/Vimeo-URL, Bunny-Embed-URL oder Bunny-Video-UUID)",
   "slideType.video-slide.field.watchUrl.label": "Ansehen-Link für den PDF-Export"
 }

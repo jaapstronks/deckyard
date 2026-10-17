@@ -126,7 +126,7 @@ default 340px), and is a **toggleable rail with swappable panes**
   which also fills the otherwise-empty space beneath the 16:9 stage. The
   textarea keeps its collab seams (`data-collab-field-key="notes"` for
   presence, the same element reference for the live-edits binder) and the
-  "Notes (QR)" companion flow sits in the strip header; the strip is
+  "On your phone" companion flow sits in the strip header; the strip is
   persistent DOM, so those bindings survive rerenders.
 - Lock/read-only gating is **not** the pane host's job: every editing
   surface consumes the state-driven `getSlideLockKind` seam itself (see

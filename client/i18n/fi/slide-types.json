@@ -4,6 +4,7 @@
   "slideType.chart-slide.field.chartType.option.bar.label": "Pylväs",
   "slideType.chart-slide.field.chartType.option.line.label": "Viiva",
   "slideType.chart-slide.field.chartType.option.pie.label": "Ympyrä",
+  "slideType.chart-slide.field.data.label": "Tiedot",
   "slideType.chart-slide.field.pieLabelMode.label": "Piirakan tunnisteet",
   "slideType.chart-slide.field.pieLabelMode.option.both.label": "Molemmat",
   "slideType.chart-slide.field.pieLabelMode.option.none.label": "Ei mitään",
@@ -195,13 +196,12 @@
   "slideType.title-slide.field.logoCorner.label": "Logon kulma",
   "slideType.title-slide.field.logoCorner.option.left.label": "Vasen",
   "slideType.title-slide.field.logoCorner.option.right.label": "Oikea",
-  "slideType.title-slide.field.meta.label": "Metatiedot",
+  "slideType.title-slide.field.meta.label": "Lisätietorivi",
   "slideType.title-slide.field.subheading.label": "Alaotsikko",
   "slideType.title-slide.label": "Otsikkodia",
   "slideType.video-slide.field.autoplay.label": "Automaattinen toisto",
   "slideType.video-slide.field.autoplay.option.off.label": "Pois",
   "slideType.video-slide.field.autoplay.option.on.label": "Päällä",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny-kirjaston ID",
-  "slideType.video-slide.field.source.label": "Videon URL tai Bunny ID (YouTube/Vimeo URL, Bunny embed URL tai Bunny video UUID)",
   "slideType.video-slide.field.watchUrl.label": "Katselulinkki PDF-vientiin"
 }
