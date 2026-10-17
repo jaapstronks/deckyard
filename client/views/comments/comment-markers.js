@@ -7,19 +7,26 @@ import { icon as uiIcon } from '../../lib/dom/icons.js';
 import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { commentAuthorName, commentExcerpt } from './comment-body.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 /**
  * Creates comment markers component for a slide preview.
  * @param {Object} options - Configuration options
  * @param {HTMLElement} options.containerEl - The container element to render markers into
  * @param {Function} options.onMarkerClick - Callback when clicking a marker (receives comment)
- * @param {Function} options.onPositionSelect - Callback when selecting a position to add comment (receives {x, y})
+ * @param {Function} [options.onPositionSelect] - Callback when selecting a position to add comment (receives {x, y})
+ * @param {Function} [options.onCancelAddMode] - When given, Escape leaves add
+ *   mode and calls it (the editor canvas; the lightbox layers its own Escape)
+ * @param {boolean} [options.readOnly=false] - Pins only, no add mode: the
+ *   viewers that show anchored comments but do not place them (D355)
  * @returns {Object} Markers API
  */
 export function createCommentMarkers({
   containerEl,
   onMarkerClick,
   onPositionSelect,
+  onCancelAddMode,
+  readOnly = false,
 }) {
   let comments = [];
   let isAddMode = false;
@@ -58,7 +65,19 @@ export function createCommentMarkers({
     onPositionSelect?.({ x: posX, y: posY });
   }
 
-  containerEl.addEventListener('click', handleContainerClick);
+  if (!readOnly) containerEl.addEventListener('click', handleContainerClick);
+
+  // Add mode is a transient layer over the canvas, so it hears Escape in the
+  // capture phase, before the editor's standing surfaces. A press inside the
+  // card that opened on the slide belongs to that card (its composer and its
+  // mention popover peel first), so it is left alone here.
+  function onEscapeKey(e) {
+    if (!isAddMode) return;
+    if (e.target?.closest?.('.positioned-comment-popup')) return;
+    if (!takeEscape(e)) return;
+    exitAddMode();
+    onCancelAddMode?.();
+  }
 
   function renderMarkers() {
     ensureAttached();
@@ -89,6 +108,7 @@ export function createCommentMarkers({
     const marker = h('button', {
       class: `comment-marker ${comment.status === 'resolved' ? 'is-resolved' : ''}`,
       type: 'button',
+      'data-comment-id': comment.id,
       title: label,
       'aria-label': label,
       style: `left: ${clampedX}%; top: ${clampedY}%;`,
@@ -122,13 +142,17 @@ export function createCommentMarkers({
   }
 
   function enterAddMode() {
+    if (readOnly || isAddMode) return;
     isAddMode = true;
     containerEl.classList.add('is-add-comment-mode');
+    if (onCancelAddMode)
+      document.addEventListener('keydown', onEscapeKey, true);
   }
 
   function exitAddMode() {
     isAddMode = false;
     containerEl.classList.remove('is-add-comment-mode');
+    document.removeEventListener('keydown', onEscapeKey, true);
   }
 
   function toggleAddMode() {
@@ -145,7 +169,29 @@ export function createCommentMarkers({
     renderMarkers();
   }
 
+  /**
+   * Point at one pin: the "Show on slide" path from the list. False when the
+   * comment has no pin on the slide shown.
+   * @param {string} commentId
+   * @returns {boolean}
+   */
+  function flash(commentId) {
+    ensureAttached();
+    const marker = [...markersContainer.children].find(
+      (m) => m.dataset.commentId === commentId,
+    );
+    if (!marker) return false;
+    marker.classList.remove('is-flashing');
+    // Restart the animation when the same pin is asked for twice.
+    void marker.offsetWidth;
+    marker.classList.add('is-flashing');
+    marker.focus({ preventScroll: true });
+    setTimeout(() => marker.classList.remove('is-flashing'), 2000);
+    return true;
+  }
+
   function detach() {
+    exitAddMode();
     containerEl.removeEventListener('click', handleContainerClick);
     markersContainer?.remove();
     containerEl.classList.remove('is-add-comment-mode');
@@ -158,6 +204,7 @@ export function createCommentMarkers({
     toggleAddMode,
     isInAddMode,
     refresh,
+    flash,
     reattach: ensureAttached,
     detach,
   };

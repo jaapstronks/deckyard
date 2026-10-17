@@ -2,6 +2,8 @@ import { createOverlay } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import {
+  commentAuthorName,
+  createAnchoredComposer,
   createCommentMarkers,
   renderCommentBodyNodes,
 } from '../../comments/index.js';
@@ -19,6 +21,7 @@ export function createPreviewLightbox({
   getSelectedSlideId,
   // Comment support
   commentsApi,
+  getAnchoredComposerSupport,
   onCommentAdded,
   // Navigation support
   onNavigate,
@@ -190,10 +193,7 @@ export function createPreviewLightbox({
       const headerEl = h('div', { class: 'comment-detail-header' });
       const authorEl = h('span', {
         class: 'comment-detail-author',
-        text:
-          comment.authorName ||
-          comment.authorEmail ||
-          t('comments.unknownAuthor', 'Unknown'),
+        text: commentAuthorName(comment),
       });
       const timeEl = h('span', {
         class: 'comment-detail-time',
@@ -222,10 +222,7 @@ export function createPreviewLightbox({
           const replyEl = h('div', { class: 'comment-detail-reply' });
           const replyAuthor = h('span', {
             class: 'comment-detail-reply-author',
-            text:
-              reply.authorName ||
-              reply.authorEmail ||
-              t('comments.unknownAuthor', 'Unknown'),
+            text: commentAuthorName(reply),
           });
           const replyBody = h('span', { class: 'comment-detail-reply-body' });
           replyBody.append(...renderCommentBodyNodes(reply.body));
@@ -265,86 +262,42 @@ export function createPreviewLightbox({
 
     // Helper to hide popup
     const hidePopup = () => {
-      if (positionedPopup) {
-        positionedPopup.remove();
-        positionedPopup = null;
-      }
+      positionedPopup?.detach();
+      positionedPopup = null;
     };
 
-    // Helper to show positioned comment popup
+    const leaveAddMode = () => {
+      hidePopup();
+      commentMarkers?.exitAddMode?.();
+      pinBtn?.classList?.remove('is-active');
+      if (pinHint) pinHint.style.display = 'none';
+    };
+
+    // The same card as on the editor canvas (one composer, D355).
     const showPopup = (x, y) => {
       hidePopup();
-
-      const thumbRect = bigThumb.getBoundingClientRect();
-      const stageRect = stage.getBoundingClientRect();
-      const pixelX =
-        thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
-      const pixelY =
-        thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
-
-      const positionClasses = ['positioned-comment-popup'];
-      if (x > 50) positionClasses.push('anchor-right');
-      if (y > 60) positionClasses.push('anchor-bottom');
-
-      positionedPopup = h('div', {
-        class: positionClasses.join(' '),
-        style: `left: ${pixelX}px; top: ${pixelY}px;`,
-      });
-
-      const marker = h('div', { class: 'positioned-comment-marker' });
-      const textarea = h('textarea', {
-        class: 'form-input',
-        placeholder: t('comments.addPlaceholder', 'Add a comment…'),
-        rows: 2,
-      });
-
-      const actions = h('div', { class: 'positioned-comment-popup-actions' });
-      const cancelBtn = h('button', {
-        class: 'btn btn-secondary btn-sm',
-        type: 'button',
-        text: t('common.cancel', 'Cancel'),
-        onclick: () => {
-          hidePopup();
-          commentMarkers?.exitAddMode?.();
-          pinBtn?.classList?.remove('is-active');
-          if (pinHint) pinHint.style.display = 'none';
-        },
-      });
-      const submitBtn = h('button', {
-        class: 'btn btn-primary btn-sm',
-        type: 'button',
-        text: t('comments.post', 'Post'),
-        onclick: async () => {
-          const body = textarea.value.trim();
-          if (!body) return;
-
-          try {
-            submitBtn.disabled = true;
+      const support = getAnchoredComposerSupport?.();
+      positionedPopup = createAnchoredComposer({
+        stageEl: stage,
+        thumbEl: bigThumb,
+        x,
+        y,
+        attachMentions: support?.attachMentions,
+        onSubmit: async (body) => {
+          const position = { positionX: x, positionY: y };
+          if (support) await support.onSubmit(body, position);
+          else
             await commentsApi.createComment({
               body,
               slideId: getSelectedSlideId?.() || null,
-              positionX: x,
-              positionY: y,
+              ...position,
             });
-            hidePopup();
-            commentMarkers?.exitAddMode?.();
-            pinBtn?.classList?.remove('is-active');
-            if (pinHint) pinHint.style.display = 'none';
-            refreshMarkers();
-            onCommentAdded?.();
-          } catch (err) {
-            console.error('Failed to post comment:', err);
-          } finally {
-            submitBtn.disabled = false;
-          }
+          leaveAddMode();
+          refreshMarkers();
+          onCommentAdded?.();
         },
+        onCancel: () => leaveAddMode(),
       });
-
-      actions.append(cancelBtn, submitBtn);
-      positionedPopup.append(marker, textarea, actions);
-      stage.style.position = 'relative';
-      stage.appendChild(positionedPopup);
-      textarea.focus();
     };
 
     // Setup comment markers on lightbox thumb
@@ -452,15 +405,16 @@ export function createPreviewLightbox({
         if (commentDetailPopup) {
           hideCommentDetail();
         } else if (positionedPopup) {
-          hidePopup();
-          commentMarkers?.exitAddMode?.();
-          pinBtn?.classList?.remove('is-active');
-          if (pinHint) pinHint.style.display = 'none';
+          leaveAddMode();
         } else {
           close();
         }
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')
+        if (
+          e.target.tagName === 'TEXTAREA' ||
+          e.target.tagName === 'INPUT' ||
+          e.target.isContentEditable
+        )
           return;
         e.preventDefault();
         navigateSlide(e.key === 'ArrowLeft' ? -1 : 1);
@@ -474,7 +428,7 @@ export function createPreviewLightbox({
       if (header.contains(e.target)) return;
       if (
         !bigThumb.contains(e.target) &&
-        !positionedPopup?.contains(e.target) &&
+        !positionedPopup?.el.contains(e.target) &&
         !commentDetailPopup?.contains(e.target)
       ) {
         close();

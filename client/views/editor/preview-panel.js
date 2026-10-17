@@ -1,6 +1,9 @@
 import { createPreviewLightbox } from './modals/preview-lightbox.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createCommentMarkers } from '../comments/index.js';
+import {
+  createAnchoredComposer,
+  createCommentMarkers,
+} from '../comments/index.js';
 import { icon } from '../../lib/dom/icons.js';
 import { h } from '../../lib/dom/index.js';
 
@@ -15,6 +18,9 @@ export function createPreviewPanel({
   getSelectedSlideId,
   // Slide comments support
   commentsApi,
+  // The comments pane's posting and mention lookup, read at open time (the
+  // pane is built after this panel): the card on a spot posts like the pane.
+  getAnchoredComposerSupport,
   // Positioned-marker click: opens the comments pane on this comment (the
   // under-slide thread list folded into the inspector rail, fase 4).
   onOpenComments,
@@ -38,6 +44,7 @@ export function createPreviewPanel({
     getSelectedSlideId,
     // Pass comments support to lightbox
     commentsApi,
+    getAnchoredComposerSupport,
     onCommentAdded: () => {
       refreshCommentMarkers();
     },
@@ -63,11 +70,13 @@ export function createPreviewPanel({
   });
   zoomBtn.append(icon('zoom-in', { size: 16 }));
 
-  // Add-comment button (only shown if commentsApi is available). Labeled, not
-  // icon-only: placing a comment was too well hidden as a bare pin glyph. When
-  // active it flips to a Cancel affordance. The mode hint no longer lives in
-  // the toolbar (it wrapped and unbalanced the row) - it renders as an overlay
-  // banner on the slide stage instead (see pinModeHint below).
+  // Mark-a-spot button (only shown if commentsApi is available). Labeled, not
+  // icon-only: placing a comment was too well hidden as a bare pin glyph; it
+  // still collapses to the glyph on narrow widths, so it carries an
+  // aria-label too. When active it flips to a Cancel affordance. The mode hint
+  // renders as an overlay banner on the slide stage (see pinModeHint below).
+  // From the keyboard (a click with no pointer), Enter places the pin in the
+  // middle of the slide and opens the card at once; Escape leaves the mode.
   let pinCommentBtn = null;
   let pinCommentLabel = null;
   let pinModeHint = null;
@@ -76,10 +85,11 @@ export function createPreviewPanel({
       class: 'btn btn-secondary pin-comment-btn',
       type: 'button',
       title: t('comments.addPositioned', 'Add comment to specific spot'),
+      'aria-label': t('comments.addLabel', 'Mark a spot'),
     });
     pinCommentLabel = h('span', {
       class: 'pin-comment-label',
-      text: t('comments.addLabel', 'Add comment'),
+      text: t('comments.addLabel', 'Mark a spot'),
     });
     pinCommentBtn.append(
       icon('map-pin', { size: 15, className: 'btn-pin-icon' }),
@@ -131,14 +141,8 @@ export function createPreviewPanel({
   let positionedCommentPopup = null;
 
   function hidePositionedCommentPopup() {
-    if (positionedCommentPopup) {
-      positionedCommentPopup.remove();
-      positionedCommentPopup = null;
-    }
-    // Also hide hint when popup is dismissed
-    if (pinModeHint) {
-      pinModeHint.hidden = true;
-    }
+    positionedCommentPopup?.detach();
+    positionedCommentPopup = null;
   }
 
   // Reflect add-comment mode on the toolbar button: filled + "Cancel" while
@@ -150,12 +154,19 @@ export function createPreviewPanel({
     pinCommentBtn.title = isActive
       ? t('comments.cancelPosition', 'Cancel')
       : t('comments.addPositioned', 'Add comment to specific spot');
-    if (pinCommentLabel) {
-      pinCommentLabel.textContent = isActive
-        ? t('comments.cancelPosition', 'Cancel')
-        : t('comments.addLabel', 'Add comment');
-    }
+    const label = isActive
+      ? t('comments.cancelPosition', 'Cancel')
+      : t('comments.addLabel', 'Mark a spot');
+    pinCommentBtn.setAttribute('aria-label', label);
+    if (pinCommentLabel) pinCommentLabel.textContent = label;
     if (pinModeHint) pinModeHint.hidden = !isActive;
+  }
+
+  // Every way out of add mode (the button, Cancel, Escape, a post) lands here.
+  function leaveAddMode() {
+    hidePositionedCommentPopup();
+    commentMarkers?.exitAddMode?.();
+    syncPinButton(false);
   }
 
   async function refreshCommentMarkers() {
@@ -175,85 +186,43 @@ export function createPreviewPanel({
 
   function showPositionedCommentPopup(x, y) {
     hidePositionedCommentPopup();
-
-    // Calculate pixel position based on thumb bounds
-    const thumbRect = thumb.getBoundingClientRect();
-    const stageRect = previewStage.getBoundingClientRect();
-
-    // Position within stage (which is the positioning context)
-    const pixelX =
-      thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
-    const pixelY = thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
-
-    // Smart positioning: avoid edge clipping
-    const positionClasses = ['positioned-comment-popup'];
-    if (x > 50) positionClasses.push('anchor-right');
-    if (y > 60) positionClasses.push('anchor-bottom');
-
-    positionedCommentPopup = h('div', {
-      class: positionClasses.join(' '),
-      style: `left: ${pixelX}px; top: ${pixelY}px;`,
-    });
-
-    // Store the original click position for the marker (as percentage)
-    const clickX = x;
-    const clickY = y;
-
-    // Small marker at click point
-    const marker = h('div', { class: 'positioned-comment-marker' });
-
-    const textarea = h('textarea', {
-      class: 'form-input',
-      placeholder: t('comments.addPlaceholder', 'Add a comment…'),
-      rows: 2,
-    });
-
-    const actions = h('div', { class: 'positioned-comment-popup-actions' });
-    const cancelBtn = h('button', {
-      class: 'btn btn-secondary btn-sm',
-      type: 'button',
-      text: t('common.cancel', 'Cancel'),
-      onclick: () => {
-        hidePositionedCommentPopup();
-        commentMarkers?.exitAddMode?.();
-        syncPinButton(false);
-      },
-    });
-    const submitBtn = h('button', {
-      class: 'btn btn-primary btn-sm',
-      type: 'button',
-      text: t('comments.post', 'Post'),
-      onclick: async () => {
-        const body = textarea.value.trim();
-        if (!body) return;
-
-        try {
-          submitBtn.disabled = true;
+    if (pinModeHint) pinModeHint.hidden = true;
+    const support = getAnchoredComposerSupport?.();
+    positionedCommentPopup = createAnchoredComposer({
+      // In previewStage (not thumb) to avoid overflow clipping.
+      stageEl: previewStage,
+      thumbEl: thumb,
+      x,
+      y,
+      attachMentions: support?.attachMentions,
+      onSubmit: async (body) => {
+        const position = { positionX: x, positionY: y };
+        if (support) await support.onSubmit(body, position);
+        else
           await commentsApi.createComment({
             body,
             slideId: getSelectedSlideId?.() || null,
-            positionX: clickX,
-            positionY: clickY,
+            ...position,
           });
-          hidePositionedCommentPopup();
-          commentMarkers?.exitAddMode?.();
-          syncPinButton(false);
-          // Refresh to show the new marker
-          refreshCommentMarkers();
-        } catch (err) {
-          console.error('Failed to post positioned comment:', err);
-        } finally {
-          submitBtn.disabled = false;
-        }
+        leaveAddMode();
+        // Refresh to show the new marker
+        refreshCommentMarkers();
       },
+      onCancel: () => leaveAddMode(),
     });
+  }
 
-    actions.append(cancelBtn, submitBtn);
-    positionedCommentPopup.append(marker, textarea, actions);
-    // Render in previewStage (not thumb) to avoid overflow clipping
-    previewStage.style.position = 'relative';
-    previewStage.appendChild(positionedCommentPopup);
-    textarea.focus();
+  /**
+   * Enter add mode, from the toolbar or from the pane's empty state. From
+   * the keyboard the pin goes in the middle of the slide and the card opens
+   * at once: there is no pointer to place it with.
+   * @param {{ keyboard?: boolean }} [opts]
+   */
+  function startPinMode({ keyboard = false } = {}) {
+    if (!commentMarkers) return;
+    if (!commentMarkers.isInAddMode()) commentMarkers.enterAddMode();
+    syncPinButton(true);
+    if (keyboard) showPositionedCommentPopup(50, 50);
   }
 
   if (commentsApi) {
@@ -267,14 +236,15 @@ export function createPreviewPanel({
         // Show popup for adding a positioned comment
         showPositionedCommentPopup(x, y);
       },
+      onCancelAddMode: () => leaveAddMode(),
     });
 
-    // Pin comment button handler
+    // Pin comment button handler. `detail` is 0 for a click the keyboard
+    // made (Enter or Space on the focused button).
     if (pinCommentBtn) {
-      pinCommentBtn.addEventListener('click', () => {
-        const isActive = commentMarkers.toggleAddMode();
-        syncPinButton(isActive);
-        if (!isActive) hidePositionedCommentPopup();
+      pinCommentBtn.addEventListener('click', (e) => {
+        if (commentMarkers.isInAddMode()) leaveAddMode();
+        else startPinMode({ keyboard: e.detail === 0 });
       });
     }
   }
@@ -316,15 +286,21 @@ export function createPreviewPanel({
     rerenderLightboxIfOpen: () => previewLightbox.rerenderIfOpen(),
     // Slide comments API (markers only; the thread list lives in the
     // inspector's comments pane)
-    refreshSlideComments: () => {
-      refreshCommentMarkers();
-    },
+    refreshSlideComments: () => refreshCommentMarkers(),
     // Re-attach markers DOM after a preview rerender wipes thumb contents.
     // Cheap: does not refetch — just re-renders the existing comment list.
     reattachCommentMarkers: () => {
       commentMarkers?.reattach?.();
       commentMarkers?.refresh?.();
     },
+    // The pane's empty state starts placing a pin from here.
+    startPinMode,
+    /**
+     * "Show on slide" from the list: point at the pin (the slide is already
+     * the selected one). False when it is not on the canvas.
+     * @param {string} commentId
+     */
+    showCommentMarker: (commentId) => Boolean(commentMarkers?.flash(commentId)),
     // True while placing a positioned comment. The inline WYSIWYG editor reads
     // this to yield its click capture so the pin lands anywhere on the slide,
     // not only in the non-editable margins.

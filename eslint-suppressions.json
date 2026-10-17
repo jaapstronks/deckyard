@@ -762,11 +762,6 @@
       "count": 2
     }
   },
-  "client/views/share-viewer/topbar.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "client/views/slide-library/edit-modal.js": {
     "no-restricted-syntax": {
       "count": 1
