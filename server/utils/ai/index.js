@@ -1,24 +1,15 @@
 /**
- * AI Module - V2 Two-Phase Deck Generation
- *
- * This module provides improved AI deck generation using a two-phase approach:
- * - Phase 1: Create outline (structure, chapters, rough content)
- * - Phase 2: Refine slides (select types, format content)
+ * AI Module - deck generation and the editing verbs around it.
  *
  * Exports:
- * - generateDeckV2: Main entry point for deck generation
+ * - generateDeck / generateSlides / assembleDeck: the one generation
+ *   pipeline (outline → revise → refine → validate → assemble), B756
  * - SLIDE_TYPE_CATALOG: For reference
  */
 
-export {
-  generateDeckV2,
-  groupSlidesForPhase2,
-  refineSlideGroup,
-  generateSessionId,
-  createSessionLogger,
-} from './generate-deck-v2.js';
+export { generateDeck, generateSlides, assembleDeck } from './generate-deck.js';
 
-export { separateSlidesForProcessing } from './generate-outline.js';
+export { generateSessionId, createSessionLogger } from './logging.js';
 
 export {
   SLIDE_TYPE_CATALOG,

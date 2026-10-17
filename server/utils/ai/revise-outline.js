@@ -206,12 +206,15 @@ export function applyRevisionOperations(
  * @param {string|null} [options.vendor]
  * @param {string} [options.lang]
  * @param {Function|null} [options.onLog]
+ * @param {AbortSignal|null} [options.signal] - Reaches the provider fetch. A
+ *   cancelled caller is not a failed revision: the abort is thrown, not
+ *   swallowed into "keep the draft".
  * @returns {Promise<{outline: object, revision: object|null}>}
  */
 export async function reviseOutline(
   outline,
   rawContent,
-  { vendor = null, lang = 'en', onLog = null } = {},
+  { vendor = null, lang = 'en', onLog = null, signal = null } = {},
 ) {
   const langLabel = lang === 'nl' ? 'DUTCH' : 'ENGLISH';
   const config = getLlmConfig({ vendor, role: 'plan' });
@@ -231,9 +234,11 @@ export async function reviseOutline(
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
+      signal,
     });
     parsed = extractJsonObject(content);
   } catch (err) {
+    if (signal?.aborted) throw err;
     const message =
       err instanceof LlmError ? err.message : String(err?.message || err);
     log.warn(`Outline revision failed, keeping the draft: ${message}`);

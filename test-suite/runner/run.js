@@ -168,7 +168,7 @@ async function main() {
 
   // Imported lazily so --dry-run / --no-generate paths don't pay for loading
   // the whole generation pipeline.
-  const { generateDeckV2 } = await import('../../server/utils/ai/index.js');
+  const { generateDeck } = await import('../../server/utils/ai/index.js');
 
   const results = [];
 
@@ -204,7 +204,7 @@ async function main() {
       let deck;
       if (options.generate) {
         const startedGeneration = Date.now();
-        deck = await generateDeckV2(sourceText, {
+        deck = await generateDeck(sourceText, {
           targetLang: testCase.language === 'nl' ? 'nl' : 'en-GB',
           vendor: options.vendor,
           // The suite measures core: an organisation without types of its

@@ -5,36 +5,21 @@ import {
   getTrimmedString,
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
-import { DECK_FORMAT_ID } from '../../../../shared/slide-types/deck-format-id.js';
 import {
+  generateDeck,
   generateSessionId,
   createSessionLogger,
 } from '../../../utils/ai/index.js';
-import {
-  generateOutline,
-  separateSlidesForProcessing,
-  calculateTargetSlides,
-} from '../../../utils/ai/generate-outline.js';
-import { refineAllSlideGroups } from '../../../utils/ai/refine-slides.js';
-import {
-  validateAndFixRefinedSlides,
-  validateSlideCount,
-} from '../../../utils/ai/validate-slides/index.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
+import { loadAiThemeContext } from '../../../utils/themes.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import {
   OUTLINE_CREEP_MS,
   PROGRESS,
   REFINE_CREEP_MS,
 } from '../../../utils/import-progress.js';
-import {
-  log,
-  loadAiThemeContext,
-  reattachAiMeta,
-  createDeckFromParts,
-} from './shared.js';
+import { log, reattachAiMeta, createDeckFromParts } from './shared.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
@@ -94,9 +79,9 @@ export async function handleAiWizardV2Stream({
   const { signal } = stream;
 
   try {
-    // Phase 1: Generate outline. One long model call with no events of its
-    // own, so the bar creeps toward the refine floor instead of standing
-    // still (B595; `docs/reference/import-progress.md`).
+    // Phase 1 is a few long model calls with no events of their own, so the
+    // bar creeps toward the refine floor instead of standing still (B595;
+    // `docs/reference/import-progress.md`).
     sseWrite(res, {
       event: 'status',
       data: {
@@ -108,145 +93,70 @@ export async function handleAiWizardV2Stream({
       },
     });
 
-    const outline = await generateOutline(raw, {
+    // The progress copy follows the deck language, which the service settles
+    // once the outline is in and hands to `onOutline`.
+    let nl = false;
+    // The one generation pipeline (B756); this route only reports on it.
+    const deck = await generateDeck(raw, {
       userName,
       targetLang: lang,
       vendor,
       targetLength,
-      onLog: (data) => logger.logPhase1(data),
+      theme: effectiveTheme,
+      titleSlideType,
+      themeContext,
+      slideTypes,
+      ...slideTypeOffer,
       signal,
-    });
-
-    // Send status messages to client. The rotator on the client replays
-    // these while sections are being written; real per-section progress
-    // events (phase 'refine-progress') below take over as groups finish.
-    const statusMessages = outline.statusMessages || [];
-    sseWrite(res, {
-      event: 'messages',
-      data: { statusMessages, total: outline.slides.length },
-    });
-
-    // Phase 2: Separate structural vs content slides
-    const { structuralSlides, contentGroups } = separateSlidesForProcessing(
-      outline.slides,
-    );
-    const langCode =
-      outline.metadata.requestedLang || outline.metadata.detectedLang || 'en';
-
-    // Informational (phase 'refine'): shown only until the rotator has its
-    // messages; real per-section events below use 'refine-progress' and
-    // take over the modal.
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message:
-          langCode === 'nl'
-            ? `Outline klaar: ${outline.slides.length} slides in ${contentGroups.length} secties…`
-            : `Outline ready: ${outline.slides.length} slides in ${contentGroups.length} sections…`,
-        progress: PROGRESS.refineFloor,
-        creepTo: PROGRESS.refineCeiling,
-        creepMs: REFINE_CREEP_MS,
-        phase: 'refine',
+      logger,
+      onOutline: (outline, { sections, lang: deckLang }) => {
+        // The rotator on the client replays these while sections are being
+        // written; the per-section events below take over as groups finish.
+        sseWrite(res, {
+          event: 'messages',
+          data: {
+            statusMessages: outline.statusMessages || [],
+            total: outline.slides.length,
+          },
+        });
+        // Informational (phase 'refine'): shown only until the rotator has
+        // its messages.
+        nl = deckLang === 'nl';
+        sseWrite(res, {
+          event: 'status',
+          data: {
+            message: nl
+              ? `Outline klaar: ${outline.slides.length} slides in ${sections} secties…`
+              : `Outline ready: ${outline.slides.length} slides in ${sections} sections…`,
+            progress: PROGRESS.refineFloor,
+            creepTo: PROGRESS.refineCeiling,
+            creepMs: REFINE_CREEP_MS,
+            phase: 'refine',
+          },
+        });
+      },
+      // Real progress: one event per finished section group.
+      onGroupDone: ({ done, total }) => {
+        sseWrite(res, {
+          event: 'status',
+          data: {
+            message: nl
+              ? `Sectie ${done} van ${total} geschreven…`
+              : `Wrote section ${done} of ${total}…`,
+            progress: Math.round(
+              PROGRESS.refineFloor +
+                (done / total) *
+                  (PROGRESS.refineCeiling - PROGRESS.refineFloor),
+            ),
+            phase: 'refine-progress',
+          },
+        });
       },
     });
 
-    // Only send content slides to AI refinement
-    let refinedContentSlides = [];
-    if (contentGroups.length > 0) {
-      refinedContentSlides = await refineAllSlideGroups(contentGroups, {
-        lang: langCode,
-        vendor,
-        batchSize: 6,
-        presentationContext: {
-          title: outline.title,
-          summary: outline.summary,
-        },
-        onLog: (data) => logger.logPhase2Call(data),
-        signal,
-        ...slideTypeOffer,
-        themeContext,
-        slideTypes,
-        // Real progress: one event per finished section group.
-        onGroupDone: ({ done, total }) => {
-          sseWrite(res, {
-            event: 'status',
-            data: {
-              message:
-                langCode === 'nl'
-                  ? `Sectie ${done} van ${total} geschreven…`
-                  : `Wrote section ${done} of ${total}…`,
-              progress: Math.round(
-                PROGRESS.refineFloor +
-                  (done / total) *
-                    (PROGRESS.refineCeiling - PROGRESS.refineFloor),
-              ),
-              phase: 'refine-progress',
-            },
-          });
-        },
-      });
-    }
-
-    // Combine structural + content slides, sorted by original index
-    const allSlides = [...structuralSlides, ...refinedContentSlides].sort(
-      (a, b) => a.originalIndex - b.originalIndex,
-    );
-
-    // Validate and fix slides to meet minimum requirements
-    const validatedSlides = validateAndFixRefinedSlides(allSlides, {
-      slideTypes,
-    });
-
-    // Validate slide count against target budget
-    const { targetSlides: budgetTarget } = calculateTargetSlides(
-      raw,
-      targetLength,
-    );
-    const budgetValidation = validateSlideCount(validatedSlides, budgetTarget);
-
-    // Assemble deck with automatic title slide using theme-appropriate type
-    const deck = {
-      format: DECK_FORMAT_ID,
-      version: 1,
-      title: outline.title,
-      theme: effectiveTheme,
-      slides: [
-        // Automatic title slide first using the theme-appropriate type
-        {
-          id: cryptoUuid(),
-          type: titleSlideType,
-          content: {
-            title: outline.title || 'Presentation',
-            subtitle: outline.subtitle || '',
-            background: 'lime',
-          },
-          notes: '',
-          _aiReasoning: 'Automatic title slide',
-        },
-        // Then all other slides with presenter notes
-        ...validatedSlides.map((refined) => ({
-          id: cryptoUuid(),
-          type: refined.type,
-          content: refined.content,
-          notes: refined.presenterNotes || '',
-          _aiReasoning: refined.reasoning,
-          ...(refined.alternativeType
-            ? {
-                _aiAlternatives: [
-                  {
-                    type: refined.alternativeType,
-                    reason: refined.alternativeReason || '',
-                  },
-                ],
-              }
-            : {}),
-        })),
-      ],
-    };
-
     const parts = deckToPresentationParts(deck, {
       theme,
-      lang: langCode,
+      lang: deck.lang,
       slideTypes,
     });
     // Keep the per-slide "why this type" + alternatives on the saved slides;
@@ -256,7 +166,6 @@ export async function handleAiWizardV2Stream({
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
 
-    // Create presentation
     sseWrite(res, {
       event: 'status',
       data: {
@@ -268,33 +177,19 @@ export async function handleAiWizardV2Stream({
 
     const updated = await createDeckFromParts(storageScope, {
       parts,
-      lang,
+      lang: deck.lang,
       authedUser,
       theme: effectiveTheme,
       settings: settingsFromRequest,
       notionSourcePageId,
     });
 
-    // Finalize logging
-    logger.finalize(deck, {
-      sessionId,
-      totalSlides: updated.slides?.length || 0,
-      endpoint: 'wizard-v2/stream',
-    });
-
-    // Send final result
     sseWrite(res, {
       event: 'complete',
       data: {
         presentation: updated,
         sessionId,
         slideCount: updated.slides?.length || 0,
-        budget: {
-          target: budgetTarget,
-          actual: budgetValidation.totalSlides,
-          percentage: budgetValidation.percentage,
-          overBudget: budgetValidation.overBudget,
-        },
       },
     });
   } catch (e) {
@@ -305,14 +200,6 @@ export async function handleAiWizardV2Stream({
     }
 
     log.error('[AI Wizard V2 Stream] Error:', e);
-
-    // Log the error too
-    try {
-      logger.finalize({ error: e?.message }, { sessionId, failed: true });
-    } catch {
-      /* ignore logging errors */
-    }
-
     sseError(res, e?.message || 'Deck generation failed');
   }
 
