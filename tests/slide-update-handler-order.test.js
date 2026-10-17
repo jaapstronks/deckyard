@@ -1,6 +1,6 @@
 /**
- * B739: a colleague's remote save is merged into the open editor in the
- * server's slide order. Before, a remote slide the tab didn't know yet was
+ * A colleague's remote save is merged into the open editor in the server's
+ * slide order (B739). Before, a remote slide the tab didn't know yet was
  * appended, so slides pasted halfway through the deck showed up at the
  * bottom until a refresh.
  *
