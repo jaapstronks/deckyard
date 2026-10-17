@@ -1,5 +1,4 @@
 import { createPresentation } from '../../../services/presentations.js';
-import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 
 /** Shared logger for all AI route handlers. */
@@ -16,72 +15,6 @@ export const log = createLogger('ai');
  * @property {object|null} authedUser
  * @property {import('../../../storage/scope.js').StorageScope} storageScope
  */
-
-/**
- * Extract theme context for AI generation.
- * Provides the AI with theme-specific information to make better content decisions.
- */
-function extractThemeContext(theme) {
-  if (!theme) return null;
-
-  const ctx = {};
-
-  // The theme's slide-background variants. Which grounds a slide can take is
-  // decided per type (its `background` field joined with these), so the prompt
-  // derives that offer itself; carrying the variants keeps the context present
-  // for every theme, also one that only has the declared options.
-  ctx.slideBackgrounds = Array.isArray(theme.slideBackgrounds)
-    ? theme.slideBackgrounds
-    : [];
-
-  // Brand colors
-  if (theme.brandColors?.length) {
-    ctx.brandColors = theme.brandColors;
-  }
-
-  // Whether theme has background image presets
-  if (theme.backgroundPresets?.length) {
-    ctx.hasBackgroundImages = true;
-  }
-
-  return ctx;
-}
-
-/**
- * Settle the theme of a deck the AI is about to generate, and load its
- * title slide type and AI theme context. The theme is checked by the rule
- * every create runs (`settleNewDeckTheme`, B486), before the generation, so an
- * unknown theme is refused without an LLM call.
- *
- * The loaded theme comes back too: the AI routes normalize their generated deck
- * through `deckToPresentationParts`, and the slide factory behind it reads the
- * theme for background presets and slide-background variants. Returning it here
- * is what keeps them from loading the same theme a second time — or, as they
- * did before, composing their slides against no theme at all.
- *
- * @param {string} repoRoot
- * @param {unknown} requestedTheme - the theme the request named, or absent
- * @param {Object} [storageScope]
- * @returns {Promise<{ themeId: string, titleSlideType: string, themeContext: object|null, theme: object|null }>}
- * @throws {AppError} 400 `invalid`, `details.field` = `theme`
- */
-export async function loadAiThemeContext(
-  repoRoot,
-  requestedTheme,
-  storageScope = null,
-) {
-  const { themeId, theme } = await settleNewDeckTheme(
-    repoRoot,
-    requestedTheme,
-    storageScope,
-  );
-  return {
-    themeId,
-    titleSlideType: theme?.defaultTitleSlide || 'title-slide',
-    themeContext: theme ? extractThemeContext(theme) : null,
-    theme,
-  };
-}
 
 /**
  * Re-attach AI review metadata (reasoning + alternative types) to normalized

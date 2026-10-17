@@ -1,14 +1,14 @@
 /**
  * Stage-separated access to the generation pipeline.
  *
- * `generateDeckV2` runs phase 1 and phase 2 as one call, which means testing a
+ * `generateDeck` runs phase 1 and phase 2 as one call, which means testing a
  * phase 1 prompt costs a full deck (one outline call plus one refinement call
  * per section, each carrying the ~32k-token slide-type catalog) and measures
  * the phase 1 change *through* phase 2's noise. Splitting the stages lets a
  * change be priced and attributed to the prompt it actually came from.
  *
  * These functions compose the app's own exported stage functions in the same
- * order `generateDeckV2` does — they do not reimplement it. `runFullPipeline`
+ * order `generateDeck` does — they do not reimplement it. `runFullPipeline`
  * exists so the equivalence can be asserted in a test; if this composition ever
  * drifts from the orchestrator, that test fails.
  */
@@ -19,7 +19,7 @@ import {
 } from '../../server/utils/ai/generate-outline.js';
 import { refineAllSlideGroups } from '../../server/utils/ai/refine-slides.js';
 import { validateAndFixRefinedSlides } from '../../server/utils/ai/validate-slides/index.js';
-import { assembleDeck } from '../../server/utils/ai/generate-deck-v2.js';
+import { assembleDeck } from '../../server/utils/ai/generate-deck.js';
 import { reviseOutline } from '../../server/utils/ai/revise-outline.js';
 import { SLIDE_TYPES } from '../../shared/slide-types/registry.js';
 

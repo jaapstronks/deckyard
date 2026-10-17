@@ -57,7 +57,7 @@ scripts/   fetch-cases.js, parse-reference.js
 cases/     one directory per case (only case.json is committed)
 ```
 
-**Generation** calls `generateDeckV2` from `server/utils/ai/` directly. That
+**Generation** calls `generateDeck` from `server/utils/ai/` directly. That
 function is a pure `(sourceText, options)` function — no database, no auth, no
 storage — so the suite exercises the exact production code path without running
 a server. Deck generation deliberately does _not_ go through the Anthropic SDK;

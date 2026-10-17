@@ -43,9 +43,20 @@ role})`, `getLlmStatus()`. Resolves vendor + model + key, including the
 Pipeline (`server/utils/ai/`). The top level:
 
 - `server/utils/ai/index.js` — the barrel.
-- `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
-  `groupSlidesForPhase2`, `refineSlideGroup`, `assembleDeck`, plus session
-  id/logger helpers.
+- `server/utils/ai/generate-deck.js` — **the one generation service** (B756):
+  `generateSlides(raw, opts)` runs phase 1, 1b, the split, phase 2 and
+  validation and returns `{ outline, slides, lang, meta }`;
+  `assembleDeck(outline, slides, { theme, titleSlideType, lang, titleSlide })`
+  is the pure assembly (`titleSlide: null` leaves the automatic title slide
+  out, an object overrides its content); `generateDeck()` is the two together.
+  One option set for every caller: `userName`, `targetLang`, `vendor`,
+  `targetLength`, `rawFirstSlideTitle`, `reviseOutline` (default on),
+  `slideTypes`, `disabledSlideTypes`, `customSlideTypes`, `themeContext`,
+  `signal`, `batchSize`, and the hooks `onOutline(outline, { sections })`,
+  `onStatusMessage(msg)`, `onGroupDone({ done, total })`. One language rule:
+  the requested language, else the detected one, else `DEFAULT_DECK_LANG`,
+  stored in `deck.lang`. Only this module imports the three step modules below
+  (`tests/ai-generation-single-path.test.js`).
 - `server/utils/ai/generate-outline.js` — **phase 1**, two calls with one
   job each: _analysis_ (what the source contains: sections, key points, a
   verbatim excerpt, quotes) and _structure_ (the slide plan within the budget,
@@ -113,11 +124,14 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 - `server/routes/api/ai/index.js` — the seam: a declarative exact-path table;
   every route is a fixed method + pathname.
 - `server/routes/api/ai/shared.js` — the `AiContext` typedef and the
-  shared helpers: `loadAiThemeContext` (backgrounds, brand colours, presets),
-  `reattachAiMeta`, `createDeckFromParts`.
+  shared helpers `reattachAiMeta` and `createDeckFromParts`. The theme loader
+  every generation path calls, `loadAiThemeContext` (title slide type plus the
+  theme context: backgrounds, brand colours, presets), lives in
+  `server/utils/themes.js` beside `settleNewDeckTheme`.
 - `wizard.js` (50) — `POST /api/ai/wizard`, the v1 one-shot path.
-- `wizard-v2-stream.js` (257) — `POST /api/ai/wizard-v2/stream`, the two-phase
-  path. The one wizard-v2 route: the non-streaming `wizard-v2` and
+- `wizard-v2-stream.js` — `POST /api/ai/wizard-v2/stream`: request →
+  theme context → `generateDeck()` with hooks that write the SSE events →
+  `createDeckFromParts`. The one wizard-v2 route: the non-streaming `wizard-v2` and
   `wizard-v2/outline` siblings were retired (B97).
 - `append-slides.js` (90), `refine-section.js` (75), `convert-slide.js` (34),
   `compress-deck.js` (47), `iterate.js` (62) — the per-feature routes.
@@ -150,21 +164,25 @@ validation-event logs alongside them.
 
 ## Flows
 
-- **Two-phase generation** (`POST /api/ai/wizard-v2/stream`) — the live path.
-  The handler validates params, loads the org's slide-type context (disabled +
-  custom types) and theme context, then: **phase 1** `generateOutline` produces
-  a title, chapters and rough slides with no slide-type vocabulary (analysis
-  call, then structure call); **phase 1b** `reviseOutline` re-plans it (only in
-  `generateDeckV2`, so MCP and the AI test suite; the wizard stream skips it);
-  `separateSlidesForProcessing` +
+- **Generation** (`generateDeck()`, B756) — one pipeline behind the creation
+  wizard (`POST /api/ai/wizard-v2/stream`) and MCP `create_presentation`; the
+  file and Notion imports move onto `generateSlides()` next (B757). The caller
+  loads the org's slide-type offer (disabled + custom types), the merged type
+  map and the theme context (`loadAiThemeContext`), then: **phase 1**
+  `generateOutline` produces a title, chapters and rough slides with no
+  slide-type vocabulary (analysis call, then structure call); **phase 1b**
+  `reviseOutline` re-plans it (on for every caller; the `reviseOutline: false`
+  option is there for a measurement, B469); `separateSlidesForProcessing` +
   `groupSlidesForPhase2` split the outline into groups; **phase 2**
   `refineAllSlideGroups` runs one LLM call per group, each shown the catalogue,
   the examples, the theme context and each slide's source context, returning a
   type, structured content, presenter notes and a presenter-facing reasoning
   per slide; `validateAndFixRefinedSlides` repairs the result;
-  `assembleDeck` prepends a title slide and emits a `deckyard.deck` document;
-  `createDeckFromParts` persists it. Progress is streamed as SSE status
-  events, then the finished presentation.
+  `assembleDeck` prepends a title slide (its `subheading` from the outline)
+  and emits a `deckyard.deck` document with `lang`. The cancel `signal` reaches
+  every model call. The wizard streams progress as SSE status events from the
+  hooks and persists through `createDeckFromParts`; MCP passes its HTTP
+  caller's disconnect signal and persists through `createPresentation`.
 - **One-shot generation** (`POST /api/ai/wizard`) — the v1 path, still used by
   the "new presentation" modal: a single prompt via
   `generateDeckJsonFromRawContent`, no outline phase, no group refinement. The
