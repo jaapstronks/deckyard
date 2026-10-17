@@ -168,7 +168,13 @@ test('markdown markers in source text stay characters, not formatting', () => {
         .replace(/&amp;/g, '&');
     }
     assert.doesNotMatch(html, /<(em|strong|ol|ul|li|h3|blockquote|code|a)\b/);
-    const plain = html.replace(/<[^>]+>/g, '');
+    // Strip the paragraph tags until none is left: the text is compared, not
+    // served, so this is a reader, not a sanitizer.
+    let plain = html;
+    for (let prev = ''; prev !== plain;) {
+      prev = plain;
+      plain = plain.replace(/<[^>]*>/g, '');
+    }
     assert.equal(plain, text, `rendered ${JSON.stringify(text)} as ${html}`);
   }
   const cell = escapeMarkdownText('a | b', { tableCell: true });
@@ -286,6 +292,31 @@ test('fallback table-untagged: a table found by geometry alone', () => {
   assert.deepEqual(chooseSlide(page), { reason: 'table-untagged' });
   // The same table from the structure tree is a table slide.
   assert.equal(chooseSlide({ ...page, tagged: true }).type, 'table-slide');
+});
+
+test('a table cell keeps its markdown markers as characters', () => {
+  // The table slide renders cells as inline markdown, unlike the other
+  // string fields: a source cell with an asterisk is escaped like a body.
+  const page = model({
+    heading: 'Key figures',
+    blocks: [
+      {
+        kind: 'table',
+        y: 120,
+        headerRow: true,
+        rows: [
+          ['Measure', 'Q4'],
+          ['EBITA *adjusted*', '$1.2bn'],
+        ],
+      },
+    ],
+  });
+  const { content } = chooseSlide(page);
+  assert.equal(content.rows[1].c1, 'EBITA \\*adjusted\\*');
+  assert.equal(content.rows[1].c2, '\\$1.2bn');
+  const html = markdownToSafeHtml(content.rows[1].c1);
+  assert.doesNotMatch(html, /<em\b/);
+  assert.match(html, /EBITA \*adjusted\*/);
 });
 
 test('fallback multi-image: more than one picture beside the text', () => {

@@ -290,6 +290,11 @@ function titleSlide(page) {
   };
 }
 
+/**
+ * The table slide renders each cell as inline markdown (`rowToCellsHtml`),
+ * unlike the other string fields: a cell is escaped like a body, so an
+ * asterisk in a source cell stays an asterisk.
+ */
 function tableSlide(page) {
   const table = page.blocks.find((b) => b.kind === 'table');
   const caption = page.blocks.find((b) => b.kind === 'caption');
@@ -303,7 +308,10 @@ function tableSlide(page) {
       colCount: String(cols),
       rows: table.rows.map((row) =>
         Object.fromEntries(
-          Array.from({ length: cols }, (_v, i) => [`c${i + 1}`, row[i] ?? '']),
+          Array.from({ length: cols }, (_v, i) => [
+            `c${i + 1}`,
+            escapeMarkdownText(row[i] ?? ''),
+          ]),
         ),
       ),
     },
