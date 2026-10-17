@@ -84,10 +84,13 @@ export function createBackgroundFields({ theme } = {}) {
     const v = String(value ?? '');
     // Local UI state: the editor form doesn't re-render this field on every change,
     // so we must update the trigger/menu immediately when an option is picked.
-    let current = values.includes(v) ? v : String(options?.[0]?.value ?? '');
     const d = hasDefaultOption(options, defaultValue)
       ? String(defaultValue)
       : null;
+    // An unknown or empty value shows the standard the slide renders with.
+    let current = values.includes(v)
+      ? v
+      : (d ?? String(options?.[0]?.value ?? ''));
 
     let open = false;
     const wrap = h('div', { class: 'stack is-field' });

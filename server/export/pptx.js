@@ -1,5 +1,6 @@
 import { renderSlideToPngBuffer } from '../render/png.js';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { typeDefaultBackground } from '../../shared/slide-types/type-defaults.js';
 import {
   exportFidelity,
   needsNativeComposition,
@@ -469,9 +470,13 @@ async function composeVideo(
   const title = String(content.title || '').trim();
   const bunnyLibraryId = resolveBunnyLibraryId(content);
   // The slide's own ground under the deck's theme, read the way the theme
-  // master reads its own (B656); `mist` is the type's default, as in
-  // renderHtml.
-  const ground = resolveGroundColors(theme, content.background || 'mist');
+  // master reads its own (B656); an empty one is the type's standard, as in
+  // renderSlideHtml (B733).
+  const ground = resolveGroundColors(
+    theme,
+    content.background ||
+      typeDefaultBackground(SLIDE_TYPES[slide?.type], theme),
+  );
   const copy = getSlideCopy(docLang);
 
   const parsed = parseVideoSource(source, bunnyLibraryId);

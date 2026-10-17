@@ -114,7 +114,7 @@ export default {
     background: 'lime',
   },
   renderHtml: (content, slide, ctx) => {
-    const bg = bgClass(content?.background || 'lime');
+    const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`

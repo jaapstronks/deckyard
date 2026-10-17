@@ -5,8 +5,10 @@
  * The default option carries a dot with the tooltip "Default"; while the
  * value deviates a "Back to default" button sits under the control, and its
  * click is the same act as choosing the default: a text style entry is
- * pruned from `content.textStyles`, a content enum gets the type default
- * back, a fit with a type default is emptied, the focus returns to the centre.
+ * pruned from `content.textStyles`, the background is pruned (the render
+ * pipeline fills an empty one with the type's standard, B733), another
+ * content enum gets the type default back, a fit with a type default is
+ * emptied, the focus returns to the centre.
  *
  * Run with: node --test tests/default-mark.test.js
  */
@@ -61,14 +63,15 @@ function textCard(content) {
 }
 
 /** One schema field of a real slide type, through the inspector renderer. */
-function schemaField(type, key, content) {
+function schemaField(type, key, content, { theme = null } = {}) {
   const def = getSlideType(type);
   const slide = { id: 's', type, content: { ...content } };
   const renderField = createRenderField({
     pres: { slides: [slide] },
     slide,
     def,
-    fieldRenderers: createFieldRenderers({}),
+    theme,
+    fieldRenderers: createFieldRenderers({ theme }),
     markDirty: () => {},
   });
   const field = def.fields.find((f) => f.key === key);
@@ -125,15 +128,44 @@ test('the background colour marks the type default and resets to it', () => {
   assert.match(marked[0].title, /\(Default\)$/);
   assert.equal(resetShown(el), true);
   resets(el)[0].click();
-  // Written back, not deleted: a missing background renders lime, and this
-  // type's default is mist.
-  assert.equal(slide.content.background, 'mist');
+  // Pruned, not written back: an empty background renders the type's own
+  // standard (B733), so a later change to that standard reaches this slide.
+  assert.equal('background' in slide.content, false);
   assert.equal(resetShown(el), false);
 });
 
-test('a background on its default shows no reset', () => {
+test('a background on its default shows no reset and the default as current', () => {
   const { el } = schemaField('callout-slide', 'background', {});
   assert.equal(resetShown(el), false);
+  const active = el.querySelector('.bg-picker-option.is-active');
+  assert.ok(active.querySelector('.field-default-dot'));
+});
+
+test('an explicit background is stored; choosing the standard prunes it', () => {
+  const { slide, el } = schemaField('pyramid-slide', 'background', {});
+  const pick = (label) =>
+    [...el.querySelectorAll('.bg-picker-option')]
+      .find((b) => b.textContent.includes(label))
+      .dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+  pick('Color 1');
+  assert.equal(slide.content.background, 'lime');
+  pick('Color 2');
+  assert.equal('background' in slide.content, false);
+});
+
+test("the theme's ground is the marked standard under that theme", () => {
+  // content-slide defaults to lime; a mist-ground theme makes mist the
+  // standard, the same value the renderer fills an empty background with.
+  const { slide, el } = schemaField(
+    'content-slide',
+    'background',
+    { background: 'lime' },
+    { theme: { defaultBackground: 'mist' } },
+  );
+  const marked = el.querySelector('.bg-picker-option .field-default-dot');
+  assert.match(marked.parentElement.textContent, /Color 2/);
+  resets(el)[0].click();
+  assert.equal('background' in slide.content, false);
 });
 
 test('the image background marks its default and resets to it', () => {
