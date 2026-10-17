@@ -609,13 +609,12 @@ test('image-text: layout settings render as plain fields, behind no collapsible'
     null,
     'layout settings are not tucked behind a collapsible',
   );
-  // Side and width declare `formLayout: 'pair'`, so the generic loop puts them
-  // on one row — the declaration replacing the helper's hand-built fieldGrid.
-  const grid = sideLabel.closest('.field-grid');
-  assert.ok(grid, 'image side sits in a paired row');
+  // The width is not a keep (B731): the three split tiles of the Layout row
+  // write narrow/half/wide, so the Slide tab offers no second control for it.
+  const labels = fieldLabels(form);
   assert.ok(
-    grid.textContent.toLowerCase().includes('image width'),
-    'image width shares that row',
+    !labels.some((l) => l.includes('image width')),
+    'image width has one home, the Layout row',
   );
 });
 
@@ -705,13 +704,12 @@ test('D336: an empty image-text slide opens on the picker, without role, alt, fi
       `no ${absent} before there is an image`,
     );
   }
-  // Side and width shape the empty slot too, so they stay.
-  for (const present of ['image position', 'image width']) {
-    assert.ok(
-      labels.some((l) => l.includes(present)),
-      `${present} stays on the empty slide`,
-    );
-  }
+  // The side shapes the empty slot too, so it stays; the width does as well,
+  // but its home is the Layout row's split tiles (B731).
+  assert.ok(
+    labels.some((l) => l.includes('image position')),
+    'image position stays on the empty slide',
+  );
 });
 
 test('D336: a filled image-text slide shows picture, Replace and alt at the top, then role and image background', () => {

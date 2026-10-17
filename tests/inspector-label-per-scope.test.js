@@ -76,15 +76,6 @@ function tileValues(def) {
 const optionValues = (f) =>
   (f.options || []).map((o) => (o && typeof o === 'object' ? o.value : o));
 
-/**
- * Doubles D348 does not decide, each with its reason. Shrink, never grow.
- * - image-text-slide.imageWidth: the three split tiles reach narrow/half/wide,
- *   but the "Image width" keep predates them and D348 only rules on the text
- *   slide's columns. Dropping the keep is B731 (after B723, which edits the
- *   same keeps).
- */
-const UNDECIDED_DOUBLES = new Set(['image-text-slide.imageWidth']);
-
 describe('inspector: one label per control (D348)', () => {
   it('there are types with a Layout row to measure', () => {
     assert.ok(TYPES_WITH_VARIANTS.length >= 5);
@@ -121,13 +112,7 @@ describe('inspector: one label per control (D348)', () => {
         if (opts.every((v) => reached.has(v))) doubled.push(`${type}.${f.key}`);
       }
     }
-    assert.deepEqual(
-      doubled.filter((d) => !UNDECIDED_DOUBLES.has(d)),
-      [],
-    );
-    for (const d of UNDECIDED_DOUBLES) {
-      assert.ok(doubled.includes(d), `${d} is no longer a double: drop it`);
-    }
+    assert.deepEqual(doubled, []);
   });
 
   it('"Text size" names only the per-text S/M/L', () => {
