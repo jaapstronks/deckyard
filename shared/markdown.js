@@ -57,7 +57,8 @@ function extractCodeBlocks(text) {
  */
 function extractInlineCode(text) {
   const codes = [];
-  const result = text.replace(/`([^`\n]+)`/g, (_match, code) => {
+  // An escaped backtick is a backtick, never a delimiter.
+  const result = text.replace(/(?<!\\)`([^`\n]+)`/g, (_match, code) => {
     codes.push(code);
     return `${INLINE_CODE_PLACEHOLDER}${codes.length - 1}${INLINE_CODE_PLACEHOLDER}`;
   });
@@ -85,8 +86,9 @@ function extractInlineMath(text) {
   const maths = [];
   // Match $...$ but not $$...$$ (already extracted) and not currency like $50
   // Require: opening $ followed by non-space non-digit, content, non-space, closing $
+  // An escaped `\$` is a dollar sign, never a delimiter.
   const result = text.replace(
-    /\$([^\s$][^$]*?[^\s$])\$|\$([^\s$])\$/g,
+    /(?<!\\)\$([^\s$][^$]*?[^\s$])\$|(?<!\\)\$([^\s$])\$/g,
     (_match, multi, single) => {
       const math = multi || single;
       if (!math) return _match;
@@ -270,6 +272,25 @@ export function isListOnlyMarkdown(markdown) {
     .split(/\r?\n/)
     .filter((l) => l.trim());
   return lines.length > 0 && lines.every((l) => LIST_ITEM_RE.test(l));
+}
+
+/**
+ * One line of plain text as markdown that renders as that same text: every
+ * marker {@link markdownToSafeHtml} would act on gets a backslash escape, so
+ * an asterisk, an underscore or a leading `1.` stays a character. For text
+ * that must land literally in a markdown field, like the import of an existing
+ * deck (B752). Inside a table cell, `|` is escaped too.
+ *
+ * @param {unknown} text - one line, no newlines
+ * @param {{ tableCell?: boolean }} [opts]
+ * @returns {string}
+ */
+export function escapeMarkdownText(text, { tableCell = false } = {}) {
+  const inline = tableCell ? /[\\`*_[$|]/g : /[\\`*_[$]/g;
+  return String(text ?? '')
+    .replace(inline, '\\$&')
+    .replace(/^(\s*)([#>]|[-+](?=\s))/, '$1\\$2')
+    .replace(/^(\s*\d+)([.)])(?=\s|$)/, '$1\\$2');
 }
 
 /**
