@@ -39,7 +39,8 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  * @param {string} options.lang - Target language ('nl' or 'en-GB')
  * @param {string} options.vendor - LLM vendor ('openai' or 'anthropic')
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
- * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
+ * @param {function} options.onOutline - `(outline, { sections, lang })` once
+ *   the outline is ready (the `generateSlides()` hook)
  * @param {function} options.onGroupDone - ({ done, total }) => void, called as
  *   each section group finishes (real progress, for streaming UIs)
  * @param {AbortSignal} [options.signal] - Cancels the conversion: it reaches
@@ -64,7 +65,7 @@ export async function convertFile(buffer, options = {}) {
     lang = 'auto', // 'auto' = detect from content, otherwise 'nl' or 'en-GB'
     vendor = null,
     onStatusMessage = null,
-    onOutlineComplete = null,
+    onOutline = null,
     onGroupDone = null,
     signal = null,
     slideTypes,
@@ -208,7 +209,7 @@ export async function convertFile(buffer, options = {}) {
       slideCount: regularSlides.length,
       metadata: parseResult.metadata,
       onStatusMessage,
-      onOutlineComplete,
+      onOutline,
       onGroupDone,
       firstSlideContent, // Pass first slide content for title detection
       imageOnlySlides, // Pass image-only slides to merge back in

@@ -14,11 +14,7 @@ import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { loadAiThemeContext } from '../../../utils/themes.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
-import {
-  OUTLINE_CREEP_MS,
-  PROGRESS,
-  REFINE_CREEP_MS,
-} from '../../../utils/import-progress.js';
+import { createSseProgress } from '../../../utils/import-progress.js';
 import { log, createDeckFromParts } from './shared.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
@@ -79,23 +75,8 @@ export async function handleAiWizardV2Stream({
   const { signal } = stream;
 
   try {
-    // Phase 1 is a few long model calls with no events of their own, so the
-    // bar creeps toward the refine floor instead of standing still (B595;
-    // `docs/reference/import-progress.md`).
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: 'Analyzing your content...',
-        phase: 'outline',
-        progress: PROGRESS.parse,
-        creepTo: PROGRESS.refineFloor,
-        creepMs: OUTLINE_CREEP_MS,
-      },
-    });
-
-    // The progress copy follows the deck language, which the service settles
-    // once the outline is in and hands to `onOutline`.
-    let nl = false;
+    // The one progress writer (B758): this route reports nothing itself.
+    const progress = createSseProgress(res, { lang });
     // The one generation pipeline (B756); this route only reports on it.
     const deck = await generateDeck(raw, {
       userName,
@@ -109,50 +90,11 @@ export async function handleAiWizardV2Stream({
       ...slideTypeOffer,
       signal,
       logger,
-      onOutline: (outline, { sections, lang: deckLang }) => {
-        // The rotator on the client replays these while sections are being
-        // written; the per-section events below take over as groups finish.
-        sseWrite(res, {
-          event: 'messages',
-          data: {
-            statusMessages: outline.statusMessages || [],
-            total: outline.slides.length,
-          },
-        });
-        // Informational (phase 'refine'): shown only until the rotator has
-        // its messages.
-        nl = deckLang === 'nl';
-        sseWrite(res, {
-          event: 'status',
-          data: {
-            message: nl
-              ? `Outline klaar: ${outline.slides.length} slides in ${sections} secties…`
-              : `Outline ready: ${outline.slides.length} slides in ${sections} sections…`,
-            progress: PROGRESS.refineFloor,
-            creepTo: PROGRESS.refineCeiling,
-            creepMs: REFINE_CREEP_MS,
-            phase: 'refine',
-          },
-        });
-      },
-      // Real progress: one event per finished section group.
-      onGroupDone: ({ done, total }) => {
-        sseWrite(res, {
-          event: 'status',
-          data: {
-            message: nl
-              ? `Sectie ${done} van ${total} geschreven…`
-              : `Wrote section ${done} of ${total}…`,
-            progress: Math.round(
-              PROGRESS.refineFloor +
-                (done / total) *
-                  (PROGRESS.refineCeiling - PROGRESS.refineFloor),
-            ),
-            phase: 'refine-progress',
-          },
-        });
-      },
+      onOutline: progress.onOutline,
+      onStatusMessage: progress.onStatusMessage,
+      onGroupDone: progress.onGroupDone,
     });
+    progress.finalize(deck.slides?.length || 0);
 
     // The per-slide "why this type", alternatives and warnings stay on the
     // saved slides; the whole-deck review grid reads them after the editor
@@ -161,15 +103,7 @@ export async function handleAiWizardV2Stream({
 
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
-
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: 'Saving your presentation...',
-        progress: PROGRESS.save,
-        phase: 'save',
-      },
-    });
+    progress.save();
 
     const updated = await createDeckFromParts(storageScope, {
       parts,

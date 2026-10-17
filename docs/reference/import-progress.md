@@ -11,17 +11,36 @@ backwards mid-import (B595).
 Phase boundaries live in one place, `server/utils/import-progress.js`, and no
 route picks its own numbers:
 
-| Phase                                    | Range   | Driven by                    |
-| ---------------------------------------- | ------- | ---------------------------- |
-| Accepted, reading and parsing the source | 5       | one event                    |
-| Outline (one model call)                 | 5 → 55  | **creep**                    |
-| Writing section groups                   | 55 → 85 | one event per finished group |
-| Assembling the deck                      | 90      | one event                    |
-| Writing it to the library                | 95      | one event                    |
-| Done                                     | 100     | the client, on `complete`    |
+| Phase word        | What happens                         | Range   | Driven by                    |
+| ----------------- | ------------------------------------ | ------- | ---------------------------- |
+| `outline`         | Reading the source, the outline call | 5 → 55  | **creep**                    |
+| `refine`          | The outline is in                    | 55 → 85 | **creep**                    |
+| `refine-progress` | A section group is written           | 55 → 85 | one event per finished group |
+| `finalize`        | The deck is generated and assembled  | 90      | one event                    |
+| `save`            | Writing it to the library            | 95      | one event                    |
+| —                 | Done                                 | 100     | the client, on `complete`    |
 
 The ladder is monotone by construction: each phase starts where the previous
 one ended.
+
+## One writer
+
+The three streams write their progress through one binder,
+`createSseProgress(res, { lang, initialMessages })` in the same module (B758).
+It writes the opening `messages` and `status` events when it is created and
+returns the three hooks of `generateSlides()` (`onOutline`, `onStatusMessage`,
+`onGroupDone`) plus `finalize(slideCount)` and `save()`. A route hands the
+hooks to the generation and calls the two closers; it writes only its own
+`complete` and `error`. The phase words above are therefore the whole
+vocabulary, on every stream, and `tests/import-progress.test.js` § "the binder
+has one source" keeps a route from writing a `status` of its own.
+
+The copy follows the language: until the outline is in, the requested deck
+language (`auto` reads the default deck language); from `onOutline` on, the
+language the generation settled on (its second argument). The rotator's list
+while a source is read is per source (`SOURCE_MESSAGES`: `pptx`, `pdf`,
+`document`, `file`, `notion`); the wizard has none and shows the `outline`
+line until the outline's own messages arrive.
 
 ## Two rules that keep it honest
 
@@ -65,10 +84,10 @@ The server does not sleep before work with `setTimeout`. It hands the client
 a list and starts working; the rotator fills the wait (`loop: true` for a list
 that must cover a phase of unknown length, `intervalMs` for its pace). Pacing
 on the server made the import measurably longer — 4.8s of it, before any work
-began — for messages that described work that had not started. The one
-exception is deliberate: two 500ms beats between the closing milestones
-(`finalize`, `save`), so the snapped closing messages are perceptible at all —
-they separate work that is already done.
+began — for messages that described work that had not started. The closing
+milestones (`finalize`, `save`) are not paced either: they used to sit 500ms
+apart so each closing line was readable, which only delayed a deck that was
+already generated (B758).
 
 ## Exports
 
@@ -100,7 +119,13 @@ sends numbers, not sentences. The route and its cancel are
 
 ```js
 { message, phase, progress?, creepTo?, creepMs? }
+// phase: 'outline' | 'refine' | 'refine-progress' | 'finalize' | 'save'
 ```
+
+The client binder (`createProgressBinding` in
+`client/views/list/modals/new-presentation/handlers.js`) reads two of them by
+name: `refine-progress` moves the bar only, `finalize` and `save` stop the
+rotator and take over the message line.
 
 `messages`:
 
