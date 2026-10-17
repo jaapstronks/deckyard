@@ -170,6 +170,7 @@
   "list.creationView.method.libraryDesc": "Reusable slides",
   "list.creationView.methodsLabel": "Creation methods",
   "list.creationView.nameLabel": "Give it a name",
+  "list.creationView.themeChangeLater": "You can change this later in Settings → Theme.",
   "list.creationView.themeOptional": "Theme (optional)",
   "list.creationView.themeOptionalHint": "Keeps the workspace theme unless you pick another.",
   "list.creationView.themeSandboxHint": "In your own Deckyard you can build a branded theme with custom colours, fonts, and logo.",

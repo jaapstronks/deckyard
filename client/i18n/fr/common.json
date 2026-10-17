@@ -133,7 +133,6 @@
   "common.settings": "Paramètres",
   "common.signOut": "Se déconnecter",
   "common.theme": "Thème",
-  "common.themeCard.bodySpecimen": "Texte courant",
   "common.themeDefault": "Par défaut de l’espace de travail",
   "common.themeDefaultNamed": "Par défaut de l’espace de travail ({name})",
   "common.toggleTheme": "Basculer entre le mode sombre et clair",

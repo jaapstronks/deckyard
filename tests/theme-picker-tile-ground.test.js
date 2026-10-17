@@ -15,6 +15,8 @@
  *      its first slide would.
  *   3. The tile's scroller leaves room for the focus ring on every side, also
  *      when a tile is snapped against its edge.
+ *   4. The tile shows the background preset the new deck is seeded with: the
+ *      theme's first, every time (D353).
  *
  * Run with: node --test tests/theme-picker-tile-ground.test.js
  */
@@ -22,9 +24,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { themePreviewSlide } from '../client/views/list/theme-picker-row.js';
+import { themePreviewSlide } from '../client/views/theme-select/theme-card.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
-import { newSlide } from '../shared/slide-types/presentation.js';
+import {
+  newPresentation,
+  newSlide,
+} from '../shared/slide-types/presentation.js';
 
 // Dreamkit's shape, trimmed to what decides the ground.
 const themeWithoutLime = {
@@ -53,6 +58,24 @@ test('the tile shows the same ground as the first slide of a new deck', () => {
       slideTypes: SLIDE_TYPES,
     });
     assert.equal(tile.content.background, first.content.background, theme.id);
+  }
+});
+
+test('the tile shows the preset the new deck is seeded with (D353)', () => {
+  const theme = {
+    ...themeWithoutLime,
+    backgroundPresets: ['/presets/one.jpg', '/presets/two.jpg'],
+  };
+  const deck = newPresentation({
+    theme: theme.id,
+    themeConfig: theme,
+    slideTypes: SLIDE_TYPES,
+  });
+  const seeded = deck.slides[0].content.slideBgImage;
+  assert.equal(seeded, '/presets/one.jpg');
+  for (let i = 0; i < 10; i++) {
+    const tile = themePreviewSlide(theme, SLIDE_TYPES);
+    assert.equal(tile.content.slideBgImage, seeded);
   }
 });
 

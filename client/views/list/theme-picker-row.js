@@ -1,81 +1,15 @@
 /**
  * Theme quick-picker row component.
- * Displays theme thumbnails for quick new presentation creation.
+ * Home's "Start something new": a row of theme cards (`theme-select`'s
+ * `createThemeCard`, shared with the creation view) that open a new deck in
+ * the chosen theme.
  */
 
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
-import { loadThemeById } from '../../lib/theme/theme.js';
-import {
-  NO_DECK_LANG,
-  RENDER_VIA_THEME,
-  renderSlideElement,
-} from '../../lib/slide-runtime/slide-render.js';
-import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import { h } from '../../lib/dom/index.js';
-import { newSlide } from '../../../shared/slide-types/presentation.js';
-
-/**
- * The sample slide a theme tile shows: the title slide a new deck in this
- * theme starts with, composed by `newSlide()` like that first slide is, with
- * the theme's label as its title. So the tile carries the theme's
- * `defaultBackground` and background preset where it declares them, and the
- * type's own default ground where it does not; there is no ground of the
- * tile's own (it used to hard-code `lime`, which a fork theme like Dreamkit
- * neither uses nor colours, B431).
- *
- * @param {Object} theme - full theme object
- * @param {Record<string, Object>} slideTypes - the live type map
- *   (`/api/slide-types`), so a fork's own title type composes too
- * @returns {Object} a slide
- * @throws when the theme's title type is not in `slideTypes`
- */
-export function themePreviewSlide(theme, slideTypes) {
-  return newSlide({
-    type: theme?.defaultTitleSlide || 'title-slide',
-    theme,
-    slideTypes,
-    content: { title: theme?.label || 'Theme Preview' },
-  });
-}
-
-/**
- * Create a real slide thumbnail preview for a theme.
- * @param {Object} theme - Full theme object
- * @param {Record<string, Object>} slideTypes - the live type map
- * @param {Function[]} detachCallbacks - Array to collect cleanup functions
- * @returns {HTMLElement} Preview element
- */
-function createThemePreview(theme, slideTypes, detachCallbacks) {
-  const preview = h('div', { class: 'theme-picker-preview' });
-  const thumb = h('div', { class: 'thumb theme-picker-thumb' });
-  preview.append(thumb);
-
-  try {
-    const slideEl = renderSlideElement(themePreviewSlide(theme, slideTypes), {
-      mode: 'thumb',
-      theme,
-      renderVia: RENDER_VIA_THEME,
-      lang: NO_DECK_LANG,
-    });
-    thumb.append(slideEl);
-    // Attach scale observer for proper sizing
-    const detach = attachThumbScale(thumb, { virtualWidth: 1600 });
-    detachCallbacks.push(detach);
-  } catch (err) {
-    // Fallback: show theme name if rendering fails
-    thumb.append(
-      h('div', {
-        class: 'theme-picker-fallback',
-        text: theme?.label || 'Theme',
-      }),
-    );
-    // eslint-disable-next-line no-console
-    console.warn('[theme-picker] Failed to render preview:', err);
-  }
-
-  return preview;
-}
+import { createInViewLoader } from '../../lib/dom/in-view.js';
+import { createThemeCard } from '../theme-select/index.js';
 
 /**
  * Create the theme quick-picker row component.
@@ -93,7 +27,8 @@ export function createThemePickerRow({
   maxVisible = 5,
 }) {
   const el = h('div', { class: 'theme-picker-row' });
-  const detachCallbacks = [];
+  const inView = createInViewLoader();
+  const cards = [];
 
   // Header — mirrors the shared `.presentation-section-header` treatment so
   // "Start something new" lines up with Recent / Popular / Activity.
@@ -129,7 +64,6 @@ export function createThemePickerRow({
   el.append(header, loading);
 
   let themes = [];
-  let loadedThemes = [];
 
   /**
    * Load and render themes.
@@ -147,48 +81,17 @@ export function createThemePickerRow({
       loading.remove();
       el.append(list);
 
-      // Load full theme data and render previews
-      const visibleThemes = themeList.slice(0, maxVisible);
-
-      for (const themeInfo of visibleThemes) {
-        try {
-          // Load full theme data
-          const fullTheme = await loadThemeById(themeInfo.id);
-          loadedThemes.push(fullTheme);
-
-          const item = h('button', {
-            class: 'theme-picker-item',
-            type: 'button',
-            title:
-              fullTheme?.label ||
-              themeInfo.label ||
-              t('list.theme.unnamed', 'Unnamed theme'),
-            onclick: () => onThemeSelect?.(themeInfo),
-          });
-
-          const preview = createThemePreview(
-            fullTheme,
-            slideTypes,
-            detachCallbacks,
-          );
-          const name = h('span', {
-            class: 'theme-picker-name',
-            text:
-              fullTheme?.label ||
-              themeInfo.label ||
-              t('list.theme.unnamed', 'Unnamed theme'),
-          });
-
-          item.append(preview, name);
-          list.append(item);
-        } catch (err) {
-          // Skip themes that fail to load
-          // eslint-disable-next-line no-console
-          console.warn(
-            `[theme-picker] Failed to load theme ${themeInfo.id}:`,
-            err,
-          );
-        }
+      // One theme card per theme, the same card the creation view's grid
+      // renders (D353); each loads and renders its slide when it scrolls in.
+      for (const record of themeList.slice(0, maxVisible)) {
+        const card = createThemeCard({
+          record,
+          slideTypes,
+          inView,
+          onSelect: () => onThemeSelect?.(record),
+        });
+        cards.push(card);
+        list.append(card.el);
       }
 
       // "More" button if there are more themes
@@ -233,17 +136,12 @@ export function createThemePickerRow({
     },
 
     /**
-     * Cleanup resize observers.
+     * Release the cards' observers.
      */
     detach() {
-      for (const fn of detachCallbacks) {
-        try {
-          fn?.();
-        } catch {
-          // ignore
-        }
-      }
-      detachCallbacks.length = 0;
+      inView.disconnect();
+      for (const card of cards) card.detach();
+      cards.length = 0;
     },
   };
 }

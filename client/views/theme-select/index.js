@@ -1,13 +1,19 @@
 /**
- * Theme Selection Utilities
- *
- * Shared utilities for creating and populating theme selector dropdowns.
+ * Theme selection: the deck-settings dropdown, the creation view's card grid,
+ * and the theme card itself (`theme-card.js`), which Home's theme row renders
+ * too.
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { loadThemeById } from '../../lib/theme/theme.js';
-import { cssStringEscape } from '../../../shared/theme-fonts.js';
 import { h } from '../../lib/dom/index.js';
+import { createInViewLoader } from '../../lib/dom/in-view.js';
+import { createThemeCard, themeCardValue } from './theme-card.js';
+
+export {
+  createThemeCard,
+  themeCardValue,
+  themePreviewSlide,
+} from './theme-card.js';
 
 /**
  * Build the `GET /api/themes` URL for a picker.
@@ -177,22 +183,26 @@ export function createAndPopulateThemeSelect({
 }
 
 /**
- * Create a visual theme picker with preview cards.
+ * Create a visual theme picker: a grid of theme cards (D353).
  *
- * Renders a grid of theme cards showing each theme's colors and fonts,
- * replacing the plain <select> dropdown for a richer selection experience.
+ * One card per theme `GET /api/themes` offers, each showing the real title
+ * slide a new deck in that theme starts with (`theme-card.js`, the card Home's
+ * "Start something new" row renders too). The workspace default's card carries
+ * a "Workspace default" badge and writes `default` (D232); there is no second
+ * card for it. The grid shows exactly what the response offers: the
+ * `enabledThemes` allowlist is enforced server-side, so there is nothing
+ * withheld for a toggle to reveal.
  *
- * When `initialTheme` is null/omitted, the picker adopts the workspace default
- * theme reported by `GET /api/themes`. The grid shows exactly what that
- * response offers: the `enabledThemes` allowlist is enforced server-side, so
- * there is nothing withheld for a toggle to reveal.
+ * When `initialTheme` is null/omitted, the picker adopts the workspace default.
+ * An explicit initial theme that IS the workspace default selects its card,
+ * so it is written as `default` as well.
  *
  * @param {Object} options
  * @param {Function} options.api - API fetch function
  * @param {string|null} [options.initialTheme=null] - Explicit initial theme ID;
  *   when falsy the workspace default is used
  * @param {Function} [options.onChange] - Called when theme changes
- * @returns {Object} { wrap, getTheme, setTheme, populated: Promise }
+ * @returns {Object} { wrap, getTheme, setTheme, populated: Promise, detach }
  */
 export function createVisualThemePicker({
   api,
@@ -212,231 +222,49 @@ export function createVisualThemePicker({
   const grid = h('div', { class: 'theme-picker-grid' });
   wrap.append(label, grid);
 
-  const cards = new Map(); // id -> card element
-  const BORDER_DEFAULT = '2px solid #ddd';
-  const BORDER_SELECTED = '2px solid hsl(160, 40%, 35%)';
-  const SHADOW_SELECTED = '0 0 0 2px hsla(160, 40%, 35%, 0.3)';
+  const cards = new Map(); // value -> card
+  const inView = createInViewLoader();
 
-  function applySelectedStyle(card, selected) {
-    card.classList.toggle('is-selected', selected);
-    card.style.border = selected ? BORDER_SELECTED : BORDER_DEFAULT;
-    card.style.boxShadow = selected ? SHADOW_SELECTED : 'none';
+  function syncSelected() {
+    for (const [value, card] of cards) card.setSelected(value === themeId);
   }
 
-  function selectCard(id) {
-    themeId = id;
-    for (const [cardId, card] of cards) {
-      applySelectedStyle(card, cardId === id);
-    }
-    onChange?.(id);
-  }
-
-  /**
-   * Resolve preview CSS vars for a theme entry from the /api/themes list by
-   * loading the theme itself: the resolved variables are what a slide in that
-   * theme paints, so the card cannot disagree with the deck. A preview rebuilt
-   * here from the record's raw colours always set the text to `textDark`, and
-   * a dark theme's "Aa" came out black on black (Midnight, B617).
-   */
-  async function resolvePreviewData(theme) {
-    try {
-      const full = await loadThemeById(theme.id);
-      return {
-        ...theme,
-        cssVars: full?.cssVars || {},
-        embedFonts: full?.embedFonts || [],
-      };
-    } catch {
-      return { ...theme, cssVars: {}, embedFonts: [] };
-    }
-  }
-
-  /** Inject @font-face rules so heading/body fonts render in cards. */
-  function preloadFonts(enrichedThemes) {
-    const rules = [];
-    const seen = new Set();
-    for (const theme of enrichedThemes) {
-      if (!theme.embedFonts?.length) continue;
-      const vars = theme.cssVars || {};
-      for (const varName of ['--t-font-heading', '--t-font-body']) {
-        const family = (vars[varName] || '')
-          .split(',')[0]
-          .trim()
-          .replace(/^['"]|['"]$/g, '');
-        if (!family || seen.has(family)) continue;
-        const first = theme.embedFonts.find((f) => f.family === family);
-        if (!first) continue;
-        // One weight entry is enough for a preview card, but a curated font
-        // ships it as Google's disjoint latin / latin-ext pair — take both, or
-        // accented glyphs in a theme name render in a fallback face. For a
-        // variable family that single entry already spans every pinned weight
-        // ("400 700"), so this is the whole family; for a static one it is its
-        // lightest weight, which is all a preview needs.
-        const matches = theme.embedFonts.filter(
-          (f) =>
-            f.family === family &&
-            String(f.weight || 400) === String(first.weight || 400),
-        );
-        let added = false;
-        for (const match of matches) {
-          // Support both path-based (curated) and URL-based (uploaded) fonts
-          let src;
-          if (match.url) {
-            src = `url('${cssStringEscape(match.url)}') format('${cssStringEscape(match.format || 'woff2')}')`;
-          } else if (match.path) {
-            src = `url('/${cssStringEscape(match.path)}') format('woff2')`;
-          } else {
-            continue;
-          }
-          const range = match.unicodeRange
-            ? ` unicode-range: ${match.unicodeRange};`
-            : '';
-          rules.push(
-            `@font-face { font-family: '${cssStringEscape(match.family)}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap;${range} }`,
-          );
-          added = true;
-        }
-        if (added) seen.add(family);
-      }
-    }
-    if (rules.length) {
-      wrap.prepend(h('style', { text: rules.join('\n') }));
-    }
-  }
-
-  function renderCard(theme) {
-    const vars = theme.cssVars || {};
-    const bgColor = vars['--t-color-background'] || '#ffffff';
-    const accentColor = vars['--t-color-accent'] || '#3B82F6';
-    const textColor = vars['--t-color-text'] || '#1f2937';
-    const headingFont = vars['--t-font-heading'] || 'Inter, sans-serif';
-    const bodyFont = vars['--t-font-body'] || 'Inter, sans-serif';
-    const headingWeight = vars['--t-heading-weight'] || '700';
-    const headingTransform = vars['--t-heading-transform'] || 'none';
-
-    const card = h('button', {
-      type: 'button',
-      class: `theme-card${theme.id === themeId ? ' is-selected' : ''}`,
-      onclick: () => selectCard(theme.id),
-    });
-    const isSelected = theme.id === themeId;
-    // Inline layout styles so the card works even before CSS is cached.
-    Object.assign(card.style, {
-      display: 'block',
-      width: '140px',
-      overflow: 'hidden',
-      padding: '0',
-      textAlign: 'center',
-      border: isSelected ? BORDER_SELECTED : BORDER_DEFAULT,
-      borderRadius: '8px',
-      background: '#fff',
-      cursor: 'pointer',
-      boxShadow: isSelected ? SHADOW_SELECTED : 'none',
-      outline: 'none',
-    });
-
-    const preview = h('div', { class: 'theme-card-preview' });
-    Object.assign(preview.style, {
-      background: bgColor,
-      aspectRatio: '16 / 9',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '4px',
-      padding: '8px',
-      position: 'relative',
-      overflow: 'hidden',
-    });
-
-    const heading = h('div', { class: 'theme-card-heading', text: 'Aa' });
-    Object.assign(heading.style, {
-      fontFamily: headingFont,
-      fontWeight: headingWeight,
-      textTransform: headingTransform,
-      color: textColor,
-      fontSize: '22px',
-      lineHeight: '1.2',
-    });
-
-    const body = h('div', {
-      class: 'theme-card-body',
-      text: t('common.themeCard.bodySpecimen', 'Body text'),
-    });
-    Object.assign(body.style, {
-      fontFamily: bodyFont,
-      color: textColor,
-      fontSize: '9px',
-      opacity: '0.7',
-      lineHeight: '1',
-    });
-
-    const dot = h('div', { class: 'theme-card-accent' });
-    Object.assign(dot.style, {
-      background: accentColor,
-      width: '12px',
-      height: '12px',
-      borderRadius: '50%',
-      position: 'absolute',
-      bottom: '6px',
-      right: '6px',
-    });
-
-    preview.append(heading, body, dot);
-
-    const labelEl = h('div', {
-      class: 'theme-card-label',
-      text: theme.label || theme.id,
-    });
-    Object.assign(labelEl.style, {
-      padding: '6px 4px',
-      fontSize: '11px',
-      fontWeight: '600',
-      fontFamily: 'inherit',
-      color: '#666',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-    });
-
-    card.append(preview, labelEl);
-    return card;
+  function selectCard(value) {
+    themeId = value;
+    syncSelected();
+    onChange?.(value);
   }
 
   const populated = (async () => {
     try {
-      const resp = await api(themeListUrl(explicitInitial));
-      const themes = Array.isArray(resp?.themes) ? resp.themes : [];
+      const [resp, slideTypes] = await Promise.all([
+        api(themeListUrl(explicitInitial)),
+        api('/api/slide-types').catch(() => ({})),
+      ]);
+      const themes = (Array.isArray(resp?.themes) ? resp.themes : []).filter(
+        (theme) => String(theme?.id || '').trim(),
+      );
       if (!themes.length) return themeId;
 
-      const defaultRecord = themes.find((th) => th.isDefault);
-      const choices = defaultRecord
-        ? [
-            {
-              ...defaultRecord,
-              id: 'default',
-              label: defaultThemeLabel(themes),
-            },
-            ...themes,
-          ]
-        : themes;
+      // The workspace default is chosen through its card, which writes
+      // `default`; resolve the selection onto the card values: explicit initial
+      // wins, else the workspace default, else the first theme.
+      const defaultRecord = themes.find((theme) => theme.isDefault);
+      if (defaultRecord && themeId === defaultRecord.id) themeId = 'default';
+      const values = themes.map(themeCardValue);
+      if (!values.includes(themeId)) themeId = values[0];
 
-      // Resolve the selected theme: explicit initial wins, else the workspace
-      // default, else the first available theme.
-      if (!choices.some((th) => th.id === themeId)) {
-        themeId = String(choices[0]?.id || 'default');
+      for (const record of themes) {
+        const card = createThemeCard({
+          record,
+          slideTypes,
+          inView,
+          onSelect: (value) => selectCard(value),
+        });
+        cards.set(card.value, card);
+        grid.append(card.el);
       }
-
-      const enriched = await Promise.all(choices.map(resolvePreviewData));
-      preloadFonts(enriched);
-
-      for (const theme of enriched) {
-        const card = renderCard(theme);
-        cards.set(theme.id, card);
-        grid.append(card);
-      }
-
+      syncSelected();
       return themeId;
     } catch {
       return themeId;
@@ -448,10 +276,12 @@ export function createVisualThemePicker({
     getTheme: () => themeId,
     setTheme: (id) => {
       themeId = id;
-      for (const [cardId, card] of cards) {
-        applySelectedStyle(card, cardId === id);
-      }
+      syncSelected();
     },
     populated,
+    detach() {
+      inView.disconnect();
+      for (const card of cards.values()) card.detach();
+    },
   };
 }

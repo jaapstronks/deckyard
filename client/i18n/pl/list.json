@@ -98,6 +98,7 @@
   "list.creationView.method.libraryDesc": "Slajdy wielokrotnego użytku",
   "list.creationView.methodsLabel": "Sposoby tworzenia",
   "list.creationView.nameLabel": "Nadaj jej nazwę",
+  "list.creationView.themeChangeLater": "Można to zmienić później w: Ustawienia → Motyw.",
   "list.creationView.themeOptional": "Motyw (opcjonalnie)",
   "list.creationView.themeOptionalHint": "Zachowuje motyw przestrzeni roboczej, o ile nie zostanie wybrany inny.",
   "list.creationView.themeSandboxHint": "We własnej instalacji Deckyard można zbudować firmowy motyw z własnymi kolorami, krojami pisma i logo.",

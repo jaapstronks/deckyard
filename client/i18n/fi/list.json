@@ -98,6 +98,7 @@
   "list.creationView.method.libraryDesc": "Uudelleen käytettävät diat",
   "list.creationView.methodsLabel": "Luontitavat",
   "list.creationView.nameLabel": "Anna sille nimi",
+  "list.creationView.themeChangeLater": "Voit vaihtaa tämän myöhemmin kohdassa Asetukset → Teema.",
   "list.creationView.themeOptional": "Teema (valinnainen)",
   "list.creationView.themeOptionalHint": "Säilyttää työtilan teeman, ellei toista valita.",
   "list.creationView.themeSandboxHint": "Omassa Deckyardissa voi rakentaa brändätyn teeman omilla väreillä, kirjasimilla ja logolla.",

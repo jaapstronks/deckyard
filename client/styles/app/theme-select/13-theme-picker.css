@@ -1,5 +1,8 @@
 /* ============================================
-   Visual Theme Picker Grid
+   Theme cards (D353)
+   One card, rendered by client/views/theme-select/theme-card.js, for Home's
+   "Start something new" row (list/97-theme-picker.css lays out the row) and
+   the creation view's grid below.
    ============================================ */
 
 .theme-picker-grid {
@@ -8,47 +11,114 @@
   flex-wrap: wrap;
 }
 
-.theme-card-heading {
-  font-size: var(--ps-text-2xl);
-  line-height: 1.2;
-  max-width: 100%;
+/* The card: a button around the slide preview and its caption. */
+.theme-picker-item {
+  flex: 0 0 auto;
+  width: 160px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--ps-radius-lg);
+  transition: transform var(--ps-transition-fast);
+}
+
+.theme-picker-item:hover {
+  transform: translateY(-2px);
+}
+
+.theme-picker-item:focus-visible {
+  outline: var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Theme thumbnail preview container */
+.theme-picker-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--ps-radius-md);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  border: 2px solid hsl(var(--app-border-subtle));
+  transition:
+    border-color var(--ps-transition-fast),
+    box-shadow var(--ps-transition-fast);
+  position: relative;
+  background: hsl(var(--app-bg-sunken));
 }
 
-.theme-card-body {
-  font-size: 9px;
-  opacity: 0.7;
-  line-height: 1;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.theme-picker-item:hover .theme-picker-preview {
+  border-color: hsl(var(--app-accent-primary) / 0.5);
+  box-shadow: var(--app-shadow-md);
 }
 
-.theme-card-accent {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
+/* Slide thumbnail inside preview */
+.theme-picker-thumb {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  padding: 0;
 }
 
-.theme-card-label {
-  padding: var(--ps-space-1-5) var(--ps-space-1);
+.theme-picker-thumb .slide {
+  font-size: calc(16px * var(--thumb-scale, 0.1));
+}
+
+/* Fallback when slide rendering fails */
+.theme-picker-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: var(--ps-text-xs);
   font-weight: 600;
+  color: hsl(var(--app-text-tertiary));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Caption: the theme's name, and the badge on the workspace default. */
+.theme-picker-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ps-space-1);
+  margin-top: var(--ps-space-2);
+  min-width: 0;
+}
+
+.theme-picker-name {
+  display: block;
+  max-width: 100%;
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
   color: hsl(var(--app-text-secondary));
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Mobile adjustments */
-@media (max-width: 640px) {
-  .theme-card-heading {
-    font-size: var(--ps-text-xl);
-  }
+/* The chosen card in the creation grid. */
+.theme-picker-item.is-selected .theme-picker-preview {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
+}
+
+.theme-picker-item.is-selected .theme-picker-name {
+  color: hsl(var(--app-text-primary));
+  font-weight: 600;
+}
+
+.theme-picker-badge {
+  padding: 0 var(--ps-space-1-5);
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  white-space: nowrap;
 }

@@ -26,9 +26,8 @@
   display: none;
 }
 
-/* Theme card. The settings list and the theme picker
-   (client/views/theme-select/index.js) render the same card root, so its rules
-   live here once (D269); the picker's inner parts live in theme-select/13-theme-picker.css. */
+/* Theme card of the settings list. The theme picker has its own card
+   (theme-select/13-theme-picker.css, D353). */
 .theme-card {
   display: flex;
   flex-direction: column;

@@ -43,10 +43,16 @@ test('getBackgroundPresets reads the theme and drops junk entries', () => {
   );
 });
 
-test('pickBackgroundPreset only ever returns a URL the theme declared', () => {
-  for (let i = 0; i < 50; i++) {
-    assert.ok(PRESETS.includes(pickBackgroundPreset(themeWithPresets)));
+test('pickBackgroundPreset returns the first preset, every time (D353)', () => {
+  // Deterministic, so the theme card can show the photo the deck gets.
+  for (let i = 0; i < 20; i++) {
+    assert.equal(pickBackgroundPreset(themeWithPresets), PRESETS[0]);
   }
+  assert.equal(
+    pickBackgroundPreset({ backgroundPresets: ['', '/b.jpg', '/c.jpg'] }),
+    '/b.jpg',
+    'the first usable entry',
+  );
 });
 
 test('pickBackgroundPreset returns empty without a theme or presets', () => {
