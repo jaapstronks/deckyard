@@ -183,13 +183,12 @@
   "slideType.title-slide.field.logoCorner.label": "Logo-hjørne",
   "slideType.title-slide.field.logoCorner.option.left.label": "Venstre",
   "slideType.title-slide.field.logoCorner.option.right.label": "Høyre",
-  "slideType.title-slide.field.meta.label": "Metadata",
+  "slideType.title-slide.field.meta.label": "Detaljlinje",
   "slideType.title-slide.field.subheading.label": "Undertittel",
   "slideType.title-slide.label": "Tittel-lysbilde",
   "slideType.video-slide.field.autoplay.label": "Autospill",
   "slideType.video-slide.field.autoplay.option.off.label": "Av",
   "slideType.video-slide.field.autoplay.option.on.label": "På",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny bibliotek-ID",
-  "slideType.video-slide.field.source.label": "Video-URL eller Bunny-ID (YouTube/Vimeo URL, Bunny embed URL eller Bunny video UUID)",
   "slideType.video-slide.field.watchUrl.label": "Se-lenke for PDF-eksporten"
 }

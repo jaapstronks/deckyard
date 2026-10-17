@@ -54,7 +54,7 @@ export default {
       // theme's label typography (caption font, uppercase, letterspaced,
       // muted) so it reads as a distinct role from the prose subtitle.
       key: 'meta',
-      label: 'Meta',
+      label: 'Detail line',
       type: 'string',
       required: false,
       maxLength: 160,

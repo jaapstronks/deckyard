@@ -44,8 +44,10 @@ export default {
     {
       key: 'source',
       essential: true,
-      label:
-        'Video URL or Bunny ID (YouTube/Vimeo URL, Bunny embed URL, or Bunny video UUID)',
+      label: 'Video',
+      // The accepted forms are help, not label: the label names the field (D352).
+      helpText:
+        'A YouTube or Vimeo link, a Bunny embed link or a Bunny video ID.',
       type: 'string',
       required: true,
       maxLength: 400,

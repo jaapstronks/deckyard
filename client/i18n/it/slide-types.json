@@ -4,7 +4,7 @@
   "slideType.chart-slide.field.chartType.option.bar.label": "Barre",
   "slideType.chart-slide.field.chartType.option.line.label": "Linee",
   "slideType.chart-slide.field.chartType.option.pie.label": "Torta",
-  "slideType.chart-slide.field.data.label": "Dati (CSV/TSV)",
+  "slideType.chart-slide.field.data.label": "Dati",
   "slideType.chart-slide.field.pieLabelMode.label": "Etichette torta",
   "slideType.chart-slide.field.pieLabelMode.option.both.label": "Entrambi",
   "slideType.chart-slide.field.pieLabelMode.option.none.label": "Nessuno",
@@ -180,12 +180,12 @@
   "slideType.title-slide.field.logoCorner.label": "Angolo logo",
   "slideType.title-slide.field.logoCorner.option.left.label": "Sinistra",
   "slideType.title-slide.field.logoCorner.option.right.label": "Destra",
+  "slideType.title-slide.field.meta.label": "Riga di dettaglio",
   "slideType.title-slide.field.subheading.label": "Sottotitolo",
   "slideType.title-slide.label": "Slide titolo",
   "slideType.video-slide.field.autoplay.label": "Riproduzione automatica",
   "slideType.video-slide.field.autoplay.option.off.label": "Disattivato",
   "slideType.video-slide.field.autoplay.option.on.label": "Attivato",
   "slideType.video-slide.field.bunnyLibraryId.label": "ID libreria Bunny",
-  "slideType.video-slide.field.source.label": "URL video o ID Bunny (URL YouTube/Vimeo, URL embed Bunny o UUID video Bunny)",
   "slideType.video-slide.field.watchUrl.label": "Link di visione per l'esportazione PDF"
 }

@@ -190,13 +190,12 @@
   "slideType.title-slide.field.logoCorner.label": "Logotyphörn",
   "slideType.title-slide.field.logoCorner.option.left.label": "Vänster",
   "slideType.title-slide.field.logoCorner.option.right.label": "Höger",
-  "slideType.title-slide.field.meta.label": "Metadata",
+  "slideType.title-slide.field.meta.label": "Detaljrad",
   "slideType.title-slide.field.subheading.label": "Underrubrik",
   "slideType.title-slide.label": "Titel-slide",
   "slideType.video-slide.field.autoplay.label": "Autospela",
   "slideType.video-slide.field.autoplay.option.off.label": "Av",
   "slideType.video-slide.field.autoplay.option.on.label": "På",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny biblioteks-ID",
-  "slideType.video-slide.field.source.label": "Video-URL eller Bunny-ID (YouTube/Vimeo URL, Bunny embed URL eller Bunny video UUID)",
   "slideType.video-slide.field.watchUrl.label": "Titta-länk för PDF-exporten"
 }

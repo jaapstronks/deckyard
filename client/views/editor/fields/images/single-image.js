@@ -189,13 +189,6 @@ export function createFieldImage(ctx) {
               'Choose from the library (recommended) or upload your own image.',
             ),
           }),
-          h('div', {
-            class: 'help',
-            text: t(
-              'editor.image.help.storage',
-              'Images are stored locally in /server/uploads and used via URL.',
-            ),
-          }),
         );
       } else if (getFeatures()?.sandboxMode) {
         wrap.append(
