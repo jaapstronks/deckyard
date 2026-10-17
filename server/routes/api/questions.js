@@ -19,6 +19,7 @@ import {
 import { updatePresentation } from '../../storage/presentations/index.js';
 import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.js';
 import { loadPresentationForActor } from '../../services/presentations.js';
+import { dominantSlidesBody } from '../../services/deck-versions.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { isAppError } from '../../utils/errors.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
@@ -269,10 +270,12 @@ async function handleQuestionPromote(
     };
   }
 
+  // The top level is the dominant version, as loaded; the body aligns it to
+  // the active one, so every version is written as built here.
   const updated = await updatePresentation(
     storageScope,
     presentationId,
-    nextPres,
+    dominantSlidesBody(nextPres, nextPres.slides),
     {
       actorEmail: authedUser?.email || null,
     },

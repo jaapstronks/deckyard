@@ -10,6 +10,7 @@ import {
   jsonError,
 } from '../../../utils/http.js';
 import { parseIfMatchRevision } from './helpers.js';
+import { alignToActiveVersion } from '../../../services/deck-versions.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 export async function handlePresentationRestoreVersion(
@@ -51,12 +52,19 @@ export async function handlePresentationRestoreVersion(
   // Optimistic-lock failures (ConflictError/LockedError from
   // updatePresentation) are AppErrors — the withErrorHandler wrapper on the
   // presentations dispatcher emits them through the canonical envelope.
-  const updated = await updatePresentation(storageScope, id, snapPres, {
-    expectedRevision,
-    actorEmail: authedUser?.email || null,
-    restoreFromVersionId: versionId,
-    reason: 'restore',
-  });
+  // A snapshot is a loaded deck, its top level the dominant version; aligned
+  // to the active one, every language version is restored as it was saved.
+  const updated = await updatePresentation(
+    storageScope,
+    id,
+    alignToActiveVersion(snapPres),
+    {
+      expectedRevision,
+      actorEmail: authedUser?.email || null,
+      restoreFromVersionId: versionId,
+      reason: 'restore',
+    },
+  );
   serveJson(res, 200, { ok: true, presentation: updated });
   return true;
 }

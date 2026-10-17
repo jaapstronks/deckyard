@@ -22,7 +22,7 @@
  * 2. **A cross-organization scope.** `{ repoRoot, crossOrganization: '<reason>' }`.
  *    For paths where no session exists *and no organization can*: a published
  *    deck, an embed, a share link, a follow-along audience. Those resolve a
- *    globally unique token first (`getPublishedById`, `getShareLinkByToken`) and
+ *    globally unique token first (`getPublishedById`, `validateShareLink`) and
  *    fetch the deck by the id that token yielded — the token *is* the
  *    authorization, so an organization filter adds nothing and, on a
  *    multi-organization instance, would break every public link. The reason

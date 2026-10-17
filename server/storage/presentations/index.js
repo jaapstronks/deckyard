@@ -37,6 +37,7 @@ import { prepareNewPresentation } from './crud/factory.js';
 import { assertSandboxQuotaForCreate } from './sandbox-quota.js';
 import { stripIdentityForSnapshot } from './snapshot-identity.js';
 import { recordSlideLevelMerge } from '../../services/activity-events.js';
+import { dominantSlidesBody } from '../../services/deck-versions.js';
 import { validatePresentationSize } from '../../utils/presentation-limits.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { countInstanceHealth, slideTypeEntries } from '../instance-health.js';
@@ -192,9 +193,11 @@ export async function updatePresentation(scope, id, body, opts) {
     }
   }
 
+  const write = await withDominantVersion(scope, id, body, collabBase);
+
   let result;
   try {
-    result = await updatePresentationUncached(scope, id, body, opts);
+    result = await updatePresentationUncached(scope, id, write, opts);
   } finally {
     invalidatePresentationCache(id);
   }
@@ -265,6 +268,37 @@ export async function updatePresentation(scope, id, body, opts) {
     }
   }
   return result;
+}
+
+/**
+ * A write body that names the deck's top-level `title`/`slides` but no `i18n`,
+ * extended with the language versions so the dominant one carries the write
+ * (B740).
+ *
+ * The top level of a deck is a projection of its dominant version: every read
+ * answers it that way, and `normalizeI18n` re-projects it on every write that
+ * carries `i18n`. A body without `i18n` (a PUT from a script or agent, the
+ * notes companion's `{ slides }`) used to skip that step and store new
+ * top-level slides beside the old `versions[dominant]`. Whatever reads the
+ * versions (the editor, the collab bootstrap) then showed the old deck and
+ * wrote it back. Without `i18n` the body is unambiguous, which is why this can
+ * live in the seam where D320 (6) could not: the top level is the dominant
+ * buffer, so `dominantSlidesBody` writes it there and keeps `active`.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} id
+ * @param {Object} body - The caller's write body.
+ * @param {Object|null} stored - The deck as stored, when already loaded.
+ * @returns {Promise<Object>} The body to store.
+ */
+async function withDominantVersion(scope, id, body, stored) {
+  if (!body || typeof body !== 'object' || body.i18n !== undefined) return body;
+  if (body.slides === undefined && typeof body.title !== 'string') return body;
+  const pres = stored || (await getPresentation(scope, id).catch(() => null));
+  if (!pres?.i18n?.versions) return body;
+  const title = typeof body.title === 'string' ? body.title : pres.title;
+  const slides = body.slides !== undefined ? body.slides : pres.slides;
+  return { ...body, ...dominantSlidesBody({ ...pres, title }, slides) };
 }
 
 async function updatePresentationUncached(scope, id, body, opts) {
