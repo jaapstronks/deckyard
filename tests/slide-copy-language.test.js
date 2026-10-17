@@ -301,3 +301,71 @@ test('no copy placeholder survives into rendered slide HTML', () => {
     }
   }
 });
+
+// --- Copy a renderer writes into its own markup ----------------------------
+
+// B749: the empty video and embed hints, the countdown's buttons and four
+// structural list names were literal English in the type sources, so a Dutch
+// deck showed (or announced) English. They read the table now; this pins the
+// Dutch side, which is the one the literals got wrong.
+const TABLE_COPY_CASES = [
+  {
+    type: 'video-slide',
+    content: { title: '', url: '' },
+    key: 'videoEmptyHint',
+  },
+  {
+    type: 'embed-slide',
+    content: { title: '', embedUrl: '' },
+    key: 'embedEmptyHint',
+  },
+  { type: 'countdown-slide', key: 'countdownPause' },
+  { type: 'countdown-slide', key: 'countdownReset' },
+  { type: 'cycle-slide', key: 'cycleStagesLabel' },
+  { type: 'funnel-slide', key: 'funnelStagesLabel' },
+  { type: 'process-slide', key: 'processStepsLabel' },
+  { type: 'pyramid-slide', key: 'pyramidLevelsLabel' },
+];
+
+test('a Dutch deck gets Dutch hints, controls and list names', () => {
+  for (const { type, content, key } of TABLE_COPY_CASES) {
+    const def = SLIDE_TYPES[type];
+    assert.ok(def, `${type} should exist`);
+    const body = content || def.defaults || {};
+    const nl = def.renderHtml(body, { type }, { lang: 'nl' });
+    const en = def.renderHtml(body, { type }, { lang: 'en-GB' });
+    assert.ok(nl.includes(SLIDE_COPY.nl[key]), `${type} (nl) shows ${key}`);
+    assert.ok(
+      en.includes(SLIDE_COPY['en-GB'][key]),
+      `${type} (en-GB) shows ${key}`,
+    );
+    assert.ok(
+      !nl.includes(SLIDE_COPY['en-GB'][key]),
+      `${type} (nl) must not show the English ${key}`,
+    );
+  }
+});
+
+test('no slide type writes literal copy into its markup', () => {
+  // The guard the i18n gate cannot be: that gate reads `client/`, and a type
+  // renders in `shared/`. Literal text between tags, or in an attribute a
+  // person reads or hears, is copy in one language whatever the deck speaks;
+  // it belongs in SLIDE_COPY. Interpolations (`${…}`) and comment lines pass.
+  const typesDir = join(repoRoot, 'shared/slide-types/types');
+  const literal =
+    /(?:aria-label|title|alt|placeholder)="[A-Za-z]|>[A-Za-z][A-Za-z ,.'/()…-]*</;
+  const offenders = [];
+  for (const file of readdirSync(typesDir, { recursive: true })) {
+    if (!String(file).endsWith('.js')) continue;
+    const src = readFileSync(join(typesDir, String(file)), 'utf8');
+    for (const [i, line] of src.split('\n').entries()) {
+      if (/^\s*(\/\/|\*|\/\*)/.test(line)) continue;
+      if (literal.test(line)) offenders.push(`${file}:${i + 1}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `literal copy in slide markup, move it to SLIDE_COPY: ${offenders.join(', ')}`,
+  );
+});
