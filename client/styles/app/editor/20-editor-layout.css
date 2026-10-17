@@ -544,7 +544,8 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Tablet Landscape (769-1023px): Auto-collapse slides to rail
+   Between md and lg (769-1023px, below an iPad in landscape): auto-collapse
+   slides to rail
    ───────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 1023px) and (min-width: 769px) {
   .is-editor:not(.is-slides-expanded-override) .layout {

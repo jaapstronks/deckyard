@@ -24,7 +24,7 @@ counterpart is one pixel up, so the two never overlap.
 | `xs` | 480px       | 481px       | small phone, portrait                   |
 | `sm` | 640px       | 641px       | phone, portrait                         |
 | `md` | 768px       | 769px       | iPad portrait / topbar collapses        |
-| `lg` | 1023px      | 1024px      | iPad landscape / editor goes two-column |
+| `lg` | 1023px      | 1024px      | below iPad landscape: editor two-column |
 | `xl` | 1280px      | 1281px      | roomy desktop                           |
 
 ### Ultra-wide
@@ -43,7 +43,8 @@ displays. `min-width` only — these never appear as a `max-width`.
 1. **Pick a rung, don't invent a width.** If a layout breaks at 860px, use the
    rung below (768) or above (1023) and adjust the layout — do not add 860.
 2. **Bands pair a rung with the next rung's counterpart**, e.g.
-   `(max-width: 1023px) and (min-width: 769px)` for "tablet up to landscape".
+   `(max-width: 1023px) and (min-width: 769px)` for "wider than `md`, narrower than an
+   iPad in landscape".
 3. **`min-width` and `max-width` for the same rung must not overlap.** Use
    `max-width: 768px` / `min-width: 769px`, never `min-width: 768px`.
 4. **Non-width conditions are out of scope** and unrestricted: `hover`,
