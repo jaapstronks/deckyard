@@ -1,0 +1,139 @@
+<!doctype html>
+<!--
+  Source of tests/fixtures/slide-deck-tagged.pdf (B751): four 960×540 slide
+  pages with real semantic HTML, so Chrome writes a tagged PDF (H1, L/LI,
+  Table/TR/TH/TD, Figure with alt). The PDF is committed; the tests never
+  start a browser. To regenerate it after editing this file, run from the
+  core root:
+
+  node --input-type=module -e "
+    import fs from 'node:fs';
+    import { getPuppeteerBrowser, closePuppeteerBrowser, toNodeBuffer } from './server/utils/puppeteer-browser.js';
+    const browser = await getPuppeteerBrowser({ featureName: 'Fixture' });
+    const page = await browser.newPage();
+    await page.setContent(fs.readFileSync('tests/fixtures/slide-deck-tagged.html', 'utf8'));
+    const pdf = await page.pdf({ width: '960px', height: '540px', printBackground: true });
+    fs.writeFileSync('tests/fixtures/slide-deck-tagged.pdf', toNodeBuffer(pdf));
+    await page.close();
+    await closePuppeteerBrowser();
+  "
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fixture deck</title>
+    <style>
+      @page {
+        margin: 0;
+      }
+      html,
+      body {
+        margin: 0;
+        font-family: 'DejaVu Sans', Arial, sans-serif;
+        color: #111;
+      }
+      section {
+        box-sizing: border-box;
+        width: 960px;
+        height: 540px;
+        padding: 60px 72px;
+        position: relative;
+        overflow: hidden;
+        page-break-after: always;
+      }
+      section:last-child {
+        page-break-after: auto;
+      }
+      h1 {
+        font-size: 44px;
+        margin: 0 0 28px;
+      }
+      p,
+      li,
+      td,
+      th {
+        font-size: 24px;
+        line-height: 1.35;
+      }
+      .subtitle {
+        font-size: 28px;
+        margin: 0 0 12px;
+      }
+      .meta {
+        font-size: 20px;
+        color: #555;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 6px 28px 6px 0;
+      }
+      .footnote {
+        position: absolute;
+        left: 72px;
+        bottom: 20px;
+        font-size: 8px;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <h1>Quarterly results 2025</h1>
+      <p class="subtitle">Growth across every region</p>
+      <p class="meta">17 October 2025</p>
+    </section>
+    <section>
+      <h1>What we learned</h1>
+      <ul>
+        <li>Customers want faster onboarding</li>
+        <li>Pricing is clear enough</li>
+        <li>Support response times improved</li>
+        <li>Mobile usage doubled</li>
+      </ul>
+    </section>
+    <section>
+      <h1>Our new office</h1>
+      <p>The team moved into a brighter space in the city centre.</p>
+      <img
+        alt="Floor plan of the new office"
+        width="240"
+        height="160"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAMAAADlRUG7AAAABlBMVEXmeB4oWqC8wsucAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAjUlEQVRoge3SQQrAMAwDQfn/n+5ZvpgYoha6cw1kQVj1EhFOUazUEI5RLuUIxyiXcoRjlEs5wjH6alh7hB1TdxzXgWHKGt73CDum7jiuA8OUNbzvEXZM3XFcB4Ypa3jfI+yYuuO4DgxT1vC+R9gxdfe/47pG974m7Jg6RrmUIxyjXMoRjlEu5QjHvDb1A3aEHIQCP7nxAAAAAElFTkSuQmCC"
+      />
+    </section>
+    <section>
+      <h1>Revenue by region</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Q3</th>
+            <th>Q4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>North</td>
+            <td>120</td>
+            <td>140</td>
+          </tr>
+          <tr>
+            <td>South</td>
+            <td>95</td>
+            <td>110</td>
+          </tr>
+          <tr>
+            <td>West</td>
+            <td>80</td>
+            <td>99</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="footnote">Figures in thousands of euros.</p>
+    </section>
+  </body>
+</html>
