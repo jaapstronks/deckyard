@@ -63,7 +63,7 @@ and text longer than any field holds falls back as `too-long`.
 
 | Page                                                               | Slide                 | Content                                                                                                            |
 | ------------------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Page 1, ≤ 4 lines, only paragraphs                                 | `title-slide`         | heading → `title`, one other line → `subheading`, a date-like line → `meta`; a picture covering ≥ 60% → background |
+| Page 1, at most four lines, only paragraphs                        | `title-slide`         | heading → `title`, one other line → `subheading`, a date-like line → `meta`; a picture covering ≥ 60% → background |
 | Heading with at most one line under it                             | `chapter-title-slide` | `title`, `subheading`                                                                                              |
 | Heading + ≥ 3 cards (a small heading with its paragraph, repeated) | `text-blocks-slide`   | one row of blocks, each `{ title, body }`                                                                          |
 | Heading + lists of one kind, more items than paragraphs            | `list-slide`          | `items[].title`, a second line in an item → `text`, `variant`                                                      |
