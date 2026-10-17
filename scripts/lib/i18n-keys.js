@@ -62,6 +62,7 @@ const DYNAMIC_KEY_PREFIXES = ['slideType.'];
 export const DYNAMIC_KEY_PATTERNS = [
   /^slideType\./, // deck-grid.js, ai-review-annotations.js, slide-library/controls.js
   /^editor\.slideTypeDesc\./, // slide-type-picker/
+  /^editor\.slideField\.background\.option\./, // slide-type-picker/ swatches (+ options in shared/slide-types/helpers.js)
   /^editor\.layoutVariant\./, // layout-switcher.js (+ labelKey in shared/slide-types/)
   /^editor\.textStyle\.(color|align|size)\./, // editor-form/text-element-card.js
   /^editor\.textBlocks\.row\d+$/, // editor-form/slide-forms/text-blocks.js
@@ -70,6 +71,42 @@ export const DYNAMIC_KEY_PATTERNS = [
   /^settings\.themes\.config\.(radius|shadow|textScale|transform)\./, // theme-editor/config-sections.js
   /^follow\./, // resolved by the scoped loader in client/views/follow/i18n.js
 ];
+
+// t( `<prefix>${expr}<suffix>` — a key assembled at the call site. Only the
+// template itself is captured; its `${…}` holes are what make it runtime-built.
+const T_TEMPLATE_CALL = /\bt\(\s*`([^`]*\$\{[^`]*)`/g;
+
+/**
+ * Every `t()` call whose key is a template literal with at least one `${…}`
+ * hole, with the hole-free shape as a regex over the keys it can reach.
+ *
+ * The coverage gate cannot check these (there is no static key), so the audit
+ * checks the family instead: it must be declared in DYNAMIC_KEY_PATTERNS and
+ * must own values in en/ and nl/ (B741: the picker's surface swatches built
+ * `editor.slideTypePicker.surface.<token>` for three tokens no locale held).
+ * @param {string} dir - absolute path to a tree to scan (client/)
+ * @returns {Promise<Array<{ file: string, line: number, template: string, sample: string, reach: RegExp }>>}
+ */
+export async function collectTemplateKeySites(dir) {
+  const sites = [];
+  for await (const file of walkJs(dir)) {
+    const src = await fs.readFile(file, 'utf8');
+    for (const m of src.matchAll(T_TEMPLATE_CALL)) {
+      const parts = m[1].split(/\$\{[^}]*\}/);
+      const reach = new RegExp(
+        `^${parts.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\w-]+')}$`,
+      );
+      sites.push({
+        file,
+        line: src.slice(0, m.index).split('\n').length,
+        template: m[1],
+        sample: parts.join('x'),
+        reach,
+      });
+    }
+  }
+  return sites;
+}
 
 /**
  * @param {string} key

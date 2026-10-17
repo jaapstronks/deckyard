@@ -19,6 +19,10 @@
  * any runtime-built family in DYNAMIC_KEY_PATTERNS, counts as a reference), so a
  * hit is a real leftover rather than a key the scanner failed to see.
  *
+ * The third hole is a key built at runtime, `t(`family.${x}`, fallback)`: no
+ * static key, so the coverage gate never asks, and the fallback (often the raw
+ * token) renders in every locale. Its family must own values in en/ and nl/.
+ *
  * Run with: node --test tests/i18n-audit.test.js
  */
 
@@ -31,6 +35,8 @@ import { fileURLToPath } from 'node:url';
 import {
   collectHardcodedHits,
   findOrphanKeys,
+  findRuntimeKeyGaps,
+  hardcodedCopyIn,
   hardcodedId,
   isSampleContentException,
 } from '../scripts/i18n-audit.js';
@@ -91,6 +97,57 @@ describe('i18n hardcoded copy', () => {
       unreasoned,
       [],
       'allowlist entries must explain themselves',
+    );
+  });
+});
+
+describe('i18n hardcoded-copy detector', () => {
+  const values = (src) => hardcodedCopyIn(src, 'x.js').map((h) => h.value);
+
+  it('flags literal copy in a ternary branch of a copy prop', () => {
+    // B741: the slide-list "+" tooltips were Dutch in every UI locale.
+    const src = `h('button', {
+      title:
+        a == null
+          ? 'Slide invoegen aan het begin'
+          : b
+            ? 'Nested slide invoegen'
+            : 'Slide invoegen tussen slides',
+    });`;
+    assert.deepStrictEqual(values(src), [
+      'Slide invoegen aan het begin',
+      'Nested slide invoegen',
+      'Slide invoegen tussen slides',
+    ]);
+  });
+
+  it('passes a ternary whose branches go through t()', () => {
+    const src = `h('button', {
+      title: a
+        ? t('k.a', 'Insert at the start')
+        : t('k.b', 'Insert between slides'),
+    });`;
+    assert.deepStrictEqual(values(src), []);
+  });
+
+  it('ignores literals nested in a call and quotes inside a literal', () => {
+    const src = `h('div', {
+      text: n ? t('k', { one: '1 slide', many: '{count} slides' }, { count: n }) : '',
+      placeholder: '{\\n  "title": "Default Title"\\n}',
+    });`;
+    assert.deepStrictEqual(values(src), []);
+  });
+});
+
+describe('i18n runtime-built keys', () => {
+  it('every t(`family.${x}`) family is declared and has values in en/ and nl/', async () => {
+    const gaps = await findRuntimeKeyGaps();
+    assert.deepStrictEqual(
+      gaps,
+      [],
+      `${gaps.length} runtime-built key gap(s).\n` +
+        'Add the family to DYNAMIC_KEY_PATTERNS (scripts/lib/i18n-keys.js) and give\n' +
+        'every member it can build a value in client/i18n/{en,nl}/.',
     );
   });
 });

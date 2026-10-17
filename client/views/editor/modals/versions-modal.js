@@ -130,12 +130,15 @@ export function openVersionsModal({
             text: label
               ? `${label}`
               : reason === 'manual'
-                ? 'Save point'
+                ? t('editor.versions.reason.manual', 'Save point')
                 : reason === 'pre_restore'
-                  ? 'Backup (pre-restore)'
+                  ? t(
+                      'editor.versions.reason.preRestore',
+                      'Backup (pre-restore)',
+                    )
                   : reason === 'restore'
-                    ? 'Restore'
-                    : 'Autosave snapshot',
+                    ? t('editor.versions.reason.restore', 'Restore')
+                    : t('editor.versions.reason.auto', 'Autosave snapshot'),
           }),
           h('div', {
             class: 'help',

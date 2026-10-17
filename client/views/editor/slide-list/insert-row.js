@@ -1,4 +1,6 @@
 import { h } from '../../../lib/dom/index.js';
+import { t } from '../../../lib/ui-i18n.js';
+
 export function createInsertRow({
   afterSlideId,
   parentId = null,
@@ -17,10 +19,10 @@ export function createInsertRow({
     text: '+',
     title:
       afterSlideId == null
-        ? 'Slide invoegen aan het begin'
+        ? t('editor.slideList.insert.atStart', 'Insert slide at the start')
         : parentId
-          ? 'Nested slide invoegen'
-          : 'Slide invoegen tussen slides',
+          ? t('editor.slideList.insert.nested', 'Insert nested slide')
+          : t('editor.slideList.insert.between', 'Insert slide between slides'),
     onclick: (e) => {
       e?.preventDefault?.();
       e?.stopPropagation?.();
