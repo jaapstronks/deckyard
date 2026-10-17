@@ -4,6 +4,31 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.72.0](https://github.com/jaapstronks/deckyard/compare/v1.71.0...v1.72.0) (2026-10-17)
+
+
+### Added
+
+* canvas fields in the Tab order, Enter edits, Escape returns (B725) ([#1690](https://github.com/jaapstronks/deckyard/issues/1690)) ([3e75cb7](https://github.com/jaapstronks/deckyard/commit/3e75cb7393b758490c9b3de0b5de5d67fdc72b51))
+* empty canvas fields carry a name, ghost labels in Dutch (B732) ([#1694](https://github.com/jaapstronks/deckyard/issues/1694)) ([9c35fac](https://github.com/jaapstronks/deckyard/commit/9c35facd67cbfd45120862783bd3994812fcd3d8))
+* lead with the image card while the image is empty, one card per image (D347, B723) ([#1693](https://github.com/jaapstronks/deckyard/issues/1693)) ([e4b9a6a](https://github.com/jaapstronks/deckyard/commit/e4b9a6ad1f6f6ca5b8709c47cc2d78ec2bb74161))
+* mark the default option and offer "Back to default" on a deviation (B722) ([#1689](https://github.com/jaapstronks/deckyard/issues/1689)) ([469e1a0](https://github.com/jaapstronks/deckyard/commit/469e1a0d0bd4a16eaaead6e23b1ae84259bdecb6))
+* one focus ring from the app tokens on every stop (B727) ([#1692](https://github.com/jaapstronks/deckyard/issues/1692)) ([d7f9ad3](https://github.com/jaapstronks/deckyard/commit/d7f9ad38b743d5ef268ebb625e5f8cd89516fb92))
+* show export, import and AI progress in one loading modal with cancel (B716) ([#1682](https://github.com/jaapstronks/deckyard/issues/1682)) ([629252c](https://github.com/jaapstronks/deckyard/commit/629252cf540b0e0e03fe356e1cd644d2438d7bce))
+* the slide list is one Tab stop with arrow keys (B726) ([#1691](https://github.com/jaapstronks/deckyard/issues/1691)) ([ec2ceae](https://github.com/jaapstronks/deckyard/commit/ec2ceaea0b0fe9fa622865384e400ed62a07c050))
+* turn block alignment in "This text" into an action to the Layout row (B721) ([#1687](https://github.com/jaapstronks/deckyard/issues/1687)) ([f78d039](https://github.com/jaapstronks/deckyard/commit/f78d03965739e0854e4b7d4231f72ace507e00b8))
+
+
+### Fixed
+
+* downsample images in the HTML export and the published page (B717) ([#1679](https://github.com/jaapstronks/deckyard/issues/1679)) ([18ad3fd](https://github.com/jaapstronks/deckyard/commit/18ad3fdf53452955b220fab256bf5731e332a36e))
+* downsample images in the PNG preview page (B729) ([#1683](https://github.com/jaapstronks/deckyard/issues/1683)) ([6302a21](https://github.com/jaapstronks/deckyard/commit/6302a2159edd7d05d082222c54924e3de1f20102))
+* drop the literal "null" above the image library search (B720) ([#1685](https://github.com/jaapstronks/deckyard/issues/1685)) ([1915baa](https://github.com/jaapstronks/deckyard/commit/1915baa182129cdcfd9e4ab97f5148932da81f8f))
+* let an inspector click land right after typing on the canvas (B730) ([#1684](https://github.com/jaapstronks/deckyard/issues/1684)) ([430252a](https://github.com/jaapstronks/deckyard/commit/430252ac436f99cf74e80a93731312ebe9af7382))
+* name stored theme slugs at boot and refuse them on library create (B718) ([#1686](https://github.com/jaapstronks/deckyard/issues/1686)) ([ef63ce9](https://github.com/jaapstronks/deckyard/commit/ef63ce9db01f789ac50ca4068fdcd637173f653d))
+* one label per scope in the inspector (B724) ([#1688](https://github.com/jaapstronks/deckyard/issues/1688)) ([5d42421](https://github.com/jaapstronks/deckyard/commit/5d42421f78c002188c1435f28415da77b6147ad9))
+* show a style or layout commit on the canvas during an inline edit (B719) ([#1680](https://github.com/jaapstronks/deckyard/issues/1680)) ([3f78a98](https://github.com/jaapstronks/deckyard/commit/3f78a988b134dc2ab51b19d89318a41ee245e9b8))
+
 ## [1.71.0](https://github.com/jaapstronks/deckyard/compare/v1.70.0...v1.71.0) (2026-10-16)
 
 
