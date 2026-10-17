@@ -50,7 +50,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../utils/errors.js';
-import { generateDeck } from '../utils/ai/index.js';
+import { generateDeck, generatedDeckToParts } from '../utils/ai/index.js';
 import {
   validateAndFixRefinedSlides,
   validateRefinedSlidesStrict,
@@ -468,12 +468,9 @@ export function registerTools(
       });
 
       // One create carries the generated slides (B609); no empty deck is
-      // written first and filled afterwards.
-      const parts = deckToPresentationParts(deck, {
-        theme: themeObj,
-        lang: deck.lang,
-        slideTypes,
-      });
+      // written first and filled afterwards. The review metadata comes along,
+      // as on every generation path (B757).
+      const parts = generatedDeckToParts(deck, { theme: themeObj, slideTypes });
       if (title) parts.title = title;
 
       const created = await createPresentation(

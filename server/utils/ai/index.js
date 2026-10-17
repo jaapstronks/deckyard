@@ -4,10 +4,17 @@
  * Exports:
  * - generateDeck / generateSlides / assembleDeck: the one generation
  *   pipeline (outline → revise → refine → validate → assemble), B756
+ * - generatedDeckToParts: the deck normalized for storage, review metadata
+ *   kept (B757)
  * - SLIDE_TYPE_CATALOG: For reference
  */
 
-export { generateDeck, generateSlides, assembleDeck } from './generate-deck.js';
+export {
+  generateDeck,
+  generateSlides,
+  assembleDeck,
+  generatedDeckToParts,
+} from './generate-deck.js';
 
 export { generateSessionId, createSessionLogger } from './logging.js';
 

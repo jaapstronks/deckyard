@@ -1,8 +1,8 @@
 /**
  * Notion Page Converter
  * Converts Notion pages into the presentation system format.
- * Uses AI V2 (two-phase) to intelligently map content to appropriate slide types.
- * Handles images and tables from Notion pages.
+ * Runs the one generation pipeline (`generateSlides()`, B757) and handles
+ * the images and tables of a Notion page.
  */
 
 import {
@@ -12,15 +12,9 @@ import {
   notionEnabled,
   NOTION_NOT_CONFIGURED_MESSAGE,
 } from './notion/index.js';
-import {
-  generateOutline,
-  separateSlidesForProcessing,
-} from './ai/generate-outline.js';
-import { refineAllSlideGroups } from './ai/refine-slides.js';
-import { validateAndFixRefinedSlides } from './ai/validate-slides/index.js';
+import { generateSlides, assembleDeck } from './ai/generate-deck.js';
 import { createSessionLogger, generateSessionId } from './ai/logging.js';
 import { cryptoUuid } from '../../shared/slide-types/helpers.js';
-import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
 import {
   uploadImageKitUrl,
   getImageKitConfigFromEnv,
@@ -28,7 +22,6 @@ import {
 import { isMediaProviderInitialized } from '../media/index.js';
 import { rehostRemoteImage } from '../media/rehost.js';
 import { createLogger } from './logger.js';
-import { DEFAULT_DECK_LANG } from '../../shared/i18n-utils.js';
 
 const log = createLogger('convert-notion');
 
@@ -51,6 +44,9 @@ const log = createLogger('convert-notion');
  *   may not insert; kept out of the catalog the model chooses from (B659).
  * @param {Array} [options.customSlideTypes] - The organization's published
  *   custom types, offered next to the core catalog (B659).
+ * @param {Object|null} [options.themeContext] - The theme context the model
+ *   sees in phase 2 (`loadAiThemeContext()`).
+ * @param {string} [options.titleSlideType] - The theme's title slide type.
  * @returns {Promise<{deck: object|null, report: object, pageId: string}>}
  */
 export async function convertNotionPage(urlOrPageId, options = {}) {
@@ -64,6 +60,8 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     slideTypes,
     disabledSlideTypes = [],
     customSlideTypes = [],
+    themeContext = null,
+    titleSlideType = 'title-slide',
   } = options;
 
   const report = {
@@ -140,7 +138,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
   // Format content for AI
   const formattedContent = formatNotionContentForAi(richContent);
 
-  // Use AI V2 to convert to deck format
+  // The one generation pipeline, assembled around the page's images
   try {
     const deck = await convertWithAi(formattedContent, {
       lang,
@@ -156,6 +154,8 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       slideTypes,
       disabledSlideTypes,
       customSlideTypes,
+      themeContext,
+      titleSlideType,
     });
 
     // Include status messages in report
@@ -284,7 +284,10 @@ export async function processNotionImages(images, options = {}) {
 }
 
 /**
- * Convert formatted content to a deck using AI V2.
+ * Convert formatted Notion content to a deck: the one generation pipeline
+ * (`generateSlides()`, B756), assembled around what the page brings of its
+ * own (B757): the first image as the title background, the other images as
+ * image slides before the closing slide.
  */
 async function convertWithAi(formattedContent, options = {}) {
   const {
@@ -301,147 +304,65 @@ async function convertWithAi(formattedContent, options = {}) {
     slideTypes,
     disabledSlideTypes = [],
     customSlideTypes = [],
+    themeContext = null,
+    titleSlideType = 'title-slide',
   } = options;
 
-  const sessionId = generateSessionId();
-  const logger = createSessionLogger(sessionId);
-
-  log.info(`Starting AI conversion session ${sessionId}`);
+  const logger = createSessionLogger(generateSessionId());
+  log.info(`Starting AI conversion session ${logger.sessionId}`);
   log.info(
     `Content length: ${formattedContent.length} chars, ${sectionCount} sections`,
   );
 
-  // Phase 1: Generate outline
   if (typeof onStatusMessage === 'function') {
     onStatusMessage('Analyzing content structure...');
   }
 
-  const outline = await generateOutline(formattedContent, {
+  const {
+    outline,
+    slides,
+    lang: deckLang,
+    meta,
+  } = await generateSlides(formattedContent, {
     userName: metadata?.author || '',
-    targetLang: lang === 'auto' ? null : lang,
+    targetLang: lang,
     vendor,
-    onLog: (data) => logger.logPhase1(data),
-    signal,
-  });
-
-  // Determine effective language
-  const effectiveLang =
-    lang !== 'auto'
-      ? lang
-      : outline.metadata?.detectedLang ||
-        outline.metadata?.requestedLang ||
-        DEFAULT_DECK_LANG;
-
-  log.info(
-    `Outline generated: ${outline.slides.length} slides planned, lang=${effectiveLang}`,
-  );
-
-  // Notify about status messages
-  const statusMessages = outline.statusMessages || [];
-  if (typeof onOutlineComplete === 'function') {
-    onOutlineComplete({ statusMessages, slideCount: outline.slides.length });
-  }
-
-  // Separate structural vs content slides
-  const { structuralSlides, contentGroups } = separateSlidesForProcessing(
-    outline.slides,
-  );
-
-  log.info(
-    `Separated: ${structuralSlides.length} structural, ${contentGroups.length} content groups`,
-  );
-
-  // Phase 2: Refine content slides
-  if (typeof onStatusMessage === 'function') {
-    onStatusMessage('Creating slides...');
-  }
-
-  let refinedContentSlides = [];
-  if (contentGroups.length > 0) {
-    refinedContentSlides = await refineAllSlideGroups(contentGroups, {
-      lang: effectiveLang,
-      vendor,
-      presentationContext: {
-        title: outline.title,
-        summary: outline.summary,
-      },
-      onLog: (data) => logger.logPhase2Call(data),
-      onGroupDone,
-      signal,
-      disabledSlideTypes,
-      customSlideTypes,
-      slideTypes,
-    });
-  }
-
-  // Validate refined slides
-  const validatedSlides = validateAndFixRefinedSlides(refinedContentSlides, {
     slideTypes,
+    disabledSlideTypes,
+    customSlideTypes,
+    themeContext,
+    signal,
+    onOutline: (outline, info) => {
+      if (typeof onStatusMessage === 'function') {
+        onStatusMessage('Creating slides...');
+      }
+      if (typeof onOutlineComplete === 'function') {
+        onOutlineComplete(outline, info);
+      }
+    },
+    onStatusMessage,
+    onGroupDone,
+    logger,
   });
 
-  // Merge structural and content slides, sorted by originalIndex
-  const allSlides = [
-    ...structuralSlides.map((s, i) => ({
-      ...s,
-      originalIndex: s.originalIndex ?? i,
-    })),
-    ...validatedSlides.map((s, i) => ({
-      ...s,
-      originalIndex: s.originalIndex ?? structuralSlides.length + i,
-    })),
-  ].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
-
-  // Build the title slide
-  const titleSlide = {
-    type: 'title-slide',
-    content: {
-      title: outline.title || metadata.title || 'Untitled',
-      subheading: outline.subtitle || '',
-      background: 'lime',
-    },
-  };
-
-  // Check if we have an image for the title slide
-  if (
-    processedImages.length > 0 &&
-    richContent?.sections?.[0]?.images?.length > 0
-  ) {
-    // Use the first image as title background if available
-    const firstImg = processedImages[0];
-    if (firstImg?.uploadedUrl) {
-      titleSlide.content.backgroundImage = firstImg.uploadedUrl;
-      titleSlide.content.background = 'image';
-    }
+  // The first image of the page's first section becomes the title background.
+  const title = outline.title || metadata.title || 'Untitled';
+  const titleSlide = { title };
+  const firstImg = processedImages[0];
+  if (firstImg?.uploadedUrl && richContent?.sections?.[0]?.images?.length > 0) {
+    titleSlide.backgroundImage = firstImg.uploadedUrl;
+    titleSlide.background = 'image';
   }
 
-  // Assemble the deck
-  const deck = {
-    format: DECK_FORMAT_ID,
-    version: 1,
-    title: outline.title || metadata.title || 'Untitled',
-    theme: 'default',
-    lang: effectiveLang,
-    slides: [
-      titleSlide,
-      ...allSlides.map((slide) => ({
-        type: slide.type,
-        content: slide.content,
-        notes: '',
-        _aiReasoning: slide.reasoning || '',
-      })),
-    ],
-    settings: {
-      stepParagraphs: true,
-      transitions: { preset: 'fade' },
-    },
-    _generationMeta: {
-      source: 'notion',
-      sessionId,
-      effectiveLang,
-      statusMessages,
-      outlineSlideCount: outline.slides.length,
-      finalSlideCount: allSlides.length + 1,
-    },
+  const deck = assembleDeck(outline, slides, {
+    titleSlideType,
+    lang: deckLang,
+    titleSlide,
+  });
+  deck.title = title;
+  deck.settings = {
+    stepParagraphs: true,
+    transitions: { preset: 'fade' },
   };
 
   // Insert image slides for remaining images (beyond the first one used for title)
@@ -449,12 +370,14 @@ async function convertWithAi(formattedContent, options = {}) {
     insertImageSlides(deck, processedImages.slice(1), richContent);
   }
 
-  // Finalize logging
-  logger.finalize(deck, {
-    sessionId,
-    totalSlides: deck.slides.length,
+  deck._generationMeta = {
+    ...meta,
     source: 'notion',
-  });
+    outlineSlideCount: outline.slides.length,
+    finalSlideCount: deck.slides.length,
+  };
+
+  logger.finalize(deck, { source: 'notion' });
 
   return deck;
 }

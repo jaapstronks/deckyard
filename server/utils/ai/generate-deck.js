@@ -12,7 +12,12 @@
  * (theme context, a target length, a cancel signal, progress hooks) and gets
  * the same chain the others get. `tests/ai-generation-single-path.test.js`
  * holds the rest of the server to that: only this module imports the outline,
- * refine and revise steps (B756).
+ * refine and revise steps (B756). The file and Notion imports run
+ * `generateSlides()` and assemble their own deck around it (B757).
+ *
+ * The way out is one too: `generatedDeckToParts()` normalizes a deck from
+ * here into presentation parts with the per-slide review metadata kept, for
+ * every path that stores one.
  */
 
 import {
@@ -25,6 +30,7 @@ import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides/index.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
+import { deckToPresentationParts } from '../../../shared/slide-types.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -84,13 +90,36 @@ function resolveDeckLang(targetLang, outline) {
  *
  * Every slide comes back with what phase 2 produced (`originalIndex`,
  * `presenterNotes`, `reasoning`, `alternativeType`), structural slides
- * included, sorted on `originalIndex`.
+ * included, sorted on `originalIndex`. A run that fails is written to the
+ * session log as failed before the error propagates (not one the caller
+ * cancelled); a run that succeeds is finalized by the caller, with the deck
+ * it assembled.
  *
  * @param {string} rawContent - Source text to create a presentation from.
  * @param {GenerateOptions} options
  * @returns {Promise<{ outline: Object, slides: Object[], lang: string, meta: Object }>}
  */
-export async function generateSlides(
+export async function generateSlides(rawContent, options = {}) {
+  const logger = options.logger || createSessionLogger(generateSessionId());
+  try {
+    return await runPhases(rawContent, { ...options, logger });
+  } catch (err) {
+    if (!options.signal?.aborted) {
+      try {
+        logger.finalize({ error: err?.message }, { failed: true });
+      } catch (logErr) {
+        // A log that fails to write never masks the generation error.
+        log.warn(`Session ${logger.sessionId}: failed log not written`, {
+          message: logErr?.message,
+        });
+      }
+    }
+    throw err;
+  }
+}
+
+/** The phases of {@link generateSlides}, with the logger settled. */
+async function runPhases(
   rawContent,
   {
     userName = '',
@@ -108,8 +137,8 @@ export async function generateSlides(
     onOutline = null,
     onStatusMessage = null,
     onGroupDone = null,
-    logger = createSessionLogger(generateSessionId()),
-  } = {},
+    logger,
+  },
 ) {
   const startTime = Date.now();
 
@@ -294,8 +323,7 @@ export function assembleDeck(
  * Generate a deck from raw content: `generateSlides()` then `assembleDeck()`.
  *
  * The deck carries `lang` (the one language rule, {@link resolveDeckLang})
- * and `_generationMeta`; the session log is finalized here, also for a run
- * that failed (not for one the caller cancelled).
+ * and `_generationMeta`; the session log is finalized here.
  *
  * @param {string} rawContent - Source text to create a presentation from.
  * @param {GenerateOptions & { theme?: string, titleSlideType?: string }} options
@@ -309,24 +337,10 @@ export async function generateDeck(
   const logger = options.logger || createSessionLogger(generateSessionId());
   log.info(`Starting session ${logger.sessionId}`);
 
-  let generated;
-  try {
-    generated = await generateSlides(rawContent, { ...options, logger });
-  } catch (err) {
-    if (!options.signal?.aborted) {
-      try {
-        logger.finalize({ error: err?.message }, { failed: true });
-      } catch (logErr) {
-        // A log that fails to write never masks the generation error.
-        log.warn(`Session ${logger.sessionId}: failed log not written`, {
-          message: logErr?.message,
-        });
-      }
-    }
-    throw err;
-  }
-
-  const { outline, slides, lang, meta } = generated;
+  const { outline, slides, lang, meta } = await generateSlides(rawContent, {
+    ...options,
+    logger,
+  });
   const deck = assembleDeck(outline, slides, { theme, titleSlideType, lang });
   deck._generationMeta = {
     ...meta,
@@ -340,6 +354,48 @@ export async function generateDeck(
   );
 
   return deck;
+}
+
+/**
+ * The per-slide review metadata `assembleDeck()` writes: the reasoning the
+ * editor's slide notes show, the alternative types the whole-deck review grid
+ * offers, the validation warnings.
+ */
+const AI_REVIEW_KEYS = ['_aiReasoning', '_aiAlternatives', '_aiWarnings'];
+
+/**
+ * Normalize a generated deck into presentation parts, review metadata kept.
+ *
+ * `deckToPresentationParts` composes every slide afresh and drops the keys
+ * no type declares; the storage keeps unknown keys (`factory.js`, "rides
+ * along"), so this is the one place the {@link AI_REVIEW_KEYS} cross from
+ * the deck onto the slides that are stored, for every path that stores a
+ * generated deck (wizard, MCP, file, Notion: B757). Both arrays map 1:1 by
+ * index. The language is the deck's own: the one rule settled it.
+ *
+ * @param {Object} deck - A deck from `assembleDeck()`.
+ * @param {Object} options
+ * @param {Object|null} options.theme - The loaded theme the slides compose
+ *   against.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map.
+ * @returns {ReturnType<typeof deckToPresentationParts>}
+ */
+export function generatedDeckToParts(deck, { theme, slideTypes }) {
+  const parts = deckToPresentationParts(deck, {
+    theme,
+    lang: deck.lang,
+    slideTypes,
+  });
+  parts.slides.forEach((slide, i) => {
+    const source = deck.slides?.[i];
+    if (!source || !slide || typeof slide !== 'object') return;
+    for (const key of AI_REVIEW_KEYS) {
+      const value = source[key];
+      if (value && (!Array.isArray(value) || value.length)) slide[key] = value;
+    }
+  });
+  return parts;
 }
 
 /** Count slide types in a deck. */

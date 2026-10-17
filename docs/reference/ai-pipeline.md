@@ -48,7 +48,9 @@ Pipeline (`server/utils/ai/`). The top level:
   validation and returns `{ outline, slides, lang, meta }`;
   `assembleDeck(outline, slides, { theme, titleSlideType, lang, titleSlide })`
   is the pure assembly (`titleSlide: null` leaves the automatic title slide
-  out, an object overrides its content); `generateDeck()` is the two together.
+  out, an object overrides its content); `generateDeck()` is the two together;
+  `generatedDeckToParts(deck, { theme, slideTypes })` normalizes a generated
+  deck for storage with the review metadata kept (B757).
   One option set for every caller: `userName`, `targetLang`, `vendor`,
   `targetLength`, `rawFirstSlideTitle`, `reviseOutline` (default on),
   `slideTypes`, `disabledSlideTypes`, `customSlideTypes`, `themeContext`,
@@ -124,7 +126,7 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 - `server/routes/api/ai/index.js` — the seam: a declarative exact-path table;
   every route is a fixed method + pathname.
 - `server/routes/api/ai/shared.js` — the `AiContext` typedef and the
-  shared helpers `reattachAiMeta` and `createDeckFromParts`. The theme loader
+  shared helper `createDeckFromParts`. The theme loader
   every generation path calls, `loadAiThemeContext` (title slide type plus the
   theme context: backgrounds, brand colours, presets), lives in
   `server/utils/themes.js` beside `settleNewDeckTheme`.
@@ -166,7 +168,10 @@ validation-event logs alongside them.
 
 - **Generation** (`generateDeck()`, B756) — one pipeline behind the creation
   wizard (`POST /api/ai/wizard-v2/stream`) and MCP `create_presentation`; the
-  file and Notion imports move onto `generateSlides()` next (B757). The caller
+  file import (`POST /api/convert`, `convert-file/ai-convert.js`) and the
+  Notion import (`convert-notion.js`) run `generateSlides()` and assemble
+  around it with `assembleDeck()` (B757: a file's image-only slides and its
+  title image, a page's images). The caller
   loads the org's slide-type offer (disabled + custom types), the merged type
   map and the theme context (`loadAiThemeContext`), then: **phase 1**
   `generateOutline` produces a title, chapters and rough slides with no
@@ -180,9 +185,14 @@ validation-event logs alongside them.
   per slide; `validateAndFixRefinedSlides` repairs the result;
   `assembleDeck` prepends a title slide (its `subheading` from the outline)
   and emits a `deckyard.deck` document with `lang`. The cancel `signal` reaches
-  every model call. The wizard streams progress as SSE status events from the
-  hooks and persists through `createDeckFromParts`; MCP passes its HTTP
-  caller's disconnect signal and persists through `createPresentation`.
+  every model call. All four store through `generatedDeckToParts()` (next to the
+  service), the one place the per-slide `_aiReasoning`, `_aiAlternatives`
+  and `_aiWarnings` cross `deckToPresentationParts` onto the stored slides,
+  so the editor's review grid works on every generated deck. The wizard and
+  the imports stream progress as SSE status events from the hooks; the
+  wizard persists through `createDeckFromParts`, the imports through
+  `createImportedPresentation`; MCP passes its HTTP caller's disconnect
+  signal and persists through `createPresentation`.
 - **One-shot generation** (`POST /api/ai/wizard`) — the v1 path, still used by
   the "new presentation" modal: a single prompt via
   `generateDeckJsonFromRawContent`, no outline phase, no group refinement. The
