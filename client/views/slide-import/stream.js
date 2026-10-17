@@ -1,10 +1,12 @@
 /**
- * Run an import of an existing deck as images: read the chosen files, post
- * them to one of the two image-import endpoints and follow its SSE progress in
- * the loading modal. Shared by the editor's insert route
+ * Run an import of an existing deck: read the chosen files, post them to one
+ * of the three deck-import endpoints and follow its SSE progress in the
+ * loading modal. Shared by the editor's insert route
  * (`/api/presentations/:id/import-slides-as-images`) and the creation view's
- * new-deck route (`/api/presentations/import/images`, B306); the caller names
- * the endpoint and adds what that endpoint needs beside the files.
+ * two new-deck routes, as images (`/api/presentations/import/images`, B306)
+ * and as editable slides (`/api/presentations/import/slides`, B753); the
+ * caller names the endpoint and adds what that endpoint needs beside the
+ * files. All three share the body and the progress stages.
  *
  * The import is a long task: its Cancel closes the stream, which stops the
  * page renders on the server (B716).
@@ -18,7 +20,8 @@ import { processSSEStream } from '../../lib/net/sse.js';
 
 /**
  * The bar position of one server `progress` event: rendering the pages is
- * the first half of the work, uploading them the second.
+ * the first half of the work, uploading them (or, as editable slides,
+ * building each slide) the second.
  */
 function progressOf({ stage, current, total }) {
   if (stage === 'converting' && total > 0) {
@@ -41,7 +44,7 @@ function progressOf({ stage, current, total }) {
  * @returns {Promise<object|null>} The `complete` event's data, or null when
  *   the user cancelled. A refusal throws an Error carrying the message to show.
  */
-export async function importDeckImages({
+export async function importDeckFiles({
   url,
   files,
   body = {},

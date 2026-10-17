@@ -734,3 +734,11 @@
 .creation-crosslink .link-button:hover {
   text-decoration: none;
 }
+
+/* Creation view, "PowerPoint or PDF": as editable slides or as images, two
+   `.share-option` cards side by side (B753). */
+.creation-import-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--ps-space-3);
+}
