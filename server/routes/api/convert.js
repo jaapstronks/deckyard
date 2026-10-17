@@ -278,7 +278,8 @@ async function handleConvertStream({
   // For initial messages, use Dutch (default UI) - actual content language is auto-detected
   const isNl = true;
 
-  // Initial status messages shown in sequence (file parsing phase)
+  // Initial status messages shown in sequence (file parsing phase). The PDF
+  // parser reads text only, so its list promises no image detection (B306).
   const initialMessages = isPptx
     ? isNl
       ? [
@@ -299,13 +300,11 @@ async function handleConvertStream({
             'PDF-bestand laden...',
             "Pagina's analyseren...",
             'Tekst extraheren...',
-            'Afbeeldingen detecteren...',
           ]
         : [
             'Loading PDF file...',
             'Analyzing pages...',
             'Extracting text content...',
-            'Detecting images...',
           ]
       : isDocument
         ? isNl

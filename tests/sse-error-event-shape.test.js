@@ -108,6 +108,7 @@ const SSE_ERROR_ROUTES = [
   'server/routes/api/ai/wizard-v2-stream.js',
   'server/routes/api/presentations/analyze.js',
   'server/routes/api/presentations/import-slides-as-images.js',
+  'server/routes/api/presentations/import-images.js',
 ];
 
 test('no route hand-rolls an SSE error payload with an `error:` prose key', () => {

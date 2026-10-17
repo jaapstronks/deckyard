@@ -57,6 +57,8 @@ const { handleNotionImport, handleNotionImportStream } =
   await import('../server/routes/api/notion/import.js');
 const { handlePresentationImportSlidesAsImages } =
   await import('../server/routes/api/presentations/import-slides-as-images.js');
+const { handlePresentationsImportImages } =
+  await import('../server/routes/api/presentations/import-images.js');
 const convertRoutes = await import('../server/routes/api/convert.js');
 
 const handleConvertStream = convertRoutes.ROUTES.find(
@@ -483,6 +485,43 @@ test('import-slides-as-images: leaving between pages stops the upload and leaves
     deckSlides().map((s) => s.id),
     ['s1'],
     'slides were added to the deck for a client that had already left',
+  );
+  assert.ok(!res.events.includes('complete'));
+  assert.ok(
+    !res.events.includes('error'),
+    'a cancel was reported to the client as a failure',
+  );
+});
+
+/** The same render behind the create route (B306): no deck for a leaver. */
+test('import/images: leaving between pages stops the upload and creates no deck', async (t) => {
+  const chrome = await resolveChromeExecutablePath();
+  if (!chrome) {
+    t.skip('no Chrome on this machine');
+    return;
+  }
+  t.after(closePuppeteerBrowser);
+  seed();
+
+  const dataUrl = `data:application/pdf;base64,${(await twoPagePdf()).toString('base64')}`;
+  const res = makeSseRes({
+    onEvent: (_event, text, response) => {
+      if (text.includes('Uploading page 1')) disconnect(response);
+    },
+  });
+
+  await handlePresentationsImportImages({
+    repoRoot: process.cwd(),
+    storageScope: scope(),
+    req: makeReq({ dataUrl, filename: 'source.pdf', lang: 'en' }),
+    res,
+    authedUser: OWNER,
+  });
+
+  assert.deepEqual(
+    (db.__tables.presentations || []).map((p) => p.id),
+    [DECK],
+    'a deck was created for a client that had already left',
   );
   assert.ok(!res.events.includes('complete'));
   assert.ok(
