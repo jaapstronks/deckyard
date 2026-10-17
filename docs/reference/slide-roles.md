@@ -253,9 +253,9 @@ text scale, and `xs / xs` is the floor (D15, D250).
 | ---- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | R0   | `xl` / `lg`   | text-blocks, 1 block                                                                                                                                                    |
 | R1   | `lg` / `md`   | the `00-tokens.css` default, text-blocks base, team-cards 4, KPI tile, matrix cell, icon-card, process 3, cycle 3                                                       |
-| R2   | `md` / `base` | text-blocks 3, team-cards base, matrix ≤1024px, icon-card tiles, process 4, funnel 3–4, pyramid 3, cycle 4                                                              |
+| R2   | `md` / `base` | text-blocks 3, team-cards base, matrix ≤1023px, icon-card tiles, process 4, funnel 3–4, pyramid 3, cycle 4                                                              |
 | R3   | `base` / `sm` | text-blocks 4–6 and 3 rows ∧ 1–2 blocks, team-cards 6, timeline card, icon-card tiles 5–6, process 5–7, funnel 5, pyramid 4–5, cycle 5–6                                |
-| R4   | `sm` / `xs`   | text-blocks 3 rows ∧ 3+ blocks and 4 rows ∧ 1–3 blocks, team-cards 18 and 6 with a bottom subheading, timeline ≤1024px, funnel 6 and 4 ≤1024px, pyramid 6 and 5 ≤1024px |
+| R4   | `sm` / `xs`   | text-blocks 3 rows ∧ 3+ blocks and 4 rows ∧ 1–3 blocks, team-cards 18 and 6 with a bottom subheading, timeline ≤1023px, funnel 6 and 4 ≤1023px, pyramid 6 and 5 ≤1023px |
 | R5   | `xs` / `xs`   | text-blocks 4 rows ∧ 4+ blocks, team-cards 25                                                                                                                           |
 
 What is shared is the **series of rungs**, not the count → rung mapping: that

@@ -281,7 +281,7 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .slide-matrix .matrix-grid {
     gap: var(--slide-space-3);
   }

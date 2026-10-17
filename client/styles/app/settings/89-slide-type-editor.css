@@ -137,7 +137,7 @@
   width: 100%;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .slide-type-editor-main {
     grid-template-columns: 1fr;
   }

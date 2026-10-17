@@ -416,8 +416,8 @@ summary.ghost-icon-btn::-webkit-details-marker {
    with a title at its minimum and the collab avatar stack at its widest for
    that band (five peers and a +N; see 107-collab-presence.css):
 
-     band  341-480  481-640  641-768  769-1024  1025-1280  1281+
-     fits  from 341 from 481 from 641 from 769  from 1025  from 1281
+     band  341-480  481-640  641-768  769-1023  1024-1280  1281+
+     fits  from 341 from 481 from 641 from 769  from 1024  from 1281
 
    And it has to fit in both pointer modes. Under `(hover: none)` - every
    phone and tablet, and CI's headless Chrome - the touch-target block in
@@ -430,9 +430,9 @@ summary.ghost-icon-btn::-webkit-details-marker {
      <= 1280  author chip   - no mirror: the avatar two slots along says it
      <= 1280  collab stack  - capped to its first avatar and a +N count
      <= 1280  the language trigger drops to its code ("NL")
-     <= 1024  save status   - no mirror: a transient chip, not an action
-     <= 1024  undo / redo   - no mirror: the keyboard shortcuts keep working
-     <= 1024  slide overview, Export, analytics
+     <= 1023  save status   - no mirror: a transient chip, not an action
+     <= 1023  undo / redo   - no mirror: the keyboard shortcuts keep working
+     <= 1023  slide overview, Export, analytics
      <= 768   Share
      <= 640   user avatar (Settings / Sign out / theme sit in the menu), seps
      <= 640   collab stack  - its menu entry names who else is here
@@ -498,7 +498,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .topbar > .topbar-fold-lg {
     display: none;
   }
@@ -815,7 +815,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
 }
 
 /* Responsive search */
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .topbar-search-wrapper {
     flex: 0 1 200px;
     max-width: 200px;

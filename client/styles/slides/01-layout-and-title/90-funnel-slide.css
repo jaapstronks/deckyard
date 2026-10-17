@@ -137,7 +137,7 @@
 }
 
 /* Restates the 4-stage base rung, but it is not a fossil: it outranks the
-   ≤1024px fit tier below, which is a later rule of lower specificity, so a
+   ≤1023px fit tier below, which is a later rule of lower specificity, so a
    3-stage funnel keeps this rung at every width (it fits). */
 .slide-funnel .funnel-container[data-count='3'] .funnel-stage {
   --slide-font-size-card-title: var(--slide-text-md);
@@ -209,7 +209,7 @@
    RESPONSIVE
    =========================================== */
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .slide-funnel .funnel-container {
     gap: var(--slide-space-2);
   }
@@ -221,7 +221,7 @@
   }
 
   .slide-funnel .funnel-stage {
-    /* overflow: this tier is what makes a 4-stage funnel fit at 1024px wide —
+    /* overflow: this tier is what makes a 4-stage funnel fit at 1023px wide —
        it is the one responsive block here that still wins (count 4 has no rung
        of its own), and the ratio-larger step measures as a stage-bar escape */
     --slide-font-size-card-title: var(--slide-text-sm);

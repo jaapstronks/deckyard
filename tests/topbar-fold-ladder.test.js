@@ -31,7 +31,7 @@ const JS_ROOTS = ['client/views/editor'];
 const TOPBAR_FILE = 'client/views/editor/topbar/index.js';
 
 /** The rung → `max-width` it folds at. Must stay on the documented ladder. */
-const RUNGS = { xl: 1280, lg: 1024, md: 768, sm: 640 };
+const RUNGS = { xl: 1280, lg: 1023, md: 768, sm: 640 };
 
 /**
  * The bar children that deliberately have no rung, and why. Each one is a

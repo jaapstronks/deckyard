@@ -17,12 +17,14 @@ Five rungs, chosen so they absorb the historic clusters and coincide with real
 device widths. `max-width` is the "at most this wide" side; the `min-width`
 counterpart is one pixel up, so the two never overlap.
 
+`lg` is the one rung with the device width on its `min-width` side: an iPad in landscape is exactly 1024px wide and gets the full three-column editor, so the rung is `max-width: 1023px` / `min-width: 1024px`. The other rungs have the device width on their `max-width` side.
+
 | Name | `max-width` | `min-width` | Intended for                            |
 | ---- | ----------- | ----------- | --------------------------------------- |
 | `xs` | 480px       | 481px       | small phone, portrait                   |
 | `sm` | 640px       | 641px       | phone, portrait                         |
 | `md` | 768px       | 769px       | iPad portrait / topbar collapses        |
-| `lg` | 1024px      | 1025px      | iPad landscape / editor goes two-column |
+| `lg` | 1023px      | 1024px      | iPad landscape / editor goes two-column |
 | `xl` | 1280px      | 1281px      | roomy desktop                           |
 
 ### Ultra-wide
@@ -39,9 +41,9 @@ displays. `min-width` only — these never appear as a `max-width`.
 ## Rules
 
 1. **Pick a rung, don't invent a width.** If a layout breaks at 860px, use the
-   rung below (768) or above (1024) and adjust the layout — do not add 860.
+   rung below (768) or above (1023) and adjust the layout — do not add 860.
 2. **Bands pair a rung with the next rung's counterpart**, e.g.
-   `(max-width: 1024px) and (min-width: 769px)` for "tablet landscape only".
+   `(max-width: 1023px) and (min-width: 769px)` for "tablet up to landscape".
 3. **`min-width` and `max-width` for the same rung must not overlap.** Use
    `max-width: 768px` / `min-width: 769px`, never `min-width: 768px`.
 4. **Non-width conditions are out of scope** and unrestricted: `hover`,

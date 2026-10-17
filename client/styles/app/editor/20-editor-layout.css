@@ -50,9 +50,9 @@
 /* Rail dismissed: only its head stays, shrunk to its tabs, so the rail is
    re-opened from where it was; the canvas takes the width under it. Scoped to
    the desktop layout on purpose: this selector is more specific than the area
-   assignments in the ≤1024 block, so unscoped it would survive into the narrow
+   assignments in the ≤1023 block, so unscoped it would survive into the narrow
    layouts and force a phantom column out of their templates. */
-@media (min-width: 1025px) {
+@media (min-width: 1024px) {
   .is-editor.is-inspector-collapsed .layout > .preview-panel {
     grid-column: 2 / 4;
   }
@@ -151,7 +151,7 @@
 }
 
 /* Hide resize handle on tablet/mobile where sidebar is a drawer */
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .is-editor .slides-panel-resize-handle {
     display: none;
   }
@@ -449,12 +449,12 @@
   }
 }
 
-/* Note: the desktop grid (>1024px) is fully expressed by the base rules above.
+/* Note: the desktop grid (≥1024px) is fully expressed by the base rules above.
    The canvas always gets the flexible space; the inspector width is the
    resizable --inspector-width. */
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Compact (≤1024px, the D339 boundary): the canvas keeps the height and the
+   Compact (<1024px, the D339 boundary): the canvas keeps the height and the
    inspector comes to it as a drawer. Row 1 keeps both column heads side by
    side - the slide bar and the rail head with its Inspector | Comments tabs,
    which open the drawer - and row 2 is the canvas alone. The drawer is
@@ -463,9 +463,9 @@
    Its open state is `is-inspector-drawer-open` (responsive-drawers.js), not
    the remembered desktop `is-inspector-collapsed`, which does not apply
    here. Narrower widths only change how the slides column presents (rail at
-   769-1024, drawer ≤768).
+   769-1023, drawer ≤768).
    ───────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   /* Every desktop column-variant collapses into the same area model. The
      combo selectors repeat the desktop ones so these win the tie. */
   .is-editor .layout,
@@ -544,9 +544,9 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Tablet Landscape (769-1024px): Auto-collapse slides to rail
+   Tablet Landscape (769-1023px): Auto-collapse slides to rail
    ───────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) and (min-width: 769px) {
+@media (max-width: 1023px) and (min-width: 769px) {
   .is-editor:not(.is-slides-expanded-override) .layout {
     grid-template-columns:
       var(--ps-slides-collapsed-width) minmax(0, 1fr)
@@ -568,6 +568,28 @@
 
   .is-editor:not(.is-slides-expanded-override) .slide-num-collapsed {
     display: flex;
+  }
+
+  /* One number per tile: the rail number replaces the gutter one, as on the
+     rail dismissed by hand (31-slide-overlays.css). */
+  .is-editor:not(.is-slides-expanded-override) .slide-num {
+    display: none;
+  }
+
+  .is-editor:not(.is-slides-expanded-override)
+    .slide-item.is-active
+    .slide-num-collapsed {
+    background: hsl(var(--app-accent-primary));
+    color: hsl(var(--app-text-on-solid));
+  }
+
+  /* The label is hidden above, so the button shows the same "+" as the
+     hand-collapsed rail (40-insert-and-collapsed.css); its name stays the
+     aria-label and title. */
+  .is-editor:not(.is-slides-expanded-override) .slides-add-btn::after {
+    content: '+';
+    font-weight: 700;
+    font-size: var(--ps-text-base);
   }
 
   .is-editor:not(.is-slides-expanded-override) .slide-search-meta {
@@ -606,7 +628,7 @@
    the right edge over the drawer they open.
    ───────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Mirror the ≤1024 combo selectors so this later block wins the tie. */
+  /* Mirror the ≤1023 combo selectors so this later block wins the tie. */
   .is-editor .layout,
   .is-editor.is-slides-collapsed .layout,
   .is-editor.is-inspector-collapsed .layout,

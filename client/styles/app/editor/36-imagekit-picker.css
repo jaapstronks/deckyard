@@ -16,7 +16,7 @@
   align-items: stretch;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .imagekit-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -81,7 +81,7 @@
   min-height: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .imagekit-layout {
     grid-template-columns: 1fr;
   }

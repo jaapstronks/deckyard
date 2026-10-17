@@ -311,7 +311,7 @@
    Responsive
    ============================================ */
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .slide-type-preview-thumb.thumb {
     --thumb-scale: 0.4;
     width: 640px;

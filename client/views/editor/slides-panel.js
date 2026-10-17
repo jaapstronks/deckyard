@@ -562,6 +562,8 @@ export function createSlidesPanel({
             class: 'btn btn-primary slides-add-btn btn-sm',
             type: 'button',
             'aria-label': t('editor.slides.add', 'Add slide'),
+            // On the rail the label folds to "+"; the tooltip names it there.
+            title: t('editor.slides.add', 'Add slide'),
             onclick: () =>
               openSlideTypeModal({ afterSlideId: getSelectedSlideId?.() }),
           },

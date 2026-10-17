@@ -168,7 +168,7 @@
   width: 100%;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .theme-editor-main {
     grid-template-columns: 1fr;
   }

@@ -183,7 +183,7 @@ test('the gate refuses what the ladder forbids', () => {
     rungsOf(`
       .a { ${TITLE}: var(--slide-text-lg); ${BODY}: var(--slide-text-md); }
       .b { ${TITLE}: var(--slide-text-xs); ${BODY}: var(--slide-text-xs); }
-      @media (max-width: 1024px) {
+      @media (max-width: 1023px) {
         .c { ${TITLE}: var(--slide-text-md); ${BODY}: var(--slide-text-base); }
       }`),
     [true, true, true],
