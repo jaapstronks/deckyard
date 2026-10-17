@@ -53,7 +53,9 @@ export function createFieldImage(ctx) {
     wrap.append(
       h('div', {
         class: 'field-label',
-        text: field?.label || t('editor.image.fieldLabel', 'Image'),
+        text: field?.labelKey
+          ? t(field.labelKey, field.label)
+          : field?.label || t('editor.image.fieldLabel', 'Image'),
       }),
     );
 

@@ -34,6 +34,7 @@ import path from 'node:path';
 import {
   extractUsedKeys,
   collectKeyLiteralRefs,
+  collectTemplateKeySites,
   isRuntimeBuiltKey,
 } from './lib/i18n-keys.js';
 import {
@@ -89,6 +90,58 @@ const PROP_RE = new RegExp(
   'g',
 );
 const TOAST_RE = /\btoast(?:\.\w+)?\(\s*(['"])((?:[^'"\\\n]|\\.)*)\1/g;
+
+// The opening of a copy prop whose value is an expression rather than a bare
+// literal: `title: cond ? 'copy' : 'other copy'`. PROP_RE only sees a literal
+// right after the colon, so a ternary of literals slipped past it (B741: three
+// Dutch tooltips on the slide-list "+" buttons rendered in every UI locale).
+const PROP_OPEN_RE = new RegExp(
+  `[{,]\\s*['"]?(${COPY_PROPS.join('|')})['"]?\\s*:`,
+  'g',
+);
+// A literal in a ternary branch: after `?` or after the `:` that closes it.
+// Inside `t('key', 'Fallback')` the fallback follows a `,`, so it never matches.
+const BRANCH_LITERAL_RE = /[?:]\s*(['"])((?:[^'"\\\n]|\\.)*)\1/g;
+
+/**
+ * The expression that starts at `from`, up to the `,`, `}`, `)` or `]` that
+ * ends it at depth zero, with everything nested inside brackets blanked to
+ * spaces (offsets are kept). Only depth-zero literals are ternary branches of
+ * the prop itself; a literal nested in a call is that call's business — the
+ * `{ one, many }` fallbacks of a plural `t()`, say.
+ * Strings are skipped whole, so a comma inside one does not end the expression;
+ * `starts` records where each depth-zero literal opens, so a quote *inside* a
+ * literal (a JSON placeholder) is not mistaken for a branch of its own.
+ * @param {string} src
+ * @param {number} from
+ * @returns {{ text: string, starts: Set<number> }} offsets relative to `from`
+ */
+function topLevelExpressionAt(src, from) {
+  let depth = 0;
+  let out = '';
+  const starts = new Set();
+  let i = from;
+  for (; i < src.length; i++) {
+    const c = src[i];
+    if (c === "'" || c === '"' || c === '`') {
+      const begin = i;
+      for (i++; i < src.length && src[i] !== c; i++) if (src[i] === '\\') i++;
+      const lit = src.slice(begin, i + 1);
+      if (depth === 0) starts.add(begin - from);
+      out += depth === 0 ? lit : lit.replace(/[^\n]/g, ' ');
+      continue;
+    }
+    if (c === ')' || c === ']' || c === '}' || c === ',') {
+      if (depth === 0) break;
+      if (c !== ',') depth--;
+      out += ' ';
+      continue;
+    }
+    if (c === '(' || c === '[' || c === '{') depth++;
+    out += depth === 0 || c === '\n' ? c : ' ';
+  }
+  return { text: out, starts };
+}
 
 /**
  * Heuristic: does this literal read as human copy rather than a machine token?
@@ -156,6 +209,40 @@ function hasSiblingI18nKey(src, index) {
 }
 
 /**
+ * User-facing string literals in one source text that bypass `t()`: a literal
+ * straight after a copy prop, a literal in a depth-zero ternary branch of one,
+ * and a literal toast.
+ * @param {string} src
+ * @param {string} rel - repo-relative path, carried into each hit
+ * @returns {Array<{file: string, line: number, prop: string, value: string}>}
+ */
+export function hardcodedCopyIn(src, rel) {
+  const hits = [];
+  const lines = src.split('\n');
+  const report = (value, at, propIndex, prop) => {
+    if (!looksLikeCopy(value)) return;
+    const line = src.slice(0, at).split('\n').length;
+    // A `t()` on the same line means the literal is a fallback, not copy.
+    if (/\bt\(/.test(lines[line - 1] || '')) return;
+    if (hasSiblingI18nKey(src, propIndex)) return;
+    hits.push({ file: rel, line, prop, value });
+  };
+  for (const m of src.matchAll(PROP_RE))
+    report(m[3], m.index + m[0].lastIndexOf(m[3]), m.index, m[1]);
+  for (const m of src.matchAll(TOAST_RE))
+    report(m[2], m.index + m[0].lastIndexOf(m[2]), m.index, 'toast');
+  for (const m of src.matchAll(PROP_OPEN_RE)) {
+    const start = m.index + m[0].length;
+    const expr = topLevelExpressionAt(src, start);
+    for (const b of expr.text.matchAll(BRANCH_LITERAL_RE)) {
+      if (!expr.starts.has(b.index + b[0].indexOf(b[1]))) continue;
+      report(b[2], start + b.index + b[0].lastIndexOf(b[2]), m.index, m[1]);
+    }
+  }
+  return hits;
+}
+
+/**
  * Find user-facing string literals that bypass `t()`.
  * @param {string} dir - absolute path to client/
  * @returns {Promise<Array<{file: string, line: number, prop: string, value: string}>>}
@@ -164,23 +251,7 @@ async function findHardcodedCopy(dir) {
   const hits = [];
   for await (const file of walkJs(dir)) {
     const src = await fs.readFile(file, 'utf8');
-    const rel = path.relative(repoRoot, file);
-    const lines = src.split('\n');
-    const scan = (re, valueGroup, propOf) => {
-      for (const m of src.matchAll(re)) {
-        const value = m[valueGroup];
-        if (!looksLikeCopy(value)) continue;
-        const line = src
-          .slice(0, m.index + m[0].lastIndexOf(value))
-          .split('\n').length;
-        // A `t()` on the same line means the literal is a fallback, not copy.
-        if (/\bt\(/.test(lines[line - 1] || '')) continue;
-        if (hasSiblingI18nKey(src, m.index)) continue;
-        hits.push({ file: rel, line, prop: propOf(m), value });
-      }
-    };
-    scan(PROP_RE, 3, (m) => m[1]);
-    scan(TOAST_RE, 2, () => 'toast');
+    hits.push(...hardcodedCopyIn(src, path.relative(repoRoot, file)));
   }
   return hits.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
 }
@@ -202,6 +273,44 @@ export async function findOrphanKeys(locale) {
   return Object.keys(dict)
     .filter((k) => !used.has(k) && !refs.has(k) && !isRuntimeBuiltKey(k))
     .sort();
+}
+
+/**
+ * Runtime-built keys the locales cannot answer.
+ *
+ * A `t(\`family.${x}\`, fallback)` call has no static key, so the coverage
+ * gate never asks for one, and the English fallback (often the raw token)
+ * renders in every locale without a test noticing (B741). Per call site this
+ * reports: a family missing from DYNAMIC_KEY_PATTERNS (its keys would read as
+ * orphans), a family with no value of its own in en/ or nl/ (keys the site can
+ * reach, minus the ones a static call site already uses), and a member en/
+ * holds that nl/ lacks.
+ * @returns {Promise<string[]>} `<file>:<line>  <template>  <problem>` per gap
+ */
+export async function findRuntimeKeyGaps() {
+  const [sites, used, en, nl] = await Promise.all([
+    collectTemplateKeySites(clientDir),
+    extractUsedKeys(clientDir),
+    loadLocale(i18nDir, 'en'),
+    loadLocale(i18nDir, 'nl'),
+  ]);
+  const members = (dict, reach) =>
+    Object.keys(dict).filter((k) => reach.test(k) && !used.has(k));
+  const gaps = [];
+  for (const site of sites) {
+    const at = `${path.relative(repoRoot, site.file)}:${site.line}  ${site.template}`;
+    if (!isRuntimeBuiltKey(site.sample)) {
+      gaps.push(`${at}  not declared in DYNAMIC_KEY_PATTERNS`);
+    }
+    const enKeys = members(en, site.reach);
+    const nlKeys = new Set(members(nl, site.reach));
+    if (!enKeys.length) gaps.push(`${at}  no value in en/`);
+    if (!nlKeys.size) gaps.push(`${at}  no value in nl/`);
+    else
+      for (const k of enKeys)
+        if (!nlKeys.has(k)) gaps.push(`${at}  ${k} missing in nl/`);
+  }
+  return [...new Set(gaps)].sort();
 }
 
 /** @returns {Promise<{hardcoded: Record<string, string>, orphans?: Record<string, string>}>} */
@@ -298,12 +407,13 @@ async function main(argv = process.argv.slice(2)) {
   );
   const orphans = await findOrphanKeys('en');
   const newOrphans = orphans.filter((k) => !(k in allowedOrphans));
-  const failed = unexpected.length || newOrphans.length;
+  const runtimeGaps = await findRuntimeKeyGaps();
+  const failed = unexpected.length || newOrphans.length || runtimeGaps.length;
 
   if (asJson) {
     console.log(
       JSON.stringify(
-        { hardcoded: hits, unexpected, orphans, newOrphans },
+        { hardcoded: hits, unexpected, orphans, newOrphans, runtimeGaps },
         null,
         2,
       ),
@@ -344,6 +454,15 @@ async function main(argv = process.argv.slice(2)) {
     );
   } else if (showOrphans) {
     for (const k of orphans) console.log(`  ${k}`);
+  }
+
+  if (runtimeGaps.length) {
+    console.log(
+      `\n✗ ${runtimeGaps.length} runtime-built key gap(s) — a t(\`…\${x}\`) family en/ or nl/ cannot answer:\n`,
+    );
+    for (const g of runtimeGaps) console.log(`  ${g}`);
+  } else {
+    console.log('✓ every runtime-built key family has values in en/ and nl/');
   }
 
   return failed ? 1 : 0;
