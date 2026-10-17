@@ -17,22 +17,6 @@ export const log = createLogger('ai');
  */
 
 /**
- * Re-attach AI review metadata (reasoning + alternative types) to normalized
- * slides. deckToPresentationParts strips unknown slide keys, and both arrays
- * map 1:1 by index, so this restores what the pipeline produced.
- */
-export function reattachAiMeta(normalizedSlides, sourceSlides) {
-  (normalizedSlides || []).forEach((s, i) => {
-    const src = sourceSlides?.[i];
-    if (!src || !s || typeof s !== 'object') return;
-    if (src._aiReasoning) s._aiReasoning = src._aiReasoning;
-    if (Array.isArray(src._aiAlternatives) && src._aiAlternatives.length) {
-      s._aiAlternatives = src._aiAlternatives;
-    }
-  });
-}
-
-/**
  * Create the deck an AI wizard generated, content and all, in one create.
  *
  * The wizards used to create an empty deck and then write the generated

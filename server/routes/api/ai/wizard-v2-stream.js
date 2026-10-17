@@ -4,9 +4,9 @@ import {
   getOptionalString,
   getTrimmedString,
 } from '../../../utils/request-validators.js';
-import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import {
   generateDeck,
+  generatedDeckToParts,
   generateSessionId,
   createSessionLogger,
 } from '../../../utils/ai/index.js';
@@ -19,7 +19,7 @@ import {
   PROGRESS,
   REFINE_CREEP_MS,
 } from '../../../utils/import-progress.js';
-import { log, reattachAiMeta, createDeckFromParts } from './shared.js';
+import { log, createDeckFromParts } from './shared.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
@@ -154,14 +154,10 @@ export async function handleAiWizardV2Stream({
       },
     });
 
-    const parts = deckToPresentationParts(deck, {
-      theme,
-      lang: deck.lang,
-      slideTypes,
-    });
-    // Keep the per-slide "why this type" + alternatives on the saved slides;
-    // the whole-deck review grid reads them after the editor loads the deck.
-    reattachAiMeta(parts.slides, deck.slides);
+    // The per-slide "why this type", alternatives and warnings stay on the
+    // saved slides; the whole-deck review grid reads them after the editor
+    // loads the deck.
+    const parts = generatedDeckToParts(deck, { theme, slideTypes });
 
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();

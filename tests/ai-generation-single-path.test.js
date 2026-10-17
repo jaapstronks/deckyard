@@ -13,11 +13,9 @@
  * re-export or literal dynamic import). Tests and the AI test suite may drive
  * the steps directly; they are not server modules.
  *
- * **No allowlist.** The two import adapters that still carry their own copy
- * move onto the service in the next PR (B757), and stand below as the named
- * rest that PR deletes: the
- * test fails as soon as one of them no longer imports a step, so the rest
- * cannot outlive its removal.
+ * **No allowlist.** The file and Notion import adapters were the last two
+ * with a copy of their own; they run `generateSlides()` now and assemble
+ * around it (B757), so every server module is held to the rule.
  *
  * Run with: node --test tests/ai-generation-single-path.test.js
  */
@@ -43,15 +41,6 @@ const STEPS = new Set(
     path.join(aiRoot, f),
   ),
 );
-
-/**
- * The file and Notion imports still run their own chain until the next PR
- * moves them onto `generateSlides()` and deletes this set (B757).
- */
-const IMPORT_ADAPTER_REST = new Set([
-  'server/utils/convert-file/ai-convert.js',
-  'server/utils/convert-notion.js',
-]);
 
 const rel = (p) => path.relative(repoRoot, p).split(path.sep).join('/');
 
@@ -79,22 +68,11 @@ function stepImporters() {
 }
 
 test('only the generation service imports the outline, refine and revise steps', () => {
-  const offenders = stepImporters().filter((f) => !IMPORT_ADAPTER_REST.has(f));
   assert.deepEqual(
-    offenders,
+    stepImporters(),
     [],
     'run the chain through generateSlides()/generateDeck() in server/utils/ai/generate-deck.js',
   );
-});
-
-test('the import adapter rest still has its own chain (delete the entry once it does not)', () => {
-  const importers = new Set(stepImporters());
-  for (const file of IMPORT_ADAPTER_REST) {
-    assert.ok(
-      importers.has(file),
-      `${file} no longer imports a step: remove it from IMPORT_ADAPTER_REST`,
-    );
-  }
 });
 
 test('the guard sees the service import the steps', () => {

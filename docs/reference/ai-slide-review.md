@@ -69,10 +69,11 @@ both arrays map 1:1 by index).
 ## Whole-deck review + section refine
 
 After AI deck generation the editor opens `ai-deck-review-modal.js`
-(`?aiReview=1`, stripped from the URL so refresh doesn't reopen it). Wizard V2
-routes re-attach `_aiReasoning`/`_aiAlternatives` before saving
-(`reattachAiMeta` in `server/routes/api/ai/shared.js`), so the review grid can
-show them after the editor loads the deck.
+(`?aiReview=1`, stripped from the URL so refresh doesn't reopen it). Every
+generation path (wizard, MCP, file and Notion import) keeps
+`_aiReasoning`/`_aiAlternatives`/`_aiWarnings` on the saved slides
+(`generatedDeckToParts` in `server/utils/ai/generate-deck.js`), so the review
+grid can show them after the editor loads the deck.
 
 - **Section refine**: select one or more tiles (the revision spans first→last
   selected, gaps included), describe a change, "Adjust section" →

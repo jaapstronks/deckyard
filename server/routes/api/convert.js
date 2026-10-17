@@ -13,8 +13,8 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { getConvertParams } from '../../utils/request-validators.js';
-import { deckToPresentationParts } from '../../../shared/slide-types.js';
-import { settleNewDeckTheme } from '../../utils/themes.js';
+import { generatedDeckToParts } from '../../utils/ai/index.js';
+import { loadAiThemeContext } from '../../utils/themes.js';
 import { createLogger } from '../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../utils/sse.js';
 import { clientDisconnectSignal } from '../../utils/client-disconnect.js';
@@ -56,11 +56,13 @@ async function handleConvertFile({
     return badRequest(res, 'Expected { filename: "..." }');
   }
   // Checked before the conversion, so an unknown theme costs no work.
-  const { themeId, theme: themeConfig } = await settleNewDeckTheme(
-    repoRoot,
-    theme,
-    storageScope,
-  );
+  // The theme context and title slide type go to the model too (B757).
+  const {
+    themeId,
+    theme: themeConfig,
+    themeContext,
+    titleSlideType,
+  } = await loadAiThemeContext(repoRoot, theme, storageScope);
 
   // Parse the data URL
   const dataUrlMatch = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
@@ -117,6 +119,8 @@ async function handleConvertFile({
       signal,
       slideTypes,
       ...slideTypeOffer,
+      themeContext,
+      titleSlideType,
     });
   } catch (e) {
     if (!signal.aborted) throw e;
@@ -139,15 +143,15 @@ async function handleConvertFile({
 
   // Create the presentation from the deck
   try {
-    const parts = deckToPresentationParts(deck, {
+    // Review metadata kept, as on every generation path (B757).
+    const parts = generatedDeckToParts(deck, {
       theme: themeConfig,
-      lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
       slideTypes,
     });
 
-    // Use the detected/effective language from the deck, not the original request
-    const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
+    // The language the generation settled on, not the original request; a
+    // Markdown file converts without the model and may name none.
+    const effectiveLang = deck.lang || DEFAULT_DECK_LANG;
 
     // The write step: no deck is created for a client that already left.
     if (signal.aborted) {
@@ -215,11 +219,13 @@ async function handleConvertStream({
     return badRequest(res, 'Expected { filename: "..." }');
   }
   // Checked before the conversion, so an unknown theme costs no work.
-  const { themeId, theme: themeConfig } = await settleNewDeckTheme(
-    repoRoot,
-    theme,
-    storageScope,
-  );
+  // The theme context and title slide type go to the model too (B757).
+  const {
+    themeId,
+    theme: themeConfig,
+    themeContext,
+    titleSlideType,
+  } = await loadAiThemeContext(repoRoot, theme, storageScope);
 
   // Parse the data URL
   const dataUrlMatch = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
@@ -375,6 +381,8 @@ async function handleConvertStream({
       signal,
       slideTypes,
       ...slideTypeOffer,
+      themeContext,
+      titleSlideType,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         // Message only: the bar is owned by the creep until the first section
@@ -476,15 +484,15 @@ async function handleConvertStream({
       },
     });
 
-    const parts = deckToPresentationParts(deck, {
+    // Review metadata kept, as on every generation path (B757).
+    const parts = generatedDeckToParts(deck, {
       theme: themeConfig,
-      lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
       slideTypes,
     });
 
-    // Use the detected/effective language from the deck, not the original request
-    const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
+    // The language the generation settled on, not the original request; a
+    // Markdown file converts without the model and may name none.
+    const effectiveLang = deck.lang || DEFAULT_DECK_LANG;
 
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
