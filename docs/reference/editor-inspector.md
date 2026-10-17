@@ -404,11 +404,16 @@ its own rule:
 
 - **Text size and alignment** ("This text"): the type's offer default; the
   entry is pruned from `content.textStyles` by `normalizeTextStyles`.
-- **Schema enums** (background colour, image background and every other `enum`
-  with a value in the type's `defaults`): the type default is written back. It
-  is not deleted, because renderers read the stored value without consulting
-  `defaults` (a missing `background` renders as `lime`, also on types whose
-  default is `mist`).
+- **Background colour**: the standard is `typeDefaultBackground()`
+  (`shared/slide-types/type-defaults.js`), the type's default replaced by the
+  theme's `defaultBackground` where the type offers it. Choosing it deletes
+  `content.background`; `renderSlideHtml()` fills an empty value with that same
+  standard before the type renders, so a later change to a type's or theme's
+  standard still reaches the deck.
+- **Other schema enums** (image background and every other `enum` with a value
+  in the type's `defaults`): the type default is written back. It is not
+  deleted, because those renderers read the stored value without consulting
+  `defaults`.
 - **Image fit** with a type default (`imageDefaults.fit`): the default option is
   marked and choosing it empties the field, so a later default change still
   reaches the deck ([`image-property-ownership.md`](image-property-ownership.md)).

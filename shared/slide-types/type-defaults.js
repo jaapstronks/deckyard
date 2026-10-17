@@ -55,6 +55,52 @@ export function resolveTypeDefaults(def, lang, theme = null) {
 }
 
 /**
+ * The background a slide of this type has when it stores none: the type's
+ * declared `defaults.background`, replaced by the theme's `defaultBackground`
+ * where the type offers it — the same answer {@link resolveTypeDefaults} seeds
+ * a new slide with. `''` for a type that declares no default background.
+ *
+ * One reader for "the standard ground" (B733): the render pipeline fills an
+ * empty `background` with it, so a reset to the standard stores nothing and a
+ * later change to a type's or theme's default still reaches older decks; the
+ * editor marks the same value as the default option.
+ *
+ * @param {{defaults?: Object, fields?: Array}|null|undefined} def
+ * @param {Object|null} [theme]
+ * @returns {string}
+ */
+export function typeDefaultBackground(def, theme = null) {
+  const own = def?.defaults?.background;
+  const seeded = applyThemeDefaultBackground(
+    { background: typeof own === 'string' ? own : '' },
+    def,
+    theme,
+  );
+  return seeded.background;
+}
+
+/**
+ * The content view with the type's standard ground under an empty
+ * `background` ({@link typeDefaultBackground}). Every renderer of a slide's
+ * ground reads this view — the HTML pipeline and the native PPTX composers —
+ * so an empty value means the same ground in each output. Returns the same
+ * object when there is nothing to fill; stored slide data is never touched.
+ *
+ * @param {Object} content
+ * @param {{defaults?: Object, fields?: Array}|null|undefined} def
+ * @param {Object|null} [theme]
+ * @returns {Object}
+ */
+export function withTypeDefaultBackground(content, def, theme = null) {
+  const own =
+    typeof content?.background === 'string' ? content.background.trim() : '';
+  if (own) return content;
+  const fallback = typeDefaultBackground(def, theme);
+  if (!fallback) return content;
+  return { ...content, background: fallback };
+}
+
+/**
  * Put the theme's ground under a type's defaults, where the type offers it.
  *
  * The one test is the union the editor's background picker already builds:

@@ -132,3 +132,19 @@ test('an empty metrics list keeps the canvas placeholder card', async () => {
   assert.match(shapeNamed(shapes, 'KPI 1 value and unit'), /<a:t>0<\/a:t>/);
   assert.match(shapeNamed(shapes, 'KPI 1 label'), /<a:t>Label<\/a:t>/);
 });
+
+test('an empty background exports the type standard ground, as the canvas renders it (B733)', async () => {
+  const ground = async (background) => {
+    const content = { title: 'Outcome', metrics: [{ value: '1', label: 'A' }] };
+    if (background) content.background = background;
+    const { xml } = await exportMetrics(content);
+    return /<p:bg>[\s\S]*?srgbClr val="([0-9A-F]{6})"/.exec(xml)?.[1];
+  };
+  const [empty, mist, lime] = await Promise.all([
+    ground(null),
+    ground('mist'),
+    ground('lime'),
+  ]);
+  assert.ok(mist && lime && mist !== lime);
+  assert.equal(empty, mist);
+});

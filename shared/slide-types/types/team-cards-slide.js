@@ -310,7 +310,7 @@ export default {
     const hasBottom = hasBottomSubheading(content);
 
     // New options
-    const bg = bgClass(content?.background || 'mist');
+    const bg = bgClass(content?.background);
     const textPosition = content?.textPosition === 'split' ? 'split' : 'below';
     const imageShape = ['square', 'circle'].includes(content?.imageShape)
       ? content.imageShape

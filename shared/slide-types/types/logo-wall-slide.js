@@ -262,7 +262,7 @@ export default {
         : '';
 
     // Existing decks carry no background value; their historical look is mist.
-    const bg = bgClass(content?.background || 'mist');
+    const bg = bgClass(content?.background);
 
     // One rule for every count: the renderer names the grid, the CSS sizes
     // the cells to fill it (46-logo-wall.css).
