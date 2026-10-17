@@ -22,19 +22,19 @@ export function getExpiresAt(value) {
 }
 
 /**
- * Format expiration date as a relative time string.
- * @param {Date} date - Expiration date
- * @returns {string} Relative time string (e.g., '7d', '2h', '<1h')
+ * Format the time a link has left, rounded **up**: a 7-day link reads "7d"
+ * the moment it is made, not "6d" (D354), and a link with minutes left reads
+ * "1h" until it expires. Whole days above one day, whole hours below.
+ * @param {Date} date - Expiration date (in the future)
+ * @param {Date} [now] - Reference time, for tests
+ * @returns {string} Relative time string (e.g., '7d', '24h', '1h')
  */
-export function formatExpiration(date) {
-  const now = new Date();
+export function formatExpiration(date, now = new Date()) {
+  const HOUR = 60 * 60 * 1000;
+  const DAY = 24 * HOUR;
   const diff = date - now;
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-  const hours = Math.floor(diff / (60 * 60 * 1000));
-
-  if (days > 1) return `${days}d`;
-  if (hours > 1) return `${hours}h`;
-  return '<1h';
+  if (diff > DAY) return `${Math.ceil(diff / DAY)}d`;
+  return `${Math.max(1, Math.ceil(diff / HOUR))}h`;
 }
 
 /**

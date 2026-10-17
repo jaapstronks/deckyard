@@ -101,7 +101,7 @@ async function handleShareLinkCreate(
     expiresAt: body?.expiresAt,
     maxUses: body?.maxUses,
     createdBy: authedUser?.email,
-    registrationMode: body?.registrationMode || 'invite_only',
+    registrationMode: body?.registrationMode,
   });
 
   if (!result.ok) {
