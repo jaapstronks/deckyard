@@ -12,8 +12,8 @@ is the follow-up to the migration jobs #548/#551.
 
 A live PostgreSQL, with the schema built by the migrations. The suite reads that
 schema; it does not create it. In CI the `test-postgres` job in
-`.github/workflows/ci.yml` runs `npm run db:migrate` against a `postgres:16`
-service container first, then `npm run test:pg`.
+`.github/workflows/ci.yml` runs `npm run db:migrate` against the PostgreSQL 16
+of the runner image first (`.github/actions/postgres`), then `npm run test:pg`.
 
 ## Why it is a separate suite and a separate job
 

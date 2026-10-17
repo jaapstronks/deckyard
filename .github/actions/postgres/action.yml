@@ -1,0 +1,61 @@
+name: PostgreSQL from the runner image
+description: >-
+  Start the PostgreSQL 16 that ships preinstalled on ubuntu-latest and create
+  the role and database a job connects to. Replaces a `services: postgres`
+  container, whose anonymous image pull counts against a registry quota shared
+  per runner IP (B736).
+
+# Why not a service container: Docker Hub and then public.ecr.aws (B641) both
+# rate-limit anonymous pulls per IP, and GitHub's runners share their IPs, so
+# most main runs failed on `toomanyrequests` before a single test ran. The
+# runner image already carries PostgreSQL (disabled by default); starting it
+# needs no network and no secret.
+#
+# The role is a superuser, like the POSTGRES_USER of the official image the
+# jobs used before, so migrations that create extensions behave the same.
+inputs:
+  database:
+    description: Name of the database to create, owned by the `deckyard` role.
+    required: true
+  major:
+    description: The PostgreSQL major version the job expects; the step fails on any other.
+    required: false
+    default: '16'
+
+runs:
+  using: composite
+  steps:
+    - name: Start PostgreSQL ${{ inputs.major }} and create ${{ inputs.database }}
+      shell: bash
+      env:
+        PG_DATABASE: ${{ inputs.database }}
+        PG_MAJOR: ${{ inputs.major }}
+      run: |
+        set -euo pipefail
+        PG_BIN="/usr/lib/postgresql/$PG_MAJOR/bin"
+        if [ ! -x "$PG_BIN/postgres" ]; then
+          echo "::error::PostgreSQL $PG_MAJOR is not installed on this runner image."
+          ls /usr/lib/postgresql/ || true
+          exit 1
+        fi
+        "$PG_BIN/postgres" --version
+        sudo systemctl start postgresql.service
+        # systemctl returns before the server accepts connections; the first
+        # migration would lose that race (the reason the service had a
+        # healthcheck), so wait for it explicitly.
+        for _ in $(seq 1 30); do
+          pg_isready -h localhost -p 5432 -q && break
+          sleep 1
+        done
+        pg_isready -h localhost -p 5432
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -q \
+          -c "CREATE ROLE deckyard WITH LOGIN SUPERUSER PASSWORD 'deckyard'"
+        sudo -u postgres createdb -O deckyard "$PG_DATABASE"
+        # The server answering on TCP with the password is what the jobs use;
+        # check that path and the server's own version, not just the binary.
+        SERVER_VERSION="$(PGPASSWORD=deckyard psql -h localhost -U deckyard -d "$PG_DATABASE" -tAc 'SHOW server_version')"
+        echo "Server version: $SERVER_VERSION"
+        case "$SERVER_VERSION" in
+          "$PG_MAJOR".*) ;;
+          *) echo "::error::Expected PostgreSQL $PG_MAJOR, the server reports $SERVER_VERSION."; exit 1 ;;
+        esac

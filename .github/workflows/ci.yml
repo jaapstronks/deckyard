@@ -18,36 +18,31 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: public.ecr.aws/docker/library/postgres:16
-        env:
-          POSTGRES_USER: deckyard
-          POSTGRES_PASSWORD: deckyard
-          POSTGRES_DB: deckyard_mcp_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # PostgreSQL and Redis come from the runner image and apt, not from service
+    # containers: anonymous registry pulls hit a quota shared per runner IP
+    # (B736, see .github/actions/postgres/action.yml).
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/postgres
+        with:
+          database: deckyard_mcp_test
       # A throwaway Redis for the rate limiter. Without it the Lua token bucket
       # never ran in CI: tests/rate-limit-redis.test.js (parity with the memory
       # backend, concurrent clients) and the admin and v1-router limiter tests
       # only reach Redis through RATE_LIMIT_TEST_REDIS_URL, set on `npm test`
-      # below, and skip or fall back to memory without it.
-      redis:
-        image: public.ecr.aws/docker/library/redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v7
+      # below, and skip or fall back to memory without it. The Ubuntu package
+      # starts the server on install.
+      - name: Install and start Redis
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q redis-server
+          redis-server --version
+          for _ in $(seq 1 30); do
+            [ "$(redis-cli -h localhost -p 6379 ping 2>/dev/null)" = PONG ] && break
+            sleep 1
+          done
+          test "$(redis-cli -h localhost -p 6379 ping)" = PONG
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -97,22 +92,11 @@ jobs:
   # in, so a local `npm test` (no copy) still runs the pure core suite.
   test-fork:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: public.ecr.aws/docker/library/postgres:16
-        env:
-          POSTGRES_USER: deckyard
-          POSTGRES_PASSWORD: deckyard
-          POSTGRES_DB: deckyard_mcp_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/postgres
+        with:
+          database: deckyard_mcp_test
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -205,32 +189,18 @@ jobs:
   # Deliberately narrow: up → down-all → up against an empty database, and
   # nothing else. No test directory, no fixtures, no storage-layer queries. That
   # is option D in docs/plans/briefs/postgres-test-infra.md; the full
-  # `services: postgres` test job (option A) is the follow-up.
+  # PostgreSQL test job (option A, `test-postgres` below) is the follow-up.
   #
   # A separate job, like `test-fork`, so it costs ~0 wall-clock on the critical
   # path — GitHub runs it beside `test`, not behind it — and so a red mark reads
   # as "a migration broke" without opening the run.
   migrations:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: public.ecr.aws/docker/library/postgres:16
-        env:
-          POSTGRES_USER: deckyard
-          POSTGRES_PASSWORD: deckyard
-          POSTGRES_DB: deckyard_migration_smoke
-        ports:
-          - 5432:5432
-        # The runner starts the step as soon as the container is up, which is
-        # earlier than the server accepting connections. Without the healthcheck
-        # the first migration loses a race it will never lose twice.
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/postgres
+        with:
+          database: deckyard_migration_smoke
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -289,22 +259,6 @@ jobs:
   # only), so a local `npm test` with no database still runs the pure suite.
   test-postgres:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: public.ecr.aws/docker/library/postgres:16
-        env:
-          POSTGRES_USER: deckyard
-          POSTGRES_PASSWORD: deckyard
-          POSTGRES_DB: deckyard_pg_tests
-        ports:
-          - 5432:5432
-        # See the note in `migrations`: without the healthcheck the migrate step
-        # races the container's boot and loses.
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
       # Read by server/config/database.js for every connection this job opens
       # (the migrate step and the suite alike). Shared at job level here because
@@ -325,6 +279,9 @@ jobs:
       DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_pg_tests
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/postgres
+        with:
+          database: deckyard_pg_tests
       - uses: actions/setup-node@v7
         with:
           node-version: 22
