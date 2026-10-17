@@ -970,6 +970,7 @@ export async function createEditorController({
       }),
     getSelectedSlideId: () => selectedSlideId,
     commentsApi,
+    getAnchoredComposerSupport: () => commentsPanel?.anchoredComposerSupport,
     user,
     // Positioned-marker click: open the rail on the comments pane and
     // highlight the thread (the under-slide list this used to expand is
@@ -1131,28 +1132,51 @@ export async function createEditorController({
         /* ignore */
       }
     },
-    onJumpToSlide: (slideId) => {
-      if (slideId && pres.slides?.some((s) => s?.id === slideId)) {
-        // Through the wrapper so presence view + slide locks follow the jump
-        // (a bare assignment left the collab view-dot on the old slide).
-        setSelectedSlideIdWithLock(slideId);
-        rerenderSlideList();
-        rerenderEditor();
-        rerenderPreview();
-        requestAnimationFrame(() => {
-          try {
-            const active = slideListEl?.querySelector?.('.list-item.is-active');
-            active?.scrollIntoView?.({ block: 'nearest' });
-          } catch {
-            /* ignore */
-          }
-        });
+    onJumpToSlide: (slideId) => jumpToCommentSlide(slideId),
+    // The empty state's "Mark a spot": pins are placed on the canvas, so the
+    // Fields view gives way to it first.
+    onMarkSpot: () => {
+      showCanvasForComments();
+      previewPanel.startPinMode();
+    },
+    // "Show on slide": go to the comment's slide and point at its pin.
+    onShowOnSlide: async (comment) => {
+      showCanvasForComments();
+      if (comment.slideId !== selectedSlideId) {
+        jumpToCommentSlide(comment.slideId);
+        await previewPanel.refreshSlideComments();
+      }
+      if (!previewPanel.showCommentMarker(comment.id)) {
+        await previewPanel.refreshSlideComments();
+        previewPanel.showCommentMarker(comment.id);
       }
     },
     // The x in the pane header dismisses the rail (same as the topbar
     // toggle); plain hide() would leave an open rail with an empty pane.
     onRequestClose: () => setInspectorCollapsed(true),
   });
+
+  function jumpToCommentSlide(slideId) {
+    if (!slideId || !pres.slides?.some((s) => s?.id === slideId)) return;
+    // Through the wrapper so presence view + slide locks follow the jump
+    // (a bare assignment left the collab view-dot on the old slide).
+    setSelectedSlideIdWithLock(slideId);
+    rerenderSlideList();
+    rerenderEditor();
+    rerenderPreview();
+    requestAnimationFrame(() => {
+      try {
+        const active = slideListEl?.querySelector?.('.list-item.is-active');
+        active?.scrollIntoView?.({ block: 'nearest' });
+      } catch {
+        /* ignore */
+      }
+    });
+  }
+
+  function showCanvasForComments() {
+    if (shell.classList.contains('is-fields-view')) setCanvasView('canvas');
+  }
 
   // Comments mount as the second inspector pane (fase 4): the old fixed
   // right slide-over now lives inside the rail. Visibility is driven by

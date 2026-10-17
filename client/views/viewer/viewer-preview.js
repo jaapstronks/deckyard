@@ -13,6 +13,8 @@ import { t } from '../../lib/ui-i18n.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom/index.js';
 import { icon } from '../../lib/dom/icons.js';
+import { createCommentMarkers } from '../comments/index.js';
+import { debugLog } from '../../lib/state/debug.js';
 
 export function createViewerPreview({
   pres,
@@ -20,9 +22,8 @@ export function createViewerPreview({
   id,
   getSelectedSlideId,
   setSelectedSlideId,
-  canComment,
   commentsApi,
-  user,
+  onMarkerClick,
 } = {}) {
   const previewEl = h('div', { class: 'viewer-preview' });
 
@@ -66,6 +67,34 @@ export function createViewerPreview({
   // Attach thumb scaling
   let detachThumbScale = attachThumbScale(slideWrap, { virtualWidth: 1600 });
 
+  // Anchored comments show as pins for every reader, read-only: placing one
+  // is the editor's (D355). A click opens the thread where there is a pane.
+  const markers = commentsApi
+    ? createCommentMarkers({
+        containerEl: slideWrap,
+        readOnly: true,
+        onMarkerClick,
+      })
+    : null;
+  let markersRequest = 0;
+
+  /** Load the pins of the slide shown; a stale answer is dropped. */
+  async function refreshMarkers() {
+    if (!markers) return;
+    const slideId = getSelectedSlideId?.();
+    const request = ++markersRequest;
+    let comments = [];
+    if (slideId) {
+      try {
+        comments = (await commentsApi.listComments({ slideId })).comments || [];
+      } catch (err) {
+        // Comments off (a sandbox example deck) or unreachable: no pins.
+        debugLog('[viewer] slide comments for pins unavailable', err);
+      }
+    }
+    if (request === markersRequest) markers.setComments(comments);
+  }
+
   // Navigation handlers
   const navigateSlide = (delta) => {
     const slides = pres?.slides || [];
@@ -104,6 +133,9 @@ export function createViewerPreview({
         renderVia: { kind: 'deck', id: pres?.id },
         lang: resolveDeckLang(pres),
       });
+      // The mount replaced the wrap's children; put the pin layer back.
+      markers?.reattach();
+      refreshMarkers();
     } else {
       slideWrap.replaceChildren();
       slideWrap.append(
@@ -128,6 +160,7 @@ export function createViewerPreview({
   };
 
   const detach = () => {
+    markers?.detach();
     try {
       detachThumbScale();
     } catch {
@@ -142,6 +175,9 @@ export function createViewerPreview({
     // the same clamping as the ← / → buttons, rather than reimplementing it.
     navigateSlide,
     rerenderPreview,
+    refreshMarkers,
+    /** Point at a pin on the slide shown ("Show on slide" in the pane). */
+    showCommentMarker: (commentId) => Boolean(markers?.flash(commentId)),
     detach,
   };
 }

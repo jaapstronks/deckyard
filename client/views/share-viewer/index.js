@@ -35,6 +35,8 @@ import { createGuestVerifyNotice } from './guest-verify-notice.js';
 import { setupShareAutoAdvance } from './auto-advance.js';
 import { queryParam, setQueryParams } from '../../lib/state/router.js';
 import { icon } from '../../lib/dom/icons.js';
+import { createCommentMarkers } from '../comments/index.js';
+import { debugLog } from '../../lib/state/debug.js';
 
 // Guest session state
 let guestSession = null;
@@ -65,6 +67,11 @@ export async function renderShareViewer(root, token) {
   let currentSlideIndex = 0;
   let detachThumb = () => {};
   let detachSwipe = () => {};
+  // Pins of anchored comments, for a guest who may comment (D355): shown,
+  // not placed. A click opens the comments section.
+  let slideMarkers = null;
+  let markersRequest = 0;
+  let markersApi = null;
   let keydownHandler = null;
   let analyticsTracker = null;
   let videoLayer = null;
@@ -230,27 +237,46 @@ export async function renderShareViewer(root, token) {
       detachThumb();
     } catch {}
     detachThumb = () => {};
+    slideMarkers?.detach();
+    slideMarkers = null;
+    markersApi = null;
+  }
+
+  /** Load the pins of the slide shown; a stale answer is dropped. */
+  async function refreshSlideMarkers(slideId) {
+    if (!slideMarkers) return;
+    slideMarkers.reattach();
+    const request = ++markersRequest;
+    let comments = [];
+    try {
+      comments = (await markersApi.listComments({ slideId })).comments || [];
+    } catch (err) {
+      // Unreachable or refused: no pins, the slide still shows.
+      debugLog('[share-viewer] slide comments for pins unavailable', err);
+    }
+    if (request === markersRequest) slideMarkers?.setComments(comments);
   }
 
   function renderViewer() {
     detachViewerListeners();
 
-    const { topbar, commentsSection, openJoinPrompt } = buildShareViewerTopbar({
-      presentation,
-      shareLink,
-      guestSession,
-      token,
-      prefillEmail,
-      shell,
-      getCurrentSlideId: () => {
-        const slides = presentation.slides || [];
-        return slides[currentSlideIndex]?.id || null;
-      },
-      analyticsTracker,
-      onAnalyticsErased: () => {
-        analyticsTracker = null;
-      },
-    });
+    const { topbar, commentsSection, commentsApi, openJoinPrompt } =
+      buildShareViewerTopbar({
+        presentation,
+        shareLink,
+        guestSession,
+        token,
+        prefillEmail,
+        shell,
+        getCurrentSlideId: () => {
+          const slides = presentation.slides || [];
+          return slides[currentSlideIndex]?.id || null;
+        },
+        analyticsTracker,
+        onAnalyticsErased: () => {
+          analyticsTracker = null;
+        },
+      });
 
     const stage = h('div', { class: 'share-viewer-stage' });
     const slideWrap = h('div', { class: 'share-viewer-slide thumb' });
@@ -353,6 +379,16 @@ export async function renderShareViewer(root, token) {
     }
 
     detachThumb = attachThumbScale(slideWrap, { virtualWidth: 1600 });
+    if (commentsApi) {
+      markersApi = commentsApi;
+      slideMarkers = createCommentMarkers({
+        containerEl: slideWrap,
+        readOnly: true,
+        onMarkerClick: () => {
+          if (!commentsSection.isVisible()) commentsSection.show();
+        },
+      });
+    }
 
     // Initial render
     updateSlide(slideWrap, slideCounter);
@@ -431,6 +467,7 @@ export async function renderShareViewer(root, token) {
     });
 
     slideWrap.append(slideEl);
+    refreshSlideMarkers(slide.id);
   }
 
   function cleanup() {

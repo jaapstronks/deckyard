@@ -47,10 +47,9 @@ export async function createViewerController({
   let setCommentsBadgeFn = () => {};
   let slideCommentCounts = {};
 
-  // Create comments API for comment permission users
-  const commentsApi = canComment
-    ? createCommentsApi({ api, presentationId: id })
-    : null;
+  // Every reader may read the comments: anchored ones show as pins on the
+  // slide (D355). Only comment permission gets the pane and writes.
+  const commentsApi = createCommentsApi({ api, presentationId: id });
 
   // Create the shell
   const shell = h('div', { class: 'viewer-shell' });
@@ -102,9 +101,13 @@ export async function createViewerController({
     id,
     getSelectedSlideId: () => selectedSlideId,
     setSelectedSlideId: selectSlide,
-    canComment,
     commentsApi,
-    user,
+    onMarkerClick: canComment
+      ? (comment) => {
+          commentsPanel?.show?.();
+          commentsPanel?.highlightComment?.(comment.id);
+        }
+      : null,
   });
   layout.append(previewApi.previewEl);
 
@@ -133,6 +136,14 @@ export async function createViewerController({
         if (slideId && pres.slides?.some((s) => s?.id === slideId)) {
           selectSlide(slideId);
         }
+      },
+      onShowOnSlide: async (comment) => {
+        if (comment.slideId !== selectedSlideId) {
+          if (!pres.slides?.some((s) => s?.id === comment.slideId)) return;
+          selectSlide(comment.slideId);
+        }
+        await previewApi.refreshMarkers();
+        previewApi.showCommentMarker(comment.id);
       },
     });
     shell.append(commentsPanel.panelEl);

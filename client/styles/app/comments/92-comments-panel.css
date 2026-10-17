@@ -202,6 +202,14 @@
   color: hsl(var(--app-text-secondary));
 }
 
+/* An anchored thread's pin glyph (D355): the list says which comments sit
+   on a spot of the slide. */
+.comment-anchor-glyph {
+  display: inline-flex;
+  align-self: center;
+  color: hsl(var(--app-accent-primary));
+}
+
 .comment-slide-link {
   margin-left: auto;
   padding: 1px 6px;
@@ -488,6 +496,14 @@
   position: relative;
 }
 
+/* Empty slide: the two ways in, a comment here or a mark on a spot. */
+.comment-ways-in {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ps-space-1-5);
+  margin-top: var(--ps-space-2);
+}
+
 /* Marker-click highlight: flash the targeted thread in the pane list. */
 .comment-thread.is-highlighted {
   background: hsl(var(--app-accent-primary) / 0.1);
@@ -539,6 +555,27 @@
 .comment-marker:focus-visible {
   outline: var(--app-focus-ring);
   outline-offset: 2px;
+}
+
+/* "Show on slide" from the list points at the pin. */
+.comment-marker.is-flashing {
+  animation: comment-marker-flash 0.6s ease 3;
+}
+
+@keyframes comment-marker-flash {
+  50% {
+    box-shadow:
+      0 0 0 6px hsl(var(--app-accent-primary) / 0.35),
+      0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comment-marker.is-flashing {
+    animation: none;
+    outline: var(--app-focus-ring);
+    outline-offset: 2px;
+  }
 }
 
 .comment-marker.is-resolved {
@@ -628,15 +665,19 @@
   bottom: -4px;
 }
 
-.positioned-comment-popup textarea {
-  resize: none;
-  width: 100%;
+.positioned-comment-popup .comment-rich-input {
+  min-height: 3.2em;
 }
 
 .positioned-comment-popup-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--ps-space-1-5);
+}
+
+/* Link sits at the start, Cancel and Post at the end (as in the pane). */
+.positioned-comment-popup-actions > :first-child {
+  margin-right: auto;
 }
 
 /* ============================================================

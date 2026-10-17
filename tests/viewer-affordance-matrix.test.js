@@ -240,10 +240,12 @@ test('only comment gets the comments affordances', async () => {
     null,
     'view gets no comments panel',
   );
-  assert.equal(
-    requestLog.filter((r) => r.includes('/comments')).length,
-    0,
-    'view never even asks the comments endpoint',
+  // A reader sees the pins of anchored comments (D355): view reads the
+  // shown slide's comments and nothing else of the comments surface.
+  const viewCommentRequests = requestLog.filter((r) => r.includes('/comments'));
+  assert.ok(
+    viewCommentRequests.every((r) => /\/comments\?slideId=/.test(r)),
+    `view only reads the slide's comments for its pins: ${viewCommentRequests}`,
   );
   view.detach();
 
