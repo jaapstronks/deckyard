@@ -82,31 +82,17 @@ the same keys — asserted, so a key added to one and forgotten in the other fai
 rather than rendering `undefined` when someone switches language. No value may
 be empty.
 
-Copy that a renderer prints must go through `getSlideCopy()`. Some strings still
-do not. The first group are editor-canvas affordances rather than deck content:
+Copy that a renderer prints must go through `getSlideCopy()`. That includes
+the editor-canvas affordances that sit on the slide (the empty video and embed
+hints, the countdown's Start / Pause / Reset) and the accessible names of
+structural lists (`cycle-slide`, `funnel-slide`, `process-slide`,
+`pyramid-slide`): a Dutch deck's screen reader announces them in Dutch.
 
-| Type              | Strings                                 |
-| ----------------- | --------------------------------------- |
-| `countdown-slide` | `Start`, `Pause`, `Reset`               |
-| `embed-slide`     | the "Paste an HTTPS URL to embed…" hint |
-| `video-slide`     | the "Paste a YouTube/Vimeo URL…" hint   |
-
-The second group _is_ deck content — it is just only ever heard, not seen. Four
-types hardcode the `aria-label` on their structural list, where their siblings
-(`poll-slide`, `likert-slide`, `timeline-slide`) take it from `copy`:
-
-| Type            | Label            |
-| --------------- | ---------------- |
-| `cycle-slide`   | `Cycle stages`   |
-| `funnel-slide`  | `Funnel stages`  |
-| `process-slide` | `Process steps`  |
-| `pyramid-slide` | `Pyramid levels` |
-
-All of these are English-only, so they are an untranslated string rather than a
-wrong-language one — a different defect from the one this page describes, and
-not yet fixed. The `aria-label` group is the closer of the two to this page's
-defect (a Dutch deck's screen reader announces English), and it is the cheaper
-fix: four keys in each table, no markup change.
+`tests/slide-copy-language.test.js` scans every module under
+`shared/slide-types/types/` and fails on literal text in markup: a word between
+tags, or a literal `aria-label`, `title`, `alt` or `placeholder` value.
+Interpolations pass, so the fix is always a key in both tables. The i18n gate
+cannot catch these: it reads `client/`, and a type renders in `shared/`.
 
 ## Copy an export writes itself
 

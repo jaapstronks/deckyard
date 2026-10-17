@@ -8,6 +8,7 @@ import {
   clampInt,
   getCollectionItems,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 function stageHtml(stage, idx, total) {
   const label = typeof stage?.label === 'string' ? stage.label.trim() : '';
@@ -194,7 +195,7 @@ export default {
       <div class="slide slide-funnel ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <ol class="funnel-container" data-count="${count}" aria-label="Funnel stages">
+          <ol class="funnel-container" data-count="${count}" aria-label="${escapeHtml(getSlideCopy(ctx?.lang).funnelStagesLabel)}">
             ${stagesHtml}
           </ol>
           ${bottomSubheadingHtml}

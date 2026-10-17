@@ -7,6 +7,7 @@ import {
   BACKGROUND_FIELD,
   clampInt,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 function safeLevelsArr(levels) {
   return Array.isArray(levels) ? levels : [];
@@ -188,7 +189,7 @@ export default {
       <div class="slide slide-pyramid ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <ol class="pyramid-container" data-count="${count}" aria-label="Pyramid levels">
+          <ol class="pyramid-container" data-count="${count}" aria-label="${escapeHtml(getSlideCopy(ctx?.lang).pyramidLevelsLabel)}">
             ${levelsHtml}
           </ol>
           ${bottomSubheadingHtml}

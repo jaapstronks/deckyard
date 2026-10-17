@@ -53,6 +53,23 @@ export const SLIDE_COPY = {
     imagePlaceholder: 'Afbeelding',
     logoPlaceholder: 'Logo',
 
+    // The hint an empty video or embed slide shows on the editor canvas, and
+    // the countdown's controls. Affordances rather than deck content, but they
+    // sit on the slide, so they speak the deck's language (B749).
+    videoEmptyHint: 'Plak een YouTube- of Vimeo-URL of een Bunny-video-UUID.',
+    embedEmptyHint:
+      'Plak een HTTPS-URL om in te sluiten (bijv. Figma, Miro, Google Sheets).',
+    countdownStart: 'Start',
+    countdownPause: 'Pauze',
+    countdownReset: 'Opnieuw',
+
+    // The accessible name of a structural list: heard, not seen, and deck
+    // content all the same (B749).
+    cycleStagesLabel: 'Fasen van de cyclus',
+    funnelStagesLabel: 'Fasen van de trechter',
+    processStepsLabel: 'Processtappen',
+    pyramidLevelsLabel: 'Niveaus van de piramide',
+
     // Admonitions — the eyebrow word for each kind of contrast block, shared
     // by callout-slide (a whole slide) and the aside inset (a block within
     // one), so the two say the same word for the same promise. On a callout an
@@ -196,6 +213,19 @@ export const SLIDE_COPY = {
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Image',
     logoPlaceholder: 'Logo',
+
+    // Empty-state hints, countdown controls and list names: see the Dutch
+    // table above.
+    videoEmptyHint: 'Paste a YouTube/Vimeo URL or a Bunny video UUID.',
+    embedEmptyHint:
+      'Paste an HTTPS URL to embed (e.g., Figma, Miro, Google Sheets).',
+    countdownStart: 'Start',
+    countdownPause: 'Pause',
+    countdownReset: 'Reset',
+    cycleStagesLabel: 'Cycle stages',
+    funnelStagesLabel: 'Funnel stages',
+    processStepsLabel: 'Process steps',
+    pyramidLevelsLabel: 'Pyramid levels',
 
     // Admonitions — see the note on the Dutch table above.
     admonitionInsight: 'Key insight',
