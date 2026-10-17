@@ -4,6 +4,31 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.73.0](https://github.com/jaapstronks/deckyard/compare/v1.72.0...v1.73.0) (2026-10-17)
+
+
+### Added
+
+* **ai:** a list holds only its own kind; remarks about it move out (B596) ([#1698](https://github.com/jaapstronks/deckyard/issues/1698)) ([e663dcc](https://github.com/jaapstronks/deckyard/commit/e663dcc41662953fe5a7fd7e5c5c56a1e265339a))
+* import an existing deck as image slides into a new deck (B306) ([#1699](https://github.com/jaapstronks/deckyard/issues/1699)) ([e93ded7](https://github.com/jaapstronks/deckyard/commit/e93ded7a2d363841f0b26a7ec54fe2454576fd07))
+* the creation view offers generate and import as two routes before the file (B306) ([#1701](https://github.com/jaapstronks/deckyard/issues/1701)) ([4847466](https://github.com/jaapstronks/deckyard/commit/4847466431675e626b9eca3979145cb978b14481))
+* the slide menu follows the keyboard (B734) ([#1695](https://github.com/jaapstronks/deckyard/issues/1695)) ([dd73ffd](https://github.com/jaapstronks/deckyard/commit/dd73ffdf8b9c53564d8ca72a838bc7fdafcc831c))
+
+
+### Fixed
+
+* a withdrawn share link unfurls generically and the fallback line follows the deck language (B745) ([#1708](https://github.com/jaapstronks/deckyard/issues/1708)) ([cedc7b8](https://github.com/jaapstronks/deckyard/commit/cedc7b868ac5764046aa2d60ea53a8ec891c5e31))
+* a write without i18n lands in the dominant language version (B740) ([#1705](https://github.com/jaapstronks/deckyard/issues/1705)) ([da47e71](https://github.com/jaapstronks/deckyard/commit/da47e71e4e0841b5e71ec36c04e93d6a87721da3))
+* an empty background renders the type's own standard (B733) ([#1700](https://github.com/jaapstronks/deckyard/issues/1700)) ([b0fd887](https://github.com/jaapstronks/deckyard/commit/b0fd88744d94d63f28f5ef2567de75a0cba5d5f2))
+* author words in the editor: no format in labels, no uploads path, three schema words renamed (B742) ([#1710](https://github.com/jaapstronks/deckyard/issues/1710)) ([3a38080](https://github.com/jaapstronks/deckyard/commit/3a38080a67ee9d829c36d527b697878987e21662))
+* one theme card shows the real title slide in the creation view and on Home (B743) ([#1711](https://github.com/jaapstronks/deckyard/issues/1711)) ([62b5c30](https://github.com/jaapstronks/deckyard/commit/62b5c30551876574bff413612de56f2e948c0c99))
+* remote slide updates follow the server's slide order (B739) ([#1704](https://github.com/jaapstronks/deckyard/issues/1704)) ([61fa03c](https://github.com/jaapstronks/deckyard/commit/61fa03c93b8661ed73b6c92ce1daef608d0ae22b))
+* route five i18n leaks through keys and make the audit catch the shape (B741) ([#1706](https://github.com/jaapstronks/deckyard/issues/1706)) ([29e965e](https://github.com/jaapstronks/deckyard/commit/29e965e87ee773721aa070a8bcd8979c69e4a569))
+* routes that write a loaded deck back keep the active language version (B748) ([#1707](https://github.com/jaapstronks/deckyard/issues/1707)) ([9e2e0b3](https://github.com/jaapstronks/deckyard/commit/9e2e0b3f34b789349989aac7dce7f063189ceff5))
+* the image width on image-text has one home, the split tiles (B731) ([#1697](https://github.com/jaapstronks/deckyard/issues/1697)) ([ddc4f34](https://github.com/jaapstronks/deckyard/commit/ddc4f342c9b14ce1f62b26fc18bfc3c8041d815a))
+* the inspector drawer starts below 1024, so 1024 gets the desktop (B728) ([#1702](https://github.com/jaapstronks/deckyard/issues/1702)) ([cef57c2](https://github.com/jaapstronks/deckyard/commit/cef57c2765601d8232e2b79fee819200b5d61b97))
+* the share dialog opens on Guests, keeps access in view and folds the extras (B744) ([#1709](https://github.com/jaapstronks/deckyard/issues/1709)) ([01b886b](https://github.com/jaapstronks/deckyard/commit/01b886b86b973cb5372a5add1fb2fbc31015a15a))
+
 ## [1.72.0](https://github.com/jaapstronks/deckyard/compare/v1.71.0...v1.72.0) (2026-10-17)
 
 
