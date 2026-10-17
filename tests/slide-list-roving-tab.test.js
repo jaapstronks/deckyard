@@ -306,3 +306,106 @@ test('with the active slide off screen, the first row is the stop', () => {
     env.teardown();
   }
 });
+
+// The menu follows the keyboard (B734): arrows walk its enabled items, and an
+// action started from it leaves the focus on the row of the resulting slide.
+const menuItems = () => [
+  ...document.querySelectorAll('.slide-context-menu .slide-context-menu-item'),
+];
+const menuItem = (re) => menuItems().find((el) => re.test(el.textContent));
+const focusedLabel = () => document.activeElement?.textContent || '';
+
+test('arrows, Home and End walk the enabled menu items and skip disabled ones', () => {
+  const env = mount({ selected: 'a' });
+  try {
+    env.row('a').focus();
+    press('Enter');
+    flush();
+    const enabled = menuItems().filter((el) => !el.disabled);
+    assert.ok(menuItem(/^paste/i).disabled, 'Paste is off with no clipboard');
+    assert.equal(document.activeElement, enabled[0]);
+    press('ArrowDown');
+    assert.equal(document.activeElement, enabled[1]);
+    assert.doesNotMatch(focusedLabel(), /^paste/i, 'Paste is skipped');
+    press('End');
+    assert.equal(document.activeElement, enabled.at(-1));
+    assert.match(focusedLabel(), /delete/i);
+    press('ArrowDown');
+    assert.equal(document.activeElement, enabled[0], 'Down wraps to the top');
+    press('ArrowUp');
+    assert.equal(document.activeElement, enabled.at(-1), 'Up wraps to the end');
+    press('Home');
+    assert.equal(document.activeElement, enabled[0]);
+    assert.equal(env.selected(), 'a', 'the walk does not move the slide');
+    press('Escape');
+    assert.equal(focusedSlide(), 'a');
+  } finally {
+    env.teardown();
+  }
+});
+
+test('Duplicate from the keyboard leaves the focus on the copy', () => {
+  const env = mount({ selected: 'a' });
+  try {
+    env.row('a').focus();
+    press('Enter');
+    flush();
+    press('ArrowDown');
+    assert.match(focusedLabel(), /duplicate/i);
+    document.activeElement.click();
+    flush();
+    const copyId = env.pres.slides[1].id;
+    assert.notEqual(copyId, 'a');
+    assert.equal(env.selected(), copyId);
+    assert.equal(focusedSlide(), copyId, 'focus is on the copy, not body');
+    assert.equal(env.row(copyId).tabIndex, 0);
+  } finally {
+    env.teardown();
+  }
+});
+
+test('Move to end from the keyboard leaves the focus on the moved slide', () => {
+  const env = mount({ selected: 'a' });
+  try {
+    env.row('a').focus();
+    press('Enter');
+    flush();
+    press('ArrowDown');
+    press('ArrowDown');
+    press('ArrowDown');
+    assert.match(focusedLabel(), /move to end/i);
+    document.activeElement.click();
+    flush();
+    assert.equal(env.pres.slides.at(-1).id, 'a');
+    assert.equal(focusedSlide(), 'a');
+  } finally {
+    env.teardown();
+  }
+});
+
+test('Delete from the keyboard leaves the focus on the neighbour', async () => {
+  const env = mount({ selected: 'a' });
+  try {
+    for (const [from, next] of [
+      ['a', 'p'],
+      ['z', 'c'],
+    ]) {
+      env.row(from).focus();
+      press('Enter');
+      flush();
+      press('End');
+      assert.match(focusedLabel(), /delete/i);
+      document.activeElement.click();
+      flush();
+      const confirm = document.querySelector('.modal-actions .btn-danger');
+      assert.ok(confirm, 'the delete asks first');
+      confirm.click();
+      await new Promise((r) => setTimeout(r, 0));
+      flush();
+      assert.ok(!env.pres.slides.some((s) => s.id === from));
+      assert.equal(focusedSlide(), next, `after deleting ${from}`);
+    }
+  } finally {
+    env.teardown();
+  }
+});

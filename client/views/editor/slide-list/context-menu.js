@@ -87,6 +87,30 @@ function slideRow(slideId) {
   );
 }
 
+/**
+ * Arrow keys in the menu (B734): Up/Down step over the enabled items and wrap,
+ * Home/End jump to the first and last. Tab keeps its native order.
+ * @param {KeyboardEvent} e
+ * @param {HTMLElement} menu
+ */
+function moveMenuFocus(e, menu) {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const items = Array.from(
+    menu.querySelectorAll('.slide-context-menu-item:not(:disabled)'),
+  );
+  if (!items.length) return;
+  const cur = items.indexOf(document.activeElement);
+  let next;
+  if (e.key === 'ArrowDown') next = items[(cur + 1) % items.length];
+  else if (e.key === 'ArrowUp')
+    next = items[(cur - 1 + items.length) % items.length];
+  else if (e.key === 'Home') next = items[0];
+  else if (e.key === 'End') next = items[items.length - 1];
+  else return;
+  e.preventDefault();
+  next.focus();
+}
+
 /** Keep the menu inside the viewport, anchored near the cursor. */
 function positionAt(menu, x, y) {
   menu.style.position = 'fixed';
@@ -127,6 +151,17 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
 
   const count = ids instanceof Set ? ids.size : ids?.length || 0;
 
+  // Reached by the keyboard (B734): after an action the focus goes to the row
+  // of the slide it left selected (the copy, the moved slide, the neighbour of
+  // a deleted one), once the list has re-rendered, instead of falling to body.
+  const focusResult = fromButton
+    ? () =>
+        requestAnimationFrame(() => {
+          const id = ctx.getSelectedSlideId?.();
+          if (id) slideRow(id)?.focus();
+        })
+    : () => {};
+
   const addItem = ({ label, danger = false, disabled = false, onClick }) =>
     h('button', {
       class: `slide-context-menu-item${danger ? ' is-danger' : ''}`,
@@ -150,6 +185,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
     onClick: () => {
       closeSlideContextMenu();
       copySlidesToClipboard({ ids, ...ctx });
+      focusResult();
     },
   });
   const pasteCount = getClipboardCount();
@@ -176,6 +212,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
         toast,
         t,
       });
+      focusResult();
     },
   });
 
@@ -184,6 +221,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
     onClick: () => {
       closeSlideContextMenu();
       duplicateSlides({ ids, ...ctx });
+      focusResult();
     },
   });
 
@@ -231,12 +269,16 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
             return null;
           },
         });
-        if (answer == null) return;
+        if (answer == null) {
+          focusResult();
+          return;
+        }
         ctx.moveSlideToPosition?.({
           fromId: slide?.id,
           position: Number(answer),
         });
         reselect();
+        focusResult();
       },
     });
 
@@ -246,6 +288,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
         closeSlideContextMenu();
         ctx.moveSlideToPosition?.({ fromId: slide?.id, position: Infinity });
         reselect();
+        focusResult();
       },
     });
     if (curIdx === total - 1) moveEndItem.disabled = true;
@@ -268,6 +311,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
         onClick: () => {
           closeSlideContextMenu();
           setAuthorLock({ ids, locked: !locked, ...ctx });
+          focusResult();
         },
       }),
     );
@@ -351,6 +395,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
       onClick: async () => {
         closeSlideContextMenu();
         await deleteSlides({ ids, ...ctx });
+        focusResult();
       },
     }),
   );
@@ -359,8 +404,9 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
   activeMenu = menu;
   activeAnchorSlideId = fromButton ? slide?.id || null : null;
   positionAt(menu, x, y);
+  menu.addEventListener('keydown', (e) => moveMenuFocus(e, menu));
   // Opened from the thumbnail's ⋯ button (keyboard reachable): put focus in
-  // the menu so arrow-free Tab/Enter works without a pointer.
+  // the menu; arrows, Home and End move within it.
   if (fromButton) {
     requestAnimationFrame(() => {
       menu.querySelector('.slide-context-menu-item:not(:disabled)')?.focus();

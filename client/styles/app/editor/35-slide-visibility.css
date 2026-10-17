@@ -197,6 +197,16 @@
   outline-offset: -2px;
 }
 
+/* The arrows skip a disabled item (B734); it looks skipped too. */
+.slide-context-menu-item:disabled {
+  color: hsl(var(--app-text-disabled));
+  cursor: default;
+}
+
+.slide-context-menu-item:disabled:hover {
+  background: transparent;
+}
+
 .slide-context-menu-item.is-danger {
   color: hsl(var(--app-danger));
 }
