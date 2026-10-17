@@ -19,9 +19,41 @@ Left rail methods:
   whole collection (pre-seeds the tray in order) and picking individual slides.
   Multi-select with a drag-to-reorder tray drives the "Create · N slides"
   footer.
-- **From content · AI** - paste text, upload a file, or pull from Notion.
-- **Import** - restore a `.json` or `.md` file. Quiet by design: it is restore,
-  not create, so the theme picker is hidden for JSON import.
+- **Generate from content · AI** - paste text, upload a file, or pull from
+  Notion. Deckyard interprets the source and writes a new deck; it does not
+  copy slides over. Only where feature `ai` is on.
+- **Import an existing deck** - take a deck over as it is. Sub-tabs:
+  **PowerPoint or PDF** (the default), `.deck`, JSON, Markdown file and pasted
+  Markdown. No AI. The theme picker is hidden where the file carries its own
+  theme (`.deck`, JSON), the whole setup block where it carries its language
+  too (`.deck`).
+
+### Two routes, chosen before the file (B306, D235)
+
+The user picks the intent first; the file type never decides it. A PDF or a
+PowerPoint file can be either source material or the deck itself, so both
+routes accept one, and each route is its own endpoint, so a request never
+lands in the other route silently:
+
+| Route (rail)                                 | Upload                                                                | Endpoint                                                    | Path                                                                                                            | Feature |
+| -------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------- |
+| Generate from content → Upload file          | `.pptx`, `.pdf`, `.docx`, `.rtf`, `.odt`                              | `POST /api/convert/stream` (fallback `/api/convert`)        | text extraction + AI outline and refine; a new deck                                                             | `ai`    |
+| Import an existing deck → PowerPoint or PDF  | a PDF for the images, the `.pptx` for the speaker notes, either alone | `POST /api/presentations/import/images` (SSE)               | one `image-slide` per PDF page, notes paired by slide order (D334); a new deck in the chosen theme and language | none    |
+| Editor → slide type modal → Import from file | the same two slots                                                    | `POST /api/presentations/:id/import-slides-as-images` (SSE) | the same, inserted after the current slide                                                                      | none    |
+
+The import route is honest about its result: every page becomes an image
+slide whose text is not editable. The rendering and pairing behind both image
+endpoints is one service, `server/services/deck-images-import.js`; the two-slot
+chooser and the streamed import with its Cancel are one client feature,
+`client/views/slide-import/` (`createDeckImagesPicker`, `importDeckImages`),
+used by the editor tab and the creation sub-tab alike.
+
+The generate route does not detect "this looks like a slide deck" and does not
+ask after the upload. Instead, the Upload file sub-tab carries one quiet line
+above the file input ("Want to take over an existing presentation one to
+one? Import it as a deck") that switches to the import rail on its PowerPoint
+or PDF sub-tab, before any file is chosen. With feature `ai` off the generate
+rail is absent and the import route works unchanged.
 
 "Duplicate a whole deck" is intentionally not in this view; it lives on every
 deck card in the list.
