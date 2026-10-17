@@ -1,0 +1,94 @@
+/* The shared two-slot chooser for importing an existing deck as image
+   slides (B700, B306): the editor's "Import from file" tab and the creation
+   view's "PowerPoint or PDF" import sub-tab both use it. */
+
+.import-slides-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+.import-slides-help {
+  text-align: center;
+  margin-bottom: var(--ps-space-2);
+}
+
+.import-slides-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-8) var(--ps-space-6);
+  border: 2px dashed hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  background: hsl(var(--app-bg-sunken));
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.import-slides-dropzone:hover,
+.import-slides-dropzone.is-dragover {
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.05);
+}
+
+.import-slides-dropzone-icon {
+  color: hsl(var(--app-text-secondary));
+  opacity: 0.7;
+}
+
+.import-slides-dropzone:hover .import-slides-dropzone-icon,
+.import-slides-dropzone.is-dragover .import-slides-dropzone-icon {
+  color: hsl(var(--app-accent-text));
+  opacity: 1;
+}
+
+.import-slides-dropzone-text {
+  font-size: var(--ps-text-base);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+
+.import-slides-dropzone-hint {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+.import-slides-file-info {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-4);
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-elevated));
+}
+
+.import-slides-file-icon {
+  flex-shrink: 0;
+  color: hsl(var(--app-accent-text));
+}
+
+.import-slides-file-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-0-5);
+}
+
+.import-slides-file-name {
+  font-weight: 600;
+  font-size: var(--ps-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-slides-file-size {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}

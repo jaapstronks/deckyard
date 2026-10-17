@@ -715,3 +715,22 @@
 .onboarding-checklist-step-hint {
   font-size: var(--ps-text-sm);
 }
+
+/* The creation view's quiet pointer from generating to importing (B306). */
+.creation-crosslink {
+  margin: 0;
+}
+
+.creation-crosslink .link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: hsl(var(--app-accent-primary));
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.creation-crosslink .link-button:hover {
+  text-decoration: none;
+}
