@@ -37,6 +37,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { newSlide } from '../../../../shared/slide-types/presentation.js';
 import { insertAfterAnchor } from '../../../services/slides.js';
+import { dominantSlidesBody } from '../../../services/deck-versions.js';
 import { resolveSlideTypeName } from '../../../../shared/slide-types/registry.js';
 
 /**
@@ -166,9 +167,14 @@ export async function handlePresentationCommentApply(
     originalSlideIndex,
   );
 
-  // Update the presentation
-  fullPres.slides = updatedSlides;
-  await updatePresentation(storageScope, id, fullPres, storageScope);
+  // The loaded deck's top level is the dominant version: write it back as a
+  // new dominant buffer, so another language version stays as stored.
+  await updatePresentation(
+    storageScope,
+    id,
+    dominantSlidesBody(fullPres, updatedSlides),
+    { actorEmail: authedUser?.email || null },
+  );
 
   // Mark the suggestion as resolved
   const resolveResult = await resolveComment(storageScope, commentId, {

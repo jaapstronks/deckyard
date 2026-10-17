@@ -85,20 +85,24 @@ async function handlePublishSlug({ storageScope, req, res, authedUser }, id) {
   const nextSlug = parsed.body?.slug;
   const entry = await updatePublishedSlug(storageScope, publishId, nextSlug);
 
-  const nextPres = {
-    ...pres,
-    published: {
-      ...(pres.published && typeof pres.published === 'object'
-        ? pres.published
-        : {}),
-      id: publishId,
-      slug: entry.slug,
-      modified: entry.modified,
-    },
+  // Only the publication column moves: writing the loaded deck back whole
+  // would put the dominant text in the active language version (B620).
+  const published = {
+    ...(pres.published && typeof pres.published === 'object'
+      ? pres.published
+      : {}),
+    id: publishId,
+    slug: entry.slug,
+    modified: entry.modified,
   };
-  await updatePresentation(storageScope, id, nextPres, {
-    actorEmail: authedUser?.email || null,
-  });
+  await updatePresentation(
+    storageScope,
+    id,
+    { published },
+    {
+      actorEmail: authedUser?.email || null,
+    },
+  );
 
   serveJson(res, 200, {
     publishId,
@@ -166,19 +170,21 @@ async function handlePreviewRegenerate(
       ogImageUrl,
     });
 
-    // Update the presentation document
-    const nextPres = {
-      ...pres,
-      published: {
-        ...(pres.published && typeof pres.published === 'object'
-          ? pres.published
-          : {}),
-        ogImageUrl,
-      },
+    // Only the publication column moves, as on publish (B620).
+    const published = {
+      ...(pres.published && typeof pres.published === 'object'
+        ? pres.published
+        : {}),
+      ogImageUrl,
     };
-    await updatePresentation(storageScope, id, nextPres, {
-      actorEmail: authedUser?.email || null,
-    });
+    await updatePresentation(
+      storageScope,
+      id,
+      { published },
+      {
+        actorEmail: authedUser?.email || null,
+      },
+    );
 
     serveJson(res, 200, { ok: true, ogImageUrl });
   } catch (err) {
