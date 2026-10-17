@@ -22,8 +22,11 @@ import {
  * Share-link viewer (public, token-based). Serves the app shell with
  * presentation-specific og: metadata injected for rich link previews.
  *
- * Only a live link unfurls with its deck: a revoked, expired or spent token
- * keeps the shell's generic preview, so pasting a withdrawn link names no deck.
+ * Only a live link without a password unfurls with its deck: a revoked,
+ * expired or spent token keeps the shell's generic preview, so pasting a
+ * withdrawn link names no deck, and so does a link with a password, because
+ * the password is the boundary and the title sits behind it. The viewer gets
+ * the title from `verify`, once the password is given.
  * The fallback description is in the deck's language (`shareLinkDescription`).
  * @param {import('./static-files.js').StaticContext} ctx
  * @returns {Promise<boolean>} true if handled.
@@ -42,8 +45,8 @@ async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
         ),
         shareLink.presentationId,
       );
-      if (pres) {
-        countDeckView('share', pres);
+      if (pres) countDeckView('share', pres);
+      if (pres && !validation.requiresPassword) {
         const proto =
           (req.headers['x-forwarded-proto'] &&
             String(req.headers['x-forwarded-proto']).split(',')[0].trim()) ||
