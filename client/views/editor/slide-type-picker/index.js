@@ -752,9 +752,11 @@ export function createSlideTypePicker({
       currentSurface = '';
 
     if (offeredSurfaces.length >= 2) {
+      // A swatch is a background option by another route: one name per token
+      // (D60), so it reads the `background` field's shared option keys.
       const surfaceLabelFor = (s) =>
         t(
-          `editor.slideTypePicker.surface.${s}`,
+          `editor.slideField.background.option.${s}`,
           { lime: 'Lime', mist: 'Mist', dark: 'Dark' }[s] || s,
         );
       const autoLabel = t(
