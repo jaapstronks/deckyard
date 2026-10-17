@@ -77,6 +77,10 @@ export const SLIDE_COPY = {
     readerSlideCountOne: '{n} dia.',
     readerSlideCountOther: "{n} dia's.",
 
+    // Share-link unfurl: the line under the title when a shared deck is
+    // pasted into chat or mail and the deck has no description of its own.
+    shareLinkDescription: 'Bekijk de presentatie "{title}".',
+
     // A typed relation between two items of a sequence (text-blocks' arrows),
     // named by the relation enum's option `copyKey`.
     relationLeadsTo: 'leidt tot',
@@ -210,6 +214,9 @@ export const SLIDE_COPY = {
     readerViewSlides: 'View the slides',
     readerSlideCountOne: '{n} slide.',
     readerSlideCountOther: '{n} slides.',
+
+    // Share-link unfurl — see the note on the Dutch table above.
+    shareLinkDescription: 'View the presentation "{title}".',
 
     // Relations — see the note on the Dutch table above.
     relationLeadsTo: 'leads to',

@@ -117,6 +117,9 @@ to render. They read the same table, with the document language
 (`resolveDocLangFromPresentation`, which always answers a string) as the key:
 `videoPdf*` in `server/export/pdf-slides.js`, `videoPptx*` in
 `server/export/pptx.js`.
+The share-link unfurl (`server/routes/static/share-viewer.js`) is a third: the
+`og:description` of a deck without a description of its own is
+`shareLinkDescription`, keyed by `resolveDeckLang()`.
 
 They are here rather than in an export-local table on purpose. The PDF strings
 _were_ such a table, and it carried its own `|| nl` fallback — the same accident
