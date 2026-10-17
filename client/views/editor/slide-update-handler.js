@@ -7,6 +7,53 @@ import { toast } from '../../lib/dom/toast.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 
 /**
+ * Merge a refetched deck into the local slides. The server's slide order is
+ * authoritative, so a slide a colleague inserted or moved lands where it
+ * stands on the server, not at the end. Content: the slide this user has
+ * locked keeps its local version; with `modifiedIds` the other slides the
+ * colleague did not touch keep theirs too (they may carry pending local
+ * edits), without it every remote version is adopted. Slides the server no
+ * longer has are dropped.
+ *
+ * @param {Array<Object>} localSlides - The editor's current slides
+ * @param {Array<Object>} remoteSlides - The refetched deck's slides, in order
+ * @param {Object} [opts]
+ * @param {string|null} [opts.lockedSlideId] - Slide locked by this user
+ * @param {string[]} [opts.modifiedIds] - Slides the remote save changed;
+ *   empty or missing means "treat all as changed"
+ * @returns {{ slides: Array<Object>, adoptedIds: Set<string> }} the merged
+ *   slides, and the ids whose remote version was taken over
+ */
+export function mergeRemoteSlides(
+  localSlides,
+  remoteSlides,
+  { lockedSlideId = null, modifiedIds = [] } = {},
+) {
+  const localById = new Map(
+    (localSlides || []).filter((s) => s?.id).map((s) => [s.id, s]),
+  );
+  const modified = new Set(modifiedIds || []);
+  const adoptAll = modified.size === 0;
+  const adoptedIds = new Set();
+  const slides = [];
+  for (const remoteSlide of remoteSlides || []) {
+    if (!remoteSlide?.id) continue;
+    const local = localById.get(remoteSlide.id);
+    const keepLocal =
+      local &&
+      (remoteSlide.id === lockedSlideId ||
+        (!adoptAll && !modified.has(remoteSlide.id)));
+    if (keepLocal) {
+      slides.push(local);
+    } else {
+      slides.push(remoteSlide);
+      adoptedIds.add(remoteSlide.id);
+    }
+  }
+  return { slides, adoptedIds };
+}
+
+/**
  * @param {Object} deps
  * @param {Object} deps.api - API client
  * @param {string} deps.presentationId - Current presentation ID
@@ -76,57 +123,13 @@ export function createSlideUpdateHandler({
 
       const lockedSlideId = getCurrentLockedSlideId();
       const selectedSlideId = getSelectedSlideId();
-      const modifiedIds = new Set(eventData.modifiedSlideIds || []);
-      let selectedSlideWasModified = false;
 
-      // Merge remote slides into local state
-      if (modifiedIds.size > 0) {
-        for (const remoteSlide of remote.slides) {
-          if (!remoteSlide?.id) continue;
-          if (!modifiedIds.has(remoteSlide.id)) continue;
-
-          // Never overwrite the slide the current user has locked
-          if (remoteSlide.id === lockedSlideId) continue;
-
-          const localIdx = pres.slides.findIndex(
-            (s) => s.id === remoteSlide.id,
-          );
-          if (localIdx >= 0) {
-            pres.slides[localIdx] = remoteSlide;
-          }
-          // New slides from remote are handled below via full array sync
-
-          if (remoteSlide.id === selectedSlideId) {
-            selectedSlideWasModified = true;
-          }
-        }
-
-        // Handle new slides added remotely (not in local array)
-        for (const remoteSlide of remote.slides) {
-          if (!remoteSlide?.id) continue;
-          const exists = pres.slides.some((s) => s.id === remoteSlide.id);
-          if (!exists) {
-            pres.slides.push(remoteSlide);
-          }
-        }
-
-        // Handle slides removed remotely (in local but not in remote)
-        const remoteIds = new Set(remote.slides.map((s) => s.id));
-        pres.slides = pres.slides.filter((s) => remoteIds.has(s.id));
-      } else {
-        // No specific modified IDs — replace all slides except the locked one
-        const mergedSlides = remote.slides.map((remoteSlide) => {
-          if (remoteSlide.id === lockedSlideId) {
-            const local = pres.slides.find((s) => s.id === lockedSlideId);
-            return local || remoteSlide;
-          }
-          if (remoteSlide.id === selectedSlideId) {
-            selectedSlideWasModified = true;
-          }
-          return remoteSlide;
-        });
-        pres.slides = mergedSlides;
-      }
+      const merged = mergeRemoteSlides(pres.slides, remote.slides, {
+        lockedSlideId,
+        modifiedIds: eventData.modifiedSlideIds,
+      });
+      pres.slides = merged.slides;
+      const selectedSlideWasModified = merged.adoptedIds.has(selectedSlideId);
 
       // Update presentation metadata
       pres.revision = remote.revision;
