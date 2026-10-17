@@ -12,6 +12,7 @@
 
 import { splitCommentSegments } from '../../../shared/comment-mentions.js';
 import { h } from '../../lib/dom/index.js';
+import { t } from '../../lib/ui-i18n.js';
 
 /**
  * Build DOM nodes for a comment body: mention markers become chips, the rest
@@ -50,4 +51,43 @@ export function renderCommentBodyNodes(body) {
     }
   }
   return nodes;
+}
+
+/**
+ * The name a reader sees for a comment's author. The API sends the author as
+ * `comment.author` (D22) and flags the configured AI identity with `isAi`; an
+ * AI suggestion shows as the assistant whoever posted it.
+ *
+ * @param {Object} comment - A comment in the API shape.
+ * @returns {string}
+ */
+export function commentAuthorName(comment) {
+  if (comment?.commentType === 'ai-suggestion' || comment?.isAi) {
+    return t('comments.aiAuthor', 'AI Assistant');
+  }
+  return comment?.author?.displayName || t('comments.unknownAuthor', 'Unknown');
+}
+
+/**
+ * The start of a comment body as plain text: mentions read as `@Name`, links
+ * as their label, whitespace collapsed, cut at `max` characters with an
+ * ellipsis.
+ *
+ * @param {string} body - Raw comment body (may contain mention/link markup).
+ * @param {number} [max=50]
+ * @returns {string}
+ */
+export function commentExcerpt(body, max = 50) {
+  const text = splitCommentSegments(body)
+    .map((seg) =>
+      seg.type === 'mention'
+        ? `@${seg.name}`
+        : seg.type === 'link'
+          ? seg.label
+          : seg.text,
+    )
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 }

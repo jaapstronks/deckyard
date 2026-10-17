@@ -50,6 +50,7 @@
   "comments.link.message": "Plak een URL. Die wordt als link getoond.",
   "comments.link.messageWithSelection": "\"{text}\" linken naar:",
   "comments.link.short": "Link",
+  "comments.markerLabel": "Reactie van {author}: {excerpt}",
   "comments.originalDeleted": "Originele slide verwijderd",
   "comments.pinCommentLabel": "Reactie",
   "comments.pinModeHint": "Klik op de slide om een reactie te plaatsen",

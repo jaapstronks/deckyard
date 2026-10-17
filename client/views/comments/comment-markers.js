@@ -5,6 +5,8 @@
 
 import { icon as uiIcon } from '../../lib/dom/icons.js';
 import { h } from '../../lib/dom/index.js';
+import { t } from '../../lib/ui-i18n.js';
+import { commentAuthorName, commentExcerpt } from './comment-body.js';
 
 /**
  * Creates comment markers component for a slide preview.
@@ -79,10 +81,16 @@ export function createCommentMarkers({
     const clampedX = Math.max(5, Math.min(95, comment.positionX));
     const clampedY = Math.max(5, Math.min(95, comment.positionY));
 
+    // The pin is icon-only, so the label is both its tooltip and its name.
+    const label = t('comments.markerLabel', 'Comment by {author}: {excerpt}', {
+      author: commentAuthorName(comment),
+      excerpt: commentExcerpt(comment.body),
+    });
     const marker = h('button', {
       class: `comment-marker ${comment.status === 'resolved' ? 'is-resolved' : ''}`,
       type: 'button',
-      title: `${comment.authorName || comment.authorEmail}: ${comment.body.substring(0, 50)}${comment.body.length > 50 ? '...' : ''}`,
+      title: label,
+      'aria-label': label,
       style: `left: ${clampedX}%; top: ${clampedY}%;`,
     });
 
