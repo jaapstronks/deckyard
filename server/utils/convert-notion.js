@@ -32,7 +32,8 @@ const log = createLogger('convert-notion');
  * @param {string} options.lang - Target language ('nl' or 'en-GB' or 'auto')
  * @param {string} options.vendor - LLM vendor ('openai' or 'anthropic')
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
- * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
+ * @param {function} options.onOutline - `(outline, { sections, lang })` once
+ *   the outline is ready (the `generateSlides()` hook)
  * @param {function} options.onGroupDone - ({ done, total }) => void, called as
  *   each section group finishes (real progress, for streaming UIs)
  * @param {AbortSignal} [options.signal] - Cancels the import: it reaches both
@@ -54,7 +55,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     lang = 'auto',
     vendor = null,
     onStatusMessage = null,
-    onOutlineComplete = null,
+    onOutline = null,
     onGroupDone = null,
     signal = null,
     slideTypes,
@@ -146,7 +147,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       sectionCount: richContent.sections.length,
       metadata: report.metadata,
       onStatusMessage,
-      onOutlineComplete,
+      onOutline,
       onGroupDone,
       processedImages,
       richContent, // Pass full content for image/table slide creation
@@ -296,7 +297,7 @@ async function convertWithAi(formattedContent, options = {}) {
     sectionCount = 0,
     metadata = {},
     onStatusMessage = null,
-    onOutlineComplete = null,
+    onOutline = null,
     onGroupDone = null,
     processedImages = [],
     richContent = null,
@@ -332,14 +333,7 @@ async function convertWithAi(formattedContent, options = {}) {
     customSlideTypes,
     themeContext,
     signal,
-    onOutline: (outline, info) => {
-      if (typeof onStatusMessage === 'function') {
-        onStatusMessage('Creating slides...');
-      }
-      if (typeof onOutlineComplete === 'function') {
-        onOutlineComplete(outline, info);
-      }
-    },
+    onOutline,
     onStatusMessage,
     onGroupDone,
     logger,

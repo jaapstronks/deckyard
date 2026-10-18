@@ -26,7 +26,7 @@ const log = createLogger('convert-file');
  * @param {number} [options.slideCount] - Regular slides the model was given.
  * @param {object} [options.metadata] - The file's metadata (`title`, `author`).
  * @param {Function} [options.onStatusMessage]
- * @param {Function} [options.onOutlineComplete] - `(outline, { sections, lang })`
+ * @param {Function} [options.onOutline] - `(outline, { sections, lang })`
  *   once the outline is ready.
  * @param {Function} [options.onGroupDone] - `({ done, total })` per finished group.
  * @param {string|null} [options.firstSlideContent] - The first source slide's
@@ -52,7 +52,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     slideCount = 0,
     metadata = {},
     onStatusMessage = null,
-    onOutlineComplete = null,
+    onOutline = null,
     onGroupDone = null,
     firstSlideContent = null,
     imageOnlySlides = [],
@@ -87,7 +87,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     customSlideTypes,
     themeContext,
     signal,
-    onOutline: onOutlineComplete,
+    onOutline,
     onStatusMessage,
     onGroupDone,
     logger,
