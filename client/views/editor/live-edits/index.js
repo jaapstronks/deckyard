@@ -332,6 +332,20 @@ export function initEditorLiveEdits({
     projectLanguage(lang) {
       return ready ? binder.projectLanguage(lang) : null;
     },
+    /**
+     * Write a text of a language version that is not the active one into
+     * the doc (B762). False before first sync: the doc is not there yet to
+     * hold it.
+     */
+    writeVersionText(lang, slideId, path, value) {
+      if (destroyed || !ready) return false;
+      const ok = binder.writeVersionText(lang, slideId, path, value);
+      if (ok) {
+        everEdited = true;
+        updateStatus();
+      }
+      return ok;
+    },
     isReady: () => ready,
     detach() {
       if (destroyed) return;

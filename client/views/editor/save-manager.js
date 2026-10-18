@@ -374,6 +374,11 @@ export function createSaveManager({
    * Mark the presentation as dirty (needs saving).
    * @param {Object} [opts] - Options
    * @param {string} [opts.slideId] - ID of the slide that was modified (for merge tracking)
+   * @param {boolean} [opts.noActiveSlide] - the edit went into a language
+   *   version other than the active one (B762). It claims no slide: the
+   *   slide-level merge compares active slides only, so claiming one would
+   *   turn a collaborator's edit of the active text into a false conflict.
+   *   The whole `i18n.versions` travels with the PUT either way.
    */
   const markDirty = (opts = {}) => {
     const wasDirty = dirty;
@@ -383,7 +388,9 @@ export function createSaveManager({
     lastEditTime = Date.now();
 
     // Track which slide was modified for slide-level merge
-    const slideId = opts?.slideId || getSelectedSlideId?.();
+    const slideId = opts?.noActiveSlide
+      ? null
+      : opts?.slideId || getSelectedSlideId?.();
     if (slideId) {
       modifiedSlideIds.set(slideId, editVersion);
     }
@@ -662,6 +669,12 @@ export function createSaveManager({
     isSaving: () => saving,
     rebaseServerTruth,
     adoptServerSlide,
+    /**
+     * Mirror the active version's slide structure into every other version
+     * now instead of at the next save, so a write into another version finds
+     * the slide and item it addresses (B762).
+     */
+    syncVersionStructure: syncOtherLanguageStructureForSave,
     getLastError: () => lastError,
     getStatus,
     isBlockedByConflict: () => blockedByConflict,

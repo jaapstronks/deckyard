@@ -32,27 +32,47 @@ function buildSlideIndex(slides) {
   return { arr, byId };
 }
 
-/**
- * Scan one language version against another and list the text that is present
- * in the source but empty in the target.
- *
- * Walks the deck title plus every per-language field and item text, at every
- * nesting level — the same walk the translation merge uses, so a deck whose
- * only untranslated prose sits in `rows[].blocks[]` is not reported complete.
- *
- * @param {Object} [args]
- * @param {{title?: string, slides?: any[]}} [args.source] - the version read from
- * @param {{title?: string, slides?: any[]}} [args.target] - the version written to
- * @returns {{missingCount: number, missing: Array<Object>}}
- */
-export function computeMissingTranslation({ source, target } = {}) {
-  const srcTitle = source?.title;
-  const tgtTitle = target?.title;
-  const missing = [];
+const textOf = (v) => (typeof v === 'string' ? v : '');
 
-  if (isNonEmptyString(srcTitle) && !isNonEmptyString(tgtTitle)) {
-    missing.push({ kind: 'deck', key: 'title' });
-  }
+/**
+ * Every translatable text of a deck, as rows that pair a source version with
+ * a target version: the deck title, then per slide each per-language field
+ * and each item text, at every nesting level.
+ *
+ * This is the one walk over "the text of a deck in two languages". The
+ * missing-translation scan is a filter on it, and the translation view lists
+ * its rows, so the two cannot disagree on which fields exist (B762). A target
+ * slide is matched by id, else by index; an item by index, the same per-index
+ * match `mapItemTexts` makes for the merge. Structure follows the source: an
+ * item only the target carries has no row.
+ *
+ * `path` is relative to the slide's `content` (`['title']`,
+ * `['items', 1, 'title']`); the deck title row has `path: ['title']` and no
+ * `slideId`. `source` and `target` are the stored strings, `''` where a
+ * version holds none.
+ *
+ * @param {{title?: string, slides?: any[]}} [source] - the version read from
+ * @param {{title?: string, slides?: any[]}} [target] - the version written to
+ * @param {Object} [opts]
+ * @param {Object} [opts.slideTypes] - slide-type registry (forks, tests and
+ *   DB-backed custom types); omitted falls back to the core registry
+ * @returns {Array<{kind: 'deck'|'slide', slideId: string|null,
+ *   slideIndex: number|null, type: string, key: string,
+ *   path: Array<string|number>, source: string, target: string}>}
+ */
+export function slideTextRows(source, target, { slideTypes } = {}) {
+  const rows = [
+    {
+      kind: 'deck',
+      slideId: null,
+      slideIndex: null,
+      type: '',
+      key: 'title',
+      path: ['title'],
+      source: textOf(source?.title),
+      target: textOf(target?.title),
+    },
+  ];
 
   const srcIdx = buildSlideIndex(source?.slides);
   const tgtIdx = buildSlideIndex(target?.slides);
@@ -61,7 +81,7 @@ export function computeMissingTranslation({ source, target } = {}) {
     const s = srcIdx.arr[i];
     if (!s || typeof s !== 'object') continue;
     const type = typeof s.type === 'string' ? s.type : '';
-    const spec = textFieldSpecForType(type);
+    const spec = textFieldSpecForType(type, slideTypes);
 
     const srcContent =
       s.content && typeof s.content === 'object' ? s.content : {};
@@ -73,53 +93,68 @@ export function computeMissingTranslation({ source, target } = {}) {
     const tgtContent =
       t?.content && typeof t.content === 'object' ? t.content : {};
     const slideId = typeof s.id === 'string' ? s.id : '';
+    const row = (path, sv, tv) => ({
+      kind: 'slide',
+      slideId,
+      slideIndex: i,
+      type,
+      key: path[path.length - 1],
+      path,
+      source: textOf(sv),
+      target: textOf(tv),
+    });
 
     // An undeclared string counts too: it is prose the type never declared
-    // (a renamed key, a retired type), and prose the target version lacks is
-    // a missing translation like any other (D79).
-    const perLang = perLanguageKeys(spec, srcContent, tgtContent);
-    if (!perLang.size && !spec.items.size) continue;
-
-    for (const k of perLang) {
-      const sv = srcContent[k];
-      const tv = tgtContent[k];
-      if (isNonEmptyString(sv) && !isNonEmptyString(tv)) {
-        missing.push({
-          kind: 'slide',
-          slideId,
-          slideIndex: i,
-          type,
-          key: k,
-          path: [k],
-        });
-      }
+    // (a renamed key, a retired type), and prose is translated like any
+    // other (D79).
+    for (const k of perLanguageKeys(spec, srcContent, tgtContent)) {
+      rows.push(row([k], srcContent[k], tgtContent[k]));
     }
 
     // Item texts, at every nesting level. `mapItemTexts` is the same walk the
-    // merge uses; a scan records paths and returns `undefined`, so the array
+    // merge uses; here it records paths and returns `undefined`, so the array
     // it rebuilds is thrown away.
     for (const [arrKey, itemSpec] of spec.items) {
       if (!Array.isArray(srcContent[arrKey])) continue;
       mapItemTexts(srcContent[arrKey], itemSpec, {
         path: [arrKey],
         resolve: (path, srcValue) => {
-          const tv = valueAtPath(tgtContent, path);
-          if (isNonEmptyString(srcValue) && !isNonEmptyString(tv)) {
-            missing.push({
-              kind: 'slide',
-              slideId,
-              slideIndex: i,
-              type,
-              key: path[path.length - 1],
-              path,
-            });
-          }
+          rows.push(row(path, srcValue, valueAtPath(tgtContent, path)));
           return undefined;
         },
       });
     }
   }
 
+  return rows;
+}
+
+/**
+ * Scan one language version against another and list the text that is present
+ * in the source but empty in the target.
+ *
+ * A filter on {@link slideTextRows}: the rows whose source is filled and whose
+ * target is empty. A deck whose only untranslated prose sits in
+ * `rows[].blocks[]` is therefore not reported complete, and the translation
+ * view shows exactly the fields this counts.
+ *
+ * @param {Object} [args]
+ * @param {{title?: string, slides?: any[]}} [args.source] - the version read from
+ * @param {{title?: string, slides?: any[]}} [args.target] - the version written to
+ * @param {Object} [args.slideTypes] - slide-type registry, as for {@link slideTextRows}
+ * @returns {{missingCount: number, missing: Array<Object>}}
+ */
+export function computeMissingTranslation({ source, target, slideTypes } = {}) {
+  const missing = [];
+  for (const r of slideTextRows(source, target, { slideTypes })) {
+    if (!isNonEmptyString(r.source) || isNonEmptyString(r.target)) continue;
+    if (r.kind === 'deck') {
+      missing.push({ kind: 'deck', key: r.key });
+      continue;
+    }
+    const { kind, slideId, slideIndex, type, key, path } = r;
+    missing.push({ kind, slideId, slideIndex, type, key, path });
+  }
   return {
     missingCount: missing.length,
     missing,
