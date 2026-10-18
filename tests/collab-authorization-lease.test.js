@@ -150,3 +150,22 @@ test('lease: dispose() drops held messages and stops gating', async () => {
   connection.send('close');
   assert.deepEqual(sent, ['close']);
 });
+
+test('lease: dispose() cancels the deadline of a running check', (t) => {
+  const timeouts = t.mock.method(globalThis, 'setTimeout');
+  const clears = t.mock.method(globalThis, 'clearTimeout');
+  const { connection, lease, clock } = setup();
+  clock.t += TTL;
+  connection.send('held');
+  assert.equal(
+    timeouts.mock.callCount(),
+    1,
+    'the running check has a deadline',
+  );
+  const deadline = timeouts.mock.calls[0].result;
+  lease.dispose();
+  assert.ok(
+    clears.mock.calls.some((call) => call.arguments[0] === deadline),
+    'the deadline is cleared with the connection, not left for the lease length',
+  );
+});

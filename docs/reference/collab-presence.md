@@ -53,7 +53,11 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
   rejects cookieless upgrades with a real HTTP 401. Per-document authorization
   happens on connect (`documentName` = `presentation:<id>`) through the
   presentation service the REST routes use, and **only a user who may write
-  the deck connects**. The Y.Doc is the author's document (it carries the AI
+  the deck connects**. One socket carries several documents, and each new one
+  starts from a copy of the upgrade context, so connecting resolves the user
+  from the cookie again (`authorizeConnection`, the same decision as a lease
+  renewal): a session revoked or a membership lost since the upgrade opens no
+  further deck. The Y.Doc is the author's document (it carries the AI
   review notes per slide, which every read route strips) and each sync hands
   all of it over, so a read-only connection would be no boundary; viewers,
   commenters and guests use the filtered HTTP routes, and the client only
@@ -138,5 +142,8 @@ collaborators route is disconnected at once, and an editor who loses the right
 another way (collaborator row, ownership transfer) and then only listens
 receives nothing written after the lease ran out. The organization-membership
 path needs multi-organization mode and has its own file,
-`tests/collab-lease-membership.test.js`; the lease itself is unit-tested with a
+`tests/collab-lease-membership.test.js`: a removed member stops receiving, a
+removed member or a revoked session opens no further deck on the socket it
+still has while a member who stays does, and a first sync that waits on a
+slow load past the lease goes through a fresh check. The lease itself is unit-tested with a
 fake clock in `tests/collab-authorization-lease.test.js`.

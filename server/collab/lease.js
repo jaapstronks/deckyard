@@ -30,8 +30,9 @@
  * @property {() => Promise<boolean>} check - Withdraw the lease and check
  *   again now: for a revocation that is known to have just happened. Messages
  *   wait until it succeeds.
- * @property {() => void} dispose - Stop gating and drop held messages; called
- *   when the connection closes.
+ * @property {() => void} dispose - Stop gating, drop held messages and
+ *   cancel the deadline of a running check; called when the connection
+ *   closes.
  */
 
 /**
@@ -58,6 +59,9 @@ export function attachAuthorizationLease(
   let held = [];
   let pending = null;
   let ended = false;
+  // Deadlines of running checks, cleared when the check settles or the
+  // connection closes.
+  const deadlines = new Set();
   // A forced check supersedes the checks before it: one that started before
   // a revocation must not renew the lease after it.
   let generation = 0;
@@ -83,6 +87,7 @@ export function attachAuthorizationLease(
         ttlMs,
       );
       timer.unref?.();
+      deadlines.add(timer);
     });
     return Promise.race([authorize(), deadline])
       .then(
@@ -91,6 +96,7 @@ export function attachAuthorizationLease(
       )
       .then((ok) => {
         clearTimeout(timer);
+        deadlines.delete(timer);
         if (ended) return false;
         if (round !== generation) return renew();
         if (!ok) {
@@ -143,6 +149,8 @@ export function attachAuthorizationLease(
     dispose() {
       ended = true;
       held = [];
+      for (const timer of deadlines) clearTimeout(timer);
+      deadlines.clear();
     },
   };
 }

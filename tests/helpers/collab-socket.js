@@ -127,22 +127,60 @@ export async function connectAs(url, deckId, cookie) {
       if (!silent) super.send(data);
     }
   }
-  const events = { authenticated: false, denied: false, closes: 0 };
+  const events = newEvents();
   const provider = new HocuspocusProvider({
     url,
     name: `presentation:${deckId}`,
     WebSocketPolyfill: CookieWebSocket,
-    onAuthenticated: () => {
-      events.authenticated = true;
-    },
-    onAuthenticationFailed: () => {
-      events.denied = true;
-    },
-    onClose: () => {
-      events.closes += 1;
-    },
+    ...recordInto(events),
   });
   provider.awareness.setLocalState({ view: null });
+  return {
+    ...observe(Y, provider, events),
+    silence: () => {
+      silent = true;
+    },
+  };
+}
+
+/**
+ * Open a further deck on a connected client's socket, the way Hocuspocus
+ * multiplexes documents: no new upgrade, so nothing on the wire tells the
+ * server whether the socket's original authentication still holds.
+ *
+ * @param {{ provider: Object }} client - a client from `connectAs`
+ * @param {string} deckId
+ */
+export async function openOnSocket(client, deckId) {
+  const { Y, HocuspocusProvider } =
+    await import('../../client/vendor/collab.js');
+  const events = newEvents();
+  const provider = new HocuspocusProvider({
+    websocketProvider: client.provider.configuration.websocketProvider,
+    name: `presentation:${deckId}`,
+    ...recordInto(events),
+  });
+  provider.attach();
+  return observe(Y, provider, events);
+}
+
+const newEvents = () => ({ authenticated: false, denied: false, closes: 0 });
+
+/** Provider callbacks that record what the server answered. */
+const recordInto = (events) => ({
+  onAuthenticated: () => {
+    events.authenticated = true;
+  },
+  onAuthenticationFailed: () => {
+    events.denied = true;
+  },
+  onClose: () => {
+    events.closes += 1;
+  },
+});
+
+/** What a test reads from, and does with, one provider. */
+function observe(Y, provider, events) {
   return {
     provider,
     events,
@@ -150,9 +188,6 @@ export async function connectAs(url, deckId, cookie) {
     holds: (marker = NOTE) =>
       Buffer.from(Y.encodeStateAsUpdate(provider.document)).includes(marker),
     hasDeck: () => provider.document.getMap('meta').get('extra') !== undefined,
-    silence: () => {
-      silent = true;
-    },
     /** Append `marker` to the first slide's reasoning, as an editor would. */
     writeNote(marker) {
       const slide = provider.document.getArray('slides').get(0);

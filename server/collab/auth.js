@@ -117,27 +117,32 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
 }
 
 /**
- * Authorize an open connection again, for its lease (`lease.js`). The user
- * is resolved from the connection's cookie anew rather than reused from the
- * upgrade, so a revoked session, a lost organization membership or a changed
- * organization role counts, not only a change on the deck.
+ * Authorize a connection on a collab document: on every document it opens
+ * (`onConnect`) and on every lease renewal (`lease.js`), through this one
+ * decision. The user is resolved from the connection's cookie anew rather
+ * than reused from the upgrade: Hocuspocus multiplexes documents over one
+ * socket and hands each new one a copy of the upgrade context, so a session
+ * revoked or an organization membership lost since then must count when the
+ * next document opens, not only a change on the deck.
  *
  * @param {Object} opts
  * @param {string} opts.repoRoot
  * @param {string} opts.documentName - `presentation:<id>`
  * @param {{ user?: Object, cookie?: string }} opts.context - the
- *   connection's context
- * @returns {Promise<Object>} the user as resolved now
+ *   connection's context; `user` is the identity of the upgrade, which the
+ *   cookie must still resolve to
+ * @returns {Promise<{ user: Object, organizationId: string|null }>} the user
+ *   as resolved now, and the deck's organization
  * @throws {UnauthorizedError|ForbiddenError|NotFoundError}
  */
-export async function reauthorizeConnection({
-  repoRoot,
-  documentName,
-  context,
-}) {
+export async function authorizeConnection({ repoRoot, documentName, context }) {
   const user = await authenticateCookie(context?.cookie || '');
   if (!user?.email || user.email !== context?.user?.email)
     throw new UnauthorizedError();
-  await authorizeDocument({ repoRoot, documentName, user });
-  return user;
+  const { organizationId } = await authorizeDocument({
+    repoRoot,
+    documentName,
+    user,
+  });
+  return { user, organizationId };
 }

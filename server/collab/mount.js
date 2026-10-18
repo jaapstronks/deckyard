@@ -78,7 +78,7 @@ export async function maybeAttachCollab(
 
   // A collab document belongs to exactly one deck, and therefore to exactly one
   // organization. The persistence hooks run outside any request, so they cannot
-  // resolve it themselves — onConnect records it here (authorizeDocument has the
+  // resolve it themselves — onConnect records it here (its authorization has the
   // deck in hand) and the hooks read it back. Cleared when the document unloads.
   const documentOrganizations = new Map();
   const documentScope = (documentName) => ({
@@ -107,11 +107,11 @@ export async function maybeAttachCollab(
       ttlMs: leaseMs,
       authorizedAt: context.authorizedAt ?? 0,
       authorize: async () => {
-        context.user = await authz.reauthorizeConnection({
+        ({ user: context.user } = await authz.authorizeConnection({
           repoRoot,
           documentName: connection.document.name,
           context,
-        });
+        }));
       },
       onRefused: () => connection.close(FORBIDDEN_CLOSE),
     });
@@ -124,18 +124,23 @@ export async function maybeAttachCollab(
     quiet: true,
     // Debounce document stores (ADR 001 §5); flushed on last disconnect.
     ...(liveEdits ? { debounce: 2000, maxDebounce: 10000 } : {}),
-    // Per-document authorization. The user was already authenticated on the
-    // upgrade (see below) and rides in via the connection context. Only a
-    // writer connects (auth.js); the stamp starts the connection's lease.
+    // Per-document authorization, for every document a socket opens. The
+    // upgrade authenticated the socket (see below), but Hocuspocus gives each
+    // new document a copy of that upgrade context, so the user is resolved
+    // from the cookie again here, the same decision as a lease renewal: an
+    // identity lost since the upgrade opens nothing. Only a writer connects
+    // (auth.js). The stamp, taken before the check like a renewal's, starts
+    // the connection's lease.
     async onConnect({ documentName, context }) {
-      const { organizationId } = await authz.authorizeDocument({
+      const authorizedAt = Date.now();
+      const { user, organizationId } = await authz.authorizeConnection({
         repoRoot,
         documentName,
-        user: context?.user,
+        context,
       });
       if (organizationId)
         documentOrganizations.set(documentName, organizationId);
-      return { authorizedAt: Date.now() };
+      return { user, authorizedAt };
     },
     // Attach the lease as soon as the connection exists. Whichever of these
     // two runs first does it: Hocuspocus hands queued messages over before
