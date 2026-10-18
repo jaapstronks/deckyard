@@ -51,9 +51,9 @@ const log = createLogger('collaborators');
 /**
  * Close the open collab connections on a deck whose user lost write
  * permission (B767): the socket syncs the unfiltered author document, so a
- * removed or demoted editor must not keep it until the connection's periodic
- * re-authorization. Lazy, so installs without collab never load the module;
- * a failure only delays the close to that periodic check.
+ * removed or demoted editor must not keep it until the connection's
+ * authorization lease runs out. Lazy, so installs without collab never load
+ * the module; a failure only leaves the close to that lease.
  *
  * @param {string} presentationId
  * @returns {Promise<void>}

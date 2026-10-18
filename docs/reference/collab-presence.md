@@ -49,7 +49,7 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
   mount. Off-flag installs never load the module (lazy import) and register
   no upgrade handler. `server/collab/mount.js`.
 - **Auth**: the `sb_session` cookie rides on the WebSocket upgrade;
-  `authenticateUpgradeRequest` resolves it with the regular auth module and
+  `authenticateCookie` resolves it with the regular auth module and
   rejects cookieless upgrades with a real HTTP 401. Per-document authorization
   happens on connect (`documentName` = `presentation:<id>`) through the
   presentation service the REST routes use, and **only a user who may write
@@ -57,11 +57,18 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
   review notes per slide, which every read route strips) and each sync hands
   all of it over, so a read-only connection would be no boundary; viewers,
   commenters and guests use the filtered HTTP routes, and the client only
-  opens the socket from the editor. Write permission is checked again on the
-  first message after `COLLAB_REAUTHORIZE_MS` (10 s), and at once when the
-  collaborators route removes or demotes a collaborator
-  (`revalidateCollabAccess`); a connection that fails closes.
-  `server/collab/auth.js`, `server/collab/mount.js`.
+  opens the socket from the editor. Write permission can end while a socket
+  stays open, so each connection holds an **authorization lease** of
+  `COLLAB_AUTHORIZATION_LEASE_MS` (10 s): once it runs out, every message to or
+  from the connection waits until a fresh check passes, whether the client
+  sends anything or not. The check resolves the user from the connection's
+  cookie again (session version, organization membership) and asks the
+  presentation service for write permission; a refusal closes the connection
+  and drops the held messages. A lost right therefore stops the document
+  reaching that user at most 10 s after the last successful check. The
+  collaborators route withdraws the leases on the deck at once when it removes
+  or demotes a collaborator (`revalidateCollabAccess`).
+  `server/collab/auth.js`, `server/collab/lease.js`, `server/collab/mount.js`.
 - **Client session**: `client/views/editor/live-edits/presence-session.js` wraps
   `HocuspocusProvider` (from the vendored bundle) and exposes
   `setViewSlide`, `setFocusField`, `getPeers`, `onPeersChange`. Awareness
@@ -126,6 +133,10 @@ traffic.
 `tests/collab-writer-only-sync.test.js` holds the access boundary over real
 session cookies with live edits on: the owner and an edit collaborator receive
 the AI review notes, a view collaborator is refused both while the document is
-loaded and when it opens from a stored binary, and an editor who loses write
-permission is disconnected, at once through the collaborator storage and on
-the next message after the re-authorization interval otherwise.
+loaded and when it opens from a stored binary, an editor demoted through the
+collaborators route is disconnected at once, and an editor who loses the right
+another way (collaborator row, ownership transfer) and then only listens
+receives nothing written after the lease ran out. The organization-membership
+path needs multi-organization mode and has its own file,
+`tests/collab-lease-membership.test.js`; the lease itself is unit-tested with a
+fake clock in `tests/collab-authorization-lease.test.js`.

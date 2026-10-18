@@ -31,26 +31,36 @@ import {
 export const COLLAB_DOC_PREFIX = 'presentation:';
 
 /**
- * How long a connection's authorization holds before its next message
- * checks it again. Write permission can end while the socket stays open
- * (a collaborator removed or demoted, an organization left); the client
- * renews its awareness state about every 15 s, so a lost permission closes
- * the connection within about half a minute even when nobody types.
+ * How long a connection's authorization holds (`lease.js`). Write permission
+ * can end while the socket stays open; after this long, nothing more goes
+ * out to the connection until a fresh check has passed, whether the client
+ * sends anything or not. So a lost permission stops the document reaching a
+ * user at most this long after the last successful check.
  */
-export const COLLAB_REAUTHORIZE_MS = 10_000;
+export const COLLAB_AUTHORIZATION_LEASE_MS = 10_000;
 
 /**
- * Resolve the user from a WebSocket upgrade request.
- * crossws hands us a WHATWG-style Request proxy; auth.js expects a node-style
- * req with `headers.cookie`, so shim the one header it reads.
+ * The cookie header of a WebSocket upgrade request.
+ * crossws hands us a WHATWG-style Request proxy.
  *
  * @param {Request} request - upgrade request (crossws NodeReqProxy)
+ * @returns {string}
+ */
+export function upgradeCookie(request) {
+  return request?.headers?.get?.('cookie') || '';
+}
+
+/**
+ * Resolve the user from a cookie header, the way every REST request does:
+ * session signature and version, and in multi-organization mode the
+ * membership the session acts in. auth.js expects a node-style req, so shim
+ * the one header it reads.
+ *
+ * @param {string} cookie
  * @returns {Promise<Object|null>} user object or null when unauthenticated
  */
-export async function authenticateUpgradeRequest(request) {
-  const cookie = request?.headers?.get?.('cookie') || '';
-  const shim = { headers: { cookie } };
-  const user = await getUserFromRequestAsync(shim);
+export async function authenticateCookie(cookie) {
+  const user = await getUserFromRequestAsync({ headers: { cookie } });
   return user || null;
 }
 
@@ -104,4 +114,30 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
     presentationId,
     organizationId: pres.organizationId ?? null,
   };
+}
+
+/**
+ * Authorize an open connection again, for its lease (`lease.js`). The user
+ * is resolved from the connection's cookie anew rather than reused from the
+ * upgrade, so a revoked session, a lost organization membership or a changed
+ * organization role counts, not only a change on the deck.
+ *
+ * @param {Object} opts
+ * @param {string} opts.repoRoot
+ * @param {string} opts.documentName - `presentation:<id>`
+ * @param {{ user?: Object, cookie?: string }} opts.context - the
+ *   connection's context
+ * @returns {Promise<Object>} the user as resolved now
+ * @throws {UnauthorizedError|ForbiddenError|NotFoundError}
+ */
+export async function reauthorizeConnection({
+  repoRoot,
+  documentName,
+  context,
+}) {
+  const user = await authenticateCookie(context?.cookie || '');
+  if (!user?.email || user.email !== context?.user?.email)
+    throw new UnauthorizedError();
+  await authorizeDocument({ repoRoot, documentName, user });
+  return user;
 }

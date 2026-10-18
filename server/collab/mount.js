@@ -45,18 +45,31 @@ export function getActiveHocuspocus() {
  * No-op (returns null) when COLLAB_ENABLED is off.
  *
  * @param {import('node:http').Server} server
- * @param {{ repoRoot: string }} opts
+ * @param {Object} opts
+ * @param {string} opts.repoRoot
+ * @param {number} [opts.authorizationLeaseMs] - How long a connection's
+ *   authorization holds; `COLLAB_AUTHORIZATION_LEASE_MS` unless a test
+ *   shortens it.
  * @returns {Promise<Object|null>} the Hocuspocus instance, or null
  */
-export async function maybeAttachCollab(server, { repoRoot }) {
+export async function maybeAttachCollab(
+  server,
+  { repoRoot, authorizationLeaseMs },
+) {
   if (!isCollabEnabled()) return null;
   if (active) return active.hocuspocus;
 
   // Lazy imports so disabled installs never load the dependency tree.
-  const [{ Hocuspocus }, { default: crossws }, authz] = await Promise.all([
+  const [
+    { Hocuspocus },
+    { default: crossws },
+    authz,
+    { attachAuthorizationLease },
+  ] = await Promise.all([
     import('@hocuspocus/server'),
     import('crossws/adapters/node'),
     import('./auth.js'),
+    import('./lease.js'),
   ]);
 
   // Phase 2 (COLLAB_LIVE_EDITS): document persistence. Without the flag the
@@ -79,13 +92,41 @@ export async function maybeAttachCollab(server, { repoRoot }) {
     persistence = createCollabPersistence({ repoRoot, documentScope });
   }
 
+  // Write permission can end while a socket stays open, so each connection
+  // sends behind an authorization lease (lease.js): once it runs out, the next
+  // message in either direction waits for a fresh check, and a refusal closes
+  // the connection. The check reads the session cookie again, so a revoked
+  // session or a lost organization membership counts as well.
+  const leaseMs = authorizationLeaseMs ?? authz.COLLAB_AUTHORIZATION_LEASE_MS;
+  const leases = new WeakMap();
+  const leaseOf = (connection) => {
+    let lease = leases.get(connection);
+    if (lease) return lease;
+    const { context } = connection;
+    lease = attachAuthorizationLease(connection, {
+      ttlMs: leaseMs,
+      authorizedAt: context.authorizedAt ?? 0,
+      authorize: async () => {
+        context.user = await authz.reauthorizeConnection({
+          repoRoot,
+          documentName: connection.document.name,
+          context,
+        });
+      },
+      onRefused: () => connection.close(FORBIDDEN_CLOSE),
+    });
+    leases.set(connection, lease);
+    connection.onClose(() => lease.dispose());
+    return lease;
+  };
+
   const hocuspocus = new Hocuspocus({
     quiet: true,
     // Debounce document stores (ADR 001 §5); flushed on last disconnect.
     ...(liveEdits ? { debounce: 2000, maxDebounce: 10000 } : {}),
     // Per-document authorization. The user was already authenticated on the
     // upgrade (see below) and rides in via the connection context. Only a
-    // writer connects (auth.js); the returned stamp lands in the context.
+    // writer connects (auth.js); the stamp starts the connection's lease.
     async onConnect({ documentName, context }) {
       const { organizationId } = await authz.authorizeDocument({
         repoRoot,
@@ -96,23 +137,17 @@ export async function maybeAttachCollab(server, { repoRoot }) {
         documentOrganizations.set(documentName, organizationId);
       return { authorizedAt: Date.now() };
     },
-    // Write permission can end while the socket stays open. Once the stamp
-    // is older than COLLAB_REAUTHORIZE_MS, the next message checks it again;
-    // a throw makes Hocuspocus close the connection before the message
-    // applies. `revalidateCollabAccess` does the same at once for the
-    // revocations the collaborators route makes.
-    async beforeHandleMessage({ documentName, context }) {
-      if (
-        Date.now() - (context.authorizedAt || 0) <
-        authz.COLLAB_REAUTHORIZE_MS
-      )
-        return;
-      await authz.authorizeDocument({
-        repoRoot,
-        documentName,
-        user: context?.user,
-      });
-      context.authorizedAt = Date.now();
+    // Attach the lease as soon as the connection exists. Whichever of these
+    // two runs first does it: Hocuspocus hands queued messages over before
+    // it calls `connected`.
+    async connected({ connection }) {
+      leaseOf(connection);
+    },
+    async beforeHandleMessage({ connection }) {
+      // A throw makes Hocuspocus close the connection before the message
+      // applies; the refusal has closed it already.
+      if (!(await leaseOf(connection).renew()))
+        throw Object.assign(new Error('Forbidden'), FORBIDDEN_CLOSE);
     },
     ...persistence,
   });
@@ -122,15 +157,18 @@ export async function maybeAttachCollab(server, { repoRoot }) {
       // Runs during the HTTP upgrade, before the socket is established:
       // authenticate the session cookie or reject with a real 401 response.
       async upgrade(request) {
-        const user = await authz.authenticateUpgradeRequest(request);
+        const cookie = authz.upgradeCookie(request);
+        const user = await authz.authenticateCookie(cookie);
         if (!user) return new Response('Unauthorized', { status: 401 });
-        return { context: { user } };
+        // The cookie stays with the connection: every lease renewal resolves
+        // the user from it again.
+        return { context: { user, cookie } };
       },
       open(peer) {
         peer._hocuspocus = hocuspocus.handleConnection(
           peer.websocket,
           peer.request,
-          { user: peer.context?.user },
+          { user: peer.context?.user, cookie: peer.context?.cookie },
         );
       },
       message(peer, message) {
@@ -170,7 +208,7 @@ export async function maybeAttachCollab(server, { repoRoot }) {
     });
   });
 
-  active = { hocuspocus, ws, authz, repoRoot };
+  active = { hocuspocus, ws, authz, leaseOf };
   log.info(
     `${liveEdits ? 'presence + live-edits' : 'presence'} endpoint mounted at ${COLLAB_PATH}`,
   );
@@ -181,7 +219,8 @@ export async function maybeAttachCollab(server, { repoRoot }) {
  * Check every open connection on a deck's collab document again and close
  * the ones whose user may no longer write it. Called when a collaborator is
  * removed or their permission changes, so a demoted editor stops receiving
- * the author document now instead of at the next periodic check.
+ * the author document now instead of when their lease runs out: each lease
+ * is withdrawn first, so nothing goes out while the checks run.
  * No-op when collab isn't mounted or the document isn't loaded.
  *
  * @param {string} presentationId
@@ -189,25 +228,15 @@ export async function maybeAttachCollab(server, { repoRoot }) {
  */
 export async function revalidateCollabAccess(presentationId) {
   if (!active) return 0;
-  const { hocuspocus, authz, repoRoot } = active;
-  const documentName = `${authz.COLLAB_DOC_PREFIX}${presentationId}`;
-  const document = hocuspocus.documents.get(documentName);
+  const { hocuspocus, authz, leaseOf } = active;
+  const document = hocuspocus.documents.get(
+    `${authz.COLLAB_DOC_PREFIX}${presentationId}`,
+  );
   if (!document) return 0;
-  let closed = 0;
-  for (const connection of document.getConnections()) {
-    try {
-      await authz.authorizeDocument({
-        repoRoot,
-        documentName,
-        user: connection.context?.user,
-      });
-      connection.context.authorizedAt = Date.now();
-    } catch {
-      connection.close(FORBIDDEN_CLOSE);
-      closed += 1;
-    }
-  }
-  return closed;
+  const results = await Promise.all(
+    document.getConnections().map((connection) => leaseOf(connection).check()),
+  );
+  return results.filter((ok) => !ok).length;
 }
 
 /** Close all collab connections (graceful shutdown). */
