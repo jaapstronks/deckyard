@@ -24,7 +24,9 @@ import { fileURLToPath } from 'node:url';
  * reason — deliberately narrow, never a broad regex.
  *
  * `docs/plans/` is gitignored working-docs and is excluded (git ls-files does not
- * list it anyway).
+ * list it anyway). `test-suite/runs/` is excluded too: each report is frozen
+ * AI-suite judge output that quotes what a generated deck claimed in that run,
+ * so its counts are evidence, not prose about the current registry.
  */
 
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -77,13 +79,10 @@ const ALLOWLIST = [
     file: 'CHANGELOG.md',
     contains: 'typed slide types with a shared schema',
   },
-  {
-    // Frozen AI-suite judge output records what a generated deck claimed in
-    // this run. Rewriting it to the current count would corrupt the evidence.
-    file: 'test-suite/runs/2026-10-04_17-14-30/report.md',
-    contains: "The stray 'mist' fragment at the bottom",
-  },
 ];
+
+/** Folders whose Markdown is never prose about the current count (see above). */
+const EXCLUDED_DIRS = ['docs/plans/', 'test-suite/runs/'];
 
 function trackedMarkdownFiles() {
   return execFileSync('git', ['ls-files', '*.md'], {
@@ -92,7 +91,7 @@ function trackedMarkdownFiles() {
   })
     .split('\n')
     .filter(Boolean)
-    .filter((f) => !f.startsWith('docs/plans/'));
+    .filter((f) => !EXCLUDED_DIRS.some((dir) => f.startsWith(dir)));
 }
 
 function isAllowlisted(file, line) {
