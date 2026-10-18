@@ -2,11 +2,13 @@
  * The share-link unfurl: what `/s/:token` puts in the head for a chat or mail
  * client that previews the link.
  *
- * Two promises are pinned. A link that no longer opens (revoked, expired,
+ * Three promises are pinned. A link that no longer opens (revoked, expired,
  * spent) unfurls with the shell's generic preview, so pasting a withdrawn link
- * does not name the deck it used to open. And a deck without a description of
- * its own gets the fallback line in its own language, not a Dutch sentence on
- * an English deck.
+ * does not name the deck it used to open. A link with a password unfurls the
+ * same way: the password is the boundary, and the title is handed over by
+ * `verify` once it is given. And a deck without a description of its own gets
+ * the fallback line in its own language, not a Dutch sentence on an English
+ * deck.
  *
  * Route-level, in the house shape: the exported handler over a req/res double
  * and `tests/helpers/fake-db.js`.
@@ -18,7 +20,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createMockRes } from './helpers/http-mocks.js';
+import { createMockReq, createMockRes } from './helpers/http-mocks.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.OG_DESCRIPTION;
@@ -33,7 +36,12 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { handleShareLink } =
   await import('../server/routes/static/share-viewer.js');
+const { handleSharePublicEndpoints } =
+  await import('../server/routes/api/share-links/public.js');
 const { getOgDescription } = await import('../server/config/branding.js');
+const { hashPassword } = await import('../server/utils/password-hash.js');
+
+const PASSWORD = 'open sesame';
 
 const HOUR = 60 * 60 * 1000;
 const past = () => new Date(Date.now() - HOUR).toISOString();
@@ -82,10 +90,13 @@ function linkRow(overrides) {
   };
 }
 
-test.before(() => {
+test.before(async () => {
+  const passwordHash = await hashPassword(PASSWORD);
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      // `verify` resolves the deck's theme for the viewer.
+      themes: [await brandSeedRow()],
       presentations: [
         deckRow('deck-nl'),
         deckRow('deck-en', { lang: 'en-GB', title: 'Quarterly review' }),
@@ -101,6 +112,12 @@ test.before(() => {
           id: 'l-described',
           token: 'tok-described',
           presentation_id: 'deck-described',
+        }),
+        linkRow({
+          id: 'l-password',
+          token: 'tok-password',
+          presentation_id: 'deck-en',
+          password_hash: passwordHash,
         }),
         linkRow({
           id: 'l-revoked',
@@ -183,6 +200,7 @@ for (const [kind, token] of [
   ['an expired', 'tok-expired'],
   ['a spent', 'tok-spent'],
   ['an unknown', 'tok-nope'],
+  ['a password-protected', 'tok-password'],
 ]) {
   test(`${kind} link unfurls with the generic preview, naming no deck`, async () => {
     const html = await unfurl(token);
@@ -194,3 +212,20 @@ for (const [kind, token] of [
     );
   });
 }
+
+test('a password-protected link hands over its title once the password is given', async () => {
+  const res = createMockRes();
+  const handled = await handleSharePublicEndpoints({
+    repoRoot,
+    req: createMockReq({
+      method: 'POST',
+      headers: { host: 'decks.example.test' },
+      body: { password: PASSWORD },
+    }),
+    res,
+    url: new URL('/api/share/tok-password/verify', 'http://decks.example.test'),
+  });
+  assert.equal(handled, true);
+  assert.equal(res.statusCode, 200);
+  assert.equal(JSON.parse(res.body).presentation.title, 'Quarterly review');
+});
