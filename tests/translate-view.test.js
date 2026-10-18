@@ -502,3 +502,94 @@ test('collab: undo and redo of an inactive write show in the view', () => {
   b.binder.detach();
   cleanup();
 });
+
+test('navigation: index status follows all rows and frozen filter follows shown slides', () => {
+  const pres = bilingualPres();
+  const { view, signal, field, type } = openWith(pres);
+  const items = () => [
+    ...document.querySelectorAll('.translate-view-index-item'),
+  ];
+  assert.equal(items().length, 2);
+  assert.ok(items()[0].querySelector('.is-partial'));
+  assert.ok(items()[1].querySelector('.is-empty'));
+  for (const row of pres.i18n.versions['en-GB'].slides[0].content.items) {
+    row.title = 'Done';
+    row.text = 'Done';
+  }
+  signal.emit();
+  assert.ok(items()[0].querySelector('.is-complete'));
+  const box = document.querySelector('.translate-view-filter input');
+  box.click();
+  assert.equal(items().length, 1);
+  items()[0].click();
+  type(field('en-GB', 's2', 'Title'), 'How');
+  signal.emit();
+  assert.equal(items().length, 1, 'index freezes alongside fields');
+  view.close();
+  cleanup();
+});
+
+test('navigation: index, keyboard and field focus use selection; typing keys stay local', () => {
+  const { view, calls, field } = openWith(bilingualPres());
+  const items = [...document.querySelectorAll('.translate-view-index-item')];
+  items[1].click();
+  assert.deepEqual(calls.selected, ['s2']);
+  assert.equal(items[1].getAttribute('aria-current'), 'true');
+  items[1].dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
+  );
+  assert.deepEqual(calls.selected, ['s2', 's1']);
+  const cell = field('en-GB', 's2', 'Title');
+  cell.focus();
+  assert.equal(calls.selected.at(-1), 's2', 'inactive field focus selects too');
+  cell.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
+  );
+  assert.equal(
+    calls.selected.at(-1),
+    's2',
+    'cursor keys do not navigate from text',
+  );
+  view.close();
+  assert.equal(calls.selected.at(-1), 's2', 'closing keeps last selection');
+  cleanup();
+});
+
+test('navigation: refused selection keeps current index; detach cancels scroll work', async () => {
+  const { view } = openWith(bilingualPres(), { selectSlide: () => false });
+  const items = [...document.querySelectorAll('.translate-view-index-item')];
+  items[1].click();
+  assert.equal(items[0].getAttribute('aria-current'), 'true');
+  assert.equal(items[1].hasAttribute('aria-current'), false);
+  document
+    .querySelector('.translate-view-body')
+    .dispatchEvent(new dom.window.Event('scroll'));
+  view.close();
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  cleanup();
+});
+
+test('navigation: a jump clamped at the bottom keeps requested last slide', async () => {
+  const { view, calls } = openWith(bilingualPres());
+  const body = document.querySelector('.translate-view-body');
+  const sections = [...body.querySelectorAll('section[data-slide-id]')];
+  body.getBoundingClientRect = () => ({ top: 0 });
+  sections[0].getBoundingClientRect = () => ({ top: 0, bottom: 200 });
+  sections[1].getBoundingClientRect = () => ({ top: 200, bottom: 400 });
+  Object.defineProperty(body, 'scrollTop', {
+    get: () => 0,
+    set: () => {},
+    configurable: true,
+  });
+  document.querySelector('.translate-view-index-item:last-child').click();
+  body.dispatchEvent(new dom.window.Event('scroll'));
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(calls.selected.at(-1), 's2');
+  assert.equal(
+    document.querySelector('.translate-view-index-item[aria-current]')
+      .textContent,
+    '2',
+  );
+  view.close();
+  cleanup();
+});
