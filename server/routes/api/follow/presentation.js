@@ -14,6 +14,7 @@ import {
   translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
 import { customThemeConfig } from '../../../utils/themes.js';
+import { stripAiReviewMeta } from '../../../utils/public-output.js';
 import {
   computeAudienceCapabilitiesFromState,
   followAudienceScope,
@@ -114,7 +115,8 @@ export async function handleFollowPresentation(
     }
   }
 
-  const picked = pickPresentationForLang(pres, lang);
+  // The audience gets what the slides show, not the author's AI notes (B767).
+  const picked = stripAiReviewMeta(pickPresentationForLang(pres, lang));
   countDeckView('follow', pres);
   serveJson(res, 200, {
     ...state,
