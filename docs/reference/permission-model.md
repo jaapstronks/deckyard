@@ -155,6 +155,14 @@ Share links carry a level from the same vocabulary but a narrower set:
 `view | comment | edit`, constrained in migration 004. There is no `admin`
 share link — a link cannot delegate.
 
+A link's preview stays behind the same gate as its deck. `/s/:token`
+(`server/routes/static/share-viewer.js`) unfurls with the deck's title and
+description only for a live link without a password; a revoked, expired, spent
+or unknown token, and a link with a password, keep the shell's generic
+preview, so pasting the link in a chat or a mail names no deck. A password
+link hands over its title with the deck, from `POST /api/share/:token/verify`,
+once the password is given (`tests/share-link-unfurl.test.js`).
+
 ## Data model
 
 **`presentation_collaborators`** (migration 010) — one row per person invited
