@@ -78,6 +78,14 @@ import { debugLog } from '../../lib/state/debug.js';
 import { syncSlideIdInUrl } from './slide-url.js';
 import { createCommentsPanel, createCommentsApi } from '../comments/index.js';
 import { createEditorTitleController } from './title-controller.js';
+import {
+  createVersionTextSignal,
+  createVersionTextWriter,
+} from './version-text.js';
+import {
+  canOpenTranslateView,
+  openTranslateView as openTranslateViewImpl,
+} from './translate-view/index.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
 import {
@@ -129,6 +137,11 @@ export async function createEditorController({
     user?.email
   );
   let liveEdits = null; // handle from ./live-edits/index.js (dynamic import)
+  // Language buffers, write readiness and slide locks: what the translation
+  // view follows (B763). Emitted by every inspector render, the live doc and
+  // the lock manager.
+  const versionTextSignal = createVersionTextSignal();
+  let translateView = null;
   let liveEditsHadEarlyEdits = false;
 
   // ============================================================
@@ -251,6 +264,7 @@ export async function createEditorController({
     // Save pending edits while the lock still covers them.
     beforeRelease: () => saveManager.requestSave(),
     onLocksChanged: ({ currentSlideIsLocked, lockedByOthers } = {}) => {
+      versionTextSignal.emit();
       // Patch the affected rows' lock indicators. A full rerenderSlideList()
       // here re-rendered every thumbnail on every SSE lock echo, which on a
       // large deck with a second editor blocked the main thread for hundreds
@@ -528,6 +542,7 @@ export async function createEditorController({
    * Wrap markDirty to capture undo snapshots.
    * The undo manager tracks edit sequences and captures the state
    * BEFORE each new sequence starts (not after each individual edit).
+   * Returns false when a slide lock refused the edit.
    */
   const markDirty = (opts = {}) => {
     if (liveEditsActive) {
@@ -540,8 +555,13 @@ export async function createEditorController({
     }
     // The first change to the selected slide takes its lock (D112). A slide
     // another user holds refuses the edit: it is not saved, and onLockFailed
-    // takes it back out of the local copy.
-    if (!slideLockManager.onSlideEdited(selectedSlideId)) return undefined;
+    // takes it back out of the local copy. A write into another language
+    // version did not edit the selected slide, so it takes no lock.
+    if (
+      !opts?.noActiveSlide &&
+      !slideLockManager.onSlideEdited(selectedSlideId)
+    )
+      return false;
     // Notify undo manager of the change (it tracks sequences internally)
     undoManager.captureSnapshot(pres, {
       slideId: opts?.slideId || selectedSlideId,
@@ -571,16 +591,28 @@ export async function createEditorController({
   const readOnlyController = createReadOnlyController({ shell });
 
   setDocumentTitle(pres?.title);
+  /** Show a changed deck title in the topbar and the browser tab. */
+  const showTitle = (next) => {
+    if (!topbarTitle) return;
+    topbarTitle.textContent = next;
+    topbarTitle.title = next;
+    setDocumentTitle(next);
+  };
   const titleCtl = createEditorTitleController({
     pres,
     markDirty,
     requestSave,
-    onTitleChanged: (next) => {
-      if (!topbarTitle) return;
-      topbarTitle.textContent = next;
-      topbarTitle.title = next;
-      setDocumentTitle(next);
-    },
+    onTitleChanged: showTitle,
+  });
+
+  const writeVersionText = createVersionTextWriter({
+    pres,
+    normalizeLang,
+    markDirty,
+    syncVersionStructure: saveManager.syncVersionStructure,
+    liveEditsActive,
+    getLiveEdits: () => liveEdits,
+    onTitleChanged: showTitle,
   });
 
   const openTitleModal = ({ mode = 'edit' } = {}) =>
@@ -653,6 +685,43 @@ export async function createEditorController({
   const canRedo = liveEditsActive
     ? () => !!liveEdits?.canRedo()
     : () => undoManager.canRedo();
+
+  // ============================================================
+  // TRANSLATION VIEW (B763)
+  // ============================================================
+
+  /** Open the side-by-side translation view; one at a time. */
+  const openTranslateView = () => {
+    if (translateView || !canOpenTranslateView(pres, normalizeLang)) return;
+    translateView = openTranslateViewImpl({
+      root,
+      pres,
+      slideTypes: SLIDE_TYPES,
+      normalizeLang,
+      write: writeVersionText,
+      // Live edits write into the doc, which is not there before first sync
+      // (B762 review 4): the view stays inert until it is.
+      canWrite: () => !liveEditsActive || !!liveEdits?.isReady(),
+      subscribe: versionTextSignal.subscribe,
+      getSlideLockKind,
+      isReadOnly: () => readOnlyController.isReadOnly(),
+      getSelectedSlideId: () => selectedSlideId,
+      selectSlide: setSelectedSlideIdWithLock,
+      history: {
+        undo: performUndo,
+        redo: performRedo,
+        canUndo,
+        canRedo,
+      },
+      // The view may have selected another slide and changed any text. On
+      // teardown there is no editor left to refresh.
+      onClosed: () => {
+        translateView = null;
+        if (!cleanup.isTornDown) editorState.refreshAll();
+      },
+    });
+  };
+  cleanup.register('translateView', () => translateView?.close());
 
   // ============================================================
   // DROPDOWNS (SHARE + EXPORT)
@@ -742,6 +811,7 @@ export async function createEditorController({
     syncShareUi: dropdowns.syncShareUi,
     markDirty,
     onOpenOverview: openDeckOverview,
+    onOpenTranslateView: openTranslateView,
     // AI Analysis exists only where AI does: with AI off the server answers
     // its route 404, so the menu has no item for it (B337, D179).
     onAnalyze: featureEnabled('ai')
@@ -1060,13 +1130,9 @@ export async function createEditorController({
                 setSaveStatus(s);
                 syncPublishedAltWarning();
               },
-              onTitleChanged: (next) => {
-                if (!topbarTitle) return;
-                topbarTitle.textContent = next;
-                topbarTitle.title = next;
-                setDocumentTitle(next);
-              },
+              onTitleChanged: showTitle,
               onUndoStateChanged: () => syncTopbarUndo(),
+              onVersionsChanged: versionTextSignal.emit,
             });
             cleanup.register('liveEdits', () => {
               liveEdits?.detach();
@@ -1234,6 +1300,7 @@ export async function createEditorController({
 
   const slideListApi = setupSlideList({
     slideListEl,
+    openTranslateView,
     pres,
     getSelectedSlideId: () => selectedSlideId,
     setSelectedSlideId: setSelectedSlideIdWithLock,
@@ -1407,6 +1474,7 @@ export async function createEditorController({
     'maintenance',
     onMaintenanceChange((state) => {
       readOnlyController.setMaintenanceReadOnly(state.active);
+      versionTextSignal.emit();
       if (state.active) {
         saveManager.cancelAutosave();
         toast.info(
@@ -1596,6 +1664,7 @@ export async function createEditorController({
   rerenderEditor = () => {
     editorForm.rerender();
     fieldsView.sync();
+    versionTextSignal.emit();
   };
   // The type pill's menu holds document-level listeners; rerender swaps
   // them, unmount has to drop the last pair.
@@ -1851,5 +1920,5 @@ export async function createEditorController({
     }
   };
 
-  return { detach, pres, theme, SLIDE_TYPES };
+  return { detach, pres, theme, SLIDE_TYPES, writeVersionText };
 }

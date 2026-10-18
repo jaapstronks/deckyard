@@ -31,6 +31,8 @@ import {
   showVisibilityMenuAt,
 } from '../slide-visibility-menu.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
+import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import { canOpenTranslateView } from '../translate-view/index.js';
 
 let activeMenu = null;
 // Slide id of the thumbnail ⋯ that opened the menu, if one did.
@@ -139,7 +141,7 @@ function positionAt(menu, x, y) {
  * @param {Set<string>} options.ids - Effective selection to act on
  * @param {Object} options.ctx - Editor callbacks (pres, editorState, setters,
  *   rerenders) plus `api`, `openSlideLibraryModal` and `isAuthor` for the
- *   library and lock items
+ *   library and lock items, and `openTranslateView` for the translation view
  * @param {boolean} [options.fromButton] - Opened from the slide's thumbnail
  *   ⋯ or by the keyboard on its row: focus moves into the menu and returns
  *   to the row on Escape
@@ -385,6 +387,24 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx, fromButton }) {
     stateItems.push(visItem);
   }
   if (stateItems.length) menu.append(separator(), ...stateItems);
+
+  // The translation view is about the deck, not the selection; it is here
+  // because translating starts from the slide you are looking at.
+  if (
+    typeof ctx.openTranslateView === 'function' &&
+    canOpenTranslateView(ctx.pres, normalizeLang)
+  ) {
+    menu.append(
+      separator(),
+      addItem({
+        label: t('editor.translateView.open', 'Translate side by side…'),
+        onClick: () => {
+          closeSlideContextMenu();
+          ctx.openTranslateView();
+        },
+      }),
+    );
+  }
 
   // Destructive action last, visually separated.
   menu.append(

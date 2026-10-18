@@ -28,7 +28,8 @@
  * the ACTIVE language buffer; the binder writes text changes into
  * `Y.Map<lang, Y.Text>` at the active language and re-projects the other
  * languages' version buffers so "translate from other language" affordances
- * stay fresh. Same-field concurrent typing merges at character level in the
+ * stay fresh. A text of another language is written straight into its
+ * Y.Text by `writeVersionText` (B762). Same-field concurrent typing merges at character level in the
  * doc; while a user is mid-edit in a field the editor overwrites remote
  * characters in that one field on their next keystroke (field-level
  * last-writer-wins — the accepted step-3 fallback; see the reference doc).
@@ -43,6 +44,7 @@
 
 import { patchYText } from '../../../../shared/collab/deck-ydoc.js';
 import { isPerLanguageKey } from '../../../../shared/slide-types/text-fields.js';
+import { debugLog } from '../../../lib/state/debug.js';
 
 const SERVER_MANAGED_KEYS = new Set([
   'id',
@@ -83,6 +85,10 @@ function jsonEq(a, b) {
  *   structureChanged, titleChanged, metaChanged}) after a doc-driven change
  *   has been projected into `pres`
  * @param {Function} [opts.onUndoStateChanged] - undo/redo stack sizes changed
+ * @param {Function} [opts.onVersionsChanged] - after a doc-driven change
+ *   (a peer, undo/redo) was projected, whichever language it touched: a text
+ *   of a language that is not active changes no `pres` slide, so
+ *   `onRemoteApplied` stays silent for it (B763)
  * @param {Object} [opts.origin] - transaction origin marker for local writes
  * @returns {Object} binder API
  */
@@ -94,6 +100,7 @@ export function createLiveDocBinder({
   getActiveLang,
   onRemoteApplied,
   onUndoStateChanged,
+  onVersionsChanged,
   origin = { source: 'deckyard-editor' },
 } = {}) {
   if (!Y || !doc || !codec || !pres) {
@@ -624,6 +631,97 @@ export function createLiveDocBinder({
     }
   }
 
+  // ── a language version that is not being edited ──────────────────────────
+
+  /**
+   * The Y container and key holding the text at `path` inside a slide's
+   * content Y.Map: string segments name a key, numbers an index into an
+   * items Y.Array. Null when the path leaves the doc's structure or ends on
+   * something that is not text (an items array, a plain object).
+   */
+  function textContainerAt(ycontent, path) {
+    if (!(ycontent instanceof Y.Map) || !Array.isArray(path) || !path.length)
+      return null;
+    let cur = ycontent;
+    for (let i = 0; i < path.length - 1; i += 1) {
+      const seg = path[i];
+      const next =
+        typeof seg === 'number'
+          ? cur instanceof Y.Array && seg >= 0 && seg < cur.length
+            ? cur.get(seg)
+            : null
+          : cur instanceof Y.Map
+            ? cur.get(seg)
+            : null;
+      // Below a key sits an items array; below an index, an item map.
+      if (
+        typeof seg === 'number'
+          ? !(next instanceof Y.Map)
+          : !(next instanceof Y.Array)
+      )
+        return null;
+      cur = next;
+    }
+    const key = path[path.length - 1];
+    if (typeof key !== 'string' || !(cur instanceof Y.Map)) return null;
+    const entry = cur.get(key);
+    // Absent, a lang → Y.Text map, or a legacy plain string (writeTextField
+    // seeds every language from it). Anything else is not a text.
+    if (
+      entry !== undefined &&
+      typeof entry !== 'string' &&
+      !(entry instanceof Y.Map)
+    )
+      return null;
+    return { container: cur, key };
+  }
+
+  /**
+   * Write one text into a language version other than the one `pres` holds
+   * (B762). `pres.slides` is the active projection and `syncLocal` only
+   * diffs that, so a text of another language has no route into the doc
+   * through `pres`; and writing it into `pres.i18n.versions[lang]` would be
+   * thrown away by the next re-projection. This writes the Y.Text of that
+   * language directly, under the local origin (so undo reverts it and the
+   * observers skip it), then re-projects that version's buffer.
+   *
+   * @param {string} lang - a language the doc carries, not the active one
+   * @param {string|null} slideId - the slide; null for the deck title
+   * @param {Array<string|number>} path - `['title']` for the deck title,
+   *   else a path into the slide's content (`['items', 1, 'title']`)
+   * @param {string} value
+   * @returns {boolean} whether the text was written
+   */
+  function writeVersionText(lang, slideId, path, value) {
+    if (destroyed || !attached || typeof value !== 'string') return false;
+    if (lang === ensureShadowLang()) return false;
+    if (!codec.getDocLangs(doc).includes(lang)) return false;
+
+    if (!slideId) {
+      if (!Array.isArray(path) || path.length !== 1 || path[0] !== 'title')
+        return false;
+      doc.transact(() => writeTextField(meta, 'title', value, lang), origin);
+      const buf = ensureVersionBuffer(lang);
+      if (buf) buf.title = value;
+      return true;
+    }
+
+    const yslide = findYSlideById(slideId);
+    if (!(yslide instanceof Y.Map)) return false;
+    const target = textContainerAt(yslide.get('content'), path);
+    if (!target) return false;
+    doc.transact(
+      () => writeTextField(target.container, target.key, value, lang),
+      origin,
+    );
+    const buf = pres.i18n?.versions?.[lang];
+    const known =
+      Array.isArray(buf?.slides) && buf.slides.some((s) => s?.id === slideId);
+    if (known) updateVersionBuffersForSlide(yslide, slideId);
+    else refreshVersionBuffers();
+    return true;
+  }
+
   /** Full structural reconcile pres ← doc (order, adds, removals, content). */
   function reconcilePresFromDoc(changedIds) {
     const lang = shadowLang;
@@ -721,6 +819,19 @@ export function createLiveDocBinder({
       titleChanged = true;
     }
     shadow.title = nextTitle;
+    // Inactive titles also change on peer transactions and undo/redo.
+    for (const l of codec.getDocLangs(doc)) {
+      if (l === lang) continue;
+      const buf = ensureVersionBuffer(l);
+      const text = ytitle instanceof Y.Map ? ytitle.get(l) : undefined;
+      if (buf)
+        buf.title =
+          text instanceof Y.Text
+            ? text.toString()
+            : typeof text === 'string'
+              ? text
+              : '';
+    }
 
     const nextExtra = deepClone(meta.get('extra')) || {};
     for (const k of Object.keys(pres)) {
@@ -793,13 +904,22 @@ export function createLiveDocBinder({
     }
   }
 
+  const notifyVersions = () => {
+    try {
+      onVersionsChanged?.();
+    } catch (err) {
+      debugLog('[live-doc] versions listener failed', err);
+    }
+  };
   const onSlidesEvents = (events, txn) => {
     if (destroyed || txn.origin === origin) return;
     handleRemoteSlides(events);
+    notifyVersions();
   };
   const onMetaEvents = (events, txn) => {
     if (destroyed || txn.origin === origin) return;
     handleRemoteMeta(events);
+    notifyVersions();
   };
 
   // ── undo / redo ───────────────────────────────────────────────────────────
@@ -926,6 +1046,7 @@ export function createLiveDocBinder({
     canUndo: () => !!undoManager && undoManager.undoStack.length > 0,
     canRedo: () => !!undoManager && undoManager.redoStack.length > 0,
     projectLanguage,
+    writeVersionText,
     detach,
     /** Exposed for tests. */
     _origin: origin,

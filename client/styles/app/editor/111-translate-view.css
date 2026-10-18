@@ -1,0 +1,146 @@
+/* Translation view (`views/editor/translate-view/`, B763): the whole deck as
+   rows of label | source | target. Full-screen over the editor: two text
+   columns need the width the inspector takes. */
+
+.modal.translate-view-modal {
+  width: min(96vw, 1280px);
+  height: 92vh;
+}
+
+.translate-view-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-3) var(--ps-space-5);
+  padding-bottom: var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.translate-view-pair {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.translate-view-lang-name {
+  font-weight: 600;
+}
+
+.translate-view-arrow {
+  display: inline-flex;
+  color: hsl(var(--app-text-tertiary));
+}
+
+.translate-view-history {
+  display: flex;
+  gap: var(--ps-space-1);
+  margin-left: auto;
+}
+
+.translate-view-status {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  margin-top: var(--ps-space-3);
+  background: hsl(var(--app-warning-soft));
+  border-radius: var(--ps-radius-md);
+}
+
+.translate-view-status[hidden] {
+  display: none;
+}
+
+/* The frame fills the modal's content region; the body is the scroller, so
+   the toolbar and the language heads stay in view while it moves. */
+.translate-view-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.translate-view-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--ps-space-6);
+}
+
+.translate-view-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.6fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ps-space-3);
+  align-items: start;
+  padding: var(--ps-space-2) 0;
+}
+
+.translate-view-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 600;
+  background: hsl(var(--app-bg-elevated));
+  border-bottom: 1px solid hsl(var(--app-border-default));
+}
+
+.translate-view-slide {
+  padding: var(--ps-space-3) 0;
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.translate-view-slide-title {
+  margin: 0 0 var(--ps-space-1);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+.translate-view-label {
+  padding-top: var(--ps-space-1);
+  color: hsl(var(--app-text-secondary));
+  overflow-wrap: anywhere;
+}
+
+.translate-view-cell {
+  min-width: 0;
+}
+
+.translate-view-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+textarea.translate-view-input {
+  min-height: 3.2em;
+  resize: vertical;
+}
+
+.translate-view-row.is-empty-target
+  .translate-view-cell:last-child
+  .translate-view-input {
+  border-color: hsl(var(--app-warning));
+}
+
+.translate-view-input[readonly] {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.translate-view-lock[hidden] {
+  display: none;
+}
+
+.translate-view-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+/* Narrow screens: label above its two fields. */
+@media (max-width: 768px) {
+  .translate-view-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .translate-view-label {
+    grid-column: 1 / -1;
+    padding-top: 0;
+  }
+}
