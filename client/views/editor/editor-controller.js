@@ -542,7 +542,7 @@ export async function createEditorController({
     // The first change to the selected slide takes its lock (D112). A slide
     // another user holds refuses the edit: it is not saved, and onLockFailed
     // takes it back out of the local copy. A write into another language
-    // version did not edit the selected slide, so it takes no lock (B762).
+    // version did not edit the selected slide, so it takes no lock.
     if (
       !opts?.noActiveSlide &&
       !slideLockManager.onSlideEdited(selectedSlideId)
@@ -591,8 +591,6 @@ export async function createEditorController({
     onTitleChanged: showTitle,
   });
 
-  // The one write path for a text in any language version, active or not
-  // (B762); the translation view writes both of its columns through it.
   const writeVersionText = createVersionTextWriter({
     pres,
     normalizeLang,

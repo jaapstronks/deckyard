@@ -380,3 +380,57 @@ test('legacy: refuses what is not an existing text address', () => {
   assert.equal(marks.length, 0);
   assert.equal(json(pres), before);
 });
+
+test('collab: inactive deck titles follow peer writes, undo and redo', () => {
+  const doc = new Y.Doc();
+  const pres = bilingualPres();
+  createDeckYdocCodec(Y).bootstrapPresentationToDoc(pres, doc);
+  const a = collabClient(doc, pres);
+  const peer = bilingualPres();
+  const b = collabClient(doc, peer);
+  const before = json(pres.slides);
+  a.write('en-GB', null, ['title'], 'English deck');
+  assert.equal(peer.i18n.versions['en-GB'].title, 'English deck');
+  a.binder.undo();
+  assert.equal(pres.i18n.versions['en-GB'].title, '');
+  assert.equal(peer.i18n.versions['en-GB'].title, '');
+  a.binder.redo();
+  assert.equal(pres.i18n.versions['en-GB'].title, 'English deck');
+  assert.equal(peer.i18n.versions['en-GB'].title, 'English deck');
+  assert.equal(pres.title, 'Deck');
+  assert.equal(json(pres.slides), before);
+  a.binder.detach();
+  b.binder.detach();
+});
+
+test('legacy: mixed-language saves require the exact revision, then resume slide merging', async () => {
+  const pres = bilingualPres();
+  const { server, saveManager, write } = legacyClient(pres);
+  write('nl', 's1', ['title'], 'Waarom wij');
+  write('en-GB', 's1', ['title'], 'Why us');
+  await saveManager.requestSave();
+  assert.equal(server.headers['If-Match'], '1');
+  assert.equal(server.headers['X-Modified-Slides'], undefined);
+  assert.equal(
+    server.stored.i18n.versions['en-GB'].slides[0].content.title,
+    'Why us',
+  );
+  write('nl', 's1', ['title'], 'Waarom nu');
+  await saveManager.requestSave();
+  saveManager.cancelAutosave();
+  assert.equal(server.headers['X-Modified-Slides'], JSON.stringify(['s1']));
+});
+
+test('collab: promoting a plain text preserves the other language', () => {
+  const doc = new Y.Doc();
+  const pres = bilingualPres();
+  createDeckYdocCodec(Y).bootstrapPresentationToDoc(pres, doc);
+  doc.getArray('slides').get(0).get('content').set('title', 'Shared old text');
+  const { binder, codec, write } = collabClient(doc, pres);
+  const before = json(codec.projectDocToPresentation(doc).i18n.versions.nl);
+  assert.equal(write('en-GB', 's1', ['title'], 'English text'), true);
+  const versions = codec.projectDocToPresentation(doc).i18n.versions;
+  assert.equal(json(versions.nl), before);
+  assert.equal(versions['en-GB'].slides[0].content.title, 'English text');
+  binder.detach();
+});

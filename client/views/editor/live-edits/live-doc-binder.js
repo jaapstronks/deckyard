@@ -813,6 +813,19 @@ export function createLiveDocBinder({
       titleChanged = true;
     }
     shadow.title = nextTitle;
+    // Inactive titles also change on peer transactions and undo/redo.
+    for (const l of codec.getDocLangs(doc)) {
+      if (l === lang) continue;
+      const buf = ensureVersionBuffer(l);
+      const text = ytitle instanceof Y.Map ? ytitle.get(l) : undefined;
+      if (buf)
+        buf.title =
+          text instanceof Y.Text
+            ? text.toString()
+            : typeof text === 'string'
+              ? text
+              : '';
+    }
 
     const nextExtra = deepClone(meta.get('extra')) || {};
     for (const k of Object.keys(pres)) {

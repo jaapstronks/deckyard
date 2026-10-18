@@ -1,26 +1,7 @@
 /**
- * Write one text into any language version of the open deck (B762).
- *
- * The editor edits one version at a time: `pres.title`/`pres.slides` are the
- * active version, and every edit seam writes there. A surface that shows two
- * languages side by side (the translation view, B763) needs to write the other
- * one too, and neither persistence mode had a route for that: the live-doc
- * binder diffs only `pres.slides` and re-projects the other versions over
- * anything written into them, and the legacy save tracks only active slides.
- *
- * `writeVersionText(lang, slideId, path, value)` is that route, for both
- * columns, so there is one write path for translated text:
- *
- * - **the active version** → `pres`, then `markDirty` (the seam every editor
- *   edit takes, in both modes);
- * - **another version, collab** → the binder writes that language's Y.Text;
- * - **another version, legacy** → `pres.i18n.versions[lang]`, then
- *   `markDirty({ noActiveSlide: true })`; the PUT carries every version.
- *
- * Only an existing text address is written: the slide must be in the version
- * and the item the path names must exist (the active version's structure
- * decides; a legacy version that lags behind it is mirrored first). Adding a
- * language or a slide is not a text write.
+ * Write text in the active projection or an inactive language buffer.
+ * Inactive collab writes must go through the doc: buffer-only changes are
+ * discarded on the next projection. Legacy writes require an exact revision.
  */
 import { valueAtPath } from '../../../shared/slide-types/text-fields.js';
 

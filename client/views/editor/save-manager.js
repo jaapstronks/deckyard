@@ -38,6 +38,8 @@ export function createSaveManager({
 
   let editVersion = 0;
   let savedVersion = 0;
+  // Slide-level merges cannot protect texts in an inactive language.
+  let inactiveEditVersion = 0;
   let saveInFlight = null;
   let saveQueued = false;
 
@@ -378,7 +380,8 @@ export function createSaveManager({
    *   version other than the active one (B762). It claims no slide: the
    *   slide-level merge compares active slides only, so claiming one would
    *   turn a collaborator's edit of the active text into a false conflict.
-   *   The whole `i18n.versions` travels with the PUT either way.
+   *   It also disables slide-level merging until saved: that merge cannot
+   *   detect conflicting edits in inactive versions.
    */
   const markDirty = (opts = {}) => {
     const wasDirty = dirty;
@@ -388,6 +391,7 @@ export function createSaveManager({
     lastEditTime = Date.now();
 
     // Track which slide was modified for slide-level merge
+    if (opts?.noActiveSlide) inactiveEditVersion = editVersion;
     const slideId = opts?.noActiveSlide
       ? null
       : opts?.slideId || getSelectedSlideId?.();
@@ -497,7 +501,10 @@ export function createSaveManager({
       // that were also changed by someone else since our base, plus whether
       // we actually reordered — without that signal the merge must not let
       // this client's (possibly stale) slide order win.
-      if (modifiedForThisSave.length > 0) {
+      if (
+        modifiedForThisSave.length > 0 &&
+        inactiveEditVersion <= savedVersion
+      ) {
         headers['X-Modified-Slides'] = JSON.stringify(modifiedForThisSave);
         headers['X-Slides-Order-Changed'] = orderChangedSinceBase() ? '1' : '0';
         const fingerprints = {};
