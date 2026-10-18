@@ -163,6 +163,16 @@ preview, so pasting the link in a chat or a mail names no deck. A password
 link hands over its title with the deck, from `POST /api/share/:token/verify`,
 once the password is given (`tests/share-link-unfurl.test.js`).
 
+The password is the boundary for everything behind the link, not only the
+slides. `verify` hands the viewer one signed grant for the link, and the two
+routes that give out what the password guards ask for it: `render-slide` (the
+slides) and `guest/request` (the guest session that reads and writes the
+comments). `guest/request` is the only way to a guest session, so the guest
+comment routes ask for the session and the session carries the proof. A
+revoked link answers `GET /api/share/:token` with the author's message and,
+only when it had no password, the deck's title
+(`tests/share-links-public-path.test.js`).
+
 ## Data model
 
 **`presentation_collaborators`** (migration 010) — one row per person invited

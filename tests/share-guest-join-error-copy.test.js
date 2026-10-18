@@ -111,7 +111,7 @@ async function submitAgainst(body, status) {
       headers: { 'Content-Type': 'application/json' },
     });
 
-  renderGuestJoinPrompt(shell, 'tok-comment', 'comment', () => {});
+  renderGuestJoinPrompt(shell, 'tok-comment', 'grant-from-verify');
   const form = shell.querySelector('form.share-viewer-guest-form');
   form.querySelector('input[type="email"]').value = 'guest@example.com';
   form.dispatchEvent(

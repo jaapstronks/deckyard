@@ -988,12 +988,12 @@ test('share render: a verified link draws a server-only type to real markup', as
   const { pres, link } = await seedRenderDeck();
   const verified = await verifyShare(link.token);
   assert.equal(verified.status, 200);
-  assert.equal(typeof verified.body.renderGrant, 'string');
+  assert.equal(typeof verified.body.grant, 'string');
 
   const out = await renderShare(link.token, {
     slideId: pres.slides[0].id,
     mode: 'thumb',
-    grant: verified.body.renderGrant,
+    grant: verified.body.grant,
   });
   assert.equal(out.status, 200);
   assert.match(out.body.html, /home-wall-marker/);
@@ -1004,8 +1004,8 @@ test('share render: a verified link draws a server-only type to real markup', as
 test('share render: without the grant from verify, or with another link’s, it refuses', async () => {
   const { pres, link } = await seedRenderDeck();
   const other = await seedRenderDeck();
-  const otherGrant = (await verifyShare(other.link.token)).body.renderGrant;
-  const ownGrant = (await verifyShare(link.token)).body.renderGrant;
+  const otherGrant = (await verifyShare(other.link.token)).body.grant;
+  const ownGrant = (await verifyShare(link.token)).body.grant;
   const slideId = pres.slides[0].id;
 
   for (const grant of [
@@ -1014,7 +1014,7 @@ test('share render: without the grant from verify, or with another link’s, it 
     'not-a-grant',
     otherGrant,
     // A grant whose payload was edited no longer matches its signature.
-    `${Buffer.from(JSON.stringify({ purpose: 'share-render', link: link.id, exp: Date.now() + 1e9 })).toString('base64url')}.${ownGrant.split('.')[1]}`,
+    `${Buffer.from(JSON.stringify({ purpose: 'share-access', link: link.id, exp: Date.now() + 1e9 })).toString('base64url')}.${ownGrant.split('.')[1]}`,
   ]) {
     const out = await renderShare(link.token, { slideId, grant });
     assert.equal(out.status, 403, `grant ${String(grant).slice(0, 24)}`);
@@ -1028,14 +1028,14 @@ test('share render: a password link renders only after the password was proven',
 
   const refused = await verifyShare(link.token);
   assert.notEqual(refused.status, 200, 'verify without the password refuses');
-  assert.equal(refused.body.renderGrant, undefined, 'and mints no grant');
+  assert.equal(refused.body.grant, undefined, 'and mints no grant');
   assert.equal((await renderShare(link.token, { slideId })).status, 403);
 
   const verified = await verifyShare(link.token, { password: 'open sesame' });
   assert.equal(verified.status, 200);
   const out = await renderShare(link.token, {
     slideId,
-    grant: verified.body.renderGrant,
+    grant: verified.body.grant,
   });
   assert.equal(out.status, 200);
   assert.match(out.body.html, /home-wall-marker/);
@@ -1043,7 +1043,7 @@ test('share render: a password link renders only after the password was proven',
 
 test('share render: a revoked link refuses, even with a grant minted before', async () => {
   const { pres, scope, link } = await seedRenderDeck();
-  const grant = (await verifyShare(link.token)).body.renderGrant;
+  const grant = (await verifyShare(link.token)).body.grant;
   await revokeShareLink(scope, link.id, OWNER);
 
   const out = await renderShare(link.token, {
@@ -1066,7 +1066,7 @@ test('share render: only the slides verify hands the viewer, of this deck', asyn
     { ...hidden, visibility: { hideFromViewers: true } },
   ]);
   const deckB = await seedRenderDeck();
-  const grant = (await verifyShare(link.token)).body.renderGrant;
+  const grant = (await verifyShare(link.token)).body.grant;
 
   const hidden = await renderShare(link.token, {
     slideId: pres.slides[1].id,
@@ -1098,7 +1098,7 @@ test('share render: the registry is the deck’s organization’s, not another�
     { ...first, type: HOME_TYPE },
     second,
   ]);
-  const grant = (await verifyShare(link.token)).body.renderGrant;
+  const grant = (await verifyShare(link.token)).body.grant;
 
   const foreignType = await renderShare(link.token, {
     slideId: pres.slides[0].id,

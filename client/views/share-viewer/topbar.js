@@ -119,7 +119,7 @@ export function buildShareViewerTopbar({
     } else {
       // Show join button
       openJoinPrompt = () => {
-        renderGuestJoinPrompt(shell, token, prefillEmail);
+        renderGuestJoinPrompt(shell, token, shareLink.grant, prefillEmail);
       };
       const joinBtn = h('button', {
         class: 'btn btn-secondary share-viewer-join-btn',

@@ -252,6 +252,8 @@ export async function validateShareLink(token) {
         revocationMessage: row.revocation_message || null,
         shareLinkId: row.id,
         presentationId: row.presentation_id,
+        // The route names the deck only for a link without one (B761).
+        requiresPassword: !!row.password_hash,
       };
     }
 
