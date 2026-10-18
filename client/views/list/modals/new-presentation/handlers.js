@@ -193,34 +193,15 @@ export async function handlePasteText({
     // aiReview=1 opens the whole-deck review grid on top of the editor.
     nav(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
   } catch (e) {
+    // A failed stream is shown, never retried on another generator (B759):
+    // the deck the user gets is the one the pipeline made, or none.
     rotator.stop();
-    // Fallback to V1
-    try {
-      loadingModal.update(t('editor.aiAppend.generating', 'Generating…'));
-      const created = await api('/api/ai/wizard', {
-        method: 'POST',
-        body: {
-          raw,
-          lang: langMode,
-          theme: themeId,
-          settings: {
-            stepParagraphs: true,
-            transitions: { preset: 'fade' },
-          },
-        },
-      });
-      loadingModal.update(t('common.done', 'Done'), { immediate: true });
-      loadingModal.setProgress(100);
-      await new Promise((r) => setTimeout(r, 500));
-      loadingModal.close();
-      close();
-      nav(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
-    } catch (fallbackError) {
-      loadingModal.close();
-      showBackdrop?.();
-      setStatus(String(fallbackError.message || fallbackError));
-      setBusy(false);
-    }
+    loadingModal.close();
+    showBackdrop?.();
+    setStatus(
+      String(e?.message || e || t('ai.generationFailed', 'Generation failed')),
+    );
+    setBusy(false);
   }
 }
 

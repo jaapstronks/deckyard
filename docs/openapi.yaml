@@ -1619,6 +1619,14 @@ paths:
       description: |
         Uses AI to generate a complete presentation from your content.
         This creates a new presentation with AI-generated slides.
+
+        The generation runs the same pipeline as the editor's wizard: an
+        outline, a revision of that outline, and one refinement call per
+        group of slides. It is several model calls, not one, so the request
+        takes longer than a single completion (tens of seconds for a
+        typical deck); keep your client timeout generous. The deck opens
+        with a title slide and is written in the requested `lang`, or in
+        the language of your content when you send none.
       requestBody:
         required: true
         content:
