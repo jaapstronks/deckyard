@@ -28,7 +28,11 @@
 
 import { uploadImageBuffer } from '../media/upload-buffer.js';
 import { pdfToImages } from '../render/pdf-to-images.js';
-import { extractPdfPages } from '../utils/pdf-extract/index.js';
+import {
+  extractPdfPages,
+  blockText,
+  pageText,
+} from '../utils/pdf-extract/index.js';
 import { createLogger } from '../utils/logger.js';
 import {
   DeckImagesRefusal,
@@ -446,40 +450,6 @@ function pipeTable(rows) {
     .join('\n');
 }
 
-/** The plain text of one block, one line per item, row or card part. */
-function blockLines(block) {
-  switch (block.kind) {
-    case 'list':
-      return block.items.map((i) => i.text);
-    case 'table':
-      return block.rows.map((r) => r.join('\t'));
-    case 'cards':
-      return block.cards.flatMap((c) => [c.title, c.body]);
-    default:
-      return [block.text];
-  }
-}
-
-function blockText(block) {
-  return blockLines(block).join(' ');
-}
-
-/**
- * The text of the page as plain lines: the heading, every block, then the
- * labels of a drawing. What a slide that falls back carries in its notes.
- * @param {PageModel} page
- * @returns {string}
- */
-export function pageText(page) {
-  return [
-    ...(page.heading ? [page.heading] : []),
-    ...page.blocks.flatMap(blockLines),
-    ...(page.drawing?.labels || []).map((l) => l.text),
-  ]
-    .filter((t) => String(t).trim())
-    .join('\n');
-}
-
 /**
  * A slide's notes: the speaker notes of the PowerPoint file first, then (on a
  * page that fell back) the page text, then what the slide does not show,
@@ -676,7 +646,10 @@ export async function buildDeckSlides({
       current: i + 1,
       total: pages.length,
     });
-    const notOnSlide = page.dropped.map((d) => d.text);
+    // A reference mark says nothing once its footnote stands beside it.
+    const notOnSlide = page.dropped
+      .filter((d) => d.reason !== 'reference')
+      .map((d) => d.text);
     let slide;
     if (plan.reason) {
       const buffer = rendered.get(page.page);

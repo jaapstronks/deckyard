@@ -5,7 +5,7 @@
  */
 
 import { parsePptx } from './pptx-parser.js';
-import { parsePdf } from './pdf-parser.js';
+import { readPdf } from './pdf-reader.js';
 import { parseDocx } from './docx-parser.js';
 import { processImageOnlySlides } from './image-slides.js';
 import { convertWithAi } from './ai-convert.js';
@@ -139,7 +139,7 @@ export async function convertFile(buffer, options = {}) {
     if (fileType === 'pptx') {
       parseResult = await parsePptx(buffer);
     } else if (fileType === 'pdf') {
-      parseResult = await parsePdf(buffer);
+      parseResult = await readPdf(buffer, { signal });
     } else if (isDocumentType) {
       // Document types all use the docx parser (mammoth handles docx well,
       // and for rtf/odt we try to extract text similarly)

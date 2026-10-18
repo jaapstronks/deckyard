@@ -38,14 +38,14 @@ interpreted, summarised or rewritten.
 `extractPdfPages()` reads every page into one model, whatever told it the
 roles:
 
-| Field     | What                                                                                                   |
-| --------- | ------------------------------------------------------------------------------------------------------ |
-| `heading` | the page's heading, or null                                                                            |
-| `blocks`  | in reading order: `para`, `list` (items, `bullets`/`numbers`), `table`, `cards`, `caption`, `quote`    |
-| `images`  | embedded raster images as PNG, each with its box on the page and the `Figure` alt text                 |
-| `drawing` | the number of vector paths and the small text labels inside the drawing                                |
-| `dropped` | text not on the slide: `artifact` (footer, page number), `off-page`, `footnote` (< 7 pt at the bottom) |
-| `tagged`  | whether the roles came from the PDF's structure tree                                                   |
+| Field     | What                                                                                                                                                                                                                                                                                                                                    |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `heading` | the page's heading, or null                                                                                                                                                                                                                                                                                                             |
+| `blocks`  | in reading order: `para`, `list` (items, `bullets`/`numbers`), `table`, `cards`, `caption`, `quote`                                                                                                                                                                                                                                     |
+| `images`  | embedded raster images as PNG, each with its box on the page and the `Figure` alt text                                                                                                                                                                                                                                                  |
+| `drawing` | the number of vector paths and the small text labels inside the drawing                                                                                                                                                                                                                                                                 |
+| `dropped` | text not on the slide: `artifact` (footer, page number), `off-page`, `footnote` (< 7 pt in the bottom 15%, or higher up when smaller than the body, under the last body line, at the body's left edge, worded, on a page with reference marks), `reference` (a short number at most 0.8 × the body size, raised just above a body line) |
+| `tagged`  | whether the roles came from the PDF's structure tree                                                                                                                                                                                                                                                                                    |
 
 Two detectors fill it. A **tagged** PDF (PowerPoint and Chrome tag by
 default) carries a structure tree: `H1`–`H3`, `P`, `L/LI`, `Table/TR/TH/TD`,
@@ -105,7 +105,14 @@ Every slide's notes are built in one order, parts separated by a blank line:
 2. on a fallback slide only, the page's text, so it can still be copied;
 3. under "Not on the slide:" ("Niet op de slide:" in a Dutch deck), the text
    the slide does not show: dropped footers, page numbers and footnotes, and
-   on a mapped slide the labels of a drawing.
+   on a mapped slide the labels of a drawing. Reference marks are left out:
+   without their footnote's text beside them they say nothing.
+
+The AI route reads a PDF through the same model (`readPdf()` in
+`server/utils/convert-file/pdf-reader.js`, B772): per page the heading, the
+blocks and the drawing labels (`pageText()`), so footnotes and reference
+marks stay out of the generation source too. Artifact text that occurs only
+on the first page (a letter's "Betreft …" and date) goes along with page 1.
 
 ## The report
 
