@@ -4,6 +4,7 @@ import {
   escapeHtml,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 function normalizeEmbedUrl(raw) {
   const s = String(raw || '').trim();
@@ -160,7 +161,7 @@ export default {
         `
       : `
           <div class="embed-empty">
-            <div class="help">Paste an HTTPS URL to embed (e.g., Figma, Miro, Google Sheets).</div>
+            <div class="help">${escapeHtml(getSlideCopy(ctx?.lang).embedEmptyHint)}</div>
           </div>
         `;
 

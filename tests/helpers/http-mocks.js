@@ -40,3 +40,22 @@ export function createMockRes() {
     },
   };
 }
+
+/**
+ * An open SSE stream that records the frames `sseWrite()` gives it, parsed
+ * as `{ event, data }`.
+ */
+export function createMockSseRes() {
+  const frames = [];
+  return {
+    frames,
+    writable: true,
+    writableEnded: false,
+    write(chunk) {
+      const event = /^event: (.+)$/m.exec(chunk)?.[1];
+      const data = /^data: (.+)$/m.exec(chunk)?.[1];
+      if (event) frames.push({ event, data: data && JSON.parse(data) });
+      return true;
+    },
+  };
+}

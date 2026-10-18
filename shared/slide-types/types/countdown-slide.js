@@ -3,6 +3,7 @@ import {
   BACKGROUND_FIELD_EXTENDED,
   escapeHtml,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 import { durationSeconds } from '../duration.js';
 
 /**
@@ -175,7 +176,8 @@ export default {
     background: 'dark',
   },
   // Signature must be (content, slide, ctx) – see `shared/slide-types/presentation.js`.
-  renderHtml: (content, slide, _ctx = {}) => {
+  renderHtml: (content, slide, ctx = {}) => {
+    const copy = getSlideCopy(ctx?.lang);
     const bg = bgClassExtended(content?.background);
     const seconds = durationSeconds(
       MINUTES_FIELD,
@@ -214,9 +216,9 @@ export default {
             ${zeroEl}
           </div>
           <div class="cd-controls" data-countdown-controls="1" data-presenter-chrome hidden>
-            <button type="button" class="btn btn-primary cd-btn" data-countdown-action="start">Start</button>
-            <button type="button" class="btn btn-secondary cd-btn" data-countdown-action="pause" hidden>Pause</button>
-            <button type="button" class="btn btn-secondary cd-btn" data-countdown-action="reset">Reset</button>
+            <button type="button" class="btn btn-primary cd-btn" data-countdown-action="start">${escapeHtml(copy.countdownStart)}</button>
+            <button type="button" class="btn btn-secondary cd-btn" data-countdown-action="pause" hidden>${escapeHtml(copy.countdownPause)}</button>
+            <button type="button" class="btn btn-secondary cd-btn" data-countdown-action="reset">${escapeHtml(copy.countdownReset)}</button>
           </div>
         </div>
       </div>

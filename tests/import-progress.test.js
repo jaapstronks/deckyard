@@ -27,7 +27,9 @@ globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
 const { showLoadingModal } = await import('../client/lib/dom/loading-modal.js');
 const { createMessageRotator } =
   await import('../client/lib/dom/status-message-rotator.js');
-const { PROGRESS } = await import('../server/utils/import-progress.js');
+const { createMockSseRes } = await import('./helpers/http-mocks.js');
+const { PROGRESS, createSseProgress, SOURCE_MESSAGES } =
+  await import('../server/utils/import-progress.js');
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -168,12 +170,102 @@ describe('the ladder has one source', () => {
   });
 
   it('does not pace its messages by sleeping on the server', () => {
-    for (const rel of routes.slice(0, 2)) {
-      const body = read(rel);
-      assert.ok(
-        !/setTimeout\(r, 1200\)/.test(body),
+    for (const rel of routes) {
+      assert.doesNotMatch(
+        read(rel),
+        /setTimeout\(/,
         `${rel} still sleeps between status messages`,
       );
     }
+  });
+});
+
+describe('the binder has one source', () => {
+  const routes = [
+    'server/routes/api/convert.js',
+    'server/routes/api/notion/import.js',
+    'server/routes/api/ai/wizard-v2-stream.js',
+  ];
+
+  it('is the only writer of status and messages events (B758)', () => {
+    for (const rel of routes) {
+      const body = read(rel);
+      assert.match(
+        body,
+        /createSseProgress\(/,
+        `${rel} does not report through createSseProgress`,
+      );
+      assert.doesNotMatch(
+        body,
+        /event: '(status|messages)'/,
+        `${rel} writes its own progress event`,
+      );
+      assert.doesNotMatch(body, /\bphase:/, `${rel} picks its own phase word`);
+      assert.doesNotMatch(body, /\bisNl\b/, `${rel} hardcodes a language`);
+    }
+  });
+});
+
+describe('the binder writes one sequence', () => {
+  const phases = (res) =>
+    res.frames.filter((f) => f.event === 'status').map((f) => f.data.phase);
+
+  const run = (opts, outlineLang = 'en-GB') => {
+    const res = createMockSseRes();
+    const progress = createSseProgress(res, opts);
+    progress.onStatusMessage('reading');
+    progress.onOutline(
+      { slides: [{}, {}, {}], statusMessages: ['about the topic'] },
+      { sections: 2, lang: outlineLang },
+    );
+    progress.onGroupDone({ done: 1, total: 2 });
+    progress.onGroupDone({ done: 2, total: 2 });
+    progress.finalize(3);
+    progress.save();
+    return res;
+  };
+
+  it('walks the five phases on a bar that only rises', () => {
+    const res = run({ initialMessages: SOURCE_MESSAGES.pdf });
+    assert.deepEqual(phases(res), [
+      'outline',
+      'outline',
+      'refine',
+      'refine-progress',
+      'refine-progress',
+      'finalize',
+      'save',
+    ]);
+    const bar = res.frames
+      .map((f) => f.data.progress)
+      .filter((p) => p !== undefined);
+    assert.deepEqual(
+      bar,
+      [...bar].sort((a, b) => a - b),
+      `bar walks back: ${bar}`,
+    );
+    assert.equal(bar.at(-1), PROGRESS.save);
+  });
+
+  it('hands the rotator the source list, then the outline list', () => {
+    const res = run({ lang: 'nl', initialMessages: SOURCE_MESSAGES.pdf });
+    const lists = res.frames
+      .filter((f) => f.event === 'messages')
+      .map((f) => f.data.statusMessages);
+    assert.deepEqual(lists, [SOURCE_MESSAGES.pdf.nl, ['about the topic']]);
+  });
+
+  it('speaks the request language until the outline settles the deck one', () => {
+    const res = run({ lang: 'nl' }, 'en-GB');
+    const lines = res.frames.map((f) => f.data.message).filter(Boolean);
+    assert.match(lines[0], /Inhoud analyseren/);
+    assert.ok(lines.includes('Outline ready: 3 slides in 2 sections…'), lines);
+    assert.equal(lines.at(-1), 'Saving to library…');
+  });
+
+  it('reads the default deck language for an auto request', () => {
+    const res = run({ lang: 'auto' }, 'nl');
+    assert.match(res.frames[0].data.message, /Inhoud analyseren/);
+    assert.match(res.frames.at(-1).data.message, /Opslaan/);
   });
 });

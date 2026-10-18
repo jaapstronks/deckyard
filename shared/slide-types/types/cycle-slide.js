@@ -8,6 +8,7 @@ import {
   clampInt,
   getCollectionItems,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 function stageHtml(stage, idx, total) {
   const label = typeof stage?.label === 'string' ? stage.label.trim() : '';
@@ -224,7 +225,7 @@ export default {
               ${arrowsHtml}
               ${centerHtml}
             </div>
-            <ol class="cycle-stages" aria-label="Cycle stages">
+            <ol class="cycle-stages" aria-label="${escapeHtml(getSlideCopy(ctx?.lang).cycleStagesLabel)}">
               ${stagesHtml}
             </ol>
           </div>

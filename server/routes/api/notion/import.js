@@ -26,9 +26,8 @@ import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 import {
-  OUTLINE_CREEP_MS,
-  PROGRESS,
-  REFINE_CREEP_MS,
+  createSseProgress,
+  SOURCE_MESSAGES,
 } from '../../../utils/import-progress.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
@@ -199,60 +198,18 @@ export async function handleNotionImportStream({
   // the image re-hosting, and is checked before the presentation is written.
   const { signal } = stream;
 
-  // Initial messages (Dutch by default - actual content language is auto-detected)
-  const isNl = true;
-  const initialMessages = isNl
-    ? [
-        'Notion-pagina ophalen...',
-        'Inhoud analyseren...',
-        'Afbeeldingen verwerken...',
-      ]
-    : [
-        'Fetching Notion page...',
-        'Analyzing content...',
-        'Processing images...',
-      ];
-
   try {
-    // Handed to the client's rotator rather than paced here with sleeps: the
-    // fetch and the outline call start immediately (B595).
     signal.throwIfAborted();
-    sseWrite(res, {
-      event: 'messages',
-      data: { statusMessages: initialMessages, intervalMs: 6000, loop: true },
+    // The one progress writer (B758): this route reports nothing itself.
+    const progress = createSseProgress(res, {
+      lang,
+      initialMessages: SOURCE_MESSAGES.notion,
     });
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: initialMessages[0],
-        phase: 'fetch',
-        progress: PROGRESS.parse,
-      },
-    });
-
-    // Fetching plus the outline call is one long stretch without events, so
-    // the bar creeps toward the refine floor instead of standing still.
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl
-          ? 'Inhoud converteren naar slides...'
-          : 'Converting content to slides...',
-        phase: 'convert',
-        progress: PROGRESS.parse,
-        creepTo: PROGRESS.refineFloor,
-        creepMs: OUTLINE_CREEP_MS,
-      },
-    });
-
-    const statusMessages = [];
-    let statusMessagesSent = false;
     // One map for the AI fix pipeline and the deck import (B247).
     const slideTypes = await buildMergedSlideTypes(storageScope);
     // The catalog the model chooses from is the org's (B659).
     const slideTypeOffer = await loadSlideTypeOffer(authedUser);
 
-    // Convert with streaming callbacks
     const {
       deck,
       report,
@@ -265,59 +222,10 @@ export async function handleNotionImportStream({
       ...slideTypeOffer,
       themeContext,
       titleSlideType,
-      onStatusMessage: (msg) => {
-        statusMessages.push(msg);
-        // Message only: the bar is owned by the creep until the first section
-        // group finishes, so an arriving message may not move it.
-        if (!statusMessagesSent) {
-          sseWrite(res, {
-            event: 'status',
-            data: { message: msg, phase: 'convert' },
-          });
-        }
-      },
-      onOutlineComplete: (outline) => {
-        if (outline?.statusMessages?.length > 0) {
-          statusMessagesSent = true;
-          sseWrite(res, {
-            event: 'messages',
-            data: { statusMessages: outline.statusMessages },
-          });
-          // The outline is a real milestone, so the bar lands on the refine
-          // floor; from there the phase creeps until a group reports.
-          sseWrite(res, {
-            event: 'status',
-            data: {
-              phase: 'refine',
-              progress: PROGRESS.refineFloor,
-              creepTo: PROGRESS.refineCeiling,
-              creepMs: REFINE_CREEP_MS,
-            },
-          });
-        }
-      },
-      // Real progress: one event per finished section group.
-      onGroupDone: ({ done, total }) => {
-        sseWrite(res, {
-          event: 'status',
-          data: {
-            message: isNl
-              ? `Sectie ${done} van ${total} geschreven…`
-              : `Wrote section ${done} of ${total}…`,
-            progress: Math.round(
-              PROGRESS.refineFloor +
-                (done / total) *
-                  (PROGRESS.refineCeiling - PROGRESS.refineFloor),
-            ),
-            phase: 'refine-progress',
-          },
-        });
-      },
+      onOutline: progress.onOutline,
+      onStatusMessage: progress.onStatusMessage,
+      onGroupDone: progress.onGroupDone,
     });
-
-    if (statusMessages.length > 0 && !statusMessagesSent) {
-      sseWrite(res, { event: 'messages', data: { statusMessages } });
-    }
 
     if (!deck || report.errors.length > 0) {
       sseError(res, report.errors.join('; ') || 'Conversion failed', {
@@ -327,41 +235,11 @@ export async function handleNotionImportStream({
       return true;
     }
 
-    // Post-conversion messages
-    const slideCount = deck?.slides?.length || 0;
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl
-          ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
-          : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
-        progress: PROGRESS.refineCeiling,
-        phase: 'finalize',
-      },
-    });
-    await new Promise((r) => setTimeout(r, 500));
-
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
-        progress: PROGRESS.building,
-        phase: 'finalize',
-      },
-    });
-    await new Promise((r) => setTimeout(r, 500));
-
-    sseWrite(res, {
-      event: 'status',
-      data: {
-        message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
-        progress: PROGRESS.save,
-        phase: 'save',
-      },
-    });
+    progress.finalize(deck.slides?.length || 0);
 
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
+    progress.save();
 
     // Create the presentation
     // The language the generation settled on; review metadata kept (B757).
