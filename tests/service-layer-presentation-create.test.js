@@ -13,10 +13,10 @@
  * with no id (v1) or a bare `Error` (MCP) (A7.4, D252–D256).
  *
  * The LLM is the one way out of the generating contracts, so the provider's
- * `fetch` is swapped for a double that answers one JSON object every parser
- * in the chain accepts (the one-shot deck parser reads `type`/`content`, the
- * two-phase outline parser reads `intent`/`roughContent`, and an unparseable
- * refinement falls back to deterministic slides), following
+ * `fetch` is swapped for a double that answers one JSON object every step of
+ * the one generation pipeline accepts (the outline reads `intent`/
+ * `roughContent`, the refinement `type`/`content`; B759 retired the one-shot
+ * generator the wizards used to fall back on), following
  * tests/post-cancel.test.js. Handler-import level against the database double,
  * like tests/service-layer-presentation-save.test.js.
  *
@@ -112,22 +112,13 @@ const isUuid = (value) =>
 // --- The model ----------------------------------------------------------------
 
 /**
- * One answer every parser in the chain accepts: the one-shot deck parser
- * reads `type` and `content`, the two-phase outline parser `intent` and
- * `roughContent`; the rest is ignored by whichever reads it.
+ * One answer every step of the pipeline accepts: the outline reads `title`,
+ * `intent` and `roughContent`, the refinement `type` and `content`; the rest
+ * is ignored by whichever reads it. The pipeline adds its own title slide.
  */
 const MODEL_ANSWER = JSON.stringify({
-  format: 'deckyard.deck',
-  version: 1,
   title: 'Tide pools',
-  theme: 'default',
   slides: [
-    {
-      type: 'title-slide',
-      content: { title: 'Tide pools', subheading: 'Who lives there' },
-      intent: 'content',
-      roughContent: 'Tide pools and who lives there',
-    },
     {
       type: 'content-slide',
       content: { title: 'Anemones', body: '- They sting\n- They wait' },
@@ -136,6 +127,9 @@ const MODEL_ANSWER = JSON.stringify({
     },
   ],
 });
+
+/** The stored titles: the pipeline's title slide, then the model's slides. */
+const GENERATED_TITLES = ['Tide pools', 'Anemones'];
 
 /** Swap the provider's `fetch` for a double for one test; counts the calls. */
 function stubModel(t) {
@@ -164,7 +158,7 @@ function makeReq(body) {
   return req;
 }
 
-/** The internal one-shot wizard, as the session user. */
+/** The internal JSON wizard, as the session user. */
 async function internalWizard(body) {
   const res = createMockRes();
   await handleAiWizard({
@@ -318,11 +312,13 @@ test('v1 wizard: one insert, no update; 201 with the generated deck, owned by th
     lang: 'en-GB',
   });
   assert.equal(res.statusCode, 201, JSON.stringify(res.json()));
-  assert.equal(calls.length, 1, 'one model call');
+  // The one generation pipeline (B759): outline, revise and refine each call
+  // the model.
+  assert.ok(calls.length >= 3, `model calls: ${calls.length}`);
   assertOneWrite(db, from, 'v1 wizard');
 
   const pres = res.json().data?.presentation ?? res.json().presentation;
-  assert.equal(pres.slideCount, 2);
+  assert.equal(pres.slideCount, GENERATED_TITLES.length);
   assert.equal(pres.title, 'Tide pools');
   assert.equal(pres.lang, 'en-GB');
   assert.ok(pres.createdAt && pres.updatedAt, 'published timestamps');
@@ -332,7 +328,7 @@ test('v1 wizard: one insert, no update; 201 with the generated deck, owned by th
   assert.equal(row.owner_email, OWNER_EMAIL);
   assert.deepEqual(
     row.slides.map((s) => s.content.title),
-    ['Tide pools', 'Anemones'],
+    GENERATED_TITLES,
   );
   assert.deepEqual(
     row.i18n.versions['en-GB'].slides.map((s) => s.id),
@@ -409,10 +405,10 @@ test('internal wizard: one insert, no update; 201 with the deck', async (t) => {
 
   const [row] = decks(db);
   assert.equal(row.id, res.json().id);
-  assert.equal(res.json().slides.length, 2);
+  assert.equal(res.json().slides.length, GENERATED_TITLES.length);
   assert.deepEqual(
     row.slides.map((s) => s.content.title),
-    ['Tide pools', 'Anemones'],
+    GENERATED_TITLES,
   );
 });
 

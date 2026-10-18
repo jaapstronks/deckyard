@@ -10,7 +10,8 @@
  * spent, 400 for a missing/empty `raw`.
  *
  * Generation success paths use a stubbed model response and the database
- * double, asserting imported image placeholders and creation settings. A local
+ * double, asserting imported image placeholders and creation settings; the
+ * wizard runs the one generation pipeline (outline, revise, refine) on it. A local
  * `openai-compat` endpoint answering 500 exercises the v1 error renderer too.
  *
  * Handler-import level against the database double, like the neighbours
@@ -351,17 +352,31 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
     const savedEndpoint = process.env.OPENAI_COMPAT_ENDPOINT;
     process.env.OPENAI_COMPAT_ENDPOINT = 'http://model.test/v1';
     process.env.OPENAI_COMPAT_MODEL = 'test-model';
-    globalThis.fetch = async () =>
-      new Response(
+    let modelCalls = 0;
+    globalThis.fetch = async () => {
+      modelCalls += 1;
+      return new Response(
         JSON.stringify({
           choices: [
             {
               message: {
                 content: JSON.stringify({
                   title: 'Images',
+                  // The outline reads `intent`/`roughContent`, phase 2 and
+                  // append read `type`/`content`: one answer for every call.
                   slides: [
-                    { type: 'image-slide', content: { image: '' } },
-                    { type: 'image-text-slide', content: {} },
+                    {
+                      intent: 'content',
+                      roughContent: 'A full-bleed photo',
+                      type: 'image-slide',
+                      content: { image: '' },
+                    },
+                    {
+                      intent: 'content',
+                      roughContent: 'A photo beside a sentence',
+                      type: 'image-text-slide',
+                      content: {},
+                    },
                   ],
                 }),
               },
@@ -370,6 +385,7 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
         }),
         { headers: { 'content-type': 'application/json' } },
       );
+    };
     t.after(() => {
       globalThis.fetch = savedFetch;
       if (savedEndpoint === undefined)
@@ -405,7 +421,15 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
         true,
         'v1 keeps the settings extracted by the shared validator',
       );
-      for (const slide of pres.slides)
+      // The one generation pipeline, not a one-shot (B759): outline, revise
+      // and refine are each a call of their own.
+      assert.ok(modelCalls >= 3, `model calls: ${modelCalls}`);
+      // The pipeline opens with its own title slide; the content
+      // slides after it are the model's.
+      const [titleSlide, ...contentSlides] = pres.slides;
+      assert.equal(titleSlide.type, 'title-slide');
+      assert.equal(contentSlides.length, 2);
+      for (const slide of contentSlides)
         assert.equal(slide.content.image, DEFAULT_IMAGE_PLACEHOLDER);
     } else {
       for (const slide of ctx.res.body.slides)
@@ -413,3 +437,59 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
     }
   });
 }
+
+test('POST /ai/wizard: a client that hangs up mid-generation aborts the model call and gets no presentation', async (t) => {
+  const db = await installDb();
+  const savedFetch = globalThis.fetch;
+  const savedModel = process.env.OPENAI_COMPAT_MODEL;
+  const savedEndpoint = process.env.OPENAI_COMPAT_ENDPOINT;
+  process.env.OPENAI_COMPAT_ENDPOINT = 'http://model.test/v1';
+  process.env.OPENAI_COMPAT_MODEL = 'test-model';
+  // A model call still in flight while the client leaves: it rejects on abort.
+  let providerSignal = null;
+  globalThis.fetch = (_url, opts = {}) => {
+    providerSignal = opts.signal;
+    return new Promise((_resolve, reject) => {
+      opts.signal?.addEventListener('abort', () =>
+        reject(opts.signal.reason ?? new Error('aborted')),
+      );
+    });
+  };
+  t.after(() => {
+    globalThis.fetch = savedFetch;
+    if (savedEndpoint === undefined) delete process.env.OPENAI_COMPAT_ENDPOINT;
+    else process.env.OPENAI_COMPAT_ENDPOINT = savedEndpoint;
+    if (savedModel === undefined) delete process.env.OPENAI_COMPAT_MODEL;
+    else process.env.OPENAI_COMPAT_MODEL = savedModel;
+  });
+  const ctx = makeCtx('POST', '/api/v1/ai/wizard', {
+    body: { raw: 'A talk about tide pools.', vendor: 'openai-compat' },
+  });
+  // The response double learns to emit `close`, the way a dropped socket ends.
+  const closeListeners = [];
+  ctx.res.writableFinished = false;
+  ctx.res.on = (event, fn) => {
+    if (event === 'close') closeListeners.push(fn);
+  };
+  const done = handleAi(ctx);
+  const deadline = Date.now() + 10_000;
+  while (!providerSignal) {
+    if (Date.now() > deadline)
+      throw new Error('the route never called the model');
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  for (const fn of closeListeners) fn();
+  assert.equal(await done, true);
+
+  assert.equal(
+    providerSignal.aborted,
+    true,
+    'the model call outlived the client',
+  );
+  assert.equal(
+    (db.__tables.presentations || []).length,
+    0,
+    'a presentation was written for a client that had already left',
+  );
+  assert.equal(ctx.res.statusCode, null, 'a cancel was answered as an error');
+});
