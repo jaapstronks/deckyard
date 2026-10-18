@@ -28,6 +28,7 @@ import { refineAllSlideGroups } from './refine-slides.js';
 import { reviseOutline as reviseOutlineStep } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides/index.js';
+import { AI_REVIEW_KEYS } from '../public-output.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
@@ -355,13 +356,6 @@ export async function generateDeck(
 
   return deck;
 }
-
-/**
- * The per-slide review metadata `assembleDeck()` writes: the reasoning the
- * editor's slide notes show, the alternative types the whole-deck review grid
- * offers, the validation warnings.
- */
-const AI_REVIEW_KEYS = ['_aiReasoning', '_aiAlternatives', '_aiWarnings'];
 
 /**
  * Normalize a generated deck into presentation parts, review metadata kept.
