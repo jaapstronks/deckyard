@@ -9,6 +9,7 @@ import {
   youtubeEmbedUrl,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 import { bunnyPlayerColors } from './video-slide/player-colors.js';
 
 export default {
@@ -239,7 +240,7 @@ export default {
           `
       : `
             <div class="video-empty">
-              <div class="help">Paste a YouTube/Vimeo URL or a Bunny video UUID.</div>
+              <div class="help">${escapeHtml(getSlideCopy(ctx?.lang).videoEmptyHint)}</div>
             </div>
           `;
 

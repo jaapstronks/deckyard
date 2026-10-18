@@ -8,6 +8,7 @@ import {
   clampInt,
   getCollectionItems,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 function stepHtml(step, idx, total, direction) {
   const title = typeof step?.title === 'string' ? step.title.trim() : '';
@@ -206,7 +207,7 @@ export default {
       <div class="slide slide-process ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <ol class="process-container" data-direction="${direction}" data-count="${count}"${layoutAttr} aria-label="Process steps">
+          <ol class="process-container" data-direction="${direction}" data-count="${count}"${layoutAttr} aria-label="${escapeHtml(getSlideCopy(ctx?.lang).processStepsLabel)}">
             ${stepsHtml}
           </ol>
           ${bottomSubheadingHtml}
