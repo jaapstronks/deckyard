@@ -10,10 +10,15 @@
  * itself overridable is a separate step of the seam.
  */
 
-import { SLIDE_TYPES } from '../../../../../shared/slide-types/registry.js';
+import {
+  SLIDE_TYPES,
+  GLOBAL_SLIDE_FIELD_KEYS,
+} from '../../../../../shared/slide-types/registry.js';
 import { customSlideTypeKey } from '../../../../../shared/slide-types/custom-type-runtime.js';
 import { allowedEnumValues } from '../../../../../shared/slide-types/field-types.js';
 import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
+
+const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
 /**
  * Build the system prompt for Phase 2 refinement
@@ -78,13 +83,23 @@ CRITICAL RULES
    - Timeline/roadmap with dates → timeline-slide
    - When uncertain, choose the plainer type (text or bulleted list)
 
-4. MAX LENGTHS:
-   - Follow the declared field limits below, including nested items.
+4. THE SLIDE CARRIES THE CORE, THE NOTES CARRY THE EXPLANATION:
+   - An audience reads a slide in seconds. Keep the visible text of one
+     slide under about 60 words: title, subheadings, items and aside together.
+   - An item, card body or block body is one short line (about 5-15 words),
+     not a paragraph. A KPI note is a few words.
+   - A subheading, bottomSubheading or asideText adds what the items do not
+     say; never restate the items, tiles or figures already on the slide.
+     Leave it out when it would only repeat.
+   - Explanation, context, extra figures and examples go in presenterNotes.
+
+5. MAX LENGTHS:
+   - The limits below are ceilings for what fits, not targets.
    - Overlong text is rejected and must be rewritten, never truncated.
-   - Write complete sentences; shorten the wording without losing its meaning.
+   - Shorten the wording without losing its meaning.
 ${buildLengthContract(disabledSlideTypes, customSlideTypes)}
 
-5. A LIST CLAIMS ITS ITEMS ARE ALIKE:
+6. A LIST CLAIMS ITS ITEMS ARE ALIKE:
    - Items, cards, and the blocks of one row all answer the question the
      title (or row title) asks: N items under "Target groups" says there
      are N target groups. Each one must be one of them.
@@ -169,6 +184,15 @@ export function buildThemeContextSection(
       'Slide backgrounds: set "background" only to a value its slide type offers:',
     );
     parts.push(offers);
+    const without = typesWithoutBackground(
+      disabledSlideTypes,
+      customSlideTypes,
+    );
+    if (without.length) {
+      parts.push(
+        `These types have no background: leave "background" out on ${without.join(', ')}.`,
+      );
+    }
   }
 
   if (themeContext.brandColors?.length) {
@@ -240,11 +264,18 @@ export function buildPhase2UserPrompt({ slides, groupId }) {
   return lines.join('\n');
 }
 
-/** Publish the actual field caps instead of a second handwritten length table. */
+/**
+ * Publish the actual field caps instead of a second handwritten length table.
+ * The global fields every type carries (a11y pair, background image, logo) are
+ * left out, as the catalog leaves them out: a cap in this list reads as a field
+ * to fill, and an a11y summary the model writes onto every slide is text the
+ * audience never sees (B765).
+ */
 function buildLengthContract(disabled = [], custom = []) {
   const lines = [];
   function walk(fields, prefix, caps) {
     for (const field of fields || []) {
+      if (!prefix && GLOBAL_FIELDS.has(field.key)) continue;
       const path = `${prefix}${field.key}`;
       if (Number.isFinite(field.maxLength))
         caps.push(`${path}: ${field.maxLength}`);
@@ -281,6 +312,15 @@ function buildBackgroundOffers(themeContext, disabled = [], custom = []) {
   return [...byOffer]
     .map(([offer, types]) => `- ${offer}: ${types.join(', ')}`)
     .join('\n');
+}
+
+/** Offered types with no `background` field, which the model still decorates (B765). */
+function typesWithoutBackground(disabled = [], custom = []) {
+  return offeredTypeDefs(disabled, custom)
+    .filter(
+      ([, def]) => !(def.fields || []).some((f) => f.key === 'background'),
+    )
+    .map(([type]) => type);
 }
 
 /** Core and custom type definitions the org has not disabled, as `[name, def]`. */
