@@ -20,9 +20,15 @@
  * 4. Before the live document is ready both columns are inert and say so.
  * 5. Whether a target slide exists is matched on id (model.js).
  *
- * Navigation through the deck (an index, the keyboard, opening on the
- * selected slide) is B764; machine proposals are B478.
+ * Navigation follows the editor selection through its lock-aware seam;
+ * machine proposals are B478.
  */
+import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
+import { createTranslateNavigation } from './navigation.js';
+import {
+  mountSlideInto,
+  cleanupSlideRuntimes,
+} from '../../../lib/slide-runtime/slide-render.js';
 import { h } from '../../../lib/dom/index.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { createModal } from '../../../lib/dom/modal.js';
@@ -37,6 +43,7 @@ import {
   isEmptyTarget,
   onlyEmptyTargets,
   translateViewModel,
+  versionOf,
 } from './model.js';
 
 const MULTILINE_TYPES = new Set(['markdown', 'csv']);
@@ -100,6 +107,7 @@ function isMultiline(meta, ...values) {
  *   selection seam
  * @param {{undo: Function, redo: Function, canUndo: Function,
  *   canRedo: Function}} [opts.history] - the editor's undo/redo
+ * @param {() => Object} [opts.getTheme] - current theme for on-demand previews
  * @param {Function} [opts.onClosed]
  * @returns {{close: Function, sync: Function}}
  */
@@ -117,6 +125,7 @@ export function openTranslateView({
   selectSlide,
   history,
   onClosed,
+  getTheme,
 } = {}) {
   const activeLang = () => normalizeLang(pres?.i18n?.active);
   const pair = defaultLanguagePair(pres, activeLang());
@@ -131,6 +140,13 @@ export function openTranslateView({
   let controls = new Map();
   let renderedShape = '';
   let unsubscribe = null;
+  let navigation = null;
+  let previewCleanups = [];
+  const clearPreviews = () => {
+    for (const cleanup of previewCleanups) cleanup();
+    previewCleanups = [];
+    cleanupSlideRuntimes(body);
+  };
 
   // ── chrome ───────────────────────────────────────────────────────────────
 
@@ -144,6 +160,8 @@ export function openTranslateView({
     fill: true,
     closeButton: 'icon',
     onClose: () => {
+      navigation?.detach();
+      clearPreviews();
       unsubscribe?.();
       unsubscribe = null;
       controls = new Map();
@@ -204,8 +222,16 @@ export function openTranslateView({
     h('div', { class: 'translate-view-history' }, [undoBtn, redoBtn]),
   ]);
   const body = h('div', { class: 'translate-view-body' });
+  const index = h('nav', {
+    class: 'translate-view-index',
+    'aria-label': t('editor.translateView.slideIndex', 'Slides'),
+  });
   modal.append(
-    h('div', { class: 'translate-view-frame' }, [toolbar, statusEl, body]),
+    h('div', { class: 'translate-view-frame' }, [
+      toolbar,
+      statusEl,
+      h('div', { class: 'translate-view-content' }, [index, body]),
+    ]),
   );
 
   // ── language pair ────────────────────────────────────────────────────────
@@ -330,6 +356,10 @@ export function openTranslateView({
       );
     entry.stored = value;
     entry.error?.clear();
+    // An own write emits no change signal (the view already holds the text),
+    // but the index's status dots are derived: refresh them, or filling the
+    // last empty field of a slide would leave it marked incomplete.
+    refreshIndex();
     syncHistory();
     return undefined;
   };
@@ -377,6 +407,10 @@ export function openTranslateView({
         })),
     };
   };
+
+  /** The index's numbers and status dots; the rows on screen stay as they are. */
+  const refreshIndex = (model = currentModel()) =>
+    navigation?.update(visibleModel(model).slides, model.slides);
 
   /** Everything a re-render would change apart from the text values. */
   const shapeOf = (model) =>
@@ -452,7 +486,48 @@ export function openTranslateView({
       class: 'translate-view-slide-title',
       text: `${number}${slideTypeLabel(s.type, slideTypes)}`,
     });
-    const children = [heading];
+    const preview = h('div', {
+      class: 'translate-view-preview thumb',
+      hidden: true,
+    });
+    const previewBtn = h('button', {
+      type: 'button',
+      class: 'btn btn-secondary btn-sm',
+      text: t('editor.translateView.preview', 'Preview slide'),
+      'aria-expanded': 'false',
+      onclick: () => {
+        preview.hidden = !preview.hidden;
+        previewBtn.setAttribute('aria-expanded', String(!preview.hidden));
+        cleanupSlideRuntimes(preview);
+        preview.replaceChildren();
+        if (!preview.hidden) {
+          const lang = s.only === 'target' ? state.target : state.source;
+          const version = versionOf(pres, lang, activeLang());
+          if (!preview.dataset.scaled) {
+            previewCleanups.push(attachThumbScale(preview));
+            preview.dataset.scaled = 'true';
+          }
+          mountSlideInto(
+            preview,
+            version.slides.find((slide) => slide.id === s.slideId),
+            {
+              mode: 'thumb',
+              theme: getTheme?.(),
+              presentationId: pres.id,
+              renderVia: { kind: 'deck', id: pres.id },
+              lang,
+            },
+          );
+        }
+      },
+    });
+    const children = [
+      h('div', { class: 'translate-view-slide-heading' }, [
+        heading,
+        previewBtn,
+      ]),
+      preview,
+    ];
     if (s.only) {
       const lang = s.only === 'source' ? state.source : state.target;
       children.push(
@@ -513,6 +588,7 @@ export function openTranslateView({
       ? addressKey(focused.lang, focused.slideId, focused.path)
       : null;
 
+    clearPreviews();
     controls = new Map();
     if (!state.source || !state.target) {
       body.replaceChildren(
@@ -565,6 +641,7 @@ export function openTranslateView({
       );
     }
     body.replaceChildren(...parts);
+    navigation?.update(shown.slides, model.slides);
 
     const again = focusKey ? controls.get(focusKey) : null;
     if (again) {
@@ -638,13 +715,21 @@ export function openTranslateView({
       if (c.el !== document.activeElement && c.el.value !== next)
         c.el.value = next;
     }
+    refreshIndex(model);
     applyWriteState();
   }
 
+  navigation = createTranslateNavigation({
+    body,
+    index,
+    getSelectedSlideId,
+    selectSlide,
+  });
   renderPair();
   render();
   unsubscribe = subscribe?.(sync) || null;
   modal.show(root);
+  navigation.go(getSelectedSlideId?.());
   return { close: modal.close, sync };
 }
 
