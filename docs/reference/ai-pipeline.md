@@ -185,7 +185,14 @@ validation-event logs alongside them.
   `refineAllSlideGroups` runs one LLM call per group, each shown the catalogue,
   the examples, the theme context and each slide's source context, returning a
   type, structured content, presenter notes and a presenter-facing reasoning
-  per slide; `validateAndFixRefinedSlides` repairs the result;
+  per slide. The rules, catalogue and theme context form a system prompt that
+  is byte-identical for every group (and every deck with the same language,
+  types and theme); it goes out with `cache: true`, which the Claude provider
+  turns into a prompt-cache breakpoint and the OpenAI-compatible providers
+  drop, since they cache a repeated prefix themselves. The presentation and
+  adjacent context ride in the user message. The first group runs alone so
+  the fan-out after it reads that cache instead of writing it six times
+  (B766). `validateAndFixRefinedSlides` repairs the result;
   `assembleDeck` prepends a title slide (its `subheading` from the outline)
   and emits a `deckyard.deck` document with `lang`. The cancel `signal` reaches
   every model call. All four store through `generatedDeckToParts()` (next to the
