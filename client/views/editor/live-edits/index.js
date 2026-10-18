@@ -48,6 +48,9 @@ import { t } from '../../../lib/ui-i18n.js';
  * @param {Function} [opts.setSaveStatus] - persistent connection failure status
  * @param {Function} [opts.onTitleChanged] - topbar title element updater
  * @param {Function} [opts.onUndoStateChanged] - topbar undo/redo buttons
+ * @param {Function} [opts.onVersionsChanged] - a language buffer changed from
+ *   the doc (a peer, undo/redo, in any language), or the doc became ready to
+ *   write into (B763)
  * @returns {Object} live-edits handle for the controller
  */
 export function initEditorLiveEdits({
@@ -66,6 +69,7 @@ export function initEditorLiveEdits({
   setSaveStatus,
   onTitleChanged,
   onUndoStateChanged,
+  onVersionsChanged,
 } = {}) {
   const provider = session?._provider;
   const doc = provider?.document;
@@ -240,6 +244,7 @@ export function initEditorLiveEdits({
         // ignore
       }
     },
+    onVersionsChanged: () => tryCall(onVersionsChanged),
   });
 
   const updateStatus = () => {
@@ -270,6 +275,7 @@ export function initEditorLiveEdits({
     refreshNotesTa();
     onTitleChanged?.(String(pres.title ?? ''));
     onUndoStateChanged?.();
+    tryCall(onVersionsChanged);
   };
 
   // Attach once the server's state (bootstrapped in onLoadDocument) is in.

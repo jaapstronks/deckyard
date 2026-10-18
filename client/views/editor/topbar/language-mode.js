@@ -64,6 +64,8 @@ import { setQueryParams } from '../../../lib/state/router.js';
  * @param {object} options.editorState - Editor state updater utility
  * @param {HTMLElement} options.topbarTitleEl - Title element to update
  * @param {Function} options.toast - Toast notifications
+ * @param {Function} [options.onOpenTranslateView] - Open the side-by-side
+ *   translation view (B763); listed while the deck has two languages
  * @returns {object} Language menu controller
  */
 export function createLanguageMode({
@@ -86,6 +88,7 @@ export function createLanguageMode({
   // pushed back into the doc so the next collab store can't overwrite them.
   // `{ loadLanguageVersion(lang) => presLike|null }`
   collabLanguage = null,
+  onOpenTranslateView,
 } = {}) {
   let translateBusy = false;
 
@@ -365,6 +368,23 @@ export function createLanguageMode({
     if (canMoveSourceHere(active, progress.dominant)) {
       items.push(h('div', { class: 'dropdown-sep' }));
       items.push(makeSourceItem(active, progress.dominant));
+    }
+
+    // The view pairs two versions, so it is offered once there are two.
+    if (onOpenTranslateView && listed.length > 1) {
+      items.push(h('div', { class: 'dropdown-sep' }));
+      items.push(
+        h('button', {
+          class: 'dropdown-item lang-menu-action',
+          type: 'button',
+          disabled: translateBusy,
+          onclick: () => {
+            closeMenu();
+            onOpenTranslateView();
+          },
+          text: t('editor.translateView.open', 'Translate side by side…'),
+        }),
+      );
     }
 
     const addable = getSupportedLangs().filter((l) => !listed.includes(l));

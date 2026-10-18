@@ -52,6 +52,8 @@ export function setupSlideList({
   // For "Save to slide library…" in the slide-list menu.
   api,
   openSlideLibraryModal,
+  // "Translate side by side…" in the slide-list menu (B763).
+  openTranslateView,
 } = {}) {
   let draggingSlideId = null;
   let draggingSlideIds = []; // For multi-select drag
@@ -725,6 +727,7 @@ export function setupSlideList({
         api,
         openSlideLibraryModal,
         isAuthor,
+        openTranslateView,
       },
     });
     return true;

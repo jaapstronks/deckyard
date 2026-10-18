@@ -349,6 +349,7 @@ export const APP_FEATURE_LAYER = {
     'editor/107-collab-presence.css',
     'editor/109-layout-switcher.css',
     'editor/110-fields-view.css',
+    'editor/111-translate-view.css',
     'shell/110-sandbox-banner.css',
     'list/110-sandbox-examples.css',
     'shell/111-maintenance-banner.css',
