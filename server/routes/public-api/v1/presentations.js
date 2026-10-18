@@ -29,8 +29,10 @@ import {
   deletePresentation,
   duplicatePresentation,
   listPresentationsForActor,
+  mayOnPresentation,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
+import { stripAiReviewMeta } from '../../../utils/public-output.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -190,9 +192,18 @@ async function handleGet(ctx, id) {
   const { ok, pres } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;
 
+  // A reader who may not edit the deck gets what the slides show, not the
+  // author's AI notes (B767); an editor keeps them, or a GET-then-PUT would
+  // drop them.
+  const mayEdit = await mayOnPresentation(
+    pres,
+    { actor: ctx.authedUser },
+    'write',
+  );
+  const served = mayEdit ? pres : stripAiReviewMeta(pres);
   const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
-    presentation: sanitizePresentation(pres, tags, ctx.apiKey?.ownerEmail),
+    presentation: sanitizePresentation(served, tags, ctx.apiKey?.ownerEmail),
   });
   return true;
 }

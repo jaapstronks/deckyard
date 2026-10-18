@@ -1,4 +1,5 @@
-// Helpers for outputs that must not include "live-only" slides.
+// Helpers for outputs that must not include "live-only" slides, or anything
+// else a reader without edit rights has no business receiving.
 
 import { filterSlidesForContext } from '../../shared/slide-visibility.js';
 import { isLiveOnlySlideType } from '../../shared/slide-types/live-session.js';
@@ -59,14 +60,15 @@ export function filterForExport(pres) {
 
 /**
  * Filter presentation for published/public context (embed, /p/ pages).
- * Removes live-only slides and slides with hideInPublished visibility.
+ * Removes live-only slides, the AI review notes and slides with
+ * hideInPublished visibility.
  * @param {Object} pres - Presentation object
  * @returns {Object} Filtered presentation
  */
 export function filterForPublished(pres) {
   if (!pres || typeof pres !== 'object') return pres;
-  // First strip live-only slides
-  pres = stripLiveOnlySlidesFromPresentation(pres);
+  // First strip live-only slides and the AI review notes
+  pres = stripAiReviewMeta(stripLiveOnlySlidesFromPresentation(pres));
   // Then apply visibility filter for published context
   const slides = Array.isArray(pres.slides) ? pres.slides : [];
   const filtered = filterSlidesForContext(slides, 'published');
@@ -107,16 +109,54 @@ export function mapDeckSlideLists(pres, fn) {
 }
 
 /**
+ * The per-slide review notes the AI generation writes for the author: the
+ * reasoning the editor's slide notes show, the alternative types the review
+ * grid offers, the validation warnings. They can quote the source the deck was
+ * made from, so they are the author's working material, not deck content.
+ */
+export const AI_REVIEW_KEYS = Object.freeze([
+  '_aiReasoning',
+  '_aiAlternatives',
+  '_aiWarnings',
+]);
+
+const hasAiReviewMeta = (slide) =>
+  !!slide &&
+  typeof slide === 'object' &&
+  AI_REVIEW_KEYS.some((key) => key in slide);
+
+/**
+ * Drop the {@link AI_REVIEW_KEYS} from every slide of every language version:
+ * whoever may only look at a deck gets what the slides show, not the notes
+ * the generation left for the author (B767). The surfaces that serve a reader
+ * without edit rights call this through their filter (view-only, share
+ * viewer, published) or directly (follow-along, public v1).
+ * @param {Object} pres - Presentation object
+ * @returns {Object} the presentation, unchanged when no slide carried a note
+ */
+export function stripAiReviewMeta(pres) {
+  return mapDeckSlideLists(pres, (slides) => {
+    if (!slides.some(hasAiReviewMeta)) return slides;
+    return slides.map((slide) => {
+      if (!hasAiReviewMeta(slide)) return slide;
+      const out = { ...slide };
+      for (const key of AI_REVIEW_KEYS) delete out[key];
+      return out;
+    });
+  });
+}
+
+/**
  * Filter presentation for view-only users, in every language version it
- * carries. Removes slides with hideFromViewers visibility and marks draft
- * slides.
+ * carries. Removes slides with hideFromViewers visibility and the AI review
+ * notes, and marks draft slides.
  * @param {Object} pres - Presentation object
  * @param {Object} options - Options
  * @param {boolean} options.markDrafts - Whether to mark draft slides with _isDraft flag
  * @returns {Object} Filtered presentation
  */
 export function filterForViewOnly(pres, options = {}) {
-  return mapDeckSlideLists(pres, (slides) => {
+  return mapDeckSlideLists(stripAiReviewMeta(pres), (slides) => {
     const filtered = filterSlidesForContext(slides, 'viewer', {
       userPermission: 'read',
       markDrafts: options.markDrafts !== false,
