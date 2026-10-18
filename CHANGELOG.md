@@ -4,6 +4,29 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.75.0](https://github.com/jaapstronks/deckyard/compare/v1.74.0...v1.75.0) (2026-10-18)
+
+
+### Added
+
+* **editor:** translate the whole deck side by side (B763) ([#1730](https://github.com/jaapstronks/deckyard/issues/1730)) ([f1f5434](https://github.com/jaapstronks/deckyard/commit/f1f5434dc261e432bd391ef8018d52a54dc9e2e2))
+* **editor:** write text into any language version, not only the active one (B762) ([#1728](https://github.com/jaapstronks/deckyard/issues/1728)) ([a3a7ab8](https://github.com/jaapstronks/deckyard/commit/a3a7ab833a8315e19e2ddfbaab3bfb48a1844c49))
+
+
+### Fixed
+
+* **ai:** the slide carries the core again, the notes the explanation (B765) ([#1725](https://github.com/jaapstronks/deckyard/issues/1725)) ([66d68c6](https://github.com/jaapstronks/deckyard/commit/66d68c667b08319d227e57471b2638c5c4aa6aff))
+
+
+### Security
+
+* the AI notes per slide stay with the author (B767) ([#1729](https://github.com/jaapstronks/deckyard/issues/1729)) ([fc02f07](https://github.com/jaapstronks/deckyard/commit/fc02f075213322ac20ac9e1cf544f576e5672707))
+
+
+### Changed
+
+* **ai:** phase 2 sends its rules and catalog as a cached prefix (B766) ([#1727](https://github.com/jaapstronks/deckyard/issues/1727)) ([988a339](https://github.com/jaapstronks/deckyard/commit/988a339ec295fd5aac267544b6f9605da2760a49))
+
 ## [1.74.0](https://github.com/jaapstronks/deckyard/compare/v1.73.0...v1.74.0) (2026-10-18)
 
 
