@@ -44,6 +44,7 @@
 
 import { patchYText } from '../../../../shared/collab/deck-ydoc.js';
 import { isPerLanguageKey } from '../../../../shared/slide-types/text-fields.js';
+import { debugLog } from '../../../lib/state/debug.js';
 
 const SERVER_MANAGED_KEYS = new Set([
   'id',
@@ -84,6 +85,10 @@ function jsonEq(a, b) {
  *   structureChanged, titleChanged, metaChanged}) after a doc-driven change
  *   has been projected into `pres`
  * @param {Function} [opts.onUndoStateChanged] - undo/redo stack sizes changed
+ * @param {Function} [opts.onVersionsChanged] - after a doc-driven change
+ *   (a peer, undo/redo) was projected, whichever language it touched: a text
+ *   of a language that is not active changes no `pres` slide, so
+ *   `onRemoteApplied` stays silent for it (B763)
  * @param {Object} [opts.origin] - transaction origin marker for local writes
  * @returns {Object} binder API
  */
@@ -95,6 +100,7 @@ export function createLiveDocBinder({
   getActiveLang,
   onRemoteApplied,
   onUndoStateChanged,
+  onVersionsChanged,
   origin = { source: 'deckyard-editor' },
 } = {}) {
   if (!Y || !doc || !codec || !pres) {
@@ -898,13 +904,22 @@ export function createLiveDocBinder({
     }
   }
 
+  const notifyVersions = () => {
+    try {
+      onVersionsChanged?.();
+    } catch (err) {
+      debugLog('[live-doc] versions listener failed', err);
+    }
+  };
   const onSlidesEvents = (events, txn) => {
     if (destroyed || txn.origin === origin) return;
     handleRemoteSlides(events);
+    notifyVersions();
   };
   const onMetaEvents = (events, txn) => {
     if (destroyed || txn.origin === origin) return;
     handleRemoteMeta(events);
+    notifyVersions();
   };
 
   // ── undo / redo ───────────────────────────────────────────────────────────

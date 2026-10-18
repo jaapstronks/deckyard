@@ -46,7 +46,8 @@ const isDeckTitle = (slideId, path) =>
  * @param {Object} opts
  * @param {Object} opts.pres - the editor's live presentation
  * @param {Function} opts.normalizeLang - canonical deck-language spelling
- * @param {Function} opts.markDirty - the controller's edit seam
+ * @param {Function} opts.markDirty - the controller's edit seam; returns
+ *   false when it refused the edit (a slide lock)
  * @param {Function} [opts.syncVersionStructure] - mirror the active version's
  *   structure into the others (legacy save manager)
  * @param {boolean} [opts.liveEditsActive] - collab live edits are on
@@ -76,8 +77,9 @@ export function createVersionTextWriter({
     }
     if (!slideId || !writeIntoSlide(pres.slides, slideId, path, value))
       return false;
-    markDirty({ slideId, action: 'edit' });
-    return true;
+    // False: another user holds the slide; the controller takes the text
+    // back out (D112), so it is no write.
+    return markDirty({ slideId, action: 'edit' }) !== false;
   };
 
   const writeLegacy = (lang, slideId, path, value) => {
@@ -105,5 +107,30 @@ export function createVersionTextWriter({
     if (liveEditsActive)
       return !!getLiveEdits?.()?.writeVersionText(l, slideId, path, value);
     return writeLegacy(l, slideId, path, value);
+  };
+}
+
+/**
+ * The signal the translation view (B763) follows: a language buffer, the
+ * readiness to write, or a slide lock may have changed. One signal rather
+ * than one per cause: the view re-reads the deck either way.
+ * @returns {{subscribe: (fn: Function) => Function, emit: () => void}}
+ */
+export function createVersionTextSignal() {
+  const listeners = new Set();
+  return {
+    subscribe(fn) {
+      listeners.add(fn);
+      return () => listeners.delete(fn);
+    },
+    emit() {
+      for (const fn of [...listeners]) {
+        try {
+          fn();
+        } catch (e) {
+          console.warn('[version-text] listener failed:', e?.message || e);
+        }
+      }
+    },
   };
 }

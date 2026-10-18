@@ -62,6 +62,9 @@ export function createEditorTopbar({
   markDirty,
   onAnalyze,
   onOpenOverview,
+  // Opens the side-by-side translation view (B763); listed in the language
+  // menu.
+  onOpenTranslateView,
   collabLanguage,
 } = {}) {
   const detachers = [];
@@ -150,6 +153,7 @@ export function createEditorTopbar({
     topbarTitleEl,
     toast,
     collabLanguage,
+    onOpenTranslateView,
   });
 
   // ============================================================
