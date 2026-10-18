@@ -10,7 +10,8 @@
  * spent, 400 for a missing/empty `raw`.
  *
  * Generation success paths use a stubbed model response and the database
- * double, asserting imported image placeholders and creation settings. A local
+ * double, asserting imported image placeholders and creation settings; the
+ * wizard runs the one generation pipeline (outline, revise, refine) on it. A local
  * `openai-compat` endpoint answering 500 exercises the v1 error renderer too.
  *
  * Handler-import level against the database double, like the neighbours
@@ -351,17 +352,31 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
     const savedEndpoint = process.env.OPENAI_COMPAT_ENDPOINT;
     process.env.OPENAI_COMPAT_ENDPOINT = 'http://model.test/v1';
     process.env.OPENAI_COMPAT_MODEL = 'test-model';
-    globalThis.fetch = async () =>
-      new Response(
+    let modelCalls = 0;
+    globalThis.fetch = async () => {
+      modelCalls += 1;
+      return new Response(
         JSON.stringify({
           choices: [
             {
               message: {
                 content: JSON.stringify({
                   title: 'Images',
+                  // The outline reads `intent`/`roughContent`, phase 2 and
+                  // append read `type`/`content`: one answer for every call.
                   slides: [
-                    { type: 'image-slide', content: { image: '' } },
-                    { type: 'image-text-slide', content: {} },
+                    {
+                      intent: 'content',
+                      roughContent: 'A full-bleed photo',
+                      type: 'image-slide',
+                      content: { image: '' },
+                    },
+                    {
+                      intent: 'content',
+                      roughContent: 'A photo beside a sentence',
+                      type: 'image-text-slide',
+                      content: {},
+                    },
                   ],
                 }),
               },
@@ -370,6 +385,7 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
         }),
         { headers: { 'content-type': 'application/json' } },
       );
+    };
     t.after(() => {
       globalThis.fetch = savedFetch;
       if (savedEndpoint === undefined)
@@ -405,7 +421,15 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
         true,
         'v1 keeps the settings extracted by the shared validator',
       );
-      for (const slide of pres.slides)
+      // The one generation pipeline, not a one-shot (B759): outline, revise
+      // and refine are each a call of their own.
+      assert.ok(modelCalls >= 3, `model calls: ${modelCalls}`);
+      // The pipeline opens with its own title slide; the content
+      // slides after it are the model's.
+      const [titleSlide, ...contentSlides] = pres.slides;
+      assert.equal(titleSlide.type, 'title-slide');
+      assert.equal(contentSlides.length, 2);
+      for (const slide of contentSlides)
         assert.equal(slide.content.image, DEFAULT_IMAGE_PLACEHOLDER);
     } else {
       for (const slide of ctx.res.body.slides)

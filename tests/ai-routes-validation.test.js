@@ -24,7 +24,7 @@
  *
  * Feasibility note (opt-out already logged in briefs/test-coverage-gaps.md,
  * opt-out 3): every generative handler's happy path crosses into a configured
- * LLM vendor (`generateDeckJsonFromRawContent`, `generateSlidesToAppend…`,
+ * LLM vendor (`generateDeck`, `generateSlidesToAppend…`,
  * `refineSectionWithAi`, …) — no seam to drive without a live vendor. Each is
  * pinned at every validation branch up to that point of no return; the vendor
  * call itself is the opt-out. The wizard-v2 **stream** endpoint additionally

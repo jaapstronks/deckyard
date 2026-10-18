@@ -17,6 +17,11 @@
  * with a copy of their own; they run `generateSlides()` now and assemble
  * around it (B757), so every server module is held to the rule.
  *
+ * The one-shot generator (`server/utils/openai/deck.js`, one call for the
+ * whole deck) is gone too (B759): it ran behind `POST /api/ai/wizard`, the
+ * creation UI's silent fallback, and the public `POST /api/v1/ai/wizard`.
+ * Both routes run `generateDeck()` now, like the stream route.
+ *
  * Run with: node --test tests/ai-generation-single-path.test.js
  */
 
@@ -79,5 +84,26 @@ test('the guard sees the service import the steps', () => {
   const imports = resolvedImports(SERVICE);
   for (const step of STEPS) {
     assert.ok(imports.includes(step), `${rel(SERVICE)} imports ${rel(step)}`);
+  }
+});
+
+test('the one-shot deck generator stays gone; every wizard route runs the service', () => {
+  assert.equal(
+    fs.existsSync(path.join(serverRoot, 'utils', 'openai', 'deck.js')),
+    false,
+    'server/utils/openai/deck.js is retired (B759): generate through generateDeck()',
+  );
+  const aiBarrel = path.join(aiRoot, 'index.js');
+  for (const route of [
+    'routes/api/ai/wizard.js',
+    'routes/api/ai/wizard-v2-stream.js',
+    'routes/public-api/v1/ai.js',
+  ]) {
+    const file = path.join(serverRoot, route);
+    const imports = resolvedImports(file);
+    assert.ok(
+      imports.includes(aiBarrel) || imports.includes(SERVICE),
+      `${rel(file)} imports the generation service`,
+    );
   }
 });

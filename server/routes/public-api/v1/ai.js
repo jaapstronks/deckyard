@@ -8,7 +8,7 @@ import {
   createPresentation,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
-import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
+import { generateDeck, generatedDeckToParts } from '../../../utils/ai/index.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
 import {
@@ -16,7 +16,7 @@ import {
   deckThemeId,
   presentationToDeck,
 } from '../../../../shared/slide-types.js';
-import { loadDeckTheme, settleNewDeckTheme } from '../../../utils/themes.js';
+import { loadAiThemeContext, loadDeckTheme } from '../../../utils/themes.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import {
   getAiParams,
@@ -56,7 +56,8 @@ async function handleVendors(ctx) {
 }
 
 /**
- * POST /api/v1/ai/wizard - Generate a new presentation from text.
+ * POST /api/v1/ai/wizard - Generate a new presentation from text, through the
+ * one generation pipeline the editor's wizard runs too (B759).
  */
 async function handleWizard(ctx) {
   const { repoRoot, storageScope, apiKey } = ctx;
@@ -84,28 +85,30 @@ async function handleWizard(ctx) {
 
   // Checked before the generation, so an unknown theme costs no LLM call;
   // absent means the installation default, never the model's pick (B486).
-  const { themeId: effectiveTheme, theme: themeConfig } =
-    await settleNewDeckTheme(repoRoot, theme, storageScope);
+  const {
+    themeId: effectiveTheme,
+    theme: themeConfig,
+    titleSlideType,
+    themeContext,
+  } = await loadAiThemeContext(repoRoot, theme, storageScope);
 
   // Track AI request
   await trackAiRequest(ctx);
 
   // A failure below (the model, or a refusal of the create such as 409
   // `limit_exceeded`) is rendered by `withV1ErrorHandler` (B619).
-  // Generate deck using AI
-  const slideTypeOffer = await loadSlideTypeOffer(apiKey);
-  const deck = await generateDeckJsonFromRawContent(raw, {
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+  const deck = await generateDeck(raw, {
     userName: apiKey.name || 'API User',
     targetLang: lang,
     vendor,
-    ...slideTypeOffer,
+    theme: effectiveTheme,
+    titleSlideType,
+    themeContext,
+    slideTypes,
+    ...(await loadSlideTypeOffer(apiKey)),
   });
-
-  const parts = deckToPresentationParts(deck, {
-    theme: themeConfig,
-    lang,
-    slideTypes: await buildMergedSlideTypes(storageScope),
-  });
+  const parts = generatedDeckToParts(deck, { theme: themeConfig, slideTypes });
 
   // One create carries the generated slides (B609): the factory seeds the
   // language version from them. A storage refusal (the size limit) is the
@@ -117,7 +120,7 @@ async function handleWizard(ctx) {
       title: parts.title,
       slides: parts.slides,
       theme: effectiveTheme,
-      lang: lang || undefined,
+      lang: deck.lang,
       ...(settings ? { settings } : {}),
     },
   );

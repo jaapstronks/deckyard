@@ -115,11 +115,12 @@ Pipeline (`server/utils/ai/`). The top level:
 - `server/utils/ai/validation-logging.js` — small, production-safe
   validation-event logs (unknown fields, schema issues) plus the admin readers.
 
-Legacy single-prompt path (`server/utils/openai/`): call sites
-import `openai/deck.js` (`wizard`), `openai/append.js`, `openai/translate.js`
-and `openai/convert-slide.js` directly; `openai/json.js`, `lang.js`,
-`prompt.js` and `slide-types-prompt.js` support them. This is the **v1** generation route — one prompt, no outline phase — still
-live behind `POST /api/ai/wizard`.
+Single-prompt editing helpers (`server/utils/openai/`): call sites import
+`openai/append.js`, `openai/translate.js` and `openai/convert-slide.js`
+directly; `openai/json.js`, `lang.js`, `prompt.js` and `slide-types-prompt.js`
+support them. None of them creates a deck: the one-shot deck generator that
+lived here (`openai/deck.js`) is gone, and every create runs `generateDeck()`
+(B759).
 
 Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 
@@ -130,7 +131,8 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
   every generation path calls, `loadAiThemeContext` (title slide type plus the
   theme context: backgrounds, brand colours, presets), lives in
   `server/utils/themes.js` beside `settleNewDeckTheme`.
-- `wizard.js` (50) — `POST /api/ai/wizard`, the v1 one-shot path.
+- `wizard.js` — `POST /api/ai/wizard`, the generation pipeline in one JSON
+  answer (no progress events).
 - `wizard-v2-stream.js` — `POST /api/ai/wizard-v2/stream`: request →
   theme context → `generateDeck()` with hooks that write the SSE events →
   `createDeckFromParts`. The one wizard-v2 route: the non-streaming `wizard-v2` and
@@ -167,7 +169,8 @@ validation-event logs alongside them.
 ## Flows
 
 - **Generation** (`generateDeck()`, B756) — one pipeline behind the creation
-  wizard (`POST /api/ai/wizard-v2/stream`) and MCP `create_presentation`; the
+  wizard (`POST /api/ai/wizard-v2/stream`), its JSON twin `POST /api/ai/wizard`,
+  the public `POST /api/v1/ai/wizard` (B759) and MCP `create_presentation`; the
   file import (`POST /api/convert`, `convert-file/ai-convert.js`) and the
   Notion import (`convert-notion.js`) run `generateSlides()` and assemble
   around it with `assembleDeck()` (B757: a file's image-only slides and its
@@ -193,10 +196,6 @@ validation-event logs alongside them.
   wizard persists through `createDeckFromParts`, the imports through
   `createImportedPresentation`; MCP passes its HTTP caller's disconnect
   signal and persists through `createPresentation`.
-- **One-shot generation** (`POST /api/ai/wizard`) — the v1 path, still used by
-  the "new presentation" modal: a single prompt via
-  `generateDeckJsonFromRawContent`, no outline phase, no group refinement. The
-  user-chosen theme always wins over whatever the model returned.
 - **Validate and fix**: `lengths.js` refuses overlong strings using the type's recursive content schema, including nested collection fields. Phase 2 checks each response before accepting it and gives the model one retry with the rejected response and exact field violations. If that rewrite fails, generation fails instead of returning clipped text or a fallback. Structural slides whose declared lengths are exceeded also go to Phase 2. `fix.js` keeps its structural repairs, defaults and item-count handling; it never shortens text. Raw slide validation through `strict.js` still refuses every schema issue. No length limit is widened.
 - **Append / refine / iterate / compress** — the editing verbs. Append generates
   slides for an existing deck; section refine revises a contiguous range with a
@@ -288,21 +287,17 @@ point of the seam.
 
 ## Implementation status (as of 2026-08-21)
 
-Shipped and live: the two-phase stream path, the v1 one-shot wizard, append,
+Shipped and live: the two-phase generation pipeline, append,
 section refine, convert, iterate, compress, analyze, version compare, the
 validate-and-fix stage, the catalogue with its fork seams, and the admin
 validation-log reader.
 
 Honest gaps:
 
-- **Two generation paths coexist.** `POST /api/ai/wizard` (v1, `utils/openai/`,
-  single prompt) and the v2 pipeline (`utils/ai/`) are both live, with different
-  prompts, different validation depth and different output quality. The
-  "new presentation" modal still calls v1 while the stream path calls v2. One
-  canonical path is the target; two is the current state.
-- **`utils/openai/` has no seam.** The v1 modules are imported one by one
-  (`openai/deck.js`, `openai/append.js`, …); unlike `utils/ai/` there is no
-  `index.js` barrel over them, so no single import tells you what v1 offers.
+- **`utils/openai/` has no seam.** The single-prompt modules are imported one
+  by one (`openai/append.js`, `openai/translate.js`, …); unlike `utils/ai/`
+  there is no `index.js` barrel over them, so no single import tells you what
+  they offer.
 - **Token usage is observable but not recorded.** `usage.js` publishes per-call
   counts, and with no subscriber in the server they are discarded — there is no
   spend log, no per-org accounting and no budget enforcement.

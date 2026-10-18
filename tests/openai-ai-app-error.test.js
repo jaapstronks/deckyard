@@ -53,7 +53,7 @@ test('translate language-pair validation throws 400 ValidationError', async () =
 });
 
 test('raw LLM content stays out of the envelope for upstream failures', () => {
-  // The shape every converted 5xx site throws (append/deck/translate/
+  // The shape every converted 5xx site throws (append/translate/
   // convert-slide/refine-section): raw content as `response`, never `details`.
   const err = new LlmError('openai did not return valid deck JSON.', {
     statusCode: 502,
