@@ -713,10 +713,11 @@ export async function createEditorController({
         canUndo,
         canRedo,
       },
-      // The view may have selected another slide and changed any text.
+      // The view may have selected another slide and changed any text. On
+      // teardown there is no editor left to refresh.
       onClosed: () => {
         translateView = null;
-        editorState.refreshAll();
+        if (!cleanup.isTornDown) editorState.refreshAll();
       },
     });
   };

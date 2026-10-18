@@ -1,6 +1,6 @@
 /**
  * The translation view (B763): the whole deck as rows of source | target per
- * text field, both editable, through the B762 write seam.
+ * text field, both editable, through the write seam for any language (B762).
  *
  * Pinned here:
  *  - the rows are the paths of `slideTextRows`, and with the filter on they
