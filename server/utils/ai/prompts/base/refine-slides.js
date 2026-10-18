@@ -21,12 +21,15 @@ import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
 const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
 /**
- * Build the system prompt for Phase 2 refinement
+ * Build the system prompt for Phase 2 refinement.
+ *
+ * It takes only what is the same for every group of a deck (and for every deck
+ * with the same language, types and theme): the transport caches it as a
+ * prefix (B766). What differs per deck or per group, the presentation context
+ * and the adjacent slides, belongs in `buildPhase2UserPrompt`.
  */
 export function buildPhase2SystemPrompt({
   lang,
-  adjacentContext,
-  presentationContext,
   disabledSlideTypes,
   customSlideTypes,
   themeContext,
@@ -36,20 +39,6 @@ export function buildPhase2SystemPrompt({
     disabledSlideTypes,
     customSlideTypes,
   });
-
-  let contextSection = '';
-  if (presentationContext?.title) {
-    contextSection = `
-═══════════════════════════════════════════════════════════════════════════════
-PRESENTATION CONTEXT
-═══════════════════════════════════════════════════════════════════════════════
-
-Title: ${presentationContext.title}
-${presentationContext.summary ? `Summary: ${presentationContext.summary}` : ''}
-
-You are creating slides for this presentation. Keep content consistent with the theme.
-`;
-  }
 
   return `You are a slide type selector and content formatter.
 
@@ -61,7 +50,7 @@ YOUR JOB:
 
 OUTPUT LANGUAGE: ${langLabel}
 Write all titles and content in ${langLabel}.
-${contextSection}
+
 ═══════════════════════════════════════════════════════════════════════════════
 CRITICAL RULES
 ═══════════════════════════════════════════════════════════════════════════════
@@ -112,8 +101,6 @@ ${buildLengthContract(disabledSlideTypes, customSlideTypes)}
      fill the slide; a short list gets density "comfortable" instead where
      the type offers it.
    - Merging or reordering items is fine; adding a different kind is not.
-
-${adjacentContext ? `ADJACENT CONTEXT (avoid repetition):\n${adjacentContext}\n` : ''}
 
 ${catalogPrompt}
 
@@ -214,13 +201,38 @@ ${parts.join('\n')}`;
 }
 
 /**
- * Build the user prompt for Phase 2
+ * Build the user prompt for Phase 2: the per-deck presentation context, the
+ * per-group adjacent context and the slides themselves.
  */
-export function buildPhase2UserPrompt({ slides, groupId }) {
-  const lines = [
+export function buildPhase2UserPrompt({
+  slides,
+  groupId,
+  presentationContext = null,
+  adjacentContext = '',
+}) {
+  const lines = [];
+
+  if (presentationContext?.title) {
+    lines.push('PRESENTATION CONTEXT');
+    lines.push(`Title: ${presentationContext.title}`);
+    if (presentationContext.summary)
+      lines.push(`Summary: ${presentationContext.summary}`);
+    lines.push(
+      'You are creating slides for this presentation. Keep content consistent with the theme.',
+    );
+    lines.push('');
+  }
+
+  if (adjacentContext) {
+    lines.push('ADJACENT CONTEXT (avoid repetition):');
+    lines.push(adjacentContext);
+    lines.push('');
+  }
+
+  lines.push(
     `Refine ${slides.length === 1 ? 'this slide' : `these ${slides.length} slides`} into structured slide types.`,
-    '',
-  ];
+  );
+  lines.push('');
 
   if (slides.length > 1) {
     lines.push(`GROUP ID: ${groupId}`);

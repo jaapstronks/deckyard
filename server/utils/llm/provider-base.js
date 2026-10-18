@@ -122,8 +122,18 @@ export function transformOpenAiCompatibleRequest({
     ...(supportsSampling(model) ? { temperature } : {}),
     ...(hasBudget ? { [maxTokensField(model)]: Math.floor(budget) } : {}),
     ...(responseFormat ? { response_format: responseFormat } : {}),
-    messages,
+    // `cache` is the caller's prefix marker, not part of this wire format:
+    // these APIs cache a repeated prefix on their own, so it is dropped.
+    messages: messages.map(withoutCacheMarker),
   };
+}
+
+/** A message as the OpenAI-compatible wire takes it: the `cache` marker dropped. */
+function withoutCacheMarker(message) {
+  if (!message || typeof message !== 'object' || !('cache' in message))
+    return message;
+  const { cache: _cache, ...rest } = message;
+  return rest;
 }
 
 /**

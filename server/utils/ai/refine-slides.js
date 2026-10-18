@@ -88,9 +88,9 @@ export function buildAdjacentContext(slideGroup, allGroups, groupIndex) {
   // Previous group's slide types.
   //
   // Groups are refined in parallel batches, and every group in a batch builds
-  // its context before any of them resolve — so for a deck with no more groups
-  // than the batch size (most decks) resolvedTypes is never populated in time
-  // and this block produced nothing at all. Falling back to the previous
+  // its context before any of them resolve — so only the group after the
+  // solo first one sees resolvedTypes; for the rest of the first fan-out
+  // batch it is not populated in time. Falling back to the previous
   // group's hints keeps the anti-repetition signal alive without serializing
   // the batch: hints are known upfront and predict the type choice closely
   // enough to steer off a third list-slide in a row.
@@ -318,8 +318,6 @@ export async function refineSlideGroup(
 
   const systemPrompt = prompts.buildPhase2SystemPrompt({
     lang,
-    adjacentContext,
-    presentationContext,
     disabledSlideTypes,
     customSlideTypes,
     themeContext,
@@ -328,10 +326,14 @@ export async function refineSlideGroup(
   const userPrompt = prompts.buildPhase2UserPrompt({
     slides,
     groupId,
+    presentationContext,
+    adjacentContext,
   });
 
+  // The system prompt (rules + catalog) is the same for every group of the
+  // deck; it is most of each call's input, so it is sent as a cached prefix.
   const messages = [
-    { role: 'system', content: systemPrompt },
+    { role: 'system', content: systemPrompt, cache: true },
     { role: 'user', content: userPrompt },
   ];
 
@@ -562,7 +564,8 @@ function getPhase2StatusMessages(lang) {
  * @param {string} options.lang
  * @param {string} options.vendor
  * @param {Function} options.onLog
- * @param {number} options.batchSize - Max parallel calls (default 6)
+ * @param {number} options.batchSize - Max parallel calls after the first
+ *   group, which runs alone to warm the prompt cache (default 6)
  * @param {Object} options.presentationContext - Title and summary of presentation
  * @param {Function} options.onStatusMessage - Callback for status messages
  * @param {Function} options.onGroupDone - ({ done, total }) => void, called as
@@ -618,10 +621,14 @@ export async function refineAllSlideGroups(
   let groupsDone = 0;
 
   try {
-    // Process in batches
-    for (let i = 0; i < groups.length; i += batchSize) {
+    // The first group runs alone: a provider caches the shared system prompt
+    // only once a call with it has been processed, so a first batch of six
+    // parallel calls would each pay the full prompt (and its cache write)
+    // instead of one (B766). The batches after it fan out as before.
+    for (let i = 0; i < groups.length;) {
       signal?.throwIfAborted();
-      const batch = groups.slice(i, i + batchSize);
+      const size = i === 0 ? 1 : batchSize;
+      const batch = groups.slice(i, i + size);
 
       const batchPromises = batch.map((group, batchIndex) => {
         const groupIndex = i + batchIndex;
@@ -659,6 +666,7 @@ export async function refineAllSlideGroups(
       for (const slides of batchResults) {
         allRefinedSlides.push(...slides);
       }
+      i += size;
     }
   } finally {
     // Clear the status interval when done
