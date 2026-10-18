@@ -78,6 +78,7 @@ import { debugLog } from '../../lib/state/debug.js';
 import { syncSlideIdInUrl } from './slide-url.js';
 import { createCommentsPanel, createCommentsApi } from '../comments/index.js';
 import { createEditorTitleController } from './title-controller.js';
+import { createVersionTextWriter } from './version-text.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
 import {
@@ -540,8 +541,13 @@ export async function createEditorController({
     }
     // The first change to the selected slide takes its lock (D112). A slide
     // another user holds refuses the edit: it is not saved, and onLockFailed
-    // takes it back out of the local copy.
-    if (!slideLockManager.onSlideEdited(selectedSlideId)) return undefined;
+    // takes it back out of the local copy. A write into another language
+    // version did not edit the selected slide, so it takes no lock.
+    if (
+      !opts?.noActiveSlide &&
+      !slideLockManager.onSlideEdited(selectedSlideId)
+    )
+      return undefined;
     // Notify undo manager of the change (it tracks sequences internally)
     undoManager.captureSnapshot(pres, {
       slideId: opts?.slideId || selectedSlideId,
@@ -571,16 +577,28 @@ export async function createEditorController({
   const readOnlyController = createReadOnlyController({ shell });
 
   setDocumentTitle(pres?.title);
+  /** Show a changed deck title in the topbar and the browser tab. */
+  const showTitle = (next) => {
+    if (!topbarTitle) return;
+    topbarTitle.textContent = next;
+    topbarTitle.title = next;
+    setDocumentTitle(next);
+  };
   const titleCtl = createEditorTitleController({
     pres,
     markDirty,
     requestSave,
-    onTitleChanged: (next) => {
-      if (!topbarTitle) return;
-      topbarTitle.textContent = next;
-      topbarTitle.title = next;
-      setDocumentTitle(next);
-    },
+    onTitleChanged: showTitle,
+  });
+
+  const writeVersionText = createVersionTextWriter({
+    pres,
+    normalizeLang,
+    markDirty,
+    syncVersionStructure: saveManager.syncVersionStructure,
+    liveEditsActive,
+    getLiveEdits: () => liveEdits,
+    onTitleChanged: showTitle,
   });
 
   const openTitleModal = ({ mode = 'edit' } = {}) =>
@@ -1060,12 +1078,7 @@ export async function createEditorController({
                 setSaveStatus(s);
                 syncPublishedAltWarning();
               },
-              onTitleChanged: (next) => {
-                if (!topbarTitle) return;
-                topbarTitle.textContent = next;
-                topbarTitle.title = next;
-                setDocumentTitle(next);
-              },
+              onTitleChanged: showTitle,
               onUndoStateChanged: () => syncTopbarUndo(),
             });
             cleanup.register('liveEdits', () => {
@@ -1851,5 +1864,5 @@ export async function createEditorController({
     }
   };
 
-  return { detach, pres, theme, SLIDE_TYPES };
+  return { detach, pres, theme, SLIDE_TYPES, writeVersionText };
 }
