@@ -15,9 +15,17 @@ function coerceClaudeText(body) {
   return texts.join('');
 }
 
+/** Anthropic's prompt-cache marker; the cache lives about five minutes. */
+const CACHE_CONTROL = Object.freeze({ type: 'ephemeral' });
+
 /**
  * Transform OpenAI-style messages to Claude format
- * Claude separates system messages and has a different structure
+ * Claude separates system messages and has a different structure.
+ *
+ * A message with `cache: true` ends a prefix the caller sends unchanged on
+ * every call (see `requestChatCompletionContent`); it gets a `cache_control`
+ * breakpoint, which needs the block form. Unmarked messages keep the plain
+ * string form.
  */
 function openAiMessagesToClaude({ messages = [] } = {}) {
   const sys = [];
@@ -28,19 +36,37 @@ function openAiMessagesToClaude({ messages = [] } = {}) {
     const role = typeof m.role === 'string' ? m.role : '';
     const content = typeof m.content === 'string' ? m.content : '';
     if (!content) continue;
+    const cache = m.cache === true;
     if (role === 'system') {
-      sys.push(content);
+      sys.push({ text: content, cache });
       continue;
     }
     if (role === 'user' || role === 'assistant') {
-      out.push({ role, content });
+      out.push({
+        role,
+        content: cache
+          ? [{ type: 'text', text: content, cache_control: CACHE_CONTROL }]
+          : content,
+      });
     }
   }
 
-  return {
-    system: sys.join('\n\n').trim() || null,
-    messages: out,
-  };
+  let system = null;
+  if (sys.some((s) => s.cache)) {
+    system = sys.map(({ text, cache }) => ({
+      type: 'text',
+      text,
+      ...(cache ? { cache_control: CACHE_CONTROL } : {}),
+    }));
+  } else if (sys.length) {
+    system =
+      sys
+        .map((s) => s.text)
+        .join('\n\n')
+        .trim() || null;
+  }
+
+  return { system, messages: out };
 }
 
 /**
