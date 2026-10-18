@@ -437,3 +437,59 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
     }
   });
 }
+
+test('POST /ai/wizard: a client that hangs up mid-generation aborts the model call and gets no presentation', async (t) => {
+  const db = await installDb();
+  const savedFetch = globalThis.fetch;
+  const savedModel = process.env.OPENAI_COMPAT_MODEL;
+  const savedEndpoint = process.env.OPENAI_COMPAT_ENDPOINT;
+  process.env.OPENAI_COMPAT_ENDPOINT = 'http://model.test/v1';
+  process.env.OPENAI_COMPAT_MODEL = 'test-model';
+  // A model call still in flight while the client leaves: it rejects on abort.
+  let providerSignal = null;
+  globalThis.fetch = (_url, opts = {}) => {
+    providerSignal = opts.signal;
+    return new Promise((_resolve, reject) => {
+      opts.signal?.addEventListener('abort', () =>
+        reject(opts.signal.reason ?? new Error('aborted')),
+      );
+    });
+  };
+  t.after(() => {
+    globalThis.fetch = savedFetch;
+    if (savedEndpoint === undefined) delete process.env.OPENAI_COMPAT_ENDPOINT;
+    else process.env.OPENAI_COMPAT_ENDPOINT = savedEndpoint;
+    if (savedModel === undefined) delete process.env.OPENAI_COMPAT_MODEL;
+    else process.env.OPENAI_COMPAT_MODEL = savedModel;
+  });
+  const ctx = makeCtx('POST', '/api/v1/ai/wizard', {
+    body: { raw: 'A talk about tide pools.', vendor: 'openai-compat' },
+  });
+  // The response double learns to emit `close`, the way a dropped socket ends.
+  const closeListeners = [];
+  ctx.res.writableFinished = false;
+  ctx.res.on = (event, fn) => {
+    if (event === 'close') closeListeners.push(fn);
+  };
+  const done = handleAi(ctx);
+  const deadline = Date.now() + 10_000;
+  while (!providerSignal) {
+    if (Date.now() > deadline)
+      throw new Error('the route never called the model');
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  for (const fn of closeListeners) fn();
+  assert.equal(await done, true);
+
+  assert.equal(
+    providerSignal.aborted,
+    true,
+    'the model call outlived the client',
+  );
+  assert.equal(
+    (db.__tables.presentations || []).length,
+    0,
+    'a presentation was written for a client that had already left',
+  );
+  assert.equal(ctx.res.statusCode, null, 'a cancel was answered as an error');
+});

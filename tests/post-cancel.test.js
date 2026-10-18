@@ -1,6 +1,7 @@
 /**
  * Long POST routes stop when the client goes away: the four SSE streams
- * (B347) and the two plain JSON routes that do the same work (B397).
+ * (B347) and the plain JSON routes that do the same work (B397; the JSON
+ * wizard since it runs the one generation pipeline, B759).
  *
  * `openSseStream` has exposed a disconnect `signal` since #1187 (B338), but
  * only the analyze route read it. These four kept working for nobody: the
@@ -53,6 +54,7 @@ const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleAiWizardV2Stream } =
   await import('../server/routes/api/ai/wizard-v2-stream.js');
+const { handleAiWizard } = await import('../server/routes/api/ai/wizard.js');
 const { handleNotionImport, handleNotionImportStream } =
   await import('../server/routes/api/notion/import.js');
 const { handlePresentationImportSlidesAsImages } =
@@ -547,6 +549,46 @@ async function twoPagePdf() {
 function toNodeBuffer(value) {
   return Buffer.isBuffer(value) ? value : Buffer.from(value);
 }
+
+test('wizard (JSON): leaving during the outline aborts the model call and saves nothing', async (t) => {
+  seed();
+  let providerSignal = null;
+  stubFetch(
+    t,
+    slowProvider((opts) => {
+      providerSignal = opts.signal;
+    }),
+  );
+
+  const res = makeJsonRes();
+  const done = handleAiWizard({
+    repoRoot: process.cwd(),
+    storageScope: scope(),
+    req: makeReq({ raw: 'A talk about tide pools and what lives in them.' }),
+    res,
+    authedUser: OWNER,
+  });
+
+  await waitFor(() => providerSignal !== null);
+  disconnect(res);
+  await done;
+
+  assert.equal(
+    providerSignal.aborted,
+    true,
+    'the outline call keeps running after the client left',
+  );
+  assert.equal(
+    storedPresentations().length,
+    1,
+    'a presentation was saved for a client that had already left',
+  );
+  assert.equal(
+    res.statusCode,
+    null,
+    'a cancel was answered as if someone were still listening',
+  );
+});
 
 test('convert (JSON): leaving during the conversion aborts the model call and saves nothing', async (t) => {
   seed();

@@ -18,6 +18,7 @@ import {
 } from '../../../../shared/slide-types.js';
 import { loadAiThemeContext, loadDeckTheme } from '../../../utils/themes.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
+import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 import {
   getAiParams,
   getOptionalObject,
@@ -96,19 +97,30 @@ async function handleWizard(ctx) {
   await trackAiRequest(ctx);
 
   // A failure below (the model, or a refusal of the create such as 409
-  // `limit_exceeded`) is rendered by `withV1ErrorHandler` (B619).
+  // `limit_exceeded`) is rendered by `withV1ErrorHandler` (B619). A client
+  // that hangs up is no failure: the signal aborts the model calls and no
+  // presentation is written for nobody, as on the editor's routes.
+  const signal = clientDisconnectSignal(ctx.res);
   const slideTypes = await buildMergedSlideTypes(storageScope);
-  const deck = await generateDeck(raw, {
-    userName: apiKey.name || 'API User',
-    targetLang: lang,
-    vendor,
-    theme: effectiveTheme,
-    titleSlideType,
-    themeContext,
-    slideTypes,
-    ...(await loadSlideTypeOffer(apiKey)),
-  });
+  let deck;
+  try {
+    deck = await generateDeck(raw, {
+      userName: apiKey.name || 'API User',
+      targetLang: lang,
+      vendor,
+      theme: effectiveTheme,
+      titleSlideType,
+      themeContext,
+      slideTypes,
+      ...(await loadSlideTypeOffer(apiKey)),
+      signal,
+    });
+  } catch (e) {
+    if (!signal.aborted) throw e;
+    return true;
+  }
   const parts = generatedDeckToParts(deck, { theme: themeConfig, slideTypes });
+  if (signal.aborted) return true;
 
   // One create carries the generated slides (B609): the factory seeds the
   // language version from them. A storage refusal (the size limit) is the

@@ -195,7 +195,10 @@ validation-event logs alongside them.
   the imports stream progress as SSE status events from the hooks; the
   wizard persists through `createDeckFromParts`, the imports through
   `createImportedPresentation`; MCP passes its HTTP caller's disconnect
-  signal and persists through `createPresentation`.
+  signal and persists through `createPresentation`. The two JSON wizard
+  routes (`/api/ai/wizard` and public `/api/v1/ai/wizard`) take theirs from
+  `clientDisconnectSignal`: a client that hangs up mid-generation stops the
+  model calls and gets no deck, like the streams.
 - **Validate and fix**: `lengths.js` refuses overlong strings using the type's recursive content schema, including nested collection fields. Phase 2 checks each response before accepting it and gives the model one retry with the rejected response and exact field violations. If that rewrite fails, generation fails instead of returning clipped text or a fallback. Structural slides whose declared lengths are exceeded also go to Phase 2. `fix.js` keeps its structural repairs, defaults and item-count handling; it never shortens text. Raw slide validation through `strict.js` still refuses every schema issue. No length limit is widened.
 - **Append / refine / iterate / compress** — the editing verbs. Append generates
   slides for an existing deck; section refine revises a contiguous range with a
