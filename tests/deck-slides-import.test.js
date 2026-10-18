@@ -17,14 +17,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 
-import { extractPdfPages } from '../server/utils/pdf-extract/index.js';
+import {
+  extractPdfPages,
+  pageText,
+} from '../server/utils/pdf-extract/index.js';
 import {
   FALLBACK_REASONS,
   blocksToMarkdown,
   buildDeckSlides,
   chooseSlide,
   composeNotes,
-  pageText,
   planPage,
 } from '../server/services/deck-slides-import.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
