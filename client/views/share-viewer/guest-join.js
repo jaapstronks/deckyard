@@ -76,9 +76,11 @@ function getGuestErrorMessage(errorCode) {
  *
  * @param {HTMLElement} shell - Container element
  * @param {string} token - Share token
+ * @param {string} grant - The grant `verify` handed out: a password-protected
+ *   link admits a guest only with it (B761)
  * @param {string} [prefillEmail] - Optional email to pre-fill the input
  */
-export function renderGuestJoinPrompt(shell, token, prefillEmail) {
+export function renderGuestJoinPrompt(shell, token, grant, prefillEmail) {
   const modal = h('div', {
     class: 'share-viewer-modal share-viewer-guest-modal',
   });
@@ -181,7 +183,7 @@ export function renderGuestJoinPrompt(shell, token, prefillEmail) {
     try {
       await api(`/api/share/${encodeURIComponent(token)}/guest/request`, {
         method: 'POST',
-        body: { email, name },
+        body: { email, name, grant },
       });
 
       // Show success message

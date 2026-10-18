@@ -205,6 +205,21 @@ function seed() {
         token: 'tok-other',
         presentation_id: 'deck-other',
       }),
+      linkRow({
+        id: 'link-password-comment',
+        token: 'tok-password-comment',
+        permission: 'comment',
+        registration_mode: 'open',
+        password_hash: passwordHash,
+      }),
+      linkRow({
+        id: 'link-password-revoked',
+        token: 'tok-password-revoked',
+        password_hash: passwordHash,
+        revoked_at: past(),
+        revoked_by: 'author@example.com',
+        revocation_message: 'This deck moved.',
+      }),
     ],
     share_link_guests: [],
     share_link_access_log: [],
@@ -294,13 +309,27 @@ const guests = () => db.__tables.share_link_guests;
 /** Access-log rows written so far. */
 const accessLog = () => db.__tables.share_link_access_log || [];
 
+/**
+ * The grant `verify` hands a viewer who opened the link (with the password,
+ * for a link that has one): what `guest/request` and `render-slide` ask for.
+ * @param {string} token
+ * @returns {Promise<string>}
+ */
+async function grantFor(token) {
+  const res = await call('POST', `/api/share/${token}/verify`, {
+    body: { password: PASSWORD },
+  });
+  assert.equal(res.status, 200, `${token} verifies`);
+  return res.body.grant;
+}
+
 /** Walk a guest all the way to a live session, through the real endpoints. */
 async function guestSession(
   token,
   { email = 'guest@example.com', name = 'Gwen' } = {},
 ) {
   const requested = await call('POST', `/api/share/${token}/guest/request`, {
-    body: { email, name },
+    body: { email, name, grant: await grantFor(token) },
   });
   assert.equal(requested.status, 200, 'guest verification was requested');
   const verificationToken = guests().find(
@@ -413,6 +442,18 @@ test('a revoked token returns the revocation notice for its own deck only', asyn
   );
 });
 
+test('a revoked link with a password does not name its deck (B761)', async () => {
+  seed();
+  const res = await call('GET', '/api/share/tok-password-revoked');
+
+  assert.equal(res.status, 410);
+  assert.equal(res.body.error, 'revoked');
+  // The author's own message still reaches the holder; the title is what the
+  // password guarded, and revoking the link does not hand it over.
+  assert.equal(res.body.message, 'This deck moved.');
+  assert.equal(res.body.presentationTitle, null);
+});
+
 // ---------------------------------------------------------------------------
 // POST /api/share/:token/verify — the password gate and the use counter
 // ---------------------------------------------------------------------------
@@ -423,7 +464,7 @@ test('a link without a password verifies, is counted, and is logged', async () =
 
   assert.equal(res.status, 200);
   assert.deepEqual(
-    { ...res.body, presentation: undefined, renderGrant: undefined },
+    { ...res.body, presentation: undefined, grant: undefined },
     {
       presentationId: 'deck-shared',
       permission: 'view',
@@ -432,12 +473,12 @@ test('a link without a password verifies, is counted, and is logged', async () =
       // feature snapshot (D260); on by default.
       tracking: true,
       presentation: undefined,
-      renderGrant: undefined,
+      grant: undefined,
     },
   );
   // The proof a server render asks for (B287); its gate is pinned in
   // tests/anon-follow-and-share-surfaces.test.js.
-  assert.equal(typeof res.body.renderGrant, 'string');
+  assert.equal(typeof res.body.grant, 'string');
   assert.equal(link('tok-view').use_count, 1, 'the access is counted');
   assert.equal(link('tok-view').last_used_at != null, true);
   assert.deepEqual(
@@ -456,10 +497,10 @@ test('the right password opens the link; the response carries no hash', async ()
   assert.equal(res.status, 200);
   assert.equal(res.body.presentationId, 'deck-shared');
   assert.deepEqual(Object.keys(res.body).sort(), [
+    'grant',
     'permission',
     'presentation',
     'presentationId',
-    'renderGrant',
     'token',
     'tracking',
   ]);
@@ -757,7 +798,10 @@ test('a view-only link admits no guests at all', async () => {
 test('an invite-only link refuses someone who was never invited', async () => {
   seed();
   const res = await call('POST', '/api/share/tok-invite/guest/request', {
-    body: { email: 'stranger@example.com' },
+    body: {
+      email: 'stranger@example.com',
+      grant: await grantFor('tok-invite'),
+    },
   });
 
   assert.equal(res.status, 403);
@@ -783,7 +827,7 @@ test('an invited guest passes the same invite-only link', async () => {
   });
 
   const res = await call('POST', '/api/share/tok-invite/guest/request', {
-    body: { email: 'invited@example.com' },
+    body: { email: 'invited@example.com', grant: await grantFor('tok-invite') },
   });
   assert.equal(res.status, 200);
   assert.equal(
@@ -791,6 +835,44 @@ test('an invited guest passes the same invite-only link', async () => {
       .verification_token,
     'string',
   );
+});
+
+test('a password link admits a guest only with the grant verify hands out (B761)', async () => {
+  seed();
+  const request = (body) =>
+    call('POST', '/api/share/tok-password-comment/guest/request', { body });
+
+  // The token alone, or a grant minted for another link, buys no session:
+  // the password is the boundary for the discussion as it is for the slides.
+  for (const grant of [undefined, 'forged.grant', await grantFor('tok-open')]) {
+    const refused = await request({ email: 'guest@example.com', grant });
+    assert.equal(refused.status, 403, `grant ${grant} is refused`);
+    assert.equal(refused.body.error, 'forbidden');
+  }
+  assert.deepEqual(guests(), [], 'no verification token is minted');
+
+  // Without a session, the comment routes refuse the token holder too.
+  const list = await call('GET', '/api/share/tok-password-comment/comments');
+  assert.equal(list.status, 401);
+  const post = await call('POST', '/api/share/tok-password-comment/comments', {
+    body: { body: 'Hello' },
+  });
+  assert.equal(post.status, 401);
+
+  // With the password given, the whole way through to a comment.
+  const { sessionToken } = await guestSession('tok-password-comment');
+  const cookie = `share_guest_session=${sessionToken}`;
+  const created = await call(
+    'POST',
+    '/api/share/tok-password-comment/comments',
+    { body: { body: 'Hello', slideId: 's1' }, cookie },
+  );
+  assert.equal(created.status, 201);
+  const listed = await call('GET', '/api/share/tok-password-comment/comments', {
+    cookie,
+  });
+  assert.equal(listed.status, 200);
+  assert.equal(listed.body.comments.length, 1);
 });
 
 test('a guest request against a dead link is refused before any mail', async () => {
@@ -814,9 +896,10 @@ test('a guest request without a usable email is a 400 that names the field', asy
   // the storage guard. The route used to pre-check the address itself and
   // answer `bad_request`, which shadowed this and left the client's email
   // copy unreachable — see tests/share-guest-join-error-copy.test.js.
+  const grant = await grantFor('tok-open');
   for (const body of [{}, { email: 'not-an-email' }, { email: '   ' }]) {
     const res = await call('POST', '/api/share/tok-open/guest/request', {
-      body,
+      body: { ...body, grant },
     });
     assert.equal(res.status, 400, `${JSON.stringify(body)} is refused`);
     assert.equal(res.body.error, 'invalid', `${JSON.stringify(body)} code`);
@@ -844,7 +927,7 @@ test('an unknown verification token redirects with an error and sets no cookie',
 test('an expired verification token is refused the same way', async () => {
   seed();
   await call('POST', '/api/share/tok-open/guest/request', {
-    body: { email: 'guest@example.com' },
+    body: { email: 'guest@example.com', grant: await grantFor('tok-open') },
   });
   const guest = guests()[0];
   guest.verification_token_expires_at = past();

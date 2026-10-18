@@ -2,9 +2,9 @@
  * Public share link endpoints (no auth required) (A7.19 C8 — ROUTES table).
  *
  * GET    /api/share/:token                            - Validate token
- * POST   /api/share/:token/verify                     - Verify password & get access (+ deck, render grant)
+ * POST   /api/share/:token/verify                     - Verify password & get access (+ deck, grant)
  * POST   /api/share/:token/render-slide               - Render one slide server-side (needs the grant)
- * POST   /api/share/:token/guest/request              - Request guest email verification
+ * POST   /api/share/:token/guest/request              - Request guest email verification (needs the grant)
  * GET    /api/share/:token/guest/verify/:vtoken       - Verify guest email & create session
  * GET    /api/share/:token/guest/me                   - Get current guest session info
  * GET    /api/share/:token/comments                   - A verified guest lists comments (D228)
@@ -84,7 +84,8 @@ async function handleShareValidate({ repoRoot, req, res }, token) {
   if (!result.ok) {
     const status = getErrorStatus(result.reason);
     // Read directly rather than through storageError(): this branch builds its
-    // own body (the revoked link carries the deck's title back to the viewer).
+    // own body (the revoked link carries the author's message, and the deck's
+    // title when the link had no password, back to the viewer).
 
     // For revoked links, include additional info and trigger notification
     if (result.reason === 'revoked' && result.presentationId) {
@@ -99,7 +100,10 @@ async function handleShareValidate({ repoRoot, req, res }, token) {
         ok: false,
         error: result.reason,
         message: result.revocationMessage || null,
-        presentationTitle: pres?.title || null,
+        // The password stays the boundary after revocation: a withdrawn link
+        // with one does not name its deck to whoever holds the token (B761),
+        // just as the living link does not before `verify` (B750).
+        presentationTitle: result.requiresPassword ? null : pres?.title || null,
       };
 
       // Get accessor info for notification
@@ -261,7 +265,7 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
     presentationId: result.shareLink.presentationId,
     permission: result.shareLink.permission,
     token: result.shareLink.token,
-    renderGrant: mintRenderGrant(result.shareLink),
+    grant: mintShareGrant(result.shareLink),
     // Whether this installation has the analytics cluster (D260). The viewer
     // is anonymous and has no feature snapshot, so the payload carries the
     // answer; the owner's opt-out stays the tracking route's (D234).
@@ -271,9 +275,9 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
   return true;
 }
 
-/** How long a render grant outlives the `verify` that minted it. */
-const RENDER_GRANT_TTL_MS = 24 * 60 * 60 * 1000;
-const RENDER_GRANT_PURPOSE = 'share-render';
+/** How long a grant outlives the `verify` that minted it. */
+const SHARE_GRANT_TTL_MS = 24 * 60 * 60 * 1000;
+const SHARE_GRANT_PURPOSE = 'share-access';
 /**
  * Signing key when no AUTH_SECRET is configured: per boot, so grants die with
  * the process (a reload mints a new one). Same rule as the analytics device
@@ -281,37 +285,53 @@ const RENDER_GRANT_PURPOSE = 'share-render';
  */
 const EPHEMERAL_GRANT_KEY = randomBytes(32).toString('hex');
 
-function renderGrantKey() {
+function shareGrantKey() {
   return envStr('AUTH_SECRET') || EPHEMERAL_GRANT_KEY;
 }
 
 /**
  * The proof that this viewer passed `verify` for this link.
  *
- * A share-link render hands out the deck's slides, so it must sit behind the
- * same gate `verify` does — the password, when the link has one. Nothing on
- * this anonymous surface remembers that the password was entered (see
- * {@link shareViewerDeck}), and asking for it on every render would make each
- * render a password check and a guessing oracle outside verify's throttle. So
- * verify mints a signed grant for the link, and the render route asks for that.
- * Every link gets one, password or not: one shape, and a render never skips the
- * `verify` that counts a use.
+ * Two routes hand out something the password guards: `render-slide` the
+ * deck's slides, `guest/request` the guest session that reads and writes the
+ * deck's comments. Both must sit behind the gate `verify` is. Nothing on this
+ * anonymous surface remembers that the password was entered (see
+ * {@link shareViewerDeck}), and asking for it on each of those calls would make
+ * every one a password check and a guessing oracle outside verify's throttle.
+ * So verify mints one signed grant for the link, and both routes ask for that
+ * ({@link hasShareGrant}). Every link gets one, password or not: one shape, and
+ * neither route skips the `verify` that counts a use.
  *
- * Revocation and expiry still bite at once: the render route validates the link
- * itself on every request; the grant only stands in for the password.
+ * Revocation and expiry still bite at once: both routes validate the link
+ * itself on every request; the grant only stands in for the password. The
+ * guest comment routes ask for the session, not the grant: `guest/request` is
+ * the only door to a session, so a session already carries this proof.
  *
  * @param {{ id: string }} shareLink
  * @returns {string}
  */
-function mintRenderGrant(shareLink) {
+function mintShareGrant(shareLink) {
   return signPayload(
     {
-      purpose: RENDER_GRANT_PURPOSE,
+      purpose: SHARE_GRANT_PURPOSE,
       link: shareLink.id,
-      exp: Date.now() + RENDER_GRANT_TTL_MS,
+      exp: Date.now() + SHARE_GRANT_TTL_MS,
     },
-    renderGrantKey(),
+    shareGrantKey(),
   );
+}
+
+/**
+ * Whether a request body carries a live grant for this link
+ * ({@link mintShareGrant}).
+ *
+ * @param {Object|null|undefined} body - The parsed request body.
+ * @param {{ id: string }} shareLink - The link the token resolved to.
+ * @returns {boolean}
+ */
+function hasShareGrant(body, shareLink) {
+  const grant = readSignedPayload(body?.grant, shareGrantKey());
+  return grant?.purpose === SHARE_GRANT_PURPOSE && grant.link === shareLink.id;
 }
 
 /**
@@ -332,11 +352,7 @@ async function handleShareRenderSlide({ repoRoot, req, res }, token) {
   if (!parsed.ok) return true;
   const body = parsed.body;
 
-  const grant = readSignedPayload(body?.grant, renderGrantKey());
-  if (
-    grant?.purpose !== RENDER_GRANT_PURPOSE ||
-    grant.link !== validation.shareLink.id
-  ) {
+  if (!hasShareGrant(body, validation.shareLink)) {
     forbidden(res, 'Open the share link to render its slides');
     return true;
   }
@@ -358,7 +374,11 @@ async function handleShareRenderSlide({ repoRoot, req, res }, token) {
   });
 }
 
-/** POST /api/share/:token/guest/request - Request guest email verification */
+/**
+ * POST /api/share/:token/guest/request — request guest email verification.
+ * Body: `{ email, name?, grant }`; the grant is the one `verify` handed out,
+ * so a password-protected link admits no guest who has not given it (B761).
+ */
 async function handleShareGuestRequest({ repoRoot, req, res }, token) {
   // Validate share link first
   const validation = await validateShareLink(token);
@@ -376,6 +396,11 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+
+  if (!hasShareGrant(body, validation.shareLink)) {
+    forbidden(res, 'Open the share link to join its discussion');
+    return true;
+  }
 
   // The address guard lives in the storage layer (`requestGuestVerification`),
   // which answers the canonical `{ reason:'invalid', field:'email' }`. A route

@@ -102,10 +102,7 @@ export async function renderShareViewer(root, token) {
     }
 
     if (data.requiresPassword) {
-      renderPasswordPrompt(shell, token, data, async (verifiedData) => {
-        shareLink = verifiedData;
-        await renderDeck(verifiedData.presentation);
-      });
+      renderPasswordPrompt(shell, token, data, openVerified);
       return cleanup;
     }
 
@@ -122,6 +119,23 @@ export async function renderShareViewer(root, token) {
       return cleanup;
     }
 
+    await openVerified(verifyData);
+  } catch (err) {
+    renderError(
+      shell,
+      err.message || t('share.error.loadLink', 'Failed to load share link'),
+    );
+  }
+
+  /**
+   * Everything after `verify`, whichever way it was passed: straight through
+   * for a link without a password, from the password prompt for one with. A
+   * guest who verified their address lands here either way, so a password
+   * link shows them as joined too (B761).
+   *
+   * @param {Object} verifyData - The `verify` response.
+   */
+  async function openVerified(verifyData) {
     shareLink = verifyData;
 
     // Check for guest session
@@ -143,11 +157,6 @@ export async function renderShareViewer(root, token) {
     }
 
     await renderDeck(verifyData.presentation);
-  } catch (err) {
-    renderError(
-      shell,
-      err.message || t('share.error.loadLink', 'Failed to load share link'),
-    );
   }
 
   /**
@@ -461,7 +470,7 @@ export async function renderShareViewer(root, token) {
       renderVia: {
         kind: 'share',
         token,
-        grant: shareLink?.renderGrant,
+        grant: shareLink?.grant,
       },
       lang: resolveDeckLang(presentation),
     });
