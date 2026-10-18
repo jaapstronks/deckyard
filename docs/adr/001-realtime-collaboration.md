@@ -64,6 +64,9 @@ need:
   `getCollaboratorPermission` + `canWritePresentation` check. Editors get
   read-write; viewers/commenters/share-link guests get `readOnly`
   connections (presence-visible, no document writes).
+  _Amended: non-writers are refused instead. A sync hands over the whole
+  author document, so `readOnly` only blocked writes, not reads; see
+  `docs/reference/collab-presence.md` § Architecture._
 - `onLoadDocument` → load the stored Y.Doc binary, or bootstrap it from the
   deck JSON on first collab open.
 - `onStoreDocument` (debounced) → persist the Y.Doc binary **and** serialize

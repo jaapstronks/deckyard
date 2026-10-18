@@ -51,10 +51,17 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
 - **Auth**: the `sb_session` cookie rides on the WebSocket upgrade;
   `authenticateUpgradeRequest` resolves it with the regular auth module and
   rejects cookieless upgrades with a real HTTP 401. Per-document authorization
-  happens on connect (`documentName` = `presentation:<id>`) with the same
-  `getCollaboratorPermission` + `canRead/canWritePresentation` pair the REST
-  routes use; non-writers (viewers, guests) get read-only connections.
-  `server/collab/auth.js`.
+  happens on connect (`documentName` = `presentation:<id>`) through the
+  presentation service the REST routes use, and **only a user who may write
+  the deck connects**. The Y.Doc is the author's document (it carries the AI
+  review notes per slide, which every read route strips) and each sync hands
+  all of it over, so a read-only connection would be no boundary; viewers,
+  commenters and guests use the filtered HTTP routes, and the client only
+  opens the socket from the editor. Write permission is checked again on the
+  first message after `COLLAB_REAUTHORIZE_MS` (10 s), and at once when the
+  collaborators route removes or demotes a collaborator
+  (`revalidateCollabAccess`); a connection that fails closes.
+  `server/collab/auth.js`, `server/collab/mount.js`.
 - **Client session**: `client/views/editor/live-edits/presence-session.js` wraps
   `HocuspocusProvider` (from the vendored bundle) and exposes
   `setViewSlide`, `setFocusField`, `getPeers`, `onPeersChange`. Awareness
@@ -115,3 +122,10 @@ cookieless upgrade is refused when auth is on. Node 22's built-in `WebSocket`
 is used as the client; note the test process intentionally has two yjs copies
 (vendored bundle + server dependency), which is fine for awareness-only
 traffic.
+
+`tests/collab-writer-only-sync.test.js` holds the access boundary over real
+session cookies with live edits on: the owner and an edit collaborator receive
+the AI review notes, a view collaborator is refused both while the document is
+loaded and when it opens from a stored binary, and an editor who loses write
+permission is disconnected, at once through the collaborator storage and on
+the next message after the re-authorization interval otherwise.

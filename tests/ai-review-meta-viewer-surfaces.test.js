@@ -4,8 +4,8 @@
  * The generation writes `_aiReasoning`, `_aiAlternatives` and `_aiWarnings`
  * onto every slide it makes, and the storage keeps them: the editor's slide
  * notes and review grid read them. They can quote the source the deck was made
- * from, so whoever may only look at a deck must not receive them. Until B767
- * no filter removed them, and every surface that serves slide JSON to a
+ * from, so whoever may only look at a deck must not receive them. No filter
+ * used to remove them (B767), and every surface that serves slide JSON to a
  * reader without edit rights handed them out.
  *
  * One row per such surface, each driven through its handler on the in-memory
@@ -37,6 +37,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const REPO_ROOT = '/tmp/deckyard-ai-review-meta-test';
 const OWNER = 'owner@example.com';
 const VIEWER = 'viewer@example.com';
+const EDITOR = 'editor@example.com';
 const PASSWORD = 'correct horse battery';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
@@ -95,7 +96,7 @@ before(async () => {
   db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     themes: [await brandSeedRow()],
-    users: userRows(OWNER, VIEWER),
+    users: userRows(OWNER, VIEWER, EDITOR),
     presentation_collaborators: [],
   });
   __setTestDb(db);
@@ -137,7 +138,14 @@ before(async () => {
     revoked_by: null,
     revocation_message: null,
   });
+  db.__tables.presentation_collaborators.push({
+    ...db.__tables.presentation_collaborators[0],
+    id: 'c-editor',
+    user_email: EDITOR,
+    permission: 'edit',
+  });
   await invalidatePermission(deckId, VIEWER);
+  await invalidatePermission(deckId, EDITOR);
 });
 
 after(() => {
@@ -226,6 +234,12 @@ describe('GET /api/presentations/:id', () => {
   it('the owner keeps them: the editor reads them', async () => {
     const body = await internalGet(OWNER);
     assert.equal(body.slides[0]._aiReasoning.includes(NOTE), true);
+    assert.equal(aiKeysIn(body).length, 3 * 2 * 3);
+  });
+
+  it('an edit collaborator keeps them as well', async () => {
+    const body = await internalGet(EDITOR);
+    assert.equal(body._userPermission, 'edit');
     assert.equal(aiKeysIn(body).length, 3 * 2 * 3);
   });
 });
@@ -380,6 +394,11 @@ describe('GET /api/v1/presentations/:id', () => {
 
   it('the owner keeps them, so a GET-then-PUT does not drop them', async () => {
     const body = await v1Get(OWNER);
+    assert.equal(aiKeysIn(body.presentation).length, 3 * 2 * 3);
+  });
+
+  it('an edit collaborator keeps them, so their GET-then-PUT does not drop them', async () => {
+    const body = await v1Get(EDITOR);
     assert.equal(aiKeysIn(body.presentation).length, 3 * 2 * 3);
   });
 });

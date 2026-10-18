@@ -4,7 +4,15 @@
  * Reuses the exact same primitives as the REST routes: the sb_session cookie
  * (which the browser sends on a same-origin WebSocket upgrade) resolves to a
  * user via auth.js, and per-document access is the presentation service's
- * (`server/services/presentations.js`): read to connect, write to edit.
+ * (`server/services/presentations.js`): only a user who may write the deck
+ * connects at all.
+ *
+ * The Y.Doc is the author's document: it carries every field the editor
+ * keeps, including the AI review notes per slide (B767), which the read
+ * routes strip for readers. Every sync hands the whole document over, so
+ * there is no read-only connection that would be safe; readers use the
+ * filtered HTTP routes. The editor is the only client, and only users with
+ * edit permission open it (`client/views/editor/index.js`).
  */
 
 import { getUserFromRequestAsync } from '../auth/auth.js';
@@ -13,10 +21,23 @@ import {
   loadPresentationForActor,
   mayOnPresentation,
 } from '../services/presentations.js';
-import { NotFoundError, UnauthorizedError } from '../utils/errors.js';
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../utils/errors.js';
 
 /** Collab document names are `presentation:<id>` — one room per deck. */
 export const COLLAB_DOC_PREFIX = 'presentation:';
+
+/**
+ * How long a connection's authorization holds before its next message
+ * checks it again. Write permission can end while the socket stays open
+ * (a collaborator removed or demoted, an organization left); the client
+ * renews its awareness state about every 15 s, so a lost permission closes
+ * the connection within about half a minute even when nobody types.
+ */
+export const COLLAB_REAUTHORIZE_MS = 10_000;
 
 /**
  * Resolve the user from a WebSocket upgrade request.
@@ -55,14 +76,14 @@ export function presentationIdFromDocumentName(documentName) {
 
 /**
  * Authorize a user for a collab document. Throws (rejecting the connection)
- * unless the user may at least read the presentation; connections without
- * write permission become read-only (presence-visible, no document writes).
+ * unless the user may write the presentation: the sync would hand a reader
+ * the unfiltered author document.
  *
  * @param {Object} opts
  * @param {string} opts.repoRoot
  * @param {string} opts.documentName - `presentation:<id>`
  * @param {Object} opts.user - authenticated user
- * @returns {Promise<{ presentationId: string, readOnly: boolean, organizationId: string|null }>}
+ * @returns {Promise<{ presentationId: string, organizationId: string|null }>}
  */
 export async function authorizeDocument({ repoRoot, documentName, user }) {
   const presentationId = presentationIdFromDocumentName(documentName);
@@ -74,13 +95,13 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
     { actor: user },
     presentationId,
   );
-  const readOnly = !(await mayOnPresentation(pres, { actor: user }, 'write'));
+  if (!(await mayOnPresentation(pres, { actor: user }, 'write')))
+    throw new ForbiddenError('Collab requires write permission');
   // The document's organization, so the persistence hooks — which run outside
   // any request — can write back into the organization the deck actually lives
   // in instead of the instance default.
   return {
     presentationId,
-    readOnly,
     organizationId: pres.organizationId ?? null,
   };
 }

@@ -25,7 +25,10 @@ const log = createLogger('collab');
 /** URL path the WebSocket upgrade listens on. */
 export const COLLAB_PATH = '/collab';
 
-let active = null; // { hocuspocus, ws }
+let active = null; // { hocuspocus, ws, authz, repoRoot }
+
+/** Close event for a connection whose write permission ended. */
+const FORBIDDEN_CLOSE = { code: 4403, reason: 'Forbidden' };
 
 /**
  * The running Hocuspocus instance, or null when collab isn't mounted.
@@ -81,16 +84,35 @@ export async function maybeAttachCollab(server, { repoRoot }) {
     // Debounce document stores (ADR 001 §5); flushed on last disconnect.
     ...(liveEdits ? { debounce: 2000, maxDebounce: 10000 } : {}),
     // Per-document authorization. The user was already authenticated on the
-    // upgrade (see below) and rides in via the connection context.
-    async onConnect({ documentName, context, connectionConfig }) {
-      const { readOnly, organizationId } = await authz.authorizeDocument({
+    // upgrade (see below) and rides in via the connection context. Only a
+    // writer connects (auth.js); the returned stamp lands in the context.
+    async onConnect({ documentName, context }) {
+      const { organizationId } = await authz.authorizeDocument({
         repoRoot,
         documentName,
         user: context?.user,
       });
       if (organizationId)
         documentOrganizations.set(documentName, organizationId);
-      connectionConfig.readOnly = readOnly;
+      return { authorizedAt: Date.now() };
+    },
+    // Write permission can end while the socket stays open. Once the stamp
+    // is older than COLLAB_REAUTHORIZE_MS, the next message checks it again;
+    // a throw makes Hocuspocus close the connection before the message
+    // applies. `revalidateCollabAccess` does the same at once for the
+    // revocations the collaborators route makes.
+    async beforeHandleMessage({ documentName, context }) {
+      if (
+        Date.now() - (context.authorizedAt || 0) <
+        authz.COLLAB_REAUTHORIZE_MS
+      )
+        return;
+      await authz.authorizeDocument({
+        repoRoot,
+        documentName,
+        user: context?.user,
+      });
+      context.authorizedAt = Date.now();
     },
     ...persistence,
   });
@@ -148,11 +170,44 @@ export async function maybeAttachCollab(server, { repoRoot }) {
     });
   });
 
-  active = { hocuspocus, ws };
+  active = { hocuspocus, ws, authz, repoRoot };
   log.info(
     `${liveEdits ? 'presence + live-edits' : 'presence'} endpoint mounted at ${COLLAB_PATH}`,
   );
   return hocuspocus;
+}
+
+/**
+ * Check every open connection on a deck's collab document again and close
+ * the ones whose user may no longer write it. Called when a collaborator is
+ * removed or their permission changes, so a demoted editor stops receiving
+ * the author document now instead of at the next periodic check.
+ * No-op when collab isn't mounted or the document isn't loaded.
+ *
+ * @param {string} presentationId
+ * @returns {Promise<number>} the number of connections closed
+ */
+export async function revalidateCollabAccess(presentationId) {
+  if (!active) return 0;
+  const { hocuspocus, authz, repoRoot } = active;
+  const documentName = `${authz.COLLAB_DOC_PREFIX}${presentationId}`;
+  const document = hocuspocus.documents.get(documentName);
+  if (!document) return 0;
+  let closed = 0;
+  for (const connection of document.getConnections()) {
+    try {
+      await authz.authorizeDocument({
+        repoRoot,
+        documentName,
+        user: connection.context?.user,
+      });
+      connection.context.authorizedAt = Date.now();
+    } catch {
+      connection.close(FORBIDDEN_CLOSE);
+      closed += 1;
+    }
+  }
+  return closed;
 }
 
 /** Close all collab connections (graceful shutdown). */

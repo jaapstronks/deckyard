@@ -45,7 +45,31 @@ import { createLogger } from '../../utils/logger.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { withDeckCardFields } from '../../utils/deck-card-fields.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { isCollabEnabled } from '../../config/features.js';
 const log = createLogger('collaborators');
+
+/**
+ * Close the open collab connections on a deck whose user lost write
+ * permission (B767): the socket syncs the unfiltered author document, so a
+ * removed or demoted editor must not keep it until the connection's periodic
+ * re-authorization. Lazy, so installs without collab never load the module;
+ * a failure only delays the close to that periodic check.
+ *
+ * @param {string} presentationId
+ * @returns {Promise<void>}
+ */
+async function closeLostCollabAccess(presentationId) {
+  if (!isCollabEnabled()) return;
+  try {
+    const { revalidateCollabAccess } = await import('../../collab/mount.js');
+    await revalidateCollabAccess(presentationId);
+  } catch (err) {
+    log.warn(
+      `closing lost collab access on ${presentationId} failed:`,
+      err?.message || err,
+    );
+  }
+}
 
 /**
  * Human-readable text per invite-failure reason, for the single-invite
@@ -416,6 +440,8 @@ async function handleCollaboratorRemove(
     return storageError(res, result);
   }
 
+  await closeLostCollabAccess(presentationId);
+
   // Log the revocation the way a grant is logged (non-blocking): a grant
   // writes collaborator.added, so a revoke writes collaborator.removed —
   // without it the security-relevant half of the model is nowhere in the
@@ -479,6 +505,8 @@ async function handleCollaboratorUpdate(
   if (!result.ok) {
     return storageError(res, result);
   }
+
+  await closeLostCollabAccess(presentationId);
 
   // Log the permission change symmetrically with grant and revoke
   // (non-blocking): a promotion or demotion is an access-model event too.
