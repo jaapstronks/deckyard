@@ -39,6 +39,11 @@
  *    coordinates. The `type` alone cannot say so — they are all `string` — so
  *    the field says it, once, and every reader (ours and any other) gets the
  *    same answer instead of each guessing from the key name.
+ *  - **`interactionCopy: true` is honoured too**, and says less: the value is
+ *    prose, but it is the furniture of an interaction (an input hint) rather
+ *    than what the slide says. The reader skips it exactly like a
+ *    presentational field; the translate pipeline does not, because it is
+ *    still prose (B770).
  *  - **`mediaRef` is honoured.** A third kind of string sits between those two:
  *    a reference to media the document cannot embed — a video source that is a
  *    URL on one slide and a bare provider id on the next. Dropping it loses the
@@ -133,25 +138,35 @@ const PRESENTATIONAL_FIELD_TYPES = new Set([
 /**
  * Does this field hold no readable document content?
  *
- * Two ways to be presentational, and they answer different questions. The
- * TYPE covers the fields whose whole vocabulary is configuration (an enum, a
+ * Three ways to hold none, and they answer different questions. The TYPE
+ * covers the fields whose whole vocabulary is configuration (an enum, a
  * colour, a number). The per-field `presentational: true` covers the ones the
  * type cannot: a `string` that stores an icon name, an infrastructure id or a
  * serialized coordinate list is a `string` like any other, so only the field
  * itself can say that its value is machine data rather than something a reader
- * should be read aloud.
+ * should be read aloud. And `interactionCopy: true` covers the remaining case:
+ * prose a human wrote that belongs to an interaction's furniture rather than
+ * to what the slide says — the hint inside a feedback slide's input box.
  *
- * It is a projection-side declaration only: the field still renders in the
- * editor, still validates, and is still offered to agents unless it separately
- * says `ai: false`. "Not document text" is not the same claim as "not editable"
- * (`hidden`) or "not part of the contract" (`deprecated`).
+ * The last two are separate words because they answer a second question
+ * differently. `presentational` says the value is machine data, so it is one
+ * value per deck and never translated (`isTextField`, B770); `interactionCopy`
+ * says only that the reader does not print it, and such a field is still prose
+ * and still translated. Folding them into one flag silently collapsed a
+ * translated placeholder to a single language.
  *
- * @param {{type?: string, presentational?: boolean}} field
+ * Both are projection-side declarations for the reader: the field still renders
+ * in the editor, still validates, and is still offered to agents unless it
+ * separately says `ai: false`. "Not document text" is not the same claim as
+ * "not editable" (`hidden`) or "not part of the contract" (`deprecated`).
+ *
+ * @param {{type?: string, presentational?: boolean, interactionCopy?: boolean}} field
  * @returns {boolean}
  */
 function isPresentationalField(field) {
   return (
     field?.presentational === true ||
+    field?.interactionCopy === true ||
     PRESENTATIONAL_FIELD_TYPES.has(field?.type)
   );
 }

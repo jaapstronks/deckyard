@@ -1374,3 +1374,29 @@ test('a link text is not a heading an item can be named by (D131)', () => {
     ['title'],
   );
 });
+
+test('`interactionCopy` is a flag, and contradicting `presentational` warns (B770)', () => {
+  const findings = walkFieldDefinitions(
+    [
+      { key: 'hint', type: 'string', label: 'Hint', interactionCopy: true },
+      { key: 'loud', type: 'string', label: 'Loud', interactionCopy: 'yes' },
+      {
+        key: 'both',
+        type: 'string',
+        label: 'Both',
+        interactionCopy: true,
+        presentational: true,
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['loud', 'interaction_copy_not_true', 'warning'],
+      ['both', 'interaction_copy_with_presentational', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});

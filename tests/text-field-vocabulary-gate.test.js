@@ -327,3 +327,68 @@ test('the registry has no translatable media reference left', () => {
   }
   assert.deepEqual(offenders, []);
 });
+
+test('a presentational field is never prose (B770)', () => {
+  // `presentational: true` claims the value is machine data rather than
+  // document text — an icon name, an infrastructure id, a serialized
+  // coordinate list. Machine data is one value per deck, so the claim has to
+  // reach this vocabulary too, not only the reader projection.
+  const fields = [
+    { key: 'title', type: 'string' },
+    { key: 'icon', type: 'string', presentational: true },
+    { key: 'zoom', type: 'string', presentational: true },
+    {
+      key: 'cards',
+      type: 'items',
+      itemFields: [
+        { key: 'label', type: 'string' },
+        { key: 'glyph', type: 'string', presentational: true },
+      ],
+    },
+  ];
+  for (const f of fields) {
+    if (f.presentational) assert.equal(isTextField(f), false, f.key);
+  }
+  const spec = textFieldSpec(fields);
+  assert.deepEqual([...spec.textKeys], ['title']);
+  assert.ok(spec.declaredKeys.has('icon'), 'still a declared key');
+  assert.equal(
+    isPerLanguageKey(spec, 'icon', 'rocket', 'rocket'),
+    false,
+    'a presentational key is one value per deck',
+  );
+  // At item level too: the shared walk must not offer the glyph either.
+  assert.deepEqual([...spec.items.get('cards').textKeys], ['label']);
+});
+
+test('interactionCopy is prose the reader skips, so it stays translatable (B770)', () => {
+  // The other half of the pair. `presentational` and `interactionCopy` answer
+  // two different questions — "is the value machine data" and "does the reader
+  // print it" — and only the first one decides translation.
+  const field = { key: 'placeholder', type: 'string', interactionCopy: true };
+  assert.equal(isTextField(field), true);
+  assert.deepEqual([...textFieldSpec([field]).textKeys], ['placeholder']);
+});
+
+test('interactionCopy sits only on a field that holds prose (B770)', () => {
+  // Checked here rather than in `field-definitions.js`: that validator cannot
+  // import the text-field vocabulary without closing an import cycle through
+  // the registry's top-level await.
+  const offenders = [];
+  const walk = (name, fields, path) => {
+    for (const f of Array.isArray(fields) ? fields : []) {
+      if (f?.interactionCopy === true && !isTextField(f))
+        offenders.push(`${name}.${path}${f.key} (${f.type})`);
+      if (f?.type === 'items') walk(name, f.itemFields, `${path}${f.key}[].`);
+    }
+  };
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    walk(name, def?.fields, '');
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these fields declare interactionCopy but hold no prose; a machine value ' +
+      'is already not projected, so the declaration says nothing',
+  );
+});

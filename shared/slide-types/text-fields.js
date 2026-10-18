@@ -27,6 +27,21 @@
  *   refuses to print it. The same sentence has to hold here, or the translate
  *   pipeline offers a translator a video id to render into Dutch and stores a
  *   different reference per language for the same video.
+ * - **Nor is a field that declares `presentational`**, for the same reason one
+ *   step further out: the flag says the value is *machine data* rather than
+ *   document text — an icon name, an infrastructure id, a serialized
+ *   coordinate list — and machine data is one value per deck, not one per
+ *   language (B770). It was a projection-side declaration only, so the
+ *   language menu counted `icon: 'rocket'` as untranslated, the translate view
+ *   offered a row for it and machine translation would render it into Dutch,
+ *   breaking the icon lookup. One claim, every consumer.
+ * - `interactionCopy` is the counterpart, and the reason the two claims are
+ *   separate words: `feedback-slide.placeholder` is prose a human wrote in the
+ *   audience's language (the type ships `defaultsByLang` for it), but it is the
+ *   hint inside an input box rather than something the slide says, so the
+ *   reader must not print it. "Not document text" and "not prose" are two
+ *   questions, and a field that is prose the reader skips can only answer them
+ *   separately. Such a field **is** a text field, and stays translatable.
  * - `items` fields are walked recursively; their `itemFields` follow the same
  *   rule.
  * - **A text field is translatable, and nothing else is.** Translation is a
@@ -64,11 +79,18 @@ const TEXT_TYPE_SET = new Set(TEXT_FIELD_TYPES);
 
 /**
  * Whether a field descriptor holds prose (and is therefore translatable).
+ *
+ * `mediaRef` and `presentational` both say the string is not prose — a media
+ * reference, or machine data — so neither is per-language. `interactionCopy`
+ * says the opposite half: prose the reader does not project, which is still
+ * prose, so it is deliberately not consulted here.
+ *
  * @param {Object} field - Field descriptor from a slide type's `fields`
  * @returns {boolean}
  */
 export function isTextField(field) {
   if (field?.mediaRef) return false;
+  if (field?.presentational === true) return false;
   return TEXT_TYPE_SET.has(field?.type);
 }
 

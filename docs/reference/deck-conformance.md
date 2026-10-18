@@ -199,7 +199,18 @@ The same goes for `presentational: true`: a `string` field whose value is
 machine data rather than document text — an icon name, an infrastructure id, a
 serialized coordinate list — says so once, on the field, and travels through
 `/api/slide-types` like the declarations above. A reader that skipped such
-fields by key name would be guessing; this one follows the declaration.
+fields by key name would be guessing; this one follows the declaration. Because
+the value is machine data it is also one value per deck rather than one per
+language: the same declaration keeps an icon name out of the translation
+surfaces, which used to count `rocket` as untranslated prose (B770).
+
+`interactionCopy: true` is the narrower neighbour, for prose a human wrote that
+belongs to an interaction's furniture rather than to what the slide says — the
+hint inside the feedback slide's input box. The reader omits it exactly like a
+presentational field, but it is still prose: it is translated, and the type may
+ship a per-language default for it. Two declarations rather than one, because
+"the reader does not print this" and "this is not prose" are two claims, and a
+field can make the first without the second.
 
 Pairs are declared the same way (D131): `unitKey`, `hrefKey` and `headingKey`
 on a `string`, `headingKey` on a `markdown` block, `nameKey` on an `image`,

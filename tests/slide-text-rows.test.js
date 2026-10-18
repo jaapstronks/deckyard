@@ -142,3 +142,74 @@ test('a custom slide-type registry decides the fields of its own type', () => {
     .map((r) => r.path.join('.'));
   assert.ok(!corePaths.includes('steps.0.label'));
 });
+
+test('a presentational field is neither a row nor a missing count (B770)', () => {
+  // `icon` on icon-cards stores a lookup key into the icon set ("rocket"), so
+  // the flag says machine data. Before B770 the walk read only the field type,
+  // so the language menu counted the icon as untranslated, the translate view
+  // offered a row for it, and machine translation would have rendered it into
+  // Dutch — leaving the card with no icon at all.
+  const deck = {
+    title: 'Deck',
+    slides: [
+      {
+        id: 'i',
+        type: 'icon-card-grid-slide',
+        content: {
+          title: 'Waarom',
+          items: [{ icon: 'rocket', title: 'Snel', text: 'Binnen een dag' }],
+        },
+      },
+    ],
+  };
+  const paths = slideTextRows(deck, { slides: [] })
+    .filter((r) => r.kind === 'slide')
+    .map((r) => r.path.join('.'));
+  assert.ok(
+    !paths.includes('items.0.icon'),
+    `the icon name is offered as a text row: ${paths.join(', ')}`,
+  );
+  // The card's own prose is still there — only the lookup key is gone.
+  assert.deepEqual(
+    paths.filter((p) => p.startsWith('items.')),
+    ['items.0.title', 'items.0.body', 'items.0.text'],
+  );
+  // Deck title, slide title and the card's two filled texts: four, not five.
+  assert.equal(
+    computeMissingTranslation({ source: deck, target: {} }).missingCount,
+    4,
+  );
+});
+
+test('interactionCopy stays prose: the feedback placeholder is a row (B770)', () => {
+  // The counterpart of the test above, and the reason the two claims are
+  // separate declarations. The placeholder is the hint inside the audience's
+  // input box — no reader prints it — but it is prose a human wrote, and the
+  // type ships a Dutch and an English default for it. Reading it as machine
+  // data would hand both languages one value and silently drop the other.
+  const deck = {
+    title: 'Deck',
+    slides: [
+      {
+        id: 'f',
+        type: 'feedback-slide',
+        content: {
+          question: 'Wat wil je ons meegeven?',
+          placeholder: 'Typ je feedback…',
+        },
+      },
+    ],
+  };
+  const paths = slideTextRows(deck, { slides: [] })
+    .filter((r) => r.kind === 'slide')
+    .map((r) => r.path.join('.'));
+  assert.ok(
+    paths.includes('placeholder'),
+    `the placeholder is not offered for translation: ${paths.join(', ')}`,
+  );
+  // Deck title, question and placeholder.
+  assert.equal(
+    computeMissingTranslation({ source: deck, target: {} }).missingCount,
+    3,
+  );
+});
