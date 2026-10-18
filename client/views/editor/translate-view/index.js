@@ -356,6 +356,10 @@ export function openTranslateView({
       );
     entry.stored = value;
     entry.error?.clear();
+    // An own write emits no change signal (the view already holds the text),
+    // but the index's status dots are derived: refresh them, or filling the
+    // last empty field of a slide would leave it marked incomplete.
+    refreshIndex();
     syncHistory();
     return undefined;
   };
@@ -403,6 +407,10 @@ export function openTranslateView({
         })),
     };
   };
+
+  /** The index's numbers and status dots; the rows on screen stay as they are. */
+  const refreshIndex = (model = currentModel()) =>
+    navigation?.update(visibleModel(model).slides, model.slides);
 
   /** Everything a re-render would change apart from the text values. */
   const shapeOf = (model) =>
@@ -707,7 +715,7 @@ export function openTranslateView({
       if (c.el !== document.activeElement && c.el.value !== next)
         c.el.value = next;
     }
-    navigation?.update(visibleModel(model).slides, model.slides);
+    refreshIndex(model);
     applyWriteState();
   }
 

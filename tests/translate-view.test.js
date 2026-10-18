@@ -593,3 +593,49 @@ test('navigation: a jump clamped at the bottom keeps requested last slide', asyn
   view.close();
   cleanup();
 });
+
+test('navigation: an own write refreshes the index status without a signal', () => {
+  const { view, type } = openWith(bilingualPres());
+  const dot = () =>
+    document.querySelectorAll('.translate-view-index-item')[1].lastElementChild
+      .className;
+  assert.match(dot(), /is-empty/);
+  const targets = [
+    ...document
+      .querySelector('section[data-slide-id="s2"]')
+      .querySelectorAll('.translate-view-input'),
+  ].filter((el) => el.lang === 'en-GB');
+  for (const el of targets) type(el, 'Done');
+  assert.match(dot(), /is-complete/, 'the dot follows the write, unprompted');
+  view.close();
+  cleanup();
+});
+
+test('navigation: the caret holds the selection until its slide leaves the view', async () => {
+  const { view, calls, field } = openWith(bilingualPres());
+  const body = document.querySelector('.translate-view-body');
+  const section = (id) => body.querySelector(`section[data-slide-id="${id}"]`);
+  body.getBoundingClientRect = () => ({ top: 0, bottom: 100 });
+  body.querySelector('.translate-view-head').getBoundingClientRect = () => ({
+    height: 0,
+  });
+  // s1 sits at the top of the viewport, s2 below it but still in view.
+  section('s1').getBoundingClientRect = () => ({ top: -60, bottom: 40 });
+  section('s2').getBoundingClientRect = () => ({ top: 40, bottom: 140 });
+  field('nl', 's2', 'Title').focus();
+  assert.equal(calls.selected.at(-1), 's2', 'focus selects the slide typed in');
+  body.dispatchEvent(new dom.window.Event('scroll'));
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(
+    calls.selected.at(-1),
+    's2',
+    'the scroll that focus caused does not hand s1 the selection',
+  );
+  // Scroll s2 out of view: the viewport takes over again.
+  section('s2').getBoundingClientRect = () => ({ top: 200, bottom: 300 });
+  body.dispatchEvent(new dom.window.Event('scroll'));
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(calls.selected.at(-1), 's1');
+  view.close();
+  cleanup();
+});

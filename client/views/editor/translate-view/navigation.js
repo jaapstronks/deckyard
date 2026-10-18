@@ -1,6 +1,9 @@
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 
+/** The controls that hold a caret, so the keys belong to the text. */
+const CARET_CONTROLS = 'input, textarea, [contenteditable="true"]';
+
 /** Translation progress over all source texts, independent of the row filter. */
 export function translationStatus(slide) {
   if (slide.only === 'source') return 'empty';
@@ -52,6 +55,23 @@ export function createTranslateNavigation({
       (head?.getBoundingClientRect().height || 0);
     jumpScrollTop = body.scrollTop;
   };
+  /**
+   * The slide holding the caret, while it is still in view. Focusing a field
+   * scrolls it into view, and that scroll must not hand the selection to
+   * whichever slide ends up at the top: you are editing this one. Scroll it
+   * off screen and the viewport takes over again.
+   */
+  const caretSection = () => {
+    const el = document.activeElement;
+    if (!el?.matches?.(CARET_CONTROLS)) return null;
+    const section = el.closest('section[data-slide-id]');
+    if (!section || !body.contains(section)) return null;
+    const bounds = body.getBoundingClientRect();
+    const rect = section.getBoundingClientRect();
+    return rect.bottom > bounds.top && rect.top < bounds.bottom
+      ? section
+      : null;
+  };
   const onScroll = () => {
     if (frame) return;
     frame = requestAnimationFrame(() => {
@@ -61,6 +81,11 @@ export function createTranslateNavigation({
         return;
       }
       jumpScrollTop = null;
+      const held = caretSection();
+      if (held) {
+        select(held.dataset.slideId);
+        return;
+      }
       const top =
         body.getBoundingClientRect().top +
         (body.querySelector('.translate-view-head')?.getBoundingClientRect()
@@ -82,7 +107,7 @@ export function createTranslateNavigation({
       event.ctrlKey ||
       event.metaKey ||
       event.shiftKey ||
-      event.target.closest('input, textarea, select, [contenteditable="true"]')
+      event.target.closest(`${CARET_CONTROLS}, select`)
     )
       return;
     const delta = ['ArrowDown', 'ArrowRight', 'PageDown'].includes(event.key)
