@@ -38,14 +38,14 @@ interpreted, summarised or rewritten.
 `extractPdfPages()` reads every page into one model, whatever told it the
 roles:
 
-| Field     | What                                                                                                   |
-| --------- | ------------------------------------------------------------------------------------------------------ |
-| `heading` | the page's heading, or null                                                                            |
-| `blocks`  | in reading order: `para`, `list` (items, `bullets`/`numbers`), `table`, `cards`, `caption`, `quote`    |
-| `images`  | embedded raster images as PNG, each with its box on the page and the `Figure` alt text                 |
-| `drawing` | the number of vector paths and the small text labels inside the drawing                                |
-| `dropped` | text not on the slide: `artifact` (footer, page number), `off-page`, `footnote` (< 7 pt at the bottom) |
-| `tagged`  | whether the roles came from the PDF's structure tree                                                   |
+| Field     | What                                                                                                                                                                                                                                                                                                                                    |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `heading` | the page's heading, or null                                                                                                                                                                                                                                                                                                             |
+| `blocks`  | in reading order: `para`, `list` (items, `bullets`/`numbers`), `table`, `cards`, `caption`, `quote`                                                                                                                                                                                                                                     |
+| `images`  | embedded raster images as PNG, each with its box on the page and the `Figure` alt text                                                                                                                                                                                                                                                  |
+| `drawing` | the number of vector paths and the small text labels inside the drawing                                                                                                                                                                                                                                                                 |
+| `dropped` | text not on the slide: `artifact` (footer, page number), `off-page`, `footnote` (< 7 pt in the bottom 15%, or higher up when smaller than the body, under the last body line, at the body's left edge, worded, on a page with reference marks), `reference` (a short number at most 0.8 × the body size, raised just above a body line) |
+| `tagged`  | whether the roles came from the PDF's structure tree                                                                                                                                                                                                                                                                                    |
 
 Two detectors fill it. A **tagged** PDF (PowerPoint and Chrome tag by
 default) carries a structure tree: `H1`–`H3`, `P`, `L/LI`, `Table/TR/TH/TD`,
@@ -105,7 +105,37 @@ Every slide's notes are built in one order, parts separated by a blank line:
 2. on a fallback slide only, the page's text, so it can still be copied;
 3. under "Not on the slide:" ("Niet op de slide:" in a Dutch deck), the text
    the slide does not show: dropped footers, page numbers and footnotes, and
-   on a mapped slide the labels of a drawing.
+   on a mapped slide the labels of a drawing. Reference marks are left out:
+   without their footnote's text beside them they say nothing.
+
+The AI route reads a PDF through the same model (`readPdf()` in
+`server/utils/convert-file/pdf-reader.js`, B772), so footnotes and reference
+marks stay out of the generation source too. It tells two shapes apart by
+the page form (B773, `pdfShape()`):
+
+- **Slides** (most pages landscape, the median page under
+  `SLIDE_MAX_CHARS` characters): per page the heading, the blocks and the
+  drawing labels (`pageText()`), framed as `--- SLIDE n ---`. Artifact text
+  that occurs only on the first page goes along with page 1.
+- **Document** (everything else): the whole PDF as one marked-up text
+  (`readDocument()` in `server/utils/pdf-extract/document.js`, also as
+  `extractPdfDocument()`), formatted by `formatDocumentForAi()` without
+  slide framing. Headings are ranked over the whole document: a short
+  paragraph larger than the body (`HEADING_SIZE_RATIO`), or bold where the
+  body is not, is a heading; each recurring heading size is a level (`##`,
+  `###`, …) and a size used once takes the level of the nearest recurring
+  size below it. What the first page opens with above every recurring
+  heading size is the `#` title. Margin text at body size that recurs on
+  more than one page (digits aside) is dropped as furniture; a paragraph
+  without closing punctuation runs on over the page break; a table becomes a
+  pipe table when its rows have one shape and it reads as data, otherwise a
+  row per line. Of the first page's unique artifact text only a letter's
+  heading block stays: the lines in the body column at body size right
+  above the running text ("Datum …", "Betreft …"), not the address column.
+
+The generation suite reads its PDF cases with the same `readPdf()`
+(`test-suite/scripts/fetch-cases.js`), so `npm run ai-suite:fetch --
+--reparse` remakes the `.txt` sources after a reader change.
 
 ## The report
 

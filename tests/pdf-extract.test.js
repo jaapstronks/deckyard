@@ -112,9 +112,10 @@ test('page 4: a table with a header row and the footnote dropped', () => {
     ['South', '95', '110'],
     ['West', '80', '99'],
   ]);
-  assert.deepEqual(p.dropped, [
-    { text: 'Figures in thousands of euros.', reason: 'footnote' },
-  ]);
+  assert.deepEqual(
+    p.dropped.map(({ text, reason }) => ({ text, reason })),
+    [{ text: 'Figures in thousands of euros.', reason: 'footnote' }],
+  );
   assert.ok(!texts(p).includes('Figures in thousands of euros.'));
 });
 

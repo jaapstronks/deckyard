@@ -269,6 +269,7 @@ function finishBlock(block) {
       y: block.y,
       text: joinLineText(block.lines),
       bold: block.lines.every((l) => l.bold),
+      size: Math.max(...block.lines.map((l) => l.size)),
     };
   }
   if (block.kind === 'list') {

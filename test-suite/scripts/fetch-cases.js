@@ -8,7 +8,12 @@
  * bug can be told apart from a bad download.
  *
  * Usage:
- *   node test-suite/scripts/fetch-cases.js [--cases a,b] [--force]
+ *   node test-suite/scripts/fetch-cases.js [--cases a,b] [--force] [--reparse]
+ *
+ * `--reparse` rebuilds the .txt of every source from the original already on
+ * disk, without downloading: the step after a change to a reader (B772).
+ * Reference material is left as it is, so the judges compare against the
+ * same reference text before and after.
  */
 
 import fs from 'node:fs/promises';
@@ -24,10 +29,12 @@ async function main() {
   const argv = process.argv.slice(2);
   let only = null;
   let force = false;
+  let reparse = false;
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--cases')
       only = argv[(i += 1)].split(',').map((s) => s.trim());
     else if (argv[i] === '--force') force = true;
+    else if (argv[i] === '--reparse') reparse = true;
   }
 
   const cases = await loadCases(only);
@@ -45,6 +52,24 @@ async function main() {
       await fs.mkdir(dir, { recursive: true });
       const originalPath = path.join(dir, asset.file);
       const textPath = path.join(dir, sourceTextFilename(asset.file));
+
+      if (reparse) {
+        if (asset.kind !== 'source') continue;
+        if (!(await exists(originalPath))) {
+          console.log(`  · ${asset.file} (no original on disk)`);
+          continue;
+        }
+        try {
+          const bytes = await fs.readFile(originalPath);
+          const text = await toText(bytes, asset, originalPath);
+          await fs.writeFile(textPath, text);
+          console.log(`  ✓ ${asset.file} → ${countWords(text)} words`);
+        } catch (err) {
+          failures += 1;
+          console.error(`  ✗ ${asset.file}: ${err.message}`);
+        }
+        continue;
+      }
 
       if (!force && (await exists(textPath))) {
         console.log(`  · ${asset.file} (already present)`);
@@ -120,15 +145,18 @@ async function toText(bytes, asset, originalPath) {
   const type = (asset.type || '').toLowerCase();
 
   if (type === 'pdf') {
-    // Reuse the app's own PDF parser rather than a second pdf-parse binding.
-    const { parsePdf } =
-      await import('../../server/utils/convert-file/pdf-parser.js');
-    const parsed = await parsePdf(bytes);
+    // The reader `convertFile()` uses, so the suite measures what a user's
+    // upload gives the pipeline (B772): a report as one marked-up document,
+    // a deck page by page (B773).
+    const { readPdf } =
+      await import('../../server/utils/convert-file/pdf-reader.js');
+    const parsed = await readPdf(bytes);
     if (!parsed.slides.length) {
       throw new Error(parsed.errors.join('; ') || 'no text extracted');
     }
     return cleanText(
-      parsed.slides.map((page) => page.textContent).join('\n\n'),
+      parsed.document ??
+        parsed.slides.map((page) => page.textContent).join('\n\n'),
     );
   }
 

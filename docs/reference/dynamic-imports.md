@@ -46,7 +46,7 @@ about twice that; half are JSDoc type annotations like
 | Package                                               | Site                                      | Gate                                                                                                      |
 | ----------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `pptxgenjs`                                           | `server/export/pptx.js`                   | PPTX export only; throws `*_MISSING`                                                                      |
-| `pdf-parse`                                           | `server/utils/convert-file/pdf-parser.js` | PDF import only                                                                                           |
+| `pdf-parse`                                           | `server/utils/convert-file/pdf-parser.js` | test and suite tooling only (B776 removes it)                                                             |
 | `puppeteer-core`                                      | `server/utils/puppeteer-browser.js`       | Chrome exports only                                                                                       |
 | `ioredis`                                             | `server/utils/redis-client.js`            | `isRedisConfigured()`                                                                                     |
 | `bullmq`                                              | `server/jobs/queue/connection.js`         | same gate, paired                                                                                         |
@@ -110,7 +110,7 @@ untangling as a design change, never as a find-and-replace.
   (`npm install --omit=optional`) and a failed install doesn't break the rest.
   Current set: `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` (S3
   media), `puppeteer-core` (Chrome exports), `pptxgenjs` (PPTX export),
-  `pdf-parse` (PDF import), `bullmq` + `ioredis` (Redis job queue),
+  `pdf-parse` (test tooling), `bullmq` + `ioredis` (Redis job queue),
   `@hocuspocus/server` + `crossws` (live collaboration). A package that is
   _statically_ imported (e.g. `openid-client`) stays a hard `dependency` even
   if its feature is off, because loading the module pulls it in regardless.

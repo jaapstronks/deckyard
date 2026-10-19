@@ -25,6 +25,7 @@ import { assembleLines } from './lines.js';
 import { detectStruct } from './struct-detector.js';
 import { detectGeometry, findDrawingLabels } from './geometry-detector.js';
 import { readPageGraphics } from './images.js';
+import { readDocument } from './document.js';
 
 export { assembleLines, joinLineText, normalizeText } from './lines.js';
 export { isBoldFont } from './text-runs.js';
@@ -35,12 +36,27 @@ export {
   splitListMarker,
 } from './geometry-detector.js';
 export { detectStruct } from './struct-detector.js';
+export { blockText, pageText } from './page-text.js';
+export { furnitureKey, readDocument, renderDocument } from './document.js';
 
-/** Text below this size (pt) in the bottom of the page is a footnote. */
+/** Text below this size (pt) under the running text is a footnote. */
 export const FOOTNOTE_MAX_SIZE = 7;
 
-/** The bottom fraction of the page where small text counts as a footnote. */
+/**
+ * The bottom fraction of the page where small text is a footnote even when
+ * no running text stands above it (B751). Small text higher up counts only
+ * below the page's last line at body size (B772).
+ */
 export const FOOTNOTE_ZONE = 0.15;
+
+/**
+ * A reference mark is at most this fraction of the body size: the
+ * superscript "1" or "45" a footnote is called with (B772).
+ */
+export const REFERENCE_MAX_RATIO = 0.8;
+
+/** The digits of a reference mark, possibly several ("4,5", "4 5"). */
+const REFERENCE_TEXT = /^\d{1,3}(?:[,\s]+\d{1,3})*$/;
 
 /**
  * @typedef {object} PageLine
@@ -56,7 +72,8 @@ export const FOOTNOTE_ZONE = 0.15;
 /**
  * Blocks, in reading order; each carries `y`, the baseline of its first line.
  *
- * - `{ kind: 'para', text, bold, subheading? }`
+ * - `{ kind: 'para', text, bold, size, subheading? }` (`size`: the largest
+ *   font size on its lines)
  * - `{ kind: 'list', variant: 'bullets'|'numbers', items: [{ text, parts }] }`
  *   (`parts`: the item's paragraphs; `text` is them joined)
  * - `{ kind: 'table', headerRow, rows: string[][] }`
@@ -79,7 +96,21 @@ export const FOOTNOTE_ZONE = 0.15;
  * @property {PageBlock[]} blocks
  * @property {Array<{ png: Buffer, box: { x: number, y: number, width: number, height: number }, pixels: { width: number, height: number }, alt?: string }>} images
  * @property {{ paths: number, labels: Array<{ text: string, x: number, y: number }> }} drawing
- * @property {Array<{ text: string, reason: 'artifact' | 'off-page' | 'footnote' }>} dropped
+ * @property {DroppedLine[]} dropped
+ */
+
+/**
+ * A line kept off the slide, with where it stood: the document reader
+ * (`document.js`) takes a letter's heading block back out of the artifacts
+ * by position.
+ *
+ * @typedef {object} DroppedLine
+ * @property {string} text
+ * @property {'artifact' | 'off-page' | 'footnote' | 'reference'} reason
+ * @property {number} x
+ * @property {number} y
+ * @property {number} size
+ * @property {Array<{ text: string, x: number }>} segments
  */
 
 /**
@@ -91,7 +122,7 @@ export const FOOTNOTE_ZONE = 0.15;
  *   between pages; an abort rejects with the signal's reason
  * @param {boolean} [opts.useStructTree=true] - false reads every page by
  *   geometry, as if it were untagged (measurement, tests)
- * @returns {Promise<{ pages: PageModel[], tagged: boolean, pageCount: number, size: { width: number, height: number } | null }>}
+ * @returns {Promise<{ pages: PageModel[], tagged: boolean, pageCount: number, size: { width: number, height: number } | null, metadata: { title?: string, author?: string } }>}
  */
 export async function extractPdfPages(
   buffer,
@@ -114,6 +145,7 @@ export async function extractPdfPages(
     signal?.throwIfAborted();
     return {
       pages,
+      metadata: await readMetadata(doc),
       tagged: pages.some((p) => p.tagged),
       pageCount: doc.numPages,
       size: pages.length
@@ -123,6 +155,19 @@ export async function extractPdfPages(
   } finally {
     await task.destroy();
   }
+}
+
+/**
+ * Extract a PDF as one document: headings over the whole document, page
+ * breaks and running furniture gone (B773, `document.js`).
+ *
+ * @param {Uint8Array} buffer - the PDF bytes
+ * @param {object} [opts]
+ * @param {AbortSignal} [opts.signal]
+ * @returns {Promise<{ title: string | null, blocks: import('./document.js').DocumentBlock[], text: string }>}
+ */
+export async function extractPdfDocument(buffer, { signal } = {}) {
+  return readDocument(await extractPdfPages(buffer, { signal }));
 }
 
 async function readPage(page, n, { useStructTree }) {
@@ -161,6 +206,15 @@ async function readPage(page, n, { useStructTree }) {
   };
 }
 
+/** Title and author from the document info, where the producer set them. */
+async function readMetadata(doc) {
+  const { info } = await doc.getMetadata().catch(() => ({}));
+  const metadata = {};
+  if (info?.Title) metadata.title = String(info.Title);
+  if (info?.Author) metadata.author = String(info.Author);
+  return metadata;
+}
+
 function fontName(page, id) {
   try {
     return page.commonObjs.has(id) ? page.commonObjs.get(id)?.name || '' : '';
@@ -171,14 +225,21 @@ function fontName(page, id) {
 
 /**
  * Split off what does not belong on the slide: `Artifact` content (footer,
- * page number), runs outside the page box, and small text at the bottom
- * (footnotes). The rest is the body the detectors read.
+ * page number), runs outside the page box, footnotes and the reference marks
+ * that call them. The rest is the body the detectors read.
+ *
+ * A footnote is small text (below {@link FOOTNOTE_MAX_SIZE}) anywhere in
+ * the bottom {@link FOOTNOTE_ZONE}, or higher up when it is also smaller
+ * than the body, under the page's last line at body size and aligned with
+ * the body's left edge and worded, on a page whose text carries reference
+ * marks (a chart label below the text is no footnote). A reference mark is a short number set clearly
+ * smaller than the body, raised just above a body line.
  */
 function dropNonSlideText(runs, box) {
   const dropped = [];
+  const drop = (line, reason) => dropped.push(droppedLine(line, reason));
   const note = (selected, reason) => {
-    for (const line of assembleLines(selected))
-      dropped.push({ text: line.text, reason });
+    for (const line of assembleLines(selected)) drop(line, reason);
   };
   note(
     runs.filter((r) => r.artifact),
@@ -190,13 +251,95 @@ function dropNonSlideText(runs, box) {
     'off-page',
   );
   const onPage = inFlow.filter((r) => isOnPage(r, box));
-  const footnotes = assembleLines(onPage).filter(
-    (l) => l.size < FOOTNOTE_MAX_SIZE && l.y > (1 - FOOTNOTE_ZONE) * box.height,
+  const lines = assembleLines(onPage);
+  const bodySize = dominantSize(onPage);
+  const bodyLines = lines.filter((l) => l.size >= bodySize);
+  const lastBodyY = Math.max(-Infinity, ...bodyLines.map((l) => l.y));
+  const bodyLeft = Math.min(Infinity, ...bodyLines.map((l) => l.x));
+  const references = lines.filter(
+    (l) =>
+      isReferenceMark(l, bodySize) &&
+      bodyLines.some((b) => raisedAbove(l, b, bodySize)),
   );
-  for (const line of footnotes)
-    dropped.push({ text: line.text, reason: 'footnote' });
-  const footnoteRuns = new Set(footnotes.flatMap((l) => l.runs));
-  return { body: onPage.filter((r) => !footnoteRuns.has(r)), dropped };
+  const inZone = (l) => l.y > (1 - FOOTNOTE_ZONE) * box.height;
+  // Above the zone a footnote needs a mark in the text that calls it, and
+  // words; a bare number there counts only as the mark beside one. So the
+  // labels of a chart under the text stay.
+  const underText = references.length
+    ? lines.filter(
+        (l) =>
+          !inZone(l) &&
+          l.size < bodySize &&
+          l.y > lastBodyY &&
+          Math.abs(l.x - bodyLeft) <= 2 * bodySize,
+      )
+    : [];
+  const worded = underText.filter((l) => /\p{L}/u.test(l.text));
+  const footnotes = lines.filter(
+    (l) =>
+      l.size < FOOTNOTE_MAX_SIZE &&
+      (inZone(l) ||
+        worded.includes(l) ||
+        (underText.includes(l) &&
+          worded.some((w) => Math.abs(w.y - l.y) <= bodySize))),
+  );
+  for (const line of footnotes) drop(line, 'footnote');
+  for (const line of references)
+    if (!footnotes.includes(line)) drop(line, 'reference');
+  const droppedRuns = new Set(
+    [...footnotes, ...references].flatMap((l) => l.runs),
+  );
+  return { body: onPage.filter((r) => !droppedRuns.has(r)), dropped };
+}
+
+function droppedLine({ text, x, y, size, segments }, reason) {
+  return {
+    text,
+    reason,
+    x,
+    y,
+    size,
+    segments: segments.map((seg) => ({ text: seg.text, x: seg.x })),
+  };
+}
+
+/** The font size that carries the most characters: the page's body size. */
+function dominantSize(runs) {
+  const chars = new Map();
+  for (const r of runs) {
+    const size = Math.round(r.size * 10) / 10;
+    chars.set(size, (chars.get(size) || 0) + r.str.trim().length);
+  }
+  let best = 0;
+  let bestChars = 0;
+  for (const [size, count] of chars) {
+    if (count > bestChars || (count === bestChars && size > best)) {
+      best = size;
+      bestChars = count;
+    }
+  }
+  return best;
+}
+
+function isReferenceMark(line, bodySize) {
+  return (
+    line.size <= REFERENCE_MAX_RATIO * bodySize &&
+    REFERENCE_TEXT.test(line.text)
+  );
+}
+
+/**
+ * The mark sits within the body line's width, its baseline less than an em
+ * above the body baseline: the place of a superscript.
+ */
+function raisedAbove(mark, line, bodySize) {
+  const rise = line.y - mark.y;
+  return (
+    rise > 0 &&
+    rise < bodySize &&
+    mark.x >= line.x - bodySize &&
+    mark.x <= line.x + line.width + bodySize
+  );
 }
 
 function detectByGeometry(runs, box, graphics) {
