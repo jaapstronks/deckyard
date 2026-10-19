@@ -300,41 +300,99 @@ test('every registered type serves its schema at its published id', async () => 
   }
 });
 
-test('a published organization type schema belongs only to its API key organization', async () => {
+test('catalogue and authenticated schema expose only the API key organization types', async () => {
   await installDb([
-    {
-      id: 'cst-partner-wall',
-      organization_id: ORG,
+    ...[ORG, OTHER_ORG].map((organization_id, index) => ({
+      id: `cst-partner-wall-${index}`,
+      organization_id,
       slug: 'partner-wall',
-      label: 'Partner wall',
+      label: `Partner wall ${index}`,
       base_type: null,
-      fields: [{ key: 'partner', type: 'string', required: true }],
-      defaults: { partner: '' },
-      defaults_by_lang: null,
+      fields: [{ key: `partner${index}`, type: 'string', required: true }],
+      defaults: { [`partner${index}`]: `Organization ${index}` },
+      defaults_by_lang: { nl: { [`partner${index}`]: `Organisatie ${index}` } },
       template: '<div class="slide"><div class="slide-inner"></div></div>',
-      css: null,
-      usage: null,
       is_published: true,
       sort_order: 0,
       created_at: '2026-07-01T00:00:00.000Z',
       updated_at: '2026-07-01T00:00:00.000Z',
-      created_by: null,
+    })),
+    {
+      id: 'cst-private',
+      organization_id: ORG,
+      slug: 'private',
+      label: 'Only first organization',
+      fields: [],
+      defaults: {},
+      is_published: true,
+    },
+    {
+      id: 'cst-draft',
+      organization_id: ORG,
+      slug: 'draft',
+      label: 'Draft',
+      fields: [],
+      defaults: {},
+      is_published: false,
     },
   ]);
   const pathname = '/api/v1/schema/slide-types/custom-partner-wall.json';
-  const owner = makeCtx('GET', pathname, { bearer: VALID_KEY });
-  await handlePublicApiV1(owner);
-  assert.equal(owner.res.statusCode, 200);
-  assert.ok(jsonBody(owner.res).properties.partner);
-  assert.deepEqual(jsonBody(owner.res).required, ['partner']);
-  assert.match(owner.res.headers['Cache-Control'], /^private/);
+  // Alternate keys, then return to the first: no request may reuse another
+  // organization's definition, even when both publish the same type slug.
+  for (const [bearer, index] of [
+    [VALID_KEY, 0],
+    [OTHER_KEY, 1],
+    [VALID_KEY, 0],
+  ]) {
+    const catalogue = makeCtx('GET', '/api/v1/slide-types', { bearer });
+    await handlePublicApiV1(catalogue);
+    assert.equal(catalogue.res.statusCode, 200);
+    assert.equal(
+      catalogue.storageScope.organizationId,
+      index === 0 ? ORG : OTHER_ORG,
+    );
+    const { slideTypes, count } = jsonBody(catalogue.res);
+    assert.equal(
+      count,
+      Object.keys(SLIDE_TYPES).length + (index === 0 ? 2 : 1),
+    );
+    assert.equal(Boolean(slideTypes['custom-private']), index === 0);
+    assert.equal(slideTypes['custom-draft'], undefined);
+    const type = slideTypes['custom-partner-wall'];
+    assert.ok(type, 'the published organization type is in the catalogue');
+    assert.equal(type.label, `Partner wall ${index}`);
+    assert.equal(type.defaults[`partner${index}`], `Organization ${index}`);
+    assert.equal(
+      type.defaultsByLang.nl[`partner${index}`],
+      `Organisatie ${index}`,
+    );
+    assert.ok(type.fields.some((f) => f.key === `partner${index}`));
+    assert.ok(!type.fields.some((f) => f.key === `partner${1 - index}`));
+    assert.equal(type.renderHtml, undefined);
+    assert.equal(type.customId, undefined);
 
-  for (const bearer of [null, OTHER_KEY]) {
-    const ctx = makeCtx('GET', pathname, { bearer });
-    await handlePublicApiV1(ctx);
-    assertV1Error(ctx.res, 404, 'not_found');
+    const schema = makeCtx('GET', pathname, { bearer });
+    await handlePublicApiV1(schema);
+    assert.equal(schema.res.statusCode, 200);
+    assert.ok(jsonBody(schema.res).properties[`partner${index}`]);
+    assert.equal(
+      jsonBody(schema.res).properties[`partner${1 - index}`],
+      undefined,
+    );
+    assert.deepEqual(jsonBody(schema.res).required, [`partner${index}`]);
+    assert.match(schema.res.headers['Cache-Control'], /^private/);
+    const privateSchema = makeCtx(
+      'GET',
+      '/api/v1/schema/slide-types/custom-private.json',
+      { bearer },
+    );
+    await handlePublicApiV1(privateSchema);
+    assert.equal(privateSchema.res.statusCode, index === 0 ? 200 : 404);
   }
 
+  const publicSchema = makeCtx('GET', pathname);
+  await handlePublicApiV1(publicSchema);
+  assertV1Error(publicSchema.res, 404, 'not_found');
   const invalidKey = makeCtx('GET', pathname, { bearer: 'not-a-key' });
   await handlePublicApiV1(invalidKey);
   assertV1Error(invalidKey.res, 401, 'unauthorized');

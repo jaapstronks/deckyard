@@ -6,7 +6,7 @@
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { getDefaultThemeId } from '../../../storage/settings.js';
-import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -65,8 +65,9 @@ async function handleThemes(ctx) {
 async function handleSlideTypes(ctx) {
   if (!requirePermission(ctx, 'read')) return true;
 
+  const definitions = await buildMergedSlideTypes(ctx.storageScope);
   const slideTypes = {};
-  for (const [key, def] of Object.entries(SLIDE_TYPES)) {
+  for (const [key, def] of Object.entries(definitions)) {
     slideTypes[key] = {
       label: def.label,
       fields: def.fields,

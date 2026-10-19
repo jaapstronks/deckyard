@@ -185,7 +185,7 @@ test('the env half reads BUNNY_LIBRARY_ID and feeds the seam', () => {
   assert.deepEqual(produced.sort(), [...CONFIG_DEFAULT_SOURCE_NAMES].sort());
 });
 
-test('both server map seams go through the env half', () => {
+test('server map seams and v1 metadata share installation defaults', () => {
   // The two places a surface's type map is built: the server-side registry
   // every creation path resolves against, and the response the editor holds
   // and composes new slides from. Fold it in anywhere else and the two
@@ -200,6 +200,18 @@ test('both server map seams go through the env half', () => {
       reads(path),
       /instanceSlideTypes\(SLIDE_TYPES\)/,
       `${path}: builds a type map without the installation's configuration`,
+    );
+  }
+  // Both v1 metadata projections must consume that configured, org-scoped
+  // map rather than starting a third map from the bare registry.
+  for (const path of [
+    '../server/routes/public-api/v1/resources.js',
+    '../server/routes/public-api/v1/index.js',
+  ]) {
+    assert.match(
+      reads(path),
+      /buildMergedSlideTypes\(ctx\.storageScope\)/,
+      `${path}: v1 metadata bypasses the configured organization registry`,
     );
   }
 });
