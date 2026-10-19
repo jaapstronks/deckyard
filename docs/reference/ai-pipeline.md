@@ -174,7 +174,7 @@ validation-event logs alongside them.
   file import (`POST /api/convert`, `convert-file/ai-convert.js`) and the
   Notion import (`convert-notion.js`) run `generateSlides()` and assemble
   around it with `assembleDeck()` (B757: a file's image-only slides and its
-  title image, a page's title image). The caller
+  title image, a Notion page's metadata). The caller
   loads the org's slide-type offer (disabled + custom types), the merged type
   map and the theme context (`loadAiThemeContext`), then: **phase 1**
   `generateOutline` produces a title, chapters and rough slides with no
