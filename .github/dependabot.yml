@@ -25,8 +25,8 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-    # pdf-parse pins pdfjs-dist exactly, and ours must match it or npm nests a
-    # second copy (tests/pdf-import-self-hosted.test.js). It moves with a
-    # pdf-parse bump, by hand, never on its own.
+    # pdfjs-dist is pinned exactly: the server reader (pdf-extract) leans on
+    # pdf.js internals, and the browser copy is vendored from it. A bump is by
+    # hand, with a re-vendor and the import tests (scripts/vendor-pdfjs.js).
     ignore:
       - dependency-name: 'pdfjs-dist'

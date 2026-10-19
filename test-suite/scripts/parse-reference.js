@@ -79,16 +79,15 @@ async function main() {
  */
 async function parseSlidePdf(pdfPath) {
   const bytes = await fs.readFile(pdfPath);
-  // The app's parser already returns text per page, which is what preserves
-  // slide boundaries here.
-  const { parsePdf } =
-    await import('../../server/utils/convert-file/pdf-parser.js');
-  const parsed = await parsePdf(bytes);
-  if (!parsed.slides.length) {
-    throw new Error(parsed.errors.join('; ') || 'no text extracted');
-  }
+  // The reader the slide import uses: text per page, which is what preserves
+  // slide boundaries here, with the page's heading first and furniture out.
+  const { extractPdfPages, pageText } =
+    await import('../../server/utils/pdf-extract/index.js');
+  const { pages } = await extractPdfPages(new Uint8Array(bytes));
+  const texts = pages.map((page) => pageText(page));
+  if (!texts.some((t) => t.trim())) throw new Error('no text extracted');
 
-  return parsed.slides.map(({ textContent: raw }, index) => {
+  return texts.map((raw, index) => {
     const lines = raw
       .split(/\s{3,}|\n/)
       .map((line) => line.replace(/\s+/g, ' ').trim())

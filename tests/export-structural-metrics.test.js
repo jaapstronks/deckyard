@@ -326,11 +326,6 @@ for (const themeName of BUILTIN_THEMES) {
       );
       if (!baseline) return;
 
-      assert.deepEqual(
-        metrics.parseErrors,
-        [],
-        'the PDF should parse without errors',
-      );
       assert.equal(
         metrics.pageCount,
         baseline.pageCount,
@@ -368,11 +363,6 @@ test(
     const baseline = await baselineFor('all-field-types-pdf', metrics);
     if (!baseline) return;
 
-    assert.deepEqual(
-      metrics.parseErrors,
-      [],
-      'the PDF should parse without errors',
-    );
     assert.equal(
       metrics.pageCount,
       deck.slides.length,

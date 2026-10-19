@@ -13,7 +13,7 @@ WORKDIR /app
 COPY . .
 
 # Production dependencies exactly as locked. `optionalDependencies` stay in:
-# puppeteer-core (PNG/PDF export), pptxgenjs, pdf-parse and the rest are loaded
+# puppeteer-core (PNG/PDF export), pptxgenjs and the rest are loaded
 # through gated imports and belong to a full image.
 #
 # The two directories the server writes, at the paths it uses without

@@ -69,28 +69,23 @@ test('the vendored build is the version package-lock.json pins', async () => {
   );
 });
 
-test('one pdfjs-dist in the tree, not two', async () => {
-  // `pdf-parse` depends on pdfjs-dist at an exact version. Matching it keeps a
-  // single copy; a `^` range resolves to the newest 5.x, npm nests pdf-parse's
-  // pin underneath, and the install grows by ~70 MB (a second pdfjs-dist plus a
-  // second @napi-rs/canvas native binary) to vendor two static files.
+test('one pdfjs-dist, pinned exactly', async () => {
+  // The server reader (`pdf-extract`) and the vendored browser build are the
+  // same pdf.js. The reader leans on more than plain text (structure tree,
+  // marked content, operator list), so a bump is deliberate: by hand, with a
+  // re-vendor and the import tests. A second copy in the tree means a second
+  // PDF reader crept back in (B776 removed the last one).
   const pkg = await readJson('package.json');
   const lock = await readJson('package-lock.json');
-  const viaPdfParse =
-    lock.packages['node_modules/pdf-parse']?.dependencies?.['pdfjs-dist'];
-  assert.ok(viaPdfParse, 'pdf-parse still declares a pdfjs-dist dependency');
-  assert.equal(
+  assert.match(
     pkg.dependencies['pdfjs-dist'],
-    viaPdfParse,
-    'pdfjs-dist has drifted from the version pdf-parse pins, so the tree now ' +
-      'carries two copies. Match it (exact, no caret) and re-run ' +
-      '`npm run vendor:pdfjs`.',
+    /^\d+\.\d+\.\d+$/,
+    'pdfjs-dist is pinned to an exact version, no range',
   );
-  assert.equal(
-    lock.packages['node_modules/pdf-parse/node_modules/pdfjs-dist'],
-    undefined,
-    'the lockfile nests a second pdfjs-dist under pdf-parse',
+  const copies = Object.keys(lock.packages).filter((key) =>
+    key.endsWith('node_modules/pdfjs-dist'),
   );
+  assert.deepEqual(copies, ['node_modules/pdfjs-dist'], 'one pdfjs-dist');
 });
 
 test('both files are vendored and look like the real builds', async () => {

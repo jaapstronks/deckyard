@@ -141,7 +141,7 @@ having it.
 Puppeteer's `page.pdf()` and `page.screenshot()` return "a Buffer or a
 Uint8Array depending on the environment". Concretely, `stringToTypedArray()`
 prefers `Uint8Array.fromBase64()` when it exists and only falls back to
-`Buffer.from()` otherwise. `pdf-parse` loads pdf.js, and **pdf.js polyfills
+`Buffer.from()` otherwise. PDF import loads pdf.js, and **pdf.js polyfills
 `Uint8Array.fromBase64` on load** — so once a PDF has been imported, every
 subsequent render in that process comes back as a plain `Uint8Array`.
 
@@ -154,5 +154,6 @@ natively, at which point the failure becomes unconditional.
 
 The fix is `toNodeBuffer()` in `server/utils/puppeteer-browser.js`, applied at
 every point where bytes leave Puppeteer. The smoke test keeps it honest twice
-over: it asserts the return type directly, and it runs the PPTX case _after_
-the PDF case in the same process, so the poisoned-globals path stays covered.
+over: it asserts the return type directly, and it imports the PDF reader
+(`pdf-extract`, which loads pdf.js), so every render in the test process runs
+on the poisoned globals and the PPTX case stays covered.
