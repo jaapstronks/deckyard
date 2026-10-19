@@ -3,6 +3,10 @@
  * Extracts text content from Word documents (.docx) and similar formats.
  * Uses mammoth for reliable text extraction.
  *
+ * The text is marked up the way a report PDF is (B773, B774): a heading as
+ * `#` per level, a list item as `- ` (or `1. ` in a numbered list), indented
+ * two spaces per nesting level, so the model still sees the outline.
+ *
  * An embedded picture stays where it stands, as an `[IMAGE n: …]` marker
  * (B775); its bytes come back as `figures`, uploaded only when the model
  * places it. Icons and bullets (under `MIN_IMAGE_PIXELS` on a side) stay out.
@@ -57,7 +61,7 @@ export async function parseDocx(buffer) {
       const figure = figures.find((f) => f.n === Number(n));
       return figure ? `<p>${escapeHtml(sourceImageMarker(figure))}</p>` : '';
     });
-    const sections = parseHtmlToSections(html);
+    const sections = parseHtmlToSections(markLists(html));
 
     if (sections.length > 0) {
       // Use structured sections
@@ -103,7 +107,7 @@ export async function parseDocx(buffer) {
     // Try to extract title from first heading or first slide content
     if (slides.length > 0) {
       const firstContent = slides[0].textContent;
-      const firstLine = firstContent.split('\n')[0].trim();
+      const firstLine = firstContent.split('\n')[0].replace(/^#+ /, '').trim();
       if (firstLine.length < 100) {
         metadata.title = firstLine;
       }
@@ -173,9 +177,9 @@ function parseHtmlToSections(html) {
       sections.push({ ...currentSection });
     }
 
-    // Start new section with this heading
+    // Start new section with this heading, marked with its level
     currentSection = {
-      heading: stripHtml(match[2]).trim(),
+      heading: `${'#'.repeat(Number(match[1]))} ${stripHtml(match[2]).trim()}`,
       content: '',
     };
 
@@ -207,13 +211,52 @@ function parseHtmlToSections(html) {
 }
 
 /**
- * Strip HTML tags and decode entities.
+ * Turn mammoth's lists into marked lines: each `<li>` opens a line with its
+ * marker, indented by its nesting depth. The rest of the markup is left for
+ * `stripHtml()`.
+ * @param {string} html
+ * @returns {string}
+ */
+function markLists(html) {
+  const lists = [];
+  return html.replace(/<(\/?)(ul|ol|li)\b[^>]*>/gi, (_, close, tag) => {
+    tag = tag.toLowerCase();
+    if (tag !== 'li') {
+      if (!close) {
+        lists.push({ ordered: tag === 'ol', count: 0 });
+        return '';
+      }
+      lists.pop();
+      // a nested list ends inside its item; the next item opens its line
+      return lists.length ? '' : '\n';
+    }
+    const list = lists.at(-1);
+    if (close || !list) return '';
+    list.count += 1;
+    const marker = list.ordered ? `${list.count}.` : '-';
+    return `\n${'  '.repeat(lists.length - 1)}${marker} `;
+  });
+}
+
+/** Inline tags: removing them must not break the line they stand in. */
+const INLINE_TAG = /^<\/?(?:a|b|strong|i|em|u|s|sub|sup|span)\b/i;
+
+/**
+ * Strip HTML tags and decode entities. A list line keeps its indentation.
  */
 function stripHtml(html) {
+  // Remove HTML tags: inline ones vanish, block ones end a line. Repeat until
+  // nothing changes, so a removed tag cannot join the halves of another.
+  let text = String(html || '');
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^>]+>/g, (tag) =>
+      INLINE_TAG.test(tag) ? '' : '\n',
+    );
+  } while (text !== previous);
   return (
-    String(html || '')
-      // Remove HTML tags
-      .replace(/<[^>]+>/g, '\n')
+    text
       // Decode common entities — `&amp;` last, so `&amp;lt;` decodes to the
       // literal text `&lt;` instead of `<` (js/double-escaping)
       .replace(/&nbsp;/g, ' ')
@@ -223,10 +266,11 @@ function stripHtml(html) {
       .replace(/&#0*39;/g, "'")
       .replace(/&amp;/g, '&')
       // Clean up whitespace
-      .replace(/[ \t]+/g, ' ')
-      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\t/g, ' ')
+      .replace(/(?<=\S) {2,}/g, ' ')
       .replace(/ +\n/g, '\n')
-      .replace(/\n +/g, '\n')
+      .replace(/\n +(?! |(?:-|\d+\.) )/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
       .trim()
   );
 }
