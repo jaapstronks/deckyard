@@ -265,6 +265,7 @@ async function handleQuestionPromote(
         : Math.max(0, Math.min(slides.length, insertIndex));
     insertAt(slides, idx, makeSlide(lang));
     nextPres.i18n.versions[lang] = {
+      ...v,
       title: typeof v.title === 'string' ? v.title : nextPres.title,
       slides,
     };

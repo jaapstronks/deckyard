@@ -252,6 +252,7 @@ test('view: typing in the target writes that language at that path', () => {
     's1',
     ['items', 1, 'title'],
     'Open',
+    { sourceLang: 'nl' },
   ]);
   assert.equal(
     pres.i18n.versions['en-GB'].slides[0].content.items[1].title,
@@ -380,8 +381,8 @@ test('view: a missing target slide is a notice, without fields', () => {
 test('view: the filter shows empty targets and keeps a row while you type', () => {
   const pres = bilingualPres();
   const { view, signal, field, type } = openWith(pres);
-  const box = document.querySelector('.translate-view-filter input');
-  box.checked = true;
+  const box = document.querySelector('.translate-view-filter');
+  box.value = 'empty';
   box.dispatchEvent(new dom.window.Event('change'));
   assert.equal(field('en-GB', 's1', 'Title'), undefined, 'a filled row hides');
   const cell = field('en-GB', 's2', 'Title');
@@ -518,8 +519,9 @@ test('navigation: index status follows all rows and frozen filter follows shown 
   }
   signal.emit();
   assert.ok(items()[0].querySelector('.is-complete'));
-  const box = document.querySelector('.translate-view-filter input');
-  box.click();
+  const box = document.querySelector('.translate-view-filter');
+  box.value = 'empty';
+  box.dispatchEvent(new dom.window.Event('change'));
   assert.equal(items().length, 1);
   items()[0].click();
   type(field('en-GB', 's2', 'Title'), 'How');
@@ -636,6 +638,36 @@ test('navigation: the caret holds the selection until its slide leaves the view'
   body.dispatchEvent(new dom.window.Event('scroll'));
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.equal(calls.selected.at(-1), 's1');
+  view.close();
+  cleanup();
+});
+
+test('view: statuses follow source edits and filters match rows and index', () => {
+  const pres = bilingualPres();
+  const { view, signal, field, type } = openWith(pres);
+  const target = field('en-GB', 's1', 'Title');
+  assert.match(target.parentElement.textContent, /No history/);
+  type(target, 'Why us');
+  assert.match(target.parentElement.textContent, /Current/);
+  pres.slides[0].content.title = 'Waarom nu';
+  signal.emit();
+  assert.match(target.parentElement.textContent, /Source changed/);
+  const filter = document.querySelector('.translate-view-filter');
+  filter.value = 'changed';
+  filter.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(document.querySelectorAll('.translate-view-input').length, 2);
+  assert.equal(
+    document.querySelectorAll('.translate-view-index-item').length,
+    1,
+  );
+  type(field('en-GB', 's1', 'Title'), 'Waarom nu');
+  assert.match(
+    field('en-GB', 's1', 'Title').parentElement.textContent,
+    /Same as source/,
+  );
+  filter.value = 'same';
+  filter.dispatchEvent(new dom.window.Event('change'));
+  assert.ok(field('en-GB', 's1', 'Title'));
   view.close();
   cleanup();
 });

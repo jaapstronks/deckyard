@@ -3,6 +3,10 @@
  * Inactive collab writes must go through the doc: buffer-only changes are
  * discarded on the next projection. Legacy writes require an exact revision.
  */
+import {
+  recordTranslationSource,
+  translationSource,
+} from '../../../shared/translation-provenance.js';
 import { valueAtPath } from '../../../shared/slide-types/text-fields.js';
 
 const isPlainObject = (v) =>
@@ -55,7 +59,7 @@ const isDeckTitle = (slideId, path) =>
  *   before it loaded
  * @param {Function} [opts.onTitleChanged] - (title) after the active title changed
  * @returns {(lang: string, slideId: string|null, path: Array<string|number>,
- *   value: string) => boolean} the write seam; false when nothing was written
+ *   value: string, options?: {sourceLang?: string}) => boolean} the write seam; false when nothing was written
  */
 export function createVersionTextWriter({
   pres,
@@ -66,12 +70,21 @@ export function createVersionTextWriter({
   getLiveEdits,
   onTitleChanged,
 } = {}) {
-  const writeActive = (slideId, path, value) => {
+  const writeActive = (slideId, path, value, source) => {
+    const version = pres.i18n?.versions?.[pres.i18n?.active];
+    const previousSources = version?.translationSources
+      ? structuredClone(version.translationSources)
+      : null;
+    const record = () => {
+      if (source && version)
+        recordTranslationSource(version, slideId, path, source);
+    };
     if (isDeckTitle(slideId, path)) {
       pres.title = value;
       const buf = pres.i18n?.versions?.[pres.i18n?.active];
       if (isPlainObject(buf)) buf.title = value;
       onTitleChanged?.(value);
+      record();
       markDirty({ action: 'edit' });
       return true;
     }
@@ -79,10 +92,16 @@ export function createVersionTextWriter({
       return false;
     // False: another user holds the slide; the controller takes the text
     // back out (D112), so it is no write.
-    return markDirty({ slideId, action: 'edit' }) !== false;
+    record();
+    if (markDirty({ slideId, action: 'edit' }) !== false) return true;
+    if (source && version) {
+      if (previousSources) version.translationSources = previousSources;
+      else delete version.translationSources;
+    }
+    return false;
   };
 
-  const writeLegacy = (lang, slideId, path, value) => {
+  const writeLegacy = (lang, slideId, path, value, source) => {
     const version = () => pres.i18n?.versions?.[lang];
     if (!isPlainObject(version())) return false;
     if (isDeckTitle(slideId, path)) {
@@ -95,18 +114,48 @@ export function createVersionTextWriter({
       syncVersionStructure?.();
       if (!writeIntoSlide(version().slides, slideId, path, value)) return false;
     }
+    if (source) recordTranslationSource(version(), slideId, path, source);
     markDirty({ noActiveSlide: true, action: 'edit' });
     return true;
   };
 
-  return function writeVersionText(lang, slideId, path, value) {
+  return function writeVersionText(
+    lang,
+    slideId,
+    path,
+    value,
+    { sourceLang = null } = {},
+  ) {
     const l = normalizeLang?.(lang);
     if (!l || typeof value !== 'string' || !isPath(path)) return false;
+    let source = null;
+    if (sourceLang) {
+      const from = normalizeLang(sourceLang);
+      if (!from || from === l || !pres.i18n?.versions?.[from]) return false;
+      const version =
+        from === normalizeLang(pres.i18n.active)
+          ? pres
+          : pres.i18n.versions[from];
+      const text = isDeckTitle(slideId, path)
+        ? version.title
+        : valueAtPath(
+            version.slides?.find((s) => s.id === slideId)?.content,
+            path,
+          );
+      if (typeof text !== 'string') return false;
+      source = translationSource(from, text);
+    }
     if (l === normalizeLang?.(pres.i18n?.active))
-      return writeActive(slideId, path, value);
+      return writeActive(slideId, path, value, source);
     if (liveEditsActive)
-      return !!getLiveEdits?.()?.writeVersionText(l, slideId, path, value);
-    return writeLegacy(l, slideId, path, value);
+      return !!getLiveEdits?.()?.writeVersionText(
+        l,
+        slideId,
+        path,
+        value,
+        source,
+      );
+    return writeLegacy(l, slideId, path, value, source);
   };
 }
 

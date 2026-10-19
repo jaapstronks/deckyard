@@ -26,6 +26,10 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { createMockRes } from './helpers/http-mocks.js';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
+import {
+  translationFieldKey,
+  translationSource,
+} from '../shared/translation-provenance.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'b748']
   .join('-')
@@ -88,6 +92,9 @@ const NL = {
 const DE = {
   title: 'Fahrplan',
   slides: [slide('slide-1', 'Hallo', 'title-slide'), slide('slide-2', 'Zwei')],
+  translationSources: {
+    [translationFieldKey('slide-1', ['title'])]: translationSource('nl', 'Hoi'),
+  },
 };
 
 /** @type {ReturnType<typeof createFakeDb>} */
@@ -149,6 +156,10 @@ const titles = (slides) => slides.map((s) => s.content.title);
  * their own language, and the pointers are as stored.
  */
 function assertVersionsKept(row) {
+  assert.deepEqual(
+    row.i18n.versions.de.translationSources,
+    DE.translationSources,
+  );
   const keptTitles = (version, ids) =>
     titles(version.slides.filter((s) => ids.includes(s.id)));
   const ids = ['slide-1', 'slide-2'];

@@ -1,3 +1,7 @@
+import {
+  recordTranslationSource,
+  translationSource,
+} from '../../../../shared/translation-provenance.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
@@ -209,6 +213,14 @@ export async function openTranslateSlideModal({
       for (const [k, v] of Object.entries(translations)) {
         if (typeof v !== 'string') continue;
         slide.content[k] = v;
+        const version = pres.i18n?.versions?.[targetLang];
+        if (version && typeof fields[k] === 'string')
+          recordTranslationSource(
+            version,
+            sid,
+            [k],
+            translationSource(sourceLang, fields[k]),
+          );
       }
 
       markDirty?.();

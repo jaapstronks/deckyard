@@ -56,11 +56,13 @@ import {
   computeMissingTranslation,
   pickVersion,
 } from '../../shared/i18n-progress.js';
+import { valueAtPath } from '../../shared/slide-types/text-fields.js';
 import {
   AppError,
   NotFoundError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import { recordTranslatedVersion } from '../../shared/translation-provenance.js';
 import { alignToActiveVersion } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
@@ -221,6 +223,58 @@ function markTranslation(i18n, to, { status, from, missingCount }) {
   i18n.translation[to] = marker;
 }
 
+/** Apply model answers only where the planned gap has not changed meanwhile. */
+function applyMissingAnswers(freshTarget, plannedTarget, filled, missing) {
+  const result = structuredClone(freshTarget);
+  const byId = (version, id) =>
+    version.slides?.find((slide) => slide?.id === id);
+  for (const gap of missing) {
+    if (gap.kind === 'deck') {
+      if (result.title === plannedTarget.title && filled.title?.trim()) {
+        result.title = filled.title;
+      }
+      continue;
+    }
+    const current = byId(result, gap.slideId);
+    const fresh = byId(freshTarget, gap.slideId);
+    const planned = byId(plannedTarget, gap.slideId);
+    const answer = byId(filled, gap.slideId);
+    if (!current || !fresh || !planned || !answer) continue;
+    const path = gap.path;
+    const before = valueAtPath(planned.content, path);
+    if (valueAtPath(fresh.content, path) !== before) continue;
+    // Item paths are positional. A change anywhere in an ancestor array can
+    // shift the answer to a different item, even if this field is still empty.
+    let plannedNode = planned.content;
+    let currentNode = fresh.content;
+    let sameStructure = true;
+    for (const step of path) {
+      if (
+        Array.isArray(plannedNode) &&
+        JSON.stringify(plannedNode) !== JSON.stringify(currentNode)
+      ) {
+        sameStructure = false;
+        break;
+      }
+      plannedNode = plannedNode?.[step];
+      currentNode = currentNode?.[step];
+    }
+    if (!sameStructure) continue;
+    const translated = valueAtPath(answer.content, path);
+    if (typeof translated !== 'string' || !translated.trim()) continue;
+    let node = current.content;
+    for (let i = 0; i < path.length - 1; i += 1) {
+      if (!node || typeof node !== 'object') break;
+      const step = path[i];
+      node[step] ??= typeof path[i + 1] === 'number' ? [] : {};
+      node = node[step];
+    }
+    if (!node || typeof node !== 'object') continue;
+    node[path.at(-1)] = translated;
+  }
+  return result;
+}
+
 /**
  * Write a deck whose `i18n` block was changed. The top-level fields are
  * aligned to the active version first (see the module comment); the store's
@@ -303,10 +357,15 @@ export async function translatePresentation(
     organizationId: scope.organizationId,
   });
 
-  pres.i18n.versions[pair.to] = {
-    title: translated.title,
-    slides: translated.slides,
-  };
+  pres.i18n.versions[pair.to] = recordTranslatedVersion(
+    src,
+    {
+      title: translated.title,
+      slides: translated.slides,
+    },
+    pair.from,
+    { previous: existingTarget },
+  );
   markTranslation(pres.i18n, pair.to, { status: 'done', from: pair.from });
 
   const presentation = await writeTranslatedDeck(scope, identity.actor, pres);
@@ -413,7 +472,23 @@ export async function runMissingTranslation(
   const fresh = await getPresentation(scope, pres.id);
   if (!fresh) throw new NotFoundError('Presentation not found');
   ensureI18n(fresh);
-  fresh.i18n.versions[to] = { title: filled.title, slides: filled.slides };
+  if (pres.i18n.versions[to] && !fresh.i18n.versions[to]) {
+    delete fresh.i18n.translation?.[to];
+    const presentation = await writeTranslatedDeck(
+      scope,
+      identity.actor,
+      fresh,
+    );
+    return { from, to, missingCount, updated: false, presentation };
+  }
+  const freshTarget =
+    fresh.i18n.versions[to] || buildBlankTargetFromSource(source);
+  fresh.i18n.versions[to] = recordTranslatedVersion(
+    source,
+    applyMissingAnswers(freshTarget, target, filled, missing),
+    from,
+    { previous: freshTarget },
+  );
   const after = computeMissingTranslation({
     source: pickVersion(fresh, from),
     target: pickVersion(fresh, to),

@@ -54,7 +54,7 @@ import { DECK_FORMAT_ID, RETIRED_DECK_FORMAT_ID } from './deck-format-id.js';
 import { ensureSlideBgImage } from './legacy-bg-image.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 22;
+export const CURRENT_SCHEMA_VERSION = 23;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -1603,6 +1603,10 @@ export const SCHEMA_MIGRATIONS = [
   // v21 -> v22: the legacy `bgImage`/`bgAlt` pair folds into `slideBgImage`
   // and is deleted, on every type (B257 B1-bg). See foldLegacyBgImage.
   foldLegacyBgImage,
+
+  // v22 -> v23: optional per-version translationSources. No backfill: old
+  // text has no known source until a translation writer accepts it.
+  (pres) => pres,
 ];
 
 /**

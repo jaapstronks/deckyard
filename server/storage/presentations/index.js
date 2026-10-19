@@ -48,6 +48,7 @@ import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js'
 import { createLogger } from '../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { extensionNames } from '../../../shared/extension-provenance.js';
+import { translationFieldKey } from '../../../shared/translation-provenance.js';
 import { settleBgTextContrast } from '../../utils/bg-image-contrast.js';
 import { loadDeckTheme } from '../../utils/themes.js';
 const log = createLogger('presentations');
@@ -61,6 +62,56 @@ const ALLOW_CROSS_ORG = { allowCrossOrganization: true };
 // declined. Same sentence shape as the library-slide conflict.
 const STALE_REVISION_MESSAGE =
   'Conflict: this presentation was updated by someone else. Reload and try again.';
+
+function translationKeySlideId(key) {
+  try {
+    const address = JSON.parse(key);
+    return Array.isArray(address) && address.length === 2 ? address[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A stale slide save owns provenance only for the slides it actually changed. */
+function mergeTranslationSources(
+  serverI18n,
+  clientI18n,
+  modifiedSlideIds,
+  activeLang,
+) {
+  if (!clientI18n?.versions) return clientI18n;
+  const modified = new Set(modifiedSlideIds);
+  const versions = { ...serverI18n?.versions, ...clientI18n.versions };
+  for (const [lang, clientVersion] of Object.entries(clientI18n.versions)) {
+    const serverVersion = serverI18n?.versions?.[lang];
+    if (!serverVersion || !clientVersion) continue;
+    if (lang !== activeLang) {
+      // The client has no edits in this language. Keep the server's text and
+      // records while carrying newly added slides through its structure sync.
+      versions[lang] = {
+        ...serverVersion,
+        slides: mergeSlidesAtSlideLevel({
+          serverSlides: serverVersion.slides,
+          clientSlides: clientVersion.slides,
+          modifiedSlideIds: [],
+          clientReordered: false,
+        }).slides,
+      };
+      continue;
+    }
+    const sources = { ...serverVersion.translationSources };
+    for (const [key, value] of Object.entries(
+      clientVersion.translationSources || {},
+    )) {
+      if (modified.has(translationKeySlideId(key))) sources[key] = value;
+    }
+    versions[lang] = { ...clientVersion };
+    if (Object.keys(sources).length)
+      versions[lang].translationSources = sources;
+    else delete versions[lang].translationSources;
+  }
+  return { ...clientI18n, versions };
+}
 
 /**
  * List the presentations of the scope's organization.
@@ -981,12 +1032,30 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
         ? opts.modifiedSlideIds
         : null;
       if (modifiedSlideIds && modifiedSlideIds.length >= 0) {
+        const activeLang = data?.i18n?.active;
+        if (
+          activeLang &&
+          existing.i18n?.active &&
+          activeLang !== existing.i18n.active
+        ) {
+          throw revisionConflict(STALE_REVISION_MESSAGE, existing);
+        }
+        if (
+          (data.title !== undefined && data.title !== existing.title) ||
+          (activeLang &&
+            data.i18n?.versions?.[activeLang]?.title !==
+              existing.i18n?.versions?.[activeLang]?.title)
+        ) {
+          throw revisionConflict(STALE_REVISION_MESSAGE, existing);
+        }
         const revisionGap =
           Number(existing.revision) - Number(opts.expectedRevision);
         const clientReordered = opts?.clientReordered ?? null;
         const mergeResult = mergeSlidesAtSlideLevel({
-          serverSlides: existing.slides,
-          clientSlides: data.slides,
+          serverSlides:
+            existing.i18n?.versions?.[activeLang]?.slides || existing.slides,
+          clientSlides:
+            data.i18n?.versions?.[activeLang]?.slides || data.slides,
           modifiedSlideIds,
           baseFingerprints: opts?.slideBaseFingerprints || null,
           revisionGap,
@@ -999,28 +1068,24 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
             appendedSlideIds: mergeResult.appendedSlideIds || [],
             clientReordered,
           };
-          data = { ...data, slides: mergeResult.slides };
-          // Keep the active-language buffer in step with the merged
-          // slides. The editor loads that buffer, so storing the
-          // client's stale copy here would undo the merge on the next
-          // load. (File-mode gets this for free: normalizeI18n runs
-          // after the merge there.)
-          const activeLang = data?.i18n?.active;
-          if (activeLang && data?.i18n?.versions?.[activeLang]) {
-            data = {
-              ...data,
-              i18n: {
-                ...data.i18n,
-                versions: {
-                  ...data.i18n.versions,
-                  [activeLang]: {
-                    ...data.i18n.versions[activeLang],
-                    slides: mergeResult.slides,
-                  },
-                },
-              },
+          const i18n = mergeTranslationSources(
+            existing.i18n,
+            data.i18n,
+            modifiedSlideIds,
+            activeLang,
+          );
+          if (i18n?.versions?.[activeLang]) {
+            i18n.versions[activeLang] = {
+              ...i18n.versions[activeLang],
+              slides: mergeResult.slides,
             };
           }
+          data = {
+            ...data,
+            slides:
+              i18n?.versions?.[i18n.dominant]?.slides || mergeResult.slides,
+            i18n,
+          };
         } else if (mergeResult.conflicts.length > 0) {
           throw revisionConflict(
             'Conflict: the same slides were modified by multiple users.',
@@ -1439,13 +1504,29 @@ async function duplicatePresentationRow(id, ctx) {
   };
 
   const newSlides = mapSlides(existing.slides);
-  const newI18n = existing.i18n ? { ...existing.i18n } : {};
+  const newI18n = existing.i18n ? structuredClone(existing.i18n) : {};
   if (newI18n.versions) {
     for (const [lang, version] of Object.entries(newI18n.versions)) {
       if (version?.slides) {
+        const slides = mapSlides(version.slides);
+        const translationSources = {};
+        for (const [key, source] of Object.entries(
+          version.translationSources || {},
+        )) {
+          const oldId = translationKeySlideId(key);
+          if (oldId === null) {
+            translationSources[key] = source;
+          } else if (slideIdMap.has(oldId)) {
+            const [, path] = JSON.parse(key);
+            translationSources[
+              translationFieldKey(slideIdMap.get(oldId), path)
+            ] = source;
+          }
+        }
         newI18n.versions[lang] = {
           ...version,
-          slides: mapSlides(version.slides),
+          slides,
+          ...(version.translationSources ? { translationSources } : {}),
         };
       }
     }

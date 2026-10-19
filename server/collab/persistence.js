@@ -95,6 +95,10 @@ export function createCollabPersistence({
     const stored = await getYDocState(storageScopeFor(documentName), id);
     if (stored instanceof Uint8Array && stored.length > 0) {
       Y.applyUpdate(document, stored, 'collab-load');
+      // Create the shared container before any peers connect: two clients
+      // initializing a nested Y.Map independently would compete for its slot.
+      // This adds no records or inferred translation history.
+      codec.ensureTranslationSources(document);
       return document;
     }
 

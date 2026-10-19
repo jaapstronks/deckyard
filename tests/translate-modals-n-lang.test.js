@@ -41,6 +41,8 @@ globalThis.cancelAnimationFrame =
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.MouseEvent = dom.window.MouseEvent;
 
+const { translationFieldKey, translationSource } =
+  await import('../shared/translation-provenance.js');
 const { normalizeLang } = await import('../client/lib/format/i18n.js');
 const { openTranslateFieldModal } =
   await import('../client/views/editor/modals/translate-field-modal.js');
@@ -182,6 +184,12 @@ test('applying the field translation writes into the active version', async (t) 
   await new Promise((r) => setTimeout(r, 0));
 
   assert.equal(pres.slides[0].content.title, 'Bonjour');
+  assert.deepEqual(
+    pres.i18n.versions.fr.translationSources[
+      translationFieldKey('s1', ['title'])
+    ],
+    translationSource('nl', 'Goedemorgen'),
+  );
   assert.equal(saved, true);
 });
 
@@ -214,6 +222,14 @@ test('the slide modal names both versions natively too', async (t) => {
   assert.ok(
     help.some((s) => s.includes('(Français) slide from Nederlands')),
     `expected the preview hint to name both versions, got ${JSON.stringify(help)}`,
+  );
+  document.querySelector('.modal .btn-primary').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(
+    pres.i18n.versions.fr.translationSources[
+      translationFieldKey('s1', ['title'])
+    ],
+    translationSource('nl', 'Goedemorgen'),
   );
 });
 

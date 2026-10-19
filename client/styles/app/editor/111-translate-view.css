@@ -185,6 +185,7 @@ textarea.translate-view-input {
   background: hsl(var(--app-text-tertiary));
 }
 
+.translate-view-dot.is-changed,
 .translate-view-dot.is-partial {
   background: hsl(var(--app-warning));
 }
@@ -209,4 +210,9 @@ textarea.translate-view-input {
 
 .translate-view-preview[hidden] {
   display: none;
+}
+
+.translate-view-field-status {
+  display: block;
+  margin-top: var(--ps-space-1);
 }
