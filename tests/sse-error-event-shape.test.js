@@ -1,3 +1,4 @@
+import { createMockEventStreamRes } from './helpers/http-mocks.js';
 /**
  * SSE `error` events carry `{ message }`, deliberately NOT the HTTP envelope.
  *
@@ -27,19 +28,6 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-
-/** Minimal writable stand-in that records everything written to the stream. */
-function fakeRes() {
-  return {
-    writable: true,
-    writableEnded: false,
-    written: '',
-    write(chunk) {
-      this.written += chunk;
-      return true;
-    },
-  };
-}
 
 test('sseErrorPayload carries message and nothing from the HTTP envelope', () => {
   const payload = sseErrorPayload('Conversion failed');
@@ -79,23 +67,30 @@ test('the documented upgrade path is additive, not a rename', () => {
 });
 
 test('sseError writes a well-formed SSE frame on the error event', () => {
-  const res = fakeRes();
+  const res = createMockEventStreamRes();
   sseError(res, 'Import failed');
-  assert.match(res.written, /^event: error\n/);
-  const dataLine = res.written.split('\n').find((l) => l.startsWith('data: '));
+  assert.match(res.body.toString(), /^event: error\n/);
+  const dataLine = res.body
+    .toString()
+    .split('\n')
+    .find((l) => l.startsWith('data: '));
   assert.ok(dataLine, 'frame has a data line');
   assert.deepEqual(JSON.parse(dataLine.slice(6)), { message: 'Import failed' });
   assert.ok(
-    res.written.endsWith('\n\n'),
+    res.body.toString().endsWith('\n\n'),
     'frame is terminated by a blank line',
   );
 });
 
 test('sseError stays silent on a closed stream', () => {
-  const res = fakeRes();
+  const res = createMockEventStreamRes();
   res.writableEnded = true;
   sseError(res, 'too late');
-  assert.equal(res.written, '', 'nothing written after the response ended');
+  assert.equal(
+    res.body.toString(),
+    '',
+    'nothing written after the response ended',
+  );
 });
 
 // --- source guard -----------------------------------------------------------

@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * The OIDC callback end to end, against an in-process identity provider
  * (B269, review #1344).
@@ -157,31 +158,17 @@ test.afterEach(() => {
 // Driving the callback
 // ---------------------------------------------------------------------------
 
-function makeRes() {
-  const cookies = [];
-  return {
-    cookies,
-    statusCode: null,
-    location: null,
-    setHeader(name, value) {
-      if (name === 'Set-Cookie') cookies.splice(0, cookies.length, value);
-    },
-    appendHeader(name, value) {
-      if (name === 'Set-Cookie') cookies.push(value);
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.location = headers?.Location ?? null;
-    },
-    end() {},
-    /** The session cookie this response minted, or null. */
-    session() {
-      const cookie = cookies.find(
-        (c) => !c.startsWith('sb_oidc=') && !/Max-Age=0\b/.test(c),
-      );
-      return cookie ? cookie.split(';')[0] : null;
-    },
+// Domain-specific selection excludes the expired OIDC cookie; transport is shared.
+function callbackRes() {
+  const res = createMockRes();
+  res.session = () => {
+    const cookies = [res.getHeader('Set-Cookie') ?? []].flat();
+    const cookie = cookies.find(
+      (c) => !c.startsWith('sb_oidc=') && !/Max-Age=0\b/.test(c),
+    );
+    return cookie ? cookie.split(';')[0] : null;
   };
+  return res;
 }
 
 /**
@@ -204,7 +191,7 @@ async function callback(claims) {
     },
     process.env.AUTH_SECRET,
   );
-  const res = makeRes();
+  const res = callbackRes();
   await handleSso({
     repoRoot: process.cwd(),
     req: {
@@ -288,7 +275,7 @@ test('a matched organization claim lands in the minted session', async () => {
   const res = await callback({ email: 'new@example.com', org_id: 'idp-beta' });
 
   assert.equal(res.statusCode, 302);
-  assert.equal(res.location, '/app');
+  assert.equal(res.headers.Location, '/app');
   const cookie = res.session();
   assert.ok(cookie, 'a session cookie was minted');
   const user = await resolveSession(cookie);
@@ -303,7 +290,7 @@ test('an unknown organization claim refuses login without a session or user', as
   const db = seed();
   const res = await callback({ email: 'new@example.com', org_id: 'missing' });
 
-  assert.equal(res.location, '/login?error=sso_org_not_found');
+  assert.equal(res.headers.Location, '/login?error=sso_org_not_found');
   assert.equal(res.session(), null);
   assert.equal(db.__tables.users.length, 0);
   assert.equal(db.__tables.user_organizations.length, 0);
@@ -313,7 +300,7 @@ test('a missing organization claim refuses login without a session or user', asy
   const db = seed();
   const res = await callback({ email: 'new@example.com' });
 
-  assert.equal(res.location, '/login?error=sso_org_claim_missing');
+  assert.equal(res.headers.Location, '/login?error=sso_org_claim_missing');
   assert.equal(res.session(), null);
   assert.equal(db.__tables.users.length, 0);
 });
@@ -355,7 +342,7 @@ test('a claim for an organization the person may not join refuses without touchi
     org_id: 'idp-beta',
   });
 
-  assert.equal(res.location, '/login?error=sso_no_membership');
+  assert.equal(res.headers.Location, '/login?error=sso_no_membership');
   assert.equal(res.session(), null);
   assert.deepEqual(db.__tables.users, usersBefore);
   assert.deepEqual(db.__tables.user_organizations, membershipsBefore);
