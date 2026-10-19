@@ -245,11 +245,18 @@ const INLINE_TAG = /^<\/?(?:a|b|strong|i|em|u|s|sub|sup|span)\b/i;
  * Strip HTML tags and decode entities. A list line keeps its indentation.
  */
 function stripHtml(html) {
+  // Remove HTML tags: inline ones vanish, block ones end a line. Repeat until
+  // nothing changes, so a removed tag cannot join the halves of another.
+  let text = String(html || '');
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^>]+>/g, (tag) =>
+      INLINE_TAG.test(tag) ? '' : '\n',
+    );
+  } while (text !== previous);
   return (
-    String(html || '')
-      // Remove HTML tags in one pass: inline ones vanish, block ones end a
-      // line (a second pass could join the halves of a tag)
-      .replace(/<[^>]+>/g, (tag) => (INLINE_TAG.test(tag) ? '' : '\n'))
+    text
       // Decode common entities — `&amp;` last, so `&amp;lt;` decodes to the
       // literal text `&lt;` instead of `<` (js/double-escaping)
       .replace(/&nbsp;/g, ' ')
