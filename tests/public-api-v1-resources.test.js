@@ -279,6 +279,28 @@ test('GET /slide-types returns every registry type with label and fields', async
   assert.ok(Array.isArray(slideTypes['title-slide'].fields));
 });
 
+test('GET /slide-types includes installation defaults without changing the projection', async () => {
+  await installDb();
+  const previous = process.env.BUNNY_LIBRARY_ID;
+  process.env.BUNNY_LIBRARY_ID = 'catalogue-test-library';
+  try {
+    const ctx = makeCtx('GET', '/api/v1/slide-types');
+    await handleResources(ctx);
+    assert.equal(ctx.res.statusCode, 200);
+    const video = ctx.res.body.slideTypes['video-slide'];
+    assert.equal(video.defaults.bunnyLibraryId, 'catalogue-test-library');
+    assert.deepEqual(Object.keys(video).sort(), [
+      'defaults',
+      'fields',
+      'label',
+    ]);
+    assert.equal(SLIDE_TYPES['video-slide'].defaults.bunnyLibraryId, '');
+  } finally {
+    if (previous === undefined) delete process.env.BUNNY_LIBRARY_ID;
+    else process.env.BUNNY_LIBRARY_ID = previous;
+  }
+});
+
 test('GET /slide-types without the read permission is refused with 403', async () => {
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/slide-types', { permissions: [] });

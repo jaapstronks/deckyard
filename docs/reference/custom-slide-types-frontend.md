@@ -60,6 +60,8 @@ Styles:
 
 One facet a DB type does not choose: `toRuntimeSlideType()` writes `fidelity: { pptx: 'raster' }` onto every composed record. A template plus author CSS has nowhere to put a declaration and no native PPTX mapper could exist for arbitrary markup, so this is what the kind of type _is_ rather than what it falls back to - see [`slide-type-fidelity.md`](./slide-type-fidelity.md).
 
+The authenticated REST catalogue (`GET /api/v1/slide-types`, requiring `read`) and authenticated per-type schema (`GET /api/v1/schema/slide-types/{id}.json`) use `buildMergedSlideTypes(ctx.storageScope)`, the same registry as the write path. They describe core and file-based types with installation-configured defaults plus the API key organization's published database types. Drafts and other organizations' types are excluded. The catalogue keeps its projection: `label`, `fields`, `defaults`, optional `themeOnly` and `defaultsByLang`; runtime renderers and database ids are not exposed. Unauthenticated schemas describe process-wide types only.
+
 ## Data model
 
 Custom types live in the `custom_slide_types` table
