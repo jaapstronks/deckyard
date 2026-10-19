@@ -132,6 +132,9 @@ function resolveVersions(pres) {
   if (versionLangs.length) {
     for (const l of versionLangs) {
       versions[l] = {
+        ...(rawVersions[l].translationSources
+          ? { translationSources: rawVersions[l].translationSources }
+          : {}),
         title:
           typeof rawVersions[l].title === 'string' ? rawVersions[l].title : '',
         slides: Array.isArray(rawVersions[l].slides)
@@ -351,6 +354,55 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     return ymap;
   }
 
+  /** Per-field LWW records share meta's undo scope with translated text. */
+  function sourcesMap(doc) {
+    const meta = doc.getMap('meta');
+    let map = meta.get('translationSources');
+    if (!(map instanceof Y.Map)) {
+      map = new Y.Map();
+      meta.set('translationSources', map);
+    }
+    return map;
+  }
+
+  function translationSourcesForLang(doc, lang) {
+    const map = doc.getMap('meta').get('translationSources');
+    const out = {};
+    if (map instanceof Y.Map)
+      for (const [address, value] of map) {
+        const [l, key] = JSON.parse(address);
+        if (l === lang) out[key] = deepClone(value);
+      }
+    return out;
+  }
+
+  function writeTranslationSource(doc, lang, key, source) {
+    sourcesMap(doc).set(JSON.stringify([lang, key]), deepClone(source));
+  }
+
+  /** Three-way per-field diff, so untouched concurrent translations survive. */
+  function applyTranslationSources(doc, versions, baseVersions = null) {
+    const map = sourcesMap(doc);
+    const desired = new Map();
+    const prior = new Map();
+    const collect = (versions, out) => {
+      for (const [lang, version] of Object.entries(versions || {}))
+        for (const [key, record] of Object.entries(
+          version.translationSources || {},
+        ))
+          out.set(JSON.stringify([lang, key]), record);
+    };
+    collect(versions, desired);
+    if (baseVersions) collect(baseVersions, prior);
+    else for (const [key, record] of map) prior.set(key, record);
+    for (const key of new Set([...prior.keys(), ...desired.keys()])) {
+      if (baseVersions && jsonEq(prior.get(key), desired.get(key))) continue;
+      if (!desired.has(key)) map.delete(key);
+      else if (!jsonEq(map.get(key), desired.get(key)))
+        map.set(key, deepClone(desired.get(key)));
+    }
+  }
+
   /**
    * Bootstrap an (empty) Y.Doc from a legacy presentation JSON.
    * @param {Object} pres - Presentation in the legacy JSON format
@@ -365,6 +417,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
 
     doc.transact(() => {
       const meta = doc.getMap('meta');
+      applyTranslationSources(doc, versions);
 
       const titleValues = {};
       for (const l of langs) titleValues[l] = versions[l].title;
@@ -524,7 +577,9 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     const versions = {};
     for (const lang of effectiveLangs) {
       const t = ytitle instanceof Y.Map ? ytitle.get(lang) : undefined;
+      const sources = translationSourcesForLang(doc, lang);
       versions[lang] = {
+        ...(Object.keys(sources).length ? { translationSources: sources } : {}),
         title: t instanceof Y.Text ? t.toString() : '',
         slides: yslides
           .toArray()
@@ -1011,6 +1066,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       const meta = doc.getMap('meta');
       const yslides = doc.getArray('slides');
       const docLangs = getDocLangs(doc);
+      applyTranslationSources(doc, inc.versions, bas?.versions || null);
 
       // Languages: removals are judged against the caller's base (a
       // language a client added in the write window survives); without a
@@ -1230,6 +1286,10 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
   }
 
   return {
+    ensureTranslationSources: sourcesMap,
+    translationSourcesForLang,
+    writeTranslationSource,
+    applyTranslationSources,
     bootstrapPresentationToDoc,
     applyPresentationToDoc,
     projectDocToPresentation,

@@ -61,6 +61,7 @@ import {
   NotFoundError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import { recordTranslatedVersion } from '../../shared/translation-provenance.js';
 import { alignToActiveVersion } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
@@ -303,10 +304,15 @@ export async function translatePresentation(
     organizationId: scope.organizationId,
   });
 
-  pres.i18n.versions[pair.to] = {
-    title: translated.title,
-    slides: translated.slides,
-  };
+  pres.i18n.versions[pair.to] = recordTranslatedVersion(
+    src,
+    {
+      title: translated.title,
+      slides: translated.slides,
+    },
+    pair.from,
+    { previous: existingTarget },
+  );
   markTranslation(pres.i18n, pair.to, { status: 'done', from: pair.from });
 
   const presentation = await writeTranslatedDeck(scope, identity.actor, pres);
@@ -413,7 +419,12 @@ export async function runMissingTranslation(
   const fresh = await getPresentation(scope, pres.id);
   if (!fresh) throw new NotFoundError('Presentation not found');
   ensureI18n(fresh);
-  fresh.i18n.versions[to] = { title: filled.title, slides: filled.slides };
+  fresh.i18n.versions[to] = recordTranslatedVersion(
+    source,
+    { title: filled.title, slides: filled.slides },
+    from,
+    { previous: target },
+  );
   const after = computeMissingTranslation({
     source: pickVersion(fresh, from),
     target: pickVersion(fresh, to),

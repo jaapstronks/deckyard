@@ -177,6 +177,9 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
   // while the server keeps top-level synced with the dominant language for compatibility.
   if (active) {
     i18n.versions[active] = {
+      ...(i18n.versions[active]?.translationSources
+        ? { translationSources: i18n.versions[active].translationSources }
+        : {}),
       title: typeof pres.title === 'string' ? pres.title : '',
       slides: Array.isArray(pres.slides) ? pres.slides : [],
     };
@@ -191,6 +194,9 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
   // alone; the repair above guarantees it exists.
   if (!active || active === dominant) {
     i18n.versions[dominant] = {
+      ...(i18n.versions[dominant]?.translationSources
+        ? { translationSources: i18n.versions[dominant].translationSources }
+        : {}),
       title: typeof pres.title === 'string' ? pres.title : '',
       slides: Array.isArray(pres.slides) ? pres.slides : [],
     };

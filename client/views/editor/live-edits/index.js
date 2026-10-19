@@ -343,9 +343,9 @@ export function initEditorLiveEdits({
      * the doc (B762). False before first sync: the doc is not there yet to
      * hold it.
      */
-    writeVersionText(lang, slideId, path, value) {
+    writeVersionText(lang, slideId, path, value, source) {
       if (destroyed || !ready) return false;
-      const ok = binder.writeVersionText(lang, slideId, path, value);
+      const ok = binder.writeVersionText(lang, slideId, path, value, source);
       if (ok) {
         everEdited = true;
         updateStatus();

@@ -128,6 +128,26 @@ describe('collab persistence hooks', () => {
     );
   });
 
+  it('a stored pre-provenance doc gets one shared empty container before peers connect', async () => {
+    const old = new Y.Doc();
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: old,
+    });
+    old.getMap('meta').delete('translationSources');
+    await setYDocState(testScope(), deckId, Y.encodeStateAsUpdate(old));
+    const loaded = new Y.Doc();
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: loaded,
+    });
+    assert.ok(loaded.getMap('meta').get('translationSources') instanceof Y.Map);
+    assert.equal(loaded.getMap('meta').get('translationSources').size, 0);
+    const projected = deckYdocCodec.projectDocToPresentation(loaded);
+    for (const version of Object.values(projected.i18n?.versions || {}))
+      assert.equal(version.translationSources, undefined);
+  });
+
   it('later opens load the binary instead of re-bootstrapping', async () => {
     const doc = new Y.Doc();
     await hooks.onLoadDocument({

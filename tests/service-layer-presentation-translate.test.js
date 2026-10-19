@@ -41,6 +41,9 @@ delete process.env.SANDBOX_MODE;
 delete process.env.AI_ENABLED;
 delete process.env.DISABLE_AI;
 
+const { translationFieldKey, translationSource } =
+  await import('../shared/translation-provenance.js');
+
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OWNER_EMAIL = 'owner@example.com';
 const COLLAB_EMAIL = 'collab@example.com';
@@ -355,6 +358,20 @@ test('every contract: the owner translates nl → fr in one write; the version a
       ['slide-1', 'slide-2'],
       `${name}: the ids are the deck's`,
     );
+    assert.deepEqual(
+      row.i18n.versions.fr.translationSources[
+        translationFieldKey('slide-1', ['title'])
+      ],
+      translationSource('nl', 'Hoi'),
+      name,
+    );
+    assert.deepEqual(
+      row.i18n.versions.fr.translationSources[
+        translationFieldKey(null, ['title'])
+      ],
+      translationSource('nl', 'Roadmap'),
+      name,
+    );
     assert.equal(row.i18n.translation.fr.status, 'done', `${name}: marker`);
     assert.equal(row.i18n.translation.fr.from, 'nl', `${name}: marker`);
     assert.deepEqual(titles(row.i18n.versions.nl), ['Hoi', 'Twee'], name);
@@ -573,6 +590,19 @@ test('translate/missing (wait): fills the gap only, marks running then done in t
   const row = storedDeck(db);
   assert.equal(row.i18n.versions.de.slides[0].content.title, 'Hallo', 'kept');
   assert.equal(row.i18n.versions.de.slides[1].content.title, 'Deux', 'filled');
+  assert.deepEqual(
+    row.i18n.versions.de.translationSources[
+      translationFieldKey('slide-2', ['title'])
+    ],
+    translationSource('nl', 'Twee'),
+  );
+  assert.equal(
+    row.i18n.versions.de.translationSources[
+      translationFieldKey('slide-1', ['title'])
+    ],
+    undefined,
+    'untouched existing text has no invented history',
+  );
   assert.equal(row.i18n.translation.de.status, 'done');
   assert.equal(row.i18n.translation.de.missingCount, 0);
   assert.equal(res.json().presentation.i18n.translation.de.status, 'done');
@@ -620,6 +650,12 @@ test('translate/missing (background): answers with the count and the fill lands 
   }
   assert.equal(calls.length, 1);
   assert.equal(storedDeck(db).i18n.versions.de.slides[1].content.title, 'Deux');
+  assert.deepEqual(
+    storedDeck(db).i18n.versions.de.translationSources[
+      translationFieldKey('slide-2', ['title'])
+    ],
+    translationSource('nl', 'Twee'),
+  );
 });
 
 test('translate/missing: an outsider is refused with 403 before any work, a missing target is 400 invalid naming `to`', async (t) => {

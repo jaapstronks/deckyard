@@ -145,6 +145,7 @@ export function createLiveDocBinder({
       langs: codec.getDocLangs(doc),
       dominant: codec.getDocDominant(doc),
       i18nExtra: deepClone(meta.get('i18n')) ?? null,
+      sourceVersions: sourceVersionsFromDoc(),
     };
   }
 
@@ -457,6 +458,28 @@ export function createLiveDocBinder({
       meta.set('i18n', extra);
   }
 
+  function sourceVersionsFromDoc() {
+    return Object.fromEntries(
+      codec.getDocLangs(doc).map((l) => [
+        l,
+        {
+          translationSources: codec.translationSourcesForLang(doc, l),
+        },
+      ]),
+    );
+  }
+
+  function refreshTranslationSources() {
+    for (const l of codec.getDocLangs(doc)) {
+      const buf = ensureVersionBuffer(l);
+      if (!buf) continue;
+      const sources = codec.translationSourcesForLang(doc, l);
+      if (Object.keys(sources).length) buf.translationSources = sources;
+      else delete buf.translationSources;
+    }
+    shadow.sourceVersions = sourceVersionsFromDoc();
+  }
+
   function detectLocalChanges() {
     const changed = {
       titleChanged: String(pres.title ?? '') !== shadow.title,
@@ -520,7 +543,17 @@ export function createLiveDocBinder({
         : false;
     changed.i18nChanged = langsGrew || dominantChanged || i18nExtraChanged;
 
+    changed.sourcesChanged = !jsonEq(
+      Object.fromEntries(
+        Object.entries(pres.i18n?.versions || {}).map(([l, v]) => [
+          l,
+          { translationSources: v.translationSources || {} },
+        ]),
+      ),
+      shadow.sourceVersions,
+    );
     changed.any =
+      changed.sourcesChanged ||
       changed.titleChanged ||
       changed.structureChanged ||
       changed.changedSlideIds.size > 0 ||
@@ -570,8 +603,15 @@ export function createLiveDocBinder({
       if (changes.titleChanged) applyTitleToDoc(lang);
       if (changes.i18nChanged) applyI18nToDoc();
       if (changes.extraChanged) applyExtraToDoc();
+      if (changes.sourcesChanged)
+        codec.applyTranslationSources(
+          doc,
+          pres.i18n?.versions || {},
+          shadow.sourceVersions,
+        );
     }, origin);
     refreshShadowAfterLocal(changes);
+    refreshTranslationSources();
   }
 
   // ── doc → pres ───────────────────────────────────────────────────────────
@@ -595,6 +635,7 @@ export function createLiveDocBinder({
 
   /** Re-project the language version buffers from the doc. */
   function refreshVersionBuffers() {
+    refreshTranslationSources();
     if (!isPlainObject(pres.i18n) || !isPlainObject(pres.i18n.versions)) return;
     const ytitle = meta.get('title');
     for (const l of codec.getDocLangs(doc)) {
@@ -692,7 +733,7 @@ export function createLiveDocBinder({
    * @param {string} value
    * @returns {boolean} whether the text was written
    */
-  function writeVersionText(lang, slideId, path, value) {
+  function writeVersionText(lang, slideId, path, value, source = null) {
     if (destroyed || !attached || typeof value !== 'string') return false;
     if (lang === ensureShadowLang()) return false;
     if (!codec.getDocLangs(doc).includes(lang)) return false;
@@ -700,7 +741,17 @@ export function createLiveDocBinder({
     if (!slideId) {
       if (!Array.isArray(path) || path.length !== 1 || path[0] !== 'title')
         return false;
-      doc.transact(() => writeTextField(meta, 'title', value, lang), origin);
+      doc.transact(() => {
+        writeTextField(meta, 'title', value, lang);
+        if (source)
+          codec.writeTranslationSource(
+            doc,
+            lang,
+            JSON.stringify([null, path]),
+            source,
+          );
+      }, origin);
+      refreshTranslationSources();
       const buf = ensureVersionBuffer(lang);
       if (buf) buf.title = value;
       return true;
@@ -710,10 +761,17 @@ export function createLiveDocBinder({
     if (!(yslide instanceof Y.Map)) return false;
     const target = textContainerAt(yslide.get('content'), path);
     if (!target) return false;
-    doc.transact(
-      () => writeTextField(target.container, target.key, value, lang),
-      origin,
-    );
+    doc.transact(() => {
+      writeTextField(target.container, target.key, value, lang);
+      if (source)
+        codec.writeTranslationSource(
+          doc,
+          lang,
+          JSON.stringify([slideId, path]),
+          source,
+        );
+    }, origin);
+    refreshTranslationSources();
     const buf = pres.i18n?.versions?.[lang];
     const known =
       Array.isArray(buf?.slides) && buf.slides.some((s) => s?.id === slideId);
@@ -802,6 +860,7 @@ export function createLiveDocBinder({
    * initial catch-up at attach time. Updates the shadow alongside.
    */
   function applyMetaFromDoc() {
+    refreshTranslationSources();
     const lang = ensureShadowLang();
     let titleChanged = false;
     let metaChanged = false;

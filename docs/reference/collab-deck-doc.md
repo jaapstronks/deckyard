@@ -18,6 +18,7 @@ ydoc
 │     dominant: string            // e.g. 'nl'
 │     langs: string[]             // language versions present
 │     extra: JSON                 // top-level keys except slides/title/i18n
+│     translationSources: Y.Map<address, {lang, hash}> // per-field provenance
 │     i18n: JSON|null             // i18n minus versions (null = no i18n block)
 └── slides: Y.Array<Y.Map>
       id, type, <other slide keys>: plain LWW values
@@ -27,6 +28,10 @@ ydoc
         <text field>:  Y.Map<lang, Y.Text> // string/markdown/csv fields
         <items field>: Y.Array<Y.Map>      // items/rows/cards, recursive
 ```
+
+Each language version may carry `translationSources`, keyed by `JSON.stringify([slideId || null, path])`; `path` is an array into slide content, or `['title']` for the deck title. A record is `{ lang, hash }`: the source language and FNV-1a 64-bit hash of its exact UTF-16 text. `shared/translation-provenance.js` produces these records and derives empty, same-as-source, source-changed, current and no-history statuses. Existing decks acquire no history until a translation is accepted. Ordinary editor changes preserve the record.
+
+In the doc, `meta.translationSources` is a Y.Map keyed by `JSON.stringify([targetLang, fieldKey])`, so records for different fields merge independently. The binder writes it in the same local transaction and undo scope as the translated text. JSON bootstrap, projection and server three-way diffs preserve it; an untouched server field does not erase a concurrent record. Schema ledger step 23 records the optional shape without backfilling.
 
 Two people typing in the same field merge at character level (Y.Text);
 everything non-textual is last-write-wins; slide order and item lists merge

@@ -1,3 +1,7 @@
+import {
+  recordTranslationSource,
+  translationSource,
+} from '../../../../shared/translation-provenance.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
@@ -184,6 +188,14 @@ export async function openTranslateFieldModal({
   btnApply.addEventListener('click', async () => {
     try {
       slide.content[k] = translated;
+      const version = pres.i18n?.versions?.[targetLang];
+      if (version)
+        recordTranslationSource(
+          version,
+          sid,
+          [k],
+          translationSource(sourceLang, srcText),
+        );
 
       markDirty?.();
       rerenderEditor?.();

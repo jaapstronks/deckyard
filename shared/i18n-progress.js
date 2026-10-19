@@ -182,6 +182,9 @@ export function pickVersion(pres, lang) {
   ) {
     const v = pres.i18n.versions[l];
     return {
+      ...(v.translationSources
+        ? { translationSources: v.translationSources }
+        : {}),
       title: typeof v?.title === 'string' ? v.title : '',
       slides: Array.isArray(v?.slides) ? v.slides : [],
     };

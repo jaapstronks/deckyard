@@ -15,6 +15,11 @@ import {
   slideTextRows,
 } from '../../../../shared/i18n-progress.js';
 
+import {
+  translationFieldKey,
+  translationFieldStatus,
+} from '../../../../shared/translation-provenance.js';
+
 const isFilled = (v) => typeof v === 'string' && v.trim() !== '';
 
 /**
@@ -93,7 +98,17 @@ export function translateViewModel({
     (tgt.slides || []).map((s) => s?.id).filter((id) => typeof id === 'string'),
   );
 
-  const [deck, ...slideRows] = slideTextRows(src, tgt, { slideTypes });
+  const rows = slideTextRows(src, tgt, { slideTypes }).map((row) => ({
+    ...row,
+    status: translationFieldStatus(
+      row,
+      source,
+      pres.i18n?.versions?.[target]?.translationSources?.[
+        translationFieldKey(row.slideId, row.path)
+      ],
+    ),
+  }));
+  const [deck, ...slideRows] = rows;
   const byId = new Map();
   for (const r of slideRows) {
     if (!byId.has(r.slideId)) byId.set(r.slideId, []);
@@ -148,5 +163,17 @@ export function onlyEmptyTargets(model) {
         s.only ? s : { ...s, rows: s.rows.filter((r) => isEmptyTarget(r)) },
       )
       .filter((s) => s.only === 'source' || s.rows.length > 0),
+  };
+}
+
+/** Filter rows and index together, leaving the unfiltered status available. */
+export function filterTranslationRows(model, status) {
+  if (status === 'empty') return onlyEmptyTargets(model);
+  if (!status) return model;
+  return {
+    deck: model.deck?.status === status ? model.deck : null,
+    slides: model.slides
+      .map((s) => ({ ...s, rows: s.rows.filter((r) => r.status === status) }))
+      .filter((s) => s.rows.length),
   };
 }

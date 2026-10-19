@@ -33,7 +33,6 @@ import { h } from '../../../lib/dom/index.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
-import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 import { fieldLabel, fieldMetaForPath } from '../inline-edit/field-path.js';
@@ -41,7 +40,7 @@ import { slideTypeLabel } from '../convert-slide-action.js';
 import {
   defaultLanguagePair,
   isEmptyTarget,
-  onlyEmptyTargets,
+  filterTranslationRows,
   translateViewModel,
   versionOf,
 } from './model.js';
@@ -132,7 +131,7 @@ export function openTranslateView({
   const state = {
     source: pair?.source || null,
     target: pair?.target || null,
-    filter: false,
+    filter: '',
   };
   /** Row keys the filter keeps, frozen while typing (see `freezeFilter`). */
   let filterKeep = null;
@@ -170,15 +169,54 @@ export function openTranslateView({
   });
 
   const pairEl = h('div', { class: 'translate-view-pair' });
-  const filterBox = labeledCheckbox({
-    text: t('editor.translateView.onlyEmpty', 'Only empty fields'),
-    className: 'translate-view-filter',
-    onChange: (on) => {
-      state.filter = on;
-      filterKeep = null;
-      render();
+  const filterSelect = h(
+    'select',
+    {
+      class: 'translate-view-filter',
+      'aria-label': t('editor.translateView.filter', 'Filter fields'),
     },
+    [
+      h('option', {
+        value: '',
+        text: t('editor.translateView.allFields', 'All fields'),
+      }),
+      h('option', {
+        value: 'empty',
+        text: t('editor.translateView.onlyEmpty', 'Only empty fields'),
+      }),
+      h('option', {
+        value: 'changed',
+        text: t('editor.translateView.fieldStatus.changed', 'Source changed'),
+      }),
+      h('option', {
+        value: 'same',
+        text: t('editor.translateView.fieldStatus.same', 'Same as source'),
+      }),
+    ],
+  );
+  filterSelect.addEventListener('change', () => {
+    state.filter = filterSelect.value;
+    filterKeep = null;
+    render();
   });
+  const fieldStatusLabel = (status) =>
+    ({
+      empty: t('editor.translateView.fieldStatus.empty', 'Empty'),
+      same: t('editor.translateView.fieldStatus.same', 'Same as source'),
+      changed: t('editor.translateView.fieldStatus.changed', 'Source changed'),
+      current: t('editor.translateView.fieldStatus.current', 'Current'),
+      untracked: t('editor.translateView.fieldStatus.untracked', 'No history'),
+    })[status];
+  const refreshFieldStatuses = (model) => {
+    const rows = [model.deck, ...model.slides.flatMap((s) => s.rows)].filter(
+      Boolean,
+    );
+    for (const r of rows) {
+      const entry = controls.get(addressKey(state.target, r.slideId, r.path));
+      if (entry?.statusEl)
+        entry.statusEl.textContent = fieldStatusLabel(r.status);
+    }
+  };
   const undoBtn = history
     ? h(
         'button',
@@ -218,7 +256,7 @@ export function openTranslateView({
   });
   const toolbar = h('div', { class: 'translate-view-toolbar' }, [
     pairEl,
-    filterBox.el,
+    filterSelect,
     h('div', { class: 'translate-view-history' }, [undoBtn, redoBtn]),
   ]);
   const body = h('div', { class: 'translate-view-body' });
@@ -344,7 +382,11 @@ export function openTranslateView({
     )
       selectSlide?.(entry.slideId);
     const value = entry.el.value;
-    if (!write(entry.lang, entry.slideId, entry.path, value))
+    if (
+      !write(entry.lang, entry.slideId, entry.path, value, {
+        sourceLang: entry.lang === state.target ? state.source : state.target,
+      })
+    )
       return showRefusal(
         entry,
         entry.slideId && lockOf(entry.slideId)
@@ -359,7 +401,9 @@ export function openTranslateView({
     // An own write emits no change signal (the view already holds the text),
     // but the index's status dots are derived: refresh them, or filling the
     // last empty field of a slide would leave it marked incomplete.
-    refreshIndex();
+    const model = currentModel();
+    refreshIndex(model);
+    refreshFieldStatuses(model);
     syncHistory();
     return undefined;
   };
@@ -383,7 +427,7 @@ export function openTranslateView({
    */
   const freezeFilter = (model) => {
     const keep = new Set(filterKeep || []);
-    const filtered = onlyEmptyTargets(model);
+    const filtered = filterTranslationRows(model, state.filter);
     if (filtered.deck) keep.add(rowKey(null, filtered.deck.path));
     for (const s of filtered.slides) {
       keep.add(`slide:${s.slideId}`);
@@ -443,7 +487,7 @@ export function openTranslateView({
     return entry;
   };
 
-  const fieldRow = ({ slideId, path, label, meta, source, target }) => {
+  const fieldRow = ({ slideId, path, label, meta, source, target, status }) => {
     const src = createControl({
       lang: state.source,
       slideId,
@@ -460,6 +504,10 @@ export function openTranslateView({
       meta,
       otherValue: source,
     });
+    tgt.statusEl = h('span', {
+      class: 'translate-view-field-status help',
+      text: fieldStatusLabel(status),
+    });
     const labelEl = h('div', { class: 'translate-view-label', text: label });
     const srcName = getLangDisplayName(state.source);
     const tgtName = getLangDisplayName(state.target);
@@ -473,7 +521,7 @@ export function openTranslateView({
       [
         labelEl,
         h('div', { class: 'translate-view-cell' }, [src.el]),
-        h('div', { class: 'translate-view-cell' }, [tgt.el]),
+        h('div', { class: 'translate-view-cell' }, [tgt.el, tgt.statusEl]),
       ],
     );
     return row;
@@ -555,6 +603,7 @@ export function openTranslateView({
             meta: fieldMetaForPath(def, r.path.join('.')),
             source: r.source,
             target: r.target,
+            status: r.status,
           }),
         );
       }
@@ -624,6 +673,7 @@ export function openTranslateView({
             meta: { type: 'string' },
             source: shown.deck.source,
             target: shown.deck.target,
+            status: shown.deck.status,
           }),
         ]),
       );
@@ -634,8 +684,8 @@ export function openTranslateView({
         h('div', {
           class: 'empty-note',
           text: t(
-            'editor.translateView.noneEmpty',
-            'No empty fields: every text has a translation.',
+            'editor.translateView.noneMatching',
+            'No fields match this filter.',
           ),
         }),
       );
@@ -716,6 +766,7 @@ export function openTranslateView({
         c.el.value = next;
     }
     refreshIndex(model);
+    refreshFieldStatuses(model);
     applyWriteState();
   }
 

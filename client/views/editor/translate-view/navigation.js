@@ -7,6 +7,7 @@ const CARET_CONTROLS = 'input, textarea, [contenteditable="true"]';
 /** Translation progress over all source texts, independent of the row filter. */
 export function translationStatus(slide) {
   if (slide.only === 'source') return 'empty';
+  if (slide.rows.some((r) => r.status === 'changed')) return 'changed';
   const rows = slide.rows.filter((r) => r.source.trim());
   const filled = rows.filter((r) => r.target.trim()).length;
   return !rows.length || filled === rows.length
@@ -141,11 +142,13 @@ export function createTranslateNavigation({
           full.find((x) => x.slideId === s.slideId) || s,
         );
         const label =
-          status === 'empty'
-            ? t('editor.translateView.status.empty', 'Empty')
-            : status === 'partial'
-              ? t('editor.translateView.status.partial', 'Incomplete')
-              : t('editor.translateView.status.complete', 'Complete');
+          status === 'changed'
+            ? t('editor.translateView.fieldStatus.changed', 'Source changed')
+            : status === 'empty'
+              ? t('editor.translateView.status.empty', 'Empty')
+              : status === 'partial'
+                ? t('editor.translateView.status.partial', 'Incomplete')
+                : t('editor.translateView.status.complete', 'Complete');
         const number = s.index == null ? '·' : String(s.index + 1);
         const button =
           previous.get(s.slideId) ||
