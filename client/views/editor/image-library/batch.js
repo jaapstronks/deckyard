@@ -9,7 +9,7 @@ import {
   IMAGE_UPLOAD_MIME_TO_EXT,
   imageUploadAccept,
 } from '../../../../shared/constants/image-uploads.js';
-import { uploadFile } from './upload.js';
+import { uploadFile } from '../../../lib/net/image-upload.js';
 import { createBatchAlts } from './batch-alts.js';
 import { runBatchTasks } from '../media/batch-runner.js';
 

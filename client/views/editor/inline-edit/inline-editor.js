@@ -41,7 +41,7 @@ import { createInlineOverlay } from './overlay.js';
 import { describeSeam } from './ghost-placement.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
-import { uploadFile } from '../image-library/upload.js';
+import { uploadFile } from '../../../lib/net/image-upload.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';

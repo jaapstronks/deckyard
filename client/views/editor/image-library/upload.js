@@ -1,7 +1,7 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getFeatures } from '../../../lib/state/features.js';
-import { readFileAsDataUrl } from '../../../lib/net/file.js';
+import { uploadFile } from '../../../lib/net/image-upload.js';
 import {
   getAllTags,
   installTagsAutocomplete,
@@ -16,79 +16,6 @@ import {
   imageUploadAccept,
   imageUploadFormatList,
 } from '../../../../shared/constants/image-uploads.js';
-
-// Cache media status to avoid repeated API calls
-let _mediaStatus = null;
-
-async function getMediaStatus(api) {
-  if (_mediaStatus) return _mediaStatus;
-  try {
-    _mediaStatus = await api('/api/media/status');
-  } catch {
-    _mediaStatus = { presignedSupported: false };
-  }
-  return _mediaStatus;
-}
-
-/**
- * Upload a file using the best available method.
- * Uses presigned URLs for S3-compatible object storage, falls back to server-side upload for local storage.
- *
- * Exported so the inline WYSIWYG editor's drag & drop path reuses the exact same
- * upload plumbing as the image-library modal (single upload destination: the
- * built-in library). Returns `{ url }`.
- */
-export async function uploadFile(api, file) {
-  const status = await getMediaStatus(api);
-
-  if (status.presignedSupported) {
-    // Presigned upload flow (S3-compatible object storage)
-    const presign = await api('/api/media/presign', {
-      method: 'POST',
-      body: {
-        filename: file.name,
-        contentType: file.type,
-        size: file.size,
-      },
-    });
-
-    // Upload directly to storage provider
-    // Presigned upload straight to external storage: not our /api/*
-    // surface, and must not carry our credentials/JSON headers.
-    // eslint-disable-next-line no-restricted-syntax
-    const uploadResp = await fetch(presign.uploadUrl, {
-      method: 'PUT',
-      headers: presign.headers || {},
-      body: file,
-    });
-
-    if (!uploadResp.ok) {
-      throw new Error(
-        `Upload failed: ${uploadResp.status} ${uploadResp.statusText}`,
-      );
-    }
-
-    // Confirm the upload completed
-    const confirm = await api('/api/media/confirm', {
-      method: 'POST',
-      body: { key: presign.key },
-    });
-
-    if (!confirm.exists) {
-      throw new Error('Upload confirmation failed');
-    }
-
-    return { url: confirm.publicUrl };
-  }
-
-  // Fallback: server-side upload (local storage)
-  const dataUrl = await readFileAsDataUrl(file);
-  const saved = await api('/api/uploads', {
-    method: 'POST',
-    body: { dataUrl, originalName: file.name },
-  });
-  return { url: saved.url };
-}
 
 /**
  * Open the OS file dialog for one image, restricted to what the server takes.

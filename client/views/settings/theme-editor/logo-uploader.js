@@ -12,7 +12,8 @@ import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { featureEnabled } from '../../../lib/state/features.js';
 import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
-import { uploadImage } from './upload-image.js';
+import { api } from '../../../lib/api.js';
+import { uploadFile } from '../../../lib/net/image-upload.js';
 
 /**
  * Create a logo uploader component.
@@ -165,17 +166,19 @@ export function createLogoUploader({ value, onChange }) {
     uploading = true;
     renderState();
 
+    let uploadError = '';
     try {
-      const result = await uploadImage(file);
+      const result = await uploadFile(api, file);
       currentUrl = result.url;
       onChange?.(result.url);
     } catch (err) {
-      status.textContent = String(
+      uploadError = String(
         err?.message || t('settings.themes.logo.uploadFailed', 'Upload failed'),
       );
     } finally {
       uploading = false;
       renderState();
+      status.textContent = uploadError;
     }
   }
 

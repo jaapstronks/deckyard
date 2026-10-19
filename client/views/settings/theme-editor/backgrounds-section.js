@@ -18,7 +18,8 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { featureEnabled } from '../../../lib/state/features.js';
 import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
-import { uploadImage } from './upload-image.js';
+import { api } from '../../../lib/api.js';
+import { uploadFile } from '../../../lib/net/image-upload.js';
 import { icon } from '../../../lib/dom/icons.js';
 
 const MAX_PRESETS = 24;
@@ -152,7 +153,7 @@ export function createBackgroundsSection({ config, onChange }) {
       const added = [];
       for (const file of accepted) {
         try {
-          const { url } = await uploadImage(file);
+          const { url } = await uploadFile(api, file);
           if (url) added.push(url);
         } catch (err) {
           // Report and keep going: one bad file should not lose the others.

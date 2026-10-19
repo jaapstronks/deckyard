@@ -166,31 +166,31 @@ const ENTRIES = {
   // D295: installation-off is absent like every cluster; only `sandboxMode`
   // beside the key greys an entry out (D181). The direct route from an image
   // field and the inline editor's drop target reach `/api/uploads` through
-  // the library's `upload.js`, so their gates are listed with that entry.
+  // `lib/net/image-upload.js`, so their gates are listed with that transport.
   uploads: [
     {
       entry: 'Image library: the upload panel',
-      calls: ['client/views/editor/image-library/upload.js'],
+      calls: ['client/lib/net/image-upload.js'],
       gate: 'client/views/editor/image-library/picker.js',
     },
     {
       entry: 'Image fields: Upload from computer (the picker seam)',
-      calls: ['client/views/editor/image-library/upload.js'],
+      calls: ['client/lib/net/image-upload.js'],
       gate: 'client/views/editor/media/picker-provider.js',
     },
     {
       entry: 'Inline editor: drop an image file on the canvas',
-      calls: ['client/views/editor/image-library/upload.js'],
+      calls: ['client/lib/net/image-upload.js'],
       gate: 'client/views/editor/editor-controller.js',
     },
     {
       entry: 'Theme editor: logo dropzone',
-      calls: ['client/views/settings/theme-editor/upload-image.js'],
+      calls: ['client/lib/net/image-upload.js'],
       gate: 'client/views/settings/theme-editor/logo-uploader.js',
     },
     {
       entry: 'Theme editor: add background images',
-      calls: ['client/views/settings/theme-editor/upload-image.js'],
+      calls: ['client/lib/net/image-upload.js'],
       gate: 'client/views/settings/theme-editor/backgrounds-section.js',
     },
   ],
