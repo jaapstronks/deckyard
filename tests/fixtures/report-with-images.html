@@ -1,0 +1,194 @@
+<!doctype html>
+<!--
+  Source of tests/fixtures/report-with-images.pdf (B775): a three-page A4
+  report with three photos (one per section, each with alt text) and a small
+  logo in the running header of every page. Read as a document, the photos
+  are figures 1-3 and the logo is page furniture. The PDF is committed; the
+  tests never start a browser. To regenerate it after editing this file, run
+  from the core root:
+
+  node --input-type=module -e "
+    import fs from 'node:fs';
+    import { getPuppeteerBrowser, closePuppeteerBrowser, toNodeBuffer } from './server/utils/puppeteer-browser.js';
+    const browser = await getPuppeteerBrowser({ featureName: 'Fixture' });
+    const page = await browser.newPage();
+    await page.setContent(fs.readFileSync('tests/fixtures/report-with-images.html', 'utf8'));
+    const pdf = await page.pdf({ format: 'A4', printBackground: true, tagged: true });
+    fs.writeFileSync('tests/fixtures/report-with-images.pdf', toNodeBuffer(pdf));
+    await page.close();
+    await closePuppeteerBrowser();
+  "
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cooperative annual report</title>
+    <style>
+      @page {
+        margin: 0;
+      }
+      body {
+        margin: 0;
+        font-family: 'DejaVu Sans', Arial, sans-serif;
+        color: #111;
+      }
+      section {
+        box-sizing: border-box;
+        width: 210mm;
+        height: 297mm;
+        padding: 110px 72px 60px;
+        position: relative;
+        overflow: hidden;
+        page-break-after: always;
+      }
+      section:last-child {
+        page-break-after: auto;
+      }
+      .logo {
+        position: absolute;
+        top: 24px;
+        right: 72px;
+        width: 120px;
+        height: 40px;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 0 0 20px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 18px 0 10px;
+      }
+      p {
+        font-size: 12px;
+        line-height: 1.45;
+        margin: 0 0 10px;
+      }
+      figure {
+        margin: 14px 0;
+      }
+      figure img {
+        width: 360px;
+        height: 225px;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <img
+        class="logo"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAAoCAIAAAC6iKlyAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAb0lEQVRoge3QQQ0AAAyEsOk8/0Lmoi9qgIRbiDOZNBppNNJopNFIo5FGI41GGo00Gmk00mik0UijkUYjjUYajTQaaTTSaKTRSKORRiONRhqNNBppNNJopNFIo5FGI41GGo00Gmk00mik0UijkUbPeDo9x543DprzAAAAAElFTkSuQmCC"
+        alt=""
+      />
+      <h1>Cooperative annual report</h1>
+      <h2>Harvest</h2>
+      <p>
+        Harvest paragraph 1. The cooperative measured its yearly results across
+        all sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Harvest paragraph 2. The cooperative measured its yearly results across
+        all sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Harvest paragraph 3. The cooperative measured its yearly results across
+        all sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Harvest paragraph 4. The cooperative measured its yearly results across
+        all sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <figure>
+        <img
+          src="data:image/png;base64,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"
+          alt="Members picking apples in the north orchard"
+        />
+      </figure>
+    </section>
+    <section>
+      <img
+        class="logo"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAAoCAIAAAC6iKlyAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAb0lEQVRoge3QQQ0AAAyEsOk8/0Lmoi9qgIRbiDOZNBppNNJopNFIo5FGI41GGo00Gmk00mik0UijkUYjjUYajTQaaTTSaKTRSKORRiONRhqNNBppNNJopNFIo5FGI41GGo00Gmk00mik0UijkUbPeDo9x543DprzAAAAAElFTkSuQmCC"
+        alt=""
+      />
+      <h2>New barn</h2>
+      <p>
+        Barn paragraph 1. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Barn paragraph 2. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Barn paragraph 3. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Barn paragraph 4. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <figure>
+        <img
+          src="data:image/png;base64,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"
+          alt="The new barn seen from the road"
+        />
+      </figure>
+    </section>
+    <section>
+      <img
+        class="logo"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAAoCAIAAAC6iKlyAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAb0lEQVRoge3QQQ0AAAyEsOk8/0Lmoi9qgIRbiDOZNBppNNJopNFIo5FGI41GGo00Gmk00mik0UijkUYjjUYajTQaaTTSaKTRSKORRiONRhqNNBppNNJopNFIo5FGI41GGo00Gmk00mik0UijkUbPeDo9x543DprzAAAAAElFTkSuQmCC"
+        alt=""
+      />
+      <h2>Next year</h2>
+      <p>
+        Plan paragraph 1. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Plan paragraph 2. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Plan paragraph 3. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <p>
+        Plan paragraph 4. The cooperative measured its yearly results across all
+        sites and wrote down what changed, what stayed the same and what the
+        members decided to do next. Each figure in this report comes from the
+        annual meeting minutes.
+      </p>
+      <figure>
+        <img
+          src="data:image/png;base64,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"
+          alt="Map of the planned extension"
+        />
+      </figure>
+    </section>
+  </body>
+</html>

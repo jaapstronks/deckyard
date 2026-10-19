@@ -2,24 +2,43 @@
  * Document Parser
  * Extracts text content from Word documents (.docx) and similar formats.
  * Uses mammoth for reliable text extraction.
+ *
+ * An embedded picture stays where it stands, as an `[IMAGE n: …]` marker
+ * (B775); its bytes come back as `figures`, uploaded only when the model
+ * places it. Icons and bullets (under `MIN_IMAGE_PIXELS` on a side) stay out.
  */
 
 import mammoth from 'mammoth';
+import sharp from 'sharp';
+
+import { MIN_IMAGE_PIXELS } from '../pdf-extract/images.js';
+import { sourceImageMarker } from '../ai/source-images.js';
+import { escapeHtml } from '../../../shared/slide-types/helpers.js';
+
+/**
+ * The `alt` a picture gets in mammoth's HTML, so the text can mark it.
+ * mammoth writes `alt` first, so the number opens the tag.
+ */
+const FIGURE_TAG = /<img alt="docx-figure:(\d+)"[^>]*>/g;
 
 /**
  * Extract text content from a Word document, attempting to identify sections.
  * Each major section (based on headings) is treated as a potential slide.
  * @param {Buffer} buffer - The document file contents
- * @returns {Promise<{slides: Array<{slideNumber: number, textContent: string}>, metadata: object, errors: string[]}>}
+ * @returns {Promise<{slides: Array<{slideNumber: number, textContent: string}>, figures: Array<{n: number, caption: string, pixels: {width: number, height: number}, buffer: Buffer, mimeType: string}>, metadata: object, errors: string[]}>}
  */
 export async function parseDocx(buffer) {
   const errors = [];
   const slides = [];
   const metadata = {};
+  const figures = [];
 
   try {
     // Extract text with style information to detect headings
-    const result = await mammoth.convertToHtml({ buffer });
+    const result = await mammoth.convertToHtml(
+      { buffer },
+      { convertImage: mammoth.images.imgElement(readFigure(figures)) },
+    );
 
     if (result.messages?.length > 0) {
       for (const msg of result.messages) {
@@ -33,8 +52,12 @@ export async function parseDocx(buffer) {
     const rawResult = await mammoth.extractRawText({ buffer });
     const rawText = rawResult.value || '';
 
-    // Parse HTML to extract structure
-    const sections = parseHtmlToSections(result.value || '');
+    // Parse HTML to extract structure; a picture becomes its marker first
+    const html = String(result.value || '').replace(FIGURE_TAG, (_, n) => {
+      const figure = figures.find((f) => f.n === Number(n));
+      return figure ? `<p>${escapeHtml(sourceImageMarker(figure))}</p>` : '';
+    });
+    const sections = parseHtmlToSections(html);
 
     if (sections.length > 0) {
       // Use structured sections
@@ -95,7 +118,32 @@ export async function parseDocx(buffer) {
     );
   }
 
-  return { slides, metadata, errors };
+  return { slides, figures, metadata, errors };
+}
+
+/**
+ * The `convertImage` handler: keeps each picture of a usable size as a
+ * numbered figure and tags its `<img>` with that number (its caption is
+ * kept on the figure).
+ * @param {Array<object>} figures - filled in document order
+ */
+function readFigure(figures) {
+  return async (image) => {
+    const data = await image.read();
+    const { width = 0, height = 0 } = await sharp(data)
+      .metadata()
+      .catch(() => ({}));
+    if (Math.min(width, height) < MIN_IMAGE_PIXELS) return { alt: '', src: '' };
+    const n = figures.length + 1;
+    figures.push({
+      n,
+      caption: String(image.altText || '').trim(),
+      pixels: { width, height },
+      buffer: data,
+      mimeType: image.contentType || 'application/octet-stream',
+    });
+    return { alt: `docx-figure:${n}`, src: '' };
+  };
 }
 
 /**
@@ -172,7 +220,7 @@ function stripHtml(html) {
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
+      .replace(/&#0*39;/g, "'")
       .replace(/&amp;/g, '&')
       // Clean up whitespace
       .replace(/[ \t]+/g, ' ')

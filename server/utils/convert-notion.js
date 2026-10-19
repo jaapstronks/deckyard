@@ -1,8 +1,10 @@
 /**
  * Notion Page Converter
  * Converts Notion pages into the presentation system format.
- * Runs the one generation pipeline (`generateSlides()`, B757) and handles
- * the images and tables of a Notion page.
+ * Runs the one generation pipeline (`generateSlides()`, B757). The page's
+ * images go along as candidates the model places where they fit (B775);
+ * only the ones it places are re-hosted, plus the first one as the title
+ * background when the page opens with it.
  */
 
 import {
@@ -14,6 +16,7 @@ import {
 } from './notion/index.js';
 import { generateSlides, assembleDeck } from './ai/generate-deck.js';
 import { createSessionLogger, generateSessionId } from './ai/logging.js';
+import { uploadOnce } from './ai/source-images.js';
 import { cryptoUuid } from '../../shared/slide-types/helpers.js';
 import {
   uploadImageKitUrl,
@@ -123,18 +126,15 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     lastEdited: richContent.metadata.lastEdited,
   };
 
-  // Process images - upload to ImageKit
-  const processedImages = [];
-  if (richContent.allImages.length > 0) {
-    if (typeof onStatusMessage === 'function') {
-      onStatusMessage(`Processing ${richContent.allImages.length} image(s)...`);
-    }
-    const uploadedImages = await processNotionImages(richContent.allImages, {
-      onStatusMessage,
-      signal,
-    });
-    processedImages.push(...uploadedImages);
-  }
+  // The page's images, re-hosted only when a slide (or the title) uses one
+  const sourceImages = richContent.allImages.map((img) => ({
+    n: img.n,
+    caption: img.caption || '',
+    upload: uploadOnce(async () => {
+      const [hosted] = await processNotionImages([img], { signal });
+      return hosted?.uploadedUrl || '';
+    }),
+  }));
 
   // Format content for AI
   const formattedContent = formatNotionContentForAi(richContent);
@@ -149,8 +149,8 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       onStatusMessage,
       onOutline,
       onGroupDone,
-      processedImages,
-      richContent, // Pass full content for image/table slide creation
+      sourceImages,
+      richContent,
       signal,
       slideTypes,
       disabledSlideTypes,
@@ -287,8 +287,8 @@ export async function processNotionImages(images, options = {}) {
 /**
  * Convert formatted Notion content to a deck: the one generation pipeline
  * (`generateSlides()`, B756), assembled around what the page brings of its
- * own (B757): the first image as the title background, the other images as
- * image slides before the closing slide.
+ * own (B757): the first image as the title background when the page's first
+ * section holds it. The images are candidates the model places (B775).
  */
 async function convertWithAi(formattedContent, options = {}) {
   const {
@@ -299,7 +299,7 @@ async function convertWithAi(formattedContent, options = {}) {
     onStatusMessage = null,
     onOutline = null,
     onGroupDone = null,
-    processedImages = [],
+    sourceImages = [],
     richContent = null,
     signal = null,
     slideTypes,
@@ -332,6 +332,7 @@ async function convertWithAi(formattedContent, options = {}) {
     disabledSlideTypes,
     customSlideTypes,
     themeContext,
+    sourceImages,
     signal,
     onOutline,
     onStatusMessage,
@@ -342,9 +343,12 @@ async function convertWithAi(formattedContent, options = {}) {
   // The first image of the page's first section becomes the title background.
   const title = outline.title || metadata.title || 'Untitled';
   const titleSlide = { title };
-  const firstImg = processedImages[0];
-  if (firstImg?.uploadedUrl && richContent?.sections?.[0]?.images?.length > 0) {
-    titleSlide.backgroundImage = firstImg.uploadedUrl;
+  const cover = richContent?.sections?.[0]?.images?.[0];
+  const coverUrl = cover
+    ? await sourceImages.find((img) => img.n === cover.n)?.upload()
+    : '';
+  if (coverUrl) {
+    titleSlide.backgroundImage = coverUrl;
     titleSlide.background = 'image';
   }
 
@@ -359,11 +363,6 @@ async function convertWithAi(formattedContent, options = {}) {
     transitions: { preset: 'fade' },
   };
 
-  // Insert image slides for remaining images (beyond the first one used for title)
-  if (processedImages.length > 1 && richContent) {
-    insertImageSlides(deck, processedImages.slice(1), richContent);
-  }
-
   deck._generationMeta = {
     ...meta,
     source: 'notion',
@@ -374,43 +373,4 @@ async function convertWithAi(formattedContent, options = {}) {
   logger.finalize(deck, { source: 'notion' });
 
   return deck;
-}
-
-/**
- * Insert image slides into the deck at appropriate positions.
- * This is a simple approach - adds image slides after the content they relate to.
- */
-function insertImageSlides(deck, images, richContent) {
-  // For now, append image slides at the end before any closing slide
-  // A more sophisticated approach would try to match images to sections
-
-  const lastSlide = deck.slides[deck.slides.length - 1];
-  const hasClosingSlide =
-    lastSlide?.type === 'payoff-slide' || lastSlide?.type === 'closing-slide';
-
-  const insertIndex = hasClosingSlide
-    ? deck.slides.length - 1
-    : deck.slides.length;
-
-  for (const img of images) {
-    if (!img.uploadedUrl) continue;
-
-    const imageSlide = {
-      type: 'image-slide',
-      content: {
-        title: img.caption || '',
-        subheading: '',
-        image: img.uploadedUrl,
-        alt: img.caption || '',
-        imageRole: 'content',
-        caption: '',
-        zoomSteps: '',
-        zoomLevel: 2,
-      },
-      notes: '',
-      _aiReasoning: 'Image extracted from Notion page',
-    };
-
-    deck.slides.splice(insertIndex, 0, imageSlide);
-  }
 }

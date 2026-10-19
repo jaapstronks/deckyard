@@ -54,9 +54,9 @@ The client and parser (`server/utils/notion/`):
 
 The conversion step:
 
-- `server/utils/convert-notion.js` — `convertNotionPage()`: extract, upload
-  images, format for the AI, run outline → refine → validate, return a deck plus
-  a report.
+- `server/utils/convert-notion.js` — `convertNotionPage()`: extract, format
+  for the AI with the images as candidates, run outline → refine → validate
+  (re-hosting the images a slide uses), return a deck plus a report.
 
 The routes (`server/routes/api/notion/`) behind one
 dispatcher:
@@ -116,7 +116,8 @@ modules pass it around. `extractRichContentFromPage()` returns:
 A **section** starts at every `heading_1` or `heading_2`; everything else
 accumulates into the current one. Tables are fetched as child blocks and kept
 both structurally and as a pipe-delimited text rendering; images are lifted into
-`images[]` and referenced in the text as `[Image: caption]`.
+`images[]`, numbered in page order (`n`), and marked in the text where they
+stand as `[IMAGE n: caption]` (B775).
 
 ## Flows
 
@@ -135,18 +136,21 @@ both structurally and as a pipe-delimited text rendering; images are lifted into
    - `extractRichContentFromPage()` — one `GET /pages/{id}` for the title, then
      paginated `GET /blocks/{id}/children` up to 600 blocks, recursing into
      children up to depth 3.
-   - Re-host every extracted image so the deck stays durable: to ImageKit when it
-     is configured, otherwise through Deckyard's own media library (see
-     _Implementation status_).
    - `formatNotionContentForAi()` — flatten to the `NOTION PAGE: …` /
-     `=== CONTENT ===` text block.
+     `=== CONTENT ===` text block, the image markers in place.
+   - Offer the images to the pipeline as `sourceImages` (see
+     [`ai-pipeline.md`](ai-pipeline.md) § Flows, _Source images_): each re-hosts
+     itself only when a slide uses it, so the deck stays durable (to ImageKit
+     when it is configured, otherwise through Deckyard's own media library;
+     see _Implementation status_).
    - Run the one generation pipeline, `generateSlides()` in
      `server/utils/ai/generate-deck.js` (see
      [`ai-pipeline.md`](ai-pipeline.md) § Flows), with the theme context and
      title slide type `loadAiThemeContext()` loaded, forwarding its status
      messages onto the SSE stream. The adapter assembles around it with
-     `assembleDeck()`: the first image becomes the title background, the
-     other images become image slides before a closing slide.
+     `assembleDeck()`: an image in the page's first section becomes the title
+     background (re-hosted for that). The other images land where the model
+     placed them, or nowhere; nothing is appended to the deck (B775).
 5. On a deck with no errors, `generatedDeckToParts()` (presenter notes and the
    review metadata kept) and `createImportedPresentation`, stamping
    `notionSourcePageId`, then a `complete` event carrying the presentation and
@@ -268,9 +272,11 @@ stands, as of 2026-08-17:
   for the finish-or-strip list, not documented promises.
 - **Imported images are durable on both paths.** Notion's file-hosted image URLs
   are signed and expire (roughly an hour), so `processNotionImages` re-hosts every
-  image: to ImageKit when it is configured, otherwise through Deckyard's own media
-  library (the configured media provider — local `/uploads` or S3). Either
-  way the block URL is rewritten to a durable one before the deck is saved. If an
+  image the deck uses (a slide's, the title background): to ImageKit when it is
+  configured, otherwise through Deckyard's own media library (the configured
+  media provider — local `/uploads` or S3). Either way the URL on the slide is
+  a durable one before the deck is saved; an image no slide uses is never
+  fetched (B775). If an
   individual image cannot be fetched or stored, that one image falls back to the
   original (expiring) URL rather than failing the import (B80, D29-1).
 - **Import is synchronous and unbounded in wall-clock.** The conversion runs

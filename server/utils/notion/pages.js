@@ -13,6 +13,7 @@ import {
 } from './parser.js';
 import { createLogger } from '../logger.js';
 import { ValidationError } from '../errors.js';
+import { sourceImageMarker } from '../ai/source-images.js';
 
 const log = createLogger('notion-pages');
 
@@ -123,6 +124,7 @@ export async function extractRichContentFromPage(
   const blocks = await fetchAllBlockChildren(id, { limit });
 
   const sections = [];
+  let imageCount = 0;
   let currentSection = {
     heading: null,
     textContent: '',
@@ -153,14 +155,14 @@ export async function extractRichContentFromPage(
       return;
     }
 
-    // Extract image
+    // Extract image: numbered in page order and marked where it stands, so
+    // the model can place it (B775)
     if (type === 'image') {
       const img = extractImageFromBlock(block);
       if (img) {
+        img.n = ++imageCount;
         currentSection.images.push(img);
-        if (img.caption) {
-          currentSection.textContent += `[Image: ${img.caption}]\n`;
-        }
+        currentSection.textContent += `${sourceImageMarker(img)}\n`;
       }
       return;
     }
@@ -248,20 +250,9 @@ export function formatNotionContentForAi(richContent) {
       lines.push('');
     }
 
+    // Images stand in the text as `[IMAGE n: caption]`, where they are
     if (section.textContent.trim()) {
       lines.push(section.textContent.trim());
-      lines.push('');
-    }
-
-    // Note images for AI context
-    if (section.images.length > 0) {
-      for (const img of section.images) {
-        if (img.caption) {
-          lines.push(`[IMAGE: ${img.caption}]`);
-        } else {
-          lines.push('[IMAGE]');
-        }
-      }
       lines.push('');
     }
   }

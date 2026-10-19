@@ -259,6 +259,14 @@ export function buildPhase2UserPrompt({
       for (const point of source.keyPoints || []) lines.push(`- ${point}`);
       if (source.excerpt) lines.push(`Excerpt: "${source.excerpt}"`);
     }
+    if (slide.sourceImage) {
+      const { n, description } = slide.sourceImage;
+      lines.push('');
+      lines.push(`Source image offered: source-image:${n} (${description})`);
+      lines.push(
+        `When this image shows what the slide says, choose a type with an image field (image-text-slide, image-slide), put exactly "source-image:${n}" in that field and write its "alt" from the description. Never write any other image reference or URL.`,
+      );
+    }
     if (slide.presenterNotes) {
       lines.push('');
       lines.push('Presenter Notes (preserve for the slide):');

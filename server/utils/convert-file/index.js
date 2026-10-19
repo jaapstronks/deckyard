@@ -9,6 +9,8 @@ import { readPdf } from './pdf-reader.js';
 import { parseDocx } from './docx-parser.js';
 import { processImageOnlySlides } from './image-slides.js';
 import { convertWithAi } from './ai-convert.js';
+import { uploadOnce } from '../ai/source-images.js';
+import { uploadImageBuffer } from '../../media/upload-buffer.js';
 import {
   detectFileType,
   formatDocumentForAi,
@@ -192,6 +194,10 @@ export async function convertFile(buffer, options = {}) {
     ? formatDocumentForAi(document, parseResult.metadata)
     : formatSlidesForAi(regularSlides, parseResult.metadata);
 
+  // The pictures the reader marked in the text: candidates the model may
+  // place, uploaded only when it does (B775).
+  const sourceImages = fileSourceImages(parseResult.figures, filename);
+
   // Get first slide content for title slide detection
   const firstSlideContent = document
     ? ''
@@ -219,6 +225,7 @@ export async function convertFile(buffer, options = {}) {
       imageOnlySlides, // Pass image-only slides to merge back in
       aiSlideIndexOffset, // Offset to apply to AI slide indices for correct ordering
       titleSlideCandidate, // Pre-extracted title slide from image-only first slide
+      sourceImages,
       signal,
       slideTypes,
       disabledSlideTypes,
@@ -275,4 +282,37 @@ export async function convertFile(buffer, options = {}) {
     report.errors.push(`AI conversion failed: ${e.message}`);
     return { deck: null, report };
   }
+}
+
+/**
+ * The figures a reader returned (PDF: `png`; Word: `buffer` + `mimeType`)
+ * as source images, each uploading itself once when a slide uses it.
+ * @param {Array<object>|undefined} figures
+ * @param {string} filename - the upload's name stem
+ * @returns {import('../ai/source-images.js').SourceImage[]}
+ */
+function fileSourceImages(figures, filename) {
+  const stem =
+    String(filename || 'document')
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^\w-]+/g, '-')
+      .slice(0, 60) || 'document';
+  return (figures || []).map((figure) => {
+    const mimeType = figure.png ? 'image/png' : figure.mimeType;
+    const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'bin';
+    return {
+      n: figure.n,
+      caption: figure.caption ?? figure.alt ?? '',
+      page: figure.page,
+      pixels: figure.pixels,
+      upload: uploadOnce(() =>
+        uploadImageBuffer({
+          buffer: figure.png || figure.buffer,
+          fileName: `${stem}-image-${figure.n}.${ext}`,
+          mimeType,
+          tags: ['document-import', 'source-image'],
+        }),
+      ),
+    };
+  });
 }
