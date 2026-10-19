@@ -12,6 +12,7 @@
  */
 
 import { test } from 'node:test';
+import { createMockRes } from './helpers/http-mocks.js';
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -26,54 +27,46 @@ const repoRoot = path.resolve(
   '..',
 );
 
-function fakeRes() {
-  const res = { status: 0, body: null };
-  res.writeHead = (status) => {
-    res.status = status;
-  };
-  res.end = (body) => {
-    res.body = JSON.parse(body);
-  };
-  return res;
-}
-
 const INTERNAL = new Error('ENOENT: /srv/deckyard/server/export/chromium');
 
 test('handleExportError: AppError passes through, anything else is a fixed 500', () => {
-  const ok = fakeRes();
+  const ok = createMockRes();
   handleExportError(ok, new ValidationError('Unknown slide'));
-  assert.equal(ok.status, 400);
-  assert.equal(ok.body.message, 'Unknown slide');
+  assert.equal(ok.statusCode, 400);
+  assert.equal(ok.json().message, 'Unknown slide');
 
-  const crash = fakeRes();
+  const crash = createMockRes();
   handleExportError(crash, INTERNAL);
-  assert.equal(crash.status, 500);
-  assert.equal(crash.body.error, 'export_failed');
-  assert.ok(!JSON.stringify(crash.body).includes('/srv/'));
+  assert.equal(crash.statusCode, 500);
+  assert.equal(crash.json().error, 'export_failed');
+  assert.ok(!JSON.stringify(crash.json()).includes('/srv/'));
 });
 
 test('handleNotionError: an AppError answers as it is, internal errors do not leak', () => {
   // The seam already decided what a Notion refusal means (B416); the handler
   // does not re-read its wording.
-  const gateway = fakeRes();
+  const gateway = createMockRes();
   handleNotionError(
     new AppError('Notion could not complete this request', 502),
     gateway,
   );
-  assert.equal(gateway.status, 502);
-  assert.equal(gateway.body.error, 'bad_gateway');
-  assert.equal(gateway.body.message, 'Notion could not complete this request');
+  assert.equal(gateway.statusCode, 502);
+  assert.equal(gateway.json().error, 'bad_gateway');
+  assert.equal(
+    gateway.json().message,
+    'Notion could not complete this request',
+  );
 
-  const invalid = fakeRes();
+  const invalid = createMockRes();
   handleNotionError(new ValidationError('Invalid Notion page ID'), invalid);
-  assert.equal(invalid.status, 400);
-  assert.equal(invalid.body.error, 'bad_request');
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(invalid.json().error, 'bad_request');
 
-  const crash = fakeRes();
+  const crash = createMockRes();
   handleNotionError(INTERNAL, crash);
-  assert.equal(crash.status, 500);
-  assert.equal(crash.body.error, 'notion_error');
-  assert.ok(!JSON.stringify(crash.body).includes('/srv/'));
+  assert.equal(crash.statusCode, 500);
+  assert.equal(crash.json().error, 'notion_error');
+  assert.ok(!JSON.stringify(crash.json()).includes('/srv/'));
 });
 
 test('the Notion routes use the one handler, no inlined copies', () => {

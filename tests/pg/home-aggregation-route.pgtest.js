@@ -1,3 +1,4 @@
+import { createMockRes } from '../helpers/http-mocks.js';
 /**
  * `/api/home` aggregation round-trip against real PostgreSQL, through the facade.
  *
@@ -28,26 +29,8 @@ import { recordSlideLibraryUsage } from '../../server/storage/slide-library-usag
 const storageScope = testScope();
 const USER = 'user@example.com';
 
-/** Minimal response stub recording status + parsed JSON body. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headers: {},
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status) {
-      this.statusCode = status;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
-}
-
 function callHome({ user = { email: USER }, search = '' } = {}) {
-  const res = makeRes();
+  const res = createMockRes();
   const url = new URL(`http://localhost/api/home${search}`);
   return handleHome({
     storageScope,
@@ -97,7 +80,7 @@ pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
     assert.strictEqual(handled, true);
     assert.strictEqual(res.statusCode, 200);
 
-    const body = res.body;
+    const body = res.json();
     assert.strictEqual(body.ok, true);
 
     // Sections always present with the shape the client loaders consume.

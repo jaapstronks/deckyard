@@ -18,6 +18,7 @@
  * Run with: node --test tests/create-presentation-service.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -68,31 +69,12 @@ test.after(() => {
   __setTestDb(null);
 });
 
-/** A recorder for a route's response. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headers: {},
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
-}
-
 /** POST a body to the internal create route as the session user. */
 async function appCreate(body) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]);
   req.method = 'POST';
   req.headers = { 'content-type': 'application/json' };
-  const res = makeRes();
+  const res = createMockRes();
   await handleAppPresentations({
     repoRoot: process.cwd(),
     storageScope: testScope(process.cwd()),
@@ -109,7 +91,7 @@ async function v1Create(body) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]);
   req.method = 'POST';
   req.headers = { 'content-type': 'application/json' };
-  const res = makeRes();
+  const res = createMockRes();
   await handleV1Presentations({
     req,
     res,
@@ -173,16 +155,16 @@ async function createdEvent(presentationId) {
 
 test('every contract leaves a presentation.created row for its actor', async () => {
   const app = await appCreate({ title: 'Intern' });
-  assert.equal(app.statusCode, 201, JSON.stringify(app.body));
+  assert.equal(app.statusCode, 201, JSON.stringify(app.json()));
 
   const v1 = await v1Create({ title: 'Via de API' });
-  assert.equal(v1.statusCode, 201, JSON.stringify(v1.body));
+  assert.equal(v1.statusCode, 201, JSON.stringify(v1.json()));
 
   const mcp = await mcpCreate({});
 
   for (const [where, id] of [
-    ['internal', app.body.id],
-    ['v1', v1.body.data?.presentation?.id ?? v1.body.presentation?.id],
+    ['internal', app.json().id],
+    ['v1', v1.json().data?.presentation?.id ?? v1.json().presentation?.id],
     ['MCP', mcp.id],
   ]) {
     assert.ok(id, `${where}: created deck id`);
@@ -205,13 +187,17 @@ for (const [extra, field] of REFUSED) {
     const before = (await decks()).length;
 
     const app = await appCreate({ title: 'Dek', ...extra });
-    assert.equal(app.statusCode, 400, `internal: ${JSON.stringify(app.body)}`);
-    assert.equal(app.body.error, 'invalid', 'internal: code');
-    assert.equal(app.body.details?.field, field, 'internal: field');
+    assert.equal(
+      app.statusCode,
+      400,
+      `internal: ${JSON.stringify(app.json())}`,
+    );
+    assert.equal(app.json().error, 'invalid', 'internal: code');
+    assert.equal(app.json().details?.field, field, 'internal: field');
 
     const v1 = await v1Create({ title: 'Dek', ...extra });
-    assert.equal(v1.statusCode, 400, `v1: ${JSON.stringify(v1.body)}`);
-    assert.equal(v1.body.details?.field, field, 'v1: field');
+    assert.equal(v1.statusCode, 400, `v1: ${JSON.stringify(v1.json())}`);
+    assert.equal(v1.json().details?.field, field, 'v1: field');
 
     await assert.rejects(
       () => mcpCreate(extra),
@@ -230,6 +216,6 @@ test('the new deck is the actor’s on every contract', async () => {
   const app = await appCreate({ title: 'Van mij' });
   const mcp = await mcpCreate({});
   const byId = new Map((await decks()).map((p) => [p.id, p]));
-  assert.equal(byId.get(app.body.id).ownerEmail, OWNER);
+  assert.equal(byId.get(app.json().id).ownerEmail, OWNER);
   assert.equal(byId.get(mcp.id).ownerEmail, OWNER);
 });

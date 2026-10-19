@@ -14,6 +14,7 @@
  * Run with: node --test tests/sandbox-examples-theme.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -68,28 +69,13 @@ test.after(() => {
   __setTestDb(null);
 });
 
-function mockRes() {
-  return {
-    statusCode: null,
-    body: null,
-    setHeader() {},
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
-}
-
 /**
  * GET the shelf in sandbox mode. Sandbox mode is on for this call only: the
  * import below does not depend on it, and its per-guest quota query is raw SQL
  * the fake database does not run.
  */
 async function getExamples() {
-  const res = mockRes();
+  const res = createMockRes();
   process.env.SANDBOX_MODE = '1';
   try {
     await handleSandbox({
@@ -103,13 +89,13 @@ async function getExamples() {
     if (savedSandbox === undefined) delete process.env.SANDBOX_MODE;
     else process.env.SANDBOX_MODE = savedSandbox;
   }
-  assert.equal(res.statusCode, 200, JSON.stringify(res.body));
-  return res.body.examples;
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  return res.json().examples;
 }
 
 async function importJson(body) {
   const buf = Buffer.from(JSON.stringify(body), 'utf8');
-  const res = mockRes();
+  const res = createMockRes();
   await handlePresentations({
     repoRoot: process.cwd(),
     storageScope: testScope(process.cwd()),
@@ -151,9 +137,12 @@ test('every shipped example resolves to its seed UUID and imports as that seed',
     const res = await importJson({ deck: ex.deck, lang: ex.deck.lang });
     assert.ok(
       res.statusCode >= 200 && res.statusCode < 300,
-      `${ex.id}: import ${res.statusCode} ${JSON.stringify(res.body)}`,
+      `${ex.id}: import ${res.statusCode} ${JSON.stringify(res.json())}`,
     );
-    const stored = await getPresentation(testScope(process.cwd()), res.body.id);
+    const stored = await getPresentation(
+      testScope(process.cwd()),
+      res.json().id,
+    );
     assert.equal(stored.theme, expected, `${ex.id}: stored theme`);
   }
 });

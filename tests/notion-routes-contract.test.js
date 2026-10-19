@@ -35,6 +35,7 @@
  * Run with: node --test tests/notion-routes-contract.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -214,36 +215,6 @@ async function seed() {
 // Driving the handlers
 // ---------------------------------------------------------------------------
 
-/** A response double capturing the status/headers/body the helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    rawBody: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      // Node defaults an unwritten status to 200 when end() is called without a
-      // prior writeHead — the CSV export path relies on exactly that.
-      if (this.statusCode === null) this.statusCode = 200;
-      this.rawBody = payload ?? null;
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null; // non-JSON (the CSV export)
-      }
-      return this;
-    },
-  };
-}
-
 /**
  * Drive a mount handler (`handleLeads`/`handleLeadsPublic`/`handleNotion`) the
  * way the router does: it dispatches on `ctx.url.pathname` and `ctx.req.method`.
@@ -272,7 +243,7 @@ async function call(
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handle({
     repoRoot: process.cwd(),
@@ -282,6 +253,9 @@ async function call(
     url: new URL(`http://decks.example.test${pathAndQuery}`),
     authedUser,
   });
+  // Node defaults an unwritten response to 200; keep the CSV export bytes separate.
+  if (handled && res.statusCode === null) res.statusCode = 200;
+  res.rawBody = res.body;
   return { handled, res };
 }
 
@@ -294,7 +268,9 @@ test('notion status reports disabled when no secret is set', async () => {
   const { res } = await call(handleNotion, 'GET', '/api/notion/status');
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { enabled: false });
+  assert.deepEqual(res.json(), { enabled: false });
+  assert.equal(res.rawBody, res.body);
+  assert.equal(typeof res.rawBody, 'string');
 });
 
 test('notion fetch is a 501 when Notion is not configured', async () => {
@@ -304,7 +280,7 @@ test('notion fetch is a 501 when Notion is not configured', async () => {
   });
 
   assert.equal(res.statusCode, 501);
-  assert.equal(res.body.error, 'notion_not_configured');
+  assert.equal(res.json().error, 'notion_not_configured');
 });
 
 test('notion import is a 501 when Notion is not configured', async () => {
@@ -314,7 +290,7 @@ test('notion import is a 501 when Notion is not configured', async () => {
   });
 
   assert.equal(res.statusCode, 501);
-  assert.equal(res.body.error, 'notion_not_configured');
+  assert.equal(res.json().error, 'notion_not_configured');
 });
 
 test('the 501 says what to do in `message`, and carries no `details`', async () => {
@@ -325,9 +301,9 @@ test('the 501 says what to do in `message`, and carries no `details`', async () 
     const { res } = await call(handleNotion, 'POST', path, {
       body: { url: 'https://www.notion.so/Some-Page-1234' },
     });
-    assert.equal(res.body.message, NOTION_NOT_CONFIGURED_MESSAGE, path);
-    assert.ok(res.body.message.includes('NOTION_SECRET'), path);
-    assert.ok(!('details' in res.body), `${path} sends no details`);
+    assert.equal(res.json().message, NOTION_NOT_CONFIGURED_MESSAGE, path);
+    assert.ok(res.json().message.includes('NOTION_SECRET'), path);
+    assert.ok(!('details' in res.json()), `${path} sends no details`);
   }
 });
 
@@ -346,13 +322,13 @@ test('with a secret, notion fetch validates the url before calling Notion', asyn
       body: {},
     });
     assert.equal(missing.res.statusCode, 400);
-    assert.match(missing.res.body.message, /Expected \{ url \}/);
+    assert.match(missing.res.json().message, /Expected \{ url \}/);
 
     const malformed = await call(handleNotion, 'POST', '/api/notion/fetch', {
       body: { url: 'not a notion url' },
     });
     assert.equal(malformed.res.statusCode, 400);
-    assert.match(malformed.res.body.message, /Invalid Notion URL or page ID/);
+    assert.match(malformed.res.json().message, /Invalid Notion URL or page ID/);
   } finally {
     delete process.env.NOTION_SECRET;
   }
@@ -366,13 +342,13 @@ test('with a secret, notion publish validates its required fields before calling
       body: { embedUrl: 'https://decks.example.test/embed/abc' },
     });
     assert.equal(noPage.res.statusCode, 400);
-    assert.match(noPage.res.body.message, /Expected \{ pageId \}/);
+    assert.match(noPage.res.json().message, /Expected \{ pageId \}/);
 
     const noEmbed = await call(handleNotion, 'POST', '/api/notion/publish', {
       body: { pageId: '11112222333344445555666677778888' },
     });
     assert.equal(noEmbed.res.statusCode, 400);
-    assert.match(noEmbed.res.body.message, /Expected \{ embedUrl \}/);
+    assert.match(noEmbed.res.json().message, /Expected \{ embedUrl \}/);
   } finally {
     delete process.env.NOTION_SECRET;
   }
@@ -387,7 +363,7 @@ test('with a secret, notion import validates the url before the conversion pipel
     });
 
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /Invalid Notion URL or page ID/);
+    assert.match(res.json().message, /Invalid Notion URL or page ID/);
   } finally {
     delete process.env.NOTION_SECRET;
   }
@@ -403,7 +379,7 @@ test('with a secret, compose validates before the API', async () => {
     });
 
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /Expected \{ pageId \} or \{ keyword \}/);
+    assert.match(res.json().message, /Expected \{ pageId \} or \{ keyword \}/);
   } finally {
     delete process.env.NOTION_SECRET;
   }

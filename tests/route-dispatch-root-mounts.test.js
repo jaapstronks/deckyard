@@ -17,6 +17,7 @@
  * Run with: node --test tests/route-dispatch-root-mounts.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -29,26 +30,8 @@ import {
 } from '../server/routes/api/follow-codes.js';
 import { handlePublicApiV1 } from '../server/routes/public-api/v1/index.js';
 
-function mockRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(chunk) {
-      this.body = chunk;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 function ctx(method, pathname) {
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {
@@ -65,7 +48,7 @@ test('maintenance: GET answers 200 with the state, any other method 405 with All
   const get = ctx('GET', '/api/maintenance');
   assert.equal(await dispatchRoutes(MAINTENANCE_ROUTES, get.ctx), true);
   assert.equal(get.res.statusCode, 200);
-  assert.ok(JSON.parse(get.res.body), 'GET body is the JSON maintenance state');
+  assert.ok(get.res.json(), 'GET body is the JSON maintenance state');
 
   for (const method of ['POST', 'PUT', 'DELETE']) {
     const { ctx: c, res } = ctx(method, '/api/maintenance');
