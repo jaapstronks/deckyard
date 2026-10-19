@@ -19,6 +19,7 @@
  * Run with: node --test tests/delete-presentation-service.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -85,25 +86,6 @@ function rowOf(id) {
   return db.__tables.presentations.find((r) => r.id === id);
 }
 
-/** A recorder for a route's response. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headers: {},
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
-}
-
 /** A body-less DELETE request. */
 function del() {
   const req = Readable.from([]);
@@ -114,7 +96,7 @@ function del() {
 
 /** DELETE through the internal route as `email`'s session. */
 async function appDelete(id, email = OWNER) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleAppPresentations({
     repoRoot: process.cwd(),
     storageScope: testScope(process.cwd()),
@@ -128,7 +110,7 @@ async function appDelete(id, email = OWNER) {
 
 /** DELETE through v1 with `email`'s write key. */
 async function v1Delete(id, email = OWNER) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleV1Presentations({
     req: del(),
     res,
@@ -197,7 +179,11 @@ async function assertRefused(where, call, status) {
     return;
   }
   const res = await call();
-  assert.equal(res.statusCode, status, `${where}: ${JSON.stringify(res.body)}`);
+  assert.equal(
+    res.statusCode,
+    status,
+    `${where}: ${JSON.stringify(res.json())}`,
+  );
 }
 
 test('the owner trashes on every contract; each trash leaves an activity row', async () => {
@@ -206,11 +192,11 @@ test('the owner trashes on every contract; each trash leaves an activity row', a
   const mcp = await ownersDeck('organization');
 
   const appRes = await appDelete(app.id);
-  assert.equal(appRes.statusCode, 200, JSON.stringify(appRes.body));
-  assert.deepEqual(appRes.body, { ok: true });
+  assert.equal(appRes.statusCode, 200, JSON.stringify(appRes.json()));
+  assert.deepEqual(appRes.json(), { ok: true });
 
   const v1Res = await v1Delete(v1.id);
-  assert.equal(v1Res.statusCode, 200, JSON.stringify(v1Res.body));
+  assert.equal(v1Res.statusCode, 200, JSON.stringify(v1Res.json()));
 
   assert.deepEqual(await mcpDelete(mcp.id), { deleted: true, id: mcp.id });
 
@@ -231,7 +217,7 @@ test('the owner trashes on every contract; each trash leaves an activity row', a
 test('a private deck goes to the trash without an activity row', async () => {
   const pres = await ownersDeck('private');
   const res = await v1Delete(pres.id);
-  assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
   assert.ok(rowOf(pres.id).trashed_at);
   assert.equal(await deletedEvent(pres.id), null);
 });

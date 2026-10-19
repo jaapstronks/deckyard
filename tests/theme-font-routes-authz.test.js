@@ -40,6 +40,7 @@
  * Run with: node --test tests/theme-font-routes-authz.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -120,27 +121,6 @@ function seed() {
 // Driving the handlers
 // ---------------------------------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null;
-      }
-      return this;
-    },
-  };
-}
-
 /**
  * Call `handleThemes` / `handleFontFamilies` the way `routes/api/index.js` does
  * — the module self-dispatches on method + path, so the id captures ride the URL.
@@ -163,7 +143,7 @@ async function call(handler, method, path, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handler({
     repoRoot: process.cwd(),
@@ -187,7 +167,7 @@ test('any authed user can list themes and the curated font catalog', async () =>
   });
   assert.equal(themes.res.statusCode, 200);
   assert.ok(
-    Array.isArray(themes.res.body.themes),
+    Array.isArray(themes.res.json().themes),
     'a themes array is returned',
   );
 
@@ -195,7 +175,7 @@ test('any authed user can list themes and the curated font catalog', async () =>
     as: ACTORS.member,
   });
   assert.equal(fonts.res.statusCode, 200);
-  assert.ok(Array.isArray(fonts.res.body.fonts));
+  assert.ok(Array.isArray(fonts.res.json().fonts));
 });
 
 test('any authed user can list the installed seed', async () => {
@@ -204,9 +184,9 @@ test('any authed user can list the installed seed', async () => {
     as: ACTORS.member,
   });
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.themes.length, 1);
-  assert.equal(res.body.themes[0].id, brandSeed.id);
-  assert.equal(res.body.themes[0].source, 'seed');
+  assert.equal(res.json().themes.length, 1);
+  assert.equal(res.json().themes[0].id, brandSeed.id);
+  assert.equal(res.json().themes[0].source, 'seed');
 });
 
 test('a seed is visible by UUID and cannot be edited or deleted', async () => {
@@ -217,13 +197,13 @@ test('a seed is visible by UUID and cannot be edited or deleted', async () => {
     as: ACTORS.member,
   });
   assert.equal(
-    list.res.body.themes.find((theme) => theme.id === id)?.source,
+    list.res.json().themes.find((theme) => theme.id === id)?.source,
     'seed',
   );
   const read = await call(handleThemes, 'GET', `/api/themes/${id}`, {
     as: ACTORS.member,
   });
-  assert.equal(read.res.body.slug, 'brand');
+  assert.equal(read.res.json().slug, 'brand');
   const update = await call(handleThemes, 'PUT', `/api/themes/${id}`, {
     as: ACTORS.designer,
     body: { label: 'Changed' },
@@ -246,15 +226,15 @@ test('a designer can create a custom theme; a plain member gets a 403', async ()
     403,
     'theme mutations deny with forbidden',
   );
-  assert.equal(denied.res.body.error, 'forbidden');
+  assert.equal(denied.res.json().error, 'forbidden');
 
   const created = await call(handleThemes, 'POST', '/api/themes', {
     as: ACTORS.designer,
     body: { label: 'Brand One' },
   });
   assert.equal(created.res.statusCode, 201);
-  assert.ok(created.res.body.id, 'the new theme id is returned');
-  assert.equal(created.res.body.label, 'Brand One');
+  assert.ok(created.res.json().id, 'the new theme id is returned');
+  assert.equal(created.res.json().label, 'Brand One');
 });
 
 test('create rejects an empty label with a 400', async () => {
@@ -301,15 +281,15 @@ test('a theme field the record does not know is a 400 that names it (D209)', asy
       body,
     });
     assert.equal(res.statusCode, 400, where);
-    assert.equal(res.body.error, 'invalid', where);
-    assert.deepEqual(res.body.details, { field, reason }, where);
-    assert.ok(res.body.message.includes(where), where);
+    assert.equal(res.json().error, 'invalid', where);
+    assert.deepEqual(res.json().details, { field, reason }, where);
+    assert.ok(res.json().message.includes(where), where);
   }
   const list = await call(handleThemes, 'GET', '/api/themes', {
     as: ACTORS.designer,
   });
   assert.deepEqual(
-    list.res.body.themes.filter((theme) => theme.source === 'organization'),
+    list.res.json().themes.filter((theme) => theme.source === 'organization'),
     [],
     'no organization theme was written',
   );
@@ -337,11 +317,11 @@ test('a record stores every explicit colour and logo field it is given (B437)', 
   const read = await call(
     handleThemes,
     'GET',
-    `/api/themes/${created.res.body.id}`,
+    `/api/themes/${created.res.json().id}`,
     { as: ACTORS.member },
   );
-  assert.deepEqual(read.res.body.colors, colors);
-  assert.deepEqual(read.res.body.config.logos, logos);
+  assert.deepEqual(read.res.json().colors, colors);
+  assert.deepEqual(read.res.json().config.logos, logos);
 });
 
 test('a designer can preview a draft config; a member cannot', async () => {
@@ -362,7 +342,7 @@ test('a designer can preview a draft config; a member cannot', async () => {
     body: { label: 'Draft' },
   });
   assert.equal(ok.res.statusCode, 200);
-  assert.ok(ok.res.body.theme, 'a built theme config comes back');
+  assert.ok(ok.res.json().theme, 'a built theme config comes back');
 });
 
 test('reading, updating and deleting an organization theme by id', async () => {
@@ -371,14 +351,14 @@ test('reading, updating and deleting an organization theme by id', async () => {
     as: ACTORS.designer,
     body: { label: 'Brand Two' },
   });
-  const id = created.res.body.id;
+  const id = created.res.json().id;
 
   // Read: open to any authed user.
   const read = await call(handleThemes, 'GET', `/api/themes/${id}`, {
     as: ACTORS.member,
   });
   assert.equal(read.res.statusCode, 200);
-  assert.equal(read.res.body.id, id);
+  assert.equal(read.res.json().id, id);
 
   // A missing id is a 404.
   const missing = await call(
@@ -401,7 +381,7 @@ test('reading, updating and deleting an organization theme by id', async () => {
     body: { label: 'Renamed' },
   });
   assert.equal(update.res.statusCode, 200);
-  assert.equal(update.res.body.label, 'Renamed');
+  assert.equal(update.res.json().label, 'Renamed');
 
   // Delete: designer only, then it is gone.
   const memberDelete = await call(handleThemes, 'DELETE', `/api/themes/${id}`, {
@@ -432,7 +412,7 @@ test('listing font families needs a session', async () => {
     as: ACTORS.member,
   });
   assert.equal(member.res.statusCode, 200);
-  assert.ok(Array.isArray(member.res.body.fontFamilies));
+  assert.ok(Array.isArray(member.res.json().fontFamilies));
 });
 
 test('a designer can create a font family; a member gets a 403', async () => {
@@ -446,14 +426,14 @@ test('a designer can create a font family; a member gets a 403', async () => {
     403,
     'font mutations deny with forbidden, same as themes (see header rule 2)',
   );
-  assert.equal(denied.res.body.error, 'forbidden');
+  assert.equal(denied.res.json().error, 'forbidden');
 
   const created = await call(handleFontFamilies, 'POST', '/api/font-families', {
     as: ACTORS.designer,
     body: { name: 'Brand Sans', source: 'upload', category: 'sans-serif' },
   });
   assert.equal(created.res.statusCode, 201);
-  assert.ok(created.res.body.id);
+  assert.ok(created.res.json().id);
 });
 
 test('reading, updating and deleting a font family by id', async () => {
@@ -462,7 +442,7 @@ test('reading, updating and deleting a font family by id', async () => {
     as: ACTORS.designer,
     body: { name: 'Brand Serif', source: 'upload', category: 'serif' },
   });
-  const id = created.res.body.id;
+  const id = created.res.json().id;
 
   // Read: any authed user; anonymous is 401; missing is 404.
   const anon = await call(
@@ -478,7 +458,7 @@ test('reading, updating and deleting a font family by id', async () => {
     { as: ACTORS.member },
   );
   assert.equal(read.res.statusCode, 200);
-  assert.equal(read.res.body.id, id);
+  assert.equal(read.res.json().id, id);
   const missing = await call(
     handleFontFamilies,
     'GET',
@@ -572,7 +552,7 @@ test('importing an Adobe family creates it without a font file', async () => {
     },
   );
   assert.equal(ok.res.statusCode, 201);
-  assert.equal(ok.res.body.source, 'adobe');
+  assert.equal(ok.res.json().source, 'adobe');
 });
 
 test('the Adobe discovery route gates and validates before it reaches the network', async () => {
@@ -629,7 +609,7 @@ test('the file-upload variant route is gated before it reaches the media provide
     as: ACTORS.designer,
     body: { name: 'Upload Target', source: 'upload' },
   });
-  const id = created.res.body.id;
+  const id = created.res.json().id;
 
   const denied = await call(
     handleFontFamilies,

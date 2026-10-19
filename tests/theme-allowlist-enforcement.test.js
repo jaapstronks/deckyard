@@ -27,6 +27,7 @@
  * Run with: node --test tests/theme-allowlist-enforcement.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -101,21 +102,6 @@ test.after(() => {
   __setTestDb(null);
 });
 
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
-
 /**
  * List themes through the real handler.
  * @param {string} path - Request path, query string included
@@ -123,7 +109,7 @@ function makeRes() {
  * @returns {Promise<{statusCode: number, ids: string[], enabledThemes: string[]}>}
  */
 async function listThemes(path, authedUser = MEMBER) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleThemes({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(authedUser, { repoRoot: process.cwd() }),
@@ -134,8 +120,8 @@ async function listThemes(path, authedUser = MEMBER) {
   });
   return {
     statusCode: res.statusCode,
-    ids: (res.body?.themes || []).map((th) => String(th.id)),
-    enabledThemes: res.body?.enabledThemes || [],
+    ids: (res.json()?.themes || []).map((th) => String(th.id)),
+    enabledThemes: res.json()?.enabledThemes || [],
   };
 }
 
@@ -176,7 +162,7 @@ test('the default theme is offered even when it is not allowlisted', async () =>
 
 test('no theme carries an `enabled` flag any more', async () => {
   seed(['editorial']);
-  const res = makeRes();
+  const res = createMockRes();
   await handleThemes({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(MEMBER, { repoRoot: process.cwd() }),
@@ -185,7 +171,7 @@ test('no theme carries an `enabled` flag any more', async () => {
     url: new URL('http://decks.example.test/api/themes'),
     authedUser: MEMBER,
   });
-  for (const theme of res.body.themes) {
+  for (const theme of res.json().themes) {
     assert.ok(
       !('enabled' in theme),
       `${theme.id} carries no soft-visibility annotation`,

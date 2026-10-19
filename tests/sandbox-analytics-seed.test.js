@@ -11,6 +11,7 @@
  * Run with: node --test tests/sandbox-analytics-seed.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -50,21 +51,6 @@ function withSandbox(value, fn) {
     else process.env.SANDBOX_MODE = saved;
   };
   return Promise.resolve().then(fn).finally(restore);
-}
-
-function mockRes() {
-  return {
-    statusCode: null,
-    body: null,
-    setHeader() {},
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
 }
 
 function installDb() {
@@ -224,7 +210,7 @@ test('outside sandbox mode nothing can write the history', async () => {
 
 test('outside sandbox mode the open-example route does not exist', async () => {
   installDb();
-  const res = mockRes();
+  const res = createMockRes();
   await withSandbox(false, () =>
     handleSandbox({
       repoRoot: process.cwd(),
@@ -240,7 +226,7 @@ test('outside sandbox mode the open-example route does not exist', async () => {
 
 test('the shelf never hands the browser the viewing profile', async () => {
   installDb();
-  const res = mockRes();
+  const res = createMockRes();
   await withSandbox(true, () =>
     handleSandbox({
       repoRoot: process.cwd(),
@@ -251,8 +237,8 @@ test('the shelf never hands the browser the viewing profile', async () => {
     }),
   );
   assert.equal(res.statusCode, 200);
-  assert.ok(res.body.examples.length >= 3);
-  for (const example of res.body.examples) {
+  assert.ok(res.json().examples.length >= 3);
+  for (const example of res.json().examples) {
     assert.equal('analytics' in example, false, example.id);
     assert.equal('sandbox' in example.deck, false, example.id);
   }

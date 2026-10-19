@@ -15,6 +15,7 @@
  * Run with: node --test tests/imagekit-browse-upstream-error.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -41,22 +42,6 @@ test.after(() => {
   console.error = savedConsoleError;
 });
 
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
-
 /** Drive `handleMedia` the way the router does. */
 async function call(method, pathAndQuery, { as = null, body } = {}) {
   const payload = body === undefined ? '' : JSON.stringify(body);
@@ -68,7 +53,7 @@ async function call(method, pathAndQuery, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   await handleMedia({
     repoRoot: process.cwd(),
     req,
@@ -129,13 +114,13 @@ for (const [method, route] of ROUTES) {
       console.error = savedConsoleError;
 
       assert.equal(res.statusCode, 502);
-      assert.deepEqual(res.body, {
+      assert.deepEqual(res.json(), {
         ok: false,
         error: 'bad_gateway',
         message: 'ImageKit could not complete this request',
       });
       // Nothing of ImageKit's answer, and not its status, on the wire.
-      const wire = JSON.stringify(res.body);
+      const wire = JSON.stringify(res.json());
       assert.doesNotMatch(
         wire,
         /imagekit\.io|invalid fileId|maintenance|ENOTFOUND|40\d|503/,
@@ -179,7 +164,7 @@ test('the tag sample keeps what it has when a later batch fails', async () => {
   console.error = savedConsoleError;
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, [
+  assert.deepEqual(res.json(), [
     { tag: 'office', count: 50 },
     { tag: 'team', count: 50 },
   ]);

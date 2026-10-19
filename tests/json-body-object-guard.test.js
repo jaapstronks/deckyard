@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { createMockRes } from './helpers/http-mocks.js';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import fs from 'node:fs/promises';
@@ -28,19 +29,6 @@ function reqFrom(str) {
   return Readable.from([Buffer.from(str)]);
 }
 
-function fakeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    writeHead(status) {
-      this.statusCode = status;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
-}
-
 test('isJsonObject accepts a plain object and nothing else', () => {
   assert.equal(isJsonObject({}), true);
   assert.equal(isJsonObject({ a: 1 }), true);
@@ -56,7 +44,7 @@ test('isJsonObject accepts a plain object and nothing else', () => {
 });
 
 test('requireJsonBody accepts a plain object', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom(JSON.stringify({ a: 1 })), res);
   assert.equal(result.ok, true);
   assert.deepEqual(result.body, { a: 1 });
@@ -64,34 +52,34 @@ test('requireJsonBody accepts a plain object', async () => {
 });
 
 test('requireJsonBody answers 400 on a top-level array', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom('[1,2,3]'), res);
   assert.equal(result.ok, false);
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'bad_request');
-  assert.equal(res.body.message, 'Request body must be a JSON object');
+  assert.equal(res.json().error, 'bad_request');
+  assert.equal(res.json().message, 'Request body must be a JSON object');
 });
 
 test('requireJsonBody answers 400 on a top-level primitive', async () => {
   for (const raw of ['5', '"hello"', 'true', 'null']) {
-    const res = fakeRes();
+    const res = createMockRes();
     const result = await requireJsonBody(reqFrom(raw), res);
     assert.equal(result.ok, false, `${raw} must be rejected`);
     assert.equal(res.statusCode, 400, `${raw} must be a 400`);
-    assert.equal(res.body.message, 'Request body must be a JSON object');
+    assert.equal(res.json().message, 'Request body must be a JSON object');
   }
 });
 
 test('the object guarantee has no opt-out (B55): even the old flag rejects an array', async () => {
   // `allowNonObject` was removed when the slide-library tag PUTs moved to
   // `{ tags: [...] }`. Passing the old flag must change nothing.
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom('["a","b"]'), res, {
     allowNonObject: true,
   });
   assert.equal(result.ok, false);
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.message, 'Request body must be a JSON object');
+  assert.equal(res.json().message, 'Request body must be a JSON object');
 });
 
 test('no server code reintroduces an allowNonObject opt-out', async () => {
@@ -111,7 +99,7 @@ test('no server code reintroduces an allowNonObject opt-out', async () => {
 });
 
 test('allowEmpty still yields a plain object, not the parsed primitive', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom('   '), res, {
     allowEmpty: true,
   });
