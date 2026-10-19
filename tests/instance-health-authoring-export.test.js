@@ -19,6 +19,7 @@ import { testScope } from './helpers/storage-scope.js';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import { healthKeys } from './helpers/instance-health.js';
+import { createMockRes } from './helpers/http-mocks.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -147,25 +148,6 @@ test('opening a deck in the editor is not a view', async () => {
   assert.deepEqual(await healthKeys(db), []);
 });
 
-function fakeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const OWNER_USER = { id: userIdFor(OWNER), email: OWNER, organizationId: ORG };
 
 function exportContext(pathname, { user = OWNER_USER, method = 'GET' } = {}) {
@@ -176,7 +158,7 @@ function exportContext(pathname, { user = OWNER_USER, method = 'GET' } = {}) {
     repoRoot: process.cwd(),
     storageScope: testScope(process.cwd(), { actorEmail: user?.email }),
     req,
-    res: fakeRes(),
+    res: createMockRes(),
     url: new URL(pathname, 'http://localhost'),
     authedUser: user,
   };

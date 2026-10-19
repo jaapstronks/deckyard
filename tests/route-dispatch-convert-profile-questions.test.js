@@ -16,6 +16,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createMockRes } from './helpers/http-mocks.js';
 
 import {
   ROUTES as CONVERT_ROUTES,
@@ -43,19 +44,8 @@ function select(routes, method, pathname) {
   return null;
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    writeHead(c) {
-      this.statusCode = c;
-    },
-    end() {},
-    setHeader() {},
-  };
-}
-
 function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {

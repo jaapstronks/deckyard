@@ -23,6 +23,7 @@ import { uploadsDir } from '../server/config/storage-paths.js';
 import { writeUploadedFile } from '../server/storage/uploads.js';
 import { getFeatureFlags } from '../server/config/flags-snapshot.js';
 import { listSandboxMedia } from '../server/sandbox/media.js';
+import { createMockRes } from './helpers/http-mocks.js';
 
 function withEnv(env, fn) {
   const saved = {};
@@ -41,21 +42,6 @@ function withEnv(env, fn) {
     });
 }
 
-function mockRes() {
-  return {
-    status: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.status = status;
-      this.headers = headers;
-    },
-    end(body) {
-      this.body = body;
-    },
-  };
-}
-
 // A 1x1 transparent PNG (valid enough to persist; optimizer falls back to the
 // original buffer if it can't process it).
 const PNG_1x1 = Buffer.from(
@@ -65,7 +51,7 @@ const PNG_1x1 = Buffer.from(
 
 test('publish route is refused (403) in sandbox mode', async () => {
   await withEnv({ SANDBOX_MODE: '1' }, async () => {
-    const res = mockRes();
+    const res = createMockRes();
     const url = new URL(
       'http://localhost/api/presentations/00000000-0000-4000-8000-000000000123/publish',
     );
@@ -78,7 +64,8 @@ test('publish route is refused (403) in sandbox mode', async () => {
     });
 
     assert.equal(handled, true, 'handler should claim the publish route');
-    assert.equal(res.status, 403, 'publishing must be blocked in sandbox');
+    // The local response called the HTTP status `status`; the shared double uses statusCode.
+    assert.equal(res.statusCode, 403, 'publishing must be blocked in sandbox');
     const body = JSON.parse(res.body);
     assert.equal(body.error, 'forbidden');
     assert.match(body.message, /sandbox/i);
@@ -186,7 +173,7 @@ test('sandbox theme list exposes seeds and hides organization records', async ()
   await initializeStorage();
   try {
     await withEnv({ SANDBOX_MODE: '1' }, async () => {
-      const res = mockRes();
+      const res = createMockRes();
       await handleThemes({
         repoRoot: process.cwd(),
         storageScope: { repoRoot: process.cwd(), organizationId },
@@ -195,7 +182,7 @@ test('sandbox theme list exposes seeds and hides organization records', async ()
         res,
         url: new URL('http://localhost/api/themes?all=1'),
       });
-      assert.equal(res.status, 200);
+      assert.equal(res.statusCode, 200);
       const ids = JSON.parse(res.body).themes.map((theme) => theme.id);
       assert.deepEqual(ids, [seed.id]);
     });
