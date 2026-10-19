@@ -26,6 +26,11 @@ export function dataDir(repoRoot) {
   return path.join(repoRoot, 'server', 'data');
 }
 
+/** Raster cache used by deck overview thumbnails, independent of media storage. */
+export function deckThumbsDir(repoRoot) {
+  return path.join(dataDir(repoRoot), 'deck-thumbs');
+}
+
 export function uploadsDir(repoRoot) {
   // Explicit override (all modes)
   const global = resolveMaybeRelative(repoRoot, envStr('UPLOADS_DIR'));

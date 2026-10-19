@@ -3,10 +3,17 @@
  * a browser for exports, somewhere to write uploads, a way to send mail.
  */
 
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { envBool, envStr } from '../config/utils.js';
 import { isUploadsEnabled } from '../config/features.js';
 import { isSsoEnforced } from '../config/sso.js';
-import { privateMediaDir, uploadsDir } from '../config/storage-paths.js';
+import {
+  deckThumbsDir,
+  privateMediaDir,
+  uploadsDir,
+} from '../config/storage-paths.js';
 import {
   getEffectiveMediaProvider,
   mediaConfigWarnings,
@@ -144,6 +151,49 @@ const UPLOAD_PROBES = Object.freeze([
       }),
   },
 ]);
+
+/** Server-owned directories outside the media provider. Keep their probes here. */
+const LOCAL_WRITE_PROBES = Object.freeze([
+  { name: 'thumbnail cache', dir: deckThumbsDir },
+]);
+
+/** @type {import('./finding.js').DoctorCheck} */
+export const localWriteCheck = {
+  id: 'local-write',
+  label: 'Local writes',
+  async run({ repoRoot }) {
+    for (const probe of LOCAL_WRITE_PROBES) {
+      const dir = probe.dir(repoRoot);
+      const file = path.join(dir, `.doctor-probe-${randomUUID()}`);
+      let failed = null;
+      try {
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(file, PROBE_PNG, { flag: 'wx' });
+        const back = await fs.readFile(file);
+        if (!back.equals(PROBE_PNG)) {
+          failed = fail(
+            `Wrote a probe to ${probe.name} (${dir}) but read back something else.`,
+          );
+        }
+      } catch (err) {
+        failed = fail(
+          `Could not write a probe to ${probe.name} (${dir}): ${err?.message || err}.`,
+          `Make ${dir} writable by the server user (a persistent volume in a container).`,
+        );
+      }
+      const removed = await fs.rm(file, { force: true }).catch((err) => err);
+      if (failed) return failed;
+      if (removed instanceof Error)
+        return fail(
+          `Could not remove the probe from ${probe.name} (${dir}): ${removed.message}.`,
+          `Make ${dir} writable by the server user, then remove ${file} by hand.`,
+        );
+    }
+    return ok(
+      `Write and read work in ${LOCAL_WRITE_PROBES.map((p) => p.dir(repoRoot)).join(' and ')}`,
+    );
+  },
+};
 
 /**
  * Write, read back and delete one probe.

@@ -12,7 +12,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,6 +36,7 @@ import { oidcDiscoveryCheck, ssoConfigCheck } from '../server/doctor/sso.js';
 import { themesCheck } from '../server/doctor/themes.js';
 import {
   chromiumCheck,
+  localWriteCheck,
   mailCheck,
   uploadsCheck,
 } from '../server/doctor/runtime.js';
@@ -629,6 +630,32 @@ test('uploads: skipped when uploads are disabled', async () => {
   );
   assert.equal(found.status, 'skip');
 });
+
+test(
+  'local writes: an unwritable thumbnail cache is red with the server-user fix',
+  { skip: process.getuid?.() === 0 && 'running as root' },
+  async () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'doctor-thumbs-'));
+    const data = path.join(root, 'data');
+    const thumbs = path.join(data, 'deck-thumbs');
+    mkdirSync(data);
+    mkdirSync(thumbs, { mode: 0o555 });
+    try {
+      const red = await run(localWriteCheck, { DATA_DIR: data });
+      assert.equal(red.status, 'fail');
+      assert.match(red.message, /thumbnail cache/);
+      assert.ok(red.message.includes(thumbs));
+      assert.match(red.fix, /server user/);
+      chmodSync(thumbs, 0o755);
+      const green = await run(localWriteCheck, { DATA_DIR: data });
+      assert.equal(green.status, 'ok', green.message);
+      assert.deepEqual(await readdir(thumbs), []);
+    } finally {
+      chmodSync(thumbs, 0o755);
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
 
 // ── mail ────────────────────────────────────────────────────────────────────
 
