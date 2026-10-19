@@ -23,7 +23,12 @@ import {
 } from './database.js';
 import { oidcDiscoveryCheck, ssoConfigCheck } from './sso.js';
 import { themesCheck } from './themes.js';
-import { chromiumCheck, mailCheck, uploadsCheck } from './runtime.js';
+import {
+  chromiumCheck,
+  localWriteCheck,
+  mailCheck,
+  uploadsCheck,
+} from './runtime.js';
 
 /**
  * Every check, in the order it runs. A check may read the findings of the ones
@@ -44,6 +49,7 @@ export const DOCTOR_CHECKS = Object.freeze([
   themesCheck,
   chromiumCheck,
   uploadsCheck,
+  localWriteCheck,
   mailCheck,
 ]);
 

@@ -14,6 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { chmodSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import sharp from 'sharp';
@@ -693,6 +694,60 @@ test('route answers thumbnail_unavailable with the reason once generation failed
   assert.equal(res.headers['Retry-After'], undefined, 'nothing to wait for');
   clearThumbnailFailures();
 });
+
+test(
+  'an unwritable cache warns once across decks and returns thumbnail_unavailable',
+  { skip: process.getuid?.() === 0 && 'running as root' },
+  async () => {
+    clearThumbnailFailures();
+    const repoRoot = await tmpRoot();
+    const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
+    await fs.mkdir(dir, { recursive: true });
+    chmodSync(dir, 0o555);
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+    try {
+      const png = await sharp({
+        create: { width: 8, height: 8, channels: 3, background: '#112233' },
+      })
+        .png()
+        .toBuffer();
+      for (const title of ['First', 'Second']) {
+        const { pres, theme, filename } = await seedUncachedDeck(
+          repoRoot,
+          title,
+        );
+        assert.equal(
+          await requestThumbnailGeneration(
+            repoRoot,
+            pres,
+            pres.slides[0],
+            theme,
+            null,
+            { render: async () => png },
+          ),
+          false,
+        );
+        assert.match(thumbnailFailure(filename), /cache directory/);
+        const res = await getThumbnail(repoRoot, pres.id);
+        assert.equal(res.statusCode, 404);
+        assert.equal(JSON.parse(res.body).error, 'thumbnail_unavailable');
+      }
+      assert.equal(
+        warnings.filter((line) => line.includes('deck-thumbnail')).length,
+        1,
+      );
+      assert.ok(warnings[0].includes(dir), warnings[0]);
+      assert.match(warnings[0], /npm run doctor/);
+    } finally {
+      console.warn = originalWarn;
+      chmodSync(dir, 0o755);
+      await fs.rm(repoRoot, { recursive: true, force: true });
+      clearThumbnailFailures();
+    }
+  },
+);
 
 test('route answers thumbnail_pending with a Retry-After while generation runs', async () => {
   clearThumbnailFailures();
