@@ -526,8 +526,6 @@ test('inviting a genuinely new person still creates them in the current organiza
 
 const authRoutes = await import('../server/routes/api/auth.js');
 
-/** A response double for the `/api/auth/me` route handler. */
-
 /** Ask `/api/auth/me` with the cookie `setSessionCookie` minted for `user`. */
 async function authMe(user, organizationId) {
   const req = { ...requestWithSession(user, organizationId), method: 'GET' };

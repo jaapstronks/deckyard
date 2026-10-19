@@ -191,8 +191,6 @@ function seed() {
 // Driving the module handlers
 // ---------------------------------------------------------------------------
 
-/** A response double capturing the status/headers/body the helpers write. */
-
 /**
  * Call a module entry handler (`handleSso`/`handleProfile`/`handleUsers`) the
  * way `routes/api/index.js` does — it self-dispatches on method + path.

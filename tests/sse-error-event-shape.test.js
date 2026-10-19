@@ -29,8 +29,6 @@ const repoRoot = path.resolve(
   '..',
 );
 
-/** Minimal writable stand-in that records everything written to the stream. */
-
 test('sseErrorPayload carries message and nothing from the HTTP envelope', () => {
   const payload = sseErrorPayload('Conversion failed');
   assert.deepEqual(payload, { message: 'Conversion failed' });
