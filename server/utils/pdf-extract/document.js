@@ -133,7 +133,9 @@ export function renderDocument(blocks) {
 
 function pipeTable(rows) {
   const width = rows[0].length;
-  const cell = (text) => String(text).replace(/\|/g, '\\|');
+  // A backslash first, so the one before an escaped pipe stays literal.
+  const cell = (text) =>
+    String(text).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
   const row = (cells) => `| ${cells.map(cell).join(' | ')} |`;
   return [
     row(rows[0]),

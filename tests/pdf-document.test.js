@@ -240,6 +240,7 @@ test('a data table is a pipe table; aligned prose columns stay lines', () => {
         table([
           ['Region', 'Q3', 'Q4'],
           ['North | East', '120', '140'],
+          ['A\\B', '1', '2'],
         ]),
         table([
           ['The agency examines', 'Members'],
@@ -250,7 +251,7 @@ test('a data table is a pipe table; aligned prose columns stay lines', () => {
   });
   assert.match(
     text,
-    /\| Region \| Q3 \| Q4 \|\n\| --- \| --- \| --- \|\n\| North \\\| East \| 120 \| 140 \|/,
+    /\| Region \| Q3 \| Q4 \|\n\| --- \| --- \| --- \|\n\| North \\\| East \| 120 \| 140 \|\n\| A\\\\B \| 1 \| 2 \|/,
   );
   assert.match(
     text,
