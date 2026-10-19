@@ -157,12 +157,17 @@ export function createTranslateNavigation({
             {
               type: 'button',
               class: 'translate-view-index-item',
+              'data-slide-id': s.slideId,
               title: label,
               'aria-label': `${t('editor.translateView.slide', 'Slide')} ${number}: ${label}`,
               onclick: () => go(s.slideId),
             },
             [
               h('span', { text: number }),
+              h('span', {
+                class: 'translate-view-proposal-count',
+                'aria-hidden': 'true',
+              }),
               h('span', {
                 class: `translate-view-dot is-${status}`,
                 'aria-hidden': 'true',
@@ -174,6 +179,7 @@ export function createTranslateNavigation({
           'aria-label',
           `${t('editor.translateView.slide', 'Slide')} ${number}: ${label}`,
         );
+        button.dataset.baseLabel = button.getAttribute('aria-label');
         button.firstElementChild.textContent = number;
         button.lastElementChild.className = `translate-view-dot is-${status}`;
         buttons.set(s.slideId, button);

@@ -73,6 +73,35 @@
   padding: var(--ps-space-2) 0;
 }
 
+.translate-view-frame.has-ai .translate-view-row {
+  grid-template-columns: minmax(110px, 0.55fr) repeat(3, minmax(0, 1fr));
+}
+
+.translate-view-proposal-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-bottom: var(--ps-space-2);
+}
+
+.translate-view-proposal-failure {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  color: hsl(var(--app-warning));
+}
+
+.translate-view-index-item.has-proposal-failure {
+  color: hsl(var(--app-warning));
+}
+
+.translate-view-index-item.is-proposing {
+  opacity: 0.6;
+}
+
+.translate-view-proposal-count {
+  font-size: var(--ps-text-xs);
+}
+
 .translate-view-head {
   position: sticky;
   top: 0;
@@ -136,13 +165,18 @@ textarea.translate-view-input {
 
 /* Narrow screens: label above its two fields. */
 @media (max-width: 768px) {
-  .translate-view-row {
+  .translate-view-row,
+  .translate-view-frame.has-ai .translate-view-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .translate-view-label {
     grid-column: 1 / -1;
     padding-top: 0;
+  }
+
+  .translate-view-frame.has-ai .translate-view-proposal {
+    grid-column: 1 / -1;
   }
 }
 
