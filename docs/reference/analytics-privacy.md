@@ -2,13 +2,15 @@
 
 ## Purpose & scope
 
-Deckyard records **view analytics** — who looked at a deck, for how long, and
-which slides — for the deck's owner. The viewers being measured are mostly
+Deckyard records **view analytics** (who looked at a deck, for how long, and
+which slides) for the deck's owner. The viewers being measured are mostly
 **anonymous**: someone opening a share link or a live follow session has no
-account. This document states what is stored per viewer, how a viewer erases it,
-how long it is kept, and — because it is the load-bearing design decision — _why
-an anonymous viewer is identified by a possessed session token and never by a
-bare device id_.
+account. This document states what analytics stores per viewer, how a viewer
+erases those rows, how long they are kept, and why an anonymous viewer is
+identified by a possessed session token rather than a bare device id. It also
+maps the separate access records made by share-link verification and revoked-link
+notifications, so the analytics controls are not mistaken for controls over
+those records.
 
 It describes the analytics-privacy seams as they stand after the
 analytics-privacy work. The tenant-isolation rules it leans on live in
@@ -20,10 +22,12 @@ which slide types, surfaces, formats and tools an install uses, per day,
 with no person, deck, device or organization in the row, and they are not
 switched by `analytics.enabled` ([`instance-health.md`](instance-health.md)).
 
-Analytics is the **only** anonymous-visitor-PII surface Deckyard has. Lead
-capture — a slide that stored a visitor's name and e-mail with its own
-retention and GDPR flow — was stripped on 2026-08-22 (D50); its erase path,
-retention window and tokens were separate from these and went with it.
+Analytics is one of the anonymous-visitor data stores in this flow. Successful
+share-link verification writes a separate IP/user-agent access log; a revoked
+share-link request can write an IP access-attempt record and an in-app
+notification containing that IP. The current storage and cleanup boundaries are
+listed below. Lead capture (a slide that stored a visitor's name and e-mail
+with its own retention and GDPR flow) was stripped on 2026-08-22 (D50).
 
 ## Module map
 
@@ -45,6 +49,19 @@ heartbeat,end}`, `POST /api/track/slide/view`, and the erasure route
   `createAnalyticsTracker(...).erase()` is the client half of the erasure route.
 - `client/views/analytics/erase-button.js` — the shared "forget me" button
   used by the share-viewer and follow surfaces.
+
+## Anonymous visitor records adjacent to analytics
+
+This is a source-code inventory of the share/follow analytics and share-link access flows, not a claim that every anonymous data store in the application has been audited. It was checked against the write sites, storage reads, migrations, and scheduled jobs on 2026-10-19; production row counts and operational retention were not measured.
+
+| Store                                        | Producer and purpose                                                                                                                                                                                                                                                                                      | Recorded identity                                                                                                                                                  | Reader                                                                                                                                                                                   | Current lifetime and erasure boundary                                                                                                                                                                                                                           |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `view_sessions` with `slide_views`           | Public tracking routes record a view session and slide timing when analytics is enabled (`server/routes/api/analytics-track.js`, `server/storage/analytics/view-sessions.js`).                                                                                                                            | Anonymous device ID and session token, IP, truncated user-agent; a signed-in viewer can instead have an email.                                                     | A deck reader can list that deck's sessions; the route replaces the raw device ID with a per-deck label and removes the session token (`server/routes/api/analytics/metrics.js`).        | The analytics cleanup anonymizes IP after the configured window and deletes old sessions and slide views; the two analytics erase routes act on these rows only. Details below.                                                                                 |
+| `share_link_access_log`                      | A successful `POST /api/share/:token/verify` records use of a validated link (`server/routes/api/share-links/public.js`, `server/storage/share-links/access-log.js`).                                                                                                                                     | Share-link ID, access time, client IP, raw request user-agent; no viewer email or analytics device ID.                                                             | `GET /api/presentations/:id/share-links/:linkId/access-log` requires write access to that deck and verifies that the link belongs to it (`server/routes/api/share-links/management.js`). | No age-based cleanup or IP anonymization for this table is wired into the jobs. Link revocation and expiry update the link without deleting its log; the log has a database cascade when its parent link is deleted. Neither analytics erase route includes it. |
+| `access_attempt_log`                         | A request for a revoked share link can log an attempt before checking whether to notify the deck author; the log also provides the 24-hour notification deduplication lookup (`server/routes/api/share-links/public.js`, `server/services/access-notifications.js`, `server/storage/access-attempts.js`). | Organization and deck IDs, access type and link reference, attempt time, client IP; this public producer supplies no email and the table has no user-agent column. | The storage service reads recent notified attempts and marks one notified. No endpoint exposing this log to the author was found in the checked routes.                                  | No age-based cleanup is wired into the jobs. A deck or organization deletion cascades to its rows; neither analytics erase route includes them. The 24-hour lookup is a deduplication window, not a deletion schedule.                                          |
+| `user_notifications` (`access_attempt` rows) | If the author notification is due, the same service saves a notification whose JSON `data` contains the accessor IP, then broadcasts it by SSE (`server/services/access-notifications.js`, `server/storage/notifications.js`).                                                                            | Recipient email and organization, deck ID, accessor IP in JSON; this public producer supplies no accessor email.                                                   | The authenticated recipient can read notifications in their organization through `/api/notifications`.                                                                                   | Archiving changes inbox state; no notification age cleanup was found in the checked jobs. Deck or organization deletion cascades to the row; analytics erase does not include it. This is a downstream copy of the attempt's IP, not another access-log table.  |
+
+The share-link access write happens independently of the `analytics.enabled` setting; the successful verification response merely uses the analytics feature flag to tell the browser whether to start tracking. A visitor pressing the analytics “forget me” button therefore erases analytics sessions, not the access-log or notification records. These are observations of current code, not a decision that the different lifetimes or access paths should remain as they are.
 
 ## What is recorded, per viewer type
 
@@ -117,7 +134,7 @@ Rate-limited by the same expensive-op bucket, keyed by IP. Pinned by
 
 ## Retention
 
-The `analytics-cleanup` job (`server/jobs/analytics-cleanup.js`) applies two
+For `view_sessions` and `slide_views` only, the `analytics-cleanup` job (`server/jobs/analytics-cleanup.js`) applies two
 schedules. Both windows come from instance settings
 (`settings.analytics.retention.*`, set in the admin UI) and are read fresh on
 every run; the env vars `ANALYTICS_RETENTION_DAYS` and
