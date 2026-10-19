@@ -60,12 +60,13 @@ export function structContentIds(tree) {
   return ids;
 }
 
-function collectIds(node, out = []) {
-  if (!node) return out;
-  if (node.type === 'content') out.push(node.id);
-  for (const child of node.children || []) collectIds(child, out);
-  return out;
-}
+/**
+ * The content ids under a node, each once, in tree order. A tree may point at
+ * one marked content more than once (Chrome references a chart's label group
+ * once per label under its `Figure`, B778), but the runs behind an id are one
+ * stretch of text: reading them per reference repeats every label.
+ */
+const collectIds = (node) => [...structContentIds(node)];
 
 /** Depth-first search for nodes with a role, not descending into matches. */
 function findRoles(node, roles, out = [], { stopAt = null } = {}) {
