@@ -174,7 +174,7 @@ validation-event logs alongside them.
   file import (`POST /api/convert`, `convert-file/ai-convert.js`) and the
   Notion import (`convert-notion.js`) run `generateSlides()` and assemble
   around it with `assembleDeck()` (B757: a file's image-only slides and its
-  title image, a page's images). The caller
+  title image, a Notion page's metadata). The caller
   loads the org's slide-type offer (disabled + custom types), the merged type
   map and the theme context (`loadAiThemeContext`), then: **phase 1**
   `generateOutline` produces a title, chapters and rough slides with no
@@ -206,6 +206,23 @@ validation-event logs alongside them.
   routes (`/api/ai/wizard` and public `/api/v1/ai/wizard`) take theirs from
   `clientDisconnectSignal`: a client that hangs up mid-generation stops the
   model calls and gets no deck, like the streams.
+- **Source images** (B775, `server/utils/ai/source-images.js`) — a file or
+  Notion import passes the pictures its source holds as `sourceImages`, each
+  marked in the text where it stands as `[IMAGE n: caption, page p, w×h]`
+  and carrying its own `upload()`. The analysis call ties images to sections
+  (`images`), the structure call puts at most one on a content slide
+  (`image`, each image once; `sourceImage` on the outline slide), and phase 2
+  is offered `source-image:n` for that slide and may write it into an image
+  field. After validation `resolveSourceImages()` reads declared image fields
+  from the merged slide-type map and uploads what they reference, each image
+  once; prose remains literal. An unknown number or a failed upload empties
+  the field with an `_aiWarnings` line. An image no slide uses is never
+  uploaded. The prompt lines appear only when there are images, so a deck
+  without them sees the same prompts as before. Readers: `pdf-extract`'s
+  `documentFigures()` (no icons, letterhead logos, backgrounds behind text or
+  pictures repeated on several pages), `parseDocx()` (mammoth's
+  `convertImage`, nothing under 40 px a side) and the Notion page's image
+  blocks. A PPTX keeps its own path (image-only slides, track 1).
 - **Validate and fix**: `lengths.js` refuses overlong strings using the type's recursive content schema, including nested collection fields. Phase 2 checks each response before accepting it and gives the model one retry with the rejected response and exact field violations. If that rewrite fails, generation fails instead of returning clipped text or a fallback. Structural slides whose declared lengths are exceeded also go to Phase 2. `fix.js` keeps its structural repairs, defaults and item-count handling; it never shortens text. Raw slide validation through `strict.js` still refuses every schema issue. No length limit is widened. The Phase 2 prompt publishes those caps as ceilings, not targets, beside a slide budget (about 60 visible words, one short line per item, the explanation in the notes); the global fields every type carries (the a11y pair, background image, logo) stay out of that list, as they stay out of the catalog, and the theme section names the types without a `background` field (B765).
 - **Append / refine / iterate / compress** — the editing verbs. Append generates
   slides for an existing deck; section refine revises a contiguous range with a

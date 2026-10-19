@@ -24,6 +24,7 @@ import {
   SlideTextLengthError,
 } from './validate-slides/index.js';
 import { prompts } from './prompts/index.js';
+import { describeSourceImage } from './source-images.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('generate-outline');
@@ -62,10 +63,15 @@ const trimmed = (value) => String(value ?? '').trim();
 /**
  * Validate and normalize the analysis call's output.
  *
+ * A section keeps the source images the call tied to it (B775), as
+ * `{ n, description }`, and only those the source has.
+ *
  * @param {object} parsed
+ * @param {object} [opts]
+ * @param {import('./source-images.js').SourceImage[]} [opts.sourceImages]
  * @returns {{ title: string, subtitle: string, summary: string, sections: Array<object> }}
  */
-export function normalizeAnalysis(parsed) {
+export function normalizeAnalysis(parsed, { sourceImages = [] } = {}) {
   if (!parsed || typeof parsed !== 'object') {
     throw new Error('Outline analysis did not return valid JSON');
   }
@@ -86,6 +92,7 @@ export function normalizeAnalysis(parsed) {
           role: trimmed(q?.role),
         }))
         .filter((q) => q.text),
+      images: sectionImages(s?.images, sourceImages),
     }))
     .filter((s) => s.heading || s.keyPoints.length);
 
@@ -98,9 +105,31 @@ export function normalizeAnalysis(parsed) {
 }
 
 /**
+ * The source images a section names, as `{ n, description }`: known
+ * numbers only, each once, in the order given.
+ * @param {unknown} numbers
+ * @param {import('./source-images.js').SourceImage[]} sourceImages
+ */
+function sectionImages(numbers, sourceImages) {
+  if (!Array.isArray(numbers) || !sourceImages.length) return [];
+  const byNumber = new Map(sourceImages.map((img) => [img.n, img]));
+  const seen = new Set();
+  const images = [];
+  for (const value of numbers) {
+    const img = byNumber.get(Number(value));
+    if (!img || seen.has(img.n)) continue;
+    seen.add(img.n);
+    images.push({ n: img.n, description: describeSourceImage(img) });
+  }
+  return images;
+}
+
+/**
  * Validate and normalize the structure call's output into outline slides.
  * Opening slides are dropped (the title slide is added downstream), and each
- * slide gets its analysis section as `sourceContext`.
+ * slide gets its analysis section as `sourceContext`. A content slide the
+ * plan gave an image keeps it as `sourceImage` (B775): one the analysis
+ * listed, on one slide only.
  *
  * @param {object} parsed
  * @param {{ sections: Array<object> }} analysis
@@ -111,10 +140,18 @@ export function normalizeStructure(parsed, analysis) {
     throw new Error('Outline structure did not return valid JSON');
   }
   const slides = [];
+  const listed = new Map(
+    analysis.sections.flatMap((s) => s.images || []).map((img) => [img.n, img]),
+  );
+  const placed = new Set();
   for (const slide of Array.isArray(parsed.slides) ? parsed.slides : []) {
     const intent = normalizeIntent(slide?.intent);
     if (intent === 'opening') continue;
     const section = analysis.sections[Number(slide?.section)] || null;
+    const image =
+      intent === 'content' ? listed.get(Number(slide?.image)) : null;
+    const sourceImage = image && !placed.has(image.n) ? image : null;
+    if (sourceImage) placed.add(sourceImage.n);
     slides.push({
       index: slides.length,
       intent,
@@ -129,6 +166,7 @@ export function normalizeStructure(parsed, analysis) {
             excerpt: section.excerpt,
           }
         : null,
+      ...(sourceImage ? { sourceImage } : {}),
     });
   }
 
@@ -322,6 +360,9 @@ async function requestOutlineStep(
  * @param {string} options.vendor - LLM vendor override
  * @param {string} options.targetLength - Target length: 'auto', '5min', '10min', '20min', '30min'
  * @param {string} options.rawFirstSlideTitle - Original title from source file's first slide (for context)
+ * @param {import('./source-images.js').SourceImage[]} [options.sourceImages] -
+ *   The images the source marks in its text (B775); the outline ties them
+ *   to slides.
  * @param {Function} options.onLog - Callback to log the conversation
  * @param {AbortSignal} [options.signal] - Reaches the provider fetch, so a
  *   caller whose reader left (an SSE client that disconnected) cancels the
@@ -336,6 +377,7 @@ export async function generateOutline(
     vendor = null,
     targetLength = 'auto',
     rawFirstSlideTitle = '',
+    sourceImages = [],
     onLog = null,
     signal = null,
   } = {},
@@ -366,12 +408,13 @@ export async function generateOutline(
       rawContent,
       userName: trimmed(userName),
       rawFirstSlideTitle: trimmed(rawFirstSlideTitle),
+      sourceImages,
     }),
     maxTokens: 16000,
     llm,
     signal,
   });
-  const analysis = normalizeAnalysis(analysisStep.parsed);
+  const analysis = normalizeAnalysis(analysisStep.parsed, { sourceImages });
 
   // Step 2: the slide plan, from the analysis alone.
   const structureStep = await requestOutlineStep('structure', {

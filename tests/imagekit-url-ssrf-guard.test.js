@@ -4,7 +4,7 @@
  * `uploadImageKitUrl` fetches an image URL server-side to push it to ImageKit.
  * When importing from Notion that URL can be an attacker-controlled `external`
  * image URL, so one resolving to a private/link-local address must be refused
- * before the fetch, falling back to the original URL (the existing pattern).
+ * before the fetch, returning no uploaded URL.
  *
  * Run with: node --test tests/imagekit-url-ssrf-guard.test.js
  */
@@ -13,7 +13,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert';
 
 // Configure ImageKit so uploadImageKitUrl takes the fetch-and-upload path
-// (unconfigured, it returns the original URL before the guard even runs).
+// (unconfigured, it returns no URL before the guard runs).
 process.env.IMAGEKIT_PRIVATE_KEY = 'private_test';
 process.env.IMAGEKIT_PUBLIC_KEY = 'public_test';
 process.env.IMAGEKIT_URL_ENDPOINT = 'https://ik.imagekit.io/test';
@@ -25,7 +25,7 @@ after(() => {
   globalThis.fetch = savedFetch;
 });
 
-test('SSRF: a private-range image URL is refused before fetch and the original URL is returned', async () => {
+test('SSRF: a private-range image URL is refused before fetch and returns no URL', async () => {
   let fetched = false;
   globalThis.fetch = async () => {
     fetched = true;
@@ -36,11 +36,7 @@ test('SSRF: a private-range image URL is refused before fetch and the original U
   const result = await uploadImageKitUrl(METADATA_URL, 'notion-x.jpg');
 
   assert.equal(fetched, false, 'the blocked URL is never fetched');
-  assert.equal(
-    result,
-    METADATA_URL,
-    'falls back to the original URL when blocked',
-  );
+  assert.equal(result, '');
 });
 
 test('the image fetch goes through the hardened helper: no redirects, with a timeout', async () => {
@@ -86,5 +82,5 @@ test('SSRF: a loopback URL is refused too', async () => {
   const result = await uploadImageKitUrl(LOOPBACK, 'notion-y.jpg');
 
   assert.equal(fetched, false);
-  assert.equal(result, LOOPBACK);
+  assert.equal(result, '');
 });

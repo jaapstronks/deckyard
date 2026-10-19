@@ -25,11 +25,19 @@
  *   column beside it is furniture.
  * - **Tables** become pipe tables when their rows have one shape and they
  *   read as data; an uncertain one stays a row per line.
+ * - **Figures** (B775): an embedded picture stands where it is on its page,
+ *   numbered in reading order, unless it is page design rather than
+ *   content: an icon, a letterhead logo, a background behind the text, or
+ *   the same picture on several pages. The renderer leaves a marker in its
+ *   place when the caller passes one (`imageMarker`); the pixels go along
+ *   as `figures`, for the caller to upload when the model uses one.
  *
  * The output is marked-up text (`#`, `- `, pipe tables): the structure
  * travels in the one string the generation pipeline already reads, so no
  * prompt needs a second input form. Pure computation over the page models.
  */
+
+import { createHash } from 'node:crypto';
 
 /** Text this many times the body size or larger can be a heading. */
 export const HEADING_SIZE_RATIO = 1.15;
@@ -52,6 +60,18 @@ const NOT_A_HEADING_END = /[.,;:]$/;
 /** A bare reference number left beside a table note. */
 const BARE_NUMBER = /^\d{1,3}$/;
 
+/** A picture smaller than this share of its page is an icon or ornament. */
+export const MIN_FIGURE_AREA = 0.01;
+
+/** A picture this much of a page with text on it is the page's background. */
+export const BACKGROUND_AREA = 0.9;
+
+/** The top band of a page where a small picture is a letterhead or logo. */
+export const LETTERHEAD_ZONE = 0.15;
+
+/** A letterhead picture is at most this share of its page. */
+const LETTERHEAD_MAX_AREA = 0.1;
+
 /** A page number or date differs per page; the furniture around it does not. */
 export const furnitureKey = (text) => text.replace(/\d+/g, '#');
 
@@ -68,17 +88,89 @@ const roundSize = (size) => Math.round(size * 2) / 2;
  * - `{ kind: 'lines', lines: string[] }` (an uncertain table, a letter's
  *   heading block, the labels of a drawing)
  * - `{ kind: 'quote', text }`
+ * - `{ kind: 'image', figure }` (a {@link DocumentFigure})
  */
+
+/**
+ * @typedef {object} DocumentFigure
+ * A picture that is content, numbered in reading order.
+ * @property {number} n - 1-based
+ * @property {number} page
+ * @property {string} alt - the structure tree's alt text, or empty
+ * @property {{ width: number, height: number }} pixels
+ * @property {Buffer} png
+ */
+
+/**
+ * The pictures of a PDF that are content, numbered in reading order: page
+ * by page, top to bottom. Page design stays out: an icon (under
+ * {@link MIN_FIGURE_AREA} of the page), a letterhead logo (small, within
+ * the top {@link LETTERHEAD_ZONE}), a background behind the text (at least
+ * {@link BACKGROUND_AREA} of a page that has text) and a picture that comes
+ * back on another page (a running logo).
+ *
+ * @param {import('./index.js').PageModel[]} pages
+ * @returns {Array<DocumentFigure & { box: { x: number, y: number, width: number, height: number } }>}
+ */
+export function documentFigures(pages) {
+  const pagesOf = new Map();
+  for (const page of pages) {
+    for (const img of page.images || []) {
+      const key = pixelKey(img.png);
+      if (!pagesOf.has(key)) pagesOf.set(key, new Set());
+      pagesOf.get(key).add(page.page);
+    }
+  }
+  const figures = [];
+  for (const page of pages) {
+    const pageArea = page.width * page.height;
+    const hasText = page.lines.length > 0;
+    const kept = (page.images || []).filter(({ box, png }) => {
+      const area = (box.width * box.height) / pageArea;
+      if (area < MIN_FIGURE_AREA) return false;
+      if (hasText && area >= BACKGROUND_AREA) return false;
+      if (
+        area <= LETTERHEAD_MAX_AREA &&
+        box.y + box.height <= LETTERHEAD_ZONE * page.height
+      )
+        return false;
+      return pagesOf.get(pixelKey(png)).size < 2;
+    });
+    kept.sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x);
+    for (const img of kept) {
+      figures.push({
+        n: figures.length + 1,
+        page: page.page,
+        alt: img.alt || '',
+        pixels: img.pixels,
+        png: img.png,
+        box: img.box,
+      });
+    }
+  }
+  return figures;
+}
+
+const pixelKey = (png) => createHash('sha1').update(png).digest('hex');
 
 /**
  * Read the page models of a PDF as one document.
  *
  * @param {{ pages: import('./index.js').PageModel[] }} extracted - what
  *   `extractPdfPages()` returns
- * @returns {{ title: string | null, blocks: DocumentBlock[], text: string }}
+ * @param {object} [opts]
+ * @param {(figure: DocumentFigure) => string} [opts.imageMarker] - the text
+ *   a figure leaves in its place; without it figures leave none
+ * @returns {{ title: string | null, blocks: DocumentBlock[], text: string, figures: DocumentFigure[] }}
  */
-export function readDocument({ pages }) {
-  const perPage = pages.map(pageEntries);
+export function readDocument({ pages }, { imageMarker } = {}) {
+  const figures = documentFigures(pages);
+  const perPage = pages.map((page) =>
+    pageEntries(
+      page,
+      figures.filter((f) => f.page === page.page),
+    ),
+  );
   const all = perPage.flat();
   const body = bodyStyle(all);
 
@@ -97,15 +189,23 @@ export function readDocument({ pages }) {
     ...(head.length ? [{ kind: 'lines', lines: head }] : []),
     ...rest.flatMap((entry) => toBlocks(entry, levels)),
   ];
-  return { title, blocks, text: renderDocument(blocks) };
+  return {
+    title,
+    blocks,
+    text: renderDocument(blocks, { imageMarker }),
+    figures: figures.map(({ box, ...figure }) => figure),
+  };
 }
 
 /**
  * Render document blocks as marked-up text.
  * @param {DocumentBlock[]} blocks
+ * @param {object} [opts]
+ * @param {(figure: DocumentFigure) => string} [opts.imageMarker] - renders
+ *   an `image` block; without it the block leaves no text
  * @returns {string}
  */
-export function renderDocument(blocks) {
+export function renderDocument(blocks, { imageMarker } = {}) {
   return blocks
     .map((block) => {
       switch (block.kind) {
@@ -123,6 +223,8 @@ export function renderDocument(blocks) {
           return block.lines.join('\n');
         case 'quote':
           return `> ${block.text}`;
+        case 'image':
+          return imageMarker ? imageMarker(block.figure) : '';
         default:
           return block.text;
       }
@@ -145,12 +247,21 @@ function pipeTable(rows) {
 }
 
 /**
- * The entries of one page in reading order: its heading, its blocks, then
- * the labels of a drawing. A paragraph carries its size and boldness.
+ * The entries of one page in reading order: its heading, its blocks with
+ * its figures among them by height, then the labels of a drawing. A
+ * paragraph carries its size and boldness.
  */
-function pageEntries(page) {
+function pageEntries(page, figures) {
   const base = { page: page.page, height: page.height };
   const entries = page.blocks.map((block) => ({ ...base, block }));
+  for (const figure of figures) {
+    const y = figure.box.y;
+    const at = entries.findIndex((e) => e.block.y > y);
+    entries.splice(at === -1 ? entries.length : at, 0, {
+      ...base,
+      block: { kind: 'image', y, figure },
+    });
+  }
   if (page.heading) {
     const lines = page.lines.filter((l) => l.role === 'heading');
     const y = Math.min(...lines.map((l) => l.y));
@@ -274,12 +385,13 @@ function mergeHeadingLines(entries) {
  */
 function joinPageBreaks(perPage) {
   const flow = [];
+  const isText = (e) => e.block.kind !== 'labels' && e.block.kind !== 'image';
   for (const entries of perPage) {
-    const lastText = flow.findLast((e) => e.block.kind !== 'labels');
-    const [first, ...rest] = entries;
+    const lastText = flow.findLast(isText);
+    const first = entries.find(isText);
     if (lastText && first && runsOn(lastText, first)) {
       lastText.block = joinBlocks(lastText.block, first.block);
-      flow.push(...rest);
+      flow.push(...entries.filter((e) => e !== first));
     } else {
       flow.push(...entries);
     }
@@ -391,6 +503,8 @@ function toBlocks({ block, heading }, levels) {
       ];
     case 'labels':
       return [{ kind: 'lines', lines: [block.lines.join(' · ')] }];
+    case 'image':
+      return [{ kind: 'image', figure: block.figure }];
     default:
       return [];
   }

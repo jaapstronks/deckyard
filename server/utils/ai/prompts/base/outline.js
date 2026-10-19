@@ -84,8 +84,19 @@ export function buildAnalysisUserPrompt({
   rawContent,
   userName,
   rawFirstSlideTitle,
+  sourceImages = [],
 }) {
   const lines = ['Analyse this source.', ''];
+
+  if (sourceImages.length) {
+    lines.push(
+      'SOURCE IMAGES: the source marks its images where they stand, as [IMAGE n: description].',
+    );
+    lines.push(
+      'Give each section an extra field "images": the numbers of the images in that part of the source that show something the audience should see (a photo, chart or diagram the text is about). Leave out images that only decorate. Omit the field when the section has none.',
+    );
+    lines.push('');
+  }
 
   if (rawFirstSlideTitle) {
     lines.push(`ORIGINAL TITLE FROM SOURCE FILE: "${rawFirstSlideTitle}"`);
@@ -220,8 +231,17 @@ export function buildStructureUserPrompt({ analysis }) {
       const by = [quote.author, quote.role].filter(Boolean).join(', ');
       lines.push(`QUOTE: "${quote.text}"${by ? ` (${by})` : ''}`);
     }
+    for (const image of section.images || []) {
+      lines.push(`IMAGE ${image.n}: ${image.description}`);
+    }
     lines.push('');
   });
+
+  if (analysis.sections.some((section) => section.images?.length)) {
+    lines.push(
+      'IMAGES: a section may list images from the source. A content slide may show one of them: add "image": <number> to that slide when the image shows what the slide says. Each image on at most one slide; most slides have none.',
+    );
+  }
 
   return lines.join('\n');
 }

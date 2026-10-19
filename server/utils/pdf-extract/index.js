@@ -37,7 +37,12 @@ export {
 } from './geometry-detector.js';
 export { detectStruct } from './struct-detector.js';
 export { blockText, pageText } from './page-text.js';
-export { furnitureKey, readDocument, renderDocument } from './document.js';
+export {
+  documentFigures,
+  furnitureKey,
+  readDocument,
+  renderDocument,
+} from './document.js';
 
 /** Text below this size (pt) under the running text is a footnote. */
 export const FOOTNOTE_MAX_SIZE = 7;

@@ -128,6 +128,9 @@ export function applyRevisionOperations(
       target.hints = [
         ...new Set([...(target.hints || []), ...(source.hints || [])]),
       ];
+      if (!target.sourceImage && source.sourceImage) {
+        target.sourceImage = source.sourceImage;
+      }
 
       removed.add(second);
       positions.forEach((p) => touched.add(p));

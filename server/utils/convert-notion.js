@@ -1,8 +1,9 @@
 /**
  * Notion Page Converter
  * Converts Notion pages into the presentation system format.
- * Runs the one generation pipeline (`generateSlides()`, B757) and handles
- * the images and tables of a Notion page.
+ * Runs the one generation pipeline (`generateSlides()`, B757). The page's
+ * images go along as candidates the model places where they fit (B775);
+ * only the ones it places are re-hosted.
  */
 
 import {
@@ -14,6 +15,7 @@ import {
 } from './notion/index.js';
 import { generateSlides, assembleDeck } from './ai/generate-deck.js';
 import { createSessionLogger, generateSessionId } from './ai/logging.js';
+import { uploadOnce } from './ai/source-images.js';
 import { cryptoUuid } from '../../shared/slide-types/helpers.js';
 import {
   uploadImageKitUrl,
@@ -123,18 +125,15 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     lastEdited: richContent.metadata.lastEdited,
   };
 
-  // Process images - upload to ImageKit
-  const processedImages = [];
-  if (richContent.allImages.length > 0) {
-    if (typeof onStatusMessage === 'function') {
-      onStatusMessage(`Processing ${richContent.allImages.length} image(s)...`);
-    }
-    const uploadedImages = await processNotionImages(richContent.allImages, {
-      onStatusMessage,
-      signal,
-    });
-    processedImages.push(...uploadedImages);
-  }
+  // The page's images, re-hosted only when a slide (or the title) uses one
+  const sourceImages = richContent.allImages.map((img) => ({
+    n: img.n,
+    caption: img.caption || '',
+    upload: uploadOnce(async () => {
+      const [hosted] = await processNotionImages([img], { signal });
+      return hosted?.uploadedUrl || '';
+    }),
+  }));
 
   // Format content for AI
   const formattedContent = formatNotionContentForAi(richContent);
@@ -149,8 +148,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       onStatusMessage,
       onOutline,
       onGroupDone,
-      processedImages,
-      richContent, // Pass full content for image/table slide creation
+      sourceImages,
       signal,
       slideTypes,
       disabledSlideTypes,
@@ -188,24 +186,22 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
  * Notion's file-hosted image URLs are signed and expire (~1h), so keeping them
  * verbatim leaves an imported deck broken shortly after import. When ImageKit is
  * not configured this fetches the bytes and stores them via the configured media
- * provider (local `/uploads` or S3), yielding a durable URL. On any failure
- * it returns the original URL so the import still succeeds (just non-durable).
+ * provider (local `/uploads` or S3), yielding a durable URL. An unavailable
+ * provider returns no URL; a failed copy throws to the caller.
  * @param {{ url: string }} img
- * @returns {Promise<string>} A durable media-library URL, or the original URL on failure.
+ * @returns {Promise<string>} A durable media-library URL, or an empty string.
  */
 async function rehostImageToMediaLibrary(img) {
   if (!isMediaProviderInitialized()) {
-    // No provider (e.g. outside the server request path) — nothing to re-host to.
-    return img.url;
+    return '';
   }
 
-  // processNotionImages handles failures by retaining this image's original URL.
   const { publicUrl } = await rehostRemoteImage({
     url: img.url,
     filename: `notion-${img.blockId || cryptoUuid()}`,
   });
 
-  return publicUrl || img.url;
+  return publicUrl || '';
 }
 
 /**
@@ -213,8 +209,8 @@ async function rehostImageToMediaLibrary(img) {
  *
  * When ImageKit is configured images are re-hosted there (unchanged). Otherwise
  * they are re-hosted through Deckyard's own media library, because Notion's
- * signed URLs expire (~1h) and would leave the deck broken. Both paths fall back
- * to the original URL when an individual image cannot be re-hosted.
+ * signed URLs expire (~1h) and would leave the deck broken. A failed copy
+ * returns no URL; the source-image resolver clears the field and warns.
  * @param {Array} images - Array of { url, caption, blockId }
  * @param {object} options - Options
  * @param {AbortSignal} [options.signal] - Checked before every re-host, so a
@@ -235,6 +231,7 @@ export async function processNotionImages(images, options = {}) {
       signal?.throwIfAborted();
       try {
         const uploadedUrl = await rehostImageToMediaLibrary(img);
+        signal?.throwIfAborted();
         results.push({
           originalUrl: img.url,
           uploadedUrl,
@@ -242,11 +239,11 @@ export async function processNotionImages(images, options = {}) {
           blockId: img.blockId,
         });
       } catch (e) {
+        if (signal?.aborted) throw e;
         log.error(`Failed to re-host image via media library: ${e.message}`);
-        // Fall back to the original (expiring) URL rather than dropping the image.
         results.push({
           originalUrl: img.url,
-          uploadedUrl: img.url,
+          uploadedUrl: '',
           caption: img.caption || '',
           blockId: img.blockId,
         });
@@ -262,19 +259,20 @@ export async function processNotionImages(images, options = {}) {
       // Upload image from URL to ImageKit
       const filename = `notion-${img.blockId || cryptoUuid()}.jpg`;
       const uploadedUrl = await uploadImageKitUrl(img.url, filename);
+      signal?.throwIfAborted();
 
       results.push({
         originalUrl: img.url,
-        uploadedUrl: uploadedUrl || img.url,
+        uploadedUrl: uploadedUrl || '',
         caption: img.caption || '',
         blockId: img.blockId,
       });
     } catch (e) {
+      if (signal?.aborted) throw e;
       log.error(`Failed to upload image: ${e.message}`);
-      // Fall back to original URL
       results.push({
         originalUrl: img.url,
-        uploadedUrl: img.url,
+        uploadedUrl: '',
         caption: img.caption || '',
         blockId: img.blockId,
       });
@@ -286,9 +284,8 @@ export async function processNotionImages(images, options = {}) {
 
 /**
  * Convert formatted Notion content to a deck: the one generation pipeline
- * (`generateSlides()`, B756), assembled around what the page brings of its
- * own (B757): the first image as the title background, the other images as
- * image slides before the closing slide.
+ * (`generateSlides()`, B756). The images are candidates the model places
+ * (B775); the first one does not become a cover without a model choice.
  */
 async function convertWithAi(formattedContent, options = {}) {
   const {
@@ -299,8 +296,7 @@ async function convertWithAi(formattedContent, options = {}) {
     onStatusMessage = null,
     onOutline = null,
     onGroupDone = null,
-    processedImages = [],
-    richContent = null,
+    sourceImages = [],
     signal = null,
     slideTypes,
     disabledSlideTypes = [],
@@ -332,6 +328,7 @@ async function convertWithAi(formattedContent, options = {}) {
     disabledSlideTypes,
     customSlideTypes,
     themeContext,
+    sourceImages,
     signal,
     onOutline,
     onStatusMessage,
@@ -339,30 +336,18 @@ async function convertWithAi(formattedContent, options = {}) {
     logger,
   });
 
-  // The first image of the page's first section becomes the title background.
   const title = outline.title || metadata.title || 'Untitled';
-  const titleSlide = { title };
-  const firstImg = processedImages[0];
-  if (firstImg?.uploadedUrl && richContent?.sections?.[0]?.images?.length > 0) {
-    titleSlide.backgroundImage = firstImg.uploadedUrl;
-    titleSlide.background = 'image';
-  }
 
   const deck = assembleDeck(outline, slides, {
     titleSlideType,
     lang: deckLang,
-    titleSlide,
+    titleSlide: { title },
   });
   deck.title = title;
   deck.settings = {
     stepParagraphs: true,
     transitions: { preset: 'fade' },
   };
-
-  // Insert image slides for remaining images (beyond the first one used for title)
-  if (processedImages.length > 1 && richContent) {
-    insertImageSlides(deck, processedImages.slice(1), richContent);
-  }
 
   deck._generationMeta = {
     ...meta,
@@ -374,43 +359,4 @@ async function convertWithAi(formattedContent, options = {}) {
   logger.finalize(deck, { source: 'notion' });
 
   return deck;
-}
-
-/**
- * Insert image slides into the deck at appropriate positions.
- * This is a simple approach - adds image slides after the content they relate to.
- */
-function insertImageSlides(deck, images, richContent) {
-  // For now, append image slides at the end before any closing slide
-  // A more sophisticated approach would try to match images to sections
-
-  const lastSlide = deck.slides[deck.slides.length - 1];
-  const hasClosingSlide =
-    lastSlide?.type === 'payoff-slide' || lastSlide?.type === 'closing-slide';
-
-  const insertIndex = hasClosingSlide
-    ? deck.slides.length - 1
-    : deck.slides.length;
-
-  for (const img of images) {
-    if (!img.uploadedUrl) continue;
-
-    const imageSlide = {
-      type: 'image-slide',
-      content: {
-        title: img.caption || '',
-        subheading: '',
-        image: img.uploadedUrl,
-        alt: img.caption || '',
-        imageRole: 'content',
-        caption: '',
-        zoomSteps: '',
-        zoomLevel: 2,
-      },
-      notes: '',
-      _aiReasoning: 'Image extracted from Notion page',
-    };
-
-    deck.slides.splice(insertIndex, 0, imageSlide);
-  }
 }
