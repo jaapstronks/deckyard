@@ -18,6 +18,7 @@ import { testScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import { healthKeys } from './helpers/instance-health.js';
+import { createMockRes } from './helpers/http-mocks.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -89,32 +90,11 @@ async function seedDeck() {
   return pres;
 }
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      if (this.statusCode === null) this.statusCode = 200;
-      this.body = payload ?? null;
-      return this;
-    },
-  };
-}
-
 function viewerContext(pathname) {
   return {
     repoRoot: REPO_ROOT,
     req: { method: 'GET', headers: { host: 'decks.example.test' }, socket: {} },
-    res: makeRes(),
+    res: createMockRes(),
     url: new URL(`http://decks.example.test${pathname}`),
     clientDir: CLIENT_DIR,
   };

@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
+import { createMockRes } from './helpers/http-mocks.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -52,20 +53,6 @@ test.before(async () => {
 test.after(() => {
   __setTestDb(null);
 });
-
-function fakeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
 
 async function seedLiveDeck(settings) {
   const pres = await createPresentation(testScope(process.cwd()), {
@@ -99,7 +86,7 @@ async function seedLiveDeck(settings) {
 }
 
 async function followPresentation(presentationId) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowPresentation(
     {
       repoRoot: REPO_ROOT,

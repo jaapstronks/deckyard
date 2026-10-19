@@ -29,6 +29,7 @@ import {
 import { McpServer } from '../../server/mcp/protocol.js';
 import { registerTools } from '../../server/mcp/tools.js';
 import { handleApi } from '../../server/routes/api/index.js';
+import { createMockRes } from '../helpers/http-mocks.js';
 
 /**
  * The read-only MCP tools — the only ones allowed through during maintenance.
@@ -75,26 +76,8 @@ function isMaintenanceRefusal(resp) {
   );
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    writeHead(code, headers) {
-      this.statusCode = code;
-      Object.assign(this.headers, headers || {});
-    },
-    end(chunk) {
-      this.body = chunk;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 function apiCtx(method, pathname) {
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {

@@ -147,10 +147,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/follow-live-video-payload.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/form-input-size-ladder.test.js": {
     "http": 0,
     "walkers": 1
@@ -183,14 +179,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/instance-health-audience.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/instance-health-authoring-export.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/internal-create-lang-refusal.test.js": {
     "http": 1,
     "walkers": 0
@@ -220,10 +208,6 @@
     "walkers": 1
   },
   "tests/managed-font-private.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/mcp/mcp-maintenance-gate.test.js": {
     "http": 1,
     "walkers": 0
   },
@@ -295,10 +279,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/route-dispatch-convert-profile-questions.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/route-dispatch-guard.test.js": {
     "http": 0,
     "walkers": 1
@@ -320,10 +300,6 @@
     "walkers": 0
   },
   "tests/sandbox-examples-theme.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/sandbox-playground.test.js": {
     "http": 1,
     "walkers": 0
   },
@@ -398,10 +374,6 @@
   "tests/storage-reason-vocabulary.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/svg-serve-headers.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/theme-allowlist-enforcement.test.js": {
     "http": 1,
