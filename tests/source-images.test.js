@@ -103,15 +103,20 @@ function candidates(count, uploads) {
 test('only the chosen image is uploaded, once, however many slides use it', async () => {
   const uploads = [];
   const slides = [
-    { content: { image: 'source-image:2', alt: 'Two' } },
-    { content: { items: [{ image: 'source-image:2' }] } },
-    { content: { title: 'No image' } },
+    { type: 'image-slide', content: { image: 'source-image:2', alt: 'Two' } },
+    {
+      type: 'logo-wall-slide',
+      content: { logos: [{ image: 'source-image:2', name: 'Two' }] },
+    },
+    { type: 'content-slide', content: { title: 'No image' } },
   ];
-  const { used } = await resolveSourceImages(slides, candidates(3, uploads));
+  const { used } = await resolveSourceImages(slides, candidates(3, uploads), {
+    slideTypes: SLIDE_TYPES,
+  });
   assert.deepEqual(uploads, [2]);
   assert.deepEqual(used, [2]);
   assert.equal(slides[0].content.image, '/uploads/img-2.png');
-  assert.equal(slides[1].content.items[0].image, '/uploads/img-2.png');
+  assert.equal(slides[1].content.logos[0].image, '/uploads/img-2.png');
   assert.equal(
     slides.some((s) => s._aiWarnings),
     false,
@@ -122,11 +127,14 @@ test('an unknown source-image:N is emptied with an _aiWarnings line', async () =
   const uploads = [];
   const slides = [
     {
+      type: 'image-slide',
       content: { image: 'source-image:9', title: 'source-image:9 in prose' },
       _aiWarnings: ['earlier warning'],
     },
   ];
-  await resolveSourceImages(slides, candidates(3, uploads));
+  await resolveSourceImages(slides, candidates(3, uploads), {
+    slideTypes: SLIDE_TYPES,
+  });
   assert.deepEqual(uploads, []);
   assert.equal(slides[0].content.image, '');
   assert.equal(slides[0].content.title, 'source-image:9 in prose');
@@ -138,8 +146,10 @@ test('a failed upload empties the field with a warning; an abort propagates', as
   const failing = [
     { n: 1, upload: async () => Promise.reject(new Error('disk full')) },
   ];
-  const slides = [{ content: { image: 'source-image:1' } }];
-  await resolveSourceImages(slides, failing);
+  const slides = [
+    { type: 'image-slide', content: { image: 'source-image:1' } },
+  ];
+  await resolveSourceImages(slides, failing, { slideTypes: SLIDE_TYPES });
   assert.equal(slides[0].content.image, '');
   assert.match(slides[0]._aiWarnings[0], /could not be uploaded/);
 
@@ -147,11 +157,79 @@ test('a failed upload empties the field with a warning; an abort propagates', as
   controller.abort();
   await assert.rejects(
     resolveSourceImages(
-      [{ content: { image: 'source-image:1' } }],
+      [{ type: 'image-slide', content: { image: 'source-image:1' } }],
       candidates(1, []),
-      { signal: controller.signal },
+      { signal: controller.signal, slideTypes: SLIDE_TYPES },
     ),
   );
+});
+
+test('source references in prose stay literal; declared nested images and shared backgrounds resolve', async () => {
+  const uploads = [];
+  const slides = [
+    {
+      type: 'content-slide',
+      content: {
+        title: 'source-image:1',
+        body: 'source-image:9',
+        slideBgImage: 'source-image:2',
+      },
+    },
+    {
+      type: 'gallery-slide',
+      content: {
+        title: 'Photos',
+        images: [
+          {
+            src: 'source-image:3',
+            alt: 'source-image:1',
+            caption: 'source-image:9',
+          },
+        ],
+      },
+    },
+  ];
+  const { used } = await resolveSourceImages(slides, candidates(3, uploads), {
+    slideTypes: SLIDE_TYPES,
+  });
+  assert.deepEqual(uploads, [2, 3]);
+  assert.deepEqual(used, [2, 3]);
+  assert.deepEqual(slides[0].content, {
+    title: 'source-image:1',
+    body: 'source-image:9',
+    slideBgImage: '/uploads/img-2.png',
+  });
+  assert.deepEqual(slides[1].content.images[0], {
+    src: '/uploads/img-3.png',
+    alt: 'source-image:1',
+    caption: 'source-image:9',
+  });
+  assert.equal(
+    slides.some((slide) => slide._aiWarnings),
+    false,
+  );
+});
+
+test('the supplied type declaration controls which fields can upload', async () => {
+  const uploads = [];
+  const custom = {
+    'custom-photo': {
+      fields: [
+        { key: 'headline', type: 'string' },
+        { key: 'picture', type: 'image' },
+      ],
+    },
+  };
+  const slide = {
+    type: 'custom-photo',
+    content: { headline: 'source-image:1', picture: 'source-image:2' },
+  };
+  await resolveSourceImages([slide], candidates(2, uploads), {
+    slideTypes: custom,
+  });
+  assert.deepEqual(uploads, [2]);
+  assert.equal(slide.content.headline, 'source-image:1');
+  assert.equal(slide.content.picture, '/uploads/img-2.png');
 });
 
 test('the marker names the number, caption, page and size', () => {
@@ -573,5 +651,49 @@ test('a Notion page with three images: the chosen one on its slide, nothing appe
     'no image slides appended at the end',
   );
   assert.equal(deck.slides[0].content.background, 'lime');
+  assert.equal((await uploadedFiles()).length, 1);
+});
+
+test('a failed Notion image copy leaves the slide empty with a warning', async (t) => {
+  await clearUploads();
+  stubModel(t, { notion: notionPage });
+  const modelFetch = globalThis.fetch;
+  globalThis.fetch = (url, init) =>
+    String(url).startsWith('https://8.8.8.8/')
+      ? Promise.resolve(new Response('unavailable', { status: 503 }))
+      : modelFetch(url, init);
+
+  const { deck, report } = await convertNotionPage(
+    '11111111222233334444555566667777',
+    { lang: 'en-GB', slideTypes: SLIDE_TYPES },
+  );
+  assert.ok(deck, JSON.stringify(report.errors));
+  const [barn] = modelSlides(deck);
+  assert.equal(barn.content.image, '');
+  assert.match(barn._aiWarnings.join(' '), /could not be uploaded/);
+  assert.deepEqual(deck._generationMeta.sourceImages.used, []);
+  assert.equal((await uploadedFiles()).length, 0);
+});
+
+test('an unchosen image at the start of a Notion page is not uploaded as a cover', async (t) => {
+  await clearUploads();
+  async function firstSectionImage(href) {
+    const response = notionPage(href);
+    if (!href.includes('/children')) return response;
+    const payload = await response.json();
+    const first = payload.results.findIndex((block) => block.type === 'image');
+    payload.results.unshift(payload.results.splice(first, 1)[0]);
+    return new Response(JSON.stringify(payload), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  const { imageFetches } = stubModel(t, { notion: firstSectionImage });
+  const { deck, report } = await convertNotionPage(
+    '11111111222233334444555566667777',
+    { lang: 'en-GB', slideTypes: SLIDE_TYPES },
+  );
+  assert.ok(deck, JSON.stringify(report.errors));
+  assert.deepEqual(imageFetches, ['https://8.8.8.8/image-2.gif']);
+  assert.equal(deck.slides[0].content.slideBgImage || '', '');
   assert.equal((await uploadedFiles()).length, 1);
 });

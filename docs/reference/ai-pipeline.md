@@ -213,8 +213,9 @@ validation-event logs alongside them.
   (`images`), the structure call puts at most one on a content slide
   (`image`, each image once; `sourceImage` on the outline slide), and phase 2
   is offered `source-image:n` for that slide and may write it into an image
-  field. After validation `resolveSourceImages()` uploads what the slides
-  reference, each image once; an unknown number or a failed upload empties
+  field. After validation `resolveSourceImages()` reads declared image fields
+  from the merged slide-type map and uploads what they reference, each image
+  once; prose remains literal. An unknown number or a failed upload empties
   the field with an `_aiWarnings` line. An image no slide uses is never
   uploaded. The prompt lines appear only when there are images, so a deck
   without them sees the same prompts as before. Readers: `pdf-extract`'s

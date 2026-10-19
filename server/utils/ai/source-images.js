@@ -62,24 +62,28 @@ export function uploadOnce(upload) {
 }
 
 /**
- * Replace every `source-image:N` in the slides' content by the uploaded URL.
+ * Replace `source-image:N` in declared image fields by the uploaded URL.
  *
  * Only the images a slide references are uploaded, each once. A reference
  * to an image the source does not have, or one whose upload fails, leaves
  * the field empty and says so in the slide's `_aiWarnings`. Mutates the
  * slides.
  *
- * @param {Array<{ content?: object, _aiWarnings?: string[] }>} slides
+ * @param {Array<{ type?: string, content?: object, _aiWarnings?: string[] }>} slides
  * @param {SourceImage[]} [sourceImages]
  * @param {object} [opts]
  * @param {AbortSignal|null} [opts.signal] - checked before every upload
+ * @param {Record<string, object>} opts.slideTypes - the merged slide-type map
  * @returns {Promise<{ used: number[] }>} the numbers of the images placed
  */
 export async function resolveSourceImages(
   slides,
   sourceImages = [],
-  { signal = null } = {},
+  { signal = null, slideTypes } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError('resolveSourceImages: pass the slide-type map');
+  }
   const byNumber = new Map(sourceImages.map((img) => [img.n, img]));
   const used = new Set();
 
@@ -95,6 +99,7 @@ export async function resolveSourceImages(
     signal?.throwIfAborted();
     try {
       const url = await img.upload();
+      signal?.throwIfAborted();
       if (url) {
         used.add(n);
         return url;
@@ -108,30 +113,28 @@ export async function resolveSourceImages(
     return '';
   }
 
-  async function walk(node, warnings) {
-    if (Array.isArray(node)) {
-      for (let i = 0; i < node.length; i++) {
-        if (typeof node[i] === 'string' && SOURCE_IMAGE_REF.test(node[i])) {
-          node[i] = await resolve(node[i], warnings);
-        } else if (node[i] && typeof node[i] === 'object') {
-          await walk(node[i], warnings);
+  async function resolveFields(content, fields, warnings) {
+    for (const field of fields) {
+      const value = content[field.key];
+      if (field.type === 'image' && typeof value === 'string') {
+        if (SOURCE_IMAGE_REF.test(value)) {
+          content[field.key] = await resolve(value, warnings);
         }
-      }
-      return;
-    }
-    for (const [key, value] of Object.entries(node)) {
-      if (typeof value === 'string' && SOURCE_IMAGE_REF.test(value)) {
-        node[key] = await resolve(value, warnings);
-      } else if (value && typeof value === 'object') {
-        await walk(value, warnings);
+      } else if (field.type === 'items' && Array.isArray(value)) {
+        for (const item of value) {
+          if (item && typeof item === 'object') {
+            await resolveFields(item, field.itemFields || [], warnings);
+          }
+        }
       }
     }
   }
 
   for (const slide of slides) {
     if (!slide?.content || typeof slide.content !== 'object') continue;
+    const fields = slideTypes[slide.type]?.fields || [];
     const warnings = [];
-    await walk(slide.content, warnings);
+    await resolveFields(slide.content, fields, warnings);
     if (warnings.length) {
       slide._aiWarnings = [...(slide._aiWarnings || []), ...warnings];
     }

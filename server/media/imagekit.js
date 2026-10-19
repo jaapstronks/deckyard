@@ -425,13 +425,12 @@ export async function uploadImageKitBuffer({
  * @param {object} options - Additional options
  * @param {string} [options.folder] - Optional folder path
  * @param {string[]} [options.tags] - Optional tags
- * @returns {Promise<string>} - The uploaded image URL
+ * @returns {Promise<string>} - The uploaded image URL, or empty on failure
  */
 export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
-    log.info('Not configured, returning original URL');
-    return imageUrl;
+    return '';
   }
 
   if (!imageUrl) {
@@ -443,7 +442,7 @@ export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
     // image URL is attacker-controllable). safeFetchRemoteImage refuses
     // non-public addresses, refuses redirects (which could hop into private
     // space after the check), times out, and caps the body size. A null
-    // return throws here, falling back to the original URL.
+    // return means the image cannot be copied.
     const fetched = await safeFetchRemoteImage(imageUrl, {
       maxBytes: 20 * 1024 * 1024,
     });
@@ -464,10 +463,9 @@ export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
       tags: options.tags || null,
     });
 
-    return result?.url || imageUrl;
+    return result?.url || '';
   } catch (e) {
     log.error(`Failed to upload from URL: ${e.message}`);
-    // Return original URL as fallback
-    return imageUrl;
+    return '';
   }
 }

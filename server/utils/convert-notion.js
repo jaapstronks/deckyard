@@ -3,8 +3,7 @@
  * Converts Notion pages into the presentation system format.
  * Runs the one generation pipeline (`generateSlides()`, B757). The page's
  * images go along as candidates the model places where they fit (B775);
- * only the ones it places are re-hosted, plus the first one as the title
- * background when the page opens with it.
+ * only the ones it places are re-hosted.
  */
 
 import {
@@ -150,7 +149,6 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       onOutline,
       onGroupDone,
       sourceImages,
-      richContent,
       signal,
       slideTypes,
       disabledSlideTypes,
@@ -188,24 +186,22 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
  * Notion's file-hosted image URLs are signed and expire (~1h), so keeping them
  * verbatim leaves an imported deck broken shortly after import. When ImageKit is
  * not configured this fetches the bytes and stores them via the configured media
- * provider (local `/uploads` or S3), yielding a durable URL. On any failure
- * it returns the original URL so the import still succeeds (just non-durable).
+ * provider (local `/uploads` or S3), yielding a durable URL. An unavailable
+ * provider returns no URL; a failed copy throws to the caller.
  * @param {{ url: string }} img
- * @returns {Promise<string>} A durable media-library URL, or the original URL on failure.
+ * @returns {Promise<string>} A durable media-library URL, or an empty string.
  */
 async function rehostImageToMediaLibrary(img) {
   if (!isMediaProviderInitialized()) {
-    // No provider (e.g. outside the server request path) — nothing to re-host to.
-    return img.url;
+    return '';
   }
 
-  // processNotionImages handles failures by retaining this image's original URL.
   const { publicUrl } = await rehostRemoteImage({
     url: img.url,
     filename: `notion-${img.blockId || cryptoUuid()}`,
   });
 
-  return publicUrl || img.url;
+  return publicUrl || '';
 }
 
 /**
@@ -213,8 +209,8 @@ async function rehostImageToMediaLibrary(img) {
  *
  * When ImageKit is configured images are re-hosted there (unchanged). Otherwise
  * they are re-hosted through Deckyard's own media library, because Notion's
- * signed URLs expire (~1h) and would leave the deck broken. Both paths fall back
- * to the original URL when an individual image cannot be re-hosted.
+ * signed URLs expire (~1h) and would leave the deck broken. A failed copy
+ * returns no URL; the source-image resolver clears the field and warns.
  * @param {Array} images - Array of { url, caption, blockId }
  * @param {object} options - Options
  * @param {AbortSignal} [options.signal] - Checked before every re-host, so a
@@ -235,6 +231,7 @@ export async function processNotionImages(images, options = {}) {
       signal?.throwIfAborted();
       try {
         const uploadedUrl = await rehostImageToMediaLibrary(img);
+        signal?.throwIfAborted();
         results.push({
           originalUrl: img.url,
           uploadedUrl,
@@ -242,11 +239,11 @@ export async function processNotionImages(images, options = {}) {
           blockId: img.blockId,
         });
       } catch (e) {
+        if (signal?.aborted) throw e;
         log.error(`Failed to re-host image via media library: ${e.message}`);
-        // Fall back to the original (expiring) URL rather than dropping the image.
         results.push({
           originalUrl: img.url,
-          uploadedUrl: img.url,
+          uploadedUrl: '',
           caption: img.caption || '',
           blockId: img.blockId,
         });
@@ -262,19 +259,20 @@ export async function processNotionImages(images, options = {}) {
       // Upload image from URL to ImageKit
       const filename = `notion-${img.blockId || cryptoUuid()}.jpg`;
       const uploadedUrl = await uploadImageKitUrl(img.url, filename);
+      signal?.throwIfAborted();
 
       results.push({
         originalUrl: img.url,
-        uploadedUrl: uploadedUrl || img.url,
+        uploadedUrl: uploadedUrl || '',
         caption: img.caption || '',
         blockId: img.blockId,
       });
     } catch (e) {
+      if (signal?.aborted) throw e;
       log.error(`Failed to upload image: ${e.message}`);
-      // Fall back to original URL
       results.push({
         originalUrl: img.url,
-        uploadedUrl: img.url,
+        uploadedUrl: '',
         caption: img.caption || '',
         blockId: img.blockId,
       });
@@ -286,9 +284,8 @@ export async function processNotionImages(images, options = {}) {
 
 /**
  * Convert formatted Notion content to a deck: the one generation pipeline
- * (`generateSlides()`, B756), assembled around what the page brings of its
- * own (B757): the first image as the title background when the page's first
- * section holds it. The images are candidates the model places (B775).
+ * (`generateSlides()`, B756). The images are candidates the model places
+ * (B775); the first one does not become a cover without a model choice.
  */
 async function convertWithAi(formattedContent, options = {}) {
   const {
@@ -300,7 +297,6 @@ async function convertWithAi(formattedContent, options = {}) {
     onOutline = null,
     onGroupDone = null,
     sourceImages = [],
-    richContent = null,
     signal = null,
     slideTypes,
     disabledSlideTypes = [],
@@ -340,22 +336,12 @@ async function convertWithAi(formattedContent, options = {}) {
     logger,
   });
 
-  // The first image of the page's first section becomes the title background.
   const title = outline.title || metadata.title || 'Untitled';
-  const titleSlide = { title };
-  const cover = richContent?.sections?.[0]?.images?.[0];
-  const coverUrl = cover
-    ? await sourceImages.find((img) => img.n === cover.n)?.upload()
-    : '';
-  if (coverUrl) {
-    titleSlide.backgroundImage = coverUrl;
-    titleSlide.background = 'image';
-  }
 
   const deck = assembleDeck(outline, slides, {
     titleSlideType,
     lang: deckLang,
-    titleSlide,
+    titleSlide: { title },
   });
   deck.title = title;
   deck.settings = {

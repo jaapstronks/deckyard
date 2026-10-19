@@ -223,7 +223,10 @@ async function runPhases(
   const slides = validateAndFixRefinedSlides(allSlides, { slideTypes });
 
   // ── Source images: upload the ones a slide uses (B775) ──────────────────
-  const { used } = await resolveSourceImages(slides, sourceImages, { signal });
+  const { used } = await resolveSourceImages(slides, sourceImages, {
+    signal,
+    slideTypes,
+  });
 
   const meta = {
     sessionId: logger.sessionId,

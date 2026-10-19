@@ -148,9 +148,9 @@ stand as `[IMAGE n: caption]` (B775).
      [`ai-pipeline.md`](ai-pipeline.md) § Flows), with the theme context and
      title slide type `loadAiThemeContext()` loaded, forwarding its status
      messages onto the SSE stream. The adapter assembles around it with
-     `assembleDeck()`: an image in the page's first section becomes the title
-     background (re-hosted for that). The other images land where the model
-     placed them, or nowhere; nothing is appended to the deck (B775).
+     `assembleDeck()`: images land only where the model placed them. The first
+     image has no automatic title-background exception, and nothing is appended
+     to the deck (B775).
 5. On a deck with no errors, `generatedDeckToParts()` (presenter notes and the
    review metadata kept) and `createImportedPresentation`, stamping
    `notionSourcePageId`, then a `complete` event carrying the presentation and
@@ -271,14 +271,11 @@ stands, as of 2026-08-17:
   itself as backwards-compatible with a shape nothing sends. They are candidates
   for the finish-or-strip list, not documented promises.
 - **Imported images are durable on both paths.** Notion's file-hosted image URLs
-  are signed and expire (roughly an hour), so `processNotionImages` re-hosts every
-  image the deck uses (a slide's, the title background): to ImageKit when it is
-  configured, otherwise through Deckyard's own media library (the configured
-  media provider — local `/uploads` or S3). Either way the URL on the slide is
-  a durable one before the deck is saved; an image no slide uses is never
-  fetched (B775). If an
-  individual image cannot be fetched or stored, that one image falls back to the
-  original (expiring) URL rather than failing the import (B80, D29-1).
+  are signed and expire (roughly an hour), so `processNotionImages` re-hosts each
+  image the model chose: to ImageKit when configured, otherwise through Deckyard's
+  media provider (local `/uploads` or S3). An unchosen image is never fetched.
+  If a chosen image cannot be fetched or stored, its field is cleared with an
+  `_aiWarnings` line; an expiring Notion URL is never saved as the image.
 - **Import is synchronous and unbounded in wall-clock.** The conversion runs
   inside the request (an SSE stream held open), not on the job queue, and the
   only limits are the block caps (600 blocks, depth 3) and the AI pipeline's own
