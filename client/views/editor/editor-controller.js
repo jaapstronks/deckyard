@@ -699,6 +699,7 @@ export async function createEditorController({
       slideTypes: SLIDE_TYPES,
       normalizeLang,
       write: writeVersionText,
+      api,
       getTheme: () => theme,
       // Live edits write into the doc, which is not there before first sync
       // (B762 review 4): the view stays inert until it is.

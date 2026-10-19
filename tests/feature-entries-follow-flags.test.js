@@ -77,6 +77,11 @@ const ENTRIES = {
       gate: 'client/views/editor/editor-controller.js',
     },
     {
+      entry: 'Translation view: suggest fields and slides',
+      calls: ['client/views/editor/translate-view/index.js'],
+      gate: 'client/views/editor/translate-view/index.js',
+    },
+    {
       entry: 'Add with AI… (type modal, picker escape hatch, batch review)',
       calls: [
         'client/views/editor/ai-append.js',
