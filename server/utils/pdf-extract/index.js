@@ -11,7 +11,8 @@
  * - a tagged page (PowerPoint, Chrome) gets its roles from the structure
  *   tree (`struct-detector.js`);
  * - an untagged page (Keynote) gets them from size and position
- *   (`geometry-detector.js`).
+ *   (`geometry-detector.js`), its lines in rows or, on request, column by
+ *   column (`columns.js`).
  *
  * Both give the same shape, so a mapper downstream knows only the model.
  * The text is literal (see `lines.js`): what is not on the slide is listed
@@ -22,6 +23,7 @@
 import { openPdf } from './pdfjs.js';
 import { readTextRuns, isOnPage } from './text-runs.js';
 import { assembleLines } from './lines.js';
+import { assembleColumnLines } from './columns.js';
 import { detectStruct } from './struct-detector.js';
 import { detectGeometry, findDrawingLabels } from './geometry-detector.js';
 import { readPageGraphics } from './images.js';
@@ -127,11 +129,15 @@ const REFERENCE_TEXT = /^\d{1,3}(?:[,\s]+\d{1,3})*$/;
  *   between pages; an abort rejects with the signal's reason
  * @param {boolean} [opts.useStructTree=true] - false reads every page by
  *   geometry, as if it were untagged (measurement, tests)
+ * @param {boolean} [opts.columns=false] - read the text of an untagged page
+ *   column by column (`columns.js`, B777): what the AI route wants, which
+ *   reads running text. The slide import keeps rows: on a slide, boxes side
+ *   by side are layout, and a box over a column would read as its text.
  * @returns {Promise<{ pages: PageModel[], tagged: boolean, pageCount: number, size: { width: number, height: number } | null, metadata: { title?: string, author?: string } }>}
  */
 export async function extractPdfPages(
   buffer,
-  { signal, useStructTree = true } = {},
+  { signal, useStructTree = true, columns = false } = {},
 ) {
   signal?.throwIfAborted();
   const task = openPdf(buffer);
@@ -142,7 +148,7 @@ export async function extractPdfPages(
       signal?.throwIfAborted();
       const page = await doc.getPage(n);
       try {
-        pages.push(await readPage(page, n, { useStructTree }));
+        pages.push(await readPage(page, n, { useStructTree, columns }));
       } finally {
         page.cleanup();
       }
@@ -172,7 +178,7 @@ export async function extractPdfPages(
  * @returns {Promise<{ title: string | null, blocks: import('./document.js').DocumentBlock[], text: string }>}
  */
 export async function extractPdfDocument(buffer, { signal } = {}) {
-  return readDocument(await extractPdfPages(buffer, { signal }));
+  return readDocument(await extractPdfPages(buffer, { signal, columns: true }));
 }
 
 /**
@@ -212,7 +218,7 @@ export async function extractPdfText(buffer, { signal } = {}) {
   }
 }
 
-async function readPage(page, n, { useStructTree }) {
+async function readPage(page, n, { useStructTree, columns }) {
   const viewport = page.getViewport({ scale: 1 });
   const box = { width: viewport.width, height: viewport.height };
   // Fonts are only loaded (and their names readable) after the operator list.
@@ -228,7 +234,7 @@ async function readPage(page, n, { useStructTree }) {
   const { body, dropped } = dropNonSlideText(runs, box);
   let detected = tree ? detectStruct(tree, body, box) : null;
   const tagged = Boolean(detected);
-  if (!detected) detected = detectByGeometry(body, box, graphics);
+  if (!detected) detected = detectByGeometry(body, box, graphics, { columns });
 
   return {
     page: n,
@@ -384,8 +390,8 @@ function raisedAbove(mark, line, bodySize) {
   );
 }
 
-function detectByGeometry(runs, box, graphics) {
-  const lines = assembleLines(runs);
+function detectByGeometry(runs, box, graphics, { columns }) {
+  const lines = columns ? assembleColumnLines(runs) : assembleLines(runs);
   const labels = findDrawingLabels(lines, {
     paths: graphics.paths,
     boxes: graphics.pathBoxes,

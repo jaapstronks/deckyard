@@ -82,7 +82,9 @@ const median = (values) => {
 const closeSize = (a, b) =>
   Math.abs(a - b) <= SIZE_CHANGE_RATIO * Math.max(a, b);
 
+/** Right below: a line higher up starts the next column (`columns.js`). */
 const followsClosely = (prev, line) =>
+  line.y >= prev.y &&
   line.y - prev.y <= PARAGRAPH_GAP_EM * Math.max(prev.size, line.size);
 
 /**

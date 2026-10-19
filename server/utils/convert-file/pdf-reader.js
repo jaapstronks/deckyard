@@ -3,7 +3,9 @@
  *
  * Reads through `pdf-extract`, the reader the slide import uses, so both
  * tracks agree on what the running text is: footnotes, the reference marks
- * that call them, page furniture and text off the page stay out.
+ * that call them, page furniture and text off the page stay out. Unlike the
+ * slide import it reads an untagged page column by column (B777), so two
+ * columns side by side do not interleave line by line.
  *
  * A PDF comes in one of two shapes (B773), told apart by the page form:
  *
@@ -50,7 +52,10 @@ export const SLIDE_MAX_CHARS = 1200;
 export async function readPdf(buffer, { signal } = {}) {
   let result;
   try {
-    result = await extractPdfPages(new Uint8Array(buffer), { signal });
+    result = await extractPdfPages(new Uint8Array(buffer), {
+      signal,
+      columns: true,
+    });
   } catch (e) {
     if (signal?.aborted) throw e;
     return {
