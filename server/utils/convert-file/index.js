@@ -160,16 +160,18 @@ export async function convertFile(buffer, options = {}) {
 
   report.warnings.push(...(parseResult.errors || []));
   report.metadata = parseResult.metadata || {};
-  report.slidesExtracted = parseResult.slides?.length || 0;
+  const { document } = parseResult;
+  const sourceSlides = document ? [] : parseResult.slides || [];
+  report.slidesExtracted = sourceSlides.length;
 
-  if (!parseResult.slides || parseResult.slides.length === 0) {
-    report.errors.push('No slides could be extracted from the file.');
+  if (!document && sourceSlides.length === 0) {
+    report.errors.push('No content could be extracted from the file.');
     return { deck: null, report };
   }
 
   // Process image-only slides: upload images and create image-slides directly
   const { imageOnlySlides, regularSlides, titleSlideCandidate } =
-    await processImageOnlySlides(parseResult.slides, {
+    await processImageOnlySlides(sourceSlides, {
       onStatusMessage,
       signal,
     });
@@ -187,9 +189,8 @@ export async function convertFile(buffer, options = {}) {
     log.info(`Using first image slide as title slide`);
   }
 
-  // Format remaining content for AI conversion. A document (a report PDF)
+  // Format remaining content for AI conversion. A document (Word or a report PDF)
   // goes as one marked-up text; it opens with no title slide of its own.
-  const { document } = parseResult;
   const formattedContent = document
     ? formatDocumentForAi(document, parseResult.metadata)
     : formatSlidesForAi(regularSlides, parseResult.metadata);
@@ -199,9 +200,7 @@ export async function convertFile(buffer, options = {}) {
   const sourceImages = fileSourceImages(parseResult.figures, filename);
 
   // Get first slide content for title slide detection
-  const firstSlideContent = document
-    ? ''
-    : parseResult.slides?.[0]?.textContent || '';
+  const firstSlideContent = sourceSlides[0]?.textContent || '';
 
   // Calculate the starting index offset for AI slides
   // This is needed to correctly merge image-only slides (which have real source indices)
@@ -248,10 +247,10 @@ export async function convertFile(buffer, options = {}) {
     report.success = true;
 
     // Check for significant slide count differences
-    const difference = Math.abs(parseResult.slides.length - deck.slides.length);
-    if (difference > parseResult.slides.length * 0.3) {
+    const difference = Math.abs(sourceSlides.length - deck.slides.length);
+    if (!document && difference > sourceSlides.length * 0.3) {
       report.warnings.push(
-        `The original had ${parseResult.slides.length} slides, but ${deck.slides.length} were generated. ` +
+        `The original had ${sourceSlides.length} slides, but ${deck.slides.length} were generated. ` +
           `Some content may have been combined or split differently.`,
       );
     }

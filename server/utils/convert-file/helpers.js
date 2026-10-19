@@ -119,7 +119,7 @@ export function formatSlidesForAi(slides, metadata) {
 }
 
 /**
- * Format a document read as one text (a report PDF, B773) for the AI: the
+ * Format a document read as one text (Word or a report PDF) for the AI: the
  * metadata, then the marked-up text as it is, without slide framing.
  *
  * @param {string} text - headings as `#`, lists as `- `, pipe tables

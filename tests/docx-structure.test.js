@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import JSZip from 'jszip';
 
 import { parseDocx } from '../server/utils/convert-file/docx-parser.js';
-import { formatSlidesForAi } from '../server/utils/convert-file/helpers.js';
+import { formatDocumentForAi } from '../server/utils/convert-file/helpers.js';
 
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 
@@ -99,7 +99,7 @@ test('a Word document reaches the AI with its headings and lists', async () => {
   const docx = await parseDocx(await reportDocx());
   // mammoth warns that the fixture defines no styles; nothing failed.
   assert.ok(!docx.errors.some((e) => e.startsWith('Error')));
-  const input = formatSlidesForAi(docx.slides, docx.metadata);
+  const input = formatDocumentForAi(docx.document, docx.metadata);
 
   for (const line of [
     '# Annual report',
@@ -114,6 +114,9 @@ test('a Word document reaches the AI with its headings and lists', async () => {
   ]) {
     assert.ok(input.split('\n').includes(line), `missing line: ${line}`);
   }
+  assert.match(input, /=== DOCUMENT ===/);
+  assert.doesNotMatch(input, /--- SLIDE|PRESENTATION TITLE/);
+  assert.equal(docx.slides, undefined);
   // A bold run stays inside its sentence; list items follow one another.
   assert.match(input, /^We picked more apples than ever\.$/m);
   assert.match(input, /^- Apples\n {2}- Cox\n {2}- Elstar\n- Pears$/m);

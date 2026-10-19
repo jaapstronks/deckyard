@@ -26,14 +26,13 @@ import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 const FIGURE_TAG = /<img alt="docx-figure:(\d+)"[^>]*>/g;
 
 /**
- * Extract text content from a Word document, attempting to identify sections.
- * Each major section (based on headings) is treated as a potential slide.
+ * Extract a Word document as one marked-up text, preserving section order.
  * @param {Buffer} buffer - The document file contents
- * @returns {Promise<{slides: Array<{slideNumber: number, textContent: string}>, figures: Array<{n: number, caption: string, pixels: {width: number, height: number}, buffer: Buffer, mimeType: string}>, metadata: object, errors: string[]}>}
+ * @returns {Promise<{document: string, figures: Array<{n: number, caption: string, pixels: {width: number, height: number}, buffer: Buffer, mimeType: string}>, metadata: object, errors: string[]}>}
  */
 export async function parseDocx(buffer) {
   const errors = [];
-  const slides = [];
+  let document = '';
   const metadata = {};
   const figures = [];
 
@@ -63,66 +62,28 @@ export async function parseDocx(buffer) {
     });
     const sections = parseHtmlToSections(markLists(html));
 
-    if (sections.length > 0) {
-      // Use structured sections
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i];
-        let textContent = '';
+    document =
+      sections
+        .map((section) =>
+          [section.heading, section.content].filter(Boolean).join('\n\n'),
+        )
+        .filter(Boolean)
+        .join('\n\n') || rawText.trim();
 
-        if (section.heading) {
-          textContent += section.heading + '\n\n';
-        }
-        if (section.content) {
-          textContent += section.content;
-        }
-
-        if (textContent.trim()) {
-          slides.push({
-            slideNumber: i + 1,
-            textContent: textContent.trim(),
-          });
-        }
-      }
-    } else if (rawText.trim()) {
-      // Fallback: split by double newlines or large text blocks
-      const paragraphs = rawText.split(/\n{2,}/).filter((p) => p.trim());
-
-      if (paragraphs.length === 0) {
-        slides.push({
-          slideNumber: 1,
-          textContent: rawText.trim(),
-        });
-      } else {
-        // Group paragraphs into reasonable slide-sized chunks
-        const sections = groupParagraphsIntoSections(paragraphs);
-        for (let i = 0; i < sections.length; i++) {
-          slides.push({
-            slideNumber: i + 1,
-            textContent: sections[i],
-          });
-        }
-      }
-    }
-
-    // Try to extract title from first heading or first slide content
-    if (slides.length > 0) {
-      const firstContent = slides[0].textContent;
-      const firstLine = firstContent.split('\n')[0].replace(/^#+ /, '').trim();
-      if (firstLine.length < 100) {
-        metadata.title = firstLine;
-      }
-    }
+    // The first heading or line names the document, not a source title slide.
+    const firstLine = document.split('\n')[0].replace(/^#+ /, '').trim();
+    if (firstLine && firstLine.length < 100) metadata.title = firstLine;
   } catch (e) {
     errors.push(`Error parsing document: ${e.message}`);
   }
 
-  if (slides.length === 0 && errors.length === 0) {
+  if (!document && errors.length === 0) {
     errors.push(
       'Could not extract any text from the document. It may be empty or protected.',
     );
   }
 
-  return { slides, figures, metadata, errors };
+  return { document, figures, metadata, errors };
 }
 
 /**
@@ -273,52 +234,4 @@ function stripHtml(html) {
       .replace(/\n{3,}/g, '\n\n')
       .trim()
   );
-}
-
-/**
- * Group paragraphs into reasonable section sizes for slides.
- * Aims for chunks that would fit on a slide (not too long, not too short).
- */
-function groupParagraphsIntoSections(paragraphs) {
-  const sections = [];
-  let currentSection = [];
-  let currentLength = 0;
-  const maxLength = 1000; // Max characters before forcing a split
-
-  for (const paragraph of paragraphs) {
-    const trimmed = paragraph.trim();
-    if (!trimmed) continue;
-
-    // Check if this paragraph looks like a heading (short, no punctuation at end)
-    const looksLikeHeading =
-      trimmed.length < 80 &&
-      !trimmed.match(/[.!?;,]$/) &&
-      !trimmed.includes('\n');
-
-    if (looksLikeHeading && currentSection.length > 0) {
-      // Start a new section with this heading
-      sections.push(currentSection.join('\n\n'));
-      currentSection = [trimmed];
-      currentLength = trimmed.length;
-    } else if (
-      currentLength + trimmed.length > maxLength &&
-      currentSection.length > 0
-    ) {
-      // Current section is getting too long, start a new one
-      sections.push(currentSection.join('\n\n'));
-      currentSection = [trimmed];
-      currentLength = trimmed.length;
-    } else {
-      // Add to current section
-      currentSection.push(trimmed);
-      currentLength += trimmed.length;
-    }
-  }
-
-  // Don't forget the last section
-  if (currentSection.length > 0) {
-    sections.push(currentSection.join('\n\n'));
-  }
-
-  return sections;
 }
