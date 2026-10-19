@@ -1100,14 +1100,6 @@
       "count": 1
     }
   },
-  "server/utils/convert-file/pdf-parser.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "server/utils/debug-log.js": {
     "no-restricted-syntax": {
       "count": 1

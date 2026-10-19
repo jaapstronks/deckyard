@@ -25,7 +25,7 @@ import {
 } from '../../server/utils/puppeteer-browser.js';
 import { buildSlidePngHtml } from '../../server/render/png.js';
 import { renderSlidesToPdfBuffer } from '../../server/render/pdf.js';
-import { parsePdf } from '../../server/utils/convert-file/pdf-parser.js';
+import { extractPdfText } from '../../server/utils/pdf-extract/index.js';
 import { FONT_SUBSETS } from '../../shared/theme-fonts.js';
 
 /** The slide frame every export renders into. */
@@ -357,40 +357,23 @@ export async function measureSlide(
  * @param {Object} deck
  * @param {Object} [options]
  * @param {Object} [options.theme]
- * @returns {Promise<{pageCount: number, pages: Array<{width: number, height: number}>}>}
+ * @returns {Promise<{pageCount: number, pages: Array<{width: number, height: number}>, pageText: string[]}>}
  */
 export async function measureDeckPdf(repoRoot, deck, { theme = null } = {}) {
   const buf = Buffer.from(
     await renderSlidesToPdfBuffer(repoRoot, deck, { theme }),
   );
-  const parsed = await parsePdf(buf);
-
-  // Page geometry comes from the /MediaBox entries rather than the text
-  // extractor, which reports content and not size. Chrome writes the page dicts
-  // uncompressed, so a scan over the raw bytes is enough and costs no
-  // dependency.
-  const mediaBoxes = [
-    ...buf.toString('latin1').matchAll(/\/MediaBox\s*\[([^\]]*)\]/g),
-  ].map((m) => {
-    const [x0, y0, x1, y1] = m[1].trim().split(/\s+/).map(Number);
-    return { width: round1(x1 - x0), height: round1(y1 - y0) };
-  });
-
-  // The scan is a heuristic over raw bytes; the page count is not. If they ever
-  // disagree the geometry list is describing something other than the pages —
-  // an inherited /MediaBox, a compressed page tree, a stray match inside a
-  // stream — and a baseline recorded from it would be nonsense.
-  if (mediaBoxes.length !== parsed.slides.length) {
-    throw new Error(
-      `/MediaBox scan found ${mediaBoxes.length} boxes for ${parsed.slides.length} pages — ` +
-        'the raw-bytes scan no longer describes this PDF and the geometry cannot be trusted',
-    );
-  }
+  // Geometry and text from the reader the product uses (B776). The plain
+  // text, not the page model: this guards the export, so it must not move
+  // when the import's reading of roles does.
+  const pages = await extractPdfText(buf);
 
   return {
-    pageCount: parsed.slides.length,
-    parseErrors: parsed.errors,
-    pages: mediaBoxes,
-    pageText: parsed.slides.map((p) => pageTextKey(p.textContent)),
+    pageCount: pages.length,
+    pages: pages.map((p) => ({
+      width: round1(p.width),
+      height: round1(p.height),
+    })),
+    pageText: pages.map((p) => pageTextKey(p.text)),
   };
 }

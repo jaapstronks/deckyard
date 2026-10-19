@@ -68,7 +68,7 @@ async function firstExecutablePath(paths, isExecutable) {
  * depending on the environment": Puppeteer prefers `Uint8Array.fromBase64()`
  * when that exists and only falls back to `Buffer.from()` otherwise. So the
  * return type flips to a plain Uint8Array the moment anything in the process
- * polyfills `fromBase64` — which pdf.js (pulled in by `pdf-parse` for PDF
+ * polyfills `fromBase64` — which pdf.js (loaded by `pdf-extract` for PDF
  * import) does on load, and which Node will eventually do natively.
  *
  * That mattered: a plain Uint8Array has no base64 `toString()`, so

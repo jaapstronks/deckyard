@@ -2,7 +2,7 @@
  * Read the structure of a slide PDF: one page model per page (B751).
  *
  * The import of an existing deck as editable slides (B737) needs more than
- * `parsePdf()`'s plain text or `pdfToImages()`'s pixels: it needs the lines
+ * plain text or `pdfToImages()`'s pixels: it needs the lines
  * in reading order, which of them is the heading, a list, a table, and the
  * embedded pictures with their place on the page. pdf.js yields all of that
  * in Node, without a browser; this module turns it into one model, whichever
@@ -168,6 +168,43 @@ export async function extractPdfPages(
  */
 export async function extractPdfDocument(buffer, { signal } = {}) {
   return readDocument(await extractPdfPages(buffer, { signal }));
+}
+
+/**
+ * The text of every page as pdf.js lays it out, with no roles read: no
+ * heading, no footnotes or artifacts taken out. What a test compares when it
+ * asks whether an exported PDF still says the same thing (B776); the slide
+ * import and the AI route read {@link extractPdfPages}.
+ *
+ * @param {Uint8Array} buffer - the PDF bytes
+ * @param {object} [opts]
+ * @param {AbortSignal} [opts.signal]
+ * @returns {Promise<Array<{ page: number, width: number, height: number, text: string }>>}
+ */
+export async function extractPdfText(buffer, { signal } = {}) {
+  signal?.throwIfAborted();
+  const task = openPdf(buffer);
+  try {
+    const doc = await task.promise;
+    const pages = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+      signal?.throwIfAborted();
+      const page = await doc.getPage(n);
+      try {
+        const { width, height } = page.getViewport({ scale: 1 });
+        const { items } = await page.getTextContent();
+        const text = items
+          .map((item) => item.str + (item.hasEOL ? '\n' : ''))
+          .join('');
+        pages.push({ page: n, width, height, text });
+      } finally {
+        page.cleanup();
+      }
+    }
+    return pages;
+  } finally {
+    await task.destroy();
+  }
 }
 
 async function readPage(page, n, { useStructTree }) {

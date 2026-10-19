@@ -9,13 +9,14 @@
  * `pdfjs-dist` was not even a dependency. It is one now, so package-lock.json
  * pins it with an integrity hash and `npm audit` can see it.
  *
- * **Why the version is pinned exactly.** `pdf-parse` (the text extractor used
- * elsewhere in import) depends on `pdfjs-dist` at an exact version of its own.
- * Matching it lets npm keep **one** copy in the tree; a `^` range resolves to
- * the newest 5.x, npm nests pdf-parse's pin underneath, and the install grows by
- * ~70 MB (a second pdfjs-dist plus a second `@napi-rs/canvas` native binary) for
- * two static files. `tests/pdf-import-self-hosted.test.js` fails when the two
- * drift apart, which is the moment to re-align and re-vendor.
+ * **Why the version is pinned exactly.** The same `pdfjs-dist` also reads
+ * PDFs on the server (`server/utils/pdf-extract/`), and that reader leans on
+ * what pdf.js reports beyond plain text: the structure tree, marked content,
+ * the operator list. A new pdf.js can change what a page model looks like, so
+ * a bump is a deliberate step: bump the exact version, run
+ * `npm run vendor:pdfjs`, and run the `pdf-extract` and import tests.
+ * `tests/pdf-import-self-hosted.test.js` pins the exact version and one copy
+ * in the tree.
  *
  * Only the two build files are copied. `standard_fonts/` (0.8 MB) and `cmaps/`
  * (1.7 MB) stay out: pdf.js only fetches those when `standardFontDataUrl` /

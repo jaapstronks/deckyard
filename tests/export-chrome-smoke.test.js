@@ -50,7 +50,7 @@ import {
   buildPptxBuffer,
 } from '../server/export/pptx.js';
 import { renderSandboxOgImagePng } from '../server/utils/sandbox-og-image.js';
-import { parsePdf } from '../server/utils/convert-file/pdf-parser.js';
+import { extractPdfText } from '../server/utils/pdf-extract/index.js';
 import { seedThemeConfig } from './helpers/theme-seed.js';
 
 const repoRoot = path.resolve(
@@ -168,14 +168,13 @@ test('PDF export produces a real, non-blank PDF', { skip }, async () => {
 
   // Text extraction is the non-blank check: a PDF whose page never painted
   // still has a valid header, but yields no text.
-  const parsed = await parsePdf(Buffer.from(buf));
-  assert.deepEqual(parsed.errors, [], 'the PDF should parse without errors');
-  assert.equal(parsed.slides.length, 1, 'one slide in → one page out');
+  const pages = await extractPdfText(buf);
+  assert.equal(pages.length, 1, 'one slide in → one page out');
   // Collapse whitespace before matching: where a line wraps is a function of
   // font metrics, so the ubuntu CI runner breaks the subheading in a different
   // place than a Mac does. The assertion is "this text rendered", not "it
   // rendered on one line".
-  const text = flattenSpace(parsed.slides[0]?.textContent || '');
+  const text = flattenSpace(pages[0].text);
   assert.ok(
     text.includes(TITLE),
     `page text should contain the slide title, got: ${text}`,
@@ -227,11 +226,11 @@ test(
 );
 
 /**
- * Order matters here, and not by accident: the PDF test above runs pdf-parse
- * first, which loads pdf.js, which polyfills `Uint8Array.fromBase64`. Puppeteer
- * then stops handing back Node Buffers, and PPTX export — which base64-encodes
- * the render — used to produce garbage. Running PPTX after PDF in the same
- * process keeps that regression covered.
+ * Not by accident in this file: it imports `pdf-extract`, which loads pdf.js,
+ * which polyfills `Uint8Array.fromBase64` on load. Puppeteer then stops handing
+ * back Node Buffers, and PPTX export — which base64-encodes the render — used
+ * to produce garbage. Rendering PPTX in a process where pdf.js is loaded keeps
+ * that regression covered.
  */
 test(
   'PPTX export embeds the Chrome-rendered slide image',
