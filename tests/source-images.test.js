@@ -376,7 +376,7 @@ test('a Word document marks its picture where it stands', async () => {
   assert.equal(docx.figures[0].caption, 'The barn from the road');
   assert.deepEqual(docx.figures[0].pixels, { width: 300, height: 200 });
   assert.ok(docx.figures[0].buffer.equals(png));
-  const text = docx.slides.map((s) => s.textContent).join('\n');
+  const text = docx.document;
   assert.match(
     text,
     /We built a barn this year\.\s+\[IMAGE 1: The barn from the road, 300×200\]\s+It holds the harvest\./,
@@ -471,7 +471,7 @@ test('the prompts speak of images only when the source has them', () => {
  * a second slide with a reference to an image the source does not have.
  * Returns the model request bodies.
  */
-function stubModel(t, { notion = null } = {}) {
+function stubModel(t, { notion = null, chosenImage = 2 } = {}) {
   const saved = globalThis.fetch;
   const bodies = [];
   const imageFetches = [];
@@ -507,13 +507,13 @@ function stubModel(t, { notion = null } = {}) {
           intent: 'content',
           section: 0,
           roughContent: 'The new barn',
-          image: 2,
+          image: chosenImage,
           originalIndex: 0,
           type: 'image-text-slide',
           content: {
             title: 'The new barn',
             body: '- Built this year',
-            image: 'source-image:2',
+            image: `source-image:${chosenImage}`,
             alt: 'The barn',
           },
         },
@@ -581,6 +581,32 @@ test('a PDF with three images: the chosen one on its slide, the others never upl
     offered: 3,
     used: [2],
   });
+});
+
+test('Word uses the document route, with a generated title and a chosen source image', async (t) => {
+  await clearUploads();
+  const { bodies } = stubModel(t, { chosenImage: 1 });
+  const { buffer } = await docxWithImage();
+  const { deck, report } = await convertFile(buffer, {
+    filename: 'report.docx',
+    lang: 'en-GB',
+    slideTypes: SLIDE_TYPES,
+  });
+  assert.ok(deck, JSON.stringify(report.errors));
+  const analysisCall = bodies.find((b) => b.includes('Analyse this source.'));
+  assert.match(analysisCall, /=== DOCUMENT ===/);
+  assert.doesNotMatch(analysisCall, /--- SLIDE|PRESENTATION TITLE/);
+  assert.match(analysisCall, /\[IMAGE 1: The barn from the road/);
+  assert.equal(report.slidesExtracted, 0);
+  assert.equal(deck._generationMeta.originalSlideCount, 0);
+  assert.equal(deck._generationMeta.addedTitleSlide, true);
+  assert.equal(deck._generationMeta.usedTitleSlideCandidate, false);
+  assert.ok(!report.warnings.some((w) => w.includes('The original had')));
+  assert.match(
+    modelSlides(deck)[0].content.image,
+    /^\/uploads\/.*report-image-1-.*\.png$/,
+  );
+  assert.equal((await uploadedFiles()).length, 1);
 });
 
 /** A Notion page: an intro, then three sections each with one image. */
