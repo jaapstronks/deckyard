@@ -40,8 +40,12 @@ export default {
       required: false,
       maxLength: 120,
       // The hint inside the audience's input box, not something the slide
-      // says: no reader projects it.
-      presentational: true,
+      // says: no reader projects it. `interactionCopy`, not `presentational`,
+      // because the value IS prose — the type ships a Dutch and an English
+      // default for it — and `presentational` claims machine data, which would
+      // drop it out of the text-field vocabulary and collapse the two
+      // languages to one value (B770).
+      interactionCopy: true,
     },
     BACKGROUND_FIELD,
   ],

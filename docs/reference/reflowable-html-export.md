@@ -181,9 +181,15 @@ missing_alt` when a drawn `image` field, at slide or item level, is not
     `social1Url`/`social2Url` and `contactEmail`, the action buttons' `url`,
     team-cards `linkedin`, the card `link` of icon-card-grid and logo-wall.
   - Presentational field types (`enum`, `color`, `number` without `duration`,
-    `boolean`), fields declaring `presentational: true` (an icon name, the
-    feedback slide's input `placeholder`) and the global background/logo fields
-    carry no document text and are omitted. embed-slide's `embedUrl` is a
+    `boolean`), fields declaring `presentational: true` (an icon name, a video
+    library id, a serialized coordinate list), fields declaring
+    `interactionCopy: true` (the feedback slide's input `placeholder`) and the
+    global background/logo fields carry no document text and are omitted. The
+    last two are separate declarations because they answer a second question
+    differently: `presentational` says the value is machine data, so it is one
+    value per deck and never translated, while `interactionCopy` says only that
+    the reader skips it — the placeholder is prose in the audience's language
+    and stays translatable (B770). embed-slide's `embedUrl` is a
     `mediaRef` ("Embedded page"): the reader cannot show the frame.
   - Every block the projection emits for a field carries `data-field="<key>"`
     (D132): the `<p>`, `<h3>`, `<figure>`, `<table>`, list, gallery and media

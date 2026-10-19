@@ -197,7 +197,8 @@ function fieldName(field, index) {
 
 /**
  * The sub-field keys of an `items` field that can name an item: its readable
- * strings (not hidden, not presentational). This is the set an
+ * strings (not hidden, not presentational, not interaction copy: the same
+ * declarations `itemHeading` in semantic-projection skips). This is the set an
  * `itemLabelField` may declare (B634). The name drives the slide-list label
  * (`labelFieldText`), the in-box prompt of an essential list's first entry and,
  * where it is also in {@link headableKeys}, the item's heading in the reader.
@@ -247,7 +248,11 @@ export function headableKeys(itemFields) {
  */
 function readableStrings(itemFields) {
   return (Array.isArray(itemFields) ? itemFields : []).filter(
-    (sub) => sub?.type === 'string' && !sub.hidden && !sub.presentational,
+    (sub) =>
+      sub?.type === 'string' &&
+      !sub.hidden &&
+      !sub.presentational &&
+      !sub.interactionCopy,
   );
 }
 
@@ -608,6 +613,30 @@ export function walkFieldDefinitions(fields, profile) {
           at2('markup_not_true', 'warning', { declared: field.markup });
         } else if (type !== 'code') {
           at2('markup_not_code', 'warning', { type });
+        }
+      }
+
+      // `interactionCopy: true` says the value is prose the reader does not
+      // print — an interaction's furniture, like a feedback slide's input
+      // hint. It is a flag, and it is the opposite claim to `presentational`
+      // (machine data): declaring both leaves "is this translated?"
+      // unanswered (B770).
+      //
+      // "Only on a field that holds prose" is checked in
+      // `tests/text-field-vocabulary-gate.test.js`, not here: the vocabulary
+      // lives in `text-fields.js`, which imports the registry, and importing
+      // that into this structural validator closes a cycle through the
+      // registry's top-level await.
+      if (
+        field.interactionCopy !== undefined &&
+        field.interactionCopy !== null
+      ) {
+        if (field.interactionCopy !== true) {
+          at2('interaction_copy_not_true', 'warning', {
+            declared: field.interactionCopy,
+          });
+        } else if (field.presentational === true) {
+          at2('interaction_copy_with_presentational', 'warning', {});
         }
       }
 
@@ -983,6 +1012,16 @@ const FINDING_MESSAGES = {
     `${where} declares \`markup: true\` on a \`${f?.detail?.type}\` field, ` +
     `but only a \`code\` field stores raw HTML for the reader to render, so ` +
     `it is ignored.`,
+  interaction_copy_not_true: (where, f) =>
+    `${where} declares \`interactionCopy: ` +
+    `${JSON.stringify(f?.detail?.declared)}\`, but the declaration is a flag: ` +
+    `\`interactionCopy: true\` or nothing — a field without it is already ` +
+    `document text, so it is ignored.`,
+  interaction_copy_with_presentational: (where) =>
+    `${where} declares both \`interactionCopy: true\` and ` +
+    `\`presentational: true\`, which are opposite claims about the value — ` +
+    `prose the reader skips versus machine data — so whether it is translated ` +
+    `is unanswered. Keep the one that is true.`,
   term_when_not_label: (where, f) =>
     `${where} declares \`termWhen\`, but only a \`string\` field with ` +
     `\`role: 'label'\` names a defined term, so it is ignored.`,
