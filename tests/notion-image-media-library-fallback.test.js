@@ -5,9 +5,8 @@
  *
  * Pins the D29-1 decision: without ImageKit, `processNotionImages` fetches each
  * Notion image and stores it via the configured media provider, rewriting the
- * block URL to the durable local URL. On a fetch/store failure it falls back to
- * the original (expiring) URL rather than dropping the image, and with no media
- * provider initialized it leaves the original URL untouched.
+ * block URL to the durable local URL. On a fetch/store failure it returns no
+ * URL, so the source-image resolver can clear the field and warn.
  *
  * Run with: node --test tests/notion-image-media-library-fallback.test.js
  */
@@ -17,6 +16,7 @@ import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 // Ensure ImageKit is treated as unconfigured for every case in this file, so the
 // media-library fallback is the path under test.
@@ -100,7 +100,7 @@ test('re-hosts each image through the media library and rewrites to a durable UR
   );
 });
 
-test('SSRF: a private-range image URL is never fetched, and the original URL is kept', async () => {
+test('SSRF: a private-range image URL is never fetched or used', async () => {
   // A Notion `external` image URL is attacker-controllable; one pointing at a
   // private/link-local address (here the cloud metadata endpoint) must be
   // refused before any fetch leaves the server. The guard checks the IP
@@ -117,11 +117,7 @@ test('SSRF: a private-range image URL is never fetched, and the original URL is 
   ]);
 
   assert.equal(fetched, false, 'the blocked URL is never fetched');
-  assert.equal(
-    result.uploadedUrl,
-    METADATA_URL,
-    'keeps the original URL when blocked',
-  );
+  assert.equal(result.uploadedUrl, '');
   assert.equal(result.originalUrl, METADATA_URL);
 });
 
@@ -156,7 +152,7 @@ test('the re-host fetch goes through the hardened helper: no redirects, with a t
   );
 });
 
-test('falls back to the original URL when the fetch fails', async () => {
+test('returns no URL when the media-provider fetch fails', async () => {
   globalThis.fetch = async () => ({
     ok: false,
     status: 403,
@@ -168,10 +164,98 @@ test('falls back to the original URL when the fetch fails', async () => {
     { url: SIGNED_URL, caption: '', blockId: 'block-2' },
   ]);
 
-  assert.equal(
-    result.uploadedUrl,
-    SIGNED_URL,
-    'keeps the original URL on failure',
-  );
+  assert.equal(result.uploadedUrl, '');
   assert.equal(result.originalUrl, SIGNED_URL);
+});
+
+test('ImageKit copies return durable URLs, clear failures and propagate cancellation', async () => {
+  const keys = [
+    'IMAGEKIT_PRIVATE_KEY',
+    'IMAGEKIT_PUBLIC_KEY',
+    'IMAGEKIT_URL_ENDPOINT',
+  ];
+  const previous = Object.fromEntries(
+    keys.map((key) => [key, process.env[key]]),
+  );
+  process.env.IMAGEKIT_PRIVATE_KEY = 'private_test';
+  process.env.IMAGEKIT_PUBLIC_KEY = 'public_test';
+  process.env.IMAGEKIT_URL_ENDPOINT = 'https://ik.imagekit.io/test';
+  const image = 'https://8.8.8.8/source.gif';
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    if (calls === 1) {
+      return new Response(GIF_BYTES, {
+        headers: { 'Content-Type': 'image/gif' },
+      });
+    }
+    return new Response('upload unavailable', { status: 503 });
+  };
+  try {
+    const [result] = await processNotionImages([
+      { url: image, caption: '', blockId: 'block-imagekit-fail' },
+    ]);
+    assert.equal(result.uploadedUrl, '');
+    assert.equal(result.originalUrl, image);
+    assert.equal(calls, 2, 'the source fetch succeeds before ImageKit refuses');
+
+    const durableUrl = 'https://ik.imagekit.io/test/copied.gif';
+    globalThis.fetch = async (url) =>
+      String(url) === image
+        ? new Response(GIF_BYTES, { headers: { 'Content-Type': 'image/gif' } })
+        : Response.json({ url: durableUrl });
+    const [copied] = await processNotionImages([{ url: image }]);
+    assert.equal(copied.uploadedUrl, durableUrl);
+
+    const controller = new AbortController();
+    globalThis.fetch = async () => {
+      controller.abort();
+      return new Response('cancelled', { status: 503 });
+    };
+    await assert.rejects(
+      processNotionImages([{ url: image }], { signal: controller.signal }),
+      { name: 'AbortError' },
+    );
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});
+
+test('returns no URL when no media provider is initialized', () => {
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('IMAGEKIT_')) delete env[key];
+  }
+  const moduleUrl = new URL(
+    '../server/utils/convert-notion.js',
+    import.meta.url,
+  ).href;
+  const script = `
+    const { processNotionImages } = await import(${JSON.stringify(moduleUrl)});
+    const [image] = await processNotionImages([{ url: 'https://8.8.8.8/image.gif' }]);
+    if (image.uploadedUrl !== '') process.exit(1);
+  `;
+  assert.doesNotThrow(() =>
+    execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+      env,
+      stdio: 'pipe',
+    }),
+  );
+});
+
+test('an abort during a media copy propagates', async () => {
+  const controller = new AbortController();
+  globalThis.fetch = async () => {
+    controller.abort();
+    return { ok: false, status: 503 };
+  };
+  await assert.rejects(
+    processNotionImages(
+      [{ url: SIGNED_URL, caption: '', blockId: 'block-abort' }],
+      { signal: controller.signal },
+    ),
+  );
 });

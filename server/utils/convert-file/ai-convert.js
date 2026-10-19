@@ -37,6 +37,8 @@ const log = createLogger('convert-file');
  *   regular slide, so model indices (0-based) merge with the image slides.
  * @param {{ title: string, imageUrl: string }|null} [options.titleSlideCandidate]
  *   - The first slide's image, when it had one.
+ * @param {import('../ai/source-images.js').SourceImage[]} [options.sourceImages]
+ *   - The pictures marked in the text, for the model to place (B775).
  * @param {AbortSignal|null} [options.signal]
  * @param {Record<string, Object>} options.slideTypes - The organization's merged type map (B247).
  * @param {string[]} [options.disabledSlideTypes] - Kept out of the offered catalog (B659).
@@ -58,6 +60,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     imageOnlySlides = [],
     aiSlideIndexOffset = 0,
     titleSlideCandidate = null,
+    sourceImages = [],
     signal = null,
     slideTypes,
     disabledSlideTypes = [],
@@ -82,6 +85,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     vendor,
     rawFirstSlideTitle:
       titleSlideCandidate?.title || firstSlideContent?.split('\n')[0] || '',
+    sourceImages,
     slideTypes,
     disabledSlideTypes,
     customSlideTypes,

@@ -20,14 +20,21 @@
  * text that recurs on no other page goes along. In the document shape the
  * document reader keeps only a letter's heading block of it ("Betreft …",
  * the date).
+ *
+ * The pictures that are content (`documentFigures()`: no icons, logos or
+ * backgrounds) are marked in the text as `[IMAGE n: …]` (B775): where they
+ * stand in a document, at the end of their page in the slide shape. Their
+ * pixels come back as `figures`; nothing is uploaded here.
  */
 
 import {
+  documentFigures,
   extractPdfPages,
   furnitureKey,
   pageText,
   readDocument,
 } from '../pdf-extract/index.js';
+import { sourceImageMarker } from '../ai/source-images.js';
 
 /** A PDF whose median page holds less text than this can be a deck. */
 export const SLIDE_MAX_CHARS = 1200;
@@ -36,7 +43,7 @@ export const SLIDE_MAX_CHARS = 1200;
  * @param {Buffer | Uint8Array} buffer - the PDF bytes
  * @param {object} [opts]
  * @param {AbortSignal} [opts.signal]
- * @returns {Promise<{shape: 'slides' | 'document' | null, slides: Array<{slideNumber: number, textContent: string}>, document?: string, metadata: object, errors: string[]}>}
+ * @returns {Promise<{shape: 'slides' | 'document' | null, slides: Array<{slideNumber: number, textContent: string}>, document?: string, figures: import('../pdf-extract/document.js').DocumentFigure[], metadata: object, errors: string[]}>}
  *   `slides` holds the text per page in both shapes; `document` only in
  *   the document shape.
  */
@@ -49,18 +56,23 @@ export async function readPdf(buffer, { signal } = {}) {
     return {
       shape: null,
       slides: [],
+      figures: [],
       metadata: {},
       errors: [`Error parsing PDF: ${e.message}`],
     };
   }
 
   const heading = firstPageHeading(result.pages);
+  const figures = documentFigures(result.pages).map(
+    ({ box, ...figure }) => figure,
+  );
   const slides = result.pages
     .map((page, i) => ({
       slideNumber: page.page,
       textContent: [
         i === 0 ? heading : '',
         pageText(page, { listMarkers: true }),
+        ...figures.filter((f) => f.page === page.page).map(figureMarker),
       ]
         .filter(Boolean)
         .join('\n'),
@@ -73,12 +85,21 @@ export async function readPdf(buffer, { signal } = {}) {
         'Could not extract any text from the PDF. It may be image-based or protected.',
       ];
   const shape = pdfShape(result.pages);
-  const out = { shape, slides, metadata: result.metadata, errors };
+  const out = { shape, slides, figures, metadata: result.metadata, errors };
   if (shape === 'document' && slides.length) {
-    out.document = readDocument(result).text;
+    out.document = readDocument(result, { imageMarker: figureMarker }).text;
   }
   return out;
 }
+
+/** The `[IMAGE n: …]` marker of a figure. */
+const figureMarker = (figure) =>
+  sourceImageMarker({
+    n: figure.n,
+    caption: figure.alt,
+    page: figure.page,
+    pixels: figure.pixels,
+  });
 
 /**
  * Slides when most pages are landscape and the median page holds little

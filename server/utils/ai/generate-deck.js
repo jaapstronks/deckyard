@@ -2,7 +2,7 @@
  * Deck generation - the one pipeline every AI creation path runs.
  *
  * Outline (phase 1) → revise (phase 1b) → separate structural from content
- * slides → refine (phase 2) → validate → assemble. Two layers, so a source
+ * slides → refine (phase 2) → validate → source images → assemble. Two layers, so a source
  * that assembles its own deck (images to keep, a title slide from a file) can
  * stop after the slides: `generateSlides()` runs the model phases and
  * `assembleDeck()` is a pure function on its result. `generateDeck()` is the
@@ -28,6 +28,7 @@ import { refineAllSlideGroups } from './refine-slides.js';
 import { reviseOutline as reviseOutlineStep } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides/index.js';
+import { resolveSourceImages } from './source-images.js';
 import { AI_REVIEW_KEYS } from '../public-output.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
@@ -53,6 +54,9 @@ const log = createLogger('generate-deck');
  * @property {string} [rawFirstSlideTitle] - The source file's own first title,
  *   as context for the outline.
  * @property {boolean} [reviseOutline] - Run phase 1b (default on).
+ * @property {import('./source-images.js').SourceImage[]} [sourceImages] - The
+ *   images the source marks in its text as `[IMAGE n: …]` (B775). The model
+ *   may place them; only the ones it placed are uploaded.
  * @property {Record<string, Object>} slideTypes - The organization's merged
  *   type map; the refined slides are fixed against it (B247).
  * @property {string[]} [disabledSlideTypes]
@@ -87,7 +91,8 @@ function resolveDeckLang(targetLang, outline) {
 }
 
 /**
- * Run the model phases: outline, revise, refine, validate.
+ * Run the model phases: outline, revise, refine, validate; then upload the
+ * source images the slides use.
  *
  * Every slide comes back with what phase 2 produced (`originalIndex`,
  * `presenterNotes`, `reasoning`, `alternativeType`), structural slides
@@ -129,6 +134,7 @@ async function runPhases(
     targetLength = 'auto',
     rawFirstSlideTitle = '',
     reviseOutline = true,
+    sourceImages = [],
     slideTypes,
     disabledSlideTypes = [],
     customSlideTypes = [],
@@ -150,6 +156,7 @@ async function runPhases(
     vendor,
     targetLength,
     rawFirstSlideTitle,
+    sourceImages,
     onLog: (data) => logger.logPhase1(data),
     signal,
   });
@@ -215,6 +222,12 @@ async function runPhases(
   );
   const slides = validateAndFixRefinedSlides(allSlides, { slideTypes });
 
+  // ── Source images: upload the ones a slide uses (B775) ──────────────────
+  const { used } = await resolveSourceImages(slides, sourceImages, {
+    signal,
+    slideTypes,
+  });
+
   const meta = {
     sessionId: logger.sessionId,
     lang,
@@ -240,6 +253,9 @@ async function runPhases(
     },
     durationMs: Date.now() - startTime,
     statusMessages: outline.statusMessages || [],
+    ...(sourceImages.length
+      ? { sourceImages: { offered: sourceImages.length, used } }
+      : {}),
   };
 
   return { outline, slides, lang, meta };
