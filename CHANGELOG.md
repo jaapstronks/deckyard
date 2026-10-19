@@ -4,6 +4,31 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.76.0](https://github.com/jaapstronks/deckyard/compare/v1.75.0...v1.76.0) (2026-10-19)
+
+
+### Added
+
+* **ai:** a report in two columns reaches the AI column by column (B777) ([#1741](https://github.com/jaapstronks/deckyard/issues/1741)) ([216bf56](https://github.com/jaapstronks/deckyard/commit/216bf56ba3b2f1b873856f6cfff235f058f5941e))
+* **ai:** a report PDF reaches the AI as a document with headings (B773) ([#1735](https://github.com/jaapstronks/deckyard/issues/1735)) ([a8950c3](https://github.com/jaapstronks/deckyard/commit/a8950c3e5753ea76ecc9a5e2d31bfa5a83ee85fe))
+* **ai:** a Word document keeps its headings and lists (B774) ([#1740](https://github.com/jaapstronks/deckyard/issues/1740)) ([1682290](https://github.com/jaapstronks/deckyard/commit/1682290966e54c26682fab8783cd89b8fc5ebaf7))
+* **ai:** images from a source document are candidates the AI places (B775) ([#1736](https://github.com/jaapstronks/deckyard/issues/1736)) ([c4352c7](https://github.com/jaapstronks/deckyard/commit/c4352c773ee957fa14a10ae83510e532905e3a7a))
+* **ai:** send Word sources as continuous documents ([#1742](https://github.com/jaapstronks/deckyard/issues/1742)) ([0ab6ccf](https://github.com/jaapstronks/deckyard/commit/0ab6ccf32a475e5ebfb793c4838aef2c9df8fc14))
+* **editor:** navigate slides in the translation view (B764) ([#1731](https://github.com/jaapstronks/deckyard/issues/1731)) ([fc4aef7](https://github.com/jaapstronks/deckyard/commit/fc4aef724765e231deb5df39862e1fb683b7badd))
+* preview slide translations before accepting them (B478) ([e76b48e](https://github.com/jaapstronks/deckyard/commit/e76b48e14fd879086baecec746eb140f4519c59d))
+* track translation source provenance per field ([#1749](https://github.com/jaapstronks/deckyard/issues/1749)) ([be2cdb9](https://github.com/jaapstronks/deckyard/commit/be2cdb9c51ba2c6572d796a30046620b8b45a05c))
+
+
+### Fixed
+
+* **ai:** the AI route reads a PDF without its footnotes (B772) ([#1733](https://github.com/jaapstronks/deckyard/issues/1733)) ([450ca29](https://github.com/jaapstronks/deckyard/commit/450ca296d9e63a28ebe20654dec6e9af2e10212b))
+* align v1 slide type catalogue with organization registry ([#1745](https://github.com/jaapstronks/deckyard/issues/1745)) ([a035828](https://github.com/jaapstronks/deckyard/commit/a035828acbeeb7c8bf7fcfa379bc9be0961a999a))
+* **doctor:** detect unwritable thumbnail cache (B779) ([#1743](https://github.com/jaapstronks/deckyard/issues/1743)) ([e6ba6ea](https://github.com/jaapstronks/deckyard/commit/e6ba6ea9f3cbb8a55b6f05e4a2298b2211bd1efa))
+* frame slides panel docs capture in editor (B797) ([#1754](https://github.com/jaapstronks/deckyard/issues/1754)) ([def150a](https://github.com/jaapstronks/deckyard/commit/def150a377e7908d2daf7e7591dceecfa656bd36))
+* **i18n:** an icon name is not untranslated text (B770) ([#1734](https://github.com/jaapstronks/deckyard/issues/1734)) ([5b362a8](https://github.com/jaapstronks/deckyard/commit/5b362a837fa08c521bcd829c48193fd725274448))
+* **import:** chart labels in a tagged PDF come out once (B778) ([#1739](https://github.com/jaapstronks/deckyard/issues/1739)) ([cf0aec7](https://github.com/jaapstronks/deckyard/commit/cf0aec7e839788bc40c2cd0c3bc3565a25da75b0))
+* share confirmed image upload transport (B781) ([#1744](https://github.com/jaapstronks/deckyard/issues/1744)) ([0c8ca60](https://github.com/jaapstronks/deckyard/commit/0c8ca602f14aa3e8f8f61640037fa93e7f967c27))
+
 ## [1.75.0](https://github.com/jaapstronks/deckyard/compare/v1.74.0...v1.75.0) (2026-10-18)
 
 
