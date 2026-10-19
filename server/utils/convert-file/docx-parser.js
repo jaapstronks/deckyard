@@ -239,7 +239,7 @@ function markLists(html) {
 }
 
 /** Inline tags: removing them must not break the line they stand in. */
-const INLINE_TAG = /<\/?(?:a|b|strong|i|em|u|s|sub|sup|span)\b[^>]*>/gi;
+const INLINE_TAG = /^<\/?(?:a|b|strong|i|em|u|s|sub|sup|span)\b/i;
 
 /**
  * Strip HTML tags and decode entities. A list line keeps its indentation.
@@ -247,9 +247,9 @@ const INLINE_TAG = /<\/?(?:a|b|strong|i|em|u|s|sub|sup|span)\b[^>]*>/gi;
 function stripHtml(html) {
   return (
     String(html || '')
-      // Remove HTML tags: inline ones vanish, block ones end a line
-      .replace(INLINE_TAG, '')
-      .replace(/<[^>]+>/g, '\n')
+      // Remove HTML tags in one pass: inline ones vanish, block ones end a
+      // line (a second pass could join the halves of a tag)
+      .replace(/<[^>]+>/g, (tag) => (INLINE_TAG.test(tag) ? '' : '\n'))
       // Decode common entities — `&amp;` last, so `&amp;lt;` decodes to the
       // literal text `&lt;` instead of `<` (js/double-escaping)
       .replace(/&nbsp;/g, ' ')
