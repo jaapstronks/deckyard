@@ -41,7 +41,7 @@ delete process.env.SANDBOX_MODE;
 delete process.env.AI_ENABLED;
 delete process.env.DISABLE_AI;
 
-const { translationFieldKey, translationSource } =
+const { translationFieldKey, translationFieldStatus, translationSource } =
   await import('../shared/translation-provenance.js');
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -198,6 +198,31 @@ function stubModel(t) {
     globalThis.fetch = saved;
   });
   return calls;
+}
+
+/** Pause the provider call so a test can save a concurrent edit. */
+function stubDelayedModel(t, answer = MODEL_ANSWER) {
+  const saved = globalThis.fetch;
+  let modelStarted;
+  let releaseModel;
+  const started = new Promise((resolve) => {
+    modelStarted = resolve;
+  });
+  const released = new Promise((resolve) => {
+    releaseModel = resolve;
+  });
+  globalThis.fetch = async () => {
+    modelStarted();
+    await released;
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: answer } }] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    );
+  };
+  t.after(() => {
+    globalThis.fetch = saved;
+  });
+  return { started, release: () => releaseModel() };
 }
 
 // --- The three writers --------------------------------------------------------
@@ -655,6 +680,128 @@ test('translate/missing (background): answers with the count and the fill lands 
       translationFieldKey('slide-2', ['title'])
     ],
     translationSource('nl', 'Twee'),
+  );
+});
+
+test('translate/missing preserves a translation accepted while the model is running', async (t) => {
+  const db = await installDb({
+    de: {
+      ...DE_WITH_GAP,
+      slides: [
+        slide('slide-1', '', 'title-slide'),
+        slide('slide-2', '', 'content-slide'),
+      ],
+    },
+  });
+  const model = stubDelayedModel(t);
+
+  const translating = editorPost(
+    OWNER,
+    { from: 'nl', to: 'de' },
+    'translate/missing',
+  );
+  await model.started;
+  const current = storedDeck(db);
+  current.i18n.versions.de.slides[0].content.title = 'Servus';
+  current.i18n.versions.nl.slides[1].content.title = 'Drie';
+  current.i18n.versions.de.translationSources = {
+    [translationFieldKey('slide-1', ['title'])]: translationSource('nl', 'Hoi'),
+  };
+
+  model.release();
+  const res = await translating;
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  const target = storedDeck(db).i18n.versions.de;
+  assert.equal(target.slides[0].content.title, 'Servus');
+  assert.deepEqual(
+    target.translationSources[translationFieldKey('slide-1', ['title'])],
+    translationSource('nl', 'Hoi'),
+  );
+  assert.equal(target.slides[1].content.title, 'Deux');
+  assert.deepEqual(
+    target.translationSources[translationFieldKey('slide-2', ['title'])],
+    translationSource('nl', 'Twee'),
+  );
+  assert.equal(
+    translationFieldStatus(
+      { source: 'Drie', target: 'Deux' },
+      'nl',
+      target.translationSources[translationFieldKey('slide-2', ['title'])],
+    ),
+    'changed',
+  );
+});
+
+test('translate/missing does not restore a target version deleted during the model call', async (t) => {
+  const db = await installDb({ de: DE_WITH_GAP });
+  const model = stubDelayedModel(t);
+  const translating = editorPost(
+    OWNER,
+    { from: 'nl', to: 'de' },
+    'translate/missing',
+  );
+  await model.started;
+  delete storedDeck(db).i18n.versions.de;
+  model.release();
+  const res = await translating;
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  assert.equal(res.json().updated, false);
+  assert.equal(storedDeck(db).i18n.versions.de, undefined);
+  assert.equal(storedDeck(db).i18n.translation.de, undefined);
+});
+
+test('translate/missing does not restore an item removed during the model call', async (t) => {
+  const source = {
+    title: 'Roadmap',
+    slides: [
+      {
+        id: 'nested',
+        type: 'text-blocks-slide',
+        content: {
+          title: 'Plan',
+          rows: [{ title: 'Rij', blocks: [{ title: 'Blok', body: 'Tekst' }] }],
+        },
+      },
+    ],
+  };
+  const target = structuredClone(source);
+  target.slides[0].content.rows[0].blocks[0].title = '';
+  const db = await installDb({ de: target });
+  const row = storedDeck(db);
+  row.title = source.title;
+  row.slides = structuredClone(source.slides);
+  row.i18n.versions.nl = source;
+  const answer = JSON.stringify({
+    title: 'Fahrplan',
+    slides: [
+      {
+        id: 'nested',
+        type: 'text-blocks-slide',
+        content: {
+          title: 'Plan',
+          rows: [{ title: 'Rij', blocks: [{ title: 'Block', body: 'Tekst' }] }],
+        },
+      },
+    ],
+  });
+  const model = stubDelayedModel(t, answer);
+  const translating = editorPost(
+    OWNER,
+    { from: 'nl', to: 'de' },
+    'translate/missing',
+  );
+  await model.started;
+  storedDeck(db).i18n.versions.de.slides[0].content.rows[0].blocks = [];
+  model.release();
+  const res = await translating;
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  const storedTarget = storedDeck(db).i18n.versions.de;
+  assert.deepEqual(storedTarget.slides[0].content.rows[0].blocks, []);
+  assert.equal(
+    storedTarget.translationSources?.[
+      translationFieldKey('nested', ['rows', 0, 'blocks', 0, 'title'])
+    ],
+    undefined,
   );
 });
 

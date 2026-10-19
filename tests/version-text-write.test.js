@@ -529,3 +529,39 @@ test('collab: text and provenance undo/redo together, including after peer re-pr
   );
   binder.detach();
 });
+
+test('collab: disconnected peers keep both translated fields and their sources on reconnect', () => {
+  const codec = createDeckYdocCodec(Y);
+  const docA = new Y.Doc();
+  const docB = new Y.Doc();
+  const presA = bilingualPres();
+  codec.bootstrapPresentationToDoc(presA, docA);
+  Y.applyUpdate(docB, Y.encodeStateAsUpdate(docA));
+  const a = collabClient(docA, presA);
+  const presB = bilingualPres();
+  const b = collabClient(docB, presB);
+
+  a.write('en-GB', 's1', ['title'], 'Why', { sourceLang: 'nl' });
+  b.write('en-GB', 's1', ['items', 1, 'text'], 'Source on GitHub', {
+    sourceLang: 'nl',
+  });
+  Y.applyUpdate(docA, Y.encodeStateAsUpdate(docB), 'peer');
+  Y.applyUpdate(docB, Y.encodeStateAsUpdate(docA), 'peer');
+
+  for (const pres of [presA, presB]) {
+    const version = pres.i18n.versions['en-GB'];
+    assert.equal(version.slides[0].content.title, 'Why');
+    assert.equal(version.slides[0].content.items[1].text, 'Source on GitHub');
+    assert.deepEqual(version.translationSources, {
+      [translationFieldKey('s1', ['title'])]: translationSource('nl', 'Waarom'),
+      [translationFieldKey('s1', ['items', 1, 'text'])]: translationSource(
+        'nl',
+        'Broncode op GitHub',
+      ),
+    });
+  }
+  a.binder.detach();
+  b.binder.detach();
+  docA.destroy();
+  docB.destroy();
+});

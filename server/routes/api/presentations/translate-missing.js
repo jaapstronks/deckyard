@@ -72,7 +72,7 @@ export async function handlePresentationTranslateMissing(
     return true;
   }
 
-  const { presentation } = await runMissingTranslation(
+  const { presentation, updated } = await runMissingTranslation(
     storageScope,
     identity,
     plan,
@@ -82,7 +82,7 @@ export async function handlePresentationTranslateMissing(
     ok: true,
     from,
     to,
-    updated: true,
+    updated,
     started: false,
     missingCount,
     presentation,

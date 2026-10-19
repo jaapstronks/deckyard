@@ -56,6 +56,7 @@ import {
   computeMissingTranslation,
   pickVersion,
 } from '../../shared/i18n-progress.js';
+import { valueAtPath } from '../../shared/slide-types/text-fields.js';
 import {
   AppError,
   NotFoundError,
@@ -220,6 +221,58 @@ function markTranslation(i18n, to, { status, from, missingCount }) {
   const marker = { status, from, updatedAt: new Date().toISOString() };
   if (typeof missingCount === 'number') marker.missingCount = missingCount;
   i18n.translation[to] = marker;
+}
+
+/** Apply model answers only where the planned gap has not changed meanwhile. */
+function applyMissingAnswers(freshTarget, plannedTarget, filled, missing) {
+  const result = structuredClone(freshTarget);
+  const byId = (version, id) =>
+    version.slides?.find((slide) => slide?.id === id);
+  for (const gap of missing) {
+    if (gap.kind === 'deck') {
+      if (result.title === plannedTarget.title && filled.title?.trim()) {
+        result.title = filled.title;
+      }
+      continue;
+    }
+    const current = byId(result, gap.slideId);
+    const fresh = byId(freshTarget, gap.slideId);
+    const planned = byId(plannedTarget, gap.slideId);
+    const answer = byId(filled, gap.slideId);
+    if (!current || !fresh || !planned || !answer) continue;
+    const path = gap.path;
+    const before = valueAtPath(planned.content, path);
+    if (valueAtPath(fresh.content, path) !== before) continue;
+    // Item paths are positional. A change anywhere in an ancestor array can
+    // shift the answer to a different item, even if this field is still empty.
+    let plannedNode = planned.content;
+    let currentNode = fresh.content;
+    let sameStructure = true;
+    for (const step of path) {
+      if (
+        Array.isArray(plannedNode) &&
+        JSON.stringify(plannedNode) !== JSON.stringify(currentNode)
+      ) {
+        sameStructure = false;
+        break;
+      }
+      plannedNode = plannedNode?.[step];
+      currentNode = currentNode?.[step];
+    }
+    if (!sameStructure) continue;
+    const translated = valueAtPath(answer.content, path);
+    if (typeof translated !== 'string' || !translated.trim()) continue;
+    let node = current.content;
+    for (let i = 0; i < path.length - 1; i += 1) {
+      if (!node || typeof node !== 'object') break;
+      const step = path[i];
+      node[step] ??= typeof path[i + 1] === 'number' ? [] : {};
+      node = node[step];
+    }
+    if (!node || typeof node !== 'object') continue;
+    node[path.at(-1)] = translated;
+  }
+  return result;
 }
 
 /**
@@ -419,11 +472,22 @@ export async function runMissingTranslation(
   const fresh = await getPresentation(scope, pres.id);
   if (!fresh) throw new NotFoundError('Presentation not found');
   ensureI18n(fresh);
+  if (pres.i18n.versions[to] && !fresh.i18n.versions[to]) {
+    delete fresh.i18n.translation?.[to];
+    const presentation = await writeTranslatedDeck(
+      scope,
+      identity.actor,
+      fresh,
+    );
+    return { from, to, missingCount, updated: false, presentation };
+  }
+  const freshTarget =
+    fresh.i18n.versions[to] || buildBlankTargetFromSource(source);
   fresh.i18n.versions[to] = recordTranslatedVersion(
     source,
-    { title: filled.title, slides: filled.slides },
+    applyMissingAnswers(freshTarget, target, filled, missing),
     from,
-    { previous: target },
+    { previous: freshTarget },
   );
   const after = computeMissingTranslation({
     source: pickVersion(fresh, from),
