@@ -314,6 +314,35 @@ test(
 );
 
 test(
+  'Philips: a page in two columns reads column by column (B777)',
+  { skip: philips ? false : 'run `npm run ai-suite:fetch` for the source' },
+  async () => {
+    const doc = await readPdf(philips);
+    const found = headings(doc.document);
+    // p13: a body line and the right column's section heading share a
+    // baseline; read as one line they made one heading.
+    assert.ok(
+      !found.some((h) => h.includes('operations and business of Philips')),
+    );
+    for (const heading of [
+      '### Forward-looking statements',
+      '### Market Abuse Regulation',
+      '### Use of non-IFRS information',
+    ]) {
+      assert.ok(found.includes(heading), `missing: ${heading}`);
+    }
+    // p4: the commentary right of the key-data table, each point whole.
+    const lines = doc.document.split('\n');
+    for (const point of [
+      '- Comparable sales increased by 1%, including a double-digit decline in China. Growth was driven by Connected Care while the Diagnosis & Treatment and Personal Health segments showed a decline, mainly due to lower demand from consumers and health systems in China.',
+      '- Adjusted EBITA increased to EUR 679 million and the margin improved to 13.5%, mainly driven by operational improvements and productivity measures.',
+    ]) {
+      assert.ok(lines.includes(point), `missing: ${point}`);
+    }
+  },
+);
+
+test(
   'IEA: the section headings are ## headings, the licence footer is gone',
   { skip: iea ? false : 'run `npm run ai-suite:fetch` for the source' },
   async () => {
