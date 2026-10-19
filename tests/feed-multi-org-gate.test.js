@@ -24,6 +24,7 @@
  * Run with: node --test tests/feed-multi-org-gate.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -56,20 +57,6 @@ function installDb() {
   return db;
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    body: '',
-    writeHead(code) {
-      this.statusCode = code;
-      return this;
-    },
-    end(chunk) {
-      if (chunk) this.body += chunk;
-    },
-  };
-}
-
 for (const [pathname, format] of [
   ['/feed/rss.xml', 'rss'],
   ['/feed/atom.xml', 'atom'],
@@ -77,7 +64,7 @@ for (const [pathname, format] of [
 ]) {
   test(`handleFeed 404s ${format} under multi-organization, before touching the database`, async () => {
     const db = installDb();
-    const res = mockRes();
+    const res = createMockStreamRes();
     const handled = await handleFeed({
       repoRoot: null,
       req: { method: 'GET', headers: {} },

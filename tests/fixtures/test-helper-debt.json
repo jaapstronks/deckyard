@@ -1,13 +1,5 @@
 {
-  "tests/ai-kill-switch.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/ai-paths-org-registry.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/analytics-kill-switch.test.js": {
     "http": 1,
     "walkers": 0
   },
@@ -27,10 +19,6 @@
     "http": 1,
     "walkers": 0
   },
-  "tests/auth-routes-reset-and-magic-link.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/auth-routes-rest.test.js": {
     "http": 1,
     "walkers": 0
@@ -46,14 +34,6 @@
   "tests/css-one-definition.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/data-source-refresh-no-sse-broadcast.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/deck-card-fields.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/deck-language-axis.test.js": {
     "http": 0,
@@ -95,14 +75,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/feed-multi-org-gate.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/feed-single-org.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/follow-invite-insertability.test.js": {
     "http": 0,
     "walkers": 1
@@ -131,10 +103,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/internal-create-lang-refusal.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/job-failure-message.test.js": {
     "http": 0,
     "walkers": 1
@@ -147,10 +115,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/live-kill-switch.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/live-session-vocabulary.test.js": {
     "http": 0,
     "walkers": 1
@@ -158,10 +122,6 @@
   "tests/llm-app-error.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/managed-font-private.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/media-app-error.test.js": {
     "http": 0,
@@ -192,10 +152,6 @@
     "walkers": 1
   },
   "tests/pg/sandbox-guest-identity.pgtest.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/published-embed-first-party-only.test.js": {
     "http": 1,
     "walkers": 0
   },
@@ -259,10 +215,6 @@
     "http": 1,
     "walkers": 0
   },
-  "tests/stock-media-public-api-kill-switch.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/storage-call-convention.test.js": {
     "http": 0,
     "walkers": 1
@@ -278,14 +230,6 @@
   "tests/storage-reason-vocabulary.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/viewer-email-routes-contract.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/viewer-language-switch.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/visually-hidden-guard.test.js": {
     "http": 0,

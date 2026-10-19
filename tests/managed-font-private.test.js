@@ -17,6 +17,7 @@
  * Run with: node --test tests/managed-font-private.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -105,33 +106,6 @@ function seed() {
   return db;
 }
 
-function makeRes() {
-  const chunks = [];
-  return {
-    statusCode: null,
-    headers: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      if (payload) chunks.push(Buffer.from(payload));
-      return this;
-    },
-    get buffer() {
-      return Buffer.concat(chunks);
-    },
-    get json() {
-      try {
-        return JSON.parse(this.buffer.toString('utf8'));
-      } catch {
-        return null;
-      }
-    },
-  };
-}
-
 async function api(method, pathname, body) {
   const payload = body === undefined ? '' : JSON.stringify(body);
   const req = {
@@ -142,7 +116,7 @@ async function api(method, pathname, body) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockStreamRes();
   await handleFontFamilies({
     repoRoot,
     storageScope: createStorageScope(DESIGNER, { repoRoot }),
@@ -156,7 +130,7 @@ async function api(method, pathname, body) {
 
 async function get(pathname, headers = {}) {
   const req = { method: 'GET', headers };
-  const res = makeRes();
+  const res = createMockStreamRes();
   const url = new URL(`http://decks.example.test${pathname}`);
   const handled =
     (await handleManagedFont({ req, res, url })) ||
@@ -174,7 +148,7 @@ async function uploadVariant() {
   assert.equal(family.statusCode, 201);
   const up = await api(
     'POST',
-    `/api/font-families/${family.json.id}/upload-variant`,
+    `/api/font-families/${family.json().id}/upload-variant`,
     {
       dataUrl: `data:font/woff2;base64,${FONT_BYTES.toString('base64')}`,
       weight: 400,
@@ -182,8 +156,8 @@ async function uploadVariant() {
       format: 'woff2',
     },
   );
-  assert.equal(up.statusCode, 201, JSON.stringify(up.json));
-  return { familyId: family.json.id, variant: up.json };
+  assert.equal(up.statusCode, 201, JSON.stringify(up.json()));
+  return { familyId: family.json().id, variant: up.json() };
 }
 
 test('an uploaded variant is a private object with a derived app-route URL', async () => {
@@ -213,7 +187,7 @@ test('the app route serves the variant; the public static roots do not', async (
 
   const served = await get(variant.url);
   assert.equal(served.res.statusCode, 200);
-  assert.deepEqual(served.res.buffer, FONT_BYTES);
+  assert.deepEqual(served.res.body, FONT_BYTES);
   assert.equal(served.res.headers['Content-Type'], 'font/woff2');
   assert.match(served.res.headers['Cache-Control'], /^private/);
   assert.equal(
@@ -287,7 +261,7 @@ test('the export CSS embeds a private variant read through the provider', async 
         headingFamilyId: familyId,
       },
     },
-    { managedFonts: [family.json] },
+    { managedFonts: [family.json()] },
   );
   const entry = theme.embedFonts.find((f) => f.family === 'Licensed Sans');
   assert.match(entry.url, /^\/fonts\/managed\//, 'the theme names the route');
@@ -415,7 +389,7 @@ test('the media confirm route will not address a private key', async () => {
       yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockStreamRes();
   await handleMedia({
     repoRoot,
     storageScope: createStorageScope(DESIGNER, { repoRoot }),
@@ -425,5 +399,5 @@ test('the media confirm route will not address a private key', async () => {
     authedUser: DESIGNER,
   });
   assert.equal(res.statusCode, 400);
-  assert.ok(!JSON.stringify(res.json).includes('exists'));
+  assert.ok(!JSON.stringify(res.json()).includes('exists'));
 });

@@ -18,6 +18,7 @@
  * Run with: node --test tests/feed-single-org.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -48,23 +49,9 @@ function installDb() {
   return db;
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    body: '',
-    writeHead(code) {
-      this.statusCode = code;
-      return this;
-    },
-    end(chunk) {
-      if (chunk) this.body += chunk;
-    },
-  };
-}
-
 test('handleFeed passes the gate in single-organization and resolves the organization', async () => {
   const db = installDb();
-  const res = mockRes();
+  const res = createMockStreamRes();
   // The route builds the feed from the storage abstraction, which is not wired
   // up in this unit test — so it may throw once it gets *past* the gate. That is
   // fine: reaching the organization lookup at all is the proof that the

@@ -19,6 +19,7 @@
  * Run with: node --test tests/stock-media-public-api-kill-switch.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -51,34 +52,10 @@ test.afterEach(() => {
   delete process.env.AI_ENABLED;
 });
 
-/** A response double capturing the status. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    headersSent: false,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status) {
-      this.statusCode = status;
-      this.headersSent = true;
-      return this;
-    },
-    write() {
-      return true;
-    },
-    end() {
-      if (this.statusCode === null) this.statusCode = 200;
-      return this;
-    },
-  };
-}
-
 function ctx(method, pathname) {
   return {
     req: { method, headers: {}, on() {}, once() {} },
-    res: makeRes(),
+    res: createMockStreamRes(),
     url: new URL(`http://localhost${pathname}`),
     authedUser: { id: 'u-1', email: 'owner@example.com', role: 'admin' },
     storageScope: null,

@@ -14,6 +14,7 @@
  * Run with: node --test tests/deck-card-fields.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -71,29 +72,6 @@ test.after(() => {
   __setTestDb(null);
 });
 
-/** Collect a route's JSON body. */
-function mockRes() {
-  return {
-    statusCode: null,
-    chunks: [],
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    setHeader() {},
-    end(chunk) {
-      if (chunk) this.chunks.push(chunk);
-    },
-    get json() {
-      try {
-        return JSON.parse(this.chunks.join(''));
-      } catch {
-        return null;
-      }
-    },
-  };
-}
-
 const deckFor = (title, overrides = {}) => ({
   title,
   ownerEmail: OWNER,
@@ -133,14 +111,14 @@ test('withDeckCardFields tolerates a themeless or empty list', async () => {
 test('the collection route ships thumbBg', async () => {
   await createPresentation(testScope(), deckFor('Collection deck'));
 
-  const res = mockRes();
+  const res = createMockStreamRes();
   await handlePresentationsList({
     repoRoot,
     storageScope: testScope(),
     res,
     authedUser: sessionFor(OWNER),
   });
-  const item = res.json.find((p) => p.title === 'Collection deck');
+  const item = res.json().find((p) => p.title === 'Collection deck');
   assert.ok(item, 'deck is listed');
   assert.match(item.thumbBg || '', /^#[0-9a-f]{3,6}$/i);
 });
@@ -157,14 +135,14 @@ test('shared-with-me ships thumbBg', async () => {
   });
   assert.equal(invited.ok, true, 'the partner holds a row on the deck');
 
-  const res = mockRes();
+  const res = createMockStreamRes();
   await handleSharedWithMe({
     repoRoot,
     storageScope: testScope(sessionFor(PARTNER)),
     res,
     authedUser: sessionFor(PARTNER),
   });
-  const item = res.json.presentations.find((p) => p.title === 'Shared deck');
+  const item = res.json().presentations.find((p) => p.title === 'Shared deck');
   assert.ok(item, 'deck is shared with the partner');
   assert.match(item.thumbBg || '', /^#[0-9a-f]{3,6}$/i);
 });
@@ -176,7 +154,7 @@ test('the trash route ships thumbBg', async () => {
   );
   await deletePresentation(testScope(), created.id, { actorEmail: OWNER });
 
-  const res = mockRes();
+  const res = createMockStreamRes();
   await handlePresentationsTrashList({
     repoRoot,
     storageScope: testScope(),
@@ -184,7 +162,7 @@ test('the trash route ships thumbBg', async () => {
     res,
     authedUser: sessionFor(OWNER),
   });
-  const item = res.json.find((p) => p.title === 'Trashed deck');
+  const item = res.json().find((p) => p.title === 'Trashed deck');
   assert.ok(item, 'deck is in the trash');
   assert.match(item.thumbBg || '', /^#[0-9a-f]{3,6}$/i);
 });
@@ -192,7 +170,7 @@ test('the trash route ships thumbBg', async () => {
 test('a duplicate answers with a card-ready item', async () => {
   const created = await createPresentation(testScope(), deckFor('Original'));
 
-  const res = mockRes();
+  const res = createMockStreamRes();
   await handlePresentationDuplicate(
     {
       repoRoot,
@@ -209,7 +187,7 @@ test('a duplicate answers with a card-ready item', async () => {
   );
   assert.equal(res.statusCode, 201);
   assert.match(
-    res.json.thumbBg || '',
+    res.json().thumbBg || '',
     /^#[0-9a-f]{3,6}$/i,
     'the card rendered straight from this response is not the one colorless one',
   );

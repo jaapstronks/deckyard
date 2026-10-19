@@ -17,6 +17,7 @@
  * Run with: node --test tests/data-source-refresh-no-sse-broadcast.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -66,30 +67,12 @@ function fakeSseClient() {
   };
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    body: '',
-    headers: {},
-    writeHead(code, headers) {
-      this.statusCode = code;
-      Object.assign(this.headers, headers ?? {});
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-    end(chunk) {
-      if (chunk) this.body += chunk;
-    },
-  };
-}
-
 /** A POST /api/data-sources/refresh context whose req streams `body` as JSON. */
 function refreshCtx(body) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]);
   req.method = 'POST';
   req.headers = {};
-  const res = mockRes();
+  const res = createMockStreamRes();
   return {
     res,
     ctx: {
