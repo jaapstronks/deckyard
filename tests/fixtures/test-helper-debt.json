@@ -15,14 +15,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/auth-identity-multi-org.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/auth-routes-rest.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/bunny-library-id.test.js": {
     "http": 0,
     "walkers": 1
@@ -151,10 +143,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/pg/sandbox-guest-identity.pgtest.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/removed-slide-types.test.js": {
     "http": 0,
     "walkers": 1
@@ -175,10 +163,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/security-sse-connection-caps.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/slide-ai-aggregator.test.js": {
     "http": 0,
     "walkers": 1
@@ -198,22 +182,6 @@
   "tests/sse-attach-sends-catch-up.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/sse-error-event-shape.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/sse-open-stream.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/sse-single-writer-gate.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/sso-oidc-callback.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/storage-call-convention.test.js": {
     "http": 0,

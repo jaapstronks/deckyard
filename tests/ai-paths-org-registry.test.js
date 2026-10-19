@@ -180,6 +180,9 @@ function stubModel(t, answer) {
   return prompts;
 }
 
+// Intentionally local: these cross-route assertions distinguish JSON passed to
+// end() from SSE chunks, including a non-JSON end payload. A transport that
+// merges all bytes would erase that distinction and weaken the registry checks.
 function makeRes() {
   const res = new EventEmitter();
   res.writable = true;

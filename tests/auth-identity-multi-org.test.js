@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * Identity resolution with MULTI_ORG_ENABLED, i.e. several organizations
  * on one managed instance (A1 phase 0).
@@ -526,33 +527,11 @@ test('inviting a genuinely new person still creates them in the current organiza
 const authRoutes = await import('../server/routes/api/auth.js');
 
 /** A response double for the `/api/auth/me` route handler. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    appendHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      if (headers) Object.assign(this.headers, headers);
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
 
 /** Ask `/api/auth/me` with the cookie `setSessionCookie` minted for `user`. */
 async function authMe(user, organizationId) {
   const req = { ...requestWithSession(user, organizationId), method: 'GET' };
-  const res = makeRes();
+  const res = createMockRes();
   await authRoutes.handleAuth({
     repoRoot: process.cwd(),
     req,
@@ -593,9 +572,9 @@ test('the first SSO login on an empty instance becomes owner and reaches /api/au
   // this is the loop back to /login the bug consisted of.
   const res = await authMe(result.user);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.user.email, 'first@example.com');
-  assert.equal(res.body.user.organizationId, ORG_A);
-  assert.equal(res.body.user.organizationRole, 'owner');
+  assert.equal(res.json().user.email, 'first@example.com');
+  assert.equal(res.json().user.organizationId, ORG_A);
+  assert.equal(res.json().user.organizationRole, 'owner');
 });
 
 test('a later SSO login on a populated organization becomes a member', async () => {
@@ -619,7 +598,7 @@ test('a later SSO login on a populated organization becomes a member', async () 
 
   const res = await authMe(result.user);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.user.organizationRole, 'member');
+  assert.equal(res.json().user.organizationRole, 'member');
 });
 
 test('a known person without any membership is given one in their home organization', async () => {
@@ -641,7 +620,7 @@ test('a known person without any membership is given one in their home organizat
 
   const res = await authMe(result.user);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.user.organizationId, ORG_B);
+  assert.equal(res.json().user.organizationId, ORG_B);
 });
 
 test('with auto-provisioning off, a known person without any membership is refused', async () => {
@@ -699,7 +678,7 @@ test('an organization claim creates membership in its matching organization and 
   assert.equal(db.__tables.user_organizations[0].organization_id, ORG_B);
   const res = await authMe(result.user, result.organizationId);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.user.organizationId, ORG_B);
+  assert.equal(res.json().user.organizationId, ORG_B);
 });
 
 test('an unknown organization claim refuses login before creating a user or membership', async () => {
@@ -754,8 +733,8 @@ test('a claim adds the target organization to a person with other memberships', 
   assert.equal(db.__tables.user_organizations[0].role, 'member');
   const res = await authMe(result.user, result.organizationId);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.user.organizationId, ORG_B);
-  assert.equal(res.body.user.organizationRole, 'admin');
+  assert.equal(res.json().user.organizationId, ORG_B);
+  assert.equal(res.json().user.organizationRole, 'admin');
 });
 
 test('a claimed organization does not regrant a removed membership when auto-provisioning is off', async () => {
@@ -843,8 +822,8 @@ test('a first magic-link login on an empty instance becomes owner and reaches /a
   // through the magic-link route instead.
   const res = await authMe(result.user);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.user.email, 'first@example.com');
-  assert.equal(res.body.user.organizationId, ORG_A);
+  assert.equal(res.json().user.email, 'first@example.com');
+  assert.equal(res.json().user.organizationId, ORG_A);
 });
 
 test('a magic-link login for a known person without any membership gives one in their home organization', async () => {
@@ -862,7 +841,7 @@ test('a magic-link login for a known person without any membership gives one in 
 
   const res = await authMe(result.user);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.user.organizationId, ORG_B);
+  assert.equal(res.json().user.organizationId, ORG_B);
 });
 
 test('a magic-link login for a person who already holds a membership writes none', async () => {

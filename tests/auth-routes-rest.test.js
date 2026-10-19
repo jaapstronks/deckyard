@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * The remaining auth-adjacent route modules: SSO, profile image, user lookup
  * (test-coverage gap map, B40 — surface 2, "auth-routes-rest").
@@ -191,34 +192,6 @@ function seed() {
 // ---------------------------------------------------------------------------
 
 /** A response double capturing the status/headers/body the helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    raw: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    appendHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      if (headers) Object.assign(this.headers, headers);
-      return this;
-    },
-    end(payload) {
-      this.raw = payload ?? null;
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null;
-      }
-      return this;
-    },
-  };
-}
 
 /**
  * Call a module entry handler (`handleSso`/`handleProfile`/`handleUsers`) the
@@ -248,7 +221,7 @@ async function call(handler, method, path, { as = null, body, cookie } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handler({
     repoRoot: process.cwd(),
@@ -426,7 +399,10 @@ test('search returns people in the caller’s organization, not others', async (
   );
 
   assert.equal(res.statusCode, 200);
-  const emails = res.body.users.map((u) => u.email).sort();
+  const emails = res
+    .json()
+    .users.map((u) => u.email)
+    .sort();
   assert.ok(
     emails.includes('viewer@example.com'),
     'a same-org person is found',
@@ -453,7 +429,7 @@ test('search scopes to the caller’s organization, not the default one', async 
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(
-    res.body.users.map((u) => u.email),
+    res.json().users.map((u) => u.email),
     ['otto@other.example'],
     'only the caller’s own organization is searched',
   );
@@ -466,7 +442,7 @@ test('search with an empty query returns an empty list, no query', async () => {
   });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.users, []);
+  assert.deepEqual(res.json().users, []);
   assert.deepEqual(db2.__queryLog, [], 'an empty query never reaches storage');
 });
 
@@ -480,7 +456,7 @@ test('search honours the exclude list', async () => {
   );
 
   assert.equal(res.statusCode, 200);
-  const emails = res.body.users.map((u) => u.email);
+  const emails = res.json().users.map((u) => u.email);
   assert.ok(
     !emails.includes('owner@example.com'),
     'the excluded address is dropped',
@@ -501,7 +477,7 @@ test('profile lookup refuses an unauthenticated caller with a 401', async () => 
     401,
     'the batch lookup is not an anonymous enumeration oracle',
   );
-  assert.equal(res.body.error, 'unauthorized');
+  assert.equal(res.json().error, 'unauthorized');
 });
 
 test('profile lookup returns name and imageUrl per user id', async () => {
@@ -514,16 +490,16 @@ test('profile lookup returns name and imageUrl per user id', async () => {
   );
 
   assert.equal(res.statusCode, 200);
-  const viewer = res.body.profiles[userId(ACTORS.viewer)];
+  const viewer = res.json().profiles[userId(ACTORS.viewer)];
   assert.equal(viewer.name, 'Vera Viewer');
   assert.equal(viewer.imageUrl, 'https://cdn.example/vera.png');
   assert.equal(
-    res.body.profiles[GHOST_ID],
+    res.json().profiles[GHOST_ID],
     undefined,
     'an id with no user record is simply absent, not an empty placeholder',
   );
   assert.deepEqual(
-    Object.keys(res.body.profiles),
+    Object.keys(res.json().profiles),
     [userId(ACTORS.viewer)],
     'a value that is not uuid-shaped is dropped before it reaches storage ' +
       '(a Postgres uuid column would 500 on it), not echoed back',
@@ -541,7 +517,7 @@ test('profile lookup does not answer for another organization', async () => {
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(
-    res.body.profiles,
+    res.json().profiles,
     {},
     'an id from another organization discloses nothing',
   );
@@ -554,7 +530,7 @@ test('profile lookup with no ids returns an empty map', async () => {
   });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.profiles, {});
+  assert.deepEqual(res.json().profiles, {});
 });
 
 test('profile lookup only answers GET', async () => {
@@ -575,7 +551,7 @@ test('the profile surface refuses an anonymous caller with a 401', async () => {
   const { res } = await call(handleProfile, 'DELETE', '/api/profile/image');
 
   assert.equal(res.statusCode, 401);
-  assert.equal(res.body.error, 'unauthorized');
+  assert.equal(res.json().error, 'unauthorized');
 });
 
 test('handleProfile ignores a path outside its prefix', async () => {
@@ -598,7 +574,7 @@ test('a user may clear their own profile image', async () => {
   });
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(res.json().ok, true);
 });
 
 test('an own-image upload without a media provider is a 400, not a crash', async () => {
@@ -614,7 +590,7 @@ test('an own-image upload without a media provider is a 400, not a crash', async
     'the media-provider guard short-circuits before Sharp',
   );
   assert.equal(
-    res.body.message,
+    res.json().message,
     'Media provider not initialized',
     'and it is that guard, not body validation',
   );
@@ -641,7 +617,7 @@ test('the admin image route refuses a non-admin with a 403', async () => {
   );
 
   assert.equal(res.statusCode, 403);
-  assert.equal(res.body.error, 'forbidden');
+  assert.equal(res.json().error, 'forbidden');
 });
 
 test('the admin image route rejects a malformed target address with a 400', async () => {
@@ -674,7 +650,7 @@ test('an admin may clear another user’s image', async () => {
   );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(res.json().ok, true);
 });
 
 test('an admin upload without a media provider is a 400, after the admin check', async () => {
@@ -690,5 +666,5 @@ test('an admin upload without a media provider is a 400, after the admin check',
   );
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.message, 'Media provider not initialized');
+  assert.equal(res.json().message, 'Media provider not initialized');
 });

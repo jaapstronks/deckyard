@@ -1,3 +1,4 @@
+import { createMockEventStreamRes } from './helpers/http-mocks.js';
 /**
  * Direct unit tests for openSseStream() — the one opener every SSE endpoint
  * goes through (#716). Pins the pieces the route-level tests only exercise
@@ -29,36 +30,9 @@ function mockReq() {
   return req;
 }
 
-function mockRes() {
-  const res = new EventEmitter();
-  res.writable = true;
-  res.writableEnded = false;
-  res.statusCode = null;
-  res.headers = null;
-  res.written = [];
-  res.flushed = false;
-  res.writeHead = (status, headers) => {
-    res.statusCode = status;
-    res.headers = headers;
-  };
-  res.flushHeaders = () => {
-    res.flushed = true;
-  };
-  res.write = (chunk) => {
-    res.written.push(String(chunk));
-    return true;
-  };
-  res.end = (chunk) => {
-    if (chunk) res.written.push(String(chunk));
-    res.writable = false;
-    res.writableEnded = true;
-  };
-  return res;
-}
-
 test('writes the canonical header set and flushes it', () => {
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const stream = openSseStream(req, res, { guard: false, heartbeatMs: 0 });
 
   assert.equal(stream.ok, true);
@@ -72,7 +46,7 @@ test('writes the canonical header set and flushes it', () => {
 
 test('cacheControl and extraHeaders pass through into the header block', () => {
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   openSseStream(req, res, {
     guard: false,
     heartbeatMs: 0,
@@ -89,11 +63,11 @@ test('cacheControl and extraHeaders pass through into the header block', () => {
 test('heartbeat comments tick on the interval and stop on close', (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   openSseStream(req, res, { guard: false, heartbeatMs: 1000 });
 
   const heartbeats = () =>
-    res.written.filter((w) => w.startsWith(': heartbeat')).length;
+    res.chunks.map(String).filter((w) => w.startsWith(': heartbeat')).length;
 
   assert.equal(heartbeats(), 0);
   t.mock.timers.tick(1000);
@@ -109,15 +83,15 @@ test('heartbeat comments tick on the interval and stop on close', (t) => {
 test('heartbeatMs: 0 disables the heartbeat entirely', (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   openSseStream(req, res, { guard: false, heartbeatMs: 0 });
   t.mock.timers.tick(60_000);
-  assert.equal(res.written.length, 0);
+  assert.equal(res.chunks.length, 0);
 });
 
 test('onClose fires exactly once, also under a double close event', () => {
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   let closes = 0;
   openSseStream(req, res, {
     guard: false,
@@ -135,7 +109,7 @@ test('onClose fires exactly once, also under a double close event', () => {
 test('close() is idempotent and suppresses a later onClose (replace race)', (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   let closes = 0;
   const stream = openSseStream(req, res, {
     guard: false,
@@ -150,7 +124,7 @@ test('close() is idempotent and suppresses a later onClose (replace race)', (t) 
   stream.close();
   stream.close();
   t.mock.timers.tick(5000);
-  assert.equal(res.written.length, 0, 'heartbeat cleared by handler close');
+  assert.equal(res.chunks.length, 0, 'heartbeat cleared by handler close');
 
   // … so the old socket's eventual disconnect must NOT run onClose: the
   // handler's references already point at the replacement stream.
@@ -163,7 +137,7 @@ test('guard: true reserves a limiter slot and releases it with the response', (t
   t.after(resetSseConnectionCounts);
 
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const stream = openSseStream(req, res); // guard defaults to true
   assert.equal(stream.ok, true);
   assert.equal(sseConnectionCounts().global, 1);
@@ -177,7 +151,7 @@ test('guard: false bypasses the limiter completely', (t) => {
   t.after(resetSseConnectionCounts);
 
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const stream = openSseStream(req, res, { guard: false, heartbeatMs: 0 });
   assert.equal(stream.ok, true);
   assert.equal(sseConnectionCounts().global, 0);
@@ -191,10 +165,10 @@ test('guard over cap: sends 429 before any stream headers, returns ok: false', (
   });
   process.env.SSE_MAX_CONNECTIONS = '1';
 
-  const first = openSseStream(mockReq(), mockRes());
+  const first = openSseStream(mockReq(), createMockEventStreamRes());
   assert.equal(first.ok, true);
 
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const second = openSseStream(mockReq(), res);
   assert.equal(second.ok, false);
   assert.equal(res.statusCode, 429);
@@ -204,7 +178,7 @@ test('guard over cap: sends 429 before any stream headers, returns ok: false', (
 
 test('signal aborts when the client leaves before the handler ended', () => {
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const stream = openSseStream(req, res, { guard: false, heartbeatMs: 0 });
   assert.equal(stream.signal.aborted, false);
 
@@ -214,7 +188,7 @@ test('signal aborts when the client leaves before the handler ended', () => {
 
 test('signal stays quiet when the handler finished the response itself', () => {
   const req = mockReq();
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const stream = openSseStream(req, res, { guard: false, heartbeatMs: 0 });
 
   res.end();

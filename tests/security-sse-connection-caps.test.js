@@ -1,3 +1,4 @@
+import { createMockEventStreamRes } from './helpers/http-mocks.js';
 /**
  * Public SSE connection caps — security regression tests (audit finding MH3).
  *
@@ -30,26 +31,6 @@ const PRIVATE_IP = '127.0.0.1';
 
 function mockReq(remoteAddress) {
   return { socket: { remoteAddress }, headers: {} };
-}
-
-function mockRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    ended: false,
-    _handlers: {},
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end() {
-      this.ended = true;
-    },
-    on(evt, fn) {
-      this._handlers[evt] = fn;
-    },
-  };
 }
 
 function resetEnv() {
@@ -138,10 +119,13 @@ test('MH3: releasing a slot decrements both global and per-IP counts', () => {
 
 test('MH3: guardSseConnection sends 429 (no event-stream) when over the cap', () => {
   process.env.SSE_MAX_CONNECTIONS = '1';
-  const first = guardSseConnection(mockReq(PRIVATE_IP), mockRes());
+  const first = guardSseConnection(
+    mockReq(PRIVATE_IP),
+    createMockEventStreamRes(),
+  );
   assert.ok(first, 'first stream is admitted');
 
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const guard = guardSseConnection(mockReq(PRIVATE_IP), res);
   assert.equal(guard, null, 'second stream is rejected');
   assert.equal(res.statusCode, 429);
@@ -152,11 +136,11 @@ test('MH3: guardSseConnection sends 429 (no event-stream) when over the cap', ()
 });
 
 test('MH3: guardSseConnection wires release to res close/finish', () => {
-  const res = mockRes();
+  const res = createMockEventStreamRes();
   const guard = guardSseConnection(mockReq(PUBLIC_IP), res);
   assert.ok(guard);
   assert.equal(sseConnectionCounts().global, 1);
   // Simulate the client disconnecting.
-  res._handlers.close?.();
+  res.emit('close');
   assert.equal(sseConnectionCounts().global, 0, 'close releases the slot');
 });
