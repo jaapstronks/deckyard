@@ -41,6 +41,8 @@ import {
 
 const HEADING_ROLE = /^H([1-6])?$/;
 
+const maxSize = (lines) => Math.max(...lines.map((l) => l.size));
+
 /**
  * All marked-content ids the tree points at.
  *
@@ -307,7 +309,13 @@ function resolveItem(item, take, figures, labels) {
     }
     const block =
       item.type === 'para'
-        ? { kind: 'para', y, text, bold: lines.every((l) => l.bold) }
+        ? {
+            kind: 'para',
+            y,
+            text,
+            bold: lines.every((l) => l.bold),
+            size: maxSize(lines),
+          }
         : { kind: item.type, y, text };
     return {
       kind: item.type,
@@ -491,6 +499,7 @@ function chooseHeading(entries, page) {
         y: h.y,
         text: h.text,
         bold: h.lines.every((l) => l.bold),
+        size: maxSize(h.lines),
         subheading: true,
       };
     }

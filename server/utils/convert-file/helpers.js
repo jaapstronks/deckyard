@@ -119,6 +119,23 @@ export function formatSlidesForAi(slides, metadata) {
 }
 
 /**
+ * Format a document read as one text (a report PDF, B773) for the AI: the
+ * metadata, then the marked-up text as it is, without slide framing.
+ *
+ * @param {string} text - headings as `#`, lists as `- `, pipe tables
+ * @param {{ title?: string, author?: string }} [metadata]
+ * @returns {string}
+ */
+export function formatDocumentForAi(text, metadata) {
+  const parts = [];
+  if (metadata?.title) parts.push(`DOCUMENT TITLE: ${metadata.title}`);
+  if (metadata?.author) parts.push(`AUTHOR: ${metadata.author}`);
+  if (parts.length > 0) parts.push('');
+  parts.push('=== DOCUMENT ===', '', text);
+  return parts.join('\n');
+}
+
+/**
  * Check if the first slide from the source file already looks like a title slide.
  * If so, we don't want to add a duplicate title slide.
  */

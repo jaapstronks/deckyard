@@ -146,7 +146,8 @@ async function toText(bytes, asset, originalPath) {
 
   if (type === 'pdf') {
     // The reader `convertFile()` uses, so the suite measures what a user's
-    // upload gives the pipeline (B772).
+    // upload gives the pipeline (B772): a report as one marked-up document,
+    // a deck page by page (B773).
     const { readPdf } =
       await import('../../server/utils/convert-file/pdf-reader.js');
     const parsed = await readPdf(bytes);
@@ -154,7 +155,8 @@ async function toText(bytes, asset, originalPath) {
       throw new Error(parsed.errors.join('; ') || 'no text extracted');
     }
     return cleanText(
-      parsed.slides.map((page) => page.textContent).join('\n\n'),
+      parsed.document ??
+        parsed.slides.map((page) => page.textContent).join('\n\n'),
     );
   }
 

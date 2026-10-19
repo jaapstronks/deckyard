@@ -32,7 +32,9 @@ export function isBoldFont(fontName) {
  * @property {string} str - the run text as pdf.js gives it (not normalised)
  * @property {number} x - left edge of the run, page units from the left
  * @property {number} y - baseline, page units from the top
- * @property {number} width - advance width in page units
+ * @property {number} width - horizontal extent in page units: the advance
+ *   projected on the x axis, so a run turned 90° (a vertical column header)
+ *   is 0 wide and never seems to overlap the run beside it (B773)
  * @property {number} size - font size in page units
  * @property {boolean} bold
  * @property {string} font - the embedded font name, '' when unknown
@@ -71,12 +73,13 @@ export function readTextRuns(textContent, { viewport, fontNameOf = () => '' }) {
     const [a, b, , , e, f] = item.transform;
     const [x, y] = viewport.convertToViewportPoint(e, f);
     const font = fontNameOf(item.fontName) || '';
+    const size = Math.hypot(a, b);
     runs.push({
       str: item.str,
       x,
       y,
-      width: item.width || 0,
-      size: Math.hypot(a, b),
+      width: size ? ((item.width || 0) * Math.abs(a)) / size : 0,
+      size,
       bold: isBoldFont(font),
       font,
       mcid: stack.findLast((m) => m.id)?.id ?? null,
