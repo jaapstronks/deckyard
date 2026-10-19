@@ -1,12 +1,11 @@
 /**
- * Recipe: the slides panel of a seven-slide deck, clipped to the panel.
+ * Recipe: the editor of a seven-slide deck, with the slides panel in view.
  * Registry id: shot-slides-panel → public/images/screenshots/slides-panel.png
  * Doc page: docs/editing/slides-panel.md
  *
- * The sample deck plus four typed slides, so the thumbnails fill the panel and
- * differ enough to read as a deck. The viewport is taller than the docs default
- * so all seven fit: a clip that hid slides behind the panel's own scrollbar
- * would photograph less than the page says it shows.
+ * The sample deck plus four typed slides, so the visible thumbnails differ
+ * enough to read as a deck. The standard viewport keeps the editor in context
+ * and avoids a tall image of the panel's empty space below the slide list.
  */
 
 import { randomUUID } from 'node:crypto';
@@ -18,7 +17,6 @@ import {
   setDisplayName,
   setUiLocale,
 } from '../lib/api.js';
-import { DEFAULT_VIEWPORT } from '../lib/browser.js';
 import { sampleDeckSlides, SAMPLE_DECK_TITLE } from './_sample-content.js';
 
 /**
@@ -34,8 +32,7 @@ export default {
   id: 'slides-panel',
   output: 'slides-panel.png',
   registryPath: 'public/images/screenshots/slides-panel.png',
-  viewport: { ...DEFAULT_VIEWPORT, height: 1600 },
-  clip: '.panel.slides-panel',
+  fullPage: false,
 
   localStorage: { 'editor.inline.coachSeen': '1' },
 
