@@ -806,7 +806,7 @@ export function openTranslateView({
                 onclick: () => acceptProposal(proposal),
               })
             : null,
-          source.trim() && !proposal
+          source.trim() && (!proposal || !proposalIsFresh(proposal))
             ? h('button', {
                 type: 'button',
                 class: 'btn btn-secondary btn-sm',

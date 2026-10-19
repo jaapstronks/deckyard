@@ -366,6 +366,16 @@ test('proposals: filled target needs individual acceptance; changed source canno
       .querySelector('.translate-view-proposal .btn-primary'),
     null,
   );
+  const retryStale = field('en-GB', 's2', 'Title')
+    .closest('.translate-view-row')
+    .querySelector('.translate-view-proposal .btn-secondary');
+  assert.ok(retryStale, 'a stale field can request a fresh suggestion');
+  retryStale.click();
+  await until(() =>
+    field('en-GB', 's2', 'Title')
+      .closest('.translate-view-row')
+      .querySelector('.translate-view-proposal .btn-primary'),
+  );
   assert.equal(field('en-GB', 's2', 'Title').value, '');
   assert.equal(calls.writes.length, 1);
   view.close();
