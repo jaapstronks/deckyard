@@ -1,3 +1,4 @@
+import { createMockRes } from '../helpers/http-mocks.js';
 /**
  * B352: the sandbox seeds its organization shelf, idempotently, against real
  * PostgreSQL.
@@ -38,22 +39,6 @@ import { handleSlideCollections } from '../../server/routes/api/slide-collection
 
 const GUEST = 'guest-0123456789abcdef0123456789abcdef@sandbox.local';
 const scope = () => ({ organizationId: getDefaultOrganizationId() });
-
-function fakeRes() {
-  return {
-    statusCode: 0,
-    body: '',
-    headersSent: false,
-    setHeader() {},
-    writeHead(status) {
-      this.statusCode = status;
-      this.headersSent = true;
-    },
-    end(chunk) {
-      if (chunk) this.body += chunk;
-    },
-  };
-}
 
 pgDescribe('sandbox library seed (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
@@ -144,7 +129,18 @@ pgDescribe('sandbox library seed (real PostgreSQL)', () => {
 
   it('a guest reads the seeded slides and collection but may not change them', async () => {
     await seedSandboxLibrary(repoRoot);
-    const res = fakeRes();
+    const res = Object.assign(createMockRes(), {
+      statusCode: 0,
+      body: '',
+      headersSent: false,
+      writeHead(status) {
+        this.statusCode = status;
+        this.headersSent = true;
+      },
+      end(chunk) {
+        if (chunk) this.body += chunk;
+      },
+    });
     await handleSlideLibrary({
       repoRoot,
       storageScope: scope(),
@@ -158,7 +154,18 @@ pgDescribe('sandbox library seed (real PostgreSQL)', () => {
     assert.equal(items.length, declared.slides.length);
     assert.ok(items.every((item) => item.canEdit === false));
 
-    const colRes = fakeRes();
+    const colRes = Object.assign(createMockRes(), {
+      statusCode: 0,
+      body: '',
+      headersSent: false,
+      writeHead(status) {
+        this.statusCode = status;
+        this.headersSent = true;
+      },
+      end(chunk) {
+        if (chunk) this.body += chunk;
+      },
+    });
     await handleSlideCollections({
       repoRoot,
       storageScope: scope(),

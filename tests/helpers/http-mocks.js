@@ -23,6 +23,7 @@ export function createMockRes() {
     statusCode: null,
     headers: {},
     body: null,
+    ended: false,
     setHeader(name, value) {
       this.headers[name] = value;
     },
@@ -33,6 +34,7 @@ export function createMockRes() {
     },
     end(body) {
       this.body = body ?? null;
+      this.ended = true;
       return this;
     },
     json() {
@@ -58,4 +60,25 @@ export function createMockSseRes() {
       return true;
     },
   };
+}
+
+/** Track committed headers and completion for handlers that refuse a second response. */
+export function createMockLifecycleRes() {
+  const res = createMockRes();
+  const { writeHead, end } = res;
+  return Object.assign(res, {
+    headersSent: false,
+    writableEnded: false,
+    writeHead(...args) {
+      writeHead.apply(this, args);
+      this.headersSent = true;
+      return this;
+    },
+    end(...args) {
+      end.apply(this, args);
+      this.headersSent = true;
+      this.writableEnded = true;
+      return this;
+    },
+  });
 }

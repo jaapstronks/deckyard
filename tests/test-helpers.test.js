@@ -10,7 +10,11 @@ import {
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createMockReq, createMockRes } from './helpers/http-mocks.js';
+import {
+  createMockReq,
+  createMockRes,
+  createMockLifecycleRes,
+} from './helpers/http-mocks.js';
 import { walkFiles } from './helpers/walk-files.js';
 import { createFakeDb } from './helpers/fake-db.js';
 
@@ -98,4 +102,36 @@ test('callback joins fail explicitly rather than pairing every user with the fir
     { id: 'bob', settings: 'bob-settings' },
     { id: 'carol', settings: undefined },
   ]);
+});
+
+test('response lifecycle commits headers separately from completion', () => {
+  const res = createMockLifecycleRes();
+  assert.equal(res.headersSent, false);
+  assert.equal(res.writableEnded, false);
+  assert.equal(res.ended, false);
+  res.setHeader('X-Test', 'yes');
+  assert.equal(res.headersSent, false);
+  res.writeHead(202, { 'Content-Type': 'text/plain' });
+  assert.equal(res.headersSent, true);
+  assert.equal(res.writableEnded, false);
+  assert.equal(res.ended, false);
+  const bytes = Buffer.from([0, 255]);
+  res.end(bytes);
+  assert.equal(res.body, bytes);
+  assert.equal(res.ended, true);
+  assert.equal(res.writableEnded, true);
+  const direct = createMockLifecycleRes();
+  direct.end();
+  assert.equal(direct.headersSent, true);
+  assert.equal(direct.writableEnded, true);
+});
+
+test('plain capture tracks end without inventing header or stream flags', () => {
+  const res = createMockRes();
+  res.writeHead(200);
+  assert.equal(res.ended, false);
+  assert.equal(res.headersSent, undefined);
+  assert.equal(res.writableEnded, undefined);
+  res.end('done');
+  assert.equal(res.ended, true);
 });

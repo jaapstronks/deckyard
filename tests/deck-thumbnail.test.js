@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * Deck overview thumbnails (front-page-perf, Fase B).
  *
@@ -69,22 +70,20 @@ test.after(() => {
   __setTestDb(null);
 });
 
-function mockRes() {
-  return {
-    statusCode: null,
+// Keep the thumbnail's observable no-argument end() body as undefined.
+function createThumbnailResponse() {
+  return Object.assign(createMockRes(), {
     headers: null,
-    body: null,
-    ended: false,
     writeHead(status, headers) {
       this.statusCode = status;
       this.headers = headers;
       return this;
     },
-    end(buf) {
-      this.body = buf;
+    end(body) {
+      this.body = body;
       this.ended = true;
     },
-  };
+  });
 }
 
 /**
@@ -250,7 +249,7 @@ test('route serves a cached webp to the owner', async () => {
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, filename), webp);
 
-  const res = mockRes();
+  const res = createThumbnailResponse();
   const handled = await handlePresentationThumbnail(
     {
       repoRoot,
@@ -299,7 +298,7 @@ async function seedCachedDeck(repoRoot, title) {
 
 /** GET the thumbnail as its owner, optionally conditionally. */
 function getThumbnail(repoRoot, id, headers = {}) {
-  const res = mockRes();
+  const res = createThumbnailResponse();
   return handlePresentationThumbnail(
     {
       repoRoot,
@@ -369,7 +368,7 @@ test('route denies a non-owner on a private deck', async () => {
     slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
 
-  const res = mockRes();
+  const res = createThumbnailResponse();
   await handlePresentationThumbnail(
     {
       repoRoot,
@@ -389,7 +388,7 @@ test('route denies a non-owner on a private deck', async () => {
 
 test('route 404s for an unknown deck', async () => {
   const repoRoot = await tmpRoot();
-  const res = mockRes();
+  const res = createThumbnailResponse();
   await handlePresentationThumbnail(
     {
       repoRoot,
@@ -405,7 +404,7 @@ test('route 404s for an unknown deck', async () => {
 
 test('route rejects non-GET methods', async () => {
   const repoRoot = await tmpRoot();
-  const res = mockRes();
+  const res = createThumbnailResponse();
   await handlePresentationThumbnail(
     {
       repoRoot,
@@ -541,7 +540,7 @@ test('route serves the previous raster instead of 404 while the new one renders'
   assert.notEqual(filename, `${prefix}-0000000000000000.webp`);
   await fs.writeFile(path.join(dir, `${prefix}-0000000000000000.webp`), webp);
 
-  const res = mockRes();
+  const res = createThumbnailResponse();
   await handlePresentationThumbnail(
     {
       repoRoot,
@@ -598,7 +597,7 @@ test("a permanent delete removes the deck's cached rasters", async () => {
     'the trash keeps the rasters',
   );
 
-  const res = mockRes();
+  const res = createThumbnailResponse();
   await handlePresentationPermanentDelete(
     {
       repoRoot,
