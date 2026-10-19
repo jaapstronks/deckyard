@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * A Giphy/Unsplash upstream failure is `502 bad_gateway` in our words (B419).
  *
@@ -41,27 +42,12 @@ test.after(() => {
   console.error = savedConsoleError;
 });
 
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headersSent: false,
-    writableEnded: false,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
-
 /** Run `call` behind the stock-media error handler, capturing the log. */
 async function onTheWire(call) {
-  const res = makeRes();
+  const res = Object.assign(createMockRes(), {
+    headersSent: false,
+    writableEnded: false,
+  });
   const lines = [];
   console.error = (...args) =>
     lines.push(args.map((a) => (a?.stack ? a.stack : String(a))).join(' '));
@@ -119,7 +105,7 @@ for (const failure of FAILURES) {
       globalThis.fetch = failure.fetch;
       const { res, log } = await onTheWire(call);
       assert.equal(res.statusCode, 502);
-      assert.deepEqual(res.body, {
+      assert.deepEqual(res.json(), {
         ok: false,
         error: 'bad_gateway',
         message: `${service} could not complete this request`,
@@ -145,7 +131,7 @@ for (const [service, what, call] of JSON_CALLS) {
       });
     const { res, log } = await onTheWire(call);
     assert.equal(res.statusCode, 502);
-    assert.deepEqual(res.body, {
+    assert.deepEqual(res.json(), {
       ok: false,
       error: 'bad_gateway',
       message: `${service} could not complete this request`,
@@ -228,7 +214,7 @@ for (const [service, what, call] of JSON_CALLS) {
         new Response(JSON.stringify(body), { status: 200 });
       const { res, log } = await onTheWire(call);
       assert.equal(res.statusCode, 502);
-      assert.deepEqual(res.body, {
+      assert.deepEqual(res.json(), {
         ok: false,
         error: 'bad_gateway',
         message: `${service} could not complete this request`,

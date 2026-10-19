@@ -1,3 +1,4 @@
+import { createMockLifecycleRes } from './helpers/http-mocks.js';
 /**
  * The public /api/v1 surface speaks exactly one error envelope (B61):
  *
@@ -32,26 +33,6 @@ import {
   resetMaintenanceForTests,
 } from '../server/config/maintenance.js';
 
-/** A minimal response double that records status, headers and the JSON body. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    headersSent: false,
-    writableEnded: false,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      this.headersSent = true;
-    },
-    end(payload) {
-      this.body = payload ?? null;
-      this.writableEnded = true;
-    },
-  };
-}
-
 function bodyOf(res) {
   return JSON.parse(String(res.body));
 }
@@ -61,7 +42,7 @@ function bodyOf(res) {
 // ---------------------------------------------------------------------------
 
 test('sendV1Error emits { error, message } with no `ok`, code defaulting from status', () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   sendV1Error(res, 404, 'Nope');
   assert.equal(res.statusCode, 404);
   const body = bodyOf(res);
@@ -73,7 +54,7 @@ test('sendV1Error emits { error, message } with no `ok`, code defaulting from st
 });
 
 test('sendV1Error honors an explicit code and attaches details + headers', () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   sendV1Error(res, 429, 'Slow down', {
     code: 'rate_limited',
     details: { limit: 10 },
@@ -89,13 +70,13 @@ test('sendV1Error honors an explicit code and attaches details + headers', () =>
 });
 
 test('sendV1Error omits message and details when absent/null', () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   sendV1Error(res, 500, undefined, { details: null });
   assert.deepEqual(bodyOf(res), { error: 'internal_error' });
 });
 
 test('apiError produces the same envelope (ctx without an apiKey adds no rate headers)', async () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   await apiError({ res }, 400, 'Bad input', { details: { field: 'title' } });
   assert.equal(res.statusCode, 400);
   assert.deepEqual(bodyOf(res), {
@@ -110,7 +91,7 @@ test('apiError produces the same envelope (ctx without an apiKey adds no rate he
 // ---------------------------------------------------------------------------
 
 test('withV1ErrorHandler turns an unexpected throw into a generic 500, no leak, no `ok`', async () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   const wrapped = withV1ErrorHandler('test', async () => {
     throw new Error('secret internal detail that must not leak');
   });
@@ -134,7 +115,7 @@ test('withV1ErrorHandler turns an unexpected throw into a generic 500, no leak, 
 });
 
 test('withV1ErrorHandler preserves an AppError status, machine code and details', async () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   const wrapped = withV1ErrorHandler('test', async () => {
     throw new LockedError('Slide is locked', {
       slideId: 's1',
@@ -155,7 +136,7 @@ test('withV1ErrorHandler preserves an AppError status, machine code and details'
 });
 
 test('withV1ErrorHandler keeps a 4xx AppError message (only 5xx is made generic)', async () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   const wrapped = withV1ErrorHandler('test', async () => {
     throw new ValidationError('targetLang is required');
   });
@@ -172,7 +153,7 @@ test('withV1ErrorHandler keeps a 4xx AppError message (only 5xx is made generic)
 });
 
 test('withV1ErrorHandler maps a bare statusCode-bearing throw by status, generic from 500 up', async () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   const wrapped = withV1ErrorHandler('test', async () => {
     const e = new Error('upstream boom');
     e.statusCode = 502;
@@ -194,7 +175,7 @@ test('withV1ErrorHandler keeps the sentence of a 5xx AppError (B619)', async () 
   // An `AppError` is written for the caller at any status: a failing model
   // (`LlmError`, 502) says what failed upstream instead of "Internal server
   // error"; only a throw that is not an `AppError` is made generic.
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   const wrapped = withV1ErrorHandler('test', async () => {
     throw new LlmError('openai did not return valid deck JSON.', {
       response: 'raw model output that stays in the log',
@@ -213,7 +194,7 @@ test('withV1ErrorHandler keeps the sentence of a 5xx AppError (B619)', async () 
 });
 
 test('withV1ErrorHandler does not double-answer once headers are flushed', async () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   res.writeHead(200, { 'Content-Type': 'text/html' }); // simulate a streaming export that began
   const wrapped = withV1ErrorHandler('test', async () => {
     throw new Error('boom mid-stream');
@@ -231,8 +212,27 @@ test('withV1ErrorHandler does not double-answer once headers are flushed', async
   );
 });
 
+test('withV1ErrorHandler does not overwrite an ended response even without the header flag', async () => {
+  const res = createMockLifecycleRes();
+  res.writeHead(202);
+  res.end('original bytes');
+  // Isolate the writableEnded refusal from the independently tested header guard.
+  res.headersSent = false;
+  const wrapped = withV1ErrorHandler('test', async () => {
+    throw new Error('boom after end');
+  });
+  await wrapped({
+    res,
+    req: { method: 'GET' },
+    url: new URL('http://x/api/v1/x'),
+  });
+  assert.equal(res.statusCode, 202);
+  assert.equal(res.body, null, 'the close writes no second error envelope');
+  assert.equal(res.writableEnded, true);
+});
+
 test('withV1ErrorHandler passes a normal return value through unchanged', async () => {
-  const res = makeRes();
+  const res = createMockLifecycleRes();
   const wrapped = withV1ErrorHandler('test', async () => false);
   assert.equal(
     await wrapped({ res, req: {}, url: new URL('http://x/api/v1/x') }),
@@ -296,7 +296,7 @@ test('a maintenance write refusal on /api/v1 answers the v1 envelope; internal k
   setMaintenanceActive(true, { reason: 'deploy' });
 
   // Storage-free: the refusal happens before any auth or storage call.
-  const v1 = makeRes();
+  const v1 = createMockLifecycleRes();
   await handleApi({
     repoRoot: '/tmp',
     req: { method: 'POST', headers: {} },
@@ -312,7 +312,7 @@ test('a maintenance write refusal on /api/v1 answers the v1 envelope; internal k
   );
   assert.ok(v1.headers['Retry-After'], 'the refusal names a retry moment');
 
-  const internal = makeRes();
+  const internal = createMockLifecycleRes();
   await handleApi({
     repoRoot: '/tmp',
     req: { method: 'POST', headers: {} },

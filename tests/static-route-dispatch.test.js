@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * Static/public router: dispatch wiring + the path-traversal guard. Guards the
  * split of the former 654-line handleStatic if-chain into per-route handlers
@@ -17,23 +18,8 @@ const { handleStatic } = await import('../server/routes/static/index.js');
 const { handleStaticFiles } =
   await import('../server/routes/static/static-files.js');
 
-function fakeRes() {
-  return {
-    statusCode: null,
-    ended: false,
-    writeHead(code) {
-      this.statusCode = code;
-      return this;
-    },
-    setHeader() {},
-    end() {
-      this.ended = true;
-    },
-  };
-}
-
 test('unmatched path falls through to 404', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleStatic({
     repoRoot: '/tmp',
     req: { method: 'GET', headers: {} },
@@ -47,7 +33,7 @@ test('unmatched path falls through to 404', async () => {
 });
 
 test('static file serving blocks path traversal', () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const handled = handleStaticFiles({
     res,
     url: { pathname: '/assets/../../../etc/passwd' },
@@ -58,7 +44,7 @@ test('static file serving blocks path traversal', () => {
 });
 
 test('a non-matching prefix is not handled (falls through)', () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const handled = handleStaticFiles({
     res,
     url: { pathname: '/nope/thing.js' },

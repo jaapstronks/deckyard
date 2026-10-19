@@ -47,19 +47,7 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/data-source-provider-refusal.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/data-source-refresh-no-sse-broadcast.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/deck-bundle-slide-types.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/deck-bundle-theme.test.js": {
     "http": 1,
     "walkers": 0
   },
@@ -70,10 +58,6 @@
   "tests/deck-language-axis.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/deck-thumbnail.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/docs-paths-resolvable.test.js": {
     "http": 0,
@@ -139,10 +123,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/import-deck.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/inline-ghost-label-keys.test.js": {
     "http": 0,
     "walkers": 1
@@ -199,10 +179,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/notion-upstream-error.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/one-helper-per-concept-guard.test.js": {
     "http": 0,
     "walkers": 1
@@ -216,18 +192,6 @@
     "walkers": 1
   },
   "tests/pg/sandbox-guest-identity.pgtest.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/pg/sandbox-insights-seed.pgtest.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/pg/sandbox-library-seed.pgtest.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/public-api-v1-error-envelope.test.js": {
     "http": 1,
     "walkers": 0
   },
@@ -295,15 +259,7 @@
     "http": 1,
     "walkers": 0
   },
-  "tests/static-route-dispatch.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/stock-media-public-api-kill-switch.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/stock-media-upstream-error.test.js": {
     "http": 1,
     "walkers": 0
   },

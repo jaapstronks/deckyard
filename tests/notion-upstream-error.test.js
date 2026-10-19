@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * The Notion seam refuses in our own words (B416).
  *
@@ -44,24 +45,6 @@ test.after(() => {
   mock.timers.reset();
 });
 
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headersSent: false,
-    writableEnded: false,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
-
 /** Drive a mount handler the way the router does. */
 async function call(handler, pathname, body) {
   const payload = JSON.stringify(body);
@@ -73,7 +56,10 @@ async function call(handler, pathname, body) {
       yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = Object.assign(createMockRes(), {
+    headersSent: false,
+    writableEnded: false,
+  });
   await handler({
     repoRoot: process.cwd(),
     req,
@@ -133,7 +119,7 @@ for (const { name, status, body } of UPSTREAM) {
     notionAnswers(status, body);
     const { res, log } = await logged(fetchPage);
     assert.equal(res.statusCode, 502);
-    assert.deepEqual(res.body, {
+    assert.deepEqual(res.json(), {
       ok: false,
       error: 'bad_gateway',
       message: 'Notion could not complete this request',
@@ -149,8 +135,8 @@ test('an unreachable Notion is 502 bad_gateway in our own words', async () => {
   };
   const { res, log } = await logged(fetchPage);
   assert.equal(res.statusCode, 502);
-  assert.equal(res.body.error, 'bad_gateway');
-  assert.equal(res.body.message, 'Notion could not complete this request');
+  assert.equal(res.json().error, 'bad_gateway');
+  assert.equal(res.json().message, 'Notion could not complete this request');
   assert.ok(log.includes('did not reach Notion'));
 });
 
@@ -165,9 +151,9 @@ for (const status of [404, 403]) {
     });
     const { res, log } = await logged(fetchPage);
     assert.equal(res.statusCode, 400);
-    assert.equal(res.body.error, 'bad_request');
+    assert.equal(res.json().error, 'bad_request');
     assert.match(
-      res.body.message,
+      res.json().message,
       /^(Notion page not found|Access denied)\. Make sure the page is shared with your Notion integration\.$/,
     );
     assert.ok(log.includes('something else'), 'the payload is logged');
@@ -182,7 +168,7 @@ test('a Notion 401 is our token refused, not the share hint (D205)', async () =>
   });
   const { res, log } = await logged(fetchPage);
   assert.equal(res.statusCode, 502);
-  assert.deepEqual(res.body, {
+  assert.deepEqual(res.json(), {
     ok: false,
     error: 'bad_gateway',
     message:
@@ -199,7 +185,7 @@ test('an unreadable body on a success is a 502, never an empty answer', async ()
     });
   const { res } = await logged(fetchPage);
   assert.equal(res.statusCode, 502);
-  assert.equal(res.body.message, 'Notion could not complete this request');
+  assert.equal(res.json().message, 'Notion could not complete this request');
 });
 
 test('an unreadable body on a 404 still reads as the share hint', async () => {
@@ -210,7 +196,7 @@ test('an unreadable body on a 404 still reads as the share hint', async () => {
     });
   const { res } = await logged(fetchPage);
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /^Notion page not found\./);
+  assert.match(res.json().message, /^Notion page not found\./);
 });
 
 test('Notion wording no longer decides the meaning of another status', async () => {
@@ -221,7 +207,7 @@ test('Notion wording no longer decides the meaning of another status', async () 
   });
   const { res } = await logged(fetchPage);
   assert.equal(res.statusCode, 502);
-  assert.equal(res.body.error, 'bad_gateway');
+  assert.equal(res.json().error, 'bad_gateway');
 });
 
 test('the Notion data-source provider carries the same sentence, not Notion text', async () => {
@@ -233,6 +219,6 @@ test('the Notion data-source provider carries the same sentence, not Notion text
     }),
   );
   assert.equal(res.statusCode, 502);
-  assert.ok(!JSON.stringify(res.body).includes(NOTION_WORDS));
-  assert.match(res.body.message, /Notion could not complete this request/);
+  assert.ok(!JSON.stringify(res.json()).includes(NOTION_WORDS));
+  assert.match(res.json().message, /Notion could not complete this request/);
 });

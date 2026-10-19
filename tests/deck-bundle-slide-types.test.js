@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * Database slide types travel in the `.deck` bundle (B251, D91).
  *
@@ -152,28 +153,15 @@ function fakeReq(buf) {
   })();
 }
 
-function fakeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headersSent: false,
-    writableEnded: false,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 async function importInto(
   scope,
   buf,
   { install = null, user = designer } = {},
 ) {
-  const res = fakeRes();
+  const res = Object.assign(createMockRes(), {
+    headersSent: false,
+    writableEnded: false,
+  });
   const url = new URL('http://x/api/presentations/import/deck');
   if (install) url.searchParams.set('install', install);
   await handlePresentationsImportDeck({
