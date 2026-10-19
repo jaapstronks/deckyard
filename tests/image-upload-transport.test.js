@@ -141,7 +141,7 @@ test('theme logo keeps its previous URL and never calls onChange on missing obje
   setFeatures({ enableUploads: true });
   const remote = provider({ exists: false, publicUrl: '' });
   t.mock.method(globalThis, 'fetch', async (path, opts) => {
-    if (String(path).startsWith('https://storage.example')) return { ok: true };
+    if (String(path) === 'https://storage.example/upload') return { ok: true };
     return Response.json(await remote.api(path, opts));
   });
   const changes = [];
