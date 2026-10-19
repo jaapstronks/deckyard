@@ -25,6 +25,7 @@ import { assembleLines } from './lines.js';
 import { detectStruct } from './struct-detector.js';
 import { detectGeometry, findDrawingLabels } from './geometry-detector.js';
 import { readPageGraphics } from './images.js';
+import { readDocument } from './document.js';
 
 export { assembleLines, joinLineText, normalizeText } from './lines.js';
 export { isBoldFont } from './text-runs.js';
@@ -36,6 +37,7 @@ export {
 } from './geometry-detector.js';
 export { detectStruct } from './struct-detector.js';
 export { blockText, pageText } from './page-text.js';
+export { furnitureKey, readDocument, renderDocument } from './document.js';
 
 /** Text below this size (pt) under the running text is a footnote. */
 export const FOOTNOTE_MAX_SIZE = 7;
@@ -70,7 +72,8 @@ const REFERENCE_TEXT = /^\d{1,3}(?:[,\s]+\d{1,3})*$/;
 /**
  * Blocks, in reading order; each carries `y`, the baseline of its first line.
  *
- * - `{ kind: 'para', text, bold, subheading? }`
+ * - `{ kind: 'para', text, bold, size, subheading? }` (`size`: the largest
+ *   font size on its lines)
  * - `{ kind: 'list', variant: 'bullets'|'numbers', items: [{ text, parts }] }`
  *   (`parts`: the item's paragraphs; `text` is them joined)
  * - `{ kind: 'table', headerRow, rows: string[][] }`
@@ -93,7 +96,21 @@ const REFERENCE_TEXT = /^\d{1,3}(?:[,\s]+\d{1,3})*$/;
  * @property {PageBlock[]} blocks
  * @property {Array<{ png: Buffer, box: { x: number, y: number, width: number, height: number }, pixels: { width: number, height: number }, alt?: string }>} images
  * @property {{ paths: number, labels: Array<{ text: string, x: number, y: number }> }} drawing
- * @property {Array<{ text: string, reason: 'artifact' | 'off-page' | 'footnote' | 'reference' }>} dropped
+ * @property {DroppedLine[]} dropped
+ */
+
+/**
+ * A line kept off the slide, with where it stood: the document reader
+ * (`document.js`) takes a letter's heading block back out of the artifacts
+ * by position.
+ *
+ * @typedef {object} DroppedLine
+ * @property {string} text
+ * @property {'artifact' | 'off-page' | 'footnote' | 'reference'} reason
+ * @property {number} x
+ * @property {number} y
+ * @property {number} size
+ * @property {Array<{ text: string, x: number }>} segments
  */
 
 /**
@@ -138,6 +155,19 @@ export async function extractPdfPages(
   } finally {
     await task.destroy();
   }
+}
+
+/**
+ * Extract a PDF as one document: headings over the whole document, page
+ * breaks and running furniture gone (B773, `document.js`).
+ *
+ * @param {Uint8Array} buffer - the PDF bytes
+ * @param {object} [opts]
+ * @param {AbortSignal} [opts.signal]
+ * @returns {Promise<{ title: string | null, blocks: import('./document.js').DocumentBlock[], text: string }>}
+ */
+export async function extractPdfDocument(buffer, { signal } = {}) {
+  return readDocument(await extractPdfPages(buffer, { signal }));
 }
 
 async function readPage(page, n, { useStructTree }) {
@@ -207,9 +237,9 @@ function fontName(page, id) {
  */
 function dropNonSlideText(runs, box) {
   const dropped = [];
+  const drop = (line, reason) => dropped.push(droppedLine(line, reason));
   const note = (selected, reason) => {
-    for (const line of assembleLines(selected))
-      dropped.push({ text: line.text, reason });
+    for (const line of assembleLines(selected)) drop(line, reason);
   };
   note(
     runs.filter((r) => r.artifact),
@@ -253,15 +283,24 @@ function dropNonSlideText(runs, box) {
         (underText.includes(l) &&
           worded.some((w) => Math.abs(w.y - l.y) <= bodySize))),
   );
-  for (const line of footnotes)
-    dropped.push({ text: line.text, reason: 'footnote' });
+  for (const line of footnotes) drop(line, 'footnote');
   for (const line of references)
-    if (!footnotes.includes(line))
-      dropped.push({ text: line.text, reason: 'reference' });
+    if (!footnotes.includes(line)) drop(line, 'reference');
   const droppedRuns = new Set(
     [...footnotes, ...references].flatMap((l) => l.runs),
   );
   return { body: onPage.filter((r) => !droppedRuns.has(r)), dropped };
+}
+
+function droppedLine({ text, x, y, size, segments }, reason) {
+  return {
+    text,
+    reason,
+    x,
+    y,
+    size,
+    segments: segments.map((seg) => ({ text: seg.text, x: seg.x })),
+  };
 }
 
 /** The font size that carries the most characters: the page's body size. */

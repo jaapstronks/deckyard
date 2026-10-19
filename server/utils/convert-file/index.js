@@ -11,6 +11,7 @@ import { processImageOnlySlides } from './image-slides.js';
 import { convertWithAi } from './ai-convert.js';
 import {
   detectFileType,
+  formatDocumentForAi,
   formatSlidesForAi,
   slideNeedsReview,
   getReviewReason,
@@ -184,14 +185,17 @@ export async function convertFile(buffer, options = {}) {
     log.info(`Using first image slide as title slide`);
   }
 
-  // Format remaining content for AI conversion
-  const formattedContent = formatSlidesForAi(
-    regularSlides,
-    parseResult.metadata,
-  );
+  // Format remaining content for AI conversion. A document (a report PDF)
+  // goes as one marked-up text; it opens with no title slide of its own.
+  const { document } = parseResult;
+  const formattedContent = document
+    ? formatDocumentForAi(document, parseResult.metadata)
+    : formatSlidesForAi(regularSlides, parseResult.metadata);
 
   // Get first slide content for title slide detection
-  const firstSlideContent = parseResult.slides?.[0]?.textContent || '';
+  const firstSlideContent = document
+    ? ''
+    : parseResult.slides?.[0]?.textContent || '';
 
   // Calculate the starting index offset for AI slides
   // This is needed to correctly merge image-only slides (which have real source indices)
