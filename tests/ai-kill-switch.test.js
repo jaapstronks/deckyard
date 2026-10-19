@@ -27,6 +27,7 @@
  * Run with: node --test tests/ai-kill-switch.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -56,42 +57,12 @@ afterEach(() => {
   delete process.env.NOTION_ENABLED;
 });
 
-/** A response double capturing what the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    headersSent: false,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers);
-      this.headersSent = true;
-      return this;
-    },
-    write() {
-      return true;
-    },
-    end(payload) {
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = payload;
-      }
-      return this;
-    },
-  };
-}
-
 /** A request context carrying just what the routers read. */
 function ctx(method, pathname) {
   const req = { method, headers: {}, on() {}, once() {} };
   return {
     req,
-    res: makeRes(),
+    res: createMockStreamRes(),
     url: new URL(`http://localhost${pathname}`),
     authedUser: { id: 'u-1', email: 'owner@example.com', role: 'admin' },
     storageScope: null,
@@ -124,7 +95,7 @@ describe("dispatchRoutes — the `feature: 'ai'` declaration", () => {
     const c = ctx('POST', '/api/x/7/think');
     dispatchRoutes(routes(seen), c);
     assert.equal(c.res.statusCode, 404);
-    assert.equal(c.res.body.error, 'not_found');
+    assert.equal(c.res.json().error, 'not_found');
     assert.deepEqual(seen, [], 'handler must not run');
   });
 
@@ -156,7 +127,7 @@ describe('presentation AI routes are not mounted with AI_ENABLED=false', () => {
       const c = ctx('POST', path);
       await handlePresentations(c);
       assert.equal(c.res.statusCode, 404);
-      assert.equal(c.res.body?.error, 'not_found');
+      assert.equal(c.res.json()?.error, 'not_found');
     });
   }
 
@@ -295,7 +266,7 @@ describe('Notion — the whole module follows NOTION_ENABLED', () => {
     const c = ctx('GET', '/api/notion/status');
     assert.equal(await dispatchMounts(MOUNTS, c), true);
     assert.equal(c.res.statusCode, 200);
-    assert.deepEqual(c.res.body, { enabled: false });
+    assert.deepEqual(c.res.json(), { enabled: false });
   });
 
   it('the legacy NOTION_FEATURE spelling still mounts it until its removal date', async () => {
@@ -316,7 +287,7 @@ describe('Notion — the whole module follows NOTION_ENABLED', () => {
       const c = ctx('POST', path);
       await dispatchMounts(MOUNTS, c);
       assert.equal(c.res.statusCode, 404);
-      assert.equal(c.res.body?.error, 'not_found');
+      assert.equal(c.res.json()?.error, 'not_found');
     });
   }
 });

@@ -11,6 +11,7 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import {
+  createMockStreamRes,
   createMockReq,
   createMockRes,
   createMockLifecycleRes,
@@ -134,4 +135,40 @@ test('plain capture tracks end without inventing header or stream flags', () => 
   assert.equal(res.writableEnded, undefined);
   res.end('done');
   assert.equal(res.ended, true);
+});
+
+test('stream capture keeps binary chunks and end bytes in order without early UTF-8 decoding', () => {
+  const res = createMockStreamRes();
+  assert.equal(res.statusCode, null);
+  assert.equal(res.headersSent, false);
+  assert.equal(res.writableEnded, false);
+  assert.equal(res.json(), null);
+  assert.deepEqual(res.body, Buffer.alloc(0));
+  res.setHeader('X-Test', 'stream');
+  res.writeHead(202, { 'Content-Type': 'application/octet-stream' });
+  assert.equal(res.write(Buffer.from([0, 255, 0xe2])), true);
+  assert.deepEqual(res.body, Buffer.from([0, 255, 0xe2]));
+  assert.equal(res.writableEnded, false);
+  assert.equal(res.end(Buffer.from([0x82, 0xac])), res);
+  assert.deepEqual(res.body, Buffer.from([0, 255, 0xe2, 0x82, 0xac]));
+  assert.equal(res.chunks.length, 2);
+  assert.equal(res.statusCode, 202);
+  assert.equal(res.headers['X-Test'], 'stream');
+  assert.equal(res.headersSent, true);
+  assert.equal(res.writableEnded, true);
+  assert.equal(res.ended, true);
+  assert.throws(() => res.json(), SyntaxError);
+  const json = createMockStreamRes();
+  json.write('{"text":"');
+  json.write(Buffer.from([0xe2]));
+  json.end(Buffer.from([0x82, 0xac, 0x22, 0x7d]));
+  assert.deepEqual(json.json(), { text: '€' });
+  assert.equal(json.statusCode, 200);
+  assert.deepEqual(json.body, Buffer.from('{"text":"€"}'));
+  const empty = createMockStreamRes();
+  empty.end();
+  assert.equal(empty.statusCode, 200);
+  assert.equal(empty.writableEnded, true);
+  assert.equal(empty.json(), null);
+  assert.deepEqual(empty.chunks, []);
 });

@@ -22,6 +22,7 @@
  * Run with: node --test tests/internal-create-lang-refusal.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -29,38 +30,10 @@ const { handleAi } = await import('../server/routes/api/ai/index.js');
 const { handleConvert } = await import('../server/routes/api/convert.js');
 const { handleNotion } = await import('../server/routes/api/notion/index.js');
 
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headersSent: false,
-    writableEnded: false,
-    setHeader() {},
-    writeHead(status) {
-      this.statusCode = status;
-      this.headersSent = true;
-      return this;
-    },
-    write() {
-      return true;
-    },
-    end(payload) {
-      this.writableEnded = true;
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null;
-      }
-      return this;
-    },
-  };
-}
-
 /** POST `body` through a module's dispatcher, as the API router does. */
 async function post(dispatch, pathname, body) {
   const payload = JSON.stringify(body);
-  const res = makeRes();
+  const res = createMockStreamRes();
   await dispatch({
     repoRoot: process.cwd(),
     req: {
@@ -129,9 +102,9 @@ for (const route of ROUTES) {
         });
         const label = `${route.path} lang=${JSON.stringify(lang)}`;
         assert.equal(res.statusCode, 400, label);
-        assert.equal(res.body?.ok, false, label);
-        assert.equal(res.body?.error, 'invalid', label);
-        assert.deepEqual(res.body?.details, { field: 'lang' }, label);
+        assert.equal(res.json()?.ok, false, label);
+        assert.equal(res.json()?.error, 'invalid', label);
+        assert.deepEqual(res.json()?.details, { field: 'lang' }, label);
       }
     } finally {
       if (route.notion) delete process.env.NOTION_SECRET;

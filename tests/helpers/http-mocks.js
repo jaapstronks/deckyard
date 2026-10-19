@@ -82,3 +82,34 @@ export function createMockLifecycleRes() {
     },
   });
 }
+
+/** Capture ordered raw stream bytes; parse JSON only when the caller asks. */
+export function createMockStreamRes() {
+  const res = createMockLifecycleRes();
+  const chunks = [];
+  Object.defineProperty(res, 'body', {
+    get() {
+      return Buffer.concat(chunks);
+    },
+  });
+  return Object.assign(res, {
+    chunks,
+    json() {
+      return this.body.length ? JSON.parse(this.body.toString('utf8')) : null;
+    },
+    write(chunk) {
+      if (this.statusCode === null) this.statusCode = 200;
+      this.headersSent = true;
+      chunks.push(Buffer.from(chunk));
+      return true;
+    },
+    end(chunk) {
+      if (chunk != null) this.write(chunk);
+      if (this.statusCode === null) this.statusCode = 200;
+      this.headersSent = true;
+      this.ended = true;
+      this.writableEnded = true;
+      return this;
+    },
+  });
+}

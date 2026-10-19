@@ -23,6 +23,7 @@
  * Run with: node --test tests/published-embed-first-party-only.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { brandSeedRow } from './helpers/theme-seed.js';
@@ -129,31 +130,9 @@ function seed() {
   );
 }
 
-/** A response double capturing status/headers/body. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    rawBody: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      if (this.statusCode === null) this.statusCode = 200;
-      this.rawBody = payload ?? null;
-      return this;
-    },
-  };
-}
-
 /** Drive a viewer handler and hand back the document it wrote. */
 async function documentFrom(handle, pathAndQuery) {
-  const res = makeRes();
+  const res = createMockStreamRes();
   const handled = await handle({
     repoRoot: process.cwd(),
     req: { method: 'GET', headers: { host: 'decks.example.test' } },
@@ -162,7 +141,7 @@ async function documentFrom(handle, pathAndQuery) {
   });
   assert.equal(handled, true, `${pathAndQuery} was handled`);
   assert.equal(res.statusCode, 200, `${pathAndQuery} answered 200`);
-  return String(res.rawBody || '');
+  return String(res.body || '');
 }
 
 /** Every absolute `src` on a `<script>` tag in a document. */

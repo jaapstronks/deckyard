@@ -40,6 +40,7 @@
  * Run with: node --test tests/auth-routes-reset-and-magic-link.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -190,26 +191,6 @@ test.after(() => {
 // Driving the handlers
 // ---------------------------------------------------------------------------
 
-/** A response double that captures both `setHeader` (cookies) and `writeHead`/`end`. */
-function makeRes() {
-  return {
-    status: null,
-    headers: {},
-    chunks: [],
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.status = status;
-      if (headers) Object.assign(this.headers, headers);
-      return this;
-    },
-    end(chunk) {
-      if (chunk) this.chunks.push(chunk);
-    },
-  };
-}
-
 /**
  * Call an auth-route handler the way `routes/api/index.js` does — the handler
  * builds its own context, so it takes only `{ repoRoot, req, res, url }`.
@@ -244,7 +225,7 @@ async function call(handler, method, path, { body, cookie } = {}) {
     },
   };
 
-  const res = makeRes();
+  const res = createMockStreamRes();
   const handled = await handler({
     repoRoot: process.cwd(),
     req,
@@ -259,7 +240,7 @@ async function call(handler, method, path, { body, cookie } = {}) {
   } catch {
     parsed = null;
   }
-  return { handled, status: res.status, body: parsed, raw, res };
+  return { handled, status: res.statusCode, body: parsed, raw, res };
 }
 
 /** Run `fn` with AUTH_ENABLED=false, then restore. */
@@ -643,7 +624,7 @@ async function sessionCookieFor(email, password) {
     actorEmail: email,
   });
   assert.ok(login, `login for ${email} must succeed to mint a session`);
-  const res = makeRes();
+  const res = createMockStreamRes();
   auth.setSessionCookie({ headers: {} }, res, login);
   return String(res.headers['Set-Cookie']).split(';')[0];
 }
@@ -717,7 +698,7 @@ test('change-password refuses a user who has no database credentials', async () 
     name: 'Dave',
     v: '',
   };
-  const cookieRes = makeRes();
+  const cookieRes = createMockStreamRes();
   const daveRow = userFor('dave@example.com');
   const { sessionVersion } = await import('../server/utils/session-version.js');
   magicUser.v = sessionVersion(daveRow);

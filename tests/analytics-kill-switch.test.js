@@ -21,6 +21,7 @@
  * Run with: node --test tests/analytics-kill-switch.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -48,37 +49,10 @@ test.afterEach(() => {
   delete process.env.ANALYTICS_ENABLED;
 });
 
-/** A response double capturing status/headers/body. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    rawBody: null,
-    headersSent: false,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      this.headersSent = true;
-      return this;
-    },
-    write() {
-      return true;
-    },
-    end(payload) {
-      if (this.statusCode === null) this.statusCode = 200;
-      this.rawBody = payload ?? null;
-      return this;
-    },
-  };
-}
-
 function ctx(method, pathname) {
   return {
     req: { method, headers: {}, on() {}, once() {} },
-    res: makeRes(),
+    res: createMockStreamRes(),
     url: new URL(`http://localhost${pathname}`),
     authedUser: { id: 'u-1', email: 'owner@example.com', role: 'admin' },
     storageScope: null,
@@ -175,7 +149,7 @@ test('published page: a tracking script only with the cluster on', async (t) => 
   });
 
   const page = async () => {
-    const res = makeRes();
+    const res = createMockStreamRes();
     const handled = await handlePublished({
       repoRoot: process.cwd(),
       req: { method: 'GET', headers: { host: 'decks.example.test' } },
@@ -184,7 +158,7 @@ test('published page: a tracking script only with the cluster on', async (t) => 
     });
     assert.equal(handled, true);
     assert.equal(res.statusCode, 200);
-    return String(res.rawBody || '');
+    return String(res.body || '');
   };
 
   assert.match(await page(), /\/api\/track\/session\/start/);

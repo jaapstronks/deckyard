@@ -44,6 +44,7 @@
  * Run with: node --test tests/viewer-email-routes-contract.test.js
  */
 
+import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -146,41 +147,13 @@ function seed() {
 // Driving the handlers
 // ---------------------------------------------------------------------------
 
-/** A response double capturing status/headers/body the helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    rawBody: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      if (this.statusCode === null) this.statusCode = 200;
-      this.rawBody = payload ?? null;
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null; // HTML / non-JSON
-      }
-      return this;
-    },
-  };
-}
-
 /**
  * Drive a viewer handler (`handlePublished`/
  * `handleEmbed`) with a static-route context.
  */
 async function callViewer(handle, method, pathAndQuery) {
   const req = { method, headers: { host: 'decks.example.test' } };
-  const res = makeRes();
+  const res = createMockStreamRes();
   const handled = await handle({
     repoRoot: process.cwd(),
     req,
@@ -204,7 +177,7 @@ async function callEmail(method, pathAndQuery, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockStreamRes();
   const handled = await handleEmailTemplates({
     repoRoot: process.cwd(),
     req,
@@ -351,7 +324,7 @@ test('the email-template routes refuse an unauthenticated caller with a 401', as
   const { res } = await callEmail('GET', '/api/admin/email-templates/metadata');
 
   assert.equal(res.statusCode, 401);
-  assert.match(res.body.message, /Authentication required/);
+  assert.match(res.json().message, /Authentication required/);
 });
 
 test('the email-template routes refuse a non-admin caller with a 403', async () => {
@@ -363,7 +336,7 @@ test('the email-template routes refuse a non-admin caller with a 403', async () 
   );
 
   assert.equal(res.statusCode, 403);
-  assert.match(res.body.message, /Admin access required/);
+  assert.match(res.json().message, /Admin access required/);
 });
 
 test('an admin may read the template metadata', async () => {
@@ -389,7 +362,7 @@ test('the test-send rejects an unknown template type with a 400', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Invalid template type/);
+  assert.match(res.json().message, /Invalid template type/);
 });
 
 test('the test-send rejects an unsupported locale with a 400', async () => {
@@ -404,7 +377,7 @@ test('the test-send rejects an unsupported locale with a 400', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Invalid locale/);
+  assert.match(res.json().message, /Invalid locale/);
 });
 
 test('the test-send is a 501 when outgoing email is not configured', async () => {
@@ -423,5 +396,5 @@ test('the test-send is a 501 when outgoing email is not configured', async () =>
     501,
     'no BREVO_API_KEY means nothing was attempted',
   );
-  assert.equal(res.body.error, 'email_not_configured');
+  assert.equal(res.json().error, 'email_not_configured');
 });
