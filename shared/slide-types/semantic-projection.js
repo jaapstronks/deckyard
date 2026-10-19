@@ -164,11 +164,21 @@ const PRESENTATIONAL_FIELD_TYPES = new Set([
  * @returns {boolean}
  */
 function isPresentationalField(field) {
-  return (
-    field?.presentational === true ||
-    field?.interactionCopy === true ||
-    PRESENTATIONAL_FIELD_TYPES.has(field?.type)
-  );
+  return skipsReader(field) || PRESENTATIONAL_FIELD_TYPES.has(field?.type);
+}
+
+/**
+ * Does the field itself declare that the reader skips it? The per-field half
+ * of {@link isPresentationalField}, for the item-level readers that keep a
+ * presentational *type* (a table's enum column) but must still drop a declared
+ * icon name or input hint — one predicate, so `interactionCopy` cannot reach a
+ * heading or a column that `presentational` never reaches.
+ *
+ * @param {{presentational?: boolean, interactionCopy?: boolean}} field
+ * @returns {boolean}
+ */
+function skipsReader(field) {
+  return field?.presentational === true || field?.interactionCopy === true;
 }
 
 function str(v) {
@@ -704,7 +714,7 @@ function renderRowTable(field, content, defaults) {
   const rows = Array.isArray(content?.[field.key]) ? content[field.key] : [];
   if (!rows.length) return '';
   const declared = Array.isArray(field.itemFields)
-    ? field.itemFields.filter((f) => f && !f.hidden && !f.presentational)
+    ? field.itemFields.filter((f) => f && !f.hidden && !skipsReader(f))
     : [];
   if (!declared.length) return '';
 
@@ -1084,7 +1094,7 @@ function itemHeading(
   const headable = (f) =>
     f?.type === 'string' &&
     !f.hidden &&
-    !f.presentational &&
+    !skipsReader(f) &&
     !str(f.hrefKey) &&
     !DOCUMENT_ELEMENT_ROLES.has(textRole(f)) &&
     !consumed.has(f.key) &&

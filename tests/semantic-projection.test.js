@@ -1054,6 +1054,53 @@ describe('a field the type declares presentational is not document text', () => 
   });
 });
 
+describe('an item field that declares interactionCopy is not printed either', () => {
+  // The reader skips `interactionCopy` exactly like `presentational`, at item
+  // level too: an input hint is no card heading and no table column (B770).
+  it('skips it in an item, and never makes it the <h3>', () => {
+    const def = {
+      fields: [
+        {
+          key: 'items',
+          type: 'items',
+          itemFields: [
+            { key: 'hint', type: 'string', interactionCopy: true },
+            { key: 'title', type: 'string' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      { content: { items: [{ hint: 'Type here', title: 'Speed' }] } },
+      def,
+    );
+    assert.ok(html.includes('Speed'), html);
+    assert.ok(!html.includes('Type here'), html);
+  });
+
+  it('leaves it out of a tabular projection', () => {
+    const def = {
+      structure: 'tabular',
+      fields: [
+        {
+          key: 'rows',
+          type: 'items',
+          itemFields: [
+            { key: 'a', type: 'string' },
+            { key: 'hint', type: 'string', interactionCopy: true },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      { content: { rows: [{ a: 'A', hint: 'Type here' }] } },
+      def,
+    );
+    assert.ok(html.includes('<table'), html);
+    assert.ok(!html.includes('Type here'), html);
+  });
+});
+
 describe('an item folds its own image siblings into the <figure>', () => {
   // Slide-level content has always done this; items did not, so a card's alt
   // text was both the figure's `alt` and — being the first declared string —

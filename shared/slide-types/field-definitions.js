@@ -197,7 +197,8 @@ function fieldName(field, index) {
 
 /**
  * The sub-field keys of an `items` field that can name an item: its readable
- * strings (not hidden, not presentational). This is the set an
+ * strings (not hidden, not presentational, not interaction copy: the same
+ * declarations `itemHeading` in semantic-projection skips). This is the set an
  * `itemLabelField` may declare (B634). The name drives the slide-list label
  * (`labelFieldText`), the in-box prompt of an essential list's first entry and,
  * where it is also in {@link headableKeys}, the item's heading in the reader.
@@ -247,7 +248,11 @@ export function headableKeys(itemFields) {
  */
 function readableStrings(itemFields) {
   return (Array.isArray(itemFields) ? itemFields : []).filter(
-    (sub) => sub?.type === 'string' && !sub.hidden && !sub.presentational,
+    (sub) =>
+      sub?.type === 'string' &&
+      !sub.hidden &&
+      !sub.presentational &&
+      !sub.interactionCopy,
   );
 }
 
