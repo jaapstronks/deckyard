@@ -1,3 +1,4 @@
+import { createMockRes } from '../helpers/http-mocks.js';
 /**
  * B353: opening a sandbox example fills the guest's insights, against real
  * PostgreSQL.
@@ -37,12 +38,11 @@ const scope = () => ({
   actorEmail: GUEST,
 });
 
-function fakeRes() {
-  return {
+async function openExample(id) {
+  const res = Object.assign(createMockRes(), {
     statusCode: 0,
     body: '',
     headersSent: false,
-    setHeader() {},
     writeHead(status) {
       this.statusCode = status;
       this.headersSent = true;
@@ -50,11 +50,7 @@ function fakeRes() {
     end(chunk) {
       if (chunk) this.body += chunk;
     },
-  };
-}
-
-async function openExample(id) {
-  const res = fakeRes();
+  });
   await handleSandbox({
     repoRoot,
     storageScope: scope(),

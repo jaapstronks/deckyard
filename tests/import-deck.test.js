@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * End-to-end round-trip test for the `.deck` bundle importer (PR 5b, move 2).
  *
@@ -75,28 +76,17 @@ function fakeReq(buf) {
   })();
 }
 
-function fakeRes() {
-  return {
-    statusCode: null,
+async function importBundle(buf) {
+  const res = Object.assign(createMockRes(), {
     headers: null,
-    body: null,
-    ended: false,
-    headersSent: false,
-    writableEnded: false,
     writeHead(status, headers) {
       this.statusCode = status;
       this.headers = headers;
       return this;
     },
-    end(payload) {
-      this.body = payload;
-      this.ended = true;
-    },
-  };
-}
-
-async function importBundle(buf) {
-  const res = fakeRes();
+    headersSent: false,
+    writableEnded: false,
+  });
   await handlePresentationsImportDeck({
     repoRoot,
     storageScope: testScope(),

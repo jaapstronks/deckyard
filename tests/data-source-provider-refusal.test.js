@@ -1,3 +1,4 @@
+import { createMockRes } from './helpers/http-mocks.js';
 /**
  * A data-source provider that fails refuses in its own words (B417).
  *
@@ -36,24 +37,6 @@ test.after(() => {
   console.error = savedConsoleError;
 });
 
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headersSent: false,
-    writableEnded: false,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
-
 /** Drive the mount handler the way the router does, capturing the log. */
 async function call(pathname, body) {
   const payload = JSON.stringify(body);
@@ -65,7 +48,10 @@ async function call(pathname, body) {
       yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = Object.assign(createMockRes(), {
+    headersSent: false,
+    writableEnded: false,
+  });
   const lines = [];
   console.error = (...args) => lines.push(args.map(String).join(' '));
   try {
@@ -131,10 +117,10 @@ for (const failure of FAILURES) {
       globalThis.fetch = failure.fetch;
       const { res, log } = await send({ url: PUBLIC_CSV_URL });
       assert.equal(res.statusCode, 502);
-      assert.equal(res.body.error, 'bad_gateway');
-      assert.equal(res.body.message, REFUSAL);
+      assert.equal(res.json().error, 'bad_gateway');
+      assert.equal(res.json().message, REFUSAL);
       assert.ok(
-        !JSON.stringify(res.body).includes('secret-module'),
+        !JSON.stringify(res.json()).includes('secret-module'),
         'no internal text on the wire',
       );
       assert.match(log, /secret-module/, 'the cause is in the log');
@@ -156,7 +142,7 @@ test('a provider input refusal is a 400 in its own words', async () => {
   ]) {
     const { res } = await preview(config);
     assert.equal(res.statusCode, 400);
-    assert.equal(res.body.error, 'bad_request');
-    assert.equal(res.body.message, message);
+    assert.equal(res.json().error, 'bad_request');
+    assert.equal(res.json().message, message);
   }
 });
