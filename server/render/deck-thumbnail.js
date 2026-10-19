@@ -2,7 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
-import { dataDir } from '../config/storage-paths.js';
+import { deckThumbsDir } from '../config/storage-paths.js';
 import { renderSlideToPngBuffer } from './png.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -51,7 +51,7 @@ const MAX_CONCURRENT = 3;
 /** How long a failed generation is remembered before the next attempt. */
 export const FAILURE_TTL_MS = 5 * 60 * 1000;
 
-const cacheDir = (repoRoot) => path.join(dataDir(repoRoot), 'deck-thumbs');
+const cacheDir = deckThumbsDir;
 
 /** Keep the id prefix filesystem-safe; the sha suffix carries uniqueness. */
 function sanitizeId(id) {
@@ -222,6 +222,8 @@ export async function readCachedThumbnail(repoRoot, filename) {
 
 // ── Remembered failures ─────────────────────────────────────────────────────
 const failures = new Map(); // filename -> { reason, until }
+const warnedCacheDirs = new Set(); // one installation warning per path and process
+const CACHE_WRITE_ERRORS = new Set(['EACCES', 'EROFS', 'ENOSPC']);
 
 /**
  * The display reason the last generation for this cache key failed, or null
@@ -250,18 +252,27 @@ export function thumbnailFailure(filename, now = Date.now()) {
  * @param {string} reason - Display sentence for the route's `message`.
  * @param {unknown} [err] - The underlying error, for the log only.
  */
-function rememberFailure(filename, reason, err) {
+function rememberFailure(filename, reason, err, { cacheDir = '' } = {}) {
   const now = Date.now();
   for (const [key, entry] of failures) {
     if (entry.until <= now) failures.delete(key);
   }
   failures.set(filename, { reason, until: now + FAILURE_TTL_MS });
+  if (cacheDir && CACHE_WRITE_ERRORS.has(err?.code)) {
+    if (warnedCacheDirs.has(cacheDir)) return;
+    warnedCacheDirs.add(cacheDir);
+    log.warn(
+      `Thumbnail cache ${cacheDir} is not writable (${err.code}). Run npm run doctor and make this directory writable by the server user.`,
+    );
+    return;
+  }
   log.warn(`${filename}: ${reason}`, err ? err?.message || String(err) : '');
 }
 
 /** Forget every remembered failure. Test seam. */
 export function clearThumbnailFailures() {
   failures.clear();
+  warnedCacheDirs.clear();
 }
 
 // ── Single-flight + a small concurrency gate ────────────────────────────────
@@ -342,6 +353,7 @@ async function generateAndCache(
       filename,
       'The thumbnail cache directory is not writable.',
       err,
+      { cacheDir: cacheDir(repoRoot) },
     );
     return false;
   }
