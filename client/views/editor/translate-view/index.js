@@ -20,8 +20,7 @@
  * 4. Before the live document is ready both columns are inert and say so.
  * 5. Whether a target slide exists is matched on id (model.js).
  *
- * Navigation follows the editor selection through its lock-aware seam;
- * machine proposals are B478.
+ * Navigation follows the editor selection through its lock-aware seam.
  */
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { createTranslateNavigation } from './navigation.js';
@@ -34,6 +33,8 @@ import { icon } from '../../../lib/dom/icons.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { featureEnabled } from '../../../lib/state/features.js';
+import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 import { fieldLabel, fieldMetaForPath } from '../inline-edit/field-path.js';
 import { slideTypeLabel } from '../convert-slide-action.js';
@@ -93,6 +94,7 @@ function isMultiline(meta, ...values) {
  * @param {Object} opts.pres - the editor's live presentation (read live)
  * @param {Object} opts.slideTypes - slide-type registry
  * @param {Function} opts.normalizeLang
+ * @param {Function} [opts.api] - translation preview endpoint
  * @param {(lang: string, slideId: string|null, path: Array<string|number>,
  *   value: string) => boolean} opts.write - the editor's writeVersionText
  * @param {() => boolean} opts.canWrite - false until the live document is
@@ -115,6 +117,7 @@ export function openTranslateView({
   pres,
   slideTypes,
   normalizeLang,
+  api,
   write,
   canWrite,
   subscribe,
@@ -141,6 +144,12 @@ export function openTranslateView({
   let unsubscribe = null;
   let navigation = null;
   let previewCleanups = [];
+  const proposals = new Map();
+  const failures = new Map();
+  const working = new Set();
+  let runId = 0;
+  let progress = null;
+  let closed = false;
   const clearPreviews = () => {
     for (const cleanup of previewCleanups) cleanup();
     previewCleanups = [];
@@ -159,6 +168,8 @@ export function openTranslateView({
     fill: true,
     closeButton: 'icon',
     onClose: () => {
+      closed = true;
+      runId += 1;
       navigation?.detach();
       clearPreviews();
       unsubscribe?.();
@@ -254,9 +265,39 @@ export function openTranslateView({
     role: 'status',
     hidden: true,
   });
+  const proposalProgress = featureEnabled('ai')
+    ? h('div', {
+        class: 'translate-view-proposal-progress help',
+        role: 'status',
+      })
+    : null;
+  const proposeEmptyBtn = featureEnabled('ai')
+    ? h('button', {
+        class: 'btn btn-secondary btn-sm',
+        type: 'button',
+        text: t(
+          'editor.translateView.proposeEmpty',
+          'Suggest all empty fields',
+        ),
+        onclick: () => proposeAllEmpty(),
+      })
+    : null;
+  const acceptEmptyBtn = featureEnabled('ai')
+    ? h('button', {
+        class: 'btn btn-secondary btn-sm',
+        type: 'button',
+        text: t(
+          'editor.translateView.acceptEmpty',
+          'Accept suggestions in empty fields',
+        ),
+        onclick: () => acceptEmpty(),
+      })
+    : null;
   const toolbar = h('div', { class: 'translate-view-toolbar' }, [
     pairEl,
     filterSelect,
+    proposeEmptyBtn,
+    acceptEmptyBtn,
     h('div', { class: 'translate-view-history' }, [undoBtn, redoBtn]),
   ]);
   const body = h('div', { class: 'translate-view-body' });
@@ -265,11 +306,16 @@ export function openTranslateView({
     'aria-label': t('editor.translateView.slideIndex', 'Slides'),
   });
   modal.append(
-    h('div', { class: 'translate-view-frame' }, [
-      toolbar,
-      statusEl,
-      h('div', { class: 'translate-view-content' }, [index, body]),
-    ]),
+    h(
+      'div',
+      { class: `translate-view-frame${featureEnabled('ai') ? ' has-ai' : ''}` },
+      [
+        toolbar,
+        statusEl,
+        proposalProgress,
+        h('div', { class: 'translate-view-content' }, [index, body]),
+      ],
+    ),
   );
 
   // ── language pair ────────────────────────────────────────────────────────
@@ -278,6 +324,11 @@ export function openTranslateView({
     defaultLanguagePair(pres, activeLang())?.langs || [];
 
   const setPair = (source, target) => {
+    runId += 1;
+    proposals.clear();
+    failures.clear();
+    working.clear();
+    progress = null;
     state.source = source;
     state.target = target;
     filterKeep = null;
@@ -368,11 +419,17 @@ export function openTranslateView({
     entry.error.show(message, { control: entry.el, focus: false });
   };
 
-  const onInput = (entry) => {
+  const writeValue = (entry, value, { refresh = true } = {}) => {
     const inert = inertReason();
-    if (inert) return showRefusal(entry, inert);
+    if (inert) {
+      showRefusal(entry, inert);
+      return false;
+    }
     const lock = lockOf(entry.slideId);
-    if (lock) return showRefusal(entry, lockMessage(lock));
+    if (lock) {
+      showRefusal(entry, lockMessage(lock));
+      return false;
+    }
     // A write into the active language is an edit of that slide: select it
     // first, so the lock the edit takes is this slide's (review rule 1).
     if (
@@ -381,13 +438,12 @@ export function openTranslateView({
       getSelectedSlideId?.() !== entry.slideId
     )
       selectSlide?.(entry.slideId);
-    const value = entry.el.value;
     if (
       !write(entry.lang, entry.slideId, entry.path, value, {
         sourceLang: entry.lang === state.target ? state.source : state.target,
       })
-    )
-      return showRefusal(
+    ) {
+      showRefusal(
         entry,
         entry.slideId && lockOf(entry.slideId)
           ? lockMessage(lockOf(entry.slideId))
@@ -396,17 +452,27 @@ export function openTranslateView({
               'This change could not be saved. The field shows what is stored.',
             ),
       );
+      return false;
+    }
+    entry.el.value = value;
     entry.stored = value;
     entry.error?.clear();
+    if (refresh && proposals.has(rowKey(entry.slideId, entry.path))) {
+      render();
+      return true;
+    }
     // An own write emits no change signal (the view already holds the text),
     // but the index's status dots are derived: refresh them, or filling the
     // last empty field of a slide would leave it marked incomplete.
-    const model = currentModel();
-    refreshIndex(model);
-    refreshFieldStatuses(model);
-    syncHistory();
-    return undefined;
+    if (refresh) {
+      const model = currentModel();
+      refreshIndex(model);
+      refreshFieldStatuses(model);
+      syncHistory();
+    }
+    return true;
   };
+  const onInput = (entry) => writeValue(entry, entry.el.value);
 
   // ── rendering ────────────────────────────────────────────────────────────
 
@@ -418,6 +484,202 @@ export function openTranslateView({
       activeLang: activeLang(),
       slideTypes,
     });
+
+  const modelRow = (model, slideId, path) => {
+    if (!slideId) return model.deck;
+    const slide = model.slides.find((s) => s.slideId === slideId);
+    if (slide?.only) return null;
+    return slide?.rows.find(
+      (r) => rowKey(slideId, r.path) === rowKey(slideId, path),
+    );
+  };
+
+  const proposalIsFresh = (proposal, model = currentModel()) => {
+    if (
+      proposal.sourceLang !== state.source ||
+      proposal.targetLang !== state.target
+    )
+      return false;
+    const row = modelRow(model, proposal.slideId, proposal.path);
+    return (
+      !!row && row.source === proposal.source && row.target === proposal.target
+    );
+  };
+
+  const updateProposalChrome = () => {
+    if (!featureEnabled('ai')) return;
+    const model = currentModel();
+    const validEmpty = [...proposals.values()].some(
+      (p) =>
+        proposalIsFresh(p, model) &&
+        !modelRow(model, p.slideId, p.path).target.trim(),
+    );
+    proposeEmptyBtn.disabled = !!progress || !!working.size || !!inertReason();
+    acceptEmptyBtn.disabled = !validEmpty || !!inertReason();
+    proposalProgress.textContent = progress
+      ? t(
+          'editor.translateView.proposalProgress',
+          'Suggestions: {done} of {total} requests',
+          progress,
+        )
+      : '';
+    for (const item of index.querySelectorAll('[data-slide-id]')) {
+      const id = item.dataset.slideId;
+      item.classList.toggle('has-proposal-failure', failures.has(id));
+      item.classList.toggle('is-proposing', working.has(id));
+      const count = [...proposals.values()].filter(
+        (p) => p.slideId === id && proposalIsFresh(p, model),
+      ).length;
+      const indicator = item.querySelector('.translate-view-proposal-count');
+      if (indicator)
+        indicator.textContent = working.has(id)
+          ? '…'
+          : failures.has(id)
+            ? '!'
+            : count
+              ? String(count)
+              : '';
+      const note = working.has(id)
+        ? t('editor.translateView.proposalWorking', 'Requesting suggestions')
+        : failures.has(id)
+          ? t(
+              'editor.translateView.proposalFailed',
+              'Suggestion failed; retry on slide',
+            )
+          : count
+            ? t('editor.translateView.proposalCount', '{count} suggestions', {
+                count,
+              })
+            : '';
+      item.setAttribute(
+        'aria-label',
+        `${item.dataset.baseLabel}${note ? `, ${note}` : ''}`,
+      );
+    }
+  };
+
+  /** One request carries one slide's text fields, keyed by their exact path. */
+  async function proposeRows(slideId, rows, generation = runId) {
+    if (!rows.length || !api || closed || working.has(slideId || 'deck'))
+      return;
+    const fields = Object.fromEntries(
+      rows.map((r) => [JSON.stringify(r.path), r.source]),
+    );
+    working.add(slideId || 'deck');
+    failures.delete(slideId || 'deck');
+    updateProposalChrome();
+    try {
+      const vendor = readPreferredLlmVendor();
+      const response = await api(
+        `/api/presentations/${pres.id}/translate/fields`,
+        {
+          method: 'POST',
+          body: {
+            from: state.source,
+            to: state.target,
+            fields,
+            ...(vendor ? { vendor } : {}),
+          },
+        },
+      );
+      if (closed || generation !== runId) return;
+      const model = currentModel();
+      const missing = [];
+      for (const row of rows) {
+        const value = response?.translations?.[JSON.stringify(row.path)];
+        const proposal = {
+          slideId,
+          path: row.path,
+          source: row.source,
+          target: row.target,
+          sourceLang: state.source,
+          targetLang: state.target,
+          value,
+        };
+        if (
+          typeof value === 'string' &&
+          value.trim() &&
+          proposalIsFresh(proposal, model)
+        )
+          proposals.set(rowKey(slideId, row.path), proposal);
+        else if (proposalIsFresh(proposal, model))
+          missing.push(rowKey(slideId, row.path));
+      }
+      if (missing.length)
+        failures.set(slideId || 'deck', {
+          message: t(
+            'editor.translateView.incompleteProposal',
+            'Some suggestions were missing from the response.',
+          ),
+          paths: missing,
+        });
+    } catch (error) {
+      if (!closed && generation === runId)
+        failures.set(slideId || 'deck', {
+          message: error?.message || String(error),
+          paths: rows.map((r) => rowKey(slideId, r.path)),
+        });
+    } finally {
+      if (!closed && generation === runId) {
+        working.delete(slideId || 'deck');
+        render();
+      }
+    }
+  }
+
+  async function proposeAllEmpty() {
+    if (progress || working.size || inertReason()) return;
+    const model = currentModel();
+    const groups = [
+      ...(model.deck && isEmptyTarget(model.deck) ? [null] : []),
+      ...model.slides
+        .filter((s) => !s.only)
+        .filter((s) => s.rows.some(isEmptyTarget))
+        .map((s) => s.slideId),
+    ];
+    const generation = ++runId;
+    progress = { done: 0, total: groups.length };
+    updateProposalChrome();
+    for (const slideId of groups) {
+      if (closed || generation !== runId) break;
+      const current = currentModel();
+      const rows = (
+        slideId
+          ? current.slides.find((s) => s.slideId === slideId)?.rows || []
+          : [current.deck]
+      ).filter((r) => r && isEmptyTarget(r));
+      await proposeRows(slideId, rows, generation);
+      progress.done += 1;
+      updateProposalChrome();
+    }
+    if (!closed && generation === runId) {
+      progress = null;
+      updateProposalChrome();
+    }
+  }
+
+  function acceptProposal(
+    proposal,
+    { onlyEmpty = false, refresh = true } = {},
+  ) {
+    const model = currentModel();
+    if (!proposalIsFresh(proposal, model)) return false;
+    const row = modelRow(model, proposal.slideId, proposal.path);
+    if (onlyEmpty && row.target.trim()) return false;
+    const entry = controls.get(
+      addressKey(state.target, proposal.slideId, proposal.path),
+    );
+    if (!entry || !writeValue(entry, proposal.value, { refresh })) return false;
+    proposals.delete(rowKey(proposal.slideId, proposal.path));
+    if (refresh) render();
+    return true;
+  }
+
+  function acceptEmpty() {
+    for (const proposal of [...proposals.values()])
+      acceptProposal(proposal, { onlyEmpty: true, refresh: false });
+    render();
+  }
 
   /**
    * Which rows the filter shows. Computed when the filter or the pair
@@ -513,6 +775,48 @@ export function openTranslateView({
     const tgtName = getLangDisplayName(state.target);
     src.el.setAttribute('aria-label', `${label} (${srcName})`);
     tgt.el.setAttribute('aria-label', `${label} (${tgtName})`);
+    const proposal = proposals.get(rowKey(slideId, path));
+    const requestRow = { slideId, path, source, target };
+    const proposalCell = featureEnabled('ai')
+      ? h('div', { class: 'translate-view-cell translate-view-proposal' }, [
+          proposal
+            ? h('div', {
+                class: 'translate-view-proposal-text',
+                text: proposal.value,
+              })
+            : h('span', {
+                class: 'help',
+                text: t('editor.translateView.noProposal', 'No suggestion yet'),
+              }),
+          proposal && !proposalIsFresh(proposal)
+            ? h('span', {
+                class: 'help',
+                text: t(
+                  'editor.translateView.proposalStale',
+                  'Text changed; request a new suggestion',
+                ),
+              })
+            : null,
+          proposal && proposalIsFresh(proposal)
+            ? h('button', {
+                type: 'button',
+                class: 'btn btn-primary btn-sm',
+                text: t('editor.translateView.acceptProposal', 'Accept'),
+                disabled: !!inertReason() || !!lockOf(slideId),
+                onclick: () => acceptProposal(proposal),
+              })
+            : null,
+          source.trim() && !proposal
+            ? h('button', {
+                type: 'button',
+                class: 'btn btn-secondary btn-sm',
+                text: t('editor.translateView.proposeField', 'Suggest field'),
+                disabled: !!inertReason() || working.has(slideId || 'deck'),
+                onclick: () => proposeRows(slideId, [requestRow]),
+              })
+            : null,
+        ])
+      : null;
     const row = h(
       'div',
       {
@@ -522,6 +826,7 @@ export function openTranslateView({
         labelEl,
         h('div', { class: 'translate-view-cell' }, [src.el]),
         h('div', { class: 'translate-view-cell' }, [tgt.el, tgt.statusEl]),
+        proposalCell,
       ],
     );
     return row;
@@ -573,9 +878,46 @@ export function openTranslateView({
       h('div', { class: 'translate-view-slide-heading' }, [
         heading,
         previewBtn,
+        featureEnabled('ai') && !s.only && s.rows.some((r) => r.source.trim())
+          ? h('button', {
+              type: 'button',
+              class: 'btn btn-secondary btn-sm translate-view-propose-slide',
+              text: t('editor.translateView.proposeSlide', 'Suggest slide'),
+              disabled: !!inertReason() || working.has(s.slideId),
+              onclick: () =>
+                proposeRows(
+                  s.slideId,
+                  s.rows.filter((r) => r.source.trim()),
+                ),
+            })
+          : null,
       ]),
       preview,
     ];
+    if (failures.has(s.slideId))
+      children.push(
+        h('div', { class: 'translate-view-proposal-failure', role: 'alert' }, [
+          h('span', { text: failures.get(s.slideId).message }),
+          h('button', {
+            type: 'button',
+            class: 'btn btn-secondary btn-sm',
+            text: t('editor.translateView.retry', 'Retry slide'),
+            onclick: () => {
+              const paths = new Set(failures.get(s.slideId)?.paths || []);
+              const rows =
+                currentModel().slides.find((x) => x.slideId === s.slideId)
+                  ?.rows || [];
+              proposeRows(
+                s.slideId,
+                rows.filter(
+                  (r) =>
+                    paths.has(rowKey(s.slideId, r.path)) && r.source.trim(),
+                ),
+              );
+            },
+          }),
+        ]),
+      );
     if (s.only) {
       const lang = s.only === 'source' ? state.source : state.target;
       children.push(
@@ -661,6 +1003,9 @@ export function openTranslateView({
       h('div', { class: 'translate-view-label' }),
       h('div', { text: getLangDisplayName(state.source) }),
       h('div', { text: getLangDisplayName(state.target) }),
+      featureEnabled('ai')
+        ? h('div', { text: t('editor.translateView.proposal', 'Suggestion') })
+        : null,
     ]);
     const parts = [head];
     if (shown.deck) {
@@ -675,6 +1020,21 @@ export function openTranslateView({
             target: shown.deck.target,
             status: shown.deck.status,
           }),
+          failures.has('deck')
+            ? h(
+                'div',
+                { class: 'translate-view-proposal-failure', role: 'alert' },
+                [
+                  h('span', { text: failures.get('deck').message }),
+                  h('button', {
+                    type: 'button',
+                    class: 'btn btn-secondary btn-sm',
+                    text: t('editor.translateView.retry', 'Retry slide'),
+                    onclick: () => proposeRows(null, [currentModel().deck]),
+                  }),
+                ],
+              )
+            : null,
         ]),
       );
     }
@@ -692,6 +1052,7 @@ export function openTranslateView({
     }
     body.replaceChildren(...parts);
     navigation?.update(shown.slides, model.slides);
+    updateProposalChrome();
 
     const again = focusKey ? controls.get(focusKey) : null;
     if (again) {
@@ -716,6 +1077,7 @@ export function openTranslateView({
     for (const c of controls.values()) {
       c.el.readOnly = !!inert || !!lockOf(c.slideId);
     }
+    updateProposalChrome();
     syncHistory();
   }
 
@@ -743,6 +1105,14 @@ export function openTranslateView({
       return;
     }
     const model = currentModel();
+    if (
+      [...proposals.values()].some(
+        (proposal) => !proposalIsFresh(proposal, model),
+      )
+    ) {
+      render();
+      return;
+    }
     if (shapeOf(model) !== renderedShape) {
       if (state.filter) freezeFilter(model);
       render();
@@ -767,6 +1137,7 @@ export function openTranslateView({
     }
     refreshIndex(model);
     refreshFieldStatuses(model);
+    updateProposalChrome();
     applyWriteState();
   }
 

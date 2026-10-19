@@ -52,6 +52,9 @@ const { translateViewModel, onlyEmptyTargets, defaultLanguagePair } =
 const { computeMissingTranslation, slideTextRows, pickVersion } =
   await import('../shared/i18n-progress.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { setFeatures } = await import('../client/lib/state/features.js');
+const { translationFieldKey } =
+  await import('../shared/translation-provenance.js');
 
 const normalizeLang = (l) => (l === 'nl' || l === 'en-GB' ? l : null);
 
@@ -240,6 +243,211 @@ function openWith(pres, overrides = {}) {
 }
 
 const cleanup = () => document.body.replaceChildren();
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+async function until(predicate) {
+  for (let i = 0; i < 1000; i += 1) {
+    if (predicate()) return;
+    await tick();
+  }
+  assert.fail(
+    `timed out waiting for proposals: ${document.querySelector('.translate-view-proposal-progress')?.textContent}`,
+  );
+}
+
+test('proposals: 80 slide requests leave storage untouched until bulk acceptance', async () => {
+  setFeatures({ enableAi: true });
+  const pres = bilingualPres();
+  pres.slides = Array.from({ length: 80 }, (_, i) =>
+    listSlide(`slide-${i}`, `Bron ${i}`, []),
+  );
+  pres.i18n.versions.nl.slides = pres.slides;
+  pres.i18n.versions['en-GB'].slides = pres.slides.map((s) =>
+    listSlide(s.id, '', []),
+  );
+  pres.i18n.versions['en-GB'].slides[0].content.title = 'Already translated';
+  const before = JSON.stringify(pres.i18n.versions['en-GB']);
+  const requests = [];
+  const { view, calls } = openWith(pres, {
+    api: async (_url, { body }) => {
+      requests.push(body);
+      return {
+        translations: Object.fromEntries(
+          Object.keys(body.fields).map((key) => [
+            key,
+            `Translated ${body.fields[key]}`,
+          ]),
+        ),
+      };
+    },
+  });
+  // Pick by class-independent copy so the test covers the visible action.
+  const suggest = [
+    ...document.querySelectorAll('.translate-view-toolbar button'),
+  ].find((b) => b.textContent === 'Suggest all empty fields');
+  suggest.click();
+  await until(
+    () =>
+      requests.length >= 80 &&
+      !document.querySelector('.translate-view-proposal-progress').textContent,
+  );
+  assert.equal(JSON.stringify(pres.i18n.versions['en-GB']), before);
+  assert.equal(calls.writes.length, 0);
+  assert.equal(
+    requests.length,
+    80,
+    'deck title plus one request for each empty slide',
+  );
+  const accept = [
+    ...document.querySelectorAll('.translate-view-toolbar button'),
+  ].find((b) => b.textContent === 'Accept suggestions in empty fields');
+  accept.click();
+  assert.equal(
+    pres.i18n.versions['en-GB'].slides[0].content.title,
+    'Already translated',
+  );
+  assert.equal(
+    pres.i18n.versions['en-GB'].slides[79].content.title,
+    'Translated Bron 79',
+  );
+  assert.equal(
+    !!pres.i18n.versions['en-GB'].translationSources[
+      translationFieldKey('slide-79', ['title'])
+    ],
+    true,
+  );
+  view.close();
+  cleanup();
+  setFeatures(null);
+});
+
+test('proposals: filled target needs individual acceptance; changed source cannot overwrite', async () => {
+  setFeatures({ enableAi: true });
+  const pres = bilingualPres();
+  const { view, field, calls, signal } = openWith(pres, {
+    api: async (_url, { body }) => ({
+      translations: Object.fromEntries(
+        Object.keys(body.fields).map((key) => [key, 'Suggestion']),
+      ),
+    }),
+  });
+  document
+    .querySelector('section[data-slide-id="s1"] .translate-view-propose-slide')
+    .click();
+  await until(
+    () =>
+      !!document.querySelector(
+        'section[data-slide-id="s1"] .translate-view-proposal .btn-primary',
+      ),
+  );
+  assert.equal(pres.i18n.versions['en-GB'].slides[0].content.title, 'Why');
+  const acceptFilled = field('en-GB', 's1', 'Title')
+    .closest('.translate-view-row')
+    .querySelector('.translate-view-proposal .btn-primary');
+  acceptFilled.click();
+  assert.equal(
+    pres.i18n.versions['en-GB'].slides[0].content.title,
+    'Suggestion',
+  );
+  document
+    .querySelector('section[data-slide-id="s2"] .translate-view-propose-slide')
+    .click();
+  await until(
+    () =>
+      !!document.querySelector(
+        'section[data-slide-id="s2"] .translate-view-proposal .btn-primary',
+      ),
+  );
+  pres.slides[1].content.title = 'Nieuwe bron';
+  signal.emit();
+  assert.equal(
+    field('en-GB', 's2', 'Title')
+      .closest('.translate-view-row')
+      .querySelector('.translate-view-proposal .btn-primary'),
+    null,
+  );
+  assert.equal(field('en-GB', 's2', 'Title').value, '');
+  assert.equal(calls.writes.length, 1);
+  view.close();
+  cleanup();
+  setFeatures(null);
+});
+
+test('proposals: retry a failed slide, then refuse a changed target and a deleted slide', async () => {
+  setFeatures({ enableAi: true });
+  const pres = bilingualPres();
+  let attempts = 0;
+  const { view, field, signal, calls } = openWith(pres, {
+    api: async (_url, { body }) => {
+      attempts += 1;
+      if (attempts === 1) throw new Error('Vendor unavailable');
+      return {
+        translations: Object.fromEntries(
+          Object.keys(body.fields).map((key) => [key, 'Suggested text']),
+        ),
+      };
+    },
+  });
+  const section = () => document.querySelector('section[data-slide-id="s2"]');
+  section().querySelector('.translate-view-propose-slide').click();
+  await until(
+    () => !!section().querySelector('.translate-view-proposal-failure'),
+  );
+  assert.match(section().textContent, /Vendor unavailable/);
+  assert.equal(calls.writes.length, 0);
+  section().querySelector('.translate-view-proposal-failure button').click();
+  await until(
+    () =>
+      !!field('en-GB', 's2', 'Title')
+        .closest('.translate-view-row')
+        .querySelector('.translate-view-proposal .btn-primary'),
+  );
+  assert.equal(attempts, 2);
+  pres.i18n.versions['en-GB'].slides[1].content.title = 'Peer edit';
+  signal.emit();
+  assert.equal(
+    field('en-GB', 's2', 'Title')
+      .closest('.translate-view-row')
+      .querySelector('.translate-view-proposal .btn-primary'),
+    null,
+  );
+  assert.equal(calls.writes.length, 0);
+  pres.i18n.versions['en-GB'].slides.splice(1, 1);
+  signal.emit();
+  assert.equal(
+    section().querySelectorAll('.translate-view-proposal .btn-primary').length,
+    0,
+  );
+  view.close();
+  cleanup();
+  setFeatures(null);
+});
+
+test('proposals: swapping languages sends the reverse pair', async () => {
+  setFeatures({ enableAi: true });
+  const pres = bilingualPres();
+  const requests = [];
+  const { view } = openWith(pres, {
+    api: async (_url, { body }) => {
+      requests.push(body);
+      return {
+        translations: Object.fromEntries(
+          Object.keys(body.fields).map((key) => [key, 'Omgekeerd']),
+        ),
+      };
+    },
+  });
+  document.querySelector('.translate-view-pair button').click();
+  document
+    .querySelector('section[data-slide-id="s1"] .translate-view-propose-slide')
+    .click();
+  await until(() => requests.length === 1);
+  assert.equal(requests[0].from, 'en-GB');
+  assert.equal(requests[0].to, 'nl');
+  view.close();
+  cleanup();
+  setFeatures(null);
+});
 
 test('view: typing in the target writes that language at that path', () => {
   const pres = bilingualPres();
