@@ -17,6 +17,7 @@
  * Run with: node --test tests/duplicate-presentation-service.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -80,25 +81,6 @@ async function ownersDeck(visibility) {
   return pres;
 }
 
-/** A recorder for a route's response. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    headers: {},
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
-}
-
 /** A body-less POST request. */
 function post() {
   const req = Readable.from([]);
@@ -109,7 +91,7 @@ function post() {
 
 /** POST to the internal duplicate route as `email`'s session. */
 async function appDuplicate(id, email = OTHER) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleAppPresentations({
     repoRoot: process.cwd(),
     storageScope: testScope(process.cwd()),
@@ -123,7 +105,7 @@ async function appDuplicate(id, email = OTHER) {
 
 /** POST to v1 duplicate with `email`'s write key. */
 async function v1Duplicate(id, email = OTHER) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleV1Presentations({
     req: post(),
     res,
@@ -190,17 +172,17 @@ test('a reader copies on every contract; the copy and its activity row are their
   const source = await ownersDeck('organization');
 
   const app = await appDuplicate(source.id);
-  assert.equal(app.statusCode, 201, JSON.stringify(app.body));
+  assert.equal(app.statusCode, 201, JSON.stringify(app.json()));
 
   const v1 = await v1Duplicate(source.id);
-  assert.equal(v1.statusCode, 201, JSON.stringify(v1.body));
+  assert.equal(v1.statusCode, 201, JSON.stringify(v1.json()));
 
   const mcp = await mcpDuplicate(source.id);
 
   const byId = new Map((await decks()).map((p) => [p.id, p]));
   for (const [where, id] of [
-    ['internal', app.body.id],
-    ['v1', v1.body.data?.presentation?.id ?? v1.body.presentation?.id],
+    ['internal', app.json().id],
+    ['v1', v1.json().data?.presentation?.id ?? v1.json().presentation?.id],
     ['MCP', mcp.id],
   ]) {
     assert.ok(id, `${where}: copy id`);
@@ -217,10 +199,10 @@ test('every contract refuses a deck the actor may not read, and copies nothing',
   const before = (await decks()).length;
 
   const app = await appDuplicate(source.id);
-  assert.equal(app.statusCode, 403, `internal: ${JSON.stringify(app.body)}`);
+  assert.equal(app.statusCode, 403, `internal: ${JSON.stringify(app.json())}`);
 
   const v1 = await v1Duplicate(source.id);
-  assert.equal(v1.statusCode, 403, `v1: ${JSON.stringify(v1.body)}`);
+  assert.equal(v1.statusCode, 403, `v1: ${JSON.stringify(v1.json())}`);
 
   await assert.rejects(
     () => mcpDuplicate(source.id),
@@ -237,11 +219,11 @@ test('every contract answers an absent deck with 404', async () => {
   const before = (await decks()).length;
 
   const app = await appDuplicate(ABSENT);
-  assert.equal(app.statusCode, 404, `internal: ${JSON.stringify(app.body)}`);
+  assert.equal(app.statusCode, 404, `internal: ${JSON.stringify(app.json())}`);
 
   // v1 answered a source it could not copy with a 500.
   const v1 = await v1Duplicate(ABSENT);
-  assert.equal(v1.statusCode, 404, `v1: ${JSON.stringify(v1.body)}`);
+  assert.equal(v1.statusCode, 404, `v1: ${JSON.stringify(v1.json())}`);
 
   await assert.rejects(
     () => mcpDuplicate(ABSENT),

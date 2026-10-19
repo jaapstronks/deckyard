@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { createMockRes } from './helpers/http-mocks.js';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import {
@@ -19,20 +20,6 @@ import {
 function reqFrom(str) {
   // A Readable is async-iterable, matching how http.js consumes `req`.
   return Readable.from([Buffer.from(str)]);
-}
-
-/** Minimal ServerResponse stand-in that records what the helper sent. */
-function fakeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    writeHead(status) {
-      this.statusCode = status;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-    },
-  };
 }
 
 function withEnv(value, fn) {
@@ -60,7 +47,7 @@ test('readRequestBody throws 413 over the cap', () => {
 
 test('requireJsonBody parses a body under the cap', () => {
   return withEnv('1000', async () => {
-    const res = fakeRes();
+    const res = createMockRes();
     const result = await requireJsonBody(
       reqFrom(JSON.stringify({ a: 1 })),
       res,
@@ -73,34 +60,34 @@ test('requireJsonBody parses a body under the cap', () => {
 
 test('requireJsonBody answers 413 in the canonical envelope when over the cap', () => {
   return withEnv('8', async () => {
-    const res = fakeRes();
+    const res = createMockRes();
     const result = await requireJsonBody(reqFrom('0123456789'), res);
     assert.equal(result.ok, false);
     assert.equal(res.statusCode, 413);
-    assert.equal(res.body.ok, false);
-    assert.equal(res.body.error, 'payload_too_large');
+    assert.equal(res.json().ok, false);
+    assert.equal(res.json().error, 'payload_too_large');
   });
 });
 
 test('requireJsonBody answers 400 on an empty body', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom(''), res);
   assert.equal(result.ok, false);
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'bad_request');
-  assert.equal(res.body.message, 'Request body is required');
+  assert.equal(res.json().error, 'bad_request');
+  assert.equal(res.json().message, 'Request body is required');
 });
 
 test('requireJsonBody answers 400 on unparseable JSON', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom('{nope'), res);
   assert.equal(result.ok, false);
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.message, 'Invalid JSON body');
+  assert.equal(res.json().message, 'Invalid JSON body');
 });
 
 test('allowEmpty turns an absent body into {} instead of a 400', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom('   '), res, {
     allowEmpty: true,
   });
@@ -110,7 +97,7 @@ test('allowEmpty turns an absent body into {} instead of a 400', async () => {
 });
 
 test('allowEmpty still rejects a broken body — absent is not the same as malformed', async () => {
-  const res = fakeRes();
+  const res = createMockRes();
   const result = await requireJsonBody(reqFrom('{nope'), res, {
     allowEmpty: true,
   });

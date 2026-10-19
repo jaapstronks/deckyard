@@ -21,6 +21,7 @@
  * Run with: node --test tests/translate-target-required.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -120,26 +121,6 @@ function seed() {
   ];
 }
 
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    writeHead(status) {
-      this.statusCode = status;
-      return this;
-    },
-    end(payload) {
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null;
-      }
-      return this;
-    },
-  };
-}
-
 async function call(path, body) {
   const payload = JSON.stringify(body);
   const req = {
@@ -150,7 +131,7 @@ async function call(path, body) {
       yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const handled = await handlePresentations({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(AUTHOR, { repoRoot: process.cwd() }),
@@ -167,9 +148,9 @@ test('translate/missing refuses a request without a target language', async () =
   const { res } = await call('translate/missing', { from: 'de' });
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body?.error, 'invalid');
-  assert.equal(res.body?.details?.field, 'to');
-  assert.match(String(res.body?.message || ''), /target language/i);
+  assert.equal(res.json()?.error, 'invalid');
+  assert.equal(res.json()?.details?.field, 'to');
+  assert.match(String(res.json()?.message || ''), /target language/i);
 });
 
 test('translate/missing refuses an off-axis target rather than guessing', async () => {
@@ -177,8 +158,8 @@ test('translate/missing refuses an off-axis target rather than guessing', async 
   const { res } = await call('translate/missing', { from: 'de', to: 'zz' });
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body?.error, 'invalid');
-  assert.equal(res.body?.details?.field, 'to');
+  assert.equal(res.json()?.error, 'invalid');
+  assert.equal(res.json()?.details?.field, 'to');
 });
 
 test('translate/fields refuses a request without a target language', async () => {
@@ -189,6 +170,6 @@ test('translate/fields refuses a request without a target language', async () =>
   });
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body?.error, 'bad_request');
-  assert.match(String(res.body?.message || ''), /target language/i);
+  assert.equal(res.json()?.error, 'bad_request');
+  assert.match(String(res.json()?.message || ''), /target language/i);
 });

@@ -38,6 +38,7 @@
  * Run with: node --test tests/ai-routes-validation.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -58,28 +59,6 @@ const { handleAiIterate } = await import('../server/routes/api/ai/iterate.js');
 // ---------------------------------------------------------------------------
 // Doubles
 // ---------------------------------------------------------------------------
-
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null;
-      }
-      return this;
-    },
-  };
-}
 
 /**
  * Call an AI handler with a JSON body (or a verbatim `rawBody` string, to drive
@@ -107,7 +86,7 @@ async function call(handler, { body, rawBody } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const handled = await handler({
     repoRoot: process.cwd(),
     req,
@@ -123,13 +102,13 @@ async function call(handler, { body, rawBody } = {}) {
 // ===========================================================================
 
 test('vendor discovery answers 200 without touching an LLM', async () => {
-  const res = makeRes();
+  const res = createMockRes();
   const handled = await handleAiVendors({ res });
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
-  assert.equal(typeof res.body, 'object');
-  assert.notEqual(res.body, null);
+  assert.equal(typeof res.json(), 'object');
+  assert.notEqual(res.json(), null);
 });
 
 // ===========================================================================

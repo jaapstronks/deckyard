@@ -7,10 +7,6 @@
     "http": 1,
     "walkers": 0
   },
-  "tests/ai-routes-validation.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/analytics-kill-switch.test.js": {
     "http": 1,
     "walkers": 0
@@ -39,10 +35,6 @@
     "http": 1,
     "walkers": 0
   },
-  "tests/body-size-cap.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/bunny-library-id.test.js": {
     "http": 0,
     "walkers": 1
@@ -50,14 +42,6 @@
   "tests/bunny-player-colors.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/comments-routes-authz.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/create-presentation-service.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/css-one-definition.test.js": {
     "http": 0,
@@ -91,10 +75,6 @@
     "http": 1,
     "walkers": 0
   },
-  "tests/delete-presentation-service.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/docs-paths-resolvable.test.js": {
     "http": 0,
     "walkers": 1
@@ -102,10 +82,6 @@
   "tests/docs-prose-claims.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/duplicate-presentation-service.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/editor-form-surfaces.test.js": {
     "http": 0,
@@ -163,10 +139,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/imagekit-browse-upstream-error.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/import-deck.test.js": {
     "http": 1,
     "walkers": 0
@@ -192,7 +164,7 @@
     "walkers": 1
   },
   "tests/json-body-object-guard.test.js": {
-    "http": 1,
+    "http": 0,
     "walkers": 1
   },
   "tests/live-kill-switch.test.js": {
@@ -227,10 +199,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/notion-routes-contract.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/notion-upstream-error.test.js": {
     "http": 1,
     "walkers": 0
@@ -246,10 +214,6 @@
   "tests/organization-vocabulary.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/pg/home-aggregation-route.pgtest.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/pg/sandbox-guest-identity.pgtest.js": {
     "http": 1,
@@ -283,25 +247,9 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/route-dispatch-root-mounts.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/route-error-handlers-no-leak.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
   "tests/route-field-validation-guard.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/sandbox-analytics-seed.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/sandbox-examples-theme.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/scripts-reachable-gate.test.js": {
     "http": 0,
@@ -374,22 +322,6 @@
   "tests/storage-reason-vocabulary.test.js": {
     "http": 0,
     "walkers": 1
-  },
-  "tests/theme-allowlist-enforcement.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/theme-font-routes-authz.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/theme-settings-organization-multi-org.test.js": {
-    "http": 1,
-    "walkers": 0
-  },
-  "tests/translate-target-required.test.js": {
-    "http": 1,
-    "walkers": 0
   },
   "tests/viewer-email-routes-contract.test.js": {
     "http": 1,

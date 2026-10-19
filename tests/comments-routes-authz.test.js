@@ -44,6 +44,7 @@
  * Run with: node --test tests/comments-routes-authz.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -369,28 +370,6 @@ async function seed() {
 // Driving the handlers
 // ---------------------------------------------------------------------------
 
-/** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      try {
-        this.body = payload ? JSON.parse(payload) : null;
-      } catch {
-        this.body = null;
-      }
-      return this;
-    },
-  };
-}
-
 /**
  * Call a comment handler the way `dispatchRoutes` does — the presentation id and
  * comment id arrive as trailing positional args after the context.
@@ -422,7 +401,7 @@ async function call(
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   // The router mounts these under `withErrorHandler`; a service refusal is a
   // thrown AppError that handler renders, so the test drives the same path.
@@ -474,7 +453,7 @@ async function asGuestOn(
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const path =
     `/api/share/${encodeURIComponent(token)}/comments` +
     (commentId ? `/${commentId}` : '') +
@@ -847,8 +826,8 @@ test('the owner can apply an AI suggestion, inserting the proposed slide', async
   });
 
   assert.equal(res.statusCode, 200);
-  assert.ok(res.body.newSlideId, 'the new slide id is reported');
-  assert.equal(res.body.originalSlideId, 's1');
+  assert.ok(res.json().newSlideId, 'the new slide id is reported');
+  assert.equal(res.json().originalSlideId, 's1');
   assert.equal(
     db2.__tables.presentations[0].slides.length,
     before + 1,
@@ -870,7 +849,7 @@ test('an applied suggestion is composed by the slide factory (B272)', async () =
 
   assert.equal(res.statusCode, 200);
   const slide = db2.__tables.presentations[0].slides.find(
-    (s) => s.id === res.body.newSlideId,
+    (s) => s.id === res.json().newSlideId,
   );
   assert.equal(slide.type, 'content-slide');
   assert.equal(slide.content.title, 'Proposed', 'the proposal is the patch');
@@ -904,9 +883,9 @@ test('a suggestion next to a child slide lands as a child of the same parent (D3
   const slides = db2.__tables.presentations[0].slides;
   assert.deepEqual(
     slides.map((s) => s.id),
-    ['s0', 's1', res.body.newSlideId, 's2'],
+    ['s0', 's1', res.json().newSlideId, 's2'],
   );
-  assert.equal(res.body.newSlideIndex, 2);
+  assert.equal(res.json().newSlideIndex, 2);
   assert.equal(slides[2].parentId, 's0', 'the proposal joins the group');
 });
 
@@ -919,7 +898,7 @@ test('a suggestion next to a top-level slide stays top level (D325)', async () =
 
   assert.equal(res.statusCode, 200);
   const slide = db2.__tables.presentations[0].slides.find(
-    (s) => s.id === res.body.newSlideId,
+    (s) => s.id === res.json().newSlideId,
   );
   assert.equal(slide.parentId ?? null, null);
 });
@@ -979,7 +958,7 @@ test('a reader can mark threads read', async () => {
   });
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(res.json().ok, true);
 });
 
 test('mark-read rejects a non-array commentIds with a 400', async () => {
@@ -1020,7 +999,7 @@ test('a verified guest with no account comments through the share-token route, u
   );
 
   assert.equal(res.statusCode, 201);
-  assert.equal(res.body.ok, true);
+  assert.equal(res.json().ok, true);
   const stored = comments().find((c) => c.author_email === GUEST.email);
   assert.equal(
     stored.author_guest_id,
@@ -1032,12 +1011,12 @@ test('a verified guest with no account comments through the share-token route, u
   assert.equal(stored.organization_id, ORG, "written in the guest's org");
   assert.equal(stored.slide_snapshot?.id, 's1', 'the guest path snapshots too');
   assert.deepEqual(
-    res.body.comment.author,
+    res.json().comment.author,
     { id: null, displayName: GUEST.name },
     'the guest is named by the name they verified with, never their address',
   );
-  assert.equal(res.body.comment.authorGuestId, GUEST.id);
-  assert.equal(res.body.comment.authorEmail, undefined);
+  assert.equal(res.json().comment.authorGuestId, GUEST.id);
+  assert.equal(res.json().comment.authorEmail, undefined);
 });
 
 test('a guest replies through the share-token route into the thread', async () => {
@@ -1049,7 +1028,7 @@ test('a guest replies through the share-token route into the thread', async () =
   );
 
   assert.equal(res.statusCode, 201);
-  assert.equal(commentById(res.body.comment.id).parent_id, 'cm-open');
+  assert.equal(commentById(res.json().comment.id).parent_id, 'cm-open');
 });
 
 test('a link opened to its use limit still lets its guest comment', async () => {
@@ -1069,10 +1048,10 @@ test('a link opened to its use limit still lets its guest comment', async () => 
  */
 async function assertGuestRefused(res, status, code) {
   assert.equal(res.statusCode, status);
-  assert.equal(res.body.ok, false);
-  assert.equal(res.body.error, code);
-  assert.equal(typeof res.body.message, 'string');
-  assert.ok(res.body.message.length > 0, 'the refusal says why');
+  assert.equal(res.json().ok, false);
+  assert.equal(res.json().error, code);
+  assert.equal(typeof res.json().message, 'string');
+  assert.ok(res.json().message.length > 0, 'the refusal says why');
   assert.equal(comments().length, 3, 'nothing was written');
 }
 
@@ -1153,7 +1132,7 @@ test('the signed-in comment routes have no guest path: a guest session there is 
     { body: 'Mine' },
     { session: GUEST.sessionToken },
   );
-  const mine = owned.body.comment.id;
+  const mine = owned.json().comment.id;
   const before = comments().length;
 
   const create = await call(handlePresentationCommentsCreate, 'POST', {
@@ -1181,8 +1160,8 @@ test('the signed-in comment routes have no guest path: a guest session there is 
       403,
       `${name}: the cookie is not an identity here`,
     );
-    assert.equal(r.res.body.ok, false);
-    assert.equal(r.res.body.error, 'forbidden');
+    assert.equal(r.res.json().ok, false);
+    assert.equal(r.res.json().error, 'forbidden');
   }
   assert.equal(comments().length, before, 'nothing was written or removed');
   assert.equal(commentById(mine).body, 'Mine', 'nor rewritten');
@@ -1199,13 +1178,16 @@ test("a guest lists the deck's comments through the share-token route", async ()
   });
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.ok, true);
+  assert.equal(res.json().ok, true);
   assert.deepEqual(
-    res.body.comments.map((c) => c.id).sort(),
+    res
+      .json()
+      .comments.map((c) => c.id)
+      .sort(),
     ['cm-ai', 'cm-open', 'cm-resolved'],
     'every comment on the deck, as the signed-in list gives (status all)',
   );
-  assert.equal(typeof res.body.openCount, 'number');
+  assert.equal(typeof res.json().openCount, 'number');
 });
 
 test('the guest list takes the signed-in filters: slideId and status', async () => {
@@ -1216,7 +1198,7 @@ test('the guest list takes the signed-in filters: slideId and status', async () 
   });
   assert.equal(open.statusCode, 200);
   assert.deepEqual(
-    open.body.comments.map((c) => c.id),
+    open.json().comments.map((c) => c.id),
     ['cm-resolved'],
   );
 
@@ -1237,8 +1219,8 @@ test('a view-only link refuses its guest the list too: 403 forbidden', async () 
     session: 'session-guest-view',
   });
   assert.equal(res.statusCode, 403);
-  assert.equal(res.body.error, 'forbidden');
-  assert.ok(res.body.message);
+  assert.equal(res.json().error, 'forbidden');
+  assert.ok(res.json().message);
 });
 
 test('a revoked link refuses its guest the list: 410 revoked', async () => {
@@ -1247,14 +1229,14 @@ test('a revoked link refuses its guest the list: 410 revoked', async () => {
     session: 'session-guest-revoked',
   });
   assert.equal(res.statusCode, 410);
-  assert.equal(res.body.error, 'revoked');
+  assert.equal(res.json().error, 'revoked');
 });
 
 test('the list without a guest session is 401 unauthorized', async () => {
   await seed();
   const res = await asGuestOn('GET', 'tok-guests');
   assert.equal(res.statusCode, 401);
-  assert.equal(res.body.error, 'unauthorized');
+  assert.equal(res.json().error, 'unauthorized');
 });
 
 /** A comment by the deck owner, created through the signed-in route (a uuid id). */
@@ -1265,7 +1247,7 @@ async function ownerComment(body = 'The owner speaks') {
     args: [DECK],
   });
   assert.equal(res.statusCode, 201);
-  return res.body.comment.id;
+  return res.json().comment.id;
 }
 
 test("a guest edits their own comment through the share-token route, and nobody else's", async () => {
@@ -1275,7 +1257,7 @@ test("a guest edits their own comment through the share-token route, and nobody 
     { body: 'Typo here' },
     { session: GUEST.sessionToken },
   );
-  const mine = created.body.comment.id;
+  const mine = created.json().comment.id;
   const theirs = await ownerComment();
 
   const edit = await asGuestOn('PUT', 'tok-guests', {
@@ -1284,7 +1266,7 @@ test("a guest edits their own comment through the share-token route, and nobody 
     session: GUEST.sessionToken,
   });
   assert.equal(edit.statusCode, 200, 'their own comment: editable');
-  assert.equal(edit.body.ok, true);
+  assert.equal(edit.json().ok, true);
   assert.equal(commentById(mine).body, 'Typo fixed');
 
   const other = await asGuestOn('PUT', 'tok-guests', {
@@ -1293,7 +1275,7 @@ test("a guest edits their own comment through the share-token route, and nobody 
     session: GUEST.sessionToken,
   });
   assert.equal(other.statusCode, 403, "someone else's: not editable");
-  assert.equal(other.body.error, 'forbidden');
+  assert.equal(other.json().error, 'forbidden');
   assert.equal(commentById(theirs).body, 'The owner speaks');
 
   const empty = await asGuestOn('PUT', 'tok-guests', {
@@ -1311,7 +1293,7 @@ test("a guest deletes their own comment through the share-token route, and nobod
     { body: 'Never mind' },
     { session: GUEST.sessionToken },
   );
-  const mine = created.body.comment.id;
+  const mine = created.json().comment.id;
   const theirs = await ownerComment();
 
   const other = await asGuestOn('DELETE', 'tok-guests', {
@@ -1319,7 +1301,7 @@ test("a guest deletes their own comment through the share-token route, and nobod
     session: GUEST.sessionToken,
   });
   assert.equal(other.statusCode, 403, "someone else's: not deletable");
-  assert.equal(other.body.error, 'forbidden');
+  assert.equal(other.json().error, 'forbidden');
   assert.ok(commentById(theirs), 'still there');
 
   const del = await asGuestOn('DELETE', 'tok-guests', {
@@ -1337,7 +1319,7 @@ test("a comment that is not on the link's deck is absent to the guest: 404", asy
     session: GUEST.sessionToken,
   });
   assert.equal(res.statusCode, 404);
-  assert.equal(res.body.error, 'not_found');
+  assert.equal(res.json().error, 'not_found');
 });
 
 test('a guest whose link turned view-only can no longer edit or delete their own comment', async () => {
@@ -1347,7 +1329,7 @@ test('a guest whose link turned view-only can no longer edit or delete their own
     { body: 'Before the change' },
     { session: GUEST.sessionToken },
   );
-  const mine = created.body.comment.id;
+  const mine = created.json().comment.id;
   db.__tables.presentation_share_links.find(
     (l) => l.id === 'link-guests',
   ).permission = 'view';
@@ -1362,7 +1344,7 @@ test('a guest whose link turned view-only can no longer edit or delete their own
     session: GUEST.sessionToken,
   });
   assert.equal(edit.statusCode, 403);
-  assert.equal(edit.body.error, 'forbidden');
+  assert.equal(edit.json().error, 'forbidden');
   assert.equal(del.statusCode, 403);
   assert.equal(commentById(mine).body, 'Before the change');
 });
@@ -1374,7 +1356,7 @@ test('a revoked link refuses edit and delete: 410 revoked', async () => {
     session: 'session-guest-revoked',
   });
   assert.equal(res.statusCode, 410);
-  assert.equal(res.body.error, 'revoked');
+  assert.equal(res.json().error, 'revoked');
 });
 
 test('a guest has no resolve route under the token', async () => {
@@ -1384,19 +1366,19 @@ test('a guest has no resolve route under the token', async () => {
     { body: 'Resolve me' },
     { session: GUEST.sessionToken },
   );
-  const res = makeRes();
+  const res = createMockRes();
   const handled = await handleSharePublic({
     repoRoot: process.cwd(),
     req: { method: 'POST', headers: {} },
     res,
     url: new URL(
-      `http://decks.example.test/api/share/tok-guests/comments/${created.body.comment.id}/resolve`,
+      `http://decks.example.test/api/share/tok-guests/comments/${created.json().comment.id}/resolve`,
     ),
     authedUser: null,
   });
   assert.equal(handled, false, 'nothing on the share surface answers it');
   assert.equal(
-    commentById(created.body.comment.id).status,
+    commentById(created.json().comment.id).status,
     'open',
     'a guest never moderates (as before D228)',
   );

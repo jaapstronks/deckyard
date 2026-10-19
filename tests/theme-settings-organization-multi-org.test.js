@@ -22,6 +22,7 @@
  * Run with: node --test tests/theme-settings-organization-multi-org.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -141,24 +142,9 @@ test.after(() => {
   }
 });
 
-function fakeRes() {
-  return {
-    statusCode: null,
-    body: null,
-    writeHead(code) {
-      this.statusCode = code;
-      return this;
-    },
-    end(value) {
-      this.body = value ? JSON.parse(value) : null;
-      return this;
-    },
-  };
-}
-
 /** GET /api/themes as `who`, inside `organizationId`. */
 async function pickerIds(who, organizationId) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleThemes({
     repoRoot: process.cwd(),
     storageScope: scope(organizationId),
@@ -168,12 +154,15 @@ async function pickerIds(who, organizationId) {
     authedUser: { ...who, organizationId },
   });
   assert.equal(res.statusCode, 200);
-  return res.body.themes.map((item) => item.id).sort();
+  return res
+    .json()
+    .themes.map((item) => item.id)
+    .sort();
 }
 
 /** PATCH /api/settings/organization as `who`, inside `organizationId`. */
 async function patchOrgSettings(who, organizationId, body) {
-  const res = fakeRes();
+  const res = createMockRes();
   const payload = JSON.stringify(body);
   await handleSettings({
     req: {
