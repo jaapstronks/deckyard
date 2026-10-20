@@ -130,6 +130,24 @@ async function share(token, action, body = {}) {
   });
   return res;
 }
+it('a read-only deck denies author data to edit collaborators on every GET', async () => {
+  fixture.row.is_view_only = true;
+  try {
+    for (const route of ['internal', 'v1']) {
+      for (const query of route === 'internal' ? ['', '?lang=en-GB'] : ['']) {
+        const reader = await get(route, 'edit', query);
+        assertReader(reader.deck, reader.bytes);
+        const owner = await get(route, 'owner', query);
+        assertAuthor(owner.deck, owner.bytes);
+      }
+    }
+    const deck = await tool('get_presentation', 'edit');
+    for (const marker of PRIVATE_MARKERS)
+      assert.ok(!JSON.stringify(deck).includes(marker));
+  } finally {
+    fixture.row.is_view_only = false;
+  }
+});
 for (const permission of ['view', 'comment']) {
   for (const password of [undefined, 'synthetic-password']) {
     it(`share ${permission}, password=${!!password}: verify and render use the same safe list`, async () => {

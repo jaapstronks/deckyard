@@ -1,4 +1,7 @@
-import { deletePresentation } from '../../../services/presentations.js';
+import {
+  deletePresentation,
+  mayOnPresentation,
+} from '../../../services/presentations.js';
 import { getTagsForPresentation } from '../../../storage/tags.js';
 import {
   methodNotAllowed,
@@ -69,6 +72,11 @@ export async function handlePresentationItem(
       pres,
       collaboratorPermission,
     });
+    const mayEdit = await mayOnPresentation(
+      pres,
+      { actor: authedUser },
+      'write',
+    );
 
     // Fetch tags for the presentation
     const tags = await getTagsForPresentation(storageScope, id);
@@ -93,7 +101,7 @@ export async function handlePresentationItem(
         _userPermission: userPermission,
       };
       // Filter slides for non-editing users (hide hidden slides, mark drafts)
-      if (userPermission === 'view' || userPermission === 'comment') {
+      if (!mayEdit) {
         projected = await projectReaderPresentation(storageScope, projected);
         projected._userPermission = userPermission;
         projected.tags = tags;
@@ -103,7 +111,7 @@ export async function handlePresentationItem(
     }
     // Filter slides for non-editing users (hide hidden slides, mark drafts)
     let responseData = { ...pres, tags, _userPermission: userPermission };
-    if (userPermission === 'view' || userPermission === 'comment') {
+    if (!mayEdit) {
       responseData = await projectReaderPresentation(
         storageScope,
         responseData,
