@@ -161,10 +161,22 @@ test('an invite that would outlive the session is a validator warning', () => {
 test('the preview image is rendered from the first slide that outlives the session', () => {
   const invite = { type: INVITE, content: {} };
   const title = { type: 'title-slide', content: { title: 'A' } };
-  assert.equal(firstPublicSlide({ slides: [invite, title] }), title);
-  assert.equal(firstPublicSlide({ slides: [null, invite, title] }), title);
-  assert.equal(firstPublicSlide({ slides: [invite] }), null);
-  assert.equal(firstPublicSlide({}), null);
+  assert.deepEqual(
+    firstPublicSlide({ slides: [invite, title] }, { channel: 'published' }),
+    title,
+  );
+  assert.deepEqual(
+    firstPublicSlide(
+      { slides: [null, invite, title] },
+      { channel: 'published' },
+    ),
+    title,
+  );
+  assert.deepEqual(
+    firstPublicSlide({ slides: [invite] }, { channel: 'published' }),
+    null,
+  );
+  assert.deepEqual(firstPublicSlide({}, { channel: 'published' }), null);
 });
 
 test('the prompts forbid the withheld types by declaration, not by name', () => {

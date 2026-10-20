@@ -1,3 +1,4 @@
+import { safePublishedOgImage } from '../../render/og-image.js';
 import { notFound } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
@@ -9,7 +10,7 @@ import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { buildReaderHtml } from '../../export/reader.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
-import { getAppName, getOgImageUrl } from '../../config/branding.js';
+import { getAppName } from '../../config/branding.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
   projectPresentationForLang,
@@ -162,9 +163,10 @@ async function servePublishedPage(
     `${canonicalPath}?lang=${encodeURIComponent(modeLang)}`,
     origin,
   ).href;
-  const ogImageAbs = entry.ogImageUrl
-    ? new URL(entry.ogImageUrl, origin).href
-    : new URL(getOgImageUrl(), origin).href;
+  const ogImageAbs = new URL(
+    safePublishedOgImage(pres, entry.ogImageUrl),
+    origin,
+  ).href;
 
   const presentationTitle =
     projected.title || tr('published.untitled', 'Presentation');

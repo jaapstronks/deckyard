@@ -177,7 +177,9 @@ export function buildReaderHtml(
   } = {},
 ) {
   const filtered =
-    context === 'published' ? filterForPublished(pres) : filterForExport(pres);
+    context === 'published'
+      ? filterForPublished(pres, { slideTypes })
+      : filterForExport(pres);
   const registry =
     slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
   const docLang = resolveDocLangFromPresentation(filtered);

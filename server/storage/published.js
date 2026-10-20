@@ -1,3 +1,4 @@
+import { safePublishedOgImage } from '../render/og-image.js';
 /**
  * Published presentations storage facade.
  *
@@ -349,6 +350,7 @@ export async function listPublishedForFeed(scope, opts = {}) {
       if (presSettings.excludeFromFeed) continue;
 
       enriched.push({
+        publicPreviewUrl: safePublishedOgImage(pres, entry.ogImageUrl),
         title: pres.title || entry.title || 'Untitled',
         description:
           typeof pres.description === 'string' ? pres.description : '',

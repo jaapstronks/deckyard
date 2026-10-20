@@ -181,7 +181,10 @@ function isOwnCreator(value, pres) {
  * owner or the creator and never changes the deck language; a caller that
  * sends one of those back as it read it is not asking to, and the field is
  * dropped. A different value is a request the save cannot honour, so it is
- * refused instead of dropped (lesson 3).
+ * refused instead of dropped (lesson 3). The publication column is dropped
+ * whatever it says: it moves only through the publish, slug and preview
+ * routes, and the editor echoes a copy it rebuilt from those routes' answers,
+ * without the preview proof (B769.4).
  *
  * @param {Object} pres - The deck as loaded.
  * @param {Object} changes - The caller's body.
@@ -209,7 +212,12 @@ function assertSavableChanges(pres, changes) {
       'lang cannot be changed: add a language version with POST /presentations/{id}/translate',
     );
   }
-  const { ownerEmail: _owner, createdBy: _creator, ...savable } = changes;
+  const {
+    ownerEmail: _owner,
+    createdBy: _creator,
+    published: _published,
+    ...savable
+  } = changes;
   return savable;
 }
 

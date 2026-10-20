@@ -1,3 +1,4 @@
+import { safePublishedOgImage } from '../render/og-image.js';
 /**
  * RSS/Atom/JSON Feed generation utility.
  * Uses the `feed` npm package to produce all three formats from a single data model.
@@ -53,11 +54,10 @@ export function buildFeed({ org, presentations, baseUrl, format = 'rss' }) {
       // No per-item author: nothing public derives a name from the owner's
       // email, and a display name arrives with identity decoupling
       // (docs/plans/briefs/identity-decoupling.md).
-      image: pres.published?.ogImageUrl
-        ? pres.published.ogImageUrl.startsWith('http')
-          ? pres.published.ogImageUrl
-          : `${baseUrl}${pres.published.ogImageUrl}`
-        : undefined,
+      image: new URL(
+        pres.publicPreviewUrl || safePublishedOgImage(pres),
+        baseUrl,
+      ).href,
     });
   }
 

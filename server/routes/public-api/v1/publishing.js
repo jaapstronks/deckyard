@@ -1,3 +1,4 @@
+import { safePublishedOgImage } from '../../../render/og-image.js';
 /**
  * Public API v1 - Publishing endpoints.
  * Handles publish/unpublish operations for presentations.
@@ -75,7 +76,7 @@ async function handleGetPublishStatus(ctx, id) {
     publishId: published.id,
     slug: published.slug || '',
     path: `/p/${published.id}-${published.slug || ''}`,
-    ogImageUrl: published.ogImageUrl || '',
+    ogImageUrl: safePublishedOgImage(pres),
     publishedAt: published.created || null,
   });
   return true;

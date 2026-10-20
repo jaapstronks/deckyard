@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+import { getOgImageUrl } from '../config/branding.js';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { firstPublicSlide } from '../utils/public-output.js';
 
@@ -8,8 +10,8 @@ function firstNonEmptyString(arr) {
   return '';
 }
 
-export function pickOgImageUrlFromPresentation(pres) {
-  const first = firstPublicSlide(pres);
+export function pickOgImageUrlFromPresentation(pres, options) {
+  const first = firstPublicSlide(pres, options);
   if (!first) return '';
 
   const type = String(first.type || '');
@@ -48,4 +50,47 @@ export function pickOgImageUrlFromPresentation(pres) {
   }
 
   return '';
+}
+
+/**
+ * Versioned evidence for a rendered published preview: the slide the image
+ * shows, as the publication channel selects it, plus the theme and preview
+ * settings it was rendered with. Never an author snapshot. The rest of the
+ * deck is not part of the image, so an edit elsewhere keeps the proof; hiding
+ * or editing the previewed slide (or hiding everything) expires it.
+ */
+export function publishedPreviewFingerprint(pres) {
+  return crypto
+    .createHash('sha256')
+    .update(
+      JSON.stringify({
+        contract: 'published-preview-v2',
+        slide: firstPublicSlide(pres, { channel: 'published' }),
+        theme: pres?.theme,
+        settings: pres?.settings?.ogPreview,
+      }),
+    )
+    .digest('hex');
+}
+
+/** Legacy or changed snapshots fail closed; publishing again creates fresh proof. */
+export function safePublishedOgImage(
+  pres,
+  storedUrl = pres?.published?.ogImageUrl,
+) {
+  if (
+    storedUrl &&
+    pres?.published?.ogImageUrl === storedUrl &&
+    pres?.published?.previewFingerprint === publishedPreviewFingerprint(pres)
+  ) {
+    return storedUrl;
+  }
+  return getOgImageUrl();
+}
+
+/** Only filenames minted by the publication OG generator, never arbitrary uploads. */
+export function isPublishedPreviewAssetName(name) {
+  return /^og-(?:[a-f0-9]{8}|v2-[a-f0-9]{8}-[a-f0-9]{20})-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.png$/.test(
+    name,
+  );
 }
