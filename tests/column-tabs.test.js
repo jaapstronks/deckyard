@@ -78,22 +78,26 @@ test('an owner-driven strip only reports; setValue(null) selects none', () => {
 test('pane tabs: selected means "rail open on MY pane"', () => {
   const calls = [];
   const pane = createPaneTabs({
-    onToggleInspector: () => calls.push('settings'),
+    onToggleInspector: () => calls.push('inspector'),
     onToggleComments: () => calls.push('comments'),
   });
   assert.ok(pane.el.classList.contains('column-tabs'));
-  assert.deepEqual(selected(pane.el), ['settings:false', 'comments:false']);
+  assert.deepEqual(selected(pane.el), ['inspector:false', 'comments:false']);
 
   pane.setState({ open: true, pane: 'comments' });
-  assert.deepEqual(selected(pane.el), ['settings:false', 'comments:true']);
+  assert.deepEqual(selected(pane.el), ['inspector:false', 'comments:true']);
 
   // Clicking reports the toggle; the rail decides, so nothing moves yet.
   pane.el.querySelector('[data-value="comments"]').click();
   assert.deepEqual(calls, ['comments']);
-  assert.deepEqual(selected(pane.el), ['settings:false', 'comments:true']);
+  assert.deepEqual(selected(pane.el), ['inspector:false', 'comments:true']);
 
   pane.setState({ open: false, pane: 'comments' });
-  assert.deepEqual(selected(pane.el), ['settings:false', 'comments:false']);
+  assert.deepEqual(selected(pane.el), ['inspector:false', 'comments:false']);
+
+  // The deck settings pane has no tab (B804): open on it, neither is selected.
+  pane.setState({ open: true, pane: 'deck' });
+  assert.deepEqual(selected(pane.el), ['inspector:false', 'comments:false']);
 
   // Each tab keeps its name when the labels hide in the dismissed rail.
   for (const tab of pane.el.querySelectorAll('[role="tab"]')) {

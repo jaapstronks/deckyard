@@ -257,8 +257,6 @@
   "editor.deckSettings.description.placeholder": "Krótki, dwuzdaniowy opis tej prezentacji…",
   "editor.deckSettings.description.title": "Opis",
   "editor.deckSettings.description.tooLong": "Za długi ({n}/{max}). Skróć.",
-  "editor.deckSettings.lang.help": "Używany do publicznego udostępniania i eksportów (atrybut HTML lang).",
-  "editor.deckSettings.lang.title": "Język dokumentu",
   "editor.deckSettings.liveVideo.detected": "Wykryto: {provider}",
   "editor.deckSettings.liveVideo.enable": "Włącz nakładkę wideo",
   "editor.deckSettings.liveVideo.mobilePosition": "Pozycja na urządzeniu mobilnym",

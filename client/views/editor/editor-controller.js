@@ -88,6 +88,8 @@ import {
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
 import { focusSearchHitInEditor } from './search-focus.js';
+import { createDeckSettingsPane } from './deck-settings/index.js';
+import { attachDeckSettingsRoute } from './deck-settings/route.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
 import { createEditorDropdowns } from './editor-dropdowns.js';
@@ -102,7 +104,11 @@ import { createSlideUpdateHandler } from './slide-update-handler.js';
 import { createRemoteRefresh } from './remote-refresh.js';
 import { onMaintenanceChange } from '../../lib/state/maintenance.js';
 import { createReadOnlyController } from './read-only-controller.js';
-import { queryParam, setQueryParams } from '../../lib/state/router.js';
+import {
+  queryParam,
+  reenterRoute,
+  setQueryParams,
+} from '../../lib/state/router.js';
 
 /** Which view the canvas column shows ('canvas' | 'fields'), kept per user. */
 const CANVAS_VIEW_KEY = 'deckyard.editor.canvasView';
@@ -795,6 +801,8 @@ export async function createEditorController({
       : null,
     // Defined later in this controller; the button is only clickable afterwards.
     onShowShortcuts: () => shortcutsHelp.open(),
+    // Late-bound like the line above: the pane is built with the rail.
+    onOpenDeckSettings: () => deckSettingsRoute?.open(),
     normalizeLang,
     topbarExportEl: dropdowns.topbarExport,
     topbarShareEl: dropdowns.topbarShare,
@@ -932,7 +940,7 @@ export async function createEditorController({
   const inspectorScroll = h('div', { class: 'panel-scroll' });
   inspectorScroll.append(editorMount);
   const settingsPane = h('div', {}, [inspectorScroll]);
-  inspectorPanes.registerPane('settings', settingsPane);
+  inspectorPanes.registerPane('inspector', settingsPane);
 
   // Presenter notes live in a collapsible strip under the slide preview
   // (Keynote / PowerPoint convention), not in the rail: notes are not
@@ -1006,7 +1014,7 @@ export async function createEditorController({
   // semantics (open on my pane = dismiss, else open/switch) live in the pane
   // host; dereferenced at click time (inspectorPanes is built above).
   const paneTabs = createPaneTabs({
-    onToggleInspector: () => inspectorPanes.toggle('settings'),
+    onToggleInspector: () => inspectorPanes.toggle('inspector'),
     onToggleComments: () => inspectorPanes.toggle('comments'),
   });
   setCommentsBadgeFn = paneTabs.updateBadge;
@@ -1244,6 +1252,40 @@ export async function createEditorController({
   const commentsPane = h('div', {}, [commentsPanel.panelEl]);
   inspectorPanes.registerPane('comments', commentsPane);
 
+  // The deck's settings are the third pane (B804): beside the canvas they
+  // change, with an address per section (deck-settings/route.js). The route
+  // is attached below, once the rail mirror exists.
+  let deckSettingsRoute = null;
+  const deckSettingsPane = createDeckSettingsPane({
+    root,
+    pres,
+    api,
+    markDirty,
+    requestSave,
+    toast,
+    beforeThemeChange: () => saveManager.flush(),
+    // The server rewrote the deck's theme and slides: enter the editor again
+    // on the stored deck, with the pane where it was.
+    onThemeChanged: () => reenterRoute(),
+    onNavigateToSlide: (slideIndex) => {
+      const slideId = pres.slides?.[slideIndex]?.id;
+      deckSettingsRoute?.close();
+      if (!slideId) return;
+      setSelectedSlideIdWithLock(slideId);
+      rerenderSlideList();
+      rerenderEditor();
+      rerenderPreview();
+    },
+    getOpenTranslateView: () =>
+      canOpenTranslateView(pres, normalizeLang)
+        ? () => openTranslateView()
+        : null,
+    onSelectSection: (key) => deckSettingsRoute?.select(key),
+    onRequestClose: () => deckSettingsRoute?.close(),
+  });
+  inspectorPanes.registerPane('deck', deckSettingsPane.el);
+  cleanup.register('deckSettingsPane', deckSettingsPane.detach);
+
   // ============================================================
   // RESPONSIVE DRAWERS
   // ============================================================
@@ -1266,7 +1308,42 @@ export async function createEditorController({
     paneTabs.setState({ open, pane });
     if (open && pane === 'comments') commentsPanel.show();
     else commentsPanel.hide();
+    // The rail moved off the deck settings (a pane tab, the drawer's
+    // Escape, crossing the rung): that is closing them, address included.
+    if (deckSettingsRoute?.isOpen() && (!open || pane !== 'deck')) {
+      deckSettingsRoute.close();
+    }
   };
+
+  // What the rail showed before the deck settings opened, restored when they
+  // close the way they opened (their close button, Back).
+  let railBeforeDeckSettings = null;
+  deckSettingsRoute = attachDeckSettingsRoute({
+    show: (section) => {
+      if (inspectorPanes.getActivePane() !== 'deck' || isInspectorCollapsed()) {
+        railBeforeDeckSettings = {
+          pane: inspectorPanes.getActivePane(),
+          collapsed: isInspectorCollapsed(),
+        };
+      }
+      const shown = deckSettingsPane.showSection(section);
+      inspectorPanes.open('deck');
+      return shown;
+    },
+    hide: () => {
+      deckSettingsPane.close();
+      const before = railBeforeDeckSettings;
+      railBeforeDeckSettings = null;
+      if (inspectorPanes.getActivePane() !== 'deck') return;
+      inspectorPanes.setActivePane(
+        before?.pane && before.pane !== 'deck' ? before.pane : 'inspector',
+      );
+      if (before?.collapsed) setInspectorCollapsed(true);
+    },
+    focus: () => deckSettingsPane.focus(),
+    containsFocus: () => deckSettingsPane.containsFocus(),
+  });
+  cleanup.register('deckSettingsRoute', deckSettingsRoute.detach);
   syncRailState();
 
   root.append(shell);
@@ -1333,7 +1410,7 @@ export async function createEditorController({
         previewNotesTa,
         // Both live in rail panes now: surface the right pane before focusing.
         onFocusNotes: () => inspectorPanes.open('notes'),
-        onFocusField: () => inspectorPanes.open('settings'),
+        onFocusField: () => inspectorPanes.open('inspector'),
       });
     },
     getSlideCommentCount: (slideId) => slideCommentCounts?.[slideId] || 0,
@@ -1699,7 +1776,7 @@ export async function createEditorController({
     getSelectedElement: () => selectedElement,
     onOpenElementSettings: (el) => {
       setSelectedElement(el);
-      inspectorPanes.open('settings');
+      inspectorPanes.open('inspector');
     },
     // Clicking a chart on the canvas opens the chart-data modal — the same
     // single data surface the inspector's "Edit data…" reaches.
@@ -1856,9 +1933,11 @@ export async function createEditorController({
   // LIFECYCLE
   // ============================================================
 
+  // No popstate hook here: a Back that leaves the editor re-routes, and
+  // detach() below cancels the autosave and runs the thumb-scale cleanup; a
+  // Back inside the editor (the settings pane, B804) must keep both.
   const detachLifecycle = attachEditorLifecycle({
     saveManager,
-    detachThumbScale: () => cleanup.run('thumbScale'),
     onWake: () => remoteRefresh.check(),
   });
   cleanup.register('lifecycle', detachLifecycle);

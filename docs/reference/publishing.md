@@ -70,7 +70,7 @@ Client surfaces:
   dialog's **Public** tab, the one place the links are shown (below).
 - `client/views/editor/publish-export/preview-address-modal.js` — "Preview and
   address…": the social preview image and the slug.
-- `client/views/editor/modals/settings-modal/toggles.js` — the per-deck
+- `client/views/editor/deck-settings/toggles.js` — the per-deck
   `excludeFromFeed` toggle.
 - `client/views/settings/tabs/integrations-tab.js` — the organization's RSS
   settings and the feed URLs.

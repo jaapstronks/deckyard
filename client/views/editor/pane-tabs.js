@@ -46,7 +46,7 @@ export function createPaneTabs({ onToggleInspector, onToggleComments } = {}) {
     selectOnClick: false,
     tabs: [
       {
-        value: 'settings',
+        value: 'inspector',
         title: t('editor.inspector.toggle', 'Show or hide the inspector'),
         ariaLabel: inspectorLabel,
         content: tabContent('sliders-horizontal', inspectorLabel),
@@ -59,7 +59,7 @@ export function createPaneTabs({ onToggleInspector, onToggleComments } = {}) {
       },
     ],
     onSelect: (pane) =>
-      pane === 'settings' ? onToggleInspector?.() : onToggleComments?.(),
+      pane === 'inspector' ? onToggleInspector?.() : onToggleComments?.(),
   });
 
   /**
