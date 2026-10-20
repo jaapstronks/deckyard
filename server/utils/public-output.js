@@ -34,13 +34,21 @@ export function stripLiveOnlySlidesFromPresentation(pres) {
  * `liveOnly` declaration as the strip above, asked once instead of by three
  * callers in their own words (B413).
  * @param {Object} pres - Presentation object
- * @returns {Object|null} the slide, or `null` when every slide is live-only
+ * @param {{channel: 'share'|'published', slideTypes?: Object}} options
+ * @returns {Object|null} the first permitted slide, or null for an empty audience
  */
-export function firstPublicSlide(pres) {
-  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+export function firstPublicSlide(pres, { channel, slideTypes } = {}) {
+  if (!['share', 'published'].includes(channel)) {
+    throw new TypeError('A public preview requires an explicit channel');
+  }
+  const projected = projectPresentationForAudience(pres, {
+    audience: 'reader',
+    channel,
+    slideTypes,
+  });
   return (
-    slides.find(
-      (s) => s && typeof s === 'object' && !isLiveOnlySlideType(s.type),
+    projected?.slides?.find(
+      (slide) => slide && !isLiveOnlySlideType(slide?.type),
     ) || null
   );
 }
@@ -64,20 +72,17 @@ export function filterForExport(pres) {
 
 /**
  * Filter presentation for published/public context (embed, /p/ pages).
- * Removes live-only slides, the AI review notes and slides with
- * hideInPublished visibility.
+ * Removes live-only slides, author notes/AI fields and hideInPublished
+ * slides from every carried language list, pinning links before filtering.
  * @param {Object} pres - Presentation object
  * @returns {Object} Filtered presentation
  */
-export function filterForPublished(pres) {
-  if (!pres || typeof pres !== 'object') return pres;
-  // First strip live-only slides and the AI review notes
-  pres = stripAiReviewMeta(stripLiveOnlySlidesFromPresentation(pres));
-  // Then apply visibility filter for published context
-  const slides = Array.isArray(pres.slides) ? pres.slides : [];
-  const filtered = filterSlidesForContext(slides, 'published');
-  if (filtered.length === slides.length) return pres;
-  return { ...pres, slides: filtered };
+export function filterForPublished(pres, { slideTypes } = {}) {
+  return projectPresentationForAudience(pres, {
+    audience: 'reader',
+    channel: 'published',
+    slideTypes,
+  });
 }
 
 /**
@@ -179,7 +184,7 @@ export function filterForShareViewer(pres, { slideTypes } = {}) {
  * @param {Object} pres
  * @param {Object} options
  * @param {'author'|'reader'} options.audience
- * @param {'viewer'|'share'|'follow'} options.channel
+ * @param {'viewer'|'share'|'follow'|'published'} options.channel
  * @param {Object} [options.slideTypes] - The deck organization's type registry
  * @param {boolean} [options.liveEnabled=true]
  * @returns {Object}
@@ -191,29 +196,33 @@ export function projectPresentationForAudience(
   if (!['author', 'reader'].includes(audience)) {
     throw new TypeError('A read projection requires an explicit audience');
   }
-  if (!['viewer', 'share', 'follow'].includes(channel)) {
+  if (!['viewer', 'share', 'follow', 'published'].includes(channel)) {
     throw new TypeError('Unknown read projection channel');
   }
   if (audience === 'author') return pres;
-  return mapDeckSlideLists(pres, (slides) => {
-    const pinned = pinSlideJumps(slides, slideTypes);
+  const projected = mapDeckSlideLists(pres, (slides) => {
+    const pinned = pinSlideJumps(
+      slides.filter((slide) => slide && typeof slide === 'object'),
+      slideTypes,
+    );
     const visible =
-      channel === 'follow'
-        ? pinned.filter(
-            (slide) =>
-              isSlideVisibleIn(slide, 'viewer', { userPermission: 'read' }) &&
-              isSlideVisibleIn(slide, 'presentation'),
-          )
-        : filterSlidesForContext(pinned, 'viewer', {
-            userPermission: 'read',
-            markDrafts: true,
-          });
+      channel === 'published'
+        ? filterSlidesForContext(pinned, 'published')
+        : channel === 'follow'
+          ? pinned.filter(
+              (slide) =>
+                isSlideVisibleIn(slide, 'viewer', { userPermission: 'read' }) &&
+                isSlideVisibleIn(slide, 'presentation'),
+            )
+          : filterSlidesForContext(pinned, 'viewer', {
+              userPermission: 'read',
+              markDrafts: true,
+            });
     return visible
       .filter(
         (slide) =>
-          channel !== 'share' ||
-          liveEnabled ||
-          !isLiveOnlySlideType(slide.type),
+          (channel !== 'published' && (channel !== 'share' || liveEnabled)) ||
+          !isLiveOnlySlideType(slide?.type),
       )
       .map((slide) => {
         const out = { ...slide };
@@ -221,4 +230,13 @@ export function projectPresentationForAudience(
         return out;
       });
   });
+  if (!projected?.published) return projected;
+  // A reader response must not advertise an old author-generated OG URL.
+  // Public metadata resolves the current proven preview at its serving seam.
+  const {
+    ogImageUrl: _ogImageUrl,
+    previewFingerprint: _previewFingerprint,
+    ...published
+  } = projected.published;
+  return { ...projected, published };
 }

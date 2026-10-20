@@ -1,3 +1,6 @@
+import crypto from 'node:crypto';
+import { filterForPublished } from '../utils/public-output.js';
+import { getOgImageUrl } from '../config/branding.js';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { firstPublicSlide } from '../utils/public-output.js';
 
@@ -8,8 +11,8 @@ function firstNonEmptyString(arr) {
   return '';
 }
 
-export function pickOgImageUrlFromPresentation(pres) {
-  const first = firstPublicSlide(pres);
+export function pickOgImageUrlFromPresentation(pres, options) {
+  const first = firstPublicSlide(pres, options);
   if (!first) return '';
 
   const type = String(first.type || '');
@@ -48,4 +51,43 @@ export function pickOgImageUrlFromPresentation(pres) {
   }
 
   return '';
+}
+
+/** Versioned evidence for a rendered published preview, never an author snapshot. */
+export function publishedPreviewFingerprint(pres) {
+  const projected = filterForPublished(pres);
+  return crypto
+    .createHash('sha256')
+    .update(
+      JSON.stringify({
+        contract: 'published-preview-v2',
+        slides: projected?.slides || [],
+        versions: projected?.i18n?.versions || {},
+        theme: pres?.theme,
+        settings: pres?.settings?.ogPreview,
+      }),
+    )
+    .digest('hex');
+}
+
+/** Legacy or changed snapshots fail closed; publishing again creates fresh proof. */
+export function safePublishedOgImage(
+  pres,
+  storedUrl = pres?.published?.ogImageUrl,
+) {
+  if (
+    storedUrl &&
+    pres?.published?.ogImageUrl === storedUrl &&
+    pres?.published?.previewFingerprint === publishedPreviewFingerprint(pres)
+  ) {
+    return storedUrl;
+  }
+  return getOgImageUrl();
+}
+
+/** Only filenames minted by the publication OG generator, never arbitrary uploads. */
+export function isPublishedPreviewAssetName(name) {
+  return /^og-(?:[a-f0-9]{8}|v2-[a-f0-9]{8}-[a-f0-9]{20})-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.png$/.test(
+    name,
+  );
 }

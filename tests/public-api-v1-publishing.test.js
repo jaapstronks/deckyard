@@ -223,6 +223,13 @@ test('POST /publish publishes the deck and answers the public path', async () =>
     'the deck document carries the publish state',
   );
   assert.equal(stored.published.slug, body.slug);
+  const status = makeCtx('GET', DECK_ID);
+  await handlePublishing(status);
+  assert.equal(
+    status.res.body.ogImageUrl,
+    body.ogImageUrl,
+    'freshly published proof survives storage reload',
+  );
 });
 
 test('POST /publish on an already-published deck reuses the publish id', async () => {
@@ -290,7 +297,7 @@ test('GET /publish reports a published deck with its public path', async () => {
     publishId: STORED_PUBLISHED.id,
     slug: STORED_PUBLISHED.slug,
     path: `/p/${STORED_PUBLISHED.id}-${STORED_PUBLISHED.slug}`,
-    ogImageUrl: STORED_PUBLISHED.ogImageUrl,
+    ogImageUrl: '/assets/images/slides-previewimage.png',
     publishedAt: STORED_PUBLISHED.created,
   });
 });

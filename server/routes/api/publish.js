@@ -1,3 +1,4 @@
+import { publishedPreviewFingerprint } from '../../render/og-image.js';
 import {
   updatePublishedSlug,
   upsertPublishedEntry,
@@ -144,7 +145,7 @@ async function handlePreviewRegenerate(
 
   // Nothing to render a preview from (every slide is live-only, e.g. a deck
   // that holds only a follow-along invite).
-  if (!firstPublicSlide(pres)) {
+  if (!firstPublicSlide(pres, { channel: 'published' })) {
     badRequest(res, 'No slides to preview');
     return true;
   }
@@ -176,6 +177,7 @@ async function handlePreviewRegenerate(
         ? pres.published
         : {}),
       ogImageUrl,
+      previewFingerprint: publishedPreviewFingerprint(pres),
     };
     await updatePresentation(
       storageScope,

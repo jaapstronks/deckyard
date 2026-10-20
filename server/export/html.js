@@ -523,7 +523,9 @@ export async function buildStandaloneHtml(
 ) {
   // Apply the appropriate visibility filter based on context
   pres =
-    context === 'published' ? filterForPublished(pres) : filterForExport(pres);
+    context === 'published'
+      ? filterForPublished(pres, { slideTypes })
+      : filterForExport(pres);
   const docLang = resolveDocLangFromPresentation(pres);
   // The deck's own language, for slide types that render built-in copy. Not
   // the same value as docLang: that one always answers (falling back to nl for

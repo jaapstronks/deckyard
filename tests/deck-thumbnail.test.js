@@ -799,3 +799,57 @@ test('route answers thumbnail_unavailable for a deck without slides', async () =
     message: 'This deck has no slides.',
   });
 });
+
+test('reader thumbnails cannot reuse hidden author rasters or stale reader rasters', async () => {
+  const repoRoot = await tmpRoot();
+  const created = await createPresentation(testScope(), {
+    title: 'Hidden thumbnail',
+    ownerEmail: 'owner@example.com',
+    visibility: 'organization',
+    slides: [
+      {
+        id: 'private',
+        type: 'title-slide',
+        content: { title: 'HIDDEN_MARKER' },
+        visibility: { hideFromViewers: true },
+      },
+    ],
+  });
+  const { addCollaborator } =
+    await import('../server/storage/collaborators.js');
+  await addCollaborator(testScope(), created.id, {
+    userEmail: 'reader@example.com',
+    permission: 'view',
+    invitedBy: 'owner@example.com',
+  });
+  const pres = await getPresentation(testScope(), created.id);
+  const theme = await loadThemeAssets(repoRoot, pres.theme);
+  const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
+  await fs.mkdir(dir, { recursive: true });
+  const unsafe = Buffer.from('OLD_HIDDEN_RASTER');
+  await fs.writeFile(
+    path.join(dir, thumbCacheKey(pres, theme).filename),
+    unsafe,
+  );
+  await fs.writeFile(
+    path.join(dir, `${created.id}-reader-v2-old.webp`),
+    unsafe,
+  );
+  const res = createThumbnailResponse();
+  await handlePresentationThumbnail(
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'GET' },
+      res,
+      authedUser: { ...sessionFor('reader@example.com'), role: 'user' },
+    },
+    created.id,
+  );
+  assert.equal(res.statusCode, 404);
+  assert.equal(JSON.parse(res.body).error, 'thumbnail_unavailable');
+  assert.ok(!String(res.body).includes('OLD_HIDDEN_RASTER'));
+  const author = await getThumbnail(repoRoot, created.id);
+  assert.equal(author.statusCode, 200);
+  assert.ok(author.body.equals(unsafe));
+});

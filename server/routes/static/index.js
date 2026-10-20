@@ -1,3 +1,4 @@
+import { handlePublishedPreview } from './published-preview.js';
 import { notFound } from '../../utils/http.js';
 import { dispatchMounts } from '../../utils/router.js';
 import { handleFeed } from '../feed.js';
@@ -33,6 +34,7 @@ export const STATIC_MOUNTS = [
   { handle: handleSandboxOg },
   { handle: handleCustomStyles },
   { handle: handleManagedFont },
+  { handle: handlePublishedPreview },
   { handle: handleStaticFiles },
   { handle: handleShareLink },
   { handle: handleAppRoutes },

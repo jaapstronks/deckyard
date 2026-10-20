@@ -37,7 +37,7 @@ export function buildEmbedHtml(
     slideTypes = null,
   } = {},
 ) {
-  pres = filterForPublished(pres);
+  pres = filterForPublished(pres, { slideTypes });
   const themeId = theme?.id ? String(theme.id) : '';
   const themeVarsCss = themeVarsCssText(theme);
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
