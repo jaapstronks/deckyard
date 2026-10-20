@@ -123,6 +123,7 @@ nothing is discoverable only by `ls`.
 | Doc                                                                    | What it covers                                                             |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | [`editing-surfaces.md`](reference/editing-surfaces.md)                 | Canvas vs inspector vs own surface — the principle                         |
+| [`translation.md`](reference/translation.md)                           | Translation view, field status and API behavior                            |
 | [`editor-inspector.md`](reference/editor-inspector.md)                 | The inspector rail, panes and toolbar zones                                |
 | [`wysiwyg-inline-editing.md`](reference/wysiwyg-inline-editing.md)     | Inline editing on the slide canvas                                         |
 | [`essential-fields.md`](reference/essential-fields.md)                 | Which fields of each core type are `essential`, and why                    |

@@ -1,13 +1,7 @@
 import { debugLog } from '../../../lib/state/debug.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { normalizeLang } from '../../../lib/format/i18n.js';
-import {
-  DEFAULT_DECK_LANG,
-  getLangDisplayName,
-  resolveDeckLang,
-  translationSourceFor,
-} from '../../../../shared/i18n-utils.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
 import { summarizeCsvData } from '../fields/csv-grid.js';
 import { createTableGridEditor } from '../fields/table-grid.js';
@@ -26,62 +20,6 @@ import {
   visibilityDriverKeys,
 } from '../../../../shared/slide-types/field-visibility.js';
 import { h } from '../../../lib/dom/index.js';
-
-/**
- * The source-language value for a field, or '' when that version doesn't exist
- * / has nothing for this field. Drives whether the "fill from the source
- * language" button renders at all.
- *
- * The source is the deck's own answer (`translationSourceFor`), not "the other
- * one of two": on a deck whose active version is German, `otherLang()` returned
- * null and the button never rendered at all (B182).
- */
-function sourceLangFieldValue({ pres, slideId, key }) {
-  const sourceLang = translationSourceFor(
-    pres,
-    normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG,
-  );
-  if (!sourceLang) return { sourceLang: null, value: '' };
-  const srcVersion = pres?.i18n?.versions?.[sourceLang];
-  const srcSlide = Array.isArray(srcVersion?.slides)
-    ? srcVersion.slides.find((s) => s?.id === slideId)
-    : null;
-  const raw = srcSlide?.content?.[key];
-  const value = typeof raw === 'string' ? raw.trim() : '';
-  return { sourceLang, value };
-}
-
-function translateLabelRightEl({ pres, onTranslateField, slideId, key }) {
-  if (!onTranslateField) return null;
-  // Only offer the button when there is actually something to translate FROM:
-  // a bare "Translate" next to an empty other-language field is dead UI and
-  // its direction (which way does it translate?) is ambiguous.
-  const { sourceLang, value } = sourceLangFieldValue({ pres, slideId, key });
-  if (!sourceLang || !value) return null;
-  // The version's own native name, the same label the language menu and the
-  // translate modals use. A two-letter map answered this for `nl`/`en-GB` and
-  // fell through to the raw code for the other ten (B182).
-  const langLabel = getLangDisplayName(sourceLang);
-  const preview = value.length > 90 ? `${value.slice(0, 90)}…` : value;
-  return h('button', {
-    class: 'btn btn-secondary btn-xs is-pill',
-    type: 'button',
-    text: t('editor.translateField.from', 'From {lang}', { lang: langLabel }),
-    title: t(
-      'editor.translateField.fromTitle',
-      'Fill this field with a translation of the {lang} value (previewed first): “{value}”',
-      { lang: langLabel, value: preview },
-    ),
-    onclick: async () => {
-      try {
-        await onTranslateField?.({ slideId, key });
-      } catch (e) {
-        debugLog('[editor] translate field failed', { slideId, key, e });
-        // ignore; editor handles toast
-      }
-    },
-  });
-}
 
 /**
  * The help text a field declares, translated, or '' when it declares none.
@@ -116,7 +54,6 @@ export function createRenderField({
   rerenderEditor,
   scheduleUiRefresh,
   updateSelectedSlideListItem,
-  onTranslateField,
   // Opens the data editor for a csv-grid field, called with the field key.
   // Every host passes it; the widget is a summary plus this entry point
   // (the grid belongs on a wide surface, editing-surfaces §4.3, D338).
@@ -270,12 +207,6 @@ export function createRenderField({
         field.helpCopyExample.trim()
           ? field.helpCopyExample
           : '';
-      const labelRightEl = translateLabelRightEl({
-        pres,
-        onTranslateField,
-        slideId: slide.id,
-        key: field.key,
-      });
       return fieldText(
         t(field.labelKey || field.key, field.label || field.key),
         slide.content[field.key] || '',
@@ -288,7 +219,6 @@ export function createRenderField({
         {
           maxLength: field.maxLength,
           required: !!field.required,
-          labelRightEl,
           helpText,
           helpCopyExample,
         },
@@ -317,12 +247,6 @@ export function createRenderField({
     }
 
     if (field.type === 'markdown') {
-      const labelRightEl = translateLabelRightEl({
-        pres,
-        onTranslateField,
-        slideId: slide.id,
-        key: field.key,
-      });
       // The heading button is a declared field affordance, not a type name:
       // shared/slide-types/field-behaviour.js.
       const showHeading = fieldToolbars(field).includes('heading');
@@ -342,7 +266,6 @@ export function createRenderField({
         {
           maxLength: field.maxLength,
           required: !!field.required,
-          labelRightEl,
           showHeading,
         },
       );

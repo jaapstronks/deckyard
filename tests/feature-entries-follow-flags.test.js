@@ -70,14 +70,6 @@ const ENTRIES = {
       gate: 'client/views/editor/editor-form/type-menu.js',
     },
     {
-      entry: 'AI box: Fill slide… / field: From {lang}',
-      calls: [
-        'client/views/editor/modals/translate-slide-modal.js',
-        'client/views/editor/modals/translate-field-modal.js',
-      ],
-      gate: 'client/views/editor/editor-controller.js',
-    },
-    {
       entry: 'Translation view: suggest fields and slides',
       calls: ['client/views/editor/translate-view/index.js'],
       gate: 'client/views/editor/translate-view/index.js',
@@ -103,11 +95,6 @@ const ENTRIES = {
       entry: 'More menu: Analyze',
       calls: ['client/views/editor/modals/analyze-modal.js'],
       gate: 'client/views/editor/editor-controller.js',
-    },
-    {
-      entry: 'More menu: Translate + the new-version translate invite',
-      calls: ['client/views/editor/topbar/language-mode.js'],
-      gate: 'client/views/editor/topbar/language-mode.js',
     },
     {
       entry: 'Versions: Analyze with AI',
@@ -527,20 +514,16 @@ const { createEditorTopbarMoreMenu } =
 const { buildPresenterTopbar } =
   await import('../client/views/presenter/topbar.js');
 
-test('More menu: without onTranslateOther there is no Translate item', () => {
-  for (const onTranslateOther of [null, () => {}]) {
-    const menu = createEditorTopbarMoreMenu({
-      root: document.body,
-      toast: { info() {}, success() {}, error() {} },
-      onTranslateOther,
-    });
-    const labels = [...menu.el.querySelectorAll('button.dropdown-item')].map(
-      (b) => b.textContent.trim(),
-    );
-    assert.equal(labels.includes('Translate'), !!onTranslateOther);
-    assert.ok(!menu.el.textContent.includes('null'));
-    menu.detach();
-  }
+test('More menu has no direct translation action', () => {
+  const menu = createEditorTopbarMoreMenu({
+    root: document.body,
+    toast: { info() {}, success() {}, error() {} },
+  });
+  const labels = [...menu.el.querySelectorAll('button.dropdown-item')].map(
+    (button) => button.textContent.trim(),
+  );
+  assert.ok(!labels.includes('Translate'));
+  menu.detach();
 });
 
 test('presenter topbar: null translate and live controls leave no trace', () => {

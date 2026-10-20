@@ -14,12 +14,6 @@ export function createEditorTopbarMoreMenu({
   requestSave,
   isDirty,
   onError,
-  // Absent where AI is switched off, and so is the Translate item.
-  onTranslateOther,
-  // A predicate, not a boolean: whether there is another language version to
-  // retranslate changes while the menu exists (the language menu creates them),
-  // so it is asked again every time the menu opens.
-  canTranslate = () => true,
   onVersions,
   // Absent for a sandbox guest, who has no account to sign out of, and so is
   // the Sign out item.
@@ -110,24 +104,6 @@ export function createEditorTopbarMoreMenu({
         return onclick?.(e);
       },
     });
-
-  // Translate is an AI action: `onTranslateOther` is absent where AI is off,
-  // and so is the item (D179).
-  const btnTranslateOther = onTranslateOther
-    ? menuItem({
-        text: t('editor.more.translate', 'Translate'),
-        title: t(
-          'editor.more.translate.title',
-          'Refresh every other language version of this deck from the one you are editing.',
-        ),
-        onclick: () => run(onTranslateOther),
-      })
-    : null;
-  const syncTranslateItem = () => {
-    if (!btnTranslateOther) return;
-    btnTranslateOther.style.display = canTranslate?.() ? '' : 'none';
-  };
-  syncTranslateItem();
 
   const btnVersions = menuItem({
     text: t('editor.more.versions', 'Versions…'),
@@ -351,7 +327,7 @@ export function createEditorTopbarMoreMenu({
     title: t('common.moreOptions', 'More options'),
     ariaLabel: t('common.moreOptions', 'More options'),
     menuClass: 'dropdown-menu-right',
-    // `btnAnalyze` and `btnTranslateOther` are null where AI is off,
+    // `btnAnalyze` is null where AI is off,
     // `btnAnalytics` where analytics is, `btnCompanion` where live is;
     // `append` would print that.
     items: [
@@ -362,7 +338,6 @@ export function createEditorTopbarMoreMenu({
       btnOverview,
       btnAnalytics,
       btnAnalyze,
-      btnTranslateOther,
       btnVersions,
       btnDuplicateDeck,
       h('div', { class: 'dropdown-sep' }),
@@ -377,13 +352,6 @@ export function createEditorTopbarMoreMenu({
   });
   detachers.push(detachMore);
   closeMore = closeDropdown;
-
-  // Re-ask the state-dependent items on every open. Without this the Translate
-  // item keeps the visibility it was built with, so a language added since the
-  // topbar was created leaves it hidden.
-  moreDetails.addEventListener('toggle', () => {
-    if (moreDetails.open) syncTranslateItem();
-  });
 
   // Warm the notes session or other actions can happen outside; keep module focused.
   // (No-op here.)
