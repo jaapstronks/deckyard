@@ -48,5 +48,6 @@
   "follow.translating.running": "Translating… This page will auto-refresh.",
   "follow.translating.runningCount": "Translating ({count} {unit})… This page will auto-refresh.",
   "follow.translating.unitPlural": "items",
-  "follow.translating.unitSingular": "item"
+  "follow.translating.unitSingular": "item",
+  "follow.waitingForVisibleSlide": "Waiting for the next slide…"
 }

@@ -187,7 +187,8 @@ function stream(pattern) {
     .find((es) => pattern.test(es.url));
 }
 
-const followStream = () => stream(/\/api\/follow\/[^/]+\/events$/);
+const followStream = () =>
+  stream(/\/api\/follow\/[^/]+\/events(?:\?lang=[^/]*)?$/);
 const questionStream = () => stream(/\/questions\/events$/);
 
 // ---------------------------------------------------------------------------
@@ -577,6 +578,40 @@ test('a live deck renders the audience chrome, the current slide and the Q&A str
   detach();
 });
 
+test('an unavailable presenter slide clears old content and recovers by id', async () => {
+  const { shell, detach } = await mountFollow();
+  assert.ok(shell.querySelector('.follow-slide .slide'));
+
+  await pushSlide({
+    slideId: '',
+    slideIndex: -1,
+    slideType: '',
+    capabilities: { canUseQa: true, canViewSlide: false },
+  });
+  assert.match(
+    shell.querySelector('.follow-slide').textContent,
+    /Wachten op de volgende slide/,
+  );
+  assert.equal(shell.querySelector('.follow-status').textContent, '– / 4');
+  assert.equal(
+    shell.querySelector('.follow-interaction').style.display,
+    'none',
+  );
+
+  await pushSlide({
+    slideId: 's-poll',
+    slideIndex: 99,
+    slideType: 'poll-slide',
+    capabilities: { canUseQa: true, canViewSlide: true },
+  });
+  assert.equal(shell.querySelector('.follow-status').textContent, '2 / 4');
+  assert.doesNotMatch(
+    shell.querySelector('.follow-slide').textContent,
+    /Wachten op de volgende slide/,
+  );
+  detach();
+});
+
 test('the slide on the stage speaks the deck language, not the default', async () => {
   // The interactive types render copy of their own — "Meekijken + stemmen",
   // "Live resultaten" — and read it from the language the mount call is given
@@ -639,7 +674,7 @@ test('the anonymous audience only ever addresses the follow surface', async () =
   assert.deepEqual(strays, [], 'no request leaves the follow surface');
 
   assert.ok(
-    followStream().url.endsWith(`/api/follow/${DECK_ID}/events`),
+    followStream().url.includes(`/api/follow/${DECK_ID}/events?lang=`),
     'the state stream is the follow events endpoint',
   );
   assert.ok(
@@ -1140,7 +1175,7 @@ test('a server-side close ends the stream instead of reconnecting it', async () 
   assert.ok(es.closed, 'the stream the server closed is closed here too');
   assert.equal(
     FakeEventSource.instances.filter(
-      (s) => /\/events$/.test(s.url) && !/questions/.test(s.url),
+      (s) => /\/events\?lang=/.test(s.url) && !/questions/.test(s.url),
     ).length,
     1,
     'and no replacement is opened behind it',

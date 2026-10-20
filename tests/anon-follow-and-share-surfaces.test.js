@@ -33,9 +33,14 @@
  * Run with: node --test tests/anon-follow-and-share-surfaces.test.js
  */
 
-import { createMockRes, createMockReq } from './helpers/http-mocks.js';
+import {
+  createMockRes,
+  createMockReq,
+  createMockSseRes,
+} from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import path from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
@@ -48,7 +53,7 @@ const OWNER = 'owner@example.com';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/db/lifecycle.js');
-const { createPresentation, updatePresentation } =
+const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 const { createLiveSession, updateLiveSessionState } =
   await import('../server/storage/live-sessions/index.js');
@@ -72,6 +77,10 @@ const {
 } = await import('../server/routes/api/follow/interactions.js');
 const { handleFollowPresentation } =
   await import('../server/routes/api/follow/presentation.js');
+const { handleFollowEvents } =
+  await import('../server/routes/api/follow/events.js');
+const { followAudiencePresentation, followAudienceState } =
+  await import('../server/routes/api/follow/helpers.js');
 const { handleShareLink } =
   await import('../server/routes/static/share-viewer.js');
 const { getErrorStatus } = await import('../server/utils/http.js');
@@ -908,6 +917,285 @@ test('a requested language version is the language the payload states', async ()
   // one requested.
   const plain = await callFollowPresentation(pres.id);
   assert.equal(plain.body.presentation.lang, 'nl');
+});
+
+test('follow hides private and presentation-only slides in payload, state, render and interactions', async () => {
+  const { pres, sessionId, slideIds } = await seedLiveDeck({
+    slides: [
+      { type: 'content-slide', content: { title: 'VISIBLE-BEFORE' } },
+      {
+        type: 'poll-slide',
+        content: { question: 'PRIVATE-POLL', options: ['PRIVATE-OPTION', 'B'] },
+        visibility: { hideFromViewers: true },
+        notes: 'PRIVATE-NOTE',
+        _aiReasoning: 'PRIVATE-REASON',
+      },
+      {
+        type: 'content-slide',
+        content: { title: 'PRESENTATION-HIDDEN' },
+        visibility: { hideInPresentation: true },
+      },
+      {
+        type: 'content-slide',
+        content: { title: 'VISIBLE-AFTER' },
+        notes: 'VISIBLE-NOTE',
+        _aiWarnings: ['VISIBLE-WARNING'],
+      },
+    ],
+    currentSlide: 1,
+  });
+
+  const hidden = await callFollowPresentation(pres.id);
+  assert.equal(hidden.body.slideId, '');
+  assert.equal(hidden.body.slideIndex, -1);
+  assert.equal(hidden.body.capabilities.interaction, undefined);
+  assert.deepEqual(
+    hidden.body.presentation.slides.map((slide) => slide.id),
+    [slideIds[0], slideIds[3]],
+  );
+  const bytes = String(hidden.res.body);
+  for (const marker of [
+    'PRIVATE-POLL',
+    'PRIVATE-OPTION',
+    'PRIVATE-NOTE',
+    'PRIVATE-REASON',
+    'PRESENTATION-HIDDEN',
+    'VISIBLE-NOTE',
+    'VISIBLE-WARNING',
+  ])
+    assert.equal(bytes.includes(marker), false, marker);
+
+  const state = await callPublic(handleFollowPublic, {
+    path: `/api/follow/${pres.id}/state`,
+    method: 'GET',
+  });
+  assert.equal(state.body.slideId, '');
+  assert.equal(state.body.slideIndex, -1);
+
+  const current = await callPublic(handleFollowPublic, {
+    path: `/api/follow/${pres.id}/interactions/current`,
+    method: 'GET',
+  });
+  assert.equal(current.body.interaction, null);
+  assert.equal(JSON.stringify(current.body).includes('PRIVATE-POLL'), false);
+
+  for (const slideId of [slideIds[1], slideIds[2]]) {
+    const rendered = await callPublic(handleFollowPublic, {
+      path: `/api/follow/${pres.id}/render-slide`,
+      body: { slideId, lang: null },
+    });
+    assert.equal(rendered.status, 404);
+  }
+  const vote = await callPublic(handleFollowPublic, {
+    path: `/api/follow/${pres.id}/interactions/${slideIds[1]}/vote`,
+    body: { optionIndex: 0 },
+  });
+  assert.equal(vote.status, 400);
+
+  await updateLiveSessionState(presenterScope, sessionId, {
+    slideId: slideIds[3],
+    slideIndex: 3,
+    slideType: 'content-slide',
+    updatedAt: Date.now(),
+  });
+  const after = await callFollowPresentation(pres.id);
+  assert.equal(after.body.slideId, slideIds[3]);
+  assert.equal(after.body.slideIndex, 1);
+  assert.equal(after.body.presentation.slides.length, 2);
+});
+
+test('follow locates a stable id after a translated reorder and never reuses its old index', async () => {
+  const { pres, slideIds } = await seedLiveDeck({
+    slides: [
+      { type: 'content-slide', content: { title: 'FIRST' } },
+      {
+        type: 'content-slide',
+        content: { title: 'HIDDEN' },
+        visibility: { hideFromViewers: true },
+      },
+      { type: 'content-slide', content: { title: 'THIRD' } },
+    ],
+    currentSlide: 2,
+  });
+  const translated = [pres.slides[2], pres.slides[1], pres.slides[0]].map(
+    (slide) => ({
+      ...slide,
+      content: { title: `EN-${slide.content.title}` },
+    }),
+  );
+  await updatePresentation(
+    testScope(null, { actorEmail: OWNER }),
+    pres.id,
+    {
+      i18n: {
+        dominant: 'nl',
+        versions: {
+          nl: { title: 'Live deck', slides: pres.slides },
+          'en-GB': { title: 'Live deck', slides: translated },
+        },
+      },
+    },
+    { actorEmail: OWNER, user: { email: OWNER } },
+  );
+
+  const english = await callFollowPresentation(pres.id, { lang: 'en-GB' });
+  assert.equal(english.body.status, 'live');
+  assert.deepEqual(
+    english.body.presentation.slides.map((slide) => slide.id),
+    [slideIds[2], slideIds[0]],
+  );
+  assert.equal(english.body.slideId, slideIds[2]);
+  assert.equal(english.body.slideIndex, 0);
+  assert.equal(JSON.stringify(english.body).includes('EN-HIDDEN'), false);
+
+  const state = await callPublic(handleFollowPublic, {
+    path: `/api/follow/${pres.id}/state?lang=en-GB`,
+    method: 'GET',
+  });
+  assert.equal(state.body.slideId, slideIds[2]);
+  assert.equal(state.body.slideIndex, 0);
+});
+
+test('missing and incomplete follow translations return no audience deck or current slide', async () => {
+  const { pres } = await seedLiveDeck({
+    slides: [{ type: 'content-slide', content: { title: 'SOURCE' } }],
+  });
+  const missing = await callFollowPresentation(pres.id, { lang: 'de' });
+  assert.equal(missing.body.status, 'translating');
+  assert.equal(missing.body.presentation, null);
+  assert.equal(missing.body.slideId, '');
+
+  const row = fakeDb.__tables.presentations.find((item) => item.id === pres.id);
+  row.i18n = {
+    dominant: 'nl',
+    versions: {
+      nl: { title: 'Live deck', slides: structuredClone(pres.slides) },
+      de: { title: '', slides: [] },
+    },
+  };
+  const stored = await getPresentation(testScope(), pres.id);
+  assert.equal(stored.i18n.versions.de.slides.length, 0);
+  assert.ok(stored.i18n.versions.nl.slides.length > 0);
+  const incomplete = await callFollowPresentation(pres.id, { lang: 'de' });
+  assert.equal(incomplete.body.status, 'translating');
+  assert.equal(incomplete.body.presentation, null);
+  assert.equal(incomplete.body.slideId, '');
+});
+
+test('follow SSE status and state suppress a private current slide', async () => {
+  const { pres, sessionId, slideIds } = await seedLiveDeck({
+    slides: [
+      { type: 'content-slide', content: { title: 'PUBLIC' } },
+      {
+        type: 'poll-slide',
+        content: { question: 'SECRET-POLL' },
+        visibility: { hideFromViewers: true },
+      },
+    ],
+  });
+  const res = Object.assign(new EventEmitter(), createMockSseRes(), {
+    writeHead() {
+      return this;
+    },
+    flushHeaders() {},
+    end() {
+      this.writableEnded = true;
+    },
+  });
+  await handleFollowEvents(
+    {
+      repoRoot: REPO_ROOT,
+      req: createMockReq({ method: 'GET' }),
+      res,
+      url: new URL(`/api/follow/${pres.id}/events`, 'http://example.com'),
+    },
+    pres.id,
+  );
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    await updateLiveSessionState(presenterScope, sessionId, {
+      slideId: slideIds[1],
+      slideIndex: 1,
+      slideType: 'poll-slide',
+      updatedAt: Date.now(),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const stateFrames = res.frames.filter((frame) => frame.event === 'state');
+    assert.ok(stateFrames.length >= 2);
+    assert.equal(stateFrames.at(-1).data.slideId, '');
+    assert.equal(stateFrames.at(-1).data.slideType, '');
+    assert.equal(JSON.stringify(res.frames).includes('SECRET-POLL'), false);
+    assert.equal(JSON.stringify(res.frames).includes(slideIds[1]), false);
+  } finally {
+    res.emit('close');
+  }
+});
+
+test('follow projection keeps channel flags distinct and resolves legacy indices before filtering', () => {
+  const slides = [
+    {
+      id: 'reader-hidden',
+      type: 'content-slide',
+      visibility: { hideFromViewers: true },
+    },
+    {
+      id: 'present-hidden',
+      type: 'content-slide',
+      visibility: { hideInPresentation: true },
+    },
+    {
+      id: 'draft',
+      type: 'content-slide',
+      visibility: {
+        hideInPresentation: true,
+        hideInExport: true,
+        hideInPublished: true,
+      },
+    },
+    {
+      id: 'visible',
+      type: 'content-slide',
+      visibility: { hideInPublished: true },
+      notes: 'AUTHOR-NOTE',
+    },
+  ];
+  const source = { slides };
+  const projected = followAudiencePresentation(source, null);
+  assert.deepEqual(
+    projected.slides.map((slide) => slide.id),
+    ['visible'],
+  );
+  assert.equal('notes' in projected.slides[0], false);
+  assert.equal('notes' in source.slides[3], true, 'author deck is untouched');
+
+  const legacy = followAudienceState(
+    { status: 'live', slideIndex: 3, slideId: '', slideType: 'content-slide' },
+    source,
+    projected,
+  );
+  assert.equal(legacy.slideId, 'visible');
+  assert.equal(legacy.slideIndex, 0);
+  const hidden = followAudienceState(
+    { status: 'live', slideIndex: 0, slideId: '', slideType: 'content-slide' },
+    source,
+    projected,
+  );
+  assert.equal(hidden.slideId, '');
+  assert.equal(hidden.slideIndex, -1);
+
+  const nothing = followAudiencePresentation(
+    { slides: slides.slice(0, 3) },
+    null,
+  );
+  assert.deepEqual(nothing.slides, []);
+  assert.equal(
+    followAudienceState(
+      { status: 'live', slideId: 'reader-hidden', slideIndex: 0 },
+      source,
+      nothing,
+    ).slideId,
+    '',
+  );
 });
 
 // ---------------------------------------------------------------------------

@@ -119,6 +119,10 @@ export async function createFollowCopy(lang) {
     title: tr('follow.title', 'Live follow-along'),
     notStarted: tr('follow.notStarted', "The presentation hasn't started yet."),
     ended: tr('follow.ended', 'The presentation is not active (anymore).'),
+    waitingForVisibleSlide: tr(
+      'follow.waitingForVisibleSlide',
+      'Waiting for the next slide…',
+    ),
     translating: tr(
       'follow.translating',
       'Translating… (this page will auto-refresh)',

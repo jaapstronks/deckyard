@@ -8,6 +8,8 @@ import {
   findMostRecentSessionForPresentation,
 } from './sessions.js';
 
+const clientEventTransforms = new WeakMap();
+
 /**
  * Attach one SSE client to a session's stream. Capability-based: the session
  * id (or follow code) is the authorization, so an audience scope may attach
@@ -21,7 +23,12 @@ import {
  *   a write, so this keeps the read shape (storage-layer.md § Failure
  *   signalling).
  */
-export async function attachSessionSseClient(scope, sessionId, res) {
+export async function attachSessionSseClient(
+  scope,
+  sessionId,
+  res,
+  { transformEvent } = {},
+) {
   toStorageContext(
     scope,
     'attachSessionSseClient',
@@ -33,9 +40,14 @@ export async function attachSessionSseClient(scope, sessionId, res) {
   const s = touched.session;
 
   s.clients.add(res);
+  if (transformEvent) clientEventTransforms.set(res, transformEvent);
 
   // Initial snapshot
-  sseWrite(res, { event: 'state', data: s.state });
+  const initialState = transformEvent
+    ? await transformEvent('state', s.state)
+    : s.state;
+  if (initialState !== null)
+    sseWrite(res, { event: 'state', data: initialState });
   sseWrite(res, {
     event: 'controlEnabled',
     data: { controlEnabled: !!s.controlEnabled, updatedAt: Date.now() },
@@ -45,6 +57,7 @@ export async function attachSessionSseClient(scope, sessionId, res) {
   const detach = () => {
     try {
       s.clients.delete(res);
+      clientEventTransforms.delete(res);
     } catch {}
   };
 
@@ -81,7 +94,9 @@ export async function broadcast(scope, sessionId, event, data) {
     data == null || typeof data === 'string' ? data : JSON.stringify(data);
   for (const res of Array.from(s.clients)) {
     try {
-      sseWrite(res, { event, data: payload });
+      const transform = clientEventTransforms.get(res);
+      const sent = transform ? await transform(event, data) : payload;
+      if (sent !== null) sseWrite(res, { event, data: sent });
     } catch {
       // Drop broken connections eagerly
       try {

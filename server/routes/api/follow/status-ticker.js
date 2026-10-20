@@ -12,7 +12,9 @@ import { getPresentationCached } from '../../../storage/presentations/index.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import {
   computeAudienceCapabilitiesFromState,
+  followAudienceState,
   followAudienceScope,
+  loadFollowAudience,
 } from './helpers.js';
 
 const TICK_MS = 2000;
@@ -36,12 +38,35 @@ async function computeShared(g) {
     followAudienceScope(g.repoRoot),
     g.presentationId,
   );
-  const capabilities = computeAudienceCapabilitiesFromState(state, pres);
+  const projected = pres
+    ? await loadFollowAudience(g.repoRoot, pres, null)
+    : null;
+  const audienceState = followAudienceState(state, pres, projected);
+  const capabilities = computeAudienceCapabilitiesFromState(
+    audienceState,
+    pres,
+  );
+  const languageStates = new Map([['', Promise.resolve(audienceState)]]);
   return {
-    state,
+    state: audienceState,
+    rawState: state,
+    pres,
     capabilities,
+    audienceStateForLang(lang) {
+      const key = lang || '';
+      if (!pres) return Promise.resolve(audienceState);
+      if (!languageStates.has(key)) {
+        languageStates.set(
+          key,
+          loadFollowAudience(g.repoRoot, pres, key).then((deck) =>
+            followAudienceState(state, pres, deck),
+          ),
+        );
+      }
+      return languageStates.get(key);
+    },
     // Serialized once for all subscribers; sseWrite passes strings through.
-    statusJson: JSON.stringify({ ...state, capabilities }),
+    statusJson: JSON.stringify({ ...audienceState, capabilities }),
   };
 }
 

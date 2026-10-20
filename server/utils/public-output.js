@@ -2,7 +2,10 @@
 // else a reader without edit rights has no business receiving.
 
 import { pinSlideJumps } from '../../shared/slide-types.js';
-import { filterSlidesForContext } from '../../shared/slide-visibility.js';
+import {
+  filterSlidesForContext,
+  isSlideVisibleIn,
+} from '../../shared/slide-visibility.js';
 import { isLiveOnlySlideType } from '../../shared/slide-types/live-session.js';
 import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
@@ -176,7 +179,7 @@ export function filterForShareViewer(pres, { slideTypes } = {}) {
  * @param {Object} pres
  * @param {Object} options
  * @param {'author'|'reader'} options.audience
- * @param {'viewer'|'share'} options.channel
+ * @param {'viewer'|'share'|'follow'} options.channel
  * @param {Object} [options.slideTypes] - The deck organization's type registry
  * @param {boolean} [options.liveEnabled=true]
  * @returns {Object}
@@ -188,16 +191,23 @@ export function projectPresentationForAudience(
   if (!['author', 'reader'].includes(audience)) {
     throw new TypeError('A read projection requires an explicit audience');
   }
-  if (!['viewer', 'share'].includes(channel)) {
+  if (!['viewer', 'share', 'follow'].includes(channel)) {
     throw new TypeError('Unknown read projection channel');
   }
   if (audience === 'author') return pres;
   return mapDeckSlideLists(pres, (slides) => {
     const pinned = pinSlideJumps(slides, slideTypes);
-    const visible = filterSlidesForContext(pinned, 'viewer', {
-      userPermission: 'read',
-      markDrafts: true,
-    });
+    const visible =
+      channel === 'follow'
+        ? pinned.filter(
+            (slide) =>
+              isSlideVisibleIn(slide, 'viewer', { userPermission: 'read' }) &&
+              isSlideVisibleIn(slide, 'presentation'),
+          )
+        : filterSlidesForContext(pinned, 'viewer', {
+            userPermission: 'read',
+            markDrafts: true,
+          });
     return visible
       .filter(
         (slide) =>

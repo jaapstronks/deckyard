@@ -1,13 +1,12 @@
-export function slideByIdOrIndex(pres, { slideId, slideIndex } = {}) {
+export function slideByIdOrIndex(pres, { slideId } = {}) {
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const sid = String(slideId || '').trim();
   if (sid) {
     const idx = slides.findIndex((s) => s?.id === sid);
     if (idx >= 0) return { slide: slides[idx], idx };
+    return { slide: null, idx: -1 };
   }
-  const i = Math.max(
-    0,
-    Math.min(slides.length - 1, Number(slideIndex || 0) || 0),
-  );
-  return { slide: slides[i] || null, idx: i };
+  // The server resolves legacy index-only state before filtering. Empty ids
+  // mean the current presenter slide is unavailable to this audience.
+  return { slide: null, idx: -1 };
 }

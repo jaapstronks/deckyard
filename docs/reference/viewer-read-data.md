@@ -12,8 +12,10 @@ Positional slide links are pinned to stable slide ids against each language's or
 
 Share links always use the reader audience, for both view and comment permissions and after password verification where required. The share response keeps its existing base-language-only contract; a language query does not create a translation endpoint. Share rendering refuses an id outside the projected list. When the live feature is disabled, share output also omits live-only slide types, in every carried list.
 
+Follow-along uses the same private-field removal and also excludes slides with `hideInPresentation`. A slide marked with either `hideFromViewers` or `hideInPresentation` is absent from the audience payload and cannot be server-rendered there. A missing or incomplete translation returns the existing translating response with no deck. Live state, SSE and interaction reads expose only a slide in the requested language's projected list. A hidden current slide has an empty `slideId`, index `-1`, no interaction, and a neutral waiting view; the audience counter uses the projected list. The presenter and notes companion keep their author view.
+
 ## Implementation boundary
 
-This contract currently covers the JSON and MCP read surfaces named above. Follow-along audience/state/interactions, reader exports (including queued jobs and notes-only downloads), and published/OG/thumbnail previews require separate projection work. Their existing behavior must not be interpreted as satisfying this contract. Published visibility and export visibility remain distinct channel policies; this change does not redefine them.
+This contract currently covers the JSON, MCP and follow-along surfaces named above. Reader exports (including queued jobs and notes-only downloads) and published/OG/thumbnail previews require separate projection work. Their existing behavior must not be interpreted as satisfying this contract. Published visibility and export visibility remain distinct channel policies; this change does not redefine them.
 
 See [authentication and sessions](auth-and-sessions.md), [MCP server](mcp-server.md), and the [public API schema](../openapi.yaml).

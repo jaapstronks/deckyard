@@ -13,8 +13,9 @@ import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   computeAudienceCapabilitiesFromState,
   ensureInteractionDeviceCookie,
+  followAudienceState,
   followAudienceScope,
-  pickPresentationForLang,
+  loadFollowAudience,
 } from './helpers.js';
 import {
   ensurePollInteractionForSlide,
@@ -47,7 +48,7 @@ export async function handleFollowInteractionsCurrent(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const lang = normalizeLang(url.searchParams.get('lang'));
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
@@ -55,6 +56,10 @@ export async function handleFollowInteractionsCurrent(
     followAudienceScope(repoRoot),
     presentationId,
   );
+  const projected = pres0
+    ? await loadFollowAudience(repoRoot, pres0, lang)
+    : null;
+  state = pres0 ? followAudienceState(state, pres0, projected) : state;
   const caps = computeAudienceCapabilitiesFromState(state, pres0);
 
   const dev = ensureInteractionDeviceCookie(req);
@@ -71,7 +76,7 @@ export async function handleFollowInteractionsCurrent(
   }
   if (!pres0) return notFound(res);
 
-  const pres = pickPresentationForLang(pres0, lang);
+  const pres = projected;
   const slideId = String(state.slideId || '').trim();
   const slide = findSlideById(pres, slideId);
   const slideType = String(state.slideType || '');
@@ -210,15 +215,19 @@ export async function handleFollowInteractionState(
   slideId,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const pres = await getPresentationCached(
+  const original = await getPresentationCached(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const caps = computeAudienceCapabilitiesFromState(state, pres);
+  const pres = original
+    ? await loadFollowAudience(repoRoot, original, null)
+    : null;
+  state = original ? followAudienceState(state, original, pres) : state;
+  const caps = computeAudienceCapabilitiesFromState(state, original);
   const dev = ensureInteractionDeviceCookie(req);
   const extraHeaders = dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {};
 
@@ -285,18 +294,22 @@ export async function handleFollowInteractionVote(
   slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
 
-  const pres = await getPresentationCached(
+  const original = await getPresentationCached(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const caps = computeAudienceCapabilitiesFromState(state, pres);
+  const pres = original
+    ? await loadFollowAudience(repoRoot, original, null)
+    : null;
+  state = original ? followAudienceState(state, original, pres) : state;
+  const caps = computeAudienceCapabilitiesFromState(state, original);
   if (!pres) return notFound(res);
 
   const dev = ensureInteractionDeviceCookie(req);
@@ -382,18 +395,22 @@ export async function handleFollowInteractionFeedback(
   slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
 
-  const pres = await getPresentationCached(
+  const original = await getPresentationCached(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const caps = computeAudienceCapabilitiesFromState(state, pres);
+  const pres = original
+    ? await loadFollowAudience(repoRoot, original, null)
+    : null;
+  state = original ? followAudienceState(state, original, pres) : state;
+  const caps = computeAudienceCapabilitiesFromState(state, original);
   if (!pres) return notFound(res);
 
   const dev = ensureInteractionDeviceCookie(req);

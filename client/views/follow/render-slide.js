@@ -1,6 +1,7 @@
 import {
   activateVideoEmbeds,
   mountSlideInto,
+  cleanupSlideRuntimes,
 } from '../../lib/slide-runtime/slide-render.js';
 import { slideByIdOrIndex } from './slides.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
@@ -16,21 +17,37 @@ export function renderFollowSlide({
   capabilities,
   statusEl,
   lastSlideId,
-  lastSlideIndex,
   lastStepIdx,
   lastStepParagraphs,
   followInviteMessage,
+  waitingMessage,
 } = {}) {
   if (!pres) return;
   const { slide, idx } = slideByIdOrIndex(pres, {
     slideId: lastSlideId,
-    slideIndex: lastSlideIndex,
   });
 
   // Always show a stable "slide counter" in the top-right, even when the slide
   // itself is replaced by an interaction UI.
   if (statusEl)
-    statusEl.textContent = `${idx + 1} / ${(pres.slides || []).length}`;
+    statusEl.textContent =
+      idx < 0
+        ? `– / ${(pres.slides || []).length}`
+        : `${idx + 1} / ${(pres.slides || []).length}`;
+
+  if (!slide) {
+    cleanupSlideRuntimes(slideWrap);
+    slideWrap?.replaceChildren(
+      h('div', { class: 'slide follow-message-slide' }, [
+        h('div', { class: 'slide-inner' }, [
+          h('div', { class: 'follow-message-box', text: waitingMessage }),
+        ]),
+      ]),
+    );
+    if (slideWrap) slideWrap.style.display = '';
+    if (interactionWrap) interactionWrap.style.display = 'none';
+    return;
+  }
 
   // When a dominant interaction is active, hide the slide and show the interaction UI.
   if (capabilities?.interaction) {
@@ -40,8 +57,6 @@ export function renderFollowSlide({
   }
   if (slideWrap) slideWrap.style.display = '';
   if (interactionWrap) interactionWrap.style.display = 'none';
-
-  if (!slide) return;
 
   // When the presenter is on the invite, show the joined-confirmation instead
   // of the slide itself (which would just show the QR code they already

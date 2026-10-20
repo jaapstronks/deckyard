@@ -14,12 +14,12 @@ import {
   translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
 import { customThemeConfig } from '../../../utils/themes.js';
-import { stripAiReviewMeta } from '../../../utils/public-output.js';
 import {
   computeAudienceCapabilitiesFromState,
+  followAudienceState,
   followAudienceScope,
   followMetaFromPresentation,
-  pickPresentationForLang,
+  loadFollowAudience,
 } from './helpers.js';
 
 /**
@@ -57,9 +57,10 @@ export async function handleFollowPresentation(
     presentationId,
   );
   if (state.status !== 'live') {
+    const audienceState = followAudienceState(state);
     serveJson(res, 200, {
-      ...state,
-      capabilities: computeAudienceCapabilitiesFromState(state, null),
+      ...audienceState,
+      capabilities: computeAudienceCapabilitiesFromState(audienceState, null),
       presentation: null,
     });
     return true;
@@ -94,8 +95,12 @@ export async function handleFollowPresentation(
           }).missingCount
         : null;
     if (!hasVersion || (typeof missing === 'number' && missing > 0)) {
-      serveJson(res, 200, {
+      const audienceState = followAudienceState({
         ...state,
+        status: 'translating',
+      });
+      serveJson(res, 200, {
+        ...audienceState,
         status: 'translating',
         lang,
         meta,
@@ -106,7 +111,7 @@ export async function handleFollowPresentation(
             ? pres.i18n.translation[lang]
             : null,
         capabilities: computeAudienceCapabilitiesFromState(
-          { ...state, status: 'translating' },
+          { ...audienceState, status: 'translating' },
           pres,
         ),
         presentation: null,
@@ -115,14 +120,14 @@ export async function handleFollowPresentation(
     }
   }
 
-  // The audience gets what the slides show, not the author's AI notes (B767).
-  const picked = stripAiReviewMeta(pickPresentationForLang(pres, lang));
+  const picked = await loadFollowAudience(repoRoot, pres, lang);
+  const audienceState = followAudienceState(state, pres, picked);
   countDeckView('follow', pres);
   serveJson(res, 200, {
-    ...state,
+    ...audienceState,
     lang: lang || null,
     meta,
-    capabilities: computeAudienceCapabilitiesFromState(state, pres),
+    capabilities: computeAudienceCapabilitiesFromState(audienceState, pres),
     // The audience has no feature snapshot: the payload says whether this
     // installation has the analytics cluster (D260), as share `verify` does.
     tracking: isFeatureEnabled('analytics'),
