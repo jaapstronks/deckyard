@@ -752,7 +752,7 @@ test('voting posts the option index to the current slide, and thanks the voter',
   assert.ok(cast, 'the vote is a POST');
   assert.equal(
     cast.url,
-    `/api/follow/${DECK_ID}/interactions/s-poll/vote`,
+    `/api/follow/${DECK_ID}/interactions/s-poll/vote?lang=nl`,
     'it is addressed to the slide the audience is looking at',
   );
   assert.deepEqual(
@@ -836,7 +836,7 @@ test('a likert-slider slide offers a range, and submits its 0-based index', asyn
   const cast = sentTo('/vote')[0];
   assert.equal(
     cast.url,
-    `/api/follow/${DECK_ID}/interactions/s-slider/vote`,
+    `/api/follow/${DECK_ID}/interactions/s-slider/vote?lang=nl`,
     'the slider posts to the current slide',
   );
   assert.deepEqual(
@@ -883,7 +883,7 @@ test('a feedback slide collects free text and sends it once', async () => {
   const sent = sentTo('/feedback')[0];
   assert.equal(
     sent.url,
-    `/api/follow/${DECK_ID}/interactions/s-feedback/feedback`,
+    `/api/follow/${DECK_ID}/interactions/s-feedback/feedback?lang=nl`,
     'feedback goes to the current slide',
   );
   assert.deepEqual(

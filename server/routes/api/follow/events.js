@@ -11,6 +11,7 @@ import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   computeAudienceCapabilitiesFromState,
   followAudienceState,
+  followWireState,
   loadFollowAudience,
 } from './helpers.js';
 
@@ -46,6 +47,7 @@ export async function handleFollowEvents(
   };
 
   const transformEvent = async (event, data) => {
+    if (stopped) return null;
     if (event === 'deckUpdated')
       return { updatedAt: data?.updatedAt || Date.now() };
     if (event !== 'state' && event !== 'interactionState') return null;
@@ -56,7 +58,8 @@ export async function handleFollowEvents(
     const projected = await audienceState(
       event === 'state' ? { ...current, ...data } : current,
     );
-    if (event === 'state') return projected.state;
+    if (stopped) return null;
+    if (event === 'state') return followWireState(projected.state);
     return projected.state.slideId && data?.slideId === projected.state.slideId
       ? data
       : null;
@@ -80,10 +83,11 @@ export async function handleFollowEvents(
       state: await shared.audienceStateForLang(lang),
       pres: shared.pres,
     };
+    if (stopped) return;
     sseWrite(res, {
       event: 'status',
       data: {
-        ...projected.state,
+        ...followWireState(projected.state),
         capabilities: computeAudienceCapabilitiesFromState(
           projected.state,
           projected.pres,
@@ -97,12 +101,17 @@ export async function handleFollowEvents(
         detachSession();
         currentSessionId = state.sessionId;
         // This will also emit an initial `state` event.
-        detach = await attachSessionSseClient(
+        const attached = await attachSessionSseClient(
           followAudienceScope(repoRoot),
           state.sessionId,
           res,
           { transformEvent },
         );
+        if (stopped || currentSessionId !== state.sessionId) {
+          attached?.();
+          return;
+        }
+        detach = attached;
         if (projected.state.slideId) {
           await sendInteractionCatchUp(followAudienceScope(repoRoot), {
             sessionId: state.sessionId,

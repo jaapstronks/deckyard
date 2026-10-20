@@ -79,8 +79,14 @@ const { handleFollowPresentation } =
   await import('../server/routes/api/follow/presentation.js');
 const { handleFollowEvents } =
   await import('../server/routes/api/follow/events.js');
-const { followAudiencePresentation, followAudienceState } =
-  await import('../server/routes/api/follow/helpers.js');
+const { handleFollowQuestionsEvents } =
+  await import('../server/routes/api/follow/questions-events.js');
+const {
+  followAudiencePresentation,
+  followAudienceState,
+  followWireState,
+  computeAudienceCapabilitiesFromState,
+} = await import('../server/routes/api/follow/helpers.js');
 const { handleShareLink } =
   await import('../server/routes/static/share-viewer.js');
 const { getErrorStatus } = await import('../server/utils/http.js');
@@ -1004,6 +1010,57 @@ test('follow hides private and presentation-only slides in payload, state, rende
   assert.equal(after.body.presentation.slides.length, 2);
 });
 
+test('follow HTTP state never exposes the presenter bearer capability or hidden state', async () => {
+  const { pres, sessionId, slideIds } = await seedLiveDeck({
+    slides: [
+      {
+        type: 'poll-slide',
+        content: { question: 'HIDDEN-CAPABILITY-POLL', options: ['A', 'B'] },
+        visibility: { hideFromViewers: true },
+        notes: 'AUTHOR-CAPABILITY-NOTE',
+      },
+    ],
+  });
+  const companion = await callPublic(handleLiveSessionsPublic, {
+    path: `/api/live-sessions/${sessionId}/deck`,
+    method: 'GET',
+  });
+  assert.equal(companion.status, 200);
+  assert.equal(
+    JSON.stringify(companion.body).includes('AUTHOR-CAPABILITY-NOTE'),
+    true,
+  );
+  for (const suffix of [
+    'presentation',
+    'state',
+    'questions',
+    'interactions/current',
+  ]) {
+    const result = await callPublic(handleFollowPublic, {
+      path: `/api/follow/${pres.id}/${suffix}`,
+      method: 'GET',
+    });
+    assert.equal(result.status, 200, suffix);
+    const wire = JSON.stringify(result.body);
+    assert.equal(
+      wire.includes(sessionId),
+      false,
+      `${suffix}: bearer capability`,
+    );
+    assert.equal(
+      wire.includes('sessionId'),
+      false,
+      `${suffix}: capability field`,
+    );
+    assert.equal(
+      wire.includes(slideIds[0]),
+      false,
+      `${suffix}: hidden slide id`,
+    );
+    assert.equal(wire.includes('poll-slide'), false, `${suffix}: hidden type`);
+  }
+});
+
 test('follow locates a stable id after a translated reorder and never reuses its old index', async () => {
   const { pres, slideIds } = await seedLiveDeck({
     slides: [
@@ -1124,10 +1181,87 @@ test('follow SSE status and state suppress a private current slide', async () =>
     assert.ok(stateFrames.length >= 2);
     assert.equal(stateFrames.at(-1).data.slideId, '');
     assert.equal(stateFrames.at(-1).data.slideType, '');
+    assert.equal(JSON.stringify(res.frames).includes(sessionId), false);
+    assert.equal(JSON.stringify(res.frames).includes('sessionId'), false);
     assert.equal(JSON.stringify(res.frames).includes('SECRET-POLL'), false);
     assert.equal(JSON.stringify(res.frames).includes(slideIds[1]), false);
   } finally {
     res.emit('close');
+  }
+});
+
+test('follow Q&A SSE status keeps hidden state and presenter capability server-side', async () => {
+  const { pres, sessionId, slideId } = await seedLiveDeck({
+    slides: [
+      {
+        type: 'poll-slide',
+        content: { question: 'PRIVATE-QUESTION-POLL' },
+        visibility: { hideFromViewers: true },
+      },
+    ],
+  });
+  const res = Object.assign(new EventEmitter(), createMockSseRes(), {
+    writeHead() {
+      return this;
+    },
+    flushHeaders() {},
+  });
+  await handleFollowQuestionsEvents(
+    {
+      repoRoot: REPO_ROOT,
+      req: createMockReq({ method: 'GET' }),
+      res,
+      url: new URL('http://example.com/'),
+    },
+    pres.id,
+  );
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.ok(res.frames.some((frame) => frame.event === 'status'));
+    assert.ok(
+      res.frames.some((frame) => frame.event === 'questions'),
+      'raw capability still attaches Q&A internally',
+    );
+    const wire = JSON.stringify(res.frames);
+    for (const marker of [
+      sessionId,
+      'sessionId',
+      slideId,
+      'poll-slide',
+      'PRIVATE-QUESTION-POLL',
+    ])
+      assert.equal(wire.includes(marker), false, marker);
+  } finally {
+    res.emit('close');
+  }
+});
+
+test('follow wire contract omits capabilities even for ended and idle internal states', () => {
+  for (const status of ['live', 'ended', 'not_started', 'translating']) {
+    const raw = {
+      status,
+      sessionId: 'PRESENTER-BEARER',
+      slideId: 'slide',
+      slideType: 'poll-slide',
+      internalFutureField: 'PRIVATE',
+    };
+    const selected = followAudienceState(
+      raw,
+      { slides: [{ id: 'slide', type: 'poll-slide' }] },
+      { slides: [{ id: 'slide', type: 'poll-slide' }] },
+    );
+    const wire = JSON.stringify({
+      ...followWireState(selected),
+      capabilities: computeAudienceCapabilitiesFromState(selected, {}),
+    });
+    assert.equal(wire.includes('PRESENTER-BEARER'), false);
+    assert.equal(wire.includes('sessionId'), false);
+    assert.equal(wire.includes('PRIVATE'), false);
+    assert.equal(
+      selected.sessionId,
+      raw.sessionId,
+      'server keeps storage capability',
+    );
   }
 });
 

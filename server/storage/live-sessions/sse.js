@@ -35,34 +35,50 @@ export async function attachSessionSseClient(
     {},
     { allowCrossOrganization: true },
   );
-  const touched = await touchLiveSession(scope, sessionId);
-  if (!touched.ok) return null;
-  const s = touched.session;
-
-  s.clients.add(res);
-  if (transformEvent) clientEventTransforms.set(res, transformEvent);
-
-  // Initial snapshot
-  const initialState = transformEvent
-    ? await transformEvent('state', s.state)
-    : s.state;
-  if (initialState !== null)
-    sseWrite(res, { event: 'state', data: initialState });
-  sseWrite(res, {
-    event: 'controlEnabled',
-    data: { controlEnabled: !!s.controlEnabled, updatedAt: Date.now() },
-  });
-
-  // No heartbeat here: openSseStream() owns the per-connection heartbeat.
+  let s = null;
+  let detached = false;
   const detach = () => {
-    try {
-      s.clients.delete(res);
-      clientEventTransforms.delete(res);
-    } catch {}
+    detached = true;
+    s?.clients.delete(res);
+    clientEventTransforms.delete(res);
+    res.off?.('close', detach);
+    res.off?.('finish', detach);
   };
-
   res.on?.('close', detach);
   res.on?.('finish', detach);
+
+  try {
+    const touched = await touchLiveSession(scope, sessionId);
+    if (!touched.ok) {
+      detach();
+      return null;
+    }
+    s = touched.session;
+    if (detached || res.destroyed || res.writableEnded) {
+      detach();
+      return detach;
+    }
+    s.clients.add(res);
+    if (transformEvent) clientEventTransforms.set(res, transformEvent);
+
+    // Initial snapshot. A disconnect may happen while the projection runs.
+    const initialState = transformEvent
+      ? await transformEvent('state', s.state)
+      : s.state;
+    if (detached) return detach;
+    if (initialState !== null)
+      sseWrite(res, { event: 'state', data: initialState });
+    if (!detached)
+      sseWrite(res, {
+        event: 'controlEnabled',
+        data: { controlEnabled: !!s.controlEnabled, updatedAt: Date.now() },
+      });
+  } catch (err) {
+    detach();
+    throw err;
+  }
+
+  // No heartbeat here: openSseStream() owns the per-connection heartbeat.
   return detach;
 }
 
@@ -96,11 +112,13 @@ export async function broadcast(scope, sessionId, event, data) {
     try {
       const transform = clientEventTransforms.get(res);
       const sent = transform ? await transform(event, data) : payload;
-      if (sent !== null) sseWrite(res, { event, data: sent });
+      if (s.clients.has(res) && sent !== null)
+        sseWrite(res, { event, data: sent });
     } catch {
       // Drop broken connections eagerly
       try {
         s.clients.delete(res);
+        clientEventTransforms.delete(res);
       } catch {}
     }
   }

@@ -126,6 +126,20 @@ export function followAudienceState(state, original, projected) {
   };
 }
 
+/** Explicit public state contract. Internal selection retains the bearer capability. */
+export function followWireState(state) {
+  return {
+    status: state?.status,
+    presentationId: state?.presentationId,
+    slideId: state?.slideId || '',
+    slideIndex: state?.slideIndex ?? -1,
+    slideType: state?.slideType || '',
+    stepIdx: state?.stepIdx || 0,
+    stepParagraphs: !!state?.stepParagraphs,
+    updatedAt: state?.updatedAt || 0,
+  };
+}
+
 export function ensureQaDeviceCookie(req) {
   const NAME = 'sb_qa';
   const cookies = parseCookies(req.headers?.cookie);
@@ -240,7 +254,6 @@ export function computeAudienceCapabilitiesFromState(state, pres) {
     ? {
         type: interactionType,
         slideId: typeof state?.slideId === 'string' ? state.slideId : '',
-        sessionId: typeof state?.sessionId === 'string' ? state.sessionId : '',
       }
     : null;
   const dominantInteraction = !!interaction;

@@ -14,6 +14,7 @@ import {
   computeAudienceCapabilitiesFromState,
   ensureInteractionDeviceCookie,
   followAudienceState,
+  followWireState,
   followAudienceScope,
   loadFollowAudience,
 } from './helpers.js';
@@ -59,7 +60,7 @@ export async function handleFollowInteractionsCurrent(
   const projected = pres0
     ? await loadFollowAudience(repoRoot, pres0, lang)
     : null;
-  state = pres0 ? followAudienceState(state, pres0, projected) : state;
+  state = followAudienceState(state, pres0, projected);
   const caps = computeAudienceCapabilitiesFromState(state, pres0);
 
   const dev = ensureInteractionDeviceCookie(req);
@@ -69,7 +70,7 @@ export async function handleFollowInteractionsCurrent(
     serveJson(
       res,
       200,
-      { ...state, capabilities: caps, interaction: null },
+      { ...followWireState(state), capabilities: caps, interaction: null },
       extraHeaders,
     );
     return true;
@@ -88,7 +89,7 @@ export async function handleFollowInteractionsCurrent(
       res,
       200,
       {
-        ...state,
+        ...followWireState(state),
         capabilities: caps,
         interaction: null,
       },
@@ -177,7 +178,7 @@ export async function handleFollowInteractionsCurrent(
     res,
     200,
     {
-      ...state,
+      ...followWireState(state),
       capabilities: caps,
       interaction: {
         type,
@@ -210,7 +211,7 @@ export async function handleFollowInteractionsCurrent(
 }
 
 export async function handleFollowInteractionState(
-  { repoRoot, req, res },
+  { repoRoot, req, res, url },
   presentationId,
   slideId,
 ) {
@@ -224,9 +225,13 @@ export async function handleFollowInteractionState(
     presentationId,
   );
   const pres = original
-    ? await loadFollowAudience(repoRoot, original, null)
+    ? await loadFollowAudience(
+        repoRoot,
+        original,
+        normalizeLang(url?.searchParams.get('lang')),
+      )
     : null;
-  state = original ? followAudienceState(state, original, pres) : state;
+  state = followAudienceState(state, original, pres);
   const caps = computeAudienceCapabilitiesFromState(state, original);
   const dev = ensureInteractionDeviceCookie(req);
   const extraHeaders = dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {};
@@ -235,7 +240,7 @@ export async function handleFollowInteractionState(
     serveJson(
       res,
       200,
-      { ...state, capabilities: caps, interactionState: null },
+      { ...followWireState(state), capabilities: caps, interactionState: null },
       extraHeaders,
     );
     return true;
@@ -282,14 +287,14 @@ export async function handleFollowInteractionState(
   serveJson(
     res,
     200,
-    { ...state, capabilities: caps, interactionState: agg },
+    { ...followWireState(state), capabilities: caps, interactionState: agg },
     extraHeaders,
   );
   return true;
 }
 
 export async function handleFollowInteractionVote(
-  { repoRoot, req, res },
+  { repoRoot, req, res, url },
   presentationId,
   slideId,
 ) {
@@ -306,9 +311,13 @@ export async function handleFollowInteractionVote(
     presentationId,
   );
   const pres = original
-    ? await loadFollowAudience(repoRoot, original, null)
+    ? await loadFollowAudience(
+        repoRoot,
+        original,
+        normalizeLang(url?.searchParams.get('lang')),
+      )
     : null;
-  state = original ? followAudienceState(state, original, pres) : state;
+  state = followAudienceState(state, original, pres);
   const caps = computeAudienceCapabilitiesFromState(state, original);
   if (!pres) return notFound(res);
 
@@ -390,7 +399,7 @@ export async function handleFollowInteractionVote(
 }
 
 export async function handleFollowInteractionFeedback(
-  { repoRoot, req, res },
+  { repoRoot, req, res, url },
   presentationId,
   slideId,
 ) {
@@ -407,9 +416,13 @@ export async function handleFollowInteractionFeedback(
     presentationId,
   );
   const pres = original
-    ? await loadFollowAudience(repoRoot, original, null)
+    ? await loadFollowAudience(
+        repoRoot,
+        original,
+        normalizeLang(url?.searchParams.get('lang')),
+      )
     : null;
-  state = original ? followAudienceState(state, original, pres) : state;
+  state = followAudienceState(state, original, pres);
   const caps = computeAudienceCapabilitiesFromState(state, original);
   if (!pres) return notFound(res);
 

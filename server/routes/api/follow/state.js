@@ -5,6 +5,7 @@ import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   computeAudienceCapabilitiesFromState,
   followAudienceState,
+  followWireState,
   followAudienceScope,
   loadFollowAudience,
 } from './helpers.js';
@@ -32,7 +33,7 @@ export async function handleFollowState(
   );
   const audienceState = followAudienceState(state, pres, projected);
   serveJson(res, 200, {
-    ...audienceState,
+    ...followWireState(audienceState),
     capabilities: computeAudienceCapabilitiesFromState(audienceState, pres),
   });
   return true;

@@ -17,6 +17,7 @@ import { customThemeConfig } from '../../../utils/themes.js';
 import {
   computeAudienceCapabilitiesFromState,
   followAudienceState,
+  followWireState,
   followAudienceScope,
   followMetaFromPresentation,
   loadFollowAudience,
@@ -59,7 +60,7 @@ export async function handleFollowPresentation(
   if (state.status !== 'live') {
     const audienceState = followAudienceState(state);
     serveJson(res, 200, {
-      ...audienceState,
+      ...followWireState(audienceState),
       capabilities: computeAudienceCapabilitiesFromState(audienceState, null),
       presentation: null,
     });
@@ -100,7 +101,7 @@ export async function handleFollowPresentation(
         status: 'translating',
       });
       serveJson(res, 200, {
-        ...audienceState,
+        ...followWireState(audienceState),
         status: 'translating',
         lang,
         meta,
@@ -110,10 +111,7 @@ export async function handleFollowPresentation(
           typeof pres.i18n.translation[lang] === 'object'
             ? pres.i18n.translation[lang]
             : null,
-        capabilities: computeAudienceCapabilitiesFromState(
-          { ...audienceState, status: 'translating' },
-          pres,
-        ),
+        capabilities: computeAudienceCapabilitiesFromState(audienceState, pres),
         presentation: null,
       });
       return true;
@@ -124,7 +122,7 @@ export async function handleFollowPresentation(
   const audienceState = followAudienceState(state, pres, picked);
   countDeckView('follow', pres);
   serveJson(res, 200, {
-    ...audienceState,
+    ...followWireState(audienceState),
     lang: lang || null,
     meta,
     capabilities: computeAudienceCapabilitiesFromState(audienceState, pres),
