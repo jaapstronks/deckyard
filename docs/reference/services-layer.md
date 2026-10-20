@@ -66,7 +66,8 @@ The common signature is not universal. `loadPresentationForActor()` takes a deck
 Export preparation has explicit entry points in `server/services/exports.js`:
 
 - `prepareExportContext()` authorizes a requested deck export and counts it before the format builder runs.
-- `prepareQueuedExportContext()` prepares an admitted job for the worker; it does not repeat the request's access check or export count.
+- `prepareQueuedExportContext()` rechecks the queued actor's current deck rights, bounded by the enqueue audience, without counting the export again. Missing access context refuses the job.
+- `authorizeExportResult()` checks the finished artifact against the downloader and current deck rights; a built author artifact cannot be served after demotion.
 - `buildExportContext()` describes an already-authorized deck, including MCP download-link preparation; it neither authorizes nor counts a request.
 - `prepareThemeTemplate()` resolves a scoped theme and builds its template without requiring a presentation.
 

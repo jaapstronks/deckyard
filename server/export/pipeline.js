@@ -353,6 +353,8 @@ export function createAsyncExportRoute(config) {
             exportType,
             {
               presentationId,
+              format,
+              exportAccess: ctx.exportAccess,
               lang: ctx.exportLang,
               stripLiveOnly,
               scale: parseScaleParam(url),
@@ -499,6 +501,7 @@ export function createExportStreamRoute(config) {
             filename: getFilename(ctx),
             langSuffix: ctx.langSuffix,
             ownerEmail: authedUser?.email || null,
+            exportAccess: ctx.exportAccess,
             headers: responseHeaders(ctx),
             once: true,
           },

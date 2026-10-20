@@ -148,6 +148,8 @@ test('the queued worker builds the same context and counts nothing', async () =>
   const queued = await prepareQueuedExportContext(scope(), {
     presentationId: pres.id,
     lang: asked.exportLang,
+    format: 'pptx',
+    exportAccess: asked.exportAccess,
   });
   assert.deepEqual(await healthKeys(db), []);
   assert.deepEqual(queued.pres, asked.pres);
@@ -158,6 +160,11 @@ test('the queued worker builds the same context and counts nothing', async () =>
   await assert.rejects(
     prepareQueuedExportContext(scope(), {
       presentationId: '00000000-0000-4000-8000-000000000404',
+      format: 'pptx',
+      exportAccess: {
+        ...asked.exportAccess,
+        presentationId: '00000000-0000-4000-8000-000000000404',
+      },
     }),
     NotFoundError,
   );
