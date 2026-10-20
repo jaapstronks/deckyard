@@ -162,7 +162,7 @@ test('nested item texts round-trip across two languages', async () => {
   assert.deepEqual(rowsOf(backToNl), rowsOf(deck('nl')));
 });
 
-test('a nested text the model skipped keeps the source value, per index', async () => {
+test('a nested text the model skipped stays empty for retry, per index', async () => {
   const partial = deck('en-GB');
   // Model returns row 0 block 1 untranslated (missing key), everything else fine.
   delete partial.slides[0].content.rows[0].blocks[1].title;
@@ -174,10 +174,33 @@ test('a nested text the model skipped keeps the source value, per index', async 
   assert.equal(out[0].blocks[0].title, 'Block A', 'index 0 is not disturbed');
   assert.equal(
     out[0].blocks[1].title,
-    'Blok B',
-    'index 1 falls back to source',
+    '',
+    'index 1 remains an untranslated gap',
   );
   assert.equal(out[0].blocks[1].body, 'Text B', 'its sibling key still lands');
+});
+
+test('omitted answers preserve existing target prose and leave new gaps empty', async () => {
+  aiResponse = JSON.stringify({ slides: [] });
+  const source = deck('nl');
+  const existingTarget = deck('en-GB');
+  const kept = await translatePresentationStrings(source, {
+    from: 'nl',
+    to: 'en-GB',
+    fillMissing: true,
+    existingTarget,
+  });
+  assert.deepEqual(kept, existingTarget);
+  const blank = await translatePresentationStrings(source, {
+    from: 'nl',
+    to: 'en-GB',
+  });
+  assert.equal(blank.title, '');
+  assert.equal(blank.slides[0].content.title, '');
+  assert.equal(rowsOf(blank)[0].blocks[0].body, '');
+  assert.ok(
+    computeMissingTranslation({ source, target: blank }).missingCount > 0,
+  );
 });
 
 test('the missing-translation scan sees nested item texts', () => {

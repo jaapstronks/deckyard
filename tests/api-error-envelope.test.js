@@ -267,6 +267,11 @@ test('errorText order is message > error, then fallback', async () => {
 test('every registered code passes with exactly its keys', () => {
   const samples = {
     bad_request: { errors: ['Slide.content.title must be a string'] },
+    translation_partial: {
+      completedBatches: 1,
+      totalBatches: 20,
+      retryable: true,
+    },
     held: { lock: { slideId: 's1' } },
     invalid: { field: 'themeId', use: 'theme' },
     conflict: { id: 'p1', revision: 4, modified: 'now', updatedBy: 'a@b.c' },
