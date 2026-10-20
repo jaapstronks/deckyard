@@ -16,14 +16,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      doc_only: ${{ steps.diff.outputs.doc_only }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        name: Classify the complete diff against the fork manifest
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/ci-doc-only.js "$BASE" "$HEAD"
+
   test:
+    needs: classify
+    if: always()
     runs-on: ubuntu-latest
     # PostgreSQL and Redis come from the runner image and apt, not from service
     # containers: anonymous registry pulls hit a quota shared per runner IP
     # (B736, see .github/actions/postgres/action.yml).
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies for documentation guards
+        if: needs.classify.result == 'success' && needs.classify.outputs.doc_only == 'true'
+        run: npm ci --ignore-scripts
+      - name: Check formatting and documentation contracts
+        if: needs.classify.result == 'success' && needs.classify.outputs.doc_only == 'true'
+        run: |
+          npm run format:check
+          node --test \
+            tests/docs-paths-resolvable.test.js \
+            tests/docs-prose-claims.test.js \
+            tests/plan-codes-public-docs.test.js \
+            tests/scripts-reachable-gate.test.js \
+            tests/follow-invite-insertability.test.js \
+            tests/slide-type-count-prose-guard.test.js \
+            tests/slide-type-docs.test.js
       - uses: ./.github/actions/postgres
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
         with:
           database: deckyard_mcp_test
       # A throwaway Redis for the rate limiter. Without it the Lua token bucket
@@ -33,6 +70,7 @@ jobs:
       # below, and skip or fall back to memory without it. The Ubuntu package
       # starts the server on install.
       - name: Install and start Redis
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
         run: |
           set -euo pipefail
           sudo apt-get update -q
@@ -43,12 +81,10 @@ jobs:
             sleep 1
           done
           test "$(redis-cli -h localhost -p 6379 ping)" = PONG
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
       - run: npm ci
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
       - name: Migrate MCP protocol test database
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
         run: npm run db:migrate
         env:
           DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test
@@ -60,6 +96,7 @@ jobs:
       # pairing is what tests/export-chrome-smoke.test.js guards.
       # Rationale and alternatives: docs/developer/export-smoke-test.md.
       - name: Install Chrome for the export smoke test
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
         run: |
           set -euo pipefail
           CHROME_VERSION="$(node -e "import('puppeteer-core').then(m => console.log(m.PUPPETEER_REVISIONS.chrome))")"
@@ -71,8 +108,11 @@ jobs:
           test -x "$CHROME_PATH"
           echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
       - run: npm run lint
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
       - run: npm run format:check
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
       - run: npm test
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
         env:
           DECKYARD_MCP_TEST_DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test
           RATE_LIMIT_TEST_REDIS_URL: redis://localhost:6379
@@ -91,6 +131,8 @@ jobs:
   # Fixtures live tracked under tests/fixtures/fork-slide-types/ and are copied
   # in, so a local `npm test` (no copy) still runs the pure core suite.
   test-fork:
+    needs: classify
+    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -159,6 +201,8 @@ jobs:
   # copies are stale — run the vendor scripts and commit" without opening the
   # run.
   vendor-freshness:
+    needs: classify
+    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -195,6 +239,8 @@ jobs:
   # path — GitHub runs it beside `test`, not behind it — and so a red mark reads
   # as "a migration broke" without opening the run.
   migrations:
+    needs: classify
+    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -258,6 +304,8 @@ jobs:
   # `npm test` by its `*.pgtest.js` naming (the default glob matches `*.test.js`
   # only), so a local `npm test` with no database still runs the pure suite.
   test-postgres:
+    needs: classify
+    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
     runs-on: ubuntu-latest
     env:
       # Read by server/config/database.js for every connection this job opens
