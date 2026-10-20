@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.77.5](https://github.com/jaapstronks/deckyard/compare/v1.77.4...v1.77.5) (2026-10-20)
+
+
+### Security
+
+* preserve reader audience through exports and queued downloads ([#1775](https://github.com/jaapstronks/deckyard/issues/1775)) ([30842ab](https://github.com/jaapstronks/deckyard/commit/30842ab14e7e1cf9578c14bb0827a599af85e098))
+
 ## [1.77.4](https://github.com/jaapstronks/deckyard/compare/v1.77.3...v1.77.4) (2026-10-20)
 
 
