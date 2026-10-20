@@ -4,6 +4,14 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.77.1](https://github.com/jaapstronks/deckyard/compare/v1.77.0...v1.77.1) (2026-10-20)
+
+
+### Fixed
+
+* normalize legacy background text through deck and collab reads ([#1766](https://github.com/jaapstronks/deckyard/issues/1766)) ([a99c569](https://github.com/jaapstronks/deckyard/commit/a99c569a1aba8f23bb8a5da0ad1090b7e6915ee8))
+* translate large decks in saved batches ([#1763](https://github.com/jaapstronks/deckyard/issues/1763)) ([2511ed0](https://github.com/jaapstronks/deckyard/commit/2511ed0ef6853129b74f2afca2484ea96fbdf90a))
+
 ## [1.77.0](https://github.com/jaapstronks/deckyard/compare/v1.76.0...v1.77.0) (2026-10-20)
 
 
