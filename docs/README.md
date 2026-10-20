@@ -72,6 +72,8 @@ ships:
 | Comments & notifications model                                | `docs/reference/comments-and-notifications.md`                             |
 | Setting up a fork                                             | `docs/reference/fork-setup.md`                                             |
 
+Settings and configuration: [scope and control map](reference/settings-map.md), including current UI, environment and API boundaries.
+
 ## Full index
 
 The table above is the task-oriented entry point; this is the complete list, so
