@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.77.2](https://github.com/jaapstronks/deckyard/compare/v1.77.1...v1.77.2) (2026-10-20)
+
+
+### Fixed
+
+* validate collaboration WebSocket origins ([#1767](https://github.com/jaapstronks/deckyard/issues/1767)) ([3ba480f](https://github.com/jaapstronks/deckyard/commit/3ba480f3e0e54d689d37e5e200311030b822fa94))
+
 ## [1.77.1](https://github.com/jaapstronks/deckyard/compare/v1.77.0...v1.77.1) (2026-10-20)
 
 
