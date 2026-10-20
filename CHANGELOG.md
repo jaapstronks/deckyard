@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.79.0](https://github.com/jaapstronks/deckyard/compare/v1.78.0...v1.79.0) (2026-10-20)
+
+
+### Added
+
+* make settings navigation addressable and keep form edits safe (B805) ([#1779](https://github.com/jaapstronks/deckyard/issues/1779)) ([c42e1b9](https://github.com/jaapstronks/deckyard/commit/c42e1b9216f209acfbcb5585509956bf1ff7bd2b))
+
+
+### Security
+
+* keep revoked-link attempt records for the notification window only (B785) ([#1781](https://github.com/jaapstronks/deckyard/issues/1781)) ([10c020c](https://github.com/jaapstronks/deckyard/commit/10c020cf77c1c0a3339c18512b6f2fe890947c30))
+
 ## [1.78.0](https://github.com/jaapstronks/deckyard/compare/v1.77.5...v1.78.0) (2026-10-20)
 
 
