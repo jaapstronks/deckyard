@@ -2,7 +2,6 @@ import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
@@ -12,6 +11,7 @@ import {
   exportRenderTimeoutMs,
 } from '../server/render/load-export-document.js';
 import { closePuppeteerBrowser } from '../server/utils/puppeteer-browser.js';
+import { withTestUploads } from './helpers/upload-fixture.js';
 
 /**
  * B302: the PNG route (PNG, PNG zip, PPTX "every slide as an image") timed out
@@ -48,20 +48,10 @@ async function bigOpaquePng(width, height) {
     .toBuffer();
 }
 
-/** Write a throwaway upload under the real repo root and return [url, cleanup]. */
-async function withUpload(buf) {
-  const name = `test-png-embed-${randomUUID()}.png`;
-  const dir = path.join(repoRoot, 'server', 'uploads');
-  await fs.mkdir(dir, { recursive: true });
-  const file = path.join(dir, name);
-  await fs.writeFile(file, buf);
-  return [`/uploads/${name}`, () => fs.rm(file, { force: true })];
-}
-
 test('PNG export document stays small for an image-set with a 3200x1800 upload used twice', async () => {
   const raw = await bigOpaquePng(3200, 1800);
-  const [url, cleanup] = await withUpload(raw);
-  try {
+  await withTestUploads(repoRoot, async (add) => {
+    const url = await add(raw, { prefix: 'test-png-embed-', ext: 'png' });
     const html = await buildSlidePngHtml(repoRoot, {
       id: 's1',
       type: 'image-set-slide',
@@ -82,9 +72,7 @@ test('PNG export document stays small for an image-set with a 3200x1800 upload u
       `PNG export document is ${(bytes / 1024 / 1024).toFixed(1)} MB; ` +
         'the raw upload is going in without the embed transform',
     );
-  } finally {
-    await cleanup();
-  }
+  });
 });
 
 test('both export renders load their document through loadExportDocument, never networkidle', async () => {
