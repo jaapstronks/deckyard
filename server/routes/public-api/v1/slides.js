@@ -3,7 +3,11 @@
  * Handles CRUD operations for individual slides within presentations.
  */
 
-import { publicDeckTimestamps } from '../../../services/presentations.js';
+import {
+  publicDeckTimestamps,
+  mayOnPresentation,
+} from '../../../services/presentations.js';
+import { projectReaderPresentation } from '../../../utils/reader-presentation.js';
 import {
   updateSlide,
   addSlide,
@@ -31,14 +35,14 @@ import {
 /**
  * Sanitize a slide for API response.
  */
-function sanitizeSlide(slide) {
+function sanitizeSlide(slide, { includeNotes = true } = {}) {
   if (!slide) return null;
   return {
     id: slide.id,
     // Published spelling (canonical id) on the wire; storage keeps the key.
     type: canonicalSlideType(slide.type),
     content: slide.content || {},
-    notes: slide.notes || '',
+    ...(includeNotes ? { notes: slide.notes || '' } : {}),
     parentId: slide.parentId || null,
     visibility: slide.visibility || {},
   };
@@ -57,7 +61,15 @@ async function handleGetSlide(ctx, presentationId, slideId) {
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
   if (!ok) return true;
 
-  const slides = Array.isArray(pres.slides) ? pres.slides : [];
+  const mayEdit = await mayOnPresentation(
+    pres,
+    { actor: ctx.authedUser },
+    'write',
+  );
+  const served = mayEdit
+    ? pres
+    : await projectReaderPresentation(ctx.storageScope, pres);
+  const slides = Array.isArray(served.slides) ? served.slides : [];
   const index = slides.findIndex((s) => s?.id === slideId);
 
   if (index < 0) {
@@ -66,7 +78,7 @@ async function handleGetSlide(ctx, presentationId, slideId) {
   }
 
   await apiSuccess(ctx, {
-    slide: sanitizeSlide(slides[index]),
+    slide: sanitizeSlide(slides[index], { includeNotes: mayEdit }),
     index,
   });
   return true;
