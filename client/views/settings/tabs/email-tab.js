@@ -9,6 +9,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createEmailTemplatesPanel } from '../email-templates/index.js';
 import { createAdminNotificationsSection } from '../sections/index.js';
+import { getAppName } from '../../../lib/theme/branding.js';
 import {
   fetchAppSettings,
   updateAppSettings,
@@ -35,6 +36,61 @@ export function createEmailTab({ user }) {
     text: t('settings.tabs.email', 'Email'),
   });
 
+  const senderCard = h('section', { class: 'stack editor-card' });
+  senderCard.append(
+    h('h3', {
+      class: 'field-label',
+      text: t('settings.admin.emailSender.title', 'Email Sender Identity'),
+    }),
+  );
+  senderCard.append(
+    h('p', {
+      class: 'help',
+      text: t(
+        'settings.admin.emailSender.hint',
+        'From address for system emails. Falls back to environment variables if empty.',
+      ),
+    }),
+  );
+  const senderEmail = h('input', {
+    type: 'email',
+    class: 'form-input',
+    maxlength: '255',
+    placeholder: 'noreply@example.com',
+  });
+  const senderName = h('input', {
+    type: 'text',
+    class: 'form-input',
+    maxlength: '128',
+    placeholder: getAppName(),
+  });
+  senderCard.append(
+    h('label', { class: 'field-row' }, [
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.emailSender.email', 'Email'),
+      }),
+      senderEmail,
+    ]),
+    h('label', { class: 'field-row' }, [
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.emailSender.name', 'Name'),
+      }),
+      senderName,
+    ]),
+  );
+  const senderError = createInlineError({ callout: true });
+  const saveSender = h('button', {
+    type: 'button',
+    class: 'btn btn-primary',
+    text: t('common.save', 'Save'),
+  });
+  senderCard.append(
+    senderError.el,
+    h('div', { class: 'row is-end settings-policy-actions' }, [saveSender]),
+  );
+
   // Admin notifications section
   const notificationsCard = h('div', { class: 'stack editor-card' });
   const adminNotifications = createAdminNotificationsSection();
@@ -59,30 +115,61 @@ export function createEmailTab({ user }) {
 
   let busy = false;
   let loaded = false;
+  let loading = false;
   let emailPanel = null;
+  saveSender.disabled = true;
+  senderEmail.disabled = true;
+  senderName.disabled = true;
+  btnSaveNotif.disabled = true;
+  adminNotifications.setDisabled(true);
 
   const load = async () => {
-    if (loaded) return;
-    loaded = true;
+    if (loaded || loading) return;
+    loading = true;
+    saveSender.disabled = true;
+    btnSaveNotif.disabled = true;
+    senderError.clear();
+    notifError.clear();
 
     // Load admin notification settings
     try {
       const app = await fetchAppSettings();
+      senderEmail.value = app?.emailSender?.email || '';
+      senderName.value = app?.emailSender?.name || '';
       const notif =
         app?.notifications && typeof app.notifications === 'object'
           ? app.notifications
           : {};
       adminNotifications.setValue(notif?.emailEnabled === true);
+      loaded = true;
+      senderEmail.disabled = false;
+      senderName.disabled = false;
+      adminNotifications.setDisabled(false);
+      saveSender.textContent = t('common.save', 'Save');
+      btnSaveNotif.textContent = t('common.save', 'Save');
     } catch (e) {
-      toast.error(e, { id: 'settings-load' });
+      senderError.show(e.message);
+      notifError.show(e.message);
+      saveSender.textContent = t('common.retry', 'Retry');
+      btnSaveNotif.textContent = t('common.retry', 'Retry');
+    } finally {
+      loading = false;
+      saveSender.disabled = false;
+      btnSaveNotif.disabled = false;
     }
 
     // Render email templates panel (it handles its own data loading)
-    emailPanel = createEmailTemplatesPanel({ user });
-    container.append(emailPanel);
+    if (!emailPanel) {
+      emailPanel = createEmailTemplatesPanel({ user });
+      container.append(emailPanel);
+    }
   };
 
   btnSaveNotif.addEventListener('click', async () => {
+    if (!loaded) {
+      await load();
+      return;
+    }
     if (busy) return;
     notifError.clear();
     busy = true;
@@ -108,7 +195,34 @@ export function createEmailTab({ user }) {
     }
   });
 
-  container.append(title, notificationsCard);
+  saveSender.addEventListener('click', async () => {
+    if (!loaded) {
+      await load();
+      return;
+    }
+    senderError.clear();
+    saveSender.disabled = true;
+    senderEmail.disabled = true;
+    senderName.disabled = true;
+    try {
+      await updateAppSettings({
+        emailSender: {
+          email: senderEmail.value.trim(),
+          name: senderName.value.trim(),
+        },
+      });
+      invalidateSettingsCache();
+      toast.success(t('settings.saved', 'Saved.'));
+    } catch (err) {
+      senderError.show(err.message);
+    } finally {
+      saveSender.disabled = !loaded;
+      senderEmail.disabled = !loaded;
+      senderName.disabled = !loaded;
+    }
+  });
+
+  container.append(title, senderCard, notificationsCard);
 
   return {
     el: container,

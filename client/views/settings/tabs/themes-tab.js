@@ -6,15 +6,10 @@
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { planRowRemoval } from '../../../lib/dom/row-removal.js';
-import {
-  fetchOrgSettings,
-  updateOrgSettings,
-  invalidateSettingsCache,
-} from '../../../lib/net/settings.js';
+import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 import { createThemeEditor } from '../theme-editor/index.js';
 import { invalidateTheme } from '../../../lib/theme/theme.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
@@ -48,184 +43,11 @@ export function createThemesTab({ user }) {
     ),
   });
 
-  // ============================================================
-  // Workspace theme settings: default theme + picker visibility.
-  // These write organization settings (defaultThemeId / enabledThemes) that govern the
-  // creation flow's theme picker.
-  // ============================================================
-  const workspaceCard = h('div', {
-    class: 'stack editor-card themes-workspace-card',
+  const policyLink = h('a', {
+    class: 'btn btn-secondary',
+    href: '/settings#organization',
+    text: t('settings.themes.organizationPolicy', 'Organization theme policy'),
   });
-  const workspaceTitle = h('h3', {
-    class: 'field-label',
-    text: t('settings.themes.workspace.title', 'Theme picker'),
-  });
-  const workspaceHint = h('p', {
-    class: 'help',
-    text: t(
-      'settings.themes.workspace.hint',
-      'Set the theme new presentations start with, and which themes can be picked. An unchecked theme is not offered anywhere.',
-    ),
-  });
-
-  const defaultField = h('div', { class: 'stack is-field' });
-  const defaultLabel = h('label', {
-    class: 'field-label',
-    for: 'settings-default-theme',
-    text: t('settings.themes.workspace.defaultTheme', 'Default theme'),
-  });
-  const defaultSelect = h('select', {
-    class: 'form-input is-compact',
-    id: 'settings-default-theme',
-  });
-  defaultField.append(defaultLabel, defaultSelect);
-
-  const visibleField = h('div', { class: 'stack is-field' });
-  const visibleLabel = h('div', {
-    class: 'field-label',
-    text: t('settings.themes.workspace.visibleInPicker', 'Visible in picker'),
-  });
-  const visibleHint = h('p', {
-    class: 'help',
-    text: t(
-      'settings.themes.workspace.visibleHint',
-      'Check the themes people can choose. The default theme is always available, and a presentation already using an unchecked theme keeps it. With everything checked, new themes are available automatically.',
-    ),
-  });
-  const visibleList = h('div', { class: 'themes-visible-list stack' });
-  visibleField.append(visibleLabel, visibleHint, visibleList);
-
-  const workspaceSaveBtn = h('button', {
-    class: 'btn btn-primary btn-sm',
-    type: 'button',
-    text: t('common.save', 'Save'),
-  });
-  const workspaceActions = h('div', { class: 'row is-end' }, [
-    workspaceSaveBtn,
-  ]);
-
-  // A refused save of this card is a state of it, so it stays beside its Save
-  // until the next attempt (docs/reference/feedback-surfaces.md). The settings
-  // routes answer about the request as a whole — permission, a malformed body
-  // — and name no `details.field`, so there is no control to mark.
-  const workspaceError = createInlineError({ callout: true });
-
-  workspaceCard.append(
-    workspaceTitle,
-    workspaceHint,
-    defaultField,
-    visibleField,
-    workspaceError.el,
-    workspaceActions,
-  );
-
-  // State for the workspace card
-  let allThemes = []; // { id, slug, label, source } from GET /api/themes
-  let visibleCheckboxes = new Map(); // id -> input element
-
-  /** Render the default-theme <select> and the visibility checkbox list. */
-  function renderWorkspaceControls(defaultThemeId, enabledThemes) {
-    defaultSelect.replaceChildren();
-    for (const th of allThemes) {
-      defaultSelect.append(
-        h('option', { value: th.id, text: th.label || th.id }),
-      );
-    }
-    const hasDefault = allThemes.some((th) => th.id === defaultThemeId);
-    defaultSelect.value = hasDefault ? defaultThemeId : allThemes[0]?.id || '';
-
-    // Empty allowlist means "all visible".
-    const allowSet = new Set(
-      (enabledThemes || []).map((id) => String(id).toLowerCase()),
-    );
-    const allVisible = allowSet.size === 0;
-
-    visibleList.replaceChildren();
-    visibleCheckboxes = new Map();
-    for (const th of allThemes) {
-      const isDefault = th.id === defaultSelect.value;
-      const checkbox = h('input', {
-        type: 'checkbox',
-        checked:
-          allVisible || allowSet.has(String(th.id).toLowerCase()) || isDefault,
-      });
-      // The default theme is always visible and can't be unchecked.
-      checkbox.disabled = isDefault;
-      const row = h(
-        'label',
-        { class: 'row is-center gap-2 themes-visible-row' },
-        [checkbox, h('span', { text: th.label || th.id })],
-      );
-      visibleList.append(row);
-      visibleCheckboxes.set(th.id, checkbox);
-    }
-  }
-
-  // Keep the "always visible" default checkbox in sync when the default changes.
-  defaultSelect.addEventListener('change', () => {
-    const nextDefault = defaultSelect.value;
-    for (const [id, cb] of visibleCheckboxes) {
-      const isDefault = id === nextDefault;
-      cb.disabled = isDefault;
-      if (isDefault) cb.checked = true;
-    }
-  });
-
-  workspaceSaveBtn.addEventListener('click', async () => {
-    workspaceError.clear();
-    workspaceSaveBtn.disabled = true;
-    try {
-      const checkedIds = [];
-      for (const [id, cb] of visibleCheckboxes) {
-        if (cb.checked) checkedIds.push(id);
-      }
-      // If everything is checked, store an empty allowlist so future themes
-      // stay visible by default.
-      const enabledThemes =
-        checkedIds.length === allThemes.length ? [] : checkedIds;
-
-      await updateOrgSettings({
-        defaultThemeId: defaultSelect.value || '',
-        enabledThemes,
-      });
-      invalidateSettingsCache();
-      toast.success(t('settings.saved', 'Saved.'));
-    } catch (err) {
-      workspaceError.show(err.message);
-    } finally {
-      workspaceSaveBtn.disabled = false;
-    }
-  });
-
-  /** Load themes + organization settings into the workspace controls. */
-  async function loadWorkspaceControls() {
-    try {
-      // `?all=1` skips the allowlist filter every other picker gets: this card
-      // is where the allowlist is edited, and a theme it cannot see is a theme
-      // that can never be checked back on.
-      const [themesResp, org] = await Promise.all([
-        api('/api/themes?all=1'),
-        fetchOrgSettings(),
-      ]);
-      allThemes = Array.isArray(themesResp?.themes) ? themesResp.themes : [];
-      const defaultThemeId = String(
-        org?.defaultThemeId ||
-          allThemes.find((theme) => theme?.isDefault)?.id ||
-          '',
-      );
-      // The response carries the *effective* allowlist (organization setting, else the
-      // ENABLED_THEMES env fallback), so the checkboxes show what is really in
-      // force rather than only what this instance stored.
-      renderWorkspaceControls(
-        defaultThemeId,
-        Array.isArray(themesResp?.enabledThemes)
-          ? themesResp.enabledThemes
-          : org?.enabledThemes || [],
-      );
-    } catch (err) {
-      toast.error(err);
-    }
-  }
 
   // Theme list container
   const themeListSection = h('div', { class: 'themes-list-section' });
@@ -266,7 +88,7 @@ export function createThemesTab({ user }) {
   container.append(
     title,
     description,
-    workspaceCard,
+    ...(isOrganizationAdmin(user) ? [policyLink] : []),
     themeListSection,
     editorSection,
   );
@@ -405,31 +227,6 @@ export function createThemesTab({ user }) {
       if (!menu.contains(ev.target)) closeMenu();
     };
 
-    // Set as default
-    if (!theme.isDefault) {
-      const setDefaultItem = h('button', {
-        class: 'dropdown-item',
-        type: 'button',
-        text: t('settings.themes.setAsDefault', 'Set as default'),
-        onclick: async () => {
-          closeMenu();
-          await setDefaultTheme(theme.id);
-        },
-      });
-      menu.append(setDefaultItem);
-    } else {
-      const clearDefaultItem = h('button', {
-        class: 'dropdown-item',
-        type: 'button',
-        text: t('settings.themes.clearDefault', 'Clear default'),
-        onclick: async () => {
-          closeMenu();
-          await clearDefaultTheme();
-        },
-      });
-      menu.append(clearDefaultItem);
-    }
-
     // Duplicate
     const duplicateItem = h('button', {
       class: 'dropdown-item',
@@ -480,35 +277,6 @@ export function createThemesTab({ user }) {
     setTimeout(() => {
       document.addEventListener('pointerdown', onPointerDown, true);
     }, 0);
-  }
-
-  /**
-   * Set a theme as default.
-   * @param {string} themeId - Theme ID
-   */
-  async function setDefaultTheme(themeId) {
-    try {
-      await updateOrgSettings({ defaultThemeId: themeId });
-      invalidateSettingsCache();
-      await loadThemes();
-      await loadWorkspaceControls();
-    } catch (err) {
-      toast.error(err);
-    }
-  }
-
-  /**
-   * Clear the default theme.
-   */
-  async function clearDefaultTheme() {
-    try {
-      await updateOrgSettings({ defaultThemeId: '' });
-      invalidateSettingsCache();
-      await loadThemes();
-      await loadWorkspaceControls();
-    } catch (err) {
-      toast.error(err);
-    }
   }
 
   /**
@@ -594,11 +362,7 @@ export function createThemesTab({ user }) {
         return;
       }
     }
-    // The workspace card configures which themes appear in the picker — it is
-    // about the list, not the theme being edited, and it carries its own
-    // primary Save. Leaving it above an open editor puts two primary Saves on
-    // screen, the wrong one nearer the top.
-    workspaceCard.classList.add('is-hidden');
+    policyLink.classList.add('is-hidden');
     themeListSection.classList.add('is-hidden');
     editorSection.classList.remove('is-hidden');
     editorSection.replaceChildren();
@@ -647,7 +411,7 @@ export function createThemesTab({ user }) {
       /* teardown must not block closing the editor */
     }
     editorSection.classList.add('is-hidden');
-    workspaceCard.classList.remove('is-hidden');
+    policyLink.classList.remove('is-hidden');
     themeListSection.classList.remove('is-hidden');
     editorSection.replaceChildren();
     editorInstance = null;
@@ -675,7 +439,7 @@ export function createThemesTab({ user }) {
   const load = async () => {
     if (loaded) return;
     loaded = true;
-    await Promise.all([loadThemes(), loadWorkspaceControls()]);
+    await loadThemes();
   };
 
   return {
