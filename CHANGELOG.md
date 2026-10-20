@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.78.0](https://github.com/jaapstronks/deckyard/compare/v1.77.5...v1.78.0) (2026-10-20)
+
+
+### Added
+
+* group settings by scope and preserve policy boundaries ([#1772](https://github.com/jaapstronks/deckyard/issues/1772)) ([34becc5](https://github.com/jaapstronks/deckyard/commit/34becc508540861da484c1588426ac2054871ef4))
+
+
+### Security
+
+* project public previews and refuse stale publication rasters ([#1777](https://github.com/jaapstronks/deckyard/issues/1777)) ([600400e](https://github.com/jaapstronks/deckyard/commit/600400eb6296d61c11d8d414c076b4de63a7d63a))
+
 ## [1.77.5](https://github.com/jaapstronks/deckyard/compare/v1.77.4...v1.77.5) (2026-10-20)
 
 
