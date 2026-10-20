@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.77.3](https://github.com/jaapstronks/deckyard/compare/v1.77.2...v1.77.3) (2026-10-20)
+
+
+### Fixed
+
+* keep author notes and hidden slides out of reader JSON and MCP ([#1770](https://github.com/jaapstronks/deckyard/issues/1770)) ([8f4160c](https://github.com/jaapstronks/deckyard/commit/8f4160c3c6f187f9ca8e50b4f8a3de59a2b4fa0b))
+
 ## [1.77.2](https://github.com/jaapstronks/deckyard/compare/v1.77.1...v1.77.2) (2026-10-20)
 
 
