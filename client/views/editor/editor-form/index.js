@@ -55,8 +55,6 @@ export function createRerenderEditor({
   fieldRenderers,
   // The active theme, for its override locks. Absent means nothing is locked.
   theme = null,
-  onTranslateSlide,
-  onTranslateField,
   user,
   disabledSlideTypes,
   features,
@@ -394,11 +392,6 @@ export function createRerenderEditor({
             setSelectedSlideId,
             editorState,
             toast,
-            // "Fill slide…" (translate from the source version) sits with
-            // the other AI tool on the slide (B703 PR 3).
-            onFillSlide: onTranslateSlide
-              ? () => onTranslateSlide({ slideId: slide.id })
-              : null,
           })
         : null;
 
@@ -507,7 +500,6 @@ export function createRerenderEditor({
       rerenderEditor,
       scheduleUiRefresh,
       updateSelectedSlideListItem,
-      onTranslateField,
       // The csv-grid widget is a summary plus an "Edit data…" entry point into
       // the host's data editor (D338); every surface passes one.
       onEditData: onEditChartData,

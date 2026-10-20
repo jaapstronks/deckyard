@@ -16,7 +16,7 @@
   },
   "client/styles/app/components/10-modals-base.css": {
     "tokenisable-spacing": {
-      "count": 9
+      "count": 8
     }
   },
   "client/styles/app/components/106-shortcuts-overlay.css": {
@@ -147,11 +147,6 @@
   "client/styles/app/editor/inspector/80-section-status.css": {
     "tokenisable-spacing": {
       "count": 2
-    }
-  },
-  "client/styles/app/editor/modals/10-modals-editor.css": {
-    "tokenisable-spacing": {
-      "count": 1
     }
   },
   "client/styles/app/editor/modals/12-modals-share.css": {

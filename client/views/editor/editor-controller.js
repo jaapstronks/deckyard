@@ -55,7 +55,6 @@ import { createSaveManager } from './save-manager.js';
 import { createSaveStatus } from './save-status.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
 import { setDocumentTitle } from '../../lib/theme/branding.js';
-import { createTranslateOpeners } from './translate-openers.js';
 import { openConflictModal as openConflictModalImpl } from './modals/conflict-modal.js';
 import { openRemoteMergeModal } from './modals/remote-merge-modal.js';
 import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal.js';
@@ -88,10 +87,6 @@ import {
 } from './translate-view/index.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
-import {
-  perLanguageKeys,
-  textFieldSpecForType,
-} from '../../../shared/slide-types/text-fields.js';
 import { focusSearchHitInEditor } from './search-focus.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
@@ -648,10 +643,6 @@ export async function createEditorController({
     }, 120);
   };
 
-  /** The per-language content keys of one slide, across the versions given. */
-  const perLanguageKeysForSlide = (type, ...contents) =>
-    perLanguageKeys(textFieldSpecForType(type, SLIDE_TYPES), ...contents);
-
   // Consolidated state updater
   const editorState = createEditorStateUpdater({
     markDirty,
@@ -691,9 +682,10 @@ export async function createEditorController({
   // ============================================================
 
   /** Open the side-by-side translation view; one at a time. */
-  const openTranslateView = () => {
+  const openTranslateView = (targetLang) => {
     if (translateView || !canOpenTranslateView(pres, normalizeLang)) return;
     translateView = openTranslateViewImpl({
+      targetLang,
       root,
       pres,
       slideTypes: SLIDE_TYPES,
@@ -1537,29 +1529,6 @@ export async function createEditorController({
   });
 
   // ============================================================
-  // TRANSLATE MODALS
-  // ============================================================
-
-  const { openTranslateSlideModal, openTranslateFieldModal } =
-    createTranslateOpeners({
-      api,
-      id,
-      pres,
-      SLIDE_TYPES,
-      toast,
-      root,
-      lockDocumentScroll,
-      normalizeLang,
-      perLanguageKeysForSlide,
-      markDirty,
-      // Late-bound: the real renderers are assigned further down, so pass
-      // indirections that read the current binding at open time.
-      rerenderEditor: () => rerenderEditor(),
-      rerenderPreview: () => rerenderPreview(),
-      requestSave,
-    });
-
-  // ============================================================
   // EDITOR FORM
   // ============================================================
 
@@ -1586,14 +1555,6 @@ export async function createEditorController({
     // Needed for the theme's override locks: a locked brand property hides its
     // control instead of offering an edit the renderer will ignore.
     theme,
-    // Both translate by AI, so where AI is off they are absent and so are the
-    // "Fill slide…" item and the per-field "From {lang}" button (D179).
-    onTranslateSlide: featureEnabled('ai')
-      ? ({ slideId }) => openTranslateSlideModal({ slideId })
-      : null,
-    onTranslateField: featureEnabled('ai')
-      ? ({ slideId, key }) => openTranslateFieldModal({ slideId, key })
-      : null,
     user,
     disabledSlideTypes,
     features,
