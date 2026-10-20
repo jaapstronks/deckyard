@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 
 import editorFull from './editor-full.js';
 import advancedImportDialog from './advanced-import-dialog.js';
+import newPresentationDialog from './new-presentation-dialog.js';
+import newFromContentDialog from './new-from-content-dialog.js';
+import newUploadFileDialog from './new-upload-file-dialog.js';
 import slideTypePickerNew from './slide-type-picker-new.js';
 import themeEditorFull from './theme-editor-full.js';
 
@@ -54,6 +57,9 @@ import agentFillsFields from './agent-fills-fields.js';
 export const RECIPES = [
   editorFull,
   advancedImportDialog,
+  newPresentationDialog,
+  newFromContentDialog,
+  newUploadFileDialog,
   slideTypePickerNew,
   themeEditorFull,
   editorOverview,
