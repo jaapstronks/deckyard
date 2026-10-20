@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.77.0](https://github.com/jaapstronks/deckyard/compare/v1.76.0...v1.77.0) (2026-10-20)
+
+
+### Added
+
+* add creation view screenshot recipes (B798) ([#1756](https://github.com/jaapstronks/deckyard/issues/1756)) ([e48ff29](https://github.com/jaapstronks/deckyard/commit/e48ff29e9810adb5db16b028e66ec7927bea5d21))
+
 ## [1.76.0](https://github.com/jaapstronks/deckyard/compare/v1.75.0...v1.76.0) (2026-10-19)
 
 
