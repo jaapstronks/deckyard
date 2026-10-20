@@ -169,7 +169,7 @@ export async function translatePresentationStrings(
     );
   }
 
-  const llmTitle = typeof obj.title === 'string' ? obj.title : srcTitle;
+  const llmTitle = typeof obj.title === 'string' ? obj.title : '';
   const outTitle = fillMissing && targetTitle.trim() ? targetTitle : llmTitle;
   const outSlides = Array.isArray(obj.slides) ? obj.slides : [];
   const outById = new Map(
@@ -197,7 +197,6 @@ export async function translatePresentationStrings(
     // Handle top-level string/markdown fields
     for (const k of keys) {
       const v = tContent?.[k];
-      if (typeof v !== 'string') continue;
       if (fillMissing) {
         const cur = existingContent?.[k];
         if (typeof cur === 'string' && cur.trim()) {
@@ -205,7 +204,8 @@ export async function translatePresentationStrings(
           continue;
         }
       }
-      nextContent[k] = v;
+      if (typeof v === 'string') nextContent[k] = v;
+      else if (typeof srcContent[k] === 'string') nextContent[k] = '';
     }
 
     // Handle items arrays (e.g., items, metrics, levels, cells, images) and
@@ -215,14 +215,14 @@ export async function translatePresentationStrings(
       if (!Array.isArray(srcContent?.[arrKey])) continue;
       nextContent[arrKey] = mapItemTexts(srcContent[arrKey], itemSpec, {
         path: [arrKey],
-        // Source fields survive by default; only text keys are replaced.
+        // Unanswered prose stays empty so the caller can report and retry it.
         resolve: (path) => {
           if (fillMissing) {
             const cur = valueAtPath(existingContent, path);
             if (typeof cur === 'string' && cur.trim()) return cur;
           }
           const v = valueAtPath(tContent, path);
-          return typeof v === 'string' ? v : undefined;
+          return typeof v === 'string' ? v : '';
         },
       });
     }

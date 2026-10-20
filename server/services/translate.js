@@ -55,6 +55,7 @@ import {
   buildBlankTargetFromSource,
   computeMissingTranslation,
   pickVersion,
+  slideTextRows,
 } from '../../shared/i18n-progress.js';
 import { valueAtPath } from '../../shared/slide-types/text-fields.js';
 import {
@@ -62,7 +63,12 @@ import {
   NotFoundError,
   throwStorageFailure,
 } from '../utils/errors.js';
-import { recordTranslatedVersion } from '../../shared/translation-provenance.js';
+import {
+  recordTranslatedVersion,
+  recordTranslationSource,
+  translationSource,
+  translationFieldKey,
+} from '../../shared/translation-provenance.js';
 import { alignToActiveVersion } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
@@ -253,14 +259,24 @@ function partialTranslationError(completed, total) {
 }
 
 /** Apply model answers only where the planned gap has not changed meanwhile. */
-function applyMissingAnswers(freshTarget, plannedTarget, filled, missing) {
+function applyMissingAnswers(
+  freshTarget,
+  plannedTarget,
+  filled,
+  missing,
+  { allowEmpty = false, accepted = null } = {},
+) {
   const result = structuredClone(freshTarget);
   const byId = (version, id) =>
     version.slides?.find((slide) => slide?.id === id);
   for (const gap of missing) {
     if (gap.kind === 'deck') {
-      if (result.title === plannedTarget.title && filled.title?.trim()) {
+      if (
+        result.title === plannedTarget.title &&
+        (allowEmpty || filled.title?.trim())
+      ) {
         result.title = filled.title;
+        accepted?.push(gap);
       }
       continue;
     }
@@ -290,7 +306,8 @@ function applyMissingAnswers(freshTarget, plannedTarget, filled, missing) {
     }
     if (!sameStructure) continue;
     const translated = valueAtPath(answer.content, path);
-    if (typeof translated !== 'string' || !translated.trim()) continue;
+    if (typeof translated !== 'string' || (!allowEmpty && !translated.trim()))
+      continue;
     let node = current.content;
     for (let i = 0; i < path.length - 1; i += 1) {
       if (!node || typeof node !== 'object') break;
@@ -300,6 +317,7 @@ function applyMissingAnswers(freshTarget, plannedTarget, filled, missing) {
     }
     if (!node || typeof node !== 'object') continue;
     node[path.at(-1)] = translated;
+    accepted?.push(gap);
   }
   return result;
 }
@@ -322,6 +340,7 @@ async function writeTranslatedDeck(scope, actor, pres) {
     {
       actorEmail: actor?.email || null,
       user: actor || null,
+      expectedRevision: pres.revision,
     },
   );
   if (!updated) throw new NotFoundError('Presentation not found');
@@ -398,17 +417,70 @@ export async function translatePresentation(
           : {}),
       }
     : blank;
-  const targetById = new Map(
-    target.slides.map((slide, index) => [slide.id, index]),
+  // Compare every answer to the target as planned, including overwrite requests.
+  // A later batch must never adopt concurrent edits as permission to replace them.
+  const knownTargetIds = new Set(
+    (pres.i18n.versions[pair.to]?.slides || []).map((slide) => slide.id),
   );
+  // Only slots absent when this request started may be created. A target
+  // slide removed while the model runs must remain removed.
+  const addPlannedSlots = (version, source) => {
+    const currentIds = new Set((version.slides || []).map((slide) => slide.id));
+    const sourceIds = new Set((source.slides || []).map((slide) => slide.id));
+    return {
+      ...version,
+      slides: [
+        ...(version.slides || []),
+        ...blank.slides
+          .filter(
+            (slide) =>
+              !knownTargetIds.has(slide.id) &&
+              !currentIds.has(slide.id) &&
+              sourceIds.has(slide.id),
+          )
+          .map((slide) => structuredClone(slide)),
+      ],
+    };
+  };
+  let plannedTarget = addPlannedSlots(
+    structuredClone(pres.i18n.versions[pair.to] || target),
+    src,
+  );
+  let targetExisted = !!pres.i18n.versions[pair.to];
   let presentation;
   let completed = 0;
+  let titleAccepted = false;
+  let overwritePrepared = false;
+  const reload = async () => {
+    const fresh = await getPresentation(scope, presentationId);
+    if (!fresh) throw new NotFoundError('Presentation not found');
+    ensureI18n(fresh);
+    return fresh;
+  };
+  const persist = async (fresh, status) => {
+    const remaining = computeMissingTranslation({
+      source: pickVersion(fresh, pair.from),
+      target: fresh.i18n.versions[pair.to],
+    });
+    markTranslation(fresh.i18n, pair.to, {
+      status: status || (remaining.missingCount ? 'partial' : 'done'),
+      from: pair.from,
+      missingCount: remaining.missingCount,
+    });
+    presentation = await writeTranslatedDeck(scope, identity.actor, fresh);
+    for (const slide of presentation.i18n.versions[pair.to]?.slides || []) {
+      knownTargetIds.add(slide.id);
+    }
+    return remaining;
+  };
   for (const slides of batches) {
-    const selected = slides.map(
-      (slide) => target.slides[targetById.get(slide.id)],
-    );
     const sourceBatch = { title: src.title, slides };
-    const targetBatch = { title: target.title, slides: selected };
+    const targetBatch = {
+      title: target.title,
+      slides: slides.map((slide) =>
+        target.slides.find((candidate) => candidate.id === slide.id),
+      ),
+    };
     if (
       pair.fillMissing &&
       !pair.overwrite &&
@@ -430,55 +502,122 @@ export async function translatePresentation(
       });
     } catch (error) {
       if (!completed) throw error;
-      const remaining = computeMissingTranslation({ source: src, target });
-      markTranslation(pres.i18n, pair.to, {
-        status: 'partial',
-        from: pair.from,
-        missingCount: remaining.missingCount,
-      });
-      await writeTranslatedDeck(scope, identity.actor, pres);
+      const fresh = await reload();
+      if (fresh.i18n.versions[pair.to]) await persist(fresh, 'partial');
       throw partialTranslationError(completed, batches.length);
     }
-    const previousTarget = structuredClone(target);
-    if (completed === 0) target.title = translated.title;
-    for (const slide of translated.slides) {
-      const index = targetById.get(slide.id);
-      if (index !== undefined) target.slides[index] = slide;
+    const fresh = await reload();
+    if (targetExisted && !fresh.i18n.versions[pair.to]) {
+      delete fresh.i18n.translation?.[pair.to];
+      presentation = await writeTranslatedDeck(scope, identity.actor, fresh);
+      return { from: pair.from, to: pair.to, presentation };
     }
-    target = recordTranslatedVersion(src, target, pair.from, {
-      previous: previousTarget,
-    });
-    pres.i18n.versions[pair.to] = target;
-    const remaining = computeMissingTranslation({ source: src, target });
-    markTranslation(pres.i18n, pair.to, {
-      status:
-        completed + 1 === batches.length && remaining.missingCount === 0
-          ? 'done'
-          : 'partial',
-      from: pair.from,
-      missingCount: remaining.missingCount,
-    });
-    presentation = await writeTranslatedDeck(scope, identity.actor, pres);
+    let freshTarget = fresh.i18n.versions[pair.to];
+    if (!freshTarget) {
+      const freshIds = new Set(
+        (pickVersion(fresh, pair.from).slides || []).map((slide) => slide.id),
+      );
+      freshTarget = {
+        ...target,
+        slides: target.slides.filter((slide) => freshIds.has(slide.id)),
+      };
+    }
+    freshTarget = addPlannedSlots(freshTarget, pickVersion(fresh, pair.from));
+    if (pair.overwrite && !overwritePrepared) {
+      // Make the unfinished replacement retryable. Clear only text still equal
+      // to the original plan; edits made while the first batch ran survive.
+      const fields = slideTextRows(src, plannedTarget).filter((row) =>
+        row.source.trim(),
+      );
+      const cleared = applyMissingAnswers(
+        freshTarget,
+        plannedTarget,
+        blank,
+        fields,
+        { allowEmpty: true },
+      );
+      for (const row of slideTextRows(src, cleared)) {
+        if (!row.target.trim()) {
+          delete cleared.translationSources?.[
+            translationFieldKey(row.slideId, row.path)
+          ];
+        }
+      }
+      plannedTarget = applyMissingAnswers(
+        plannedTarget,
+        plannedTarget,
+        blank,
+        fields,
+        { allowEmpty: true },
+      );
+      freshTarget = cleared;
+      overwritePrepared = true;
+    }
+    const plannedBatch = {
+      title: plannedTarget.title,
+      slides: slides.map((slide) =>
+        plannedTarget.slides.find((candidate) => candidate.id === slide.id),
+      ),
+    };
+    const fields = slideTextRows(sourceBatch, plannedBatch).filter(
+      (row) =>
+        row.source.trim() &&
+        (pair.overwrite || !row.target.trim()) &&
+        (row.kind !== 'deck' || !titleAccepted),
+    );
+    const accepted = [];
+    const merged = applyMissingAnswers(
+      freshTarget,
+      plannedBatch,
+      translated,
+      fields,
+      { accepted },
+    );
+    const acceptedKeys = new Set(
+      accepted.map((row) => translationFieldKey(row.slideId, row.path)),
+    );
+    for (const row of slideTextRows(sourceBatch, merged)) {
+      if (
+        !acceptedKeys.has(translationFieldKey(row.slideId, row.path)) ||
+        !row.target.trim()
+      )
+        continue;
+      recordTranslationSource(
+        merged,
+        row.slideId,
+        row.path,
+        translationSource(pair.from, row.source),
+      );
+      if (row.kind === 'deck') titleAccepted = true;
+    }
+    fresh.i18n.versions[pair.to] = merged;
+    targetExisted = true;
+    target = merged;
+    await persist(fresh, completed + 1 === batches.length ? null : 'partial');
     completed += 1;
   }
-  const remaining = computeMissingTranslation({ source: src, target });
+  const fresh = await reload();
+  if (!fresh.i18n.versions[pair.to]) {
+    return { from: pair.from, to: pair.to, presentation: fresh };
+  }
+  const remaining = computeMissingTranslation({
+    source: pickVersion(fresh, pair.from),
+    target: fresh.i18n.versions[pair.to],
+  });
+  const marker = fresh.i18n.translation?.[pair.to];
+  const status = remaining.missingCount ? 'partial' : 'done';
+  if (
+    marker?.from !== pair.from ||
+    marker?.status !== status ||
+    marker?.missingCount !== remaining.missingCount
+  ) {
+    await persist(fresh);
+  } else {
+    presentation = fresh;
+  }
   if (remaining.missingCount > 0) {
-    if (!presentation) {
-      pres.i18n.versions[pair.to] = target;
-      markTranslation(pres.i18n, pair.to, {
-        status: 'partial',
-        from: pair.from,
-        missingCount: remaining.missingCount,
-      });
-      await writeTranslatedDeck(scope, identity.actor, pres);
-    }
     throw partialTranslationError(completed, batches.length);
   }
-  if (presentation && pres.i18n.translation[pair.to].status !== 'done') {
-    markTranslation(pres.i18n, pair.to, { status: 'done', from: pair.from });
-    presentation = await writeTranslatedDeck(scope, identity.actor, pres);
-  }
-  if (!presentation) presentation = pres;
   return { from: pair.from, to: pair.to, presentation };
 }
 
