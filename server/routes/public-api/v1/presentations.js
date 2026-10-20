@@ -32,7 +32,7 @@ import {
   mayOnPresentation,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
-import { stripAiReviewMeta } from '../../../utils/public-output.js';
+import { projectReaderPresentation } from '../../../utils/reader-presentation.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -193,14 +193,16 @@ async function handleGet(ctx, id) {
   if (!ok) return true;
 
   // A reader who may not edit the deck gets what the slides show, not the
-  // author's AI notes (B767); an editor keeps them, or a GET-then-PUT would
-  // drop them.
+  // author's notes or hidden slides (B769). An editor keeps them so a
+  // GET-then-PUT preserves author material.
   const mayEdit = await mayOnPresentation(
     pres,
     { actor: ctx.authedUser },
     'write',
   );
-  const served = mayEdit ? pres : stripAiReviewMeta(pres);
+  const served = mayEdit
+    ? pres
+    : await projectReaderPresentation(ctx.storageScope, pres);
   const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
     presentation: sanitizePresentation(served, tags, ctx.apiKey?.ownerEmail),

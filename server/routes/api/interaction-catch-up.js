@@ -35,16 +35,17 @@ const log = createLogger('interaction-catch-up');
  */
 export async function sendInteractionCatchUp(
   scope,
-  { sessionId, slideId, res },
+  { sessionId, slideId, res, transformEvent },
 ) {
   if (!slideId) return;
   try {
     const agg = await getInteractionAggregate(scope, sessionId, { slideId });
     if (!agg) return;
-    sseWrite(res, {
-      event: 'interactionState',
-      data: { ...agg, updatedAt: Date.now() },
-    });
+    const data = { ...agg, updatedAt: Date.now() };
+    const sent = transformEvent
+      ? await transformEvent('interactionState', data)
+      : data;
+    if (sent !== null) sseWrite(res, { event: 'interactionState', data: sent });
   } catch (err) {
     // A catch-up nobody could compute is not a reason to drop the stream: the
     // client still gets every push from here on, so this is logged, not thrown.

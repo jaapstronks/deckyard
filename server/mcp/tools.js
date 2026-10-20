@@ -8,6 +8,7 @@
 import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { loadPresentationChecked, mcpActor } from './presentation-access.js';
+import { projectReaderPresentation } from '../utils/reader-presentation.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import {
   enrichCommentsWithSlideContext,
@@ -27,6 +28,7 @@ import {
   DECK_LIST_OWNERSHIPS,
   listPresentationsForActor,
   publicDeckTimestamps,
+  mayOnPresentation,
 } from '../services/presentations.js';
 import {
   addSlide,
@@ -253,6 +255,22 @@ export function registerTools(
     );
   }
 
+  /** Read tools share one deck-rights decision, independent of key scopes. */
+  async function getReadPresentation(presentationId, context) {
+    const pres = await getCheckedPresentation(presentationId, context);
+    const mayEdit = await mayOnPresentation(
+      pres,
+      { actor: actorOf(context) },
+      'write',
+    );
+    return {
+      pres: mayEdit
+        ? pres
+        : await projectReaderPresentation(storageScopeOf(context), pres),
+      mayEdit,
+    };
+  }
+
   // ─── get_slide_types ────────────────────────────────────────────────────
 
   server.tool(
@@ -359,7 +377,7 @@ export function registerTools(
 
   server.tool(
     'get_presentation',
-    'Get full presentation data including all slides. Use to read existing deck content before modifying.',
+    'Get presentation data for your deck rights. Authors receive all slides and notes; view/comment readers receive viewer-visible slides without author notes. Use to read existing deck content before modifying.',
     {
       type: 'object',
       properties: {
@@ -368,7 +386,10 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+      const { pres, mayEdit } = await getReadPresentation(
+        presentationId,
+        context,
+      );
 
       return {
         id: pres.id,
@@ -380,7 +401,7 @@ export function registerTools(
           id: s.id,
           type: s.type,
           content: s.content,
-          notes: s.notes || '',
+          ...(mayEdit ? { notes: s.notes || '' } : {}),
         })),
         slideCount: pres.slides?.length || 0,
       };
@@ -973,7 +994,7 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+      const { pres } = await getReadPresentation(presentationId, context);
 
       const slideTypes = await sessionSlideTypes(context);
       const validated = validateAndFixRefinedSlides(
@@ -1345,7 +1366,7 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId, vendor }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+      const { pres } = await getReadPresentation(presentationId, context);
 
       // analyzePresentation auto-detects language from slide content; it
       // proposes from the session organization's offer (B660)
@@ -1454,7 +1475,7 @@ export function registerTools(
 
   server.tool(
     'export_presentation',
-    'Get a download URL for a finished export of a deck (PDF, pixel-perfect or editable PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
+    'Get a download URL for a finished export of a deck (PDF, pixel-perfect or editable PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand using that browser user’s current deck rights. Reader exports omit hidden slides and speaker notes; only authors receive author data. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
     {
       type: 'object',
       properties: {
@@ -1474,7 +1495,10 @@ export function registerTools(
       required: ['presentationId', 'format'],
     },
     async ({ presentationId, format, lang }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+      const { pres, mayEdit } = await getReadPresentation(
+        presentationId,
+        context,
+      );
 
       // Agent-friendly format name → in-app export route (cookie-authenticated).
       const EXPORT_PATHS = {
@@ -1509,7 +1533,11 @@ export function registerTools(
         const { filteredPres, slideTypes } = await buildExportContext(
           storageScopeOf(context),
           pres,
-          { exportLang: normalizeLang(lang), stripLiveOnly: true },
+          {
+            exportLang: normalizeLang(lang),
+            stripLiveOnly: true,
+            audience: mayEdit ? 'author' : 'reader',
+          },
         );
         imageSlides = filteredPres.slides.flatMap((slide, index) =>
           needsNativeComposition(slideTypes[slide.type], 'pptx')
@@ -1552,7 +1580,7 @@ export function registerTools(
       required: ['presentationId', 'slideIndex'],
     },
     async ({ presentationId, slideIndex }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+      const { pres } = await getReadPresentation(presentationId, context);
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new ValidationError(
           `Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`,
@@ -1601,7 +1629,7 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId, slideRange }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+      const { pres } = await getReadPresentation(presentationId, context);
 
       let theme = null;
       try {

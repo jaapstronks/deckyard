@@ -4,24 +4,25 @@
  * Previously every follower connection ran its own setInterval that re-read
  * the follow state and the full presentation on each tick, so server work
  * scaled as followers × deck size. This module runs ONE tick per presentation
- * and fans the (once-serialized) result out to all subscribed connections.
+ * and shares the per-language audience state across subscribed connections.
  */
 
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getPresentationCached } from '../../../storage/presentations/index.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import {
-  computeAudienceCapabilitiesFromState,
+  followAudienceState,
   followAudienceScope,
+  loadFollowAudience,
 } from './helpers.js';
 
 const TICK_MS = 2000;
 
 /**
  * @typedef {Object} SharedStatus
- * @property {any} state - Follow state for the presentation
- * @property {any} capabilities - Audience capabilities derived from the state
- * @property {string} statusJson - Pre-serialized `status` event payload
+ * @property {any} rawState - Internal session state, including its capability
+ * @property {any} pres - Original deck for capability computation
+ * @property {(lang: string) => Promise<any>} audienceStateForLang - Shared language projection
  */
 
 /** @type {Map<string, { repoRoot: string, presentationId: string, subscribers: Set<Function>, timer: any }>} */
@@ -36,12 +37,27 @@ async function computeShared(g) {
     followAudienceScope(g.repoRoot),
     g.presentationId,
   );
-  const capabilities = computeAudienceCapabilitiesFromState(state, pres);
+  const projected = pres
+    ? await loadFollowAudience(g.repoRoot, pres, null)
+    : null;
+  const audienceState = followAudienceState(state, pres, projected);
+  const languageStates = new Map([['', Promise.resolve(audienceState)]]);
   return {
-    state,
-    capabilities,
-    // Serialized once for all subscribers; sseWrite passes strings through.
-    statusJson: JSON.stringify({ ...state, capabilities }),
+    rawState: state,
+    pres,
+    audienceStateForLang(lang) {
+      const key = lang || '';
+      if (!pres) return Promise.resolve(audienceState);
+      if (!languageStates.has(key)) {
+        languageStates.set(
+          key,
+          loadFollowAudience(g.repoRoot, pres, key).then((deck) =>
+            followAudienceState(state, pres, deck),
+          ),
+        );
+      }
+      return languageStates.get(key);
+    },
   };
 }
 

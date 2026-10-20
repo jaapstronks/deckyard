@@ -19,6 +19,7 @@ import { createSSEConnection } from '../../lib/net/sse-connection.js';
  */
 export function createFollowSse({
   presentationId,
+  getLang = () => '',
   getCopy,
   statusEl,
   onStatusEvent,
@@ -75,7 +76,8 @@ export function createFollowSse({
   }
 
   const connection = createSSEConnection({
-    url: `/api/follow/${encodeURIComponent(presentationId)}/events`,
+    url: () =>
+      `/api/follow/${encodeURIComponent(presentationId)}/events?lang=${encodeURIComponent(getLang())}`,
     events: ['status', 'state', 'interactionState', 'deckUpdated', 'close'],
     onEvent: handleEvent,
     onStateChange: (state) => {
@@ -99,6 +101,10 @@ export function createFollowSse({
   return {
     connect: connection.connect,
     detach: connection.stop,
+    reconnect: () => {
+      connection.stop();
+      connection.connect();
+    },
     /**
      * True when the SSE stream is connected and has delivered an event
      * recently (the server pushes a `status` event every 2s, so a healthy

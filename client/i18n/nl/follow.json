@@ -48,5 +48,6 @@
   "follow.translating.running": "Bezig met vertalen… Dit scherm ververst automatisch.",
   "follow.translating.runningCount": "Bezig met vertalen ({count} {unit})… Dit scherm ververst automatisch.",
   "follow.translating.unitPlural": "onderdelen",
-  "follow.translating.unitSingular": "onderdeel"
+  "follow.translating.unitSingular": "onderdeel",
+  "follow.waitingForVisibleSlide": "Wachten op de volgende slide…"
 }

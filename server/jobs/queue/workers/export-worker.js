@@ -36,7 +36,7 @@ const log = createLogger('export-worker');
  * @param {Object} job - BullMQ job
  * @returns {Promise<Object>} Result with download info
  */
-async function processExportJob(job) {
+export async function processExportJob(job) {
   // The enqueue site (export/pipeline.js) passes the export type as the BullMQ
   // job *name*: `addJob(QUEUE_NAMES.EXPORT, exportType, data)`. The name is the
   // type's only carrier — `job.data` carries no `type` field.
@@ -49,11 +49,12 @@ async function processExportJob(job) {
   await job.updateProgress(10);
 
   // The request admitted and counted this export when it queued it; the
-  // worker builds as the system (services/exports.js).
-  const { presentationId, lang, stripLiveOnly } = job.data;
+  // worker rechecks current rights within the enqueue audience.
+  const { presentationId, format, lang, stripLiveOnly, exportAccess } =
+    job.data;
   const ctx = await prepareQueuedExportContext(
     jobScope(job.data, 'export job'),
-    { presentationId, lang, stripLiveOnly },
+    { presentationId, format, lang, stripLiveOnly, exportAccess },
   );
   await job.updateProgress(30);
 
@@ -173,6 +174,7 @@ async function processExportJob(job) {
     filename: ctx.filteredPres.title || 'presentation',
     langSuffix: ctx.langSuffix,
     ownerEmail: job.data.ownerEmail || null,
+    exportAccess: ctx.exportAccess,
   };
 
   storeExportResult(String(job.id), result);

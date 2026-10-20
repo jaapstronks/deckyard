@@ -30,6 +30,7 @@ export const STREAM_RESULT_TTL_MS = 10 * 60 * 1000;
  * @property {Record<string, string>} [headers] - extra response headers, a
  *   finding about the file the file cannot carry (the editable PPTX's image
  *   slides)
+ * @property {Object} exportAccess - Server-stamped actor, deck, format and built audience
  * @property {boolean} [once] - drop the result after its first download
  */
 

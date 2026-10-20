@@ -29,6 +29,7 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import { authorizeExportResult } from '../../services/exports.js';
 import { normalizeEmail } from '../../../shared/email.js';
 
 /**
@@ -91,7 +92,10 @@ export function ownsStoredResult(result, authedUser) {
  * Handle job status request.
  * GET /api/jobs/:id
  */
-async function handleGetJobStatus({ res, authedUser }, fullJobId) {
+async function handleGetJobStatus(
+  { res, authedUser, storageScope },
+  fullJobId,
+) {
   const { queueName, id } = parseJobId(fullJobId);
 
   // Check if this is a sync job (executed synchronously, no queue)
@@ -130,6 +134,13 @@ async function handleGetJobStatus({ res, authedUser }, fullJobId) {
     if (!ownsStoredResult(stored, authedUser)) {
       return notFound(res, 'Job not found');
     }
+    if (queueName === QUEUE_NAMES.EXPORT) {
+      await authorizeExportResult(
+        storageScope,
+        { actor: authedUser },
+        stored.exportAccess,
+      );
+    }
     response.result = status.returnvalue;
     if (status.returnvalue.ready) {
       response.downloadUrl = `/api/jobs/${fullJobId}/download`;
@@ -155,7 +166,7 @@ async function handleGetJobStatus({ res, authedUser }, fullJobId) {
  * Handle job result download.
  * GET /api/jobs/:id/download
  */
-async function handleJobDownload({ res, authedUser }, fullJobId) {
+async function handleJobDownload({ res, authedUser, storageScope }, fullJobId) {
   const { queueName, id } = parseJobId(fullJobId);
 
   // Get stored result based on queue type
@@ -171,6 +182,14 @@ async function handleJobDownload({ res, authedUser }, fullJobId) {
   // the response can't confirm another user's job exists (security-audit H3).
   if (!ownsStoredResult(result, authedUser)) {
     return notFound(res, 'Job result not found or expired');
+  }
+
+  if (queueName === QUEUE_NAMES.EXPORT) {
+    await authorizeExportResult(
+      storageScope,
+      { actor: authedUser },
+      result.exportAccess,
+    );
   }
 
   // For translation jobs, just return the result as JSON
@@ -215,6 +234,7 @@ async function handleJobDownload({ res, authedUser }, fullJobId) {
     'Content-Type': result.contentType,
     'Content-Disposition': `attachment; filename="${encodeURIComponent(fullFilename)}"`,
     'Content-Length': buffer.length,
+    'Cache-Control': 'no-store',
   });
   res.end(buffer);
   releaseExportResult(id);

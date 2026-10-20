@@ -10,7 +10,7 @@ import {
   resolveDeckLang,
 } from '../../../../shared/i18n-utils.js';
 import { serveDeckSlideRender } from '../render-slide.js';
-import { followAudienceScope, pickPresentationForLang } from './helpers.js';
+import { followAudienceScope, loadFollowAudience } from './helpers.js';
 
 /**
  * POST /api/follow/:presentationId/render-slide — render one slide the
@@ -49,7 +49,7 @@ export async function handleFollowRenderSlide(
   if (lang && lang !== deckLang && !pres.i18n?.versions?.[lang]) {
     return notFound(res);
   }
-  const picked = pickPresentationForLang(pres, lang);
+  const picked = await loadFollowAudience(repoRoot, pres, lang);
   return serveDeckSlideRender({ repoRoot, res }, body, {
     pres,
     slides: Array.isArray(picked.slides) ? picked.slides : [],

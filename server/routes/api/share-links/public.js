@@ -57,7 +57,7 @@ import {
   allowShareVerifyAttempt,
 } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../../shared/email.js';
-import { filterForShareViewer } from '../../../utils/public-output.js';
+import { projectReaderPresentation } from '../../../utils/reader-presentation.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
@@ -175,7 +175,7 @@ async function shareViewerDeck(repoRoot, pres) {
   // `hideFromViewers` never leave, drafts come through badged), and with the
   // live cluster off no live-only slide: the viewer has no snapshot, so the
   // server answers (D260).
-  const visible = filterForShareViewer(pres);
+  const visible = await projectReaderPresentation({ repoRoot }, pres, 'share');
   const settings =
     pres?.settings && typeof pres.settings === 'object' ? pres.settings : {};
   return {
@@ -366,7 +366,7 @@ async function handleShareRenderSlide({ repoRoot, req, res }, token) {
   );
   if (!pres) return notFound(res);
 
-  const visible = filterForShareViewer(pres);
+  const visible = await projectReaderPresentation({ repoRoot }, pres, 'share');
   return serveDeckSlideRender({ repoRoot, res }, body, {
     pres,
     slides: Array.isArray(visible.slides) ? visible.slides : [],

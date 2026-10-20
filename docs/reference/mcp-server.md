@@ -556,3 +556,7 @@ The pinned permission table and the gate that fails on a tool declaring none:
 | --------- | ------------------------------------ | ---------------------- |
 | **stdio** | Local tools (Claude Desktop, Cursor) | None needed (local)    |
 | **SSE**   | Remote agents, webhooks, web clients | API key (Bearer token) |
+
+## Reader presentation data
+
+`get_presentation`, `preview_slide` and `preview_presentation` project slides according to the acting user's deck rights. View/comment readers receive the [viewer read data contract](viewer-read-data.md); preview indices and ranges address the same visible list as `get_presentation`. Owners, edit collaborators and trusted local operators keep the existing author payload. API-key `read` scope limits operations without changing that audience decision.

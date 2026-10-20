@@ -1,7 +1,11 @@
 // Helpers for outputs that must not include "live-only" slides, or anything
 // else a reader without edit rights has no business receiving.
 
-import { filterSlidesForContext } from '../../shared/slide-visibility.js';
+import { pinSlideJumps } from '../../shared/slide-types.js';
+import {
+  filterSlidesForContext,
+  isSlideVisibleIn,
+} from '../../shared/slide-visibility.js';
 import { isLiveOnlySlideType } from '../../shared/slide-types/live-session.js';
 import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
@@ -147,26 +151,6 @@ export function stripAiReviewMeta(pres) {
 }
 
 /**
- * Filter presentation for view-only users, in every language version it
- * carries. Removes slides with hideFromViewers visibility and the AI review
- * notes, and marks draft slides.
- * @param {Object} pres - Presentation object
- * @param {Object} options - Options
- * @param {boolean} options.markDrafts - Whether to mark draft slides with _isDraft flag
- * @returns {Object} Filtered presentation
- */
-export function filterForViewOnly(pres, options = {}) {
-  return mapDeckSlideLists(stripAiReviewMeta(pres), (slides) => {
-    const filtered = filterSlidesForContext(slides, 'viewer', {
-      userPermission: 'read',
-      markDrafts: options.markDrafts !== false,
-    });
-    if (filtered.length === slides.length && !options.markDrafts) return slides;
-    return filtered;
-  });
-}
-
-/**
  * The deck an anonymous share viewer gets (`/s/:token`): the view-only filter
  * with drafts badged, and with the live cluster off no live-only slide either.
  * The viewer has no feature snapshot, so the server's answer is what it
@@ -174,11 +158,67 @@ export function filterForViewOnly(pres, options = {}) {
  * session nothing can start does not leave. A signed-in reader keeps the
  * slide in its static form and asks its snapshot.
  * @param {Object} pres - Presentation object
+ * @param {Object} [options]
+ * @param {Object} [options.slideTypes] - The deck organization's registry
  * @returns {Object} Filtered presentation
  */
-export function filterForShareViewer(pres) {
-  const visible = filterForViewOnly(pres, { markDrafts: true });
-  return isFeatureEnabled('live')
-    ? visible
-    : stripLiveOnlySlidesFromPresentation(visible);
+export function filterForShareViewer(pres, { slideTypes } = {}) {
+  return projectPresentationForAudience(pres, {
+    audience: 'reader',
+    channel: 'share',
+    slideTypes,
+    liveEnabled: isFeatureEnabled('live'),
+  });
+}
+
+/**
+ * Project a read response without changing storage or author loaders. Pin
+ * positional links against each original language list before removing slides.
+ * Audience is a server authorization decision; channel keeps share's live
+ * feature policy separate from collaborator visibility.
+ * @param {Object} pres
+ * @param {Object} options
+ * @param {'author'|'reader'} options.audience
+ * @param {'viewer'|'share'|'follow'} options.channel
+ * @param {Object} [options.slideTypes] - The deck organization's type registry
+ * @param {boolean} [options.liveEnabled=true]
+ * @returns {Object}
+ */
+export function projectPresentationForAudience(
+  pres,
+  { audience, channel, slideTypes, liveEnabled = true },
+) {
+  if (!['author', 'reader'].includes(audience)) {
+    throw new TypeError('A read projection requires an explicit audience');
+  }
+  if (!['viewer', 'share', 'follow'].includes(channel)) {
+    throw new TypeError('Unknown read projection channel');
+  }
+  if (audience === 'author') return pres;
+  return mapDeckSlideLists(pres, (slides) => {
+    const pinned = pinSlideJumps(slides, slideTypes);
+    const visible =
+      channel === 'follow'
+        ? pinned.filter(
+            (slide) =>
+              isSlideVisibleIn(slide, 'viewer', { userPermission: 'read' }) &&
+              isSlideVisibleIn(slide, 'presentation'),
+          )
+        : filterSlidesForContext(pinned, 'viewer', {
+            userPermission: 'read',
+            markDrafts: true,
+          });
+    return visible
+      .filter(
+        (slide) =>
+          channel !== 'share' ||
+          liveEnabled ||
+          !isLiveOnlySlideType(slide.type),
+      )
+      .map((slide) => {
+        const out = { ...slide };
+        for (const key of ['notes', ...AI_REVIEW_KEYS]) delete out[key];
+        return out;
+      });
+  });
 }

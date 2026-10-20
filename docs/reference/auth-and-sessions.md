@@ -159,6 +159,10 @@ downstream — which organization a request may read or write, the R1–R3 isola
 rules, `MULTI_ORG_ENABLED` — is in
 [`tenant-isolation.md`](tenant-isolation.md), not repeated here.
 
+## Reader data boundary
+
+Deck-read authorization does not grant author notes or hidden slides. The internal JSON GET, v1 GET, share verify/render and MCP read/preview tools apply the [viewer read data contract](viewer-read-data.md). API-key operation scopes do not downgrade an owner's or editor's author read; deck rights determine the response audience. The linked contract names the remaining follow/export/public-preview boundaries explicitly.
+
 ## Implementation status (as of 2026-08-21)
 
 All four identity paths are live: password, magic-link, OIDC SSO, and the

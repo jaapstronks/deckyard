@@ -1,0 +1,31 @@
+# Presentation data for readers
+
+Internal `GET /api/presentations/:id` (including `?lang=`), public v1 `GET /api/v1/presentations/:id` and its single-slide GET, MCP `get_presentation`, `preview_slide` and `preview_presentation`, and share-link verify/render use the same reader projection.
+
+MCP `validate_presentation` and `analyze_presentation` also consume this projection, so validation and AI suggestions cannot inspect slides outside the reader audience.
+
+A reader without deck-write rights receives no slides with `visibility.hideFromViewers`. Each delivered slide omits `notes`, `_aiReasoning`, `_aiAlternatives` and `_aiWarnings`. This applies to the main `slides` list and every slide list in `i18n.versions`, including languages other than the active language. Draft slides remain visible and carry `_isDraft: true`; the separate `hideInPresentation`, `hideInPublished` and `hideInExport` flags do not hide a collaborator slide.
+
+The server determines the audience from the actor's deck rights. Owners and edit collaborators retain author data, including when their API key has only `read` permission. The key still limits which operations they can perform. Trusted local MCP sessions retain their existing author access. Storage, author loaders and collaboration documents are not projected or modified.
+
+Positional slide links are pinned to stable slide ids against each language's original list before filtering, using the deck organization's type registry. Removing a slide therefore cannot redirect a link to another slide. A link to a removed target cannot resolve within the delivered list. MCP indices, counts and preview ranges all address that same delivered list.
+
+Share links always use the reader audience, for both view and comment permissions and after password verification where required. The share response keeps its existing base-language-only contract; a language query does not create a translation endpoint. Share rendering refuses an id outside the projected list. When the live feature is disabled, share output also omits live-only slide types, in every carried list.
+
+Follow-along uses the same private-field removal and also excludes slides with `hideInPresentation`. A slide marked with either `hideFromViewers` or `hideInPresentation` is absent from the audience payload and cannot be server-rendered there. A missing or incomplete translation returns the existing translating response with no deck. Live state, SSE and interaction reads expose only a slide in the requested language's projected list. A hidden current slide has an empty `slideId`, index `-1`, no interaction, and a neutral waiting view; the audience counter uses the projected list. The presenter and notes companion keep their author view.
+
+Follow responses, including Q&A state and both SSE streams, omit the live-session id. That id is the notes companion's bearer capability and stays server-side when serving the audience. The presenter receives it through the authorized session-creation route; follow clients address the presentation and visible slide instead. An already issued companion link remains valid under the existing session lifetime.
+
+## Exports
+
+Internal and public v1 deck exports apply the same actor-based reader projection before any builder receives `pres` or `filteredPres`. It covers every carried language list, including portable JSON and `.deck`. Format-specific live-only and export visibility choices remain in the existing builders. Owners and edit collaborators keep the author input; portable v1 preserves notes, visibility and its supported translations, while AI working metadata is not part of that portable format.
+
+Notes-only Markdown and Word downloads require deck-write rights and return 403 for view/comment readers. Other reader exports, including handoff packages, contain no author notes or AI fields and no `hideFromViewers` slide content.
+
+Queued exports store a server-selected actor, deck, format and maximum audience. Workers recheck current read/write rights before building: promotion cannot expand a reader job; demotion reduces an author job to reader (or refuses a notes-only job); loss of read rights refuses it. Completed queued and streamed artifacts remain bound to their requester and organization. Status/result download checks current deck rights again; an author artifact is refused after demotion and must be exported again. No artifact is shared between requesters. Results and jobs without the new access context are refused, so old unsafe cached artifacts cannot be served through these routes. There is no production migration or deletion of author data.
+
+## Implementation boundary
+
+This contract currently covers the JSON, MCP, follow-along and individual deck export surfaces named above. Published/OG/thumbnail previews require separate projection work. Bulk account backups are a separate owner/creator-only surface and do not use the individual deck export job contract. Their existing behavior must not be interpreted as satisfying this contract. Published visibility and export visibility remain distinct channel policies; this change does not redefine them.
+
+See [authentication and sessions](auth-and-sessions.md), [MCP server](mcp-server.md), and the [public API schema](../openapi.yaml).

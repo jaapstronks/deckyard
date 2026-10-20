@@ -4,6 +4,27 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.77.5](https://github.com/jaapstronks/deckyard/compare/v1.77.4...v1.77.5) (2026-10-20)
+
+
+### Security
+
+* preserve reader audience through exports and queued downloads ([#1775](https://github.com/jaapstronks/deckyard/issues/1775)) ([30842ab](https://github.com/jaapstronks/deckyard/commit/30842ab14e7e1cf9578c14bb0827a599af85e098))
+
+## [1.77.4](https://github.com/jaapstronks/deckyard/compare/v1.77.3...v1.77.4) (2026-10-20)
+
+
+### Fixed
+
+* project follow audience data and state (B769.2) ([#1773](https://github.com/jaapstronks/deckyard/issues/1773)) ([75e5695](https://github.com/jaapstronks/deckyard/commit/75e5695b59e87d24589561628339edde0cce3fa3))
+
+## [1.77.3](https://github.com/jaapstronks/deckyard/compare/v1.77.2...v1.77.3) (2026-10-20)
+
+
+### Fixed
+
+* keep author notes and hidden slides out of reader JSON and MCP ([#1770](https://github.com/jaapstronks/deckyard/issues/1770)) ([8f4160c](https://github.com/jaapstronks/deckyard/commit/8f4160c3c6f187f9ca8e50b4f8a3de59a2b4fa0b))
+
 ## [1.77.2](https://github.com/jaapstronks/deckyard/compare/v1.77.1...v1.77.2) (2026-10-20)
 
 
