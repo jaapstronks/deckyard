@@ -36,6 +36,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { walkFiles } from './helpers/walk-files.js';
 
 import { planSync } from '../scripts/i18n-sync.js';
 import {
@@ -62,23 +63,12 @@ const syncScript = path.join(repoRoot, 'scripts', 'i18n-sync.js');
  */
 function fingerprintI18nTree() {
   const seen = new Map();
-  const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-      } else if (entry.isFile()) {
-        seen.set(
-          path.relative(repoRoot, full),
-          crypto
-            .createHash('sha256')
-            .update(fs.readFileSync(full))
-            .digest('hex'),
-        );
-      }
-    }
-  };
-  walk(i18nDir);
+  for (const file of walkFiles(i18nDir)) {
+    seen.set(
+      path.relative(repoRoot, file),
+      crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'),
+    );
+  }
   return seen;
 }
 

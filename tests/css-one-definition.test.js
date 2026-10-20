@@ -26,6 +26,7 @@
  * Run with: node --test tests/css-one-definition.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -56,22 +57,6 @@ const PRIMITIVES = [
   'sb-segmented',
   'sb-segmented-btn',
 ];
-
-/**
- * @param {string} dir
- * @param {string[]} extensions
- * @returns {Promise<string[]>} absolute paths of matching files, sorted
- */
-async function walk(dir, extensions = ['.css']) {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  const out = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await walk(full, extensions)));
-    else if (extensions.includes(path.extname(entry.name))) out.push(full);
-  }
-  return out.sort();
-}
 
 /** Blank out block comments, keeping newlines so line numbers stay right. */
 function stripComments(text) {
@@ -132,9 +117,12 @@ const SIMPLE_CLASS = /^\.([A-Za-z0-9_-]+)$/;
 /** `.btn`, `.btn:hover`, `.btn-primary:hover:not(:disabled)`: the class bare. */
 const BARE_CLASS = /^\.([A-Za-z0-9_-]+)((?::{1,2}[A-Za-z-]+(?:\([^)]*\))?)*)$/;
 
-const files = (await walk(stylesDir)).filter(
-  (file) => !path.relative(stylesDir, file).startsWith('slides' + path.sep),
-);
+const files = walkFiles(stylesDir, { filesOnly: false })
+  .filter((file) => path.extname(file) === '.css')
+  .sort()
+  .filter(
+    (file) => !path.relative(stylesDir, file).startsWith('slides' + path.sep),
+  );
 const sheets = await Promise.all(
   files.map(async (file) => ({
     file: path.relative(repoRoot, file).split(path.sep).join('/'),
@@ -214,11 +202,11 @@ describe('button size spelling', () => {
   it('uses the size ladder in CSS and markup', async () => {
     const strays = [];
     for (const root of ['client', 'server', 'shared']) {
-      for (const file of await walk(path.join(repoRoot, root), [
-        '.css',
-        '.js',
-        '.html',
-      ])) {
+      for (const file of walkFiles(path.join(repoRoot, root), {
+        filesOnly: false,
+      })
+        .filter((file) => ['.css', '.js', '.html'].includes(path.extname(file)))
+        .sort()) {
         const text = stripComments(await fs.readFile(file, 'utf8'));
         for (const [index, line] of text.split('\n').entries()) {
           const classes = /(?<![\w-])btn(?![\w-])/;

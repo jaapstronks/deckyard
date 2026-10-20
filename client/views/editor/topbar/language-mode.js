@@ -9,9 +9,8 @@
  * Choosing an existing version switches to it. Choosing one under "Add
  * language" is the same switch: the version is created on the spot
  * (structure-only, translatable fields empty) and the user lands in it
- * immediately. A non-blocking popover then offers to AI-translate the missing
- * texts - fields the user already filled in by hand are left alone (the
- * server's translate/missing endpoint only fills empty translatable fields).
+ * immediately in the side-by-side translation view, where empty fields can
+ * receive suggestions without writing until the user accepts them.
  *
  * Under the list, on a version that is not the source, sits the one action that
  * moves the source: "Make this the source version" (B198). It is the only way
@@ -28,21 +27,17 @@ import {
   getSupportedLangs,
   isSupportedLang,
 } from '../../../lib/format/i18n.js';
-import { confirmModal, createModal } from '../../../lib/dom/modal.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { icon, makeDropdownCaret } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
-import { featureEnabled } from '../../../lib/state/features.js';
 import {
   DEFAULT_DECK_LANG,
   getLangDisplayName,
-  translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
 import {
-  computeMissingTranslation,
   existingVersionLangs,
-  pickVersion,
   translationProgress,
 } from '../../../../shared/i18n-progress.js';
 import { setQueryParams } from '../../../lib/state/router.js';
@@ -64,8 +59,8 @@ import { setQueryParams } from '../../../lib/state/router.js';
  * @param {object} options.editorState - Editor state updater utility
  * @param {HTMLElement} options.topbarTitleEl - Title element to update
  * @param {Function} options.toast - Toast notifications
- * @param {Function} [options.onOpenTranslateView] - Open the side-by-side
- *   translation view (B763); listed while the deck has two languages
+ * @param {(targetLang?: string) => void} [options.onOpenTranslateView] - Open
+ *   the side-by-side view, with a newly created language as its target
  * @returns {object} Language menu controller
  */
 export function createLanguageMode({
@@ -90,19 +85,7 @@ export function createLanguageMode({
   collabLanguage = null,
   onOpenTranslateView,
 } = {}) {
-  let translateBusy = false;
-
-  /**
-   * Best-effort display text for a thrown value. May legitimately come back
-   * empty (a rejection with no message at all) - `toastStatus` supplies the
-   * fallback so an error can never end up invisible.
-   */
   const errorMessage = (e) => String(e?.message || e || '').trim();
-
-  const setTranslateBusy = (busy) => {
-    translateBusy = !!busy;
-    syncLangUi();
-  };
 
   const activeLang = () =>
     normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
@@ -176,7 +159,6 @@ export function createLanguageMode({
     const row = h('button', {
       class: `dropdown-item lang-menu-item${isActive ? ' is-active' : ''}`,
       type: 'button',
-      disabled: translateBusy,
       onclick: () => {
         closeMenu();
         if (isActive) return;
@@ -268,13 +250,6 @@ export function createLanguageMode({
     const next = activeLang();
     const previous = normalizeLang(pres?.i18n?.dominant) || null;
     if (!canMoveSourceHere(next, previous)) return;
-    if (translateBusy) {
-      onStatus?.({
-        level: 'info',
-        msg: t('editor.translate.busy', 'Translating…'),
-      });
-      return;
-    }
 
     const lang = getLangDisplayName(next);
     const current = getLangDisplayName(previous);
@@ -322,9 +297,8 @@ export function createLanguageMode({
   /** The "Make this the source version" row, shown under the version list. */
   const makeSourceItem = (active, dominant) =>
     h('button', {
-      class: 'dropdown-item lang-menu-action',
+      class: 'dropdown-item lang-menu-action lang-menu-source-action',
       type: 'button',
-      disabled: translateBusy,
       title: t(
         'editor.lang.makeSourceHint',
         'Translations are measured from {current} now. Measure them from {lang} instead.',
@@ -345,7 +319,6 @@ export function createLanguageMode({
     h('button', {
       class: 'dropdown-item lang-menu-item',
       type: 'button',
-      disabled: translateBusy,
       onclick: () => {
         closeMenu();
         switchLanguageMode(lang, { onStatus: toastStatus });
@@ -375,9 +348,8 @@ export function createLanguageMode({
       items.push(h('div', { class: 'dropdown-sep' }));
       items.push(
         h('button', {
-          class: 'dropdown-item lang-menu-action',
+          class: 'dropdown-item lang-menu-action lang-menu-translate',
           type: 'button',
-          disabled: translateBusy,
           onclick: () => {
             closeMenu();
             onOpenTranslateView();
@@ -401,29 +373,11 @@ export function createLanguageMode({
     menu.replaceChildren(...items);
   };
 
-  // Single place that derives the trigger from state: which language is active,
-  // and whether a translation is running. While it runs the menu is disabled
-  // with the reason on the trigger (a disabled control swallows its own
-  // tooltip), so a click that can't work explains itself instead of
-  // disappearing under the busy modal's backdrop.
   const syncLangUi = () => {
     langMenuLabel.textContent = getLangDisplayName(activeLang());
-    // The primary subtag only: "pt-BR" is a name's worth of room again.
     langMenuCode.textContent = String(activeLang() || '')
       .split('-')[0]
       .toUpperCase();
-    langMenu.summary.setAttribute(
-      'aria-busy',
-      translateBusy ? 'true' : 'false',
-    );
-    langMenu.summary.classList.toggle('is-disabled', translateBusy);
-    langMenu.summary.title = translateBusy
-      ? t(
-          'editor.translate.busyLangSwitch',
-          'Translating… you can switch language again when it is done.',
-        )
-      : t('editor.langMode.title', 'Language mode (edit + present)');
-    if (translateBusy) closeMenu();
     buildMenu();
   };
 
@@ -557,23 +511,10 @@ export function createLanguageMode({
       return;
     }
     if (next === pres.i18n.active) return;
-    if (translateBusy) {
-      onStatus?.({
-        level: 'info',
-        msg: t('editor.translate.busy', 'Translating…'),
-      });
-      return;
-    }
-
-    // The version this one will be translated FROM. Read before the switch so
-    // the answer is the deck as it stands, not as the reload leaves it: the
-    // load replaces `pres.i18n` wholesale with the server's block.
-    const sourceLang = translationSourceFor(pres, next);
 
     // Create a missing version on the spot instead of blocking the switch.
     // Structure only: the save sync copies slide ids/layout and non-translatable
-    // content, leaving translatable fields empty ("missing") so the AI fill and
-    // the inline ghosts both know what still needs words. The deck title is
+    // content, leaving translatable fields empty for the translation view. The deck title is
     // copied as-is - titles often stay the same across languages.
     const justCreated = !ensureVersionBuffers(next);
     if (justCreated) {
@@ -602,30 +543,7 @@ export function createLanguageMode({
     const ok = await loadLanguageIntoView(next, { onStatus });
     if (!ok) return;
 
-    // Invite (non-blocking, dismissible) to AI-translate what's still missing -
-    // right after creating the version, but also on later switches while the
-    // version still has untranslated texts. Manual translations are never
-    // overwritten, so the invite stays safe to accept at any time.
-    if (!sourceLang) return;
-    if (justCreated) {
-      showTranslateInvite(
-        t(
-          'editor.lang.versionCreatedInvite',
-          'The {lang} version was just created and has no texts yet. Translate them automatically? Fields you fill in yourself are never overwritten.',
-          { lang: getLangDisplayName(next) },
-        ),
-        sourceLang,
-      );
-    } else if (versionHasMissingTexts(next, sourceLang)) {
-      showTranslateInvite(
-        t(
-          'editor.lang.versionIncompleteInvite',
-          'This {lang} version still has untranslated texts. Translate them automatically? Fields you filled in yourself are never overwritten.',
-          { lang: getLangDisplayName(next) },
-        ),
-        sourceLang,
-      );
-    }
+    if (justCreated) onOpenTranslateView?.(next);
   };
 
   /**
@@ -644,272 +562,6 @@ export function createLanguageMode({
     }
   };
 
-  /**
-   * Whether `lang` still has empty translatable fields that `sourceLang` fills.
-   *
-   * The same scan the menu's status counts use, asked about one pair - the
-   * hand-rolled top-level-only mirror it replaces missed prose nested in
-   * `rows[].blocks[]` and reported such a version complete.
-   */
-  const versionHasMissingTexts = (lang, sourceLang) => {
-    if (!sourceLang || sourceLang === lang) return false;
-    if (!pres?.i18n?.versions?.[lang] || !pres?.i18n?.versions?.[sourceLang])
-      return false;
-    return (
-      computeMissingTranslation({
-        source: pickVersion(pres, sourceLang),
-        target: pickVersion(pres, lang),
-      }).missingCount > 0
-    );
-  };
-
-  /**
-   * AI-translate only the MISSING texts of the active language. Manually
-   * translated fields are untouched.
-   *
-   * @param {object} [opts]
-   * @param {string} [opts.from] - source version; defaults to the deck's own
-   *   answer for "what is this language translated from" (`translationSourceFor`).
-   */
-  const translateMissingForActive = async ({ onStatus, from } = {}) => {
-    const to = activeLang();
-    const source = normalizeLang(from) || translationSourceFor(pres, to);
-    if (!source) {
-      onStatus?.({
-        level: 'info',
-        msg: t(
-          'editor.translate.disabled',
-          'Translation is disabled (only one language enabled).',
-        ),
-      });
-      return;
-    }
-    if (translateBusy) {
-      onStatus?.({
-        level: 'info',
-        msg: t('editor.translate.busy', 'Translating…'),
-      });
-      return;
-    }
-    if (isDirty?.()) {
-      onStatus?.({
-        level: 'info',
-        msg: t('common.savingFirst', 'Saving first…'),
-      });
-      await requestSave?.();
-      if (isDirty?.()) {
-        onStatus?.({
-          level: 'error',
-          msg: t(
-            'editor.translate.abortedSaveFailed',
-            'Could not save; translation aborted.',
-          ),
-        });
-        return;
-      }
-    }
-
-    setTranslateBusy(true);
-    const busyModal = openBusyModal();
-    try {
-      // fillMissing keeps every field the user already wrote by hand (top-level
-      // AND per-item texts) and only translates the empty ones from `source`.
-      const resp = await api?.(`/api/presentations/${id}/translate`, {
-        method: 'POST',
-        body: {
-          from: source,
-          to,
-          overwrite: false,
-          fillMissing: true,
-        },
-      });
-      applyServerMeta(resp?.presentation);
-      // Live-edit mode: the server applied the translation to the live doc
-      // itself (step-4 server-as-collaborator seam); it reaches this client
-      // as a regular remote update. The doc-based load below may briefly
-      // show the pre-translate state until that update lands, after which
-      // the binder re-renders.
-      await loadLanguageIntoView(to, { onStatus });
-      onStatus?.({
-        level: 'success',
-        msg: t('editor.translate.done', 'Translation ready.'),
-      });
-    } catch (e) {
-      onStatus?.({ level: 'error', msg: errorMessage(e) });
-    } finally {
-      setTranslateBusy(false);
-      busyModal.close();
-    }
-  };
-
-  /**
-   * The languages a full-deck retranslate would write into: every version the
-   * deck has besides the one on screen.
-   *
-   * "The other language" had one answer while the chrome was bilingual; on the
-   * open axis the honest generalization is "all the others". Creating a version
-   * is deliberately NOT part of it any more — that is what the menu's "Add
-   * language…" does, and it comes with the fill-missing invite. So this action
-   * refreshes what exists and never invents a target (D72 #1).
-   */
-  const retranslateTargets = () => {
-    const active = activeLang();
-    return existingVersionLangs(pres).filter((l) => l !== active);
-  };
-
-  /**
-   * Full-deck retranslate of every other existing version (the ⋯ menu action).
-   * Overwrites: these versions exist, so there is nothing to create and the
-   * confirm names every one of them.
-   */
-  const translateOtherLanguage = async ({ onStatus } = {}) => {
-    const from = activeLang();
-    const targets = retranslateTargets();
-    if (!targets.length) {
-      onStatus?.({
-        level: 'info',
-        msg: t(
-          'editor.translate.noOtherVersions',
-          'This deck has no other language version yet. Add one from the language menu.',
-        ),
-      });
-      return;
-    }
-    const langList = targets.map(getLangDisplayName).join(', ');
-    const ok = await confirmModal(root || document.body, {
-      title: t('editor.translate.overwrite', 'Overwrite translation'),
-      message: t(
-        'editor.translate.overwriteConfirm',
-        'This replaces the existing translation of {lang}. Continue?',
-        { lang: langList },
-      ),
-      confirmLabel: t('editor.translate.overwrite', 'Overwrite translation'),
-      danger: true,
-    });
-    if (!ok) return;
-    if (isDirty?.()) {
-      onStatus?.({
-        level: 'info',
-        msg: t('common.savingFirst', 'Saving first…'),
-      });
-      await requestSave?.();
-      if (isDirty?.()) {
-        onStatus?.({
-          level: 'error',
-          msg: t(
-            'editor.translate.abortedSaveFailed',
-            'Could not save; translation aborted.',
-          ),
-        });
-        return;
-      }
-    }
-    onStatus?.({
-      level: 'info',
-      msg: t('editor.translate.busy', 'Translating…'),
-    });
-    setTranslateBusy(true);
-    const busyModal = openBusyModal();
-    try {
-      // Sequential on purpose: each call bumps the deck revision, so two in
-      // flight would race for it and the second would 409.
-      for (const to of targets) {
-        const resp = await api?.(`/api/presentations/${id}/translate`, {
-          method: 'POST',
-          body: {
-            from,
-            to,
-            overwrite: true,
-            fillMissing: false,
-          },
-        });
-        const updated = resp?.presentation;
-        if (updated?.i18n) pres.i18n = updated.i18n;
-        applyServerMeta(updated);
-      }
-      // Live-edit mode: the server applied the translation to the live doc
-      // (step-4 seam), so it syncs to every client — no local doc write here
-      // (a duplicate write would double-insert the same text via the CRDT).
-      onStatus?.({
-        level: 'success',
-        msg: t('editor.translate.done', 'Translation ready.'),
-      });
-    } catch (e) {
-      onStatus?.({ level: 'error', msg: errorMessage(e) });
-    } finally {
-      setTranslateBusy(false);
-      busyModal.close();
-    }
-  };
-
-  /** Dismissible "busy" modal shown while a translation request runs. */
-  function openBusyModal() {
-    const modal = createModal({
-      title: t('editor.translate.modalTitle', 'Translating…'),
-    });
-    modal.append(
-      h('div', {
-        class: 'help',
-        text: t(
-          'editor.translate.modalHelp',
-          'Please wait. You can keep using the editor once translation is done.',
-        ),
-      }),
-    );
-    modal.show(root);
-    return modal;
-  }
-
-  /**
-   * Post-switch invite popover: offer to AI-translate the missing texts of a
-   * freshly created (or still incomplete) language version. Non-blocking.
-   *
-   * @returns {{ el: HTMLElement, show: (msg: string, sourceLang: string) => void, hide: () => void }}
-   */
-  const createTranslateInvite = () => {
-    const msgEl = h('div', { class: 'lang-popover-msg' });
-    let timeout = null;
-    // The version the invite offers to translate FROM, pinned when it is
-    // shown: by the time the button is clicked the deck's own source answer
-    // has moved on.
-    let source = null;
-    const hide = () => {
-      if (timeout) clearTimeout(timeout);
-      el.classList.remove('is-visible');
-    };
-    const el = h('div', { class: 'lang-popover' }, [
-      msgEl,
-      h('button', {
-        class: 'btn btn-primary btn-sm lang-popover-btn',
-        type: 'button',
-        text: t('editor.translate.missingBtn', 'Translate with AI'),
-        onclick: () => {
-          const from = source;
-          hide();
-          translateMissingForActive({ onStatus: toastStatus, from });
-        },
-      }),
-      h('button', {
-        class: 'btn btn-secondary btn-sm lang-popover-btn',
-        type: 'button',
-        text: t('editor.lang.notNow', 'Not now, I’ll write it myself'),
-        onclick: () => hide(),
-      }),
-    ]);
-    const show = (msg, sourceLang) => {
-      if (timeout) clearTimeout(timeout);
-      msgEl.textContent = msg;
-      source = sourceLang || null;
-      el.classList.add('is-visible');
-      timeout = setTimeout(() => el.classList.remove('is-visible'), 15000);
-    };
-    return { el, show, hide };
-  };
-  // Not built where AI is off (D179): creating a version then just switches.
-  const translateInvite = featureEnabled('ai') ? createTranslateInvite() : null;
-  const showTranslateInvite = (msg, sourceLang) =>
-    translateInvite?.show(msg, sourceLang);
-
   // UI elements
   const langMenuWrapper = h('div', { class: 'lang-menu-wrapper' });
   const langMenuLabel = h('span', { class: 'lang-menu-label' });
@@ -920,7 +572,7 @@ export function createLanguageMode({
     class: 'lang-menu-code',
     'aria-hidden': 'true',
   });
-  // Title is set by syncLangUi (it doubles as the busy explanation).
+  // The trigger title names the language menu.
   const langMenu = createDropdown({
     triggerClass: 'btn btn-secondary btn-sm',
     triggerContent: [langMenuLabel, langMenuCode, makeDropdownCaret()],
@@ -936,7 +588,6 @@ export function createLanguageMode({
   });
 
   langMenuWrapper.append(langMenu.el);
-  if (translateInvite) langMenuWrapper.append(translateInvite.el);
 
   syncLangUi();
 
@@ -945,13 +596,7 @@ export function createLanguageMode({
     syncLangUi,
     revealRefusedVersion,
     detach: () => {
-      translateInvite?.hide();
       langMenu.detach();
     },
-    // Null where AI is off: the More menu then builds no Translate item.
-    translateOtherLanguage: featureEnabled('ai')
-      ? () => translateOtherLanguage({ onStatus: toastStatus })
-      : null,
-    canTranslate: () => retranslateTargets().length > 0,
   };
 }

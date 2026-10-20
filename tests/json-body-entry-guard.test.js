@@ -1,3 +1,4 @@
+import { walkFiles } from './helpers/walk-files.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -20,15 +21,6 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-
-async function walk(dir, out = []) {
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) await walk(full, out);
-    else if (entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
 
 test('http.js exports exactly one JSON body entry point', async () => {
   const src = await fs.readFile(
@@ -54,7 +46,10 @@ test('http.js exports exactly one JSON body entry point', async () => {
 });
 
 test('no route handler reads a request body except through requireJsonBody', async () => {
-  const files = await walk(path.join(REPO_ROOT, 'server/routes'));
+  const files = walkFiles(path.join(REPO_ROOT, 'server/routes'), {
+    extensions: ['.js'],
+    filesOnly: false,
+  });
   const offenders = [];
 
   for (const file of files) {

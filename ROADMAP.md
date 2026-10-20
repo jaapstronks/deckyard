@@ -25,6 +25,9 @@ file looks forward.
 ## Next — planned features
 
 - **Portable `.deck` roundtrip proof** — verify a real fork-to-clean-instance import with notes, languages, theme assets and a custom slide type before declaring portability complete.
+
+## Later — directional
+
 - **Live-session robustness** — survive presenter refresh, companion
   auto-recovery, persistent join QR, unified follow codes, linked Q&A
   moderation, poll-open affordance.
@@ -39,15 +42,10 @@ file looks forward.
   add + refine flows; recognize the slide type + content and rebuild it as a
   native, editable slide.
 - **Interactive behaviors** — add gallery links, click-to-reveal, hover states, follow-sync and analytics to content blocks.
-- **Forker slide-type toolkit** — a scaffolder and validator for the file-JS
-  custom-slide-type seam, plus a reusable building-block layer (eyebrow,
-  highlight, badge, CTA) that core and custom types both compose.
+- **Forker tooling improvements** - extend fork-safe forms and inline editing, and explore packaging for custom slide types. The scaffolder, validator and shared composition primitives are already available.
 - **System clipboard interop for slides** — copy/paste of slides across
   browsers, devices and Deckyard installs via the async Clipboard API: the
   in-app buffer stays the fast path, with a web custom format
   (`application/vnd.deckyard.slides+json`) plus a plain-text outline written
   to the system clipboard as a progressive enhancement.
-
-## Later — directional
-
 - **SSO expansion** — add SAML alongside OIDC.

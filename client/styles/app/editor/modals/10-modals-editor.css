@@ -29,15 +29,3 @@
 .slide-type-modal .ps-modal-header {
   padding: var(--ps-space-3) var(--ps-space-5);
 }
-
-.translate-slide-modal {
-  max-width: 880px;
-}
-
-.translate-field-modal {
-  max-width: 820px;
-}
-
-.translate-preview-list {
-  margin-top: 10px;
-}

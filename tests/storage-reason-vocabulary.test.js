@@ -72,9 +72,10 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import { parse } from 'acorn';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -94,14 +95,6 @@ const SCANNED_ROOTS = ['server/storage', 'server/routes/api', 'shared'];
 const ALLOWLIST = [];
 
 // ─── scanner ────────────────────────────────────────────────────────────────
-
-function* walk(dir) {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) yield* walk(p);
-    else if (p.endsWith('.js')) yield p;
-  }
-}
 
 /** The property name of an AST `Property`, for identifier and string keys alike. */
 function propName(prop) {
@@ -157,7 +150,11 @@ function mintedLiterals(node) {
 function scanMintedReasons() {
   const minted = [];
   for (const root of SCANNED_ROOTS) {
-    for (const file of walk(join(repoRoot, root))) {
+    for (const file of walkFiles(join(repoRoot, root), {
+      extensions: ['.js'],
+      filesOnly: false,
+      followSymlinks: true,
+    })) {
       const rel = relative(repoRoot, file).replace(/\\/g, '/');
       const ast = parse(readFileSync(file, 'utf8'), {
         ecmaVersion: 'latest',
@@ -287,7 +284,11 @@ test('the register carries no dead codes', () => {
 test('getErrorStatus takes no route-local default status', () => {
   const offenders = [];
   for (const root of SCANNED_ROOTS) {
-    for (const file of walk(join(repoRoot, root))) {
+    for (const file of walkFiles(join(repoRoot, root), {
+      extensions: ['.js'],
+      filesOnly: false,
+      followSymlinks: true,
+    })) {
       const rel = relative(repoRoot, file).replace(/\\/g, '/');
       readFileSync(file, 'utf8')
         .split('\n')
@@ -379,7 +380,11 @@ const REASON_BRANCH_BURNDOWN = [
  */
 function scanReasonBranches() {
   const found = [];
-  for (const file of walk(join(repoRoot, 'server/routes'))) {
+  for (const file of walkFiles(join(repoRoot, 'server/routes'), {
+    extensions: ['.js'],
+    filesOnly: false,
+    followSymlinks: true,
+  })) {
     const rel = relative(repoRoot, file).replace(/\\/g, '/');
     readFileSync(file, 'utf8').replace(
       /\breason [!=]== '([a-z_]+)'/g,
@@ -391,7 +396,11 @@ function scanReasonBranches() {
 
 test('no route flattens a storage reason into badRequest', () => {
   const offenders = [];
-  for (const file of walk(join(repoRoot, 'server/routes'))) {
+  for (const file of walkFiles(join(repoRoot, 'server/routes'), {
+    extensions: ['.js'],
+    filesOnly: false,
+    followSymlinks: true,
+  })) {
     const rel = relative(repoRoot, file).replace(/\\/g, '/');
     readFileSync(file, 'utf8')
       .split('\n')
@@ -479,7 +488,11 @@ test('every field is a snake_case token', () => {
 
 test('a route answers a storage failure through storageError()', () => {
   const offenders = [];
-  for (const file of walk(join(repoRoot, 'server/routes'))) {
+  for (const file of walkFiles(join(repoRoot, 'server/routes'), {
+    extensions: ['.js'],
+    filesOnly: false,
+    followSymlinks: true,
+  })) {
     const rel = relative(repoRoot, file).replace(/\\/g, '/');
     readFileSync(file, 'utf8')
       .split('\n')

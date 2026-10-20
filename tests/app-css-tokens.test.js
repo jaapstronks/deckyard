@@ -33,6 +33,7 @@
  * Run with: node --test tests/app-css-tokens.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
@@ -55,24 +56,6 @@ const APP_READ_WITH_FALLBACK = /var\(\s*(--(?:ps|app|z)-[\w-]*)\s*,/g;
 const JS_SETTER =
   /setProperty(?:\?\.)?\(\s*['"`](--[a-zA-Z][\w-]*)|['"`;{\s](--[a-zA-Z][\w-]*)['"`]?\s*:/g;
 
-/**
- * @param {string} dir
- * @param {(name: string) => boolean} keep
- * @returns {Promise<string[]>} absolute paths, recursively, sorted
- */
-async function walk(dir, keep) {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  const out = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === 'vendor' || entry.name === 'node_modules') continue;
-      out.push(...(await walk(full, keep)));
-    } else if (keep(entry.name)) out.push(full);
-  }
-  return out.sort();
-}
-
 /** Blank out block comments, keeping newlines so line numbers stay right. */
 function stripComments(text) {
   return text.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
@@ -93,7 +76,11 @@ const isSlideSheet = (file) =>
   rel(file).startsWith(path.join('client', 'styles', 'slides') + path.sep);
 
 async function loadCss() {
-  const files = await walk(stylesDir, (n) => n.endsWith('.css'));
+  const files = walkFiles(stylesDir, {
+    extensions: ['.css'],
+    skipDirs: ['vendor', 'node_modules'],
+    filesOnly: false,
+  }).sort();
   return Promise.all(
     files.map(async (file) => {
       const raw = await fs.readFile(file, 'utf8');
@@ -166,7 +153,11 @@ describe('app CSS token namespace (D265)', () => {
     for (const { code } of sheets) {
       for (const m of code.matchAll(DEFINITION)) defined.add(m[1]);
     }
-    const scripts = await walk(clientDir, (n) => n.endsWith('.js'));
+    const scripts = walkFiles(clientDir, {
+      extensions: ['.js'],
+      skipDirs: ['vendor', 'node_modules'],
+      filesOnly: false,
+    }).sort();
     for (const file of scripts) {
       const code = await fs.readFile(file, 'utf8');
       for (const m of code.matchAll(JS_SETTER)) defined.add(m[1] || m[2]);

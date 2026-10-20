@@ -16,9 +16,7 @@
 
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
@@ -35,6 +33,7 @@ import {
   resolveChromeExecutablePath,
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
+import { withTestUploads } from './helpers/upload-fixture.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -179,15 +178,6 @@ async function bigOpaqueJpeg(px, seed = 1) {
     .toBuffer();
 }
 
-async function withUpload(buf, ext = 'jpg') {
-  const name = `test-display-aware-${randomUUID()}.${ext}`;
-  const dir = path.join(repoRoot, 'server', 'uploads');
-  await fs.mkdir(dir, { recursive: true });
-  const file = path.join(dir, name);
-  await fs.writeFile(file, buf);
-  return [`/uploads/${name}`, () => fs.rm(file, { force: true })];
-}
-
 /** Longest-edge px of every embedded JPEG in the export HTML. */
 async function embeddedJpegLongestEdges(html) {
   const payloads = [
@@ -205,20 +195,19 @@ test(
   'PDF export caps a grid image at its display size but keeps a full-bleed sharp',
   { skip },
   async () => {
-    const cleanups = [];
-    try {
+    await withTestUploads(repoRoot, async (add) => {
       const images = [];
       for (let i = 0; i < 6; i++) {
-        const [url, cleanup] = await withUpload(
-          await bigOpaqueJpeg(2400, i + 1),
-        );
-        cleanups.push(cleanup);
+        const url = await add(await bigOpaqueJpeg(2400, i + 1), {
+          prefix: 'test-display-aware-',
+          ext: 'jpg',
+        });
         images.push({ src: url, caption: '', alt: '' });
       }
-      const [bleedUrl, bleedCleanup] = await withUpload(
-        await bigOpaqueJpeg(2400, 99),
-      );
-      cleanups.push(bleedCleanup);
+      const bleedUrl = await add(await bigOpaqueJpeg(2400, 99), {
+        prefix: 'test-display-aware-',
+        ext: 'jpg',
+      });
 
       const pres = {
         id: 'display-aware',
@@ -266,8 +255,6 @@ test(
         bleed > Math.max(...grid) * 1.5,
         'full-bleed must stay far sharper than a grid item',
       );
-    } finally {
-      for (const c of cleanups) await c();
-    }
+    });
   },
 );

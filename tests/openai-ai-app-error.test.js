@@ -13,9 +13,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import { convertSlideWithAi } from '../server/utils/openai/convert-slide.js';
 import { translateShortText } from '../server/utils/openai/translate.js';
@@ -80,38 +81,31 @@ test('raw LLM content stays out of the envelope for upstream failures', () => {
 
 test('"unsupported vendor" has exactly one form: LlmError.unsupportedVendor', () => {
   const offenders = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir)) {
-      const full = path.join(dir, entry);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (
-        entry.endsWith('.js') &&
-        readFileSync(full, 'utf8').includes('Unsupported LLM vendor')
-      ) {
-        offenders.push(path.relative(repoRoot, full));
-      }
+  for (const file of walkFiles(path.join(repoRoot, 'server'), {
+    extensions: ['.js'],
+    followSymlinks: true,
+    filesOnly: false,
+  })) {
+    if (readFileSync(file, 'utf8').includes('Unsupported LLM vendor')) {
+      offenders.push(path.relative(repoRoot, file));
     }
-  };
-  walk(path.join(repoRoot, 'server'));
+  }
   assert.deepEqual(offenders, ['server/utils/llm/error.js']);
 });
 
 test('no bare .statusCode assignment left under openai/ and ai/', () => {
   const offenders = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir)) {
-      const full = path.join(dir, entry);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (
-        entry.endsWith('.js') &&
-        /\.statusCode = /.test(readFileSync(full, 'utf8'))
-      ) {
-        offenders.push(path.relative(repoRoot, full));
+  for (const dir of ['server/utils/openai', 'server/utils/ai']) {
+    for (const file of walkFiles(path.join(repoRoot, dir), {
+      extensions: ['.js'],
+      followSymlinks: true,
+      filesOnly: false,
+    })) {
+      if (/\.statusCode = /.test(readFileSync(file, 'utf8'))) {
+        offenders.push(path.relative(repoRoot, file));
       }
     }
-  };
-  walk(path.join(repoRoot, 'server/utils/openai'));
-  walk(path.join(repoRoot, 'server/utils/ai'));
+  }
   assert.deepEqual(
     offenders,
     [],

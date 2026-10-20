@@ -20,6 +20,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import {
   getJobFailureMessage,
@@ -145,23 +146,19 @@ function codeOnly(src) {
 
 test("nothing reads a job's failedReason any more", () => {
   const offenders = [];
-  const walk = (abs) => {
-    for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
-      const next = path.join(abs, entry.name);
-      if (entry.isDirectory()) walk(next);
-      else if (entry.name.endsWith('.js')) {
-        for (const [i, line] of codeOnly(fs.readFileSync(next, 'utf8'))
-          .split('\n')
-          .entries()) {
-          if (line.includes('failedReason')) {
-            offenders.push(`${path.relative(repoRoot, next)}:${i + 1}`);
-          }
+  for (const dir of ['server', 'client', 'shared']) {
+    for (const file of walkFiles(path.join(repoRoot, dir), {
+      extensions: ['.js'],
+      filesOnly: false,
+    })) {
+      for (const [i, line] of codeOnly(fs.readFileSync(file, 'utf8'))
+        .split('\n')
+        .entries()) {
+        if (line.includes('failedReason')) {
+          offenders.push(`${path.relative(repoRoot, file)}:${i + 1}`);
         }
       }
     }
-  };
-  for (const dir of ['server', 'client', 'shared']) {
-    walk(path.join(repoRoot, dir));
   }
   assert.deepEqual(
     offenders,

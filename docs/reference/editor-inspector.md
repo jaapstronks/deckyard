@@ -144,17 +144,17 @@ AI Convert (only with `features.ai`) and the admin's View JSON; with nothing
 to offer it is a plain label. There is no slide-actions menu above the
 canvas any more; every action it held has one address:
 
-| Action                     | Where                                                                                                                                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layout                     | First row of the inspector: four schematics plus "All N →" (`layout-switcher.js`), on every `layoutVariants` type; a variant with `rowLabel: true` shows its name in the row too |
-| Convert, AI Convert        | The type pill's menu                                                                                                                                                             |
-| View JSON (admin)          | The type pill's menu                                                                                                                                                             |
-| Duplicate, Delete          | Slide-list menu (right-click / long-press, or the ⋯ on the thumbnail); ⌘D and Delete/Backspace stay                                                                              |
-| Lock / Unlock (author)     | Slide-list menu; the lock badge on the thumbnail shows it and unlocks on click                                                                                                   |
-| Save to slide library      | Slide-list menu (one slide)                                                                                                                                                      |
-| Copy, Paste (B308)         | Slide-list menu, through the same `copySlidesToClipboard` / `pasteSlidesFromClipboard` as ⌘C/⌘V                                                                                  |
-| Fill slide… (AI translate) | The AI box at the foot of the inspector, beside Refine                                                                                                                           |
-| Add comment, zoom          | Floating at the top right of the canvas (`.canvas-float-tools`), hidden with the canvas in Fields                                                                                |
+| Action                 | Where                                                                                                                                                                            |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout                 | First row of the inspector: four schematics plus "All N →" (`layout-switcher.js`), on every `layoutVariants` type; a variant with `rowLabel: true` shows its name in the row too |
+| Convert, AI Convert    | The type pill's menu                                                                                                                                                             |
+| View JSON (admin)      | The type pill's menu                                                                                                                                                             |
+| Duplicate, Delete      | Slide-list menu (right-click / long-press, or the ⋯ on the thumbnail); ⌘D and Delete/Backspace stay                                                                              |
+| Lock / Unlock (author) | Slide-list menu; the lock badge on the thumbnail shows it and unlocks on click                                                                                                   |
+| Save to slide library  | Slide-list menu (one slide)                                                                                                                                                      |
+| Copy, Paste (B308)     | Slide-list menu, through the same `copySlidesToClipboard` / `pasteSlidesFromClipboard` as ⌘C/⌘V                                                                                  |
+| Translate side by side | Slide-list menu and the editor language menu; opens the translation view                                                                                                         |
+| Add comment, zoom      | Floating at the top right of the canvas (`.canvas-float-tools`), hidden with the canvas in Fields                                                                                |
 
 The ⋯ on a thumbnail sits top-left and shows on hover and on the active
 slide; the thumbnail's bottom edge stays free for the insert affordance

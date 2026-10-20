@@ -32,6 +32,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -273,16 +274,13 @@ describe('the client render path stays clear of the server-only layer', () => {
 
   it('ai.js is imported from server code only', () => {
     const importers = [];
-    const walk = (dir) => {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.'))
-          continue;
-        const abs = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          walk(abs);
-          continue;
-        }
-        if (!entry.name.endsWith('.js')) continue;
+    for (const dir of ['client', 'server', 'shared', 'scripts']) {
+      for (const abs of walkFiles(path.join(repoRoot, dir), {
+        extensions: ['.js'],
+        skipEntry: (entry) =>
+          entry.name === 'node_modules' || entry.name.startsWith('.'),
+        filesOnly: false,
+      })) {
         const specs = importSpecifiers(fs.readFileSync(abs, 'utf8'));
         if (!specs.some((s) => s.endsWith('/ai.js'))) continue;
         const resolved = specs
@@ -295,9 +293,6 @@ describe('the client render path stays clear of the server-only layer', () => {
           );
         if (resolved.length) importers.push(rel(abs));
       }
-    };
-    for (const dir of ['client', 'server', 'shared', 'scripts']) {
-      walk(path.join(repoRoot, dir));
     }
     const outsideServer = importers
       .filter((f) => !f.startsWith('server/'))

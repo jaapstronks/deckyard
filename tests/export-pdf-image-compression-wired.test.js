@@ -1,12 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
+import { withTestUploads } from './helpers/upload-fixture.js';
 
 /**
  * Regression guard for the *seam*, not the transform.
@@ -44,16 +43,6 @@ async function bigOpaquePng(px) {
     .toBuffer();
 }
 
-/** Write a throwaway upload under the real repo root and return [url, cleanup]. */
-async function withUpload(buf) {
-  const name = `test-export-compress-${randomUUID()}.png`;
-  const dir = path.join(repoRoot, 'server', 'uploads');
-  await fs.mkdir(dir, { recursive: true });
-  const file = path.join(dir, name);
-  await fs.writeFile(file, buf);
-  return [`/uploads/${name}`, () => fs.rm(file, { force: true })];
-}
-
 function dataUrlPayloads(html, mime) {
   const re = new RegExp(
     `data:${mime.replace('/', '\\/')};base64,([A-Za-z0-9+/=]+)`,
@@ -64,8 +53,8 @@ function dataUrlPayloads(html, mime) {
 
 test('PDF export still applies image compression to embedded slide images', async () => {
   const raw = await bigOpaquePng(3000);
-  const [url, cleanup] = await withUpload(raw);
-  try {
+  await withTestUploads(repoRoot, async (add) => {
+    const url = await add(raw, { prefix: 'test-export-compress-', ext: 'png' });
     const pres = {
       id: 'compress-seam',
       title: 'Compression seam',
@@ -101,38 +90,37 @@ test('PDF export still applies image compression to embedded slide images', asyn
       biggest < rawBase64Len * 0.5,
       `embedded payload ${biggest} not substantially smaller than raw ${rawBase64Len}`,
     );
-  } finally {
-    await cleanup();
-  }
+  });
 });
 
 test('compression can be switched off for the PDF export', async () => {
   const prev = process.env.EXPORT_IMAGE_COMPRESSION;
   const raw = await bigOpaquePng(1200);
-  const [url, cleanup] = await withUpload(raw);
-  try {
-    process.env.EXPORT_IMAGE_COMPRESSION = 'off';
-    const pres = {
-      id: 'compress-off',
-      title: 'Compression off',
-      theme: 'default',
-      lang: 'en',
-      slides: [
-        {
-          id: 's1',
-          type: 'image-slide',
-          content: { title: 'Photo', image: url },
-        },
-      ],
-    };
-    const html = await buildSlidesPdfHtml(repoRoot, pres, {});
-    assert.ok(
-      dataUrlPayloads(html, 'image/png').length > 0,
-      'with compression off the original PNG bytes should be embedded as-is',
-    );
-  } finally {
-    if (prev === undefined) delete process.env.EXPORT_IMAGE_COMPRESSION;
-    else process.env.EXPORT_IMAGE_COMPRESSION = prev;
-    await cleanup();
-  }
+  await withTestUploads(repoRoot, async (add) => {
+    const url = await add(raw, { prefix: 'test-export-compress-', ext: 'png' });
+    try {
+      process.env.EXPORT_IMAGE_COMPRESSION = 'off';
+      const pres = {
+        id: 'compress-off',
+        title: 'Compression off',
+        theme: 'default',
+        lang: 'en',
+        slides: [
+          {
+            id: 's1',
+            type: 'image-slide',
+            content: { title: 'Photo', image: url },
+          },
+        ],
+      };
+      const html = await buildSlidesPdfHtml(repoRoot, pres, {});
+      assert.ok(
+        dataUrlPayloads(html, 'image/png').length > 0,
+        'with compression off the original PNG bytes should be embedded as-is',
+      );
+    } finally {
+      if (prev === undefined) delete process.env.EXPORT_IMAGE_COMPRESSION;
+      else process.env.EXPORT_IMAGE_COMPRESSION = prev;
+    }
+  });
 });

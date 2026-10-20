@@ -1,3 +1,4 @@
+import { walkFiles } from './helpers/walk-files.js';
 import { test } from 'node:test';
 import { createMockRes } from './helpers/http-mocks.js';
 import assert from 'node:assert/strict';
@@ -83,7 +84,10 @@ test('the object guarantee has no opt-out (B55): even the old flag rejects an ar
 });
 
 test('no server code reintroduces an allowNonObject opt-out', async () => {
-  const files = await walk(path.join(REPO_ROOT, 'server'));
+  const files = walkFiles(path.join(REPO_ROOT, 'server'), {
+    extensions: ['.js'],
+    filesOnly: false,
+  });
   const offenders = [];
   for (const file of files) {
     const src = await fs.readFile(file, 'utf8');
@@ -107,17 +111,11 @@ test('allowEmpty still yields a plain object, not the parsed primitive', async (
   assert.equal(isJsonObject(result.body), true);
 });
 
-async function walk(dir, out = []) {
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) await walk(full, out);
-    else if (entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
 test('no route re-checks the whole body with typeof', async () => {
-  const files = await walk(path.join(REPO_ROOT, 'server/routes'));
+  const files = walkFiles(path.join(REPO_ROOT, 'server/routes'), {
+    extensions: ['.js'],
+    filesOnly: false,
+  });
   const offenders = [];
 
   for (const file of files) {

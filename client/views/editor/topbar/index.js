@@ -265,8 +265,6 @@ export function createEditorTopbar({
     requestSave,
     isDirty,
     onError,
-    onTranslateOther: languageMode.translateOtherLanguage,
-    canTranslate: languageMode.canTranslate,
     onVersions: () =>
       openVersionsModalImpl({
         api,

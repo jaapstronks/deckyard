@@ -24,25 +24,16 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import { parse } from 'acorn';
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CALLER_ROOTS = ['capture', 'scripts'];
 const STORAGE_PREFIX = join(repoRoot, 'server', 'storage') + '/';
-
-function* walk(dir) {
-  if (!existsSync(dir)) return;
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) {
-      if (name !== 'node_modules') yield* walk(p);
-    } else if (p.endsWith('.js')) yield p;
-  }
-}
 
 function parseModule(file) {
   return parse(readFileSync(file, 'utf8'), {
@@ -179,7 +170,13 @@ test('callers outside server/ pass a storage scope first', () => {
   const problems = [];
   let scannedCalls = 0;
   for (const root of CALLER_ROOTS) {
-    for (const file of walk(join(repoRoot, root))) {
+    for (const file of walkFiles(join(repoRoot, root), {
+      extensions: ['.js'],
+      filesOnly: false,
+      followSymlinks: true,
+      missingOk: true,
+      skipDirs: ['node_modules'],
+    })) {
       const rel = relative(repoRoot, file);
       const ast = parseModule(file);
       for (const node of nodes(ast))

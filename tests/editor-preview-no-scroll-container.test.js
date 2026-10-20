@@ -15,27 +15,21 @@
  *
  * Run with: node --test tests/editor-preview-no-scroll-container.test.js
  */
+import { walkFiles } from './helpers/walk-files.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-async function walk(dir, ext) {
-  const out = [];
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await walk(full, ext)));
-    else if (entry.name.endsWith(ext)) out.push(full);
-  }
-  return out;
-}
-
 test('no view puts panel-scroll on the preview body', async () => {
   const offenders = [];
-  for (const file of await walk(path.join(ROOT, 'client'), '.js')) {
+  for (const file of walkFiles(path.join(ROOT, 'client'), {
+    extensions: ['.js'],
+    filesOnly: false,
+  })) {
     const src = await readFile(file, 'utf8');
     for (const m of src.matchAll(/class:\s*['"`]([^'"`]*)['"`]/g)) {
       const classes = m[1].split(/\s+/);
@@ -53,7 +47,10 @@ test('no view puts panel-scroll on the preview body', async () => {
 test('no stylesheet lets the preview body scroll', async () => {
   const offenders = [];
   let declaresHidden = false;
-  for (const file of await walk(path.join(ROOT, 'client/styles'), '.css')) {
+  for (const file of walkFiles(path.join(ROOT, 'client/styles'), {
+    extensions: ['.css'],
+    filesOnly: false,
+  })) {
     const css = (await readFile(file, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
     for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       if (!/\.preview-panel-body\b/.test(m[1])) continue;
