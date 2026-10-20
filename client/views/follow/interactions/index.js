@@ -59,6 +59,10 @@ export function createFollowInteractionController({
   } = localCache;
 
   const isActive = () => !!capabilities?.interaction;
+  const withLanguage = (path) => {
+    const lang = String(getLang?.() || '').trim();
+    return lang ? `${path}?lang=${encodeURIComponent(lang)}` : path;
+  };
 
   // Local cache helpers extracted to `./interactions/local-cache.js`
 
@@ -156,9 +160,11 @@ export function createFollowInteractionController({
       busy = true;
       try {
         const resp = await api(
-          `/api/follow/${encodeURIComponent(
-            presentationId,
-          )}/interactions/${encodeURIComponent(currentSlideId)}/vote`,
+          withLanguage(
+            `/api/follow/${encodeURIComponent(
+              presentationId,
+            )}/interactions/${encodeURIComponent(currentSlideId)}/vote`,
+          ),
           {
             method: 'POST',
             body: { optionIndex: idx },
@@ -210,9 +216,11 @@ export function createFollowInteractionController({
       render();
       try {
         const resp = await api(
-          `/api/follow/${encodeURIComponent(
-            presentationId,
-          )}/interactions/${encodeURIComponent(currentSlideId)}/feedback`,
+          withLanguage(
+            `/api/follow/${encodeURIComponent(
+              presentationId,
+            )}/interactions/${encodeURIComponent(currentSlideId)}/feedback`,
+          ),
           {
             method: 'POST',
             body: { text: t },
@@ -443,11 +451,10 @@ export function createFollowInteractionController({
     if (!isActive()) return false;
     if (!currentSlideId || !isLiveSlideType(currentSlideType)) return false;
     try {
-      const lang = String(getLang?.() || '').trim();
       const base = `/api/follow/${encodeURIComponent(
         presentationId,
       )}/interactions/current`;
-      const url = lang ? `${base}?lang=${encodeURIComponent(lang)}` : base;
+      const url = withLanguage(base);
       const resp = await api(url);
       if (resp?.capabilities && onCapabilities)
         onCapabilities(resp.capabilities);

@@ -76,7 +76,7 @@ export async function renderFollow(root, presentationId) {
     containerEl: stageWrap,
     getCurrentSlide: () => {
       if (!pres?.slides?.length) return null;
-      return pres.slides[lastSlideIndex] || null;
+      return pres.slides.find((slide) => slide?.id === lastSlideId) || null;
     },
   });
 
@@ -190,6 +190,7 @@ export async function renderFollow(root, presentationId) {
         try {
           const ok = await refreshPresentationIfLive();
           if (ok) renderSlide();
+          sse?.reconnect?.();
         } catch {
           // ignore
         }
@@ -211,6 +212,7 @@ export async function renderFollow(root, presentationId) {
       lastStepIdx,
       lastStepParagraphs,
       followInviteMessage: copy.followInviteSuccess,
+      waitingMessage: copy.waitingForVisibleSlide,
     });
 
   const applyCapabilities = (next) => {
@@ -301,8 +303,8 @@ export async function renderFollow(root, presentationId) {
         });
     }
     // Also sync current slide/step state (helps initial render before SSE connects).
-    lastSlideId = String(resp?.slideId || lastSlideId || '');
-    lastSlideType = String(resp?.slideType || lastSlideType || '');
+    lastSlideId = String(resp?.slideId || '');
+    lastSlideType = String(resp?.slideType || '');
     lastSlideIndex = Number(resp?.slideIndex ?? lastSlideIndex) || 0;
     lastStepIdx = Math.max(0, Number(resp?.stepIdx || 0) || 0);
     lastStepParagraphs = !!resp?.stepParagraphs;
@@ -323,7 +325,7 @@ export async function renderFollow(root, presentationId) {
   const refreshStateIfLive = async () => {
     try {
       const resp = await api(
-        `/api/follow/${encodeURIComponent(presentationId)}/state`,
+        `/api/follow/${encodeURIComponent(presentationId)}/state?lang=${encodeURIComponent(lang)}`,
       );
       if (resp?.status !== 'live') {
         pres = null;
@@ -430,6 +432,7 @@ export async function renderFollow(root, presentationId) {
 
   sse = createFollowSse({
     presentationId,
+    getLang: () => lang,
     getCopy: () => copy,
     statusEl: status,
     onStatusEvent: (data) => {
@@ -459,10 +462,6 @@ export async function renderFollow(root, presentationId) {
         analyticsTracker.trackSlide(lastSlideId, lastSlideIndex);
       }
 
-      // Keep the status indicator useful even while the interaction UI is active.
-      // (renderSlide() early-returns in interaction mode.)
-      if (pres?.slides?.length)
-        status.textContent = `${lastSlideIndex + 1} / ${pres.slides.length}`;
       interactions?.setSlideContext?.({
         slideId: lastSlideId,
         slideType: lastSlideType,

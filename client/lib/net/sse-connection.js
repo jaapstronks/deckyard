@@ -33,7 +33,7 @@ const STATE = {
 /**
  * Create an SSE connection with automatic reconnection.
  * @param {Object} options - Configuration options
- * @param {string} options.url - The SSE endpoint URL
+ * @param {string|(() => string)} options.url - The SSE endpoint URL
  * @param {string[]} options.events - Event types to listen for
  * @param {Function} options.onEvent - Callback for events (event) => void
  * @param {Function} [options.onError] - Callback for errors (error) => void
@@ -101,7 +101,9 @@ export function createSSEConnection({
     setState(reconnectAttempts > 0 ? STATE.RECONNECTING : STATE.CONNECTING);
 
     try {
-      eventSource = new EventSource(url, { withCredentials: true });
+      eventSource = new EventSource(typeof url === 'function' ? url() : url, {
+        withCredentials: true,
+      });
 
       // Listen for specific event types
       for (const eventType of events) {

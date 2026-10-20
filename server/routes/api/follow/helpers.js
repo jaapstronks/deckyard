@@ -1,13 +1,20 @@
 import crypto from 'node:crypto';
 import { parseCookies } from '../../../utils/cookies.js';
-import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import {
+  normalizeLang,
+  translationSourceFor,
+} from '../../../../shared/i18n-utils.js';
 import {
   existingVersionLangs,
+  computeMissingTranslation,
+  pickVersion,
   translationProgress,
 } from '../../../../shared/i18n-progress.js';
 import { isHttpsRequest } from '../../../utils/request-url.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
 import { liveInteractionKind } from '../../../../shared/slide-types/runtime.js';
+import { projectPresentationForAudience } from '../../../utils/public-output.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * The storage scope the follow-along audience reads under.
@@ -44,6 +51,93 @@ export function pickPresentationForLang(pres, lang) {
     };
   }
   return pres;
+}
+
+/** The one slide list every public follow read and render must use. */
+export function followAudiencePresentation(pres, lang, slideTypes) {
+  const requested = normalizeLang(lang);
+  let unavailable = false;
+  if (requested) {
+    const version = pres?.i18n?.versions?.[requested];
+    const sourceLang = translationSourceFor(pres, requested);
+    const missing =
+      version && sourceLang
+        ? computeMissingTranslation({
+            source: pickVersion(pres, sourceLang),
+            target: pickVersion(pres, requested),
+          }).missingCount
+        : null;
+    if (!version || (typeof missing === 'number' && missing > 0)) {
+      unavailable = true;
+    }
+  }
+  const projected = projectPresentationForAudience(
+    pickPresentationForLang(pres, lang),
+    {
+      audience: 'reader',
+      channel: 'follow',
+      slideTypes,
+    },
+  );
+  return unavailable ? { ...projected, slides: [] } : projected;
+}
+
+/** Load the deck's registry so positional links pin before projection. */
+export async function loadFollowAudience(repoRoot, pres, lang) {
+  const slideTypes = await buildMergedSlideTypes({
+    repoRoot,
+    organizationId: pres.organizationId,
+  });
+  return followAudiencePresentation(pres, lang, slideTypes);
+}
+
+/** Resolve legacy index state before filtering, then locate its stable id. */
+export function followAudienceState(state, original, projected) {
+  if (state?.status !== 'live') {
+    return {
+      ...state,
+      slideId: '',
+      slideIndex: -1,
+      slideType: '',
+      stepIdx: 0,
+      stepParagraphs: false,
+    };
+  }
+  const source = Array.isArray(original?.slides) ? original.slides : [];
+  const visible = Array.isArray(projected?.slides) ? projected.slides : [];
+  const explicitId = String(state.slideId || '').trim();
+  const id = explicitId || source[state.slideIndex]?.id || '';
+  const index = id ? visible.findIndex((slide) => slide?.id === id) : -1;
+  if (index < 0) {
+    return {
+      ...state,
+      slideId: '',
+      slideIndex: -1,
+      slideType: '',
+      stepIdx: 0,
+      stepParagraphs: false,
+    };
+  }
+  return {
+    ...state,
+    slideId: id,
+    slideIndex: index,
+    slideType: visible[index].type || '',
+  };
+}
+
+/** Explicit public state contract. Internal selection retains the bearer capability. */
+export function followWireState(state) {
+  return {
+    status: state?.status,
+    presentationId: state?.presentationId,
+    slideId: state?.slideId || '',
+    slideIndex: state?.slideIndex ?? -1,
+    slideType: state?.slideType || '',
+    stepIdx: state?.stepIdx || 0,
+    stepParagraphs: !!state?.stepParagraphs,
+    updatedAt: state?.updatedAt || 0,
+  };
 }
 
 export function ensureQaDeviceCookie(req) {
@@ -154,18 +248,18 @@ export function computeAudienceCapabilitiesFromState(state, pres) {
   // What the audience may do here is the slide type's declared capability, not
   // a list of names this module keeps: `runtime: 'live'` plus the interaction
   // kind it collects. See shared/slide-types/runtime.js.
-  const interactionType = (live && liveInteractionKind(slideType)) || null;
+  const interactionType =
+    (live && state?.slideId && liveInteractionKind(slideType)) || null;
   const interaction = interactionType
     ? {
         type: interactionType,
         slideId: typeof state?.slideId === 'string' ? state.slideId : '',
-        sessionId: typeof state?.sessionId === 'string' ? state.sessionId : '',
       }
     : null;
   const dominantInteraction = !!interaction;
   const qaEnabled = isQaEnabledForPresentation(pres);
   return {
-    canViewSlide: live,
+    canViewSlide: live && !!state?.slideId,
     canUseQa: live && !dominantInteraction && qaEnabled,
     canUseCaptions: false,
     canUseZoom: false,

@@ -13,8 +13,10 @@ import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   computeAudienceCapabilitiesFromState,
   ensureInteractionDeviceCookie,
+  followAudienceState,
+  followWireState,
   followAudienceScope,
-  pickPresentationForLang,
+  loadFollowAudience,
 } from './helpers.js';
 import {
   ensurePollInteractionForSlide,
@@ -47,7 +49,7 @@ export async function handleFollowInteractionsCurrent(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const lang = normalizeLang(url.searchParams.get('lang'));
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
@@ -55,6 +57,10 @@ export async function handleFollowInteractionsCurrent(
     followAudienceScope(repoRoot),
     presentationId,
   );
+  const projected = pres0
+    ? await loadFollowAudience(repoRoot, pres0, lang)
+    : null;
+  state = followAudienceState(state, pres0, projected);
   const caps = computeAudienceCapabilitiesFromState(state, pres0);
 
   const dev = ensureInteractionDeviceCookie(req);
@@ -64,14 +70,14 @@ export async function handleFollowInteractionsCurrent(
     serveJson(
       res,
       200,
-      { ...state, capabilities: caps, interaction: null },
+      { ...followWireState(state), capabilities: caps, interaction: null },
       extraHeaders,
     );
     return true;
   }
   if (!pres0) return notFound(res);
 
-  const pres = pickPresentationForLang(pres0, lang);
+  const pres = projected;
   const slideId = String(state.slideId || '').trim();
   const slide = findSlideById(pres, slideId);
   const slideType = String(state.slideType || '');
@@ -83,7 +89,7 @@ export async function handleFollowInteractionsCurrent(
       res,
       200,
       {
-        ...state,
+        ...followWireState(state),
         capabilities: caps,
         interaction: null,
       },
@@ -172,7 +178,7 @@ export async function handleFollowInteractionsCurrent(
     res,
     200,
     {
-      ...state,
+      ...followWireState(state),
       capabilities: caps,
       interaction: {
         type,
@@ -205,20 +211,28 @@ export async function handleFollowInteractionsCurrent(
 }
 
 export async function handleFollowInteractionState(
-  { repoRoot, req, res },
+  { repoRoot, req, res, url },
   presentationId,
   slideId,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const pres = await getPresentationCached(
+  const original = await getPresentationCached(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const caps = computeAudienceCapabilitiesFromState(state, pres);
+  const pres = original
+    ? await loadFollowAudience(
+        repoRoot,
+        original,
+        normalizeLang(url?.searchParams.get('lang')),
+      )
+    : null;
+  state = followAudienceState(state, original, pres);
+  const caps = computeAudienceCapabilitiesFromState(state, original);
   const dev = ensureInteractionDeviceCookie(req);
   const extraHeaders = dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {};
 
@@ -226,7 +240,7 @@ export async function handleFollowInteractionState(
     serveJson(
       res,
       200,
-      { ...state, capabilities: caps, interactionState: null },
+      { ...followWireState(state), capabilities: caps, interactionState: null },
       extraHeaders,
     );
     return true;
@@ -273,30 +287,38 @@ export async function handleFollowInteractionState(
   serveJson(
     res,
     200,
-    { ...state, capabilities: caps, interactionState: agg },
+    { ...followWireState(state), capabilities: caps, interactionState: agg },
     extraHeaders,
   );
   return true;
 }
 
 export async function handleFollowInteractionVote(
-  { repoRoot, req, res },
+  { repoRoot, req, res, url },
   presentationId,
   slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
 
-  const pres = await getPresentationCached(
+  const original = await getPresentationCached(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const caps = computeAudienceCapabilitiesFromState(state, pres);
+  const pres = original
+    ? await loadFollowAudience(
+        repoRoot,
+        original,
+        normalizeLang(url?.searchParams.get('lang')),
+      )
+    : null;
+  state = followAudienceState(state, original, pres);
+  const caps = computeAudienceCapabilitiesFromState(state, original);
   if (!pres) return notFound(res);
 
   const dev = ensureInteractionDeviceCookie(req);
@@ -377,23 +399,31 @@ export async function handleFollowInteractionVote(
 }
 
 export async function handleFollowInteractionFeedback(
-  { repoRoot, req, res },
+  { repoRoot, req, res, url },
   presentationId,
   slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(
+  let state = await getFollowStateForPresentation(
     followAudienceScope(repoRoot),
     presentationId,
   );
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
 
-  const pres = await getPresentationCached(
+  const original = await getPresentationCached(
     followAudienceScope(repoRoot),
     presentationId,
   );
-  const caps = computeAudienceCapabilitiesFromState(state, pres);
+  const pres = original
+    ? await loadFollowAudience(
+        repoRoot,
+        original,
+        normalizeLang(url?.searchParams.get('lang')),
+      )
+    : null;
+  state = followAudienceState(state, original, pres);
+  const caps = computeAudienceCapabilitiesFromState(state, original);
   if (!pres) return notFound(res);
 
   const dev = ensureInteractionDeviceCookie(req);

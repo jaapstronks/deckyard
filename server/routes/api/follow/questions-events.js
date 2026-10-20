@@ -1,10 +1,16 @@
 import { attachQuestionsSseClient } from '../../../storage/questions.js';
 import { sseWrite, openSseStream } from '../../../utils/sse.js';
-import { ensureQaDeviceCookie, followAudienceScope } from './helpers.js';
+import {
+  computeAudienceCapabilitiesFromState,
+  followWireState,
+  ensureQaDeviceCookie,
+  followAudienceScope,
+} from './helpers.js';
+import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import { subscribeFollowStatus } from './status-ticker.js';
 
 export async function handleFollowQuestionsEvents(
-  { repoRoot, req, res },
+  { repoRoot, req, res, url },
   presentationId,
 ) {
   if (req.method !== 'GET') return false;
@@ -19,6 +25,7 @@ export async function handleFollowQuestionsEvents(
   let detach = null;
   let currentSessionId = '';
   let stopped = false;
+  const lang = normalizeLang(url?.searchParams.get('lang'));
 
   const detachSession = () => {
     if (typeof detach === 'function') {
@@ -34,24 +41,38 @@ export async function handleFollowQuestionsEvents(
   // (state + presentation are computed once for all followers).
   const onStatus = async (shared) => {
     if (stopped) return;
-    sseWrite(res, { event: 'status', data: shared.statusJson });
+    const selected = await shared.audienceStateForLang(lang);
+    if (stopped) return;
+    const capabilities = computeAudienceCapabilitiesFromState(
+      selected,
+      shared.pres,
+    );
+    sseWrite(res, {
+      event: 'status',
+      data: { ...followWireState(selected), capabilities },
+    });
 
     // If Q&A is disabled at the presentation level, never attach to the questions session.
-    if (shared.capabilities?.canUseQa === false) {
+    if (capabilities?.canUseQa === false) {
       detachSession();
       return;
     }
 
-    const state = shared.state;
+    const state = shared.rawState;
     if (state.status === 'live' && state.sessionId) {
       if (state.sessionId !== currentSessionId) {
         detachSession();
         currentSessionId = state.sessionId;
-        detach = await attachQuestionsSseClient(
+        const attached = await attachQuestionsSseClient(
           followAudienceScope(repoRoot),
           currentSessionId,
           res,
         );
+        if (stopped || currentSessionId !== state.sessionId) {
+          attached?.();
+          return;
+        }
+        detach = attached;
       }
     } else {
       detachSession();
