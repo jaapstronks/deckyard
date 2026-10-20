@@ -1,3 +1,4 @@
+import { createMockRes } from '../helpers/http-mocks.js';
 /**
  * A sandbox guest owns what it creates, end to end against real PostgreSQL.
  *
@@ -44,18 +45,6 @@ function guestReq(token) {
   };
 }
 
-/** A response double that records Set-Cookie. */
-function fakeRes() {
-  const headers = {};
-  return {
-    headers,
-    getHeader: (k) => headers[k],
-    setHeader: (k, v) => {
-      headers[k] = v;
-    },
-  };
-}
-
 pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
   let db;
@@ -81,7 +70,7 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
   });
 
   it('mints a cookie without a row, then gives the returning guest one stable id', async () => {
-    const res = fakeRes();
+    const res = createMockRes();
     const first = await ensureSandboxUserAsync(guestReq(null), res);
     assert.equal(first.id, null, 'the minting request carries no id yet');
     assert.match(String(res.headers['Set-Cookie']), /sb_sandbox=/);
@@ -94,33 +83,39 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
 
     const back = await ensureSandboxUserAsync(
       guestReq(first.sandboxId),
-      fakeRes(),
+      createMockRes(),
     );
     assert.ok(back.id, 'the returning guest has a users.id');
     const again = await ensureSandboxUserAsync(
       guestReq(first.sandboxId),
-      fakeRes(),
+      createMockRes(),
     );
     assert.equal(again.id, back.id, 'the id is stable across requests');
   });
 
   it('never puts the cookie token in the address other guests can see', async () => {
     const token = 'cccccccc-guest-carol';
-    const carol = await ensureSandboxUserAsync(guestReq(token), fakeRes());
+    const carol = await ensureSandboxUserAsync(
+      guestReq(token),
+      createMockRes(),
+    );
     assert.ok(!carol.email.includes(token), carol.email);
     assert.match(carol.email, /^guest-[0-9a-f]{32}@sandbox\.local$/);
-    const again = await ensureSandboxUserAsync(guestReq(token), fakeRes());
+    const again = await ensureSandboxUserAsync(
+      guestReq(token),
+      createMockRes(),
+    );
     assert.equal(again.email, carol.email, 'stable per cookie');
   });
 
   it('lets a guest read the deck it created, and keeps another guest out', async () => {
     const alice = await ensureSandboxUserAsync(
       guestReq('aaaaaaaa-guest-alice'),
-      fakeRes(),
+      createMockRes(),
     );
     const bob = await ensureSandboxUserAsync(
       guestReq('bbbbbbbb-guest-bob'),
-      fakeRes(),
+      createMockRes(),
     );
 
     const created = await createPresentation(testScope(), {

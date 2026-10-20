@@ -1,3 +1,4 @@
+import { createMockEventStreamRes } from './helpers/http-mocks.js';
 /**
  * Gate: `sseWrite()` is the only thing that writes an SSE frame (B105).
  *
@@ -75,38 +76,28 @@ test('sseWrite is the exported frame writer and formatSSEMessage is private', as
 
 // --- what the hand-rolled writers got wrong ---------------------------------
 
-function fakeRes() {
-  return {
-    writable: true,
-    writableEnded: false,
-    writes: [],
-    write(chunk) {
-      if (this.writableEnded) throw new Error('ERR_STREAM_WRITE_AFTER_END');
-      this.writes.push(String(chunk));
-      return true;
-    },
-  };
-}
-
 test('sseWrite emits one atomic frame, never event and data separately', async () => {
   const { sseWrite } = await import('../server/utils/sse.js');
-  const res = fakeRes();
+  const res = createMockEventStreamRes();
   sseWrite(res, { event: 'status', data: { progress: 5 } });
   assert.equal(
-    res.writes.length,
+    res.chunks.length,
     1,
     'one write() call, so frames cannot interleave',
   );
-  assert.equal(res.writes[0], 'event: status\ndata: {"progress":5}\n\n');
+  assert.equal(
+    res.chunks[0].toString(),
+    'event: status\ndata: {"progress":5}\n\n',
+  );
 });
 
 test('sseWrite is a no-op after the client disconnected', async () => {
   const { sseWrite } = await import('../server/utils/sse.js');
-  const res = fakeRes();
+  const res = createMockEventStreamRes();
   res.writableEnded = true;
   res.writable = false;
   assert.doesNotThrow(() =>
     sseWrite(res, { event: 'status', data: { progress: 50 } }),
   );
-  assert.deepEqual(res.writes, [], 'nothing written after the stream ended');
+  assert.deepEqual(res.chunks, [], 'nothing written after the stream ended');
 });

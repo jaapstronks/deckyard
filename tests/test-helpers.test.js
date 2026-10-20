@@ -11,6 +11,7 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import {
+  createMockEventStreamRes,
   createMockStreamRes,
   createMockReq,
   createMockRes,
@@ -171,4 +172,48 @@ test('stream capture keeps binary chunks and end bytes in order without early UT
   assert.equal(empty.writableEnded, true);
   assert.equal(empty.json(), null);
   assert.deepEqual(empty.chunks, []);
+});
+
+test('headers append repeated cookies and replace them case-insensitively', () => {
+  const res = createMockRes();
+  res.setHeader('Set-Cookie', 'state=one');
+  res.appendHeader('set-cookie', 'session=two');
+  res.appendHeader('SET-COOKIE', ['third=three', 'fourth=four']);
+  assert.deepEqual(res.getHeader('set-cookie'), [
+    'state=one',
+    'session=two',
+    'third=three',
+    'fourth=four',
+  ]);
+  res.setHeader('set-cookie', ['replacement=yes']);
+  assert.deepEqual(res.getHeader('Set-Cookie'), ['replacement=yes']);
+  assert.equal(Object.keys(res.headers).length, 1);
+  res.appendHeader('X-New', 'first');
+  assert.equal(res.getHeader('x-new'), 'first');
+});
+
+test('event stream records raw writes, flushes headers and rejects write after end', () => {
+  const res = createMockEventStreamRes();
+  const events = [];
+  res.on('close', () => events.push('close'));
+  res.on('finish', () => events.push('finish'));
+  assert.equal(res.writable, true);
+  assert.equal(res.writableFinished, false);
+  res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+  res.flushHeaders();
+  assert.equal(res.flushed, true);
+  assert.equal(res.writableEnded, false);
+  res.write('event: status\n');
+  res.end('data: {}\n\n');
+  assert.equal(res.body.toString(), 'event: status\ndata: {}\n\n');
+  assert.equal(res.chunks.length, 2);
+  assert.equal(res.writable, false);
+  assert.equal(res.writableEnded, true);
+  assert.equal(res.writableFinished, true);
+  assert.throws(() => res.write('too late'), /ERR_STREAM_WRITE_AFTER_END/);
+  assert.equal(res.chunks.length, 2);
+  assert.deepEqual(events, [], 'tests control the socket event boundaries');
+  res.emit('finish');
+  res.emit('close');
+  assert.deepEqual(events, ['finish', 'close']);
 });

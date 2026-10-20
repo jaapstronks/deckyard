@@ -1,3 +1,5 @@
+import { EventEmitter } from 'node:events';
+
 /** Small HTTP doubles for handler tests; bodies stay raw until json() is read. */
 
 /** Create a JSON-body request with an async iterable, like IncomingMessage. */
@@ -25,7 +27,23 @@ export function createMockRes() {
     body: null,
     ended: false,
     setHeader(name, value) {
-      this.headers[name] = value;
+      const key = Object.keys(this.headers).find(
+        (key) => key.toLowerCase() === name.toLowerCase(),
+      );
+      this.headers[key ?? name] = value;
+    },
+    getHeader(name) {
+      const key = Object.keys(this.headers).find(
+        (key) => key.toLowerCase() === name.toLowerCase(),
+      );
+      return this.headers[key];
+    },
+    appendHeader(name, value) {
+      const previous = this.getHeader(name);
+      this.setHeader(
+        name,
+        previous === undefined ? value : [previous, value].flat(),
+      );
     },
     writeHead(status, headers) {
       this.statusCode = status;
@@ -112,4 +130,31 @@ export function createMockStreamRes() {
       return this;
     },
   });
+}
+
+/** Event-capable raw SSE transport; rejects writes after end, without parsing frames. */
+export function createMockEventStreamRes() {
+  const res = Object.defineProperties(
+    new EventEmitter(),
+    Object.getOwnPropertyDescriptors(createMockStreamRes()),
+  );
+  res.writable = true;
+  res.writableFinished = false;
+  res.flushed = false;
+  const { write, end } = res;
+  res.flushHeaders = function () {
+    this.headersSent = true;
+    this.flushed = true;
+  };
+  res.write = function (chunk) {
+    if (this.writableEnded) throw new Error('ERR_STREAM_WRITE_AFTER_END');
+    return write.call(this, chunk);
+  };
+  res.end = function (chunk) {
+    end.call(this, chunk);
+    this.writable = false;
+    this.writableFinished = true;
+    return this;
+  };
+  return res;
 }
