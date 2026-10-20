@@ -96,7 +96,7 @@ const DE = {
  * @param {string} [opts.active='nl'] - The stored active language.
  * @param {Object} [opts.de=DE] - The German version (`null` for none).
  */
-async function installDb({ active = 'nl', de = DE } = {}) {
+async function installDb({ active = 'nl', de = DE, nl = NL } = {}) {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     users: userRows(OWNER_EMAIL, COLLAB_EMAIL, OUTSIDER_EMAIL),
@@ -110,7 +110,7 @@ async function installDb({ active = 'nl', de = DE } = {}) {
         owner_user_id: userIdFor(OWNER_EMAIL),
         created_by_user_id: userIdFor(OWNER_EMAIL),
         updated_by_user_id: userIdFor(OWNER_EMAIL),
-        title: NL.title,
+        title: nl.title,
         description: null,
         theme: 'default',
         lang: 'nl',
@@ -122,11 +122,11 @@ async function installDb({ active = 'nl', de = DE } = {}) {
           dominant: 'nl',
           active,
           versions: {
-            nl: structuredClone(NL),
+            nl: structuredClone(nl),
             ...(de ? { de: structuredClone(de) } : {}),
           },
         },
-        slides: structuredClone(NL.slides),
+        slides: structuredClone(nl.slides),
         published: null,
         created_at: '2026-07-01T00:00:00.000Z',
         modified_at: '2026-07-01T00:00:00.000Z',
@@ -855,3 +855,124 @@ test('worker: a job without an actorEmail is refused, not run as the operator', 
   assert.equal(calls.length, 0);
   assert.deepEqual(storedDeck(db), before);
 });
+
+/** The vendor refuses responses above a small token ceiling. */
+function stubBudgetedModel(t, { failAt = 0 } = {}) {
+  const saved = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (_url, options) => {
+    calls += 1;
+    const user = JSON.parse(options.body).messages.find(
+      (m) => m.role === 'user',
+    ).content;
+    const source = JSON.parse(
+      user
+        .split('TRANSLATE THIS PRESENTATION JSON:\n')[1]
+        .split('\n\nSLIDE META')[0],
+    );
+    const answer = JSON.stringify({
+      title: 'Translated roadmap',
+      slides: source.slides.map((s) => ({
+        id: s.id,
+        type: s.type,
+        content: { title: `Translated ${s.content.title}` },
+      })),
+    });
+    if (calls === failAt || answer.length > 1200) {
+      return new Response(
+        JSON.stringify({ choices: [{ message: { content: '{' } }] }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: answer } }] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    );
+  };
+  t.after(() => {
+    globalThis.fetch = saved;
+  });
+  return {
+    count: () => calls,
+    resume: () => {
+      failAt = 0;
+    },
+  };
+}
+
+const LARGE_NL = {
+  title: 'Roadmap',
+  slides: Array.from({ length: 80 }, (_, index) =>
+    slide(`slide-${index}`, `Titel ${index}`, 'title-slide'),
+  ),
+};
+
+for (const [name, translate] of [
+  ['editor', (body) => editorPost(OWNER, body)],
+  ['v1', (body) => v1Post(OWNER, v1Body(body))],
+  ['worker', (body) => workerJob(OWNER, body)],
+]) {
+  test(`${name}: 80 slides translate below the vendor response ceiling`, async (t) => {
+    const db = await installDb({ nl: LARGE_NL, de: null });
+    const vendor = stubBudgetedModel(t);
+    const result = await translate({ from: 'nl', to: 'en-GB' });
+    if (name !== 'worker') assert.equal(result.statusCode, 200);
+    const target = storedDeck(db).i18n.versions['en-GB'];
+    assert.equal(target.slides.length, 80);
+    assert.equal(target.slides[79].content.title, 'Translated Titel 79');
+    assert.ok(
+      target.translationSources[translationFieldKey('slide-79', ['title'])],
+    );
+    assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'done');
+    assert.ok(vendor.count() > 1);
+  });
+}
+
+test('a failed batch saves earlier slides and a retry fills the gaps', async (t) => {
+  const db = await installDb({ nl: LARGE_NL, de: null });
+  const vendor = stubBudgetedModel(t, { failAt: 2 });
+  const failed = await editorPost(OWNER, { from: 'nl', to: 'en-GB' });
+  assert.equal(failed.statusCode, 502);
+  assert.equal(failed.json().error, 'translation_partial');
+  assert.match(failed.json().message, /retry with fillMissing: true/);
+  const partial = storedDeck(db).i18n.versions['en-GB'];
+  assert.equal(partial.slides[0].content.title, 'Translated Titel 0');
+  assert.equal(partial.slides[79].content.title, '');
+  assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'partial');
+
+  vendor.resume();
+  const retried = await editorPost(OWNER, { from: 'nl', to: 'en-GB' });
+  assert.equal(retried.statusCode, 200);
+  assert.equal(
+    storedDeck(db).i18n.versions['en-GB'].slides[79].content.title,
+    'Translated Titel 79',
+  );
+  assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'done');
+});
+
+for (const [name, translate] of [
+  ['v1', (body) => v1Post(OWNER, v1Body(body))],
+  ['worker', (body) => workerJob(OWNER, body)],
+]) {
+  test(`${name}: a failed batch reports partial progress and keeps earlier slides`, async (t) => {
+    const db = await installDb({ nl: LARGE_NL, de: null });
+    stubBudgetedModel(t, { failAt: 2 });
+    if (name === 'worker') {
+      await assert.rejects(
+        () => translate({ from: 'nl', to: 'en-GB' }),
+        (error) => error.code === 'translation_partial',
+      );
+    } else {
+      const response = await translate({ from: 'nl', to: 'en-GB' });
+      assert.equal(response.statusCode, 502);
+      assert.equal(response.json().error, 'translation_partial');
+    }
+    const stored = storedDeck(db);
+    assert.equal(
+      stored.i18n.versions['en-GB'].slides[0].content.title,
+      'Translated Titel 0',
+    );
+    assert.equal(stored.i18n.versions['en-GB'].slides[79].content.title, '');
+    assert.equal(stored.i18n.translation['en-GB'].status, 'partial');
+  });
+}

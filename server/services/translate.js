@@ -223,6 +223,35 @@ function markTranslation(i18n, to, { status, from, missingCount }) {
   i18n.translation[to] = marker;
 }
 
+/** Bound both slide count and prompt size before asking for translated JSON. */
+function translationBatches(slides) {
+  const batches = [];
+  let batch = [];
+  let size = 0;
+  for (const slide of slides) {
+    const slideSize = JSON.stringify(slide).length;
+    if (batch.length && (batch.length === 4 || size + slideSize > 6000)) {
+      batches.push(batch);
+      batch = [];
+      size = 0;
+    }
+    batch.push(slide);
+    size += slideSize;
+  }
+  if (batch.length || !batches.length) batches.push(batch);
+  return batches;
+}
+
+/** Tell each caller that the persisted target is incomplete and can be retried. */
+function partialTranslationError(completed, total) {
+  return new AppError(
+    `Translation is incomplete after ${completed} of ${total} batches. Earlier translations were saved; retry with fillMissing: true.`,
+    502,
+    { completedBatches: completed, totalBatches: total, retryable: true },
+    'translation_partial',
+  );
+}
+
 /** Apply model answers only where the planned gap has not changed meanwhile. */
 function applyMissingAnswers(freshTarget, plannedTarget, filled, missing) {
   const result = structuredClone(freshTarget);
@@ -348,27 +377,108 @@ export async function translatePresentation(
     !pair.overwrite && isObject(pres.i18n.versions[pair.to])
       ? pres.i18n.versions[pair.to]
       : null;
-  const translated = await translatePresentationStrings(src, {
-    from: pair.from,
-    to: pair.to,
-    existingTarget,
-    fillMissing: pair.fillMissing && !pair.overwrite,
-    vendor,
-    organizationId: scope.organizationId,
-  });
-
-  pres.i18n.versions[pair.to] = recordTranslatedVersion(
-    src,
-    {
-      title: translated.title,
-      slides: translated.slides,
-    },
-    pair.from,
-    { previous: existingTarget },
+  const batches = translationBatches(src.slides || []);
+  const blank = buildBlankTargetFromSource(src);
+  const existingById = new Map(
+    (existingTarget?.slides || []).map((slide) => [slide.id, slide]),
   );
-  markTranslation(pres.i18n, pair.to, { status: 'done', from: pair.from });
-
-  const presentation = await writeTranslatedDeck(scope, identity.actor, pres);
+  let target = existingTarget
+    ? {
+        ...blank,
+        title: existingTarget.title || '',
+        slides: blank.slides.map((slide) =>
+          structuredClone(existingById.get(slide.id) || slide),
+        ),
+        ...(existingTarget.translationSources
+          ? {
+              translationSources: structuredClone(
+                existingTarget.translationSources,
+              ),
+            }
+          : {}),
+      }
+    : blank;
+  const targetById = new Map(
+    target.slides.map((slide, index) => [slide.id, index]),
+  );
+  let presentation;
+  let completed = 0;
+  for (const slides of batches) {
+    const selected = slides.map(
+      (slide) => target.slides[targetById.get(slide.id)],
+    );
+    const sourceBatch = { title: src.title, slides };
+    const targetBatch = { title: target.title, slides: selected };
+    if (
+      pair.fillMissing &&
+      !pair.overwrite &&
+      computeMissingTranslation({ source: sourceBatch, target: targetBatch })
+        .missingCount === 0
+    ) {
+      completed += 1;
+      continue;
+    }
+    let translated;
+    try {
+      translated = await translatePresentationStrings(sourceBatch, {
+        from: pair.from,
+        to: pair.to,
+        existingTarget: targetBatch,
+        fillMissing: pair.fillMissing && !pair.overwrite,
+        vendor,
+        organizationId: scope.organizationId,
+      });
+    } catch (error) {
+      if (!completed) throw error;
+      const remaining = computeMissingTranslation({ source: src, target });
+      markTranslation(pres.i18n, pair.to, {
+        status: 'partial',
+        from: pair.from,
+        missingCount: remaining.missingCount,
+      });
+      await writeTranslatedDeck(scope, identity.actor, pres);
+      throw partialTranslationError(completed, batches.length);
+    }
+    const previousTarget = structuredClone(target);
+    if (completed === 0) target.title = translated.title;
+    for (const slide of translated.slides) {
+      const index = targetById.get(slide.id);
+      if (index !== undefined) target.slides[index] = slide;
+    }
+    target = recordTranslatedVersion(src, target, pair.from, {
+      previous: previousTarget,
+    });
+    pres.i18n.versions[pair.to] = target;
+    const remaining = computeMissingTranslation({ source: src, target });
+    markTranslation(pres.i18n, pair.to, {
+      status:
+        completed + 1 === batches.length && remaining.missingCount === 0
+          ? 'done'
+          : 'partial',
+      from: pair.from,
+      missingCount: remaining.missingCount,
+    });
+    presentation = await writeTranslatedDeck(scope, identity.actor, pres);
+    completed += 1;
+  }
+  const remaining = computeMissingTranslation({ source: src, target });
+  if (remaining.missingCount > 0) {
+    if (!presentation) {
+      pres.i18n.versions[pair.to] = target;
+      markTranslation(pres.i18n, pair.to, {
+        status: 'partial',
+        from: pair.from,
+        missingCount: remaining.missingCount,
+      });
+      await writeTranslatedDeck(scope, identity.actor, pres);
+    }
+    throw partialTranslationError(completed, batches.length);
+  }
+  if (presentation && pres.i18n.translation[pair.to].status !== 'done') {
+    markTranslation(pres.i18n, pair.to, { status: 'done', from: pair.from });
+    presentation = await writeTranslatedDeck(scope, identity.actor, pres);
+  }
+  if (!presentation) presentation = pres;
   return { from: pair.from, to: pair.to, presentation };
 }
 
