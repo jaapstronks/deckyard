@@ -24,8 +24,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { walkFiles } from './helpers/walk-files.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -174,16 +175,12 @@ test('no client caller hands isAnalyticsEnabled() a deck', () => {
   // The owner's rule lives on the server; a client call with an argument is
   // the second authority this item removed.
   const offenders = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const path = join(dir, entry.name);
-      if (entry.isDirectory()) walk(path);
-      else if (entry.name.endsWith('.js')) {
-        const src = readFileSync(path, 'utf8');
-        if (/isAnalyticsEnabled\(\s*[^)\s]/.test(src)) offenders.push(path);
-      }
-    }
-  };
-  walk(join(process.cwd(), 'client'));
+  for (const file of walkFiles(join(process.cwd(), 'client'), {
+    extensions: ['.js'],
+    filesOnly: false,
+  })) {
+    const src = readFileSync(file, 'utf8');
+    if (/isAnalyticsEnabled\(\s*[^)\s]/.test(src)) offenders.push(file);
+  }
   assert.deepEqual(offenders, []);
 });

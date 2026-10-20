@@ -10,6 +10,7 @@ import { createFakeDb } from './helpers/fake-db.js';
 import { seedRow } from './helpers/theme-seed.js';
 import { __setTestDb } from '../server/db/client.js';
 import { testScope } from './helpers/storage-scope.js';
+import { walkFiles } from './helpers/walk-files.js';
 import { initializeStorage } from '../server/db/lifecycle.js';
 
 /**
@@ -140,22 +141,17 @@ test('the export worker reads the export type from the job name, not job.data', 
 test('no server call site passes a repoRoot into storage getThemeRecord', async () => {
   const offenders = [];
 
-  async function walk(dir) {
-    for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-      if (entry.name === 'node_modules' || entry.name === 'uploads') continue;
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        await walk(full);
-      } else if (entry.name.endsWith('.js')) {
-        const src = await fs.readFile(full, 'utf8');
-        if (/\bgetThemeRecord\s*\(\s*(?:job\.data\.)?_?repoRoot\b/.test(src)) {
-          offenders.push(path.relative(repoRoot, full));
-        }
-      }
+  for (const file of walkFiles(path.join(repoRoot, 'server'), {
+    extensions: ['.js'],
+    skipEntry: (entry) =>
+      entry.name === 'node_modules' || entry.name === 'uploads',
+    filesOnly: false,
+  })) {
+    const src = await fs.readFile(file, 'utf8');
+    if (/\bgetThemeRecord\s*\(\s*(?:job\.data\.)?_?repoRoot\b/.test(src)) {
+      offenders.push(path.relative(repoRoot, file));
     }
   }
-
-  await walk(path.join(repoRoot, 'server'));
 
   assert.deepEqual(
     offenders,

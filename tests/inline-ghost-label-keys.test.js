@@ -31,6 +31,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { INLINE_DESCRIPTORS } from '../client/views/editor/inline-edit/descriptors.js';
@@ -201,25 +202,20 @@ test('ghost fields that share a last path segment keep distinct keys', () => {
 
 test('guard: the editor.inline.field.* namespace is gone and stays gone', () => {
   const hits = [];
-  const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === 'vendor') continue;
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.isFile() && /\.(js|json)$/.test(entry.name)) {
-        const rel = path.relative(repoRoot, full).split(path.sep).join('/');
-        fs.readFileSync(full, 'utf8')
-          .split('\n')
-          .forEach((line, i) => {
-            const trimmed = line.trimStart();
-            // This file argues about the namespace by name.
-            if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
-            if (line.includes(DEAD_NAMESPACE)) hits.push(`${rel}:${i + 1}`);
-          });
-      }
-    }
-  };
-  walk(path.join(repoRoot, 'client'));
+  for (const file of walkFiles(path.join(repoRoot, 'client'), {
+    extensions: ['.js', '.json'],
+    skipEntry: (entry) => entry.name === 'vendor',
+  })) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    fs.readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        const trimmed = line.trimStart();
+        // This file argues about the namespace by name.
+        if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+        if (line.includes(DEAD_NAMESPACE)) hits.push(`${rel}:${i + 1}`);
+      });
+  }
 
   assert.deepEqual(
     hits,

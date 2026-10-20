@@ -18,9 +18,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import { LlmError } from '../server/utils/llm/error.js';
 import { requireEnv } from '../server/utils/llm/env.js';
@@ -97,19 +98,15 @@ test('requireEnv throws a 400 ValidationError for a missing variable', () => {
 
 test('no bare .statusCode assignment left under server/utils/llm/', () => {
   const offenders = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir)) {
-      const full = path.join(dir, entry);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (
-        entry.endsWith('.js') &&
-        /\.statusCode = /.test(readFileSync(full, 'utf8'))
-      ) {
-        offenders.push(path.relative(repoRoot, full));
-      }
+  for (const file of walkFiles(path.join(repoRoot, 'server/utils/llm'), {
+    extensions: ['.js'],
+    followSymlinks: true,
+    filesOnly: false,
+  })) {
+    if (/\.statusCode = /.test(readFileSync(file, 'utf8'))) {
+      offenders.push(path.relative(repoRoot, file));
     }
-  };
-  walk(path.join(repoRoot, 'server/utils/llm'));
+  }
   assert.deepEqual(
     offenders,
     [],

@@ -17,9 +17,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import videoSlide from '../shared/slide-types/types/video-slide.js';
 import { bunnyEmbedUrlFromInput } from '../shared/slide-types/helpers.js';
@@ -132,21 +132,19 @@ test("no fork's Bunny library id survives in shared/ or server/", () => {
     fileURLToPath(new URL(r, import.meta.url)),
   );
   const offenders = [];
-  const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      // `server/data/` holds saved decks, whose slides legitimately name the
-      // library their author chose.
-      if (name === 'data' || name === 'node_modules') continue;
-      const full = join(dir, name);
-      if (statSync(full).isDirectory()) {
-        walk(full);
-        continue;
-      }
-      if (!name.endsWith('.js')) continue;
-      if (readFileSync(full, 'utf8').includes(banned)) offenders.push(full);
+  // `server/data/` holds saved decks, whose slides legitimately name the
+  // library their author chose.
+  for (const root of roots) {
+    for (const file of walkFiles(root, {
+      extensions: ['.js'],
+      skipEntry: (entry) =>
+        entry.name === 'data' || entry.name === 'node_modules',
+      followSymlinks: true,
+      filesOnly: false,
+    })) {
+      if (readFileSync(file, 'utf8').includes(banned)) offenders.push(file);
     }
-  };
-  for (const root of roots) walk(root);
+  }
   assert.deepEqual(
     offenders,
     [],

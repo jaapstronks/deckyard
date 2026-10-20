@@ -11,9 +11,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import { notionFetchJson } from '../server/utils/notion/client.js';
 import { appendBlocksToPage } from '../server/utils/notion/blocks.js';
@@ -68,20 +69,17 @@ test('data-source validation failures stay 400', async () => {
 
 test('no bare .statusCode assignment left in the three converted trees', () => {
   const offenders = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir)) {
-      const full = path.join(dir, entry);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (
-        entry.endsWith('.js') &&
-        /\.statusCode = /.test(readFileSync(full, 'utf8'))
-      ) {
-        offenders.push(path.relative(repoRoot, full));
+  for (const dir of ['server/utils/notion', 'server/utils/data-source']) {
+    for (const file of walkFiles(path.join(repoRoot, dir), {
+      extensions: ['.js'],
+      followSymlinks: true,
+      filesOnly: false,
+    })) {
+      if (/\.statusCode = /.test(readFileSync(file, 'utf8'))) {
+        offenders.push(path.relative(repoRoot, file));
       }
     }
-  };
-  walk(path.join(repoRoot, 'server/utils/notion'));
-  walk(path.join(repoRoot, 'server/utils/data-source'));
+  }
   const features = readFileSync(
     path.join(repoRoot, 'server/config/features.js'),
     'utf8',

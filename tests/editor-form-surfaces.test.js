@@ -18,9 +18,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
+import { walkFiles } from './helpers/walk-files.js';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'http://localhost/app/test-id',
@@ -365,20 +365,19 @@ test('contentOnly no longer appears in the client', () => {
     'client/views/editor/modals/ai-batch-review-modal.js',
   ]);
   const offenders = [];
-  const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      const path = join(dir, name);
-      if (statSync(path).isDirectory()) {
-        if (name === 'vendor' || name === 'i18n') continue;
-        walk(path);
-      } else if (name.endsWith('.js') && !allowed.has(path)) {
-        if (readFileSync(path, 'utf8').includes('contentOnly')) {
-          offenders.push(path);
-        }
-      }
+  for (const file of walkFiles('client', {
+    extensions: ['.js'],
+    skipDirs: ['vendor', 'i18n'],
+    followSymlinks: true,
+    filesOnly: false,
+  })) {
+    if (
+      !allowed.has(file) &&
+      readFileSync(file, 'utf8').includes('contentOnly')
+    ) {
+      offenders.push(file);
     }
-  };
-  walk('client');
+  }
   assert.deepEqual(offenders, [], 'use a surface from editor-form/surfaces.js');
 });
 

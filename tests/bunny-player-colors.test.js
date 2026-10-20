@@ -16,9 +16,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import { bunnyPlayerColors } from '../shared/slide-types/types/video-slide/player-colors.js';
 import videoSlide from '../shared/slide-types/types/video-slide.js';
@@ -124,21 +124,16 @@ test('neither brand hex survives anywhere under shared/', () => {
   // Spelled in halves so this file is not itself a hit.
   const banned = ['db' + 'ff00', '37' + '5c5d'];
   const offenders = [];
-  const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      const full = join(dir, name);
-      if (statSync(full).isDirectory()) {
-        walk(full);
-        continue;
-      }
-      if (!name.endsWith('.js') && !name.endsWith('.json')) continue;
-      const text = readFileSync(full, 'utf8').toLowerCase();
-      for (const hex of banned) {
-        if (text.includes(hex)) offenders.push(`${full}: ${hex}`);
-      }
+  for (const file of walkFiles(SHARED, {
+    extensions: ['.js', '.json'],
+    followSymlinks: true,
+    filesOnly: false,
+  })) {
+    const text = readFileSync(file, 'utf8').toLowerCase();
+    for (const hex of banned) {
+      if (text.includes(hex)) offenders.push(`${file}: ${hex}`);
     }
-  };
-  walk(SHARED);
+  }
   assert.deepEqual(
     offenders,
     [],
