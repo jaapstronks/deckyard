@@ -4,14 +4,13 @@
  * Some contracts are shaped as "this function takes exactly these arguments,
  * and a further one would be the thing we just removed creeping back". A
  * behavioural test cannot see a call site that no test exercises, so those
- * contracts are guarded by reading the sources. Two guards use this now:
+ * contracts are guarded by reading the sources, for example
  * `getCollaboratorPermission` (the deck is the scope — see
- * `tests/collaborator-cross-org-endpoints.test.js`) and the share-link access
- * log (the link is the scope — see `tests/share-link-access-log-scope.test.js`).
+ * `tests/collaborator-cross-org-endpoints.test.js`).
  *
  * This is a bracket-depth scanner, not a parser: it is exact about argument
  * counts for ordinary calls, including nested calls and object literals, and it
- * does not try to understand strings containing brackets. Both guards ship a
+ * does not try to understand strings containing brackets. The guards ship a
  * self-test ("the guard would catch a re-introduced argument") so a change here
  * that blinds them fails loudly.
  */

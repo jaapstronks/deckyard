@@ -143,10 +143,10 @@ export async function createShareLink(scope, presentationId, options) {
  * Get a share link by its ID (org-scoped), without expiry/revocation filtering.
  *
  * Used to bind a linkId to the presentation the caller is authorized for before
- * a revoke/update/access-log operation, so a user who can write one deck can't
+ * a revoke/update operation, so a user who can write one deck can't
  * act on a link belonging to a different (private) deck via a forged linkId.
  * Returns revoked links too, so the containment check still holds on the
- * revoke/access-log paths.
+ * revoke path.
  * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} linkId - The share link ID
  * @returns {Promise<Object|null>} - The formatted share link, or null

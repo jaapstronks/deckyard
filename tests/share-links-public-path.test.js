@@ -54,7 +54,7 @@ delete process.env.SECURE_COOKIES;
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
-const { createFakeDb } = await import('./helpers/fake-db.js');
+const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 // Teardown uninstalls the double rather than calling `closeStorage`: it is not
 // a real Kysely handle, so closing it would call a `destroy()` it does not have.
@@ -222,7 +222,6 @@ function seed() {
       }),
     ],
     share_link_guests: [],
-    share_link_access_log: [],
   });
   __setTestDb(db);
   return db;
@@ -306,8 +305,13 @@ const link = (token) =>
   db.__tables.presentation_share_links.find((r) => r.token === token);
 /** The single stored guest row, once a request has minted one. */
 const guests = () => db.__tables.share_link_guests;
-/** Access-log rows written so far. */
-const accessLog = () => db.__tables.share_link_access_log || [];
+/**
+ * Every table a request wrote to (insert, update, delete), in order. A verify
+ * may move the link's use counter and nothing else: there is no per-visit
+ * access log beside it any more (B784).
+ */
+const writtenTables = () =>
+  ['insert', 'update', 'delete'].flatMap((op) => touchedTables(db, op));
 
 /**
  * The grant `verify` hands a viewer who opened the link (with the password,
@@ -458,8 +462,9 @@ test('a revoked link with a password does not name its deck (B761)', async () =>
 // POST /api/share/:token/verify — the password gate and the use counter
 // ---------------------------------------------------------------------------
 
-test('a link without a password verifies, is counted, and is logged', async () => {
+test('a link without a password verifies and is counted, and nothing else is written', async () => {
   seed();
+  db.__queryLog.length = 0;
   const res = await call('POST', '/api/share/tok-view/verify', { body: {} });
 
   assert.equal(res.status, 200);
@@ -482,9 +487,9 @@ test('a link without a password verifies, is counted, and is logged', async () =
   assert.equal(link('tok-view').use_count, 1, 'the access is counted');
   assert.equal(link('tok-view').last_used_at != null, true);
   assert.deepEqual(
-    accessLog().map((row) => ({ link: row.share_link_id, ip: row.ip_address })),
-    [{ link: 'link-view', ip: '203.0.113.9' }],
-    'the access log records the attempt against this link',
+    writtenTables(),
+    ['presentation_share_links'],
+    'the link update is the only write: no IP or user-agent is kept per visit',
   );
 });
 
@@ -509,6 +514,7 @@ test('the right password opens the link; the response carries no hash', async ()
 
 test('a missing or wrong password buys nothing and costs the link nothing', async () => {
   seed();
+  db.__queryLog.length = 0;
 
   const missing = await call('POST', '/api/share/tok-password/verify', {
     body: {},
@@ -532,7 +538,7 @@ test('a missing or wrong password buys nothing and costs the link nothing', asyn
     0,
     'a refused attempt is not a use',
   );
-  assert.deepEqual(accessLog(), [], 'and it is not logged as an access');
+  assert.deepEqual(writtenTables(), [], 'and it writes nothing');
 });
 
 test('verify hands over the deck itself — the anonymous viewer has no other way to it', async () => {
@@ -662,13 +668,18 @@ test('a use-limited link stops working once it is spent', async () => {
 
 test('a revoked or expired token cannot be verified into access', async () => {
   seed();
+  db.__queryLog.length = 0;
 
   for (const token of ['tok-revoked', 'tok-expired']) {
     const res = await call('POST', `/api/share/${token}/verify`, { body: {} });
     assert.equal(res.status, 410, `${token} is refused`);
     assert.equal(res.body.presentationId, undefined);
   }
-  assert.deepEqual(accessLog(), [], 'a dead link writes no access log');
+  assert.equal(
+    writtenTables().includes('presentation_share_links'),
+    false,
+    'a dead link is never counted as a use',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -716,7 +727,6 @@ test('password guessing is throttled to three tries per IP, then 429', async () 
     0,
     'a throttled attempt is never a use',
   );
-  assert.deepEqual(accessLog(), [], 'and it is never logged as access');
 });
 
 test('the throttle is scoped to the guessing surface: a no-password link is not capped', async () => {
@@ -1024,5 +1034,57 @@ test('the handler declines everything outside its five endpoints', async () => {
     const res = await call(method, path);
     assert.equal(res.handled, false, `${method} ${path} is not this module's`);
     assert.equal(res.status, null, 'and nothing was written to the response');
+  }
+});
+
+test('the share-link access log has no route any more (B784)', async () => {
+  // The verification log was dropped with its only reader. Its old address
+  // must not be claimed by anything: the API answers it like any unknown path.
+  // That no share-links pattern matches it any more is pinned at the table in
+  // tests/route-dispatch-share-links.test.js; this is the end-to-end answer.
+  seed();
+  const saved = {
+    AUTH_ENABLED: process.env.AUTH_ENABLED,
+    AUTH_DEV_BYPASS: process.env.AUTH_DEV_BYPASS,
+    SANDBOX_MODE: process.env.SANDBOX_MODE,
+  };
+  process.env.AUTH_ENABLED = 'false';
+  delete process.env.AUTH_DEV_BYPASS;
+  delete process.env.SANDBOX_MODE;
+  try {
+    const { handleApi } = await import('../server/routes/api/index.js');
+    const path =
+      '/api/presentations/11111111-1111-4111-8111-111111111111' +
+      '/share-links/22222222-2222-4222-8222-222222222222/access-log';
+    const res = {
+      statusCode: null,
+      chunks: [],
+      setHeader() {},
+      writeHead(status) {
+        this.statusCode = status;
+        return this;
+      },
+      end(chunk) {
+        if (chunk) this.chunks.push(chunk);
+      },
+    };
+    await handleApi({
+      repoRoot: process.cwd(),
+      req: {
+        method: 'GET',
+        url: path,
+        headers: { host: HOST },
+        socket: { remoteAddress: '203.0.113.9' },
+      },
+      res,
+      url: new URL(`http://${HOST}${path}`),
+    });
+    assert.equal(res.statusCode, 404);
+    assert.equal(JSON.parse(res.chunks.join('')).error, 'not_found');
+  } finally {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 });

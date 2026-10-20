@@ -49,8 +49,7 @@ The three database-layer modules act for no organization, so they live in
   `ownership.js`, `i18n.js`, `slide-notes.js`, `sandbox.js`, `sandbox-quota.js`,
   `cache.js`, `comments.js`, `subscriptions.js`, `ydocs.js`,
   `snapshot-identity.js`.
-- `server/storage/share-links/` — token share links (`crud.js`, `guests.js`,
-  `access-log.js`).
+- `server/storage/share-links/` — token share links (`crud.js`, `guests.js`).
 - `server/storage/live-sessions/` — live present/follow sessions (`sessions.js`,
   `sse.js`, `control.js`, `state.js`, `close.js`, `db.js`). See
   [`live-sessions.md`](live-sessions.md).
