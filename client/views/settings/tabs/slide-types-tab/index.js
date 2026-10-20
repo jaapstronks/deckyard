@@ -28,24 +28,23 @@ import { DEFAULT_THEME_REF } from '../../../../../shared/constants/themes.js';
 import { icon } from '../../../../lib/dom/icons.js';
 import { featureEnabled } from '../../../../lib/state/features.js';
 import { clusterOffSlideTypes } from '../../../../../shared/slide-types/policy.js';
+import { createUnsavedTracker } from '../../unsaved-changes.js';
 
 /**
  * Create the slide types curation tab.
  * @param {Object} options
  * @param {Object} options.user - Current user
- * @returns {{ el: HTMLElement, load: Function }}
+ * @returns {{ el: HTMLElement, load: Function, hasUnsavedChanges: () => boolean, discardChanges: () => void }}
  */
 export function createSlideTypesTab({ user } = {}) {
   const el = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-slide-types',
-    role: 'tabpanel',
   });
 
-  let disabledTypes = new Set();
+  const disabledTypes = new Set();
   let slideTypeMeta = {};
   let customTypes = [];
-  let saveTimer = null;
   let currentTheme = null;
 
   // Section containers
@@ -59,6 +58,35 @@ export function createSlideTypesTab({ user } = {}) {
    */
   const customTypesFailure = createInlineError({ live: 'polite' });
   const curationSection = h('div', { class: 'curation-section' });
+  // Curation is an organization policy with its own Save, like the theme and
+  // RSS policies (B805): toggles are local until saved, a refusal stays
+  // beside Save, and leaving the tab with edits asks first. The actions sit
+  // outside `curationSection`, whose render replaces its own children.
+  const curationError = createInlineError({ callout: true });
+  const saveCurationBtn = h('button', {
+    type: 'button',
+    class: 'btn btn-primary',
+    text: t('common.save', 'Save'),
+  });
+  const curationUnsaved = createUnsavedTracker({
+    root: curationSection,
+    read: () => [...disabledTypes].sort(),
+    write: (types) => {
+      disabledTypes.clear();
+      for (const type of types) disabledTypes.add(type);
+      renderCatalog();
+    },
+  });
+  const curationForm = h('section', { class: 'curation-form' }, [
+    curationSection,
+    h('div', { class: 'curation-actions' }, [
+      curationError.el,
+      h('div', { class: 'row is-end settings-policy-actions' }, [
+        curationUnsaved.statusEl,
+        saveCurationBtn,
+      ]),
+    ]),
+  ]);
   const editorSection = h('div', {
     class: 'slide-type-editor-section is-hidden',
   });
@@ -81,7 +109,7 @@ export function createSlideTypesTab({ user } = {}) {
       customTypesFailure.el,
       customTypesSection,
       editorSection,
-      curationSection,
+      curationForm,
     );
 
     try {
@@ -97,11 +125,12 @@ export function createSlideTypesTab({ user } = {}) {
         ]);
 
       const orgSettings = orgSettingsRes?.settings || {};
-      disabledTypes = new Set(
-        Array.isArray(orgSettings.disabledSlideTypes)
-          ? orgSettings.disabledSlideTypes
-          : [],
-      );
+      disabledTypes.clear();
+      for (const type of Array.isArray(orgSettings.disabledSlideTypes)
+        ? orgSettings.disabledSlideTypes
+        : [])
+        disabledTypes.add(type);
+      curationError.clear();
       slideTypeMeta = typeMetaRes || {};
       customTypes = customTypesRes?.customSlideTypes || [];
       const themes = Array.isArray(themesRes?.themes) ? themesRes.themes : [];
@@ -111,6 +140,7 @@ export function createSlideTypesTab({ user } = {}) {
 
       renderCustomTypesSection();
       renderCatalog();
+      curationUnsaved.markSaved();
     } catch (err) {
       el.append(
         h('div', {
@@ -675,7 +705,7 @@ export function createSlideTypesTab({ user } = {}) {
 
   function openEditor(slideType) {
     customTypesSection.classList.add('is-hidden');
-    curationSection.classList.add('is-hidden');
+    curationForm.classList.add('is-hidden');
     editorSection.classList.remove('is-hidden');
     editorSection.replaceChildren();
 
@@ -715,31 +745,34 @@ export function createSlideTypesTab({ user } = {}) {
     editorSection.classList.add('is-hidden');
     editorSection.replaceChildren();
     customTypesSection.classList.remove('is-hidden');
-    curationSection.classList.remove('is-hidden');
+    curationForm.classList.remove('is-hidden');
   }
 
   // ============================================================
   // Curation Section (core type toggles)
   // ============================================================
 
-  const saveCuration = () => {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      try {
-        await api('/api/settings/organization', {
-          method: 'PATCH',
-          body: { disabledSlideTypes: [...disabledTypes] },
-        });
-        toast.success(
-          t('settings.slideTypes.saved', 'Slide type settings saved.'),
-        );
-      } catch {
-        toast.error(
+  saveCurationBtn.addEventListener('click', async () => {
+    curationError.clear();
+    saveCurationBtn.disabled = true;
+    try {
+      await api('/api/settings/organization', {
+        method: 'PATCH',
+        body: { disabledSlideTypes: [...disabledTypes] },
+      });
+      curationUnsaved.markSaved();
+      toast.success(
+        t('settings.slideTypes.saved', 'Slide type settings saved.'),
+      );
+    } catch (err) {
+      curationError.show(
+        err?.message ||
           t('settings.slideTypes.saveError', 'Failed to save settings.'),
-        );
-      }
-    }, 400);
-  };
+      );
+    } finally {
+      saveCurationBtn.disabled = false;
+    }
+  });
 
   const renderCatalog = () => {
     curationSection.replaceChildren();
@@ -887,7 +920,6 @@ export function createSlideTypesTab({ user } = {}) {
         disabledTypes.add(type);
         card.classList.add('is-disabled');
       }
-      saveCuration();
     });
 
     info.append(labelEl, toggle);
@@ -905,10 +937,15 @@ export function createSlideTypesTab({ user } = {}) {
       disabledTypes,
       curationSection,
       theme: currentTheme,
-      saveCuration,
+      onCurationChange: curationUnsaved.sync,
       duplicateCoreType,
     });
   }
 
-  return { el, load };
+  return {
+    el,
+    load,
+    hasUnsavedChanges: curationUnsaved.isDirty,
+    discardChanges: curationUnsaved.discard,
+  };
 }

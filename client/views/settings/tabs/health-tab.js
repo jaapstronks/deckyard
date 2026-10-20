@@ -282,8 +282,6 @@ export function createHealthTab() {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-health',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-health-btn',
     'data-tab': 'health',
   });
 

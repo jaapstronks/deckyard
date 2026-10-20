@@ -21,8 +21,6 @@ export function createExportTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-export',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-export-btn',
     'data-tab': 'export',
   });
 

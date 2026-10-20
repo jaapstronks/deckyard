@@ -18,15 +18,35 @@
 
 let renderFn = () => {};
 
+/**
+ * Path + query of the last URL the router rendered or wrote. A history step
+ * that only changes the hash keeps it, and the view that owns the hash
+ * (settings) follows through its own `hashchange` listener instead of being
+ * torn down and re-mounted with its unsaved form state.
+ */
+let documentKey = null;
+
 export function setRenderer(fn) {
   renderFn = fn;
 }
 
 export function startRouter() {
+  documentKey = locationKey();
   // Deliberately document-long: the router is a boot-time singleton that lives
   // for the whole page, so this listener has no teardown by design. Called
   // exactly once from bootstrap() — do not call it per view.
-  window.addEventListener('popstate', () => renderFn());
+  window.addEventListener('popstate', () => {
+    const key = locationKey();
+    if (key === documentKey) return;
+    documentKey = key;
+    renderFn();
+  });
+}
+
+/** Path + query of the live location; `null` where there is none. */
+function locationKey() {
+  const url = liveUrl();
+  return url ? `${url.pathname}${url.search}` : null;
 }
 
 export function nav(to) {
@@ -77,6 +97,7 @@ function writeUrl(dest, { push = false } = {}) {
   try {
     if (push) history.pushState(null, '', dest);
     else history.replaceState(history.state, '', dest);
+    documentKey = locationKey();
     /* eslint-disable-next-line no-restricted-syntax -- Nothing to record with: the debug logger reads `?debugLog=` through `queryString()` below, so importing it here would be a cycle. A history-less environment is a bare test or a sandboxed embed; the view already shows the state and only the address bar lags. */
   } catch {
     // See the disable above.
@@ -102,16 +123,42 @@ export function replacePath(path) {
 
 /**
  * Replace the current hash (without `#`; empty clears it) without a history
- * entry or re-route. A no-op when the hash is already current. Settings keeps
- * its tab here.
+ * entry or re-route. A no-op when the hash is already current. Settings uses
+ * it to correct an unknown or unreachable section to its default.
  * @param {string} hash
  */
 export function replaceHash(hash) {
+  writeHash(hash, { push: false });
+}
+
+/**
+ * Push the hash (without `#`) as a new history entry without re-routing, so
+ * Back returns to the previous one. A no-op when the hash is already current.
+ * Settings keeps its section here.
+ * @param {string} hash
+ */
+export function pushHash(hash) {
+  writeHash(hash, { push: true });
+}
+
+/**
+ * The current hash without its leading `#`; `''` when there is none.
+ * @returns {string}
+ */
+export function currentHash() {
+  return (liveUrl()?.hash || '').slice(1);
+}
+
+/**
+ * @param {string} hash
+ * @param {{ push: boolean }} opts
+ */
+function writeHash(hash, { push }) {
   const url = liveUrl();
   const next = hash ? `#${hash}` : '';
   if (!url || url.hash === next) return;
   url.hash = next;
-  writeUrl(relativeUrl(url));
+  writeUrl(relativeUrl(url), { push });
 }
 
 /**

@@ -52,8 +52,6 @@ export function createPreferencesTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-preferences',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-preferences-btn',
     'data-tab': 'preferences',
   });
 

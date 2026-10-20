@@ -26,8 +26,6 @@ export function createOrganizationTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-organization',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-organization-btn',
     'data-tab': 'organization',
   });
 

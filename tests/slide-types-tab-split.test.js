@@ -92,7 +92,7 @@ test('preview modal: opens a backdrop and closes on Escape', () => {
     disabledTypes: new Set(),
     curationSection,
     theme: null,
-    saveCuration: () => {
+    onCurationChange: () => {
       saves++;
     },
     duplicateCoreType: (typeKey) => {
@@ -116,7 +116,7 @@ test('preview modal: opens a backdrop and closes on Escape', () => {
     'closes on Escape',
   );
 
-  // saveCuration + duplicateCoreType are wired but not triggered here.
+  // onCurationChange + duplicateCoreType are wired but not triggered here.
   assert.equal(saves, 0);
   assert.equal(duped, null);
 });

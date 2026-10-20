@@ -16,7 +16,8 @@ import { takeEscape } from '../../../../lib/dom/escape.js';
  * @param {Set<string>} ctx.disabledTypes - mutated as the toggle flips
  * @param {HTMLElement} ctx.curationSection - grid container, to sync the card
  * @param {object|null} ctx.theme - resolved theme for thumbnail rendering
- * @param {Function} ctx.saveCuration - debounced persist of disabledTypes
+ * @param {Function} ctx.onCurationChange - a toggle changed disabledTypes;
+ *   the tab marks its curation form as unsaved
  * @param {Function} ctx.duplicateCoreType - (typeKey, meta) => open editor
  */
 export function openTypePreview(type, allTypesList, ctx) {
@@ -25,7 +26,7 @@ export function openTypePreview(type, allTypesList, ctx) {
     disabledTypes,
     curationSection,
     theme,
-    saveCuration,
+    onCurationChange,
     duplicateCoreType,
   } = ctx;
 
@@ -104,7 +105,7 @@ export function openTypePreview(type, allTypesList, ctx) {
       const gridToggle = gridCard.querySelector('input[type="checkbox"]');
       if (gridToggle) gridToggle.checked = toggleCheckbox.checked;
     }
-    saveCuration();
+    onCurationChange();
   });
 
   const dupBtn = h('button', {

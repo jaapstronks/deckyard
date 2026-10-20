@@ -42,8 +42,6 @@ export function createAdminTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-admin',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-admin-btn',
     'data-tab': 'admin',
   });
 

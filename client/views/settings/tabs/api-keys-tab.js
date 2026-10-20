@@ -20,8 +20,6 @@ export function createApiKeysTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-api-keys',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-api-keys-btn',
     'data-tab': 'api-keys',
   });
 

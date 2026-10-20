@@ -7,6 +7,7 @@ import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
 import { api } from '../../../lib/api.js';
 import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import {
@@ -17,6 +18,7 @@ import {
 import { displayNameFromEmail } from '../../../lib/format/user-format.js';
 import { createPasswordSection } from '../sections/index.js';
 import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
+import { createUnsavedTracker } from '../unsaved-changes.js';
 import {
   fetchMySettings,
   updateMySettings,
@@ -27,14 +29,12 @@ import {
  * Create the account tab component.
  * @param {Object} options
  * @param {Object} options.user - Current user
- * @returns {Object} { el, load }
+ * @returns {Object} { el, load, hasUnsavedChanges, discardChanges }
  */
 export function createAccountTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-account',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-account-btn',
     'data-tab': 'account',
   });
 
@@ -134,7 +134,9 @@ export function createAccountTab({ user }) {
         invalidateProfile(user?.id);
       }
     } catch (err) {
-      toast.error(err, { id: 'profile-image' });
+      // The photo form is still on screen, so the refusal stays beside it
+      // until the next attempt instead of passing as a toast.
+      imageError.show(err.message);
     } finally {
       uploadBtn.disabled = false;
       imageStatus.textContent = '';
@@ -145,6 +147,7 @@ export function createAccountTab({ user }) {
   uploadBtn.addEventListener('click', () => fileInput.click());
 
   removeBtn.addEventListener('click', async () => {
+    imageError.clear();
     removeBtn.disabled = true;
     imageStatus.textContent = t('settings.profile.removing', 'Removing…');
 
@@ -155,7 +158,7 @@ export function createAccountTab({ user }) {
       removeBtn.style.display = 'none';
       invalidateProfile(user?.id);
     } catch (err) {
-      toast.error(err, { id: 'profile-image' });
+      imageError.show(err.message);
     } finally {
       removeBtn.disabled = false;
       imageStatus.textContent = '';
@@ -185,17 +188,20 @@ export function createAccountTab({ user }) {
   // Profile name input
   const profileName = h('input', {
     class: 'form-input settings-compact-control',
-    placeholder: t('settings.profile.placeholder', 'Display name'),
+    autocomplete: 'name',
     value: '',
   });
-  const profileHint = h('div', {
-    class: 'help',
-    text: t(
-      'settings.profile.hint',
-      'Used as your name in the app (instead of the auth name).',
-    ),
-  });
-  profileCard.append(profilePhoto, profileName, profileHint);
+  const profileNameField = createFieldWrap(
+    t('settings.profile.placeholder', 'Display name'),
+    profileName,
+    {
+      helpText: t(
+        'settings.profile.hint',
+        'Used as your name in the app (instead of the auth name).',
+      ),
+    },
+  );
+  profileCard.append(profilePhoto, profileNameField);
 
   // Save button for profile
   const profileActions = h('div', {
@@ -206,7 +212,14 @@ export function createAccountTab({ user }) {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),
   });
-  profileActions.append(btnSaveProfile);
+  const profileUnsaved = createUnsavedTracker({
+    root: profileNameField,
+    read: () => profileName.value,
+    write: (value) => {
+      profileName.value = value;
+    },
+  });
+  profileActions.append(profileUnsaved.statusEl, btnSaveProfile);
   // A refused save is a state of this form, so it stays beside Save until the
   // next attempt (docs/reference/feedback-surfaces.md). `/api/settings/me`
   // answers about the request as a whole and names no `details.field`, so
@@ -241,6 +254,7 @@ export function createAccountTab({ user }) {
     try {
       const my = await fetchMySettings();
       profileName.value = String(my?.profile?.name || '');
+      profileUnsaved.markSaved();
 
       // Load profile image
       const savedImageUrl = String(my?.profile?.imageUrl || '').trim();
@@ -268,6 +282,7 @@ export function createAccountTab({ user }) {
       const name = String(profileName.value || '').trim();
       await updateMySettings({ profile: { name } });
       invalidateSettingsCache();
+      profileUnsaved.markSaved();
       toast.success(t('settings.saved', 'Saved.'), {
         id: 'settings-save',
         durationMs: 1800,
@@ -284,5 +299,7 @@ export function createAccountTab({ user }) {
   return {
     el: container,
     load,
+    hasUnsavedChanges: profileUnsaved.isDirty,
+    discardChanges: profileUnsaved.discard,
   };
 }

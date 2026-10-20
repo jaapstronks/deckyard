@@ -348,3 +348,18 @@
     padding: var(--ps-space-3);
   }
 }
+
+/* Curation is an explicit-Save policy form (B805). The catalog is long, so
+   its Save stays in reach at the bottom of the viewport while it scrolls. */
+.curation-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-4);
+  padding: var(--ps-space-3) 0;
+  background: hsl(var(--app-bg-base));
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
