@@ -54,7 +54,7 @@ import { DECK_FORMAT_ID, RETIRED_DECK_FORMAT_ID } from './deck-format-id.js';
 import { ensureSlideBgImage } from './legacy-bg-image.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 23;
+export const CURRENT_SCHEMA_VERSION = 24;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -1607,6 +1607,18 @@ export const SCHEMA_MIGRATIONS = [
   // v22 -> v23: optional per-version translationSources. No backfill: old
   // text has no known source until a translation writer accepts it.
   (pres) => pres,
+
+  // v23 -> v24: historical background-text `default` meant no override.
+  // The empty optional enum preserves it through editor/server contrast
+  // settling too; absence can become `auto` and activate text/scrim changes.
+  // All current enum values stay untouched (B800).
+  (pres) => {
+    for (const slide of eachSlide(pres)) {
+      if (slide.content?.slideBgText === 'default')
+        slide.content.slideBgText = '';
+    }
+    return pres;
+  },
 ];
 
 /**

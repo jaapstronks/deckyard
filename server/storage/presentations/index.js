@@ -1466,7 +1466,9 @@ async function listTrashedPresentationRowsBefore(cutoffIso, _ctx) {
  * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
  */
 async function duplicatePresentationRow(id, ctx) {
-  const existing = await getPresentationRow(id, ctx);
+  // A copy is a read followed by a new write: use the same canonical shape
+  // a normal deck read answers, including every language version (B800).
+  const existing = migratePresentation(await getPresentationRow(id, ctx));
   if (!existing) return { ok: false, reason: 'not_found' };
 
   // One new id per *source* slide id, shared by every language version of it

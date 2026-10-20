@@ -1343,8 +1343,8 @@ test('a slide-level migration step walks eachSlide(), never pres.slides on its o
   assert.doesNotMatch(table, /pres\??\.slides\b/);
   assert.equal(
     (table.match(/eachSlide\(pres\)/g) || []).length,
-    8,
-    'every slide-level step (v1, v3-v9) walks eachSlide(pres)',
+    9,
+    'every inline slide-level step (v1, v3-v9, v24) walks eachSlide(pres)',
   );
 });
 
