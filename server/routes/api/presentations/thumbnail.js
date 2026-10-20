@@ -1,3 +1,5 @@
+import { mayOnPresentation } from '../../../services/presentations.js';
+import { projectPresentationForAudience } from '../../../utils/public-output.js';
 /**
  * Deck overview thumbnail (Fase B of the front-page-perf track).
  *
@@ -60,13 +62,22 @@ export async function handlePresentationThumbnail(
     return methodNotAllowed(res, ['GET']);
   }
 
-  const pres = await withPresentationAuth({
+  let pres = await withPresentationAuth({
     storageScope,
     id: presentationId,
     authedUser,
     res,
   });
   if (!pres) return true;
+  const mayEdit = await mayOnPresentation(pres, { actor: authedUser }, 'write');
+  if (!mayEdit) {
+    pres = projectPresentationForAudience(pres, {
+      audience: 'reader',
+      channel: 'viewer',
+    });
+    // Readers never share an author's cached raster, including pre-contract files.
+    pres = { ...pres, id: `${pres.id}-reader-v2` };
+  }
 
   // A stored theme that cannot load (a slug left from before the cutover,
   // B718; a record deleted under the deck) is not the request's fault: there
@@ -123,7 +134,9 @@ export async function handlePresentationThumbnail(
   // rather than a placeholder. The card is then at most one edit out of date,
   // and upgrades itself on the next load — which the stale file's own ETag
   // guarantees, since it stops matching the moment the fresh raster lands.
-  const stale = await readStaleThumbnail(repoRoot, prefix, filename);
+  const stale = mayEdit
+    ? await readStaleThumbnail(repoRoot, prefix, filename)
+    : null;
   if (stale) return sendImage(stale.buffer, stale.filename);
 
   // Nothing to show. Say which kind of nothing, so the card never has to

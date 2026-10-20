@@ -31,7 +31,10 @@ import {
 } from '../storage/published.js';
 import { updatePresentation } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
-import { pickOgImageUrlFromPresentation } from '../render/og-image.js';
+import {
+  pickOgImageUrlFromPresentation,
+  publishedPreviewFingerprint,
+} from '../render/og-image.js';
 import { firstPublicSlide } from '../utils/public-output.js';
 import { loadThemeAssets } from '../utils/themes.js';
 import { generateAndSaveOgPreview } from '../render/preview-image.js';
@@ -128,7 +131,11 @@ export async function buildPublishOgImage({
   try {
     // The first slide that outlives the session: a live-only slide (the
     // follow-along invite) has nothing to show a preview of.
-    const firstSlide = firstPublicSlide(pres);
+    const slideTypes = await buildMergedSlideTypes(storageScope);
+    const firstSlide = firstPublicSlide(pres, {
+      channel: 'published',
+      slideTypes,
+    });
 
     if (firstSlide && isMediaProviderInitialized()) {
       const theme = await loadThemeAssets(repoRoot, pres.theme, storageScope);
@@ -142,16 +149,20 @@ export async function buildPublishOgImage({
         repoRoot,
         firstSlide,
         theme,
-        `og-${publishId}`,
-        { showAuthor, authorInfo },
+        `og-v2-${publishId}-${publishedPreviewFingerprint(pres).slice(0, 20)}`,
+        { showAuthor, authorInfo, slideTypes },
       );
     } else {
       // No media provider: pick an image out of the deck content.
-      ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
+      ogImageUrl =
+        pickOgImageUrlFromPresentation(pres, { channel: 'published' }) ||
+        ogImageUrl;
     }
   } catch (err) {
     log.warn('[publish] Preview generation failed:', err?.message || err);
-    ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
+    ogImageUrl =
+      pickOgImageUrlFromPresentation(pres, { channel: 'published' }) ||
+      ogImageUrl;
   }
   return ogImageUrl;
 }
@@ -220,6 +231,7 @@ export async function publishPresentation({
   // with the dominant text and a concurrent slide edit with the load (B620).
   const published = {
     id: entry.publishId,
+    previewFingerprint: publishedPreviewFingerprint(pres),
     slug: entry.slug,
     ogImageUrl: entry.ogImageUrl || '',
     created: entry.created,

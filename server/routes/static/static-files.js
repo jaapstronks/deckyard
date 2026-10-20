@@ -1,3 +1,4 @@
+import { isPublishedPreviewAssetName } from '../../render/og-image.js';
 import path from 'node:path';
 import { notFound, serveFile } from '../../utils/http.js';
 import {
@@ -76,6 +77,16 @@ export function handleStaticFiles({ res, url, sharedPublicDirs }) {
         rel = decodeURIComponent(relRaw);
       } catch {
         rel = relRaw;
+      }
+
+      // Generated publication previews have a separate proof-checking route.
+      // Fail closed even when a caller bypasses the static mount chain.
+      if (
+        urlPrefix === '/uploads/' &&
+        isPublishedPreviewAssetName(path.basename(rel))
+      ) {
+        notFound(res);
+        return true;
       }
 
       const base = path.resolve(dir);
