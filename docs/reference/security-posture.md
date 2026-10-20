@@ -185,3 +185,13 @@ victim's browser would attach automatically. Requests authenticated another way
 endpoints) cannot be abused through a victim's browser cookie, so they are exempt
 and need no client changes. A "missing Origin" is allowed, which is safe here
 because the check only runs when a `SameSite=Lax` cookie is already present.
+
+## Collaboration WebSocket origin
+
+**Where:** `server/collab/origin.js`, checked by `server/collab/mount.js` before the `/collab` HTTP upgrade and session authentication.
+
+Browsers send an `Origin` on WebSocket connections. The upgrade requires an exact HTTP(S) origin match, including scheme and port. Same-site sibling origins, opaque `null`, malformed values and URL-shaped values with paths or credentials receive HTTP 403. A valid session cookie does not bypass this boundary; cookie authentication and per-document writer authorization still apply.
+
+The expected origin comes from `getAppBaseUrl()`: `APP_URL` takes precedence over `DOMAIN` (HTTPS). This configured public origin is authoritative, including behind a proxy with an internal Host; forwarded headers cannot add origins. Without either setting, the expected origin uses `getRequestOrigin()` and its first `X-Forwarded-Host` / `X-Forwarded-Proto` values, falling back to Host and the socket protocol. As with the existing request URL convention, the reverse proxy must overwrite forwarded headers from untrusted clients. Configure `APP_URL` for a fixed public boundary. `CSRF_ALLOWED_ORIGINS` does not widen collaboration access.
+
+Clients without an Origin header are allowed and must still authenticate and have write permission. This supports native clients and server-side integrations; a browser WebSocket cannot omit or override its Origin. A present but empty or invalid Origin is refused. The existing HTTP CSRF policy is separate.

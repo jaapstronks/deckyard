@@ -19,6 +19,7 @@ import {
   isCollabLiveEditsEnabled,
 } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
+import { isCollabOriginAllowed } from './origin.js';
 
 const log = createLogger('collab');
 
@@ -201,6 +202,12 @@ export async function maybeAttachCollab(
     if (pathname !== COLLAB_PATH) {
       // Not ours; nothing else handles upgrades, so close the socket.
       socket.destroy();
+      return;
+    }
+    if (!isCollabOriginAllowed(req)) {
+      socket.end(
+        'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n',
+      );
       return;
     }
     ws.handleUpgrade(req, socket, head).catch((err) => {
