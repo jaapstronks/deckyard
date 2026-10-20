@@ -9,6 +9,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createEmailTemplatesPanel } from '../email-templates/index.js';
 import { createAdminNotificationsSection } from '../sections/index.js';
+import { getAppName } from '../../../lib/theme/branding.js';
 import {
   fetchAppSettings,
   updateAppSettings,
@@ -34,6 +35,61 @@ export function createEmailTab({ user }) {
     class: 'settings-tab-title',
     text: t('settings.tabs.email', 'Email'),
   });
+
+  const senderCard = h('section', { class: 'stack editor-card' });
+  senderCard.append(
+    h('h3', {
+      class: 'field-label',
+      text: t('settings.admin.emailSender.title', 'Email Sender Identity'),
+    }),
+  );
+  senderCard.append(
+    h('p', {
+      class: 'help',
+      text: t(
+        'settings.admin.emailSender.hint',
+        'From address for system emails. Falls back to environment variables if empty.',
+      ),
+    }),
+  );
+  const senderEmail = h('input', {
+    type: 'email',
+    class: 'form-input',
+    maxlength: '255',
+    placeholder: 'noreply@example.com',
+  });
+  const senderName = h('input', {
+    type: 'text',
+    class: 'form-input',
+    maxlength: '128',
+    placeholder: getAppName(),
+  });
+  senderCard.append(
+    h('label', { class: 'field-row' }, [
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.emailSender.email', 'Email'),
+      }),
+      senderEmail,
+    ]),
+    h('label', { class: 'field-row' }, [
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.emailSender.name', 'Name'),
+      }),
+      senderName,
+    ]),
+  );
+  const senderError = createInlineError({ callout: true });
+  const saveSender = h('button', {
+    type: 'button',
+    class: 'btn btn-primary',
+    text: t('common.save', 'Save'),
+  });
+  senderCard.append(
+    senderError.el,
+    h('div', { class: 'row is-end settings-policy-actions' }, [saveSender]),
+  );
 
   // Admin notifications section
   const notificationsCard = h('div', { class: 'stack editor-card' });
@@ -68,6 +124,8 @@ export function createEmailTab({ user }) {
     // Load admin notification settings
     try {
       const app = await fetchAppSettings();
+      senderEmail.value = app?.emailSender?.email || '';
+      senderName.value = app?.emailSender?.name || '';
       const notif =
         app?.notifications && typeof app.notifications === 'object'
           ? app.notifications
@@ -108,7 +166,30 @@ export function createEmailTab({ user }) {
     }
   });
 
-  container.append(title, notificationsCard);
+  saveSender.addEventListener('click', async () => {
+    senderError.clear();
+    saveSender.disabled = true;
+    senderEmail.disabled = true;
+    senderName.disabled = true;
+    try {
+      await updateAppSettings({
+        emailSender: {
+          email: senderEmail.value.trim(),
+          name: senderName.value.trim(),
+        },
+      });
+      invalidateSettingsCache();
+      toast.success(t('settings.saved', 'Saved.'));
+    } catch (err) {
+      senderError.show(err.message);
+    } finally {
+      saveSender.disabled = false;
+      senderEmail.disabled = false;
+      senderName.disabled = false;
+    }
+  });
+
+  container.append(title, senderCard, notificationsCard);
 
   return {
     el: container,

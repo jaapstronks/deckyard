@@ -289,7 +289,7 @@ export function createHealthTab() {
 
   const title = h('h2', {
     class: 'settings-tab-title',
-    text: t('settings.tabs.health', 'Instance Health'),
+    text: t('settings.tabs.health', 'Installation overview'),
   });
   const description = h('p', {
     class: 'settings-tab-description',

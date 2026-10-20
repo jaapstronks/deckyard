@@ -903,6 +903,10 @@
       "forms": ["Alt-tekst", "Alt-tekst (optioneel)"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
+    "nl  Appearance": {
+      "forms": ["Uiterlijk", "Weergave"],
+      "reason": "The local device appearance shortcut uses Uiterlijk; the existing visual display controls use Weergave in another context."
+    },
     "nl  Body": {
       "forms": ["Inhoud", "Tekst"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -941,10 +945,6 @@
     },
     "nl  Custom": {
       "forms": ["Aangepast", "Eigen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Data Export": {
-      "forms": ["Data-export", "Gegevensexport"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Delete": {

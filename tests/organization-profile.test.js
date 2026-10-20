@@ -531,6 +531,7 @@ test('the panel opens the dialog for the organization on screen', async () => {
 function sidebarEntries(user) {
   const sidebar = createSettingsSidebar({
     isAdmin: isOrganizationAdmin(user),
+    isInstanceAdmin: Boolean(user?.isAdmin),
     isDesigner: false,
     canSeeMembers: canSeeMemberList(user),
     canSeeOrganization: isOrganizationMember(user),
@@ -542,22 +543,22 @@ function sidebarEntries(user) {
   ).map((el) => el.dataset.tab || 'divider');
 }
 
-test('single-organization has no organization tab, for anyone', () => {
+test('single-organization shows policy to an instance admin without a profile editor', () => {
   const admin = { email: 'jaap@example.com', isAdmin: true };
   assert.equal(isOrganizationMember(admin), false, 'no membership to speak of');
-  assert.equal(sidebarEntries(admin).includes('organization'), false);
+  assert.equal(sidebarEntries(admin).includes('organization'), true);
   assert.equal(
     sidebarEntries({ email: 'a@b.c', isAdmin: false }).includes('organization'),
     false,
   );
 });
 
-test('multi-organization: an admin finds it in the Admin group, before the members', () => {
+test('multi-organization: an admin finds organization before members', () => {
   const entries = sidebarEntries(viewer('admin'));
   assert.ok(entries.includes('organization'));
   assert.ok(
     entries.indexOf('organization') > entries.indexOf('divider'),
-    'admins keep it where the people tab has always been',
+    'organization has its own section',
   );
   assert.ok(
     entries.indexOf('organization') < entries.indexOf('users'),
@@ -565,13 +566,13 @@ test('multi-organization: an admin finds it in the Admin group, before the membe
   );
 });
 
-test('multi-organization: a plain member gets it without an Admin heading over it', () => {
+test('multi-organization: a plain member gets an Organization section', () => {
   const entries = sidebarEntries(viewer('member'));
   const divider = entries.indexOf('divider');
   assert.ok(entries.includes('organization'));
   assert.ok(
-    divider === -1 || entries.indexOf('organization') < divider,
-    'an "Admin" divider over someone who is not one is a lie about what they see',
+    divider !== -1 && entries.indexOf('organization') > divider,
+    'organization is a scope heading, not an administrator role',
   );
   assert.ok(entries.indexOf('organization') < entries.indexOf('users'));
 });

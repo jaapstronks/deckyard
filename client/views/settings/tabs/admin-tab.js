@@ -6,12 +6,10 @@
 import { h } from '../../../lib/dom/index.js';
 import { featureEnabled } from '../../../lib/state/features.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
-import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createSsoLoginsCard } from '../sso-logins.js';
-import { createTranslationInstructionsCard } from '../translation-instructions/index.js';
 import {
   fetchAppSettings,
   updateAppSettings,
@@ -51,14 +49,14 @@ export function createAdminTab({ user }) {
 
   const title = h('h2', {
     class: 'settings-tab-title',
-    text: t('settings.tabs.admin', 'Admin'),
+    text: t('settings.tabs.admin', 'General'),
   });
 
   const description = h('p', {
     class: 'settings-tab-description',
     text: t(
       'settings.admin.description',
-      'Configure workspace-wide settings that apply to all users.',
+      'Configure installation-wide settings that apply to all organizations.',
     ),
   });
 
@@ -141,51 +139,6 @@ export function createAdminTab({ user }) {
     ]),
   ]);
   aiCard.append(aiHint, aiFields);
-
-  // Email Sender Identity card
-  const senderCard = h('div', { class: 'stack editor-card' });
-  senderCard.append(
-    h('div', {
-      class: 'field-label',
-      text: t('settings.admin.emailSender.title', 'Email Sender Identity'),
-    }),
-  );
-  const senderHint = h('div', {
-    class: 'help',
-    text: t(
-      'settings.admin.emailSender.hint',
-      'From address for system emails. Falls back to environment variables if empty.',
-    ),
-  });
-  const senderEmailInput = h('input', {
-    type: 'email',
-    class: 'form-input',
-    placeholder: 'noreply@example.com',
-    maxlength: '255',
-  });
-  const senderNameInput = h('input', {
-    type: 'text',
-    class: 'form-input',
-    placeholder: getAppName(),
-    maxlength: '128',
-  });
-  const senderFields = h('div', { class: 'stack gap-2' }, [
-    h('label', { class: 'field-row' }, [
-      h('span', {
-        class: 'field-row-label',
-        text: t('settings.admin.emailSender.email', 'Email'),
-      }),
-      senderEmailInput,
-    ]),
-    h('label', { class: 'field-row' }, [
-      h('span', {
-        class: 'field-row-label',
-        text: t('settings.admin.emailSender.name', 'Name'),
-      }),
-      senderNameInput,
-    ]),
-  ]);
-  senderCard.append(senderHint, senderFields);
 
   // Session Duration card
   const sessionCard = h('div', { class: 'stack editor-card' });
@@ -445,14 +398,9 @@ export function createAdminTab({ user }) {
   });
   actions.append(btnSave);
 
-  const translationInstructions = featureEnabled('ai')
-    ? createTranslationInstructionsCard()
-    : null;
   const cards = h('div', { class: 'settings-admin-cards' }, [
     langCard,
     aiCard,
-    translationInstructions?.el,
-    senderCard,
     sessionCard,
     hasAnalytics ? analyticsCard : null,
     hasStockMedia ? stockMediaCard : null,
@@ -482,8 +430,6 @@ export function createAdminTab({ user }) {
     ...Object.values(langChecks),
     aiNameInput,
     aiEmailInput,
-    senderEmailInput,
-    senderNameInput,
     sessionSelect,
     analyticsEnabledCheck,
     retentionSessionSelect,
@@ -504,7 +450,6 @@ export function createAdminTab({ user }) {
     if (loaded) return;
     loaded = true;
     ssoLogins.load();
-    translationInstructions?.load();
 
     try {
       const app = await fetchAppSettings();
@@ -518,10 +463,6 @@ export function createAdminTab({ user }) {
       // AI assistant identity
       aiNameInput.value = app?.aiAssistant?.name || '';
       aiEmailInput.value = app?.aiAssistant?.email || '';
-
-      // Email sender identity
-      senderEmailInput.value = app?.emailSender?.email || '';
-      senderNameInput.value = app?.emailSender?.name || '';
 
       // Session duration
       const sessionDays = String(app?.sessionDurationDays || 30);
@@ -603,10 +544,6 @@ export function createAdminTab({ user }) {
           name: aiNameInput.value.trim(),
           email: aiEmailInput.value.trim(),
         },
-        emailSender: {
-          email: senderEmailInput.value.trim(),
-          name: senderNameInput.value.trim(),
-        },
         sessionDurationDays: parseInt(sessionSelect.value, 10) || 30,
         ...(hasAnalytics && {
           analytics: {
@@ -631,7 +568,6 @@ export function createAdminTab({ user }) {
         : null;
       if (supportedSlideLangs) {
         setSupportedLangs(supportedSlideLangs);
-        translationInstructions?.syncSupportedLanguages(supportedSlideLangs);
       }
 
       invalidateSettingsCache();

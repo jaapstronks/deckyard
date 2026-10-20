@@ -702,11 +702,6 @@
       "count": 1
     }
   },
-  "client/views/settings/index.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/settings/organization-members/invite-modal.js": {
     "no-restricted-syntax": {
       "count": 1
@@ -730,11 +725,6 @@
   "client/views/settings/tabs/export-tab.js": {
     "no-restricted-syntax": {
       "count": 3
-    }
-  },
-  "client/views/settings/tabs/integrations-tab.js": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "client/views/settings/tabs/themes-tab.js": {

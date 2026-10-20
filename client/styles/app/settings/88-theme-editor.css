@@ -63,6 +63,35 @@
   }
 }
 
+@media (max-width: 480px) {
+  .themes-list-header,
+  .theme-card-name-row {
+    flex-wrap: wrap;
+    gap: var(--ps-space-2);
+  }
+
+  .themes-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .theme-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .theme-card-info,
+  .theme-card-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .themes-list-header .btn {
+    min-height: 44px;
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
 .theme-card-preview {
   position: relative;
   width: 100%;

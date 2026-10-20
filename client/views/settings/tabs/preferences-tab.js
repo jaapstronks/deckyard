@@ -34,6 +34,10 @@ import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
 import { currentUrl, nav } from '../../../lib/state/router.js';
 import {
+  getUiModePreference,
+  setUiModePreference,
+} from '../../../lib/theme/ui-mode.js';
+import {
   DEFAULT_SUPPORTED_DECK_LANGS,
   getLangDisplayName,
 } from '../../../../shared/i18n-utils.js';
@@ -57,6 +61,34 @@ export function createPreferencesTab({ user }) {
     class: 'settings-tab-title',
     text: t('settings.tabs.preferences', 'Preferences'),
   });
+
+  const appearance = h('section', { class: 'stack editor-card' });
+  const mode = h('select', { class: 'form-input settings-compact-control' }, [
+    h('option', {
+      value: 'system',
+      text: t('settings.appearance.system', 'System'),
+    }),
+    h('option', {
+      value: 'light',
+      text: t('settings.appearance.light', 'Light'),
+    }),
+    h('option', { value: 'dark', text: t('settings.appearance.dark', 'Dark') }),
+  ]);
+  mode.value = getUiModePreference();
+  mode.addEventListener('change', () => setUiModePreference(mode.value));
+  appearance.append(
+    h('label', { class: 'field-row' }, [
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.appearance.title', 'Appearance'),
+      }),
+      mode,
+    ]),
+    h('p', {
+      class: 'help',
+      text: t('settings.appearance.local', 'On this device'),
+    }),
+  );
 
   // UI Locale card
   const uiLocaleCard = h('div', { class: 'stack editor-card' });
@@ -425,7 +457,7 @@ export function createPreferencesTab({ user }) {
   // name no `details.field`, so there is no control to mark.
   const saveError = createInlineError({ callout: true });
 
-  container.append(title, cards, saveError.el, actions);
+  container.append(title, appearance, cards, saveError.el, actions);
 
   // The weekly analytics digest emails a summary, which a sandbox guest (no
   // account, no email, throwaway decks) can't receive — grey it out with a

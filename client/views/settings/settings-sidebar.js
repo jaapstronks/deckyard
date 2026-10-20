@@ -7,23 +7,29 @@ import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { getFeatures } from '../../lib/state/features.js';
 import { sidebarSections } from './tab-registry.js';
+import { fetchOrganization } from './organization-profile/actions.js';
+import { debugLog } from '../../lib/state/debug.js';
 
 /**
  * Create the settings sidebar component.
  * @param {Object} options
- * @param {boolean} options.isAdmin - Whether user is admin
+ * @param {boolean} options.isAdmin - Admin of the active organization
+ * @param {boolean} options.isInstanceAdmin - Installation administrator
  * @param {boolean} options.isDesigner - Whether user has designer capability
  * @param {boolean} [options.canSeeMembers] - Whether the members tab is reachable
  * @param {boolean} [options.canSeeOrganization] - Whether the organization tab is reachable
+ * @param {string} [options.organizationId] - Active organization for the scope heading
  * @param {string} options.activeTab - Currently active tab key
  * @param {Function} options.onTabChange - Callback when tab changes
  * @returns {{el: HTMLElement, setActiveTab: Function}}
  */
 export function createSettingsSidebar({
   isAdmin,
+  isInstanceAdmin,
   isDesigner,
   canSeeMembers = isAdmin,
   canSeeOrganization = false,
+  organizationId = null,
   activeTab,
   onTabChange,
 }) {
@@ -67,46 +73,59 @@ export function createSettingsSidebar({
 
   const sections = sidebarSections({
     isAdmin,
+    isInstanceAdmin,
     isDesigner,
     canSeeMembers,
     canSeeOrganization,
   });
 
-  // The personal tabs, with the organization tabs for a member who is not an
-  // admin (see tab-registry.js).
+  // Personal settings stay personal regardless of the active organization.
   for (const tab of sections.personal) {
     sidebar.append(createTabButton(tab));
   }
 
-  // Add designer section if user has designer capability
-  if (sections.designer.length) {
-    const designerDivider = h('div', { class: 'settings-sidebar-divider' });
-    const designerDividerLabel = h('span', {
+  const appendSection = (tabs, label) => {
+    if (!tabs.length) return null;
+    const divider = h('div', { class: 'settings-sidebar-divider' });
+    const caption = h('span', {
       class: 'settings-sidebar-divider-label',
-      text: t('settings.tabs.designerSection', 'Designer'),
+      text: label,
     });
-    designerDivider.append(designerDividerLabel);
-    sidebar.append(designerDivider);
+    divider.append(caption);
+    sidebar.append(divider);
+    for (const tab of tabs) sidebar.append(createTabButton(tab));
+    return caption;
+  };
 
-    for (const tab of sections.designer) {
-      sidebar.append(createTabButton(tab));
-    }
+  const organizationCaption = appendSection(
+    sections.organization,
+    t('settings.tabs.organizationSection', 'Organization'),
+  );
+  if (
+    organizationCaption &&
+    getFeatures()?.multiOrganization &&
+    organizationId
+  ) {
+    fetchOrganization(organizationId)
+      .then(({ organization }) => {
+        if (organization)
+          organizationCaption.textContent =
+            organization.displayName || organization.name;
+      })
+      .catch((err) => debugLog('Active organization name unavailable', err));
   }
+
+  // Add designer section if user has designer capability
+  appendSection(
+    sections.designer,
+    t('settings.tabs.designerSection', 'Design'),
+  );
 
   // Add admin section if user is admin
-  if (sections.admin.length) {
-    const divider = h('div', { class: 'settings-sidebar-divider' });
-    const dividerLabel = h('span', {
-      class: 'settings-sidebar-divider-label',
-      text: t('settings.tabs.adminSection', 'Admin'),
-    });
-    divider.append(dividerLabel);
-    sidebar.append(divider);
-
-    for (const tab of sections.admin) {
-      sidebar.append(createTabButton(tab));
-    }
-  }
+  appendSection(
+    sections.instance,
+    t('settings.tabs.adminSection', 'Installation'),
+  );
 
   const setActiveTab = (tabKey) => {
     for (const [key, btn] of Object.entries(tabButtons)) {
