@@ -21,9 +21,9 @@
  *     is counted once on the instance-health `export` axis (D247). This is the
  *     only place that count happens: a refused export was not one, one whose
  *     build then failed or that went to the queue was still asked for.
- *   - {@link prepareQueuedExportContext} — the export worker builds what an
- *     earlier request was admitted for. It acts as the system (D252): the
- *     right was decided and the export counted when the job was queued.
+ *   - {@link prepareQueuedExportContext} — the worker rechecks the requester
+ *     against current deck rights, bounded by the audience at enqueue. It
+ *     does not count the export again.
  *   - {@link buildExportContext} — describe an already-authorized deck, as MCP
  *     does before returning a download link. No export has been requested yet,
  *     so this neither repeats the access check nor counts an export.
@@ -37,16 +37,22 @@
  * @module server/services/exports
  */
 
-import { loadPresentationForActor } from './presentations.js';
-import { getPresentation } from '../storage/presentations/index.js';
+import {
+  loadPresentationForActor,
+  mayOnPresentation,
+} from './presentations.js';
 import { countInstanceHealth } from '../storage/instance-health.js';
 import { repoRootOf } from '../storage/scope.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
-import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
+import {
+  stripLiveOnlySlidesFromPresentation,
+  projectPresentationForAudience,
+} from '../utils/public-output.js';
 import { loadThemeAssets } from '../utils/themes.js';
 import { buildThemeTemplateBuffer } from '../export/pptx-theme.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
-import { NotFoundError } from '../utils/errors.js';
+import { ForbiddenError } from '../utils/errors.js';
+import { normalizeEmail } from '../../shared/email.js';
 
 /**
  * @typedef {import('./actor.js').Actor} Actor
@@ -91,24 +97,29 @@ function langSuffixFor(exportLang) {
  *
  * @param {StorageScope} scope
  * @param {Object} pres
- * @param {{ exportLang: string|null, stripLiveOnly: boolean }} options
+ * @param {{ exportLang: string|null, stripLiveOnly: boolean, audience: 'author'|'reader' }} options
  * @returns {Promise<ExportContext>}
  */
 export async function buildExportContext(
   scope,
   pres,
-  { exportLang, stripLiveOnly },
+  { exportLang, stripLiveOnly, audience },
 ) {
+  const [theme, slideTypes] = await Promise.all([
+    loadThemeAssets(repoRootOf(scope), pres.theme, scope),
+    buildMergedSlideTypes({ organizationId: pres.organizationId }),
+  ]);
+  const safe = projectPresentationForAudience(pres, {
+    audience,
+    channel: 'viewer',
+    slideTypes,
+  });
   const projected = exportLang
-    ? projectPresentationForLang(pres, exportLang)
-    : pres;
+    ? projectPresentationForLang(safe, exportLang)
+    : safe;
   const filteredPres = stripLiveOnly
     ? stripLiveOnlySlidesFromPresentation(projected)
     : projected;
-  const [theme, slideTypes] = await Promise.all([
-    loadThemeAssets(repoRootOf(scope), projected.theme, scope),
-    buildMergedSlideTypes({ organizationId: pres.organizationId }),
-  ]);
   return {
     pres: projected,
     filteredPres,
@@ -146,36 +157,124 @@ export async function prepareExportContext(
   { presentationId, format, lang, allLanguages = false, stripLiveOnly = true },
 ) {
   const pres = await loadPresentationForActor(scope, identity, presentationId);
+  const audience = await exportAudience(pres, identity, format);
+  const actor = identity.actor;
+  const exportAccess = {
+    version: 1,
+    presentationId,
+    format,
+    audience,
+    actor: {
+      id: actor.id || null,
+      email: actor.email,
+      organizationId: actor.organizationId || null,
+      ...(actor.unrestricted === true ? { unrestricted: true } : {}),
+    },
+  };
   countInstanceHealth([{ axis: 'export', key: format }]);
-  return buildExportContext(scope, pres, {
-    exportLang: allLanguages ? null : normalizeLang(lang),
-    stripLiveOnly,
-  });
+  return {
+    ...(await buildExportContext(scope, pres, {
+      exportLang: allLanguages ? null : normalizeLang(lang),
+      stripLiveOnly,
+      audience,
+    })),
+    exportAccess,
+  };
+}
+
+/** The current deck right, independent of an API key's action permissions. */
+async function exportAudience(pres, identity, format, maximum = 'author') {
+  const audience =
+    maximum === 'author' && (await mayOnPresentation(pres, identity, 'write'))
+      ? 'author'
+      : 'reader';
+  if (audience === 'reader' && ['notes-md', 'notes-docx'].includes(format)) {
+    throw new ForbiddenError('Speaker notes require presentation write access');
+  }
+  return audience;
+}
+
+/** Missing pre-contract jobs/results are unsafe and must be exported again. */
+function requireExportAccess(access) {
+  if (
+    access?.version !== 1 ||
+    !access.presentationId ||
+    !access.format ||
+    !['author', 'reader'].includes(access.audience) ||
+    !normalizeEmail(access.actor?.email)
+  ) {
+    throw new ForbiddenError('Export access context missing; export again');
+  }
 }
 
 /**
- * Prepare a queued export: the worker acting as the system on what a request
- * was admitted for. The job payload carries the language the request already
- * normalized, or `null`.
- *
- * @param {StorageScope} scope - The job's scope (`jobScope`).
+ * Recheck a queued request without promoting its enqueue audience or counting
+ * it twice. No fallback to a system/author export for older jobs.
+ * @param {StorageScope} scope
  * @param {Object} input
- * @param {string} input.presentationId
- * @param {string|null} [input.lang]
- * @param {boolean} [input.stripLiveOnly=true]
  * @returns {Promise<ExportContext>}
- * @throws {NotFoundError} The deck is gone since the job was queued.
  */
 export async function prepareQueuedExportContext(
   scope,
-  { presentationId, lang, stripLiveOnly = true },
+  { presentationId, format, lang, stripLiveOnly = true, exportAccess },
 ) {
-  const pres = await getPresentation(scope, presentationId);
-  if (!pres) throw new NotFoundError('Presentation not found');
-  return buildExportContext(scope, pres, {
-    exportLang: normalizeLang(lang),
-    stripLiveOnly,
-  });
+  requireExportAccess(exportAccess);
+  if (
+    exportAccess.presentationId !== presentationId ||
+    exportAccess.format !== format
+  ) {
+    throw new ForbiddenError('Export access context does not match the job');
+  }
+  const identity = { actor: exportAccess.actor };
+  const pres = await loadPresentationForActor(scope, identity, presentationId);
+  const audience = await exportAudience(
+    pres,
+    identity,
+    format,
+    exportAccess.audience,
+  );
+  return {
+    ...(await buildExportContext(scope, pres, {
+      exportLang: normalizeLang(lang),
+      stripLiveOnly,
+      audience,
+    })),
+    exportAccess: { ...exportAccess, audience },
+  };
+}
+
+/**
+ * Check the finished artifact against the current downloader's rights. An
+ * author artifact cannot be downgraded after building: refuse and re-export.
+ * @param {StorageScope} scope
+ * @param {{actor: Actor}} identity
+ * @param {Object} exportAccess - Server-stamped context of the built artifact
+ * @returns {Promise<void>}
+ */
+export async function authorizeExportResult(scope, identity, exportAccess) {
+  requireExportAccess(exportAccess);
+  if (
+    normalizeEmail(identity.actor?.email) !==
+      normalizeEmail(exportAccess.actor.email) ||
+    (identity.actor?.organizationId || null) !==
+      exportAccess.actor.organizationId
+  ) {
+    throw new ForbiddenError('Export belongs to another actor');
+  }
+  const pres = await loadPresentationForActor(
+    scope,
+    identity,
+    exportAccess.presentationId,
+  );
+  const audience = await exportAudience(
+    pres,
+    identity,
+    exportAccess.format,
+    exportAccess.audience,
+  );
+  if (audience !== exportAccess.audience) {
+    throw new ForbiddenError('Presentation rights changed; export again');
+  }
 }
 
 /**

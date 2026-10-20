@@ -1475,7 +1475,7 @@ export function registerTools(
 
   server.tool(
     'export_presentation',
-    'Get a download URL for a finished export of a deck (PDF, pixel-perfect or editable PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
+    'Get a download URL for a finished export of a deck (PDF, pixel-perfect or editable PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand using that browser user’s current deck rights. Reader exports omit hidden slides and speaker notes; only authors receive author data. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
     {
       type: 'object',
       properties: {
@@ -1495,7 +1495,10 @@ export function registerTools(
       required: ['presentationId', 'format'],
     },
     async ({ presentationId, format, lang }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+      const { pres, mayEdit } = await getReadPresentation(
+        presentationId,
+        context,
+      );
 
       // Agent-friendly format name → in-app export route (cookie-authenticated).
       const EXPORT_PATHS = {
@@ -1530,7 +1533,11 @@ export function registerTools(
         const { filteredPres, slideTypes } = await buildExportContext(
           storageScopeOf(context),
           pres,
-          { exportLang: normalizeLang(lang), stripLiveOnly: true },
+          {
+            exportLang: normalizeLang(lang),
+            stripLiveOnly: true,
+            audience: mayEdit ? 'author' : 'reader',
+          },
         );
         imageSlides = filteredPres.slides.flatMap((slide, index) =>
           needsNativeComposition(slideTypes[slide.type], 'pptx')

@@ -16,8 +16,16 @@ Follow-along uses the same private-field removal and also excludes slides with `
 
 Follow responses, including Q&A state and both SSE streams, omit the live-session id. That id is the notes companion's bearer capability and stays server-side when serving the audience. The presenter receives it through the authorized session-creation route; follow clients address the presentation and visible slide instead. An already issued companion link remains valid under the existing session lifetime.
 
+## Exports
+
+Internal and public v1 deck exports apply the same actor-based reader projection before any builder receives `pres` or `filteredPres`. It covers every carried language list, including portable JSON and `.deck`. Format-specific live-only and export visibility choices remain in the existing builders. Owners and edit collaborators keep the author input; portable v1 preserves notes, visibility and its supported translations, while AI working metadata is not part of that portable format.
+
+Notes-only Markdown and Word downloads require deck-write rights and return 403 for view/comment readers. Other reader exports, including handoff packages, contain no author notes or AI fields and no `hideFromViewers` slide content.
+
+Queued exports store a server-selected actor, deck, format and maximum audience. Workers recheck current read/write rights before building: promotion cannot expand a reader job; demotion reduces an author job to reader (or refuses a notes-only job); loss of read rights refuses it. Completed queued and streamed artifacts remain bound to their requester and organization. Status/result download checks current deck rights again; an author artifact is refused after demotion and must be exported again. No artifact is shared between requesters. Results and jobs without the new access context are refused, so old unsafe cached artifacts cannot be served through these routes. There is no production migration or deletion of author data.
+
 ## Implementation boundary
 
-This contract currently covers the JSON, MCP and follow-along surfaces named above. Reader exports (including queued jobs and notes-only downloads) and published/OG/thumbnail previews require separate projection work. Their existing behavior must not be interpreted as satisfying this contract. Published visibility and export visibility remain distinct channel policies; this change does not redefine them.
+This contract currently covers the JSON, MCP, follow-along and individual deck export surfaces named above. Published/OG/thumbnail previews require separate projection work. Bulk account backups are a separate owner/creator-only surface and do not use the individual deck export job contract. Their existing behavior must not be interpreted as satisfying this contract. Published visibility and export visibility remain distinct channel policies; this change does not redefine them.
 
 See [authentication and sessions](auth-and-sessions.md), [MCP server](mcp-server.md), and the [public API schema](../openapi.yaml).
