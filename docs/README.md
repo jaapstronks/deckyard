@@ -221,6 +221,7 @@ nothing is discoverable only by `ls`.
 | [`tenant-isolation.md`](reference/tenant-isolation.md)           | Organizations and isolation shapes                                                                                         |
 | [`permission-model.md`](reference/permission-model.md)           | The per-deck permission ladder: grants, collaborators, the deciders and the cache                                          |
 | [`auth-and-sessions.md`](reference/auth-and-sessions.md)         | Session cookies/tokens, the login paths, and auth rate limits                                                              |
+| [`viewer-read-data.md`](reference/viewer-read-data.md)           | Reader JSON/MCP projection, author rights and implementation boundaries                                                    |
 | [`sandbox-mode.md`](reference/sandbox-mode.md)                   | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup                                       |
 | [`feature-flags.md`](reference/feature-flags.md)                 | Feature-flag env vars: where they live, the `X_ENABLED` polarity rule, the legacy `DISABLE_*` window                       |
 | [`security-posture.md`](reference/security-posture.md)           | Server-side hardening controls, what each blocks, and where it lives                                                       |
