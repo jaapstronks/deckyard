@@ -1,3 +1,4 @@
+import { walkFiles } from './helpers/walk-files.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -37,19 +38,14 @@ const SKIP_DIRS = new Set([
   'server/uploads',
 ]);
 
-async function walk(dir, out = []) {
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    const rel = path.relative(REPO_ROOT, full);
-    if (SKIP_DIRS.has(rel) || SKIP_DIRS.has(entry.name)) continue;
-    if (entry.isDirectory()) await walk(full, out);
-    else if (entry.name.endsWith('.js')) out.push(rel);
-  }
-  return out;
-}
-
 test('zod is imported only from server/utils/ai/schemas', async () => {
-  const files = await walk(REPO_ROOT);
+  const files = walkFiles(REPO_ROOT, {
+    extensions: ['.js'],
+    filesOnly: false,
+    skipEntry: (entry, full) =>
+      SKIP_DIRS.has(path.relative(REPO_ROOT, full)) ||
+      SKIP_DIRS.has(entry.name),
+  }).map((file) => path.relative(REPO_ROOT, file));
   const offenders = [];
 
   for (const rel of files) {
