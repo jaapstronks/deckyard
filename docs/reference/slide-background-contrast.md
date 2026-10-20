@@ -59,6 +59,14 @@ Key properties:
 
 `light` / `dark` skip detection and force the theme's light / dark text colour.
 
+## Historical theme-default text
+
+The optional `slideBgText` field accepts the empty string (`''`) for no text-colour override. The schema-v24 normalizer folds the historical `default` value to this empty enum in top-level slides and every language version, including library items through the same migration funnel. `default` remains invalid for newly authored content.
+
+The empty value preserves historical rendering, including any manual overlay. It also keeps stored auto recommendations dormant: unlike `auto`, it adds neither an automatic text class nor an automatic scrim. Absence renders the same immediately, but the editor and server contrast-settling paths initialize a null or absent value to `auto`. Keeping an explicit empty enum therefore preserves the appearance through opening the inspector and subsequent saves too. The fold runs after the legacy `bgImage` migration so that migration cannot mistake the old explicit theme-default choice for an unset choice and force light text.
+
+No database backfill is required to unblock existing decks. Ordinary deck reads and version reads pass through `migratePresentation`; duplication applies that same funnel before copying, and slide-library reads use `migrateLibraryItem`. Existing collaborative binaries pass their projection through the same funnel on load, before peers connect. When that projection changes, the existing codec applies the diff and persists the repaired binary, retaining collaborative text identities and translation provenance. Current binaries are not rewritten. Collab stores also normalize before saving deck JSON. The read funnel does not rewrite source rows or historical snapshots. A future requirement to remove historical spellings from stored bytes would need a numbered database migration covering those stores, rather than a side effect on read.
+
 ## How `auto` overlay works
 
 When `slideBgOverlay` is `auto`, a subtle scrim is added **only when** detection

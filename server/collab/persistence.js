@@ -99,6 +99,20 @@ export function createCollabPersistence({
       // initializing a nested Y.Map independently would compete for its slot.
       // This adds no records or inferred translation history.
       codec.ensureTranslationSources(document);
+      // A binary can predate any canonical shape fold, just like the JSON.
+      // Normalize its projection through the same funnel before peers see it,
+      // then apply only the diff so existing collaborative text identities and
+      // translation provenance survive (B800).
+      const before = codec.projectDocToPresentation(document);
+      const canonical = migratePresentation(structuredClone(before));
+      if (!isDeepStrictEqual(before, canonical)) {
+        codec.applyPresentationToDoc(canonical, document, { base: before });
+        await setYDocState(
+          storageScopeFor(documentName),
+          id,
+          Y.encodeStateAsUpdate(document),
+        );
+      }
       return document;
     }
 
