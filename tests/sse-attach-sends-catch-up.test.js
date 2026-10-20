@@ -13,8 +13,9 @@
  */
 
 import { test } from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,13 +26,11 @@ const repoRoot = path.resolve(
 
 /** @returns {string[]} every .js file under `dir` */
 function walk(dir) {
-  const out = [];
-  for (const entry of readdirSync(dir)) {
-    const full = path.join(dir, entry);
-    if (statSync(full).isDirectory()) out.push(...walk(full));
-    else if (entry.endsWith('.js')) out.push(full);
-  }
-  return out;
+  return walkFiles(dir, {
+    extensions: ['.js'],
+    filesOnly: false,
+    followSymlinks: true,
+  });
 }
 
 test('a route that attaches an SSE client also sends the catch-up', () => {

@@ -18,6 +18,7 @@
  */
 
 import { describe, it } from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -346,19 +347,15 @@ describe('the ceiling: nothing re-derives the grouping by hand', () => {
 
   const sources = () => {
     const out = [];
-    const walk = (dir) => {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.'))
-          continue;
-        const abs = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          walk(abs);
-          continue;
-        }
-        if (!entry.name.endsWith('.js')) continue;
-        out.push(abs);
-      }
-    };
+    const walk = (dir) =>
+      out.push(
+        ...walkFiles(dir, {
+          extensions: ['.js'],
+          filesOnly: false,
+          skipEntry: (entry) =>
+            entry.name === 'node_modules' || entry.name.startsWith('.'),
+        }),
+      );
     for (const dir of ['client', 'server', 'shared', 'scripts'])
       walk(path.join(repoRoot, dir));
     return out;

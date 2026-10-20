@@ -19,6 +19,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,22 +54,12 @@ const PATTERNS = [
   [/\.createElementNS\(/, 'createElementNS'],
 ];
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === 'vendor') continue;
-      walk(full, out);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
 function scan() {
   const hits = new Map();
-  for (const file of walk(CLIENT_DIR)) {
+  for (const file of walkFiles(CLIENT_DIR, {
+    extensions: ['.js'],
+    skipDirs: ['vendor'],
+  })) {
     const rel = path.relative(repoRoot, file);
     if (rel === ICONS_MODULE) continue;
     const src = fs.readFileSync(file, 'utf8');
@@ -106,7 +97,10 @@ test('every icon() name is vendored', () => {
   const declared = new Set(UI_ICON_NAMES);
   const unknown = [];
   const unvendored = [];
-  for (const file of walk(CLIENT_DIR)) {
+  for (const file of walkFiles(CLIENT_DIR, {
+    extensions: ['.js'],
+    skipDirs: ['vendor'],
+  })) {
     const rel = path.relative(repoRoot, file);
     const src = fs.readFileSync(file, 'utf8');
     for (const m of src.matchAll(/\bicon\(\s*['"]([a-z0-9-]+)['"]/g)) {

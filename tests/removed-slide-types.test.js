@@ -15,6 +15,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -103,24 +104,16 @@ function collectFiles() {
     // No git: walk the roots directly.
   }
   const out = [];
-  const walk = (relDir) => {
-    let entries;
-    try {
-      entries = fs.readdirSync(path.join(REPO_ROOT, relDir), {
-        withFileTypes: true,
-      });
-    } catch {
-      return; // an optional tree (docs/ops on a trimmed checkout) is fine
-    }
-    for (const entry of entries) {
-      const rel = `${relDir}/${entry.name}`;
-      if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name)) walk(rel);
-        continue;
-      }
-      if (isScannable(rel)) out.push(rel);
-    }
-  };
+  const walk = (relDir) =>
+    out.push(
+      ...walkFiles(path.join(REPO_ROOT, relDir), {
+        skipDirs: [...SKIP_DIRS],
+        filesOnly: false,
+        ignoreReadErrors: true,
+      })
+        .map((file) => path.relative(REPO_ROOT, file))
+        .filter(isScannable),
+    );
   for (const root of SCAN_ROOTS) walk(root);
   return out;
 }

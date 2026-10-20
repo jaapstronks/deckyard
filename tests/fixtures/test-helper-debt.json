@@ -7,10 +7,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/api-body-object-guard.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/app-css-tokens.test.js": {
     "http": 0,
     "walkers": 1
@@ -27,18 +23,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/deck-language-axis.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/docs-paths-resolvable.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/docs-prose-claims.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/editor-form-surfaces.test.js": {
     "http": 0,
     "walkers": 1
@@ -47,27 +31,7 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/empty-state-single-vocabulary.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/escape-contract-guard.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/export-worker-theme.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/feature-declarations.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/feature-entries-follow-flags.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/follow-invite-insertability.test.js": {
     "http": 0,
     "walkers": 1
   },
@@ -79,19 +43,11 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/glyph-icon-guard.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/i18n-sync-plan.test.js": {
     "http": 0,
     "walkers": 1
   },
   "tests/inline-ghost-label-keys.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/inline-svg-single-source.test.js": {
     "http": 0,
     "walkers": 1
   },
@@ -107,10 +63,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/live-session-vocabulary.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/llm-app-error.test.js": {
     "http": 0,
     "walkers": 1
@@ -119,37 +71,13 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/module-layout.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/nested-surface-contrast.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/notion-datasource-app-error.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/one-helper-per-concept-guard.test.js": {
     "http": 0,
     "walkers": 1
   },
   "tests/openai-ai-app-error.test.js": {
     "http": 0,
     "walkers": 2
-  },
-  "tests/organization-vocabulary.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/removed-slide-types.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/route-captures-guard.test.js": {
-    "http": 0,
-    "walkers": 1
   },
   "tests/route-dispatch-guard.test.js": {
     "http": 0,
@@ -159,27 +87,11 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/scripts-reachable-gate.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/slide-ai-aggregator.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/slide-type-directory-boundary.test.js": {
     "http": 0,
     "walkers": 1
   },
-  "tests/slide-type-groups.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/slide-type-marker-guard.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/sse-attach-sends-catch-up.test.js": {
     "http": 0,
     "walkers": 1
   },
@@ -196,10 +108,6 @@
     "walkers": 1
   },
   "tests/storage-reason-vocabulary.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/visually-hidden-guard.test.js": {
     "http": 0,
     "walkers": 1
   },

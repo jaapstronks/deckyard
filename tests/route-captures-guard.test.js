@@ -29,8 +29,9 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -55,13 +56,7 @@ const UNDECLARED_ROWS = {
 
 /** @returns {string[]} every `.js` file under `server/routes`, repo-relative. */
 function walk(dir) {
-  const out = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walk(full));
-    else if (entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
+  return walkFiles(dir, { extensions: ['.js'], filesOnly: false });
 }
 
 /**

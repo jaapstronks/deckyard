@@ -30,8 +30,9 @@
  */
 
 import { test } from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -197,16 +198,16 @@ function claimsAbout(rel) {
  */
 function sourceFiles() {
   const out = [];
-  const walk = (rel, ext) => {
-    for (const entry of readdirSync(path.join(ROOT, rel), {
-      withFileTypes: true,
-    })) {
-      if (SKIP.has(entry.name) || entry.isSymbolicLink()) continue;
-      const child = path.join(rel, entry.name);
-      if (entry.isDirectory()) walk(child, ext);
-      else if (ext.includes(path.extname(entry.name))) out.push(child);
-    }
-  };
+  const walk = (rel, ext) =>
+    out.push(
+      ...walkFiles(path.join(ROOT, rel), {
+        extensions: ext,
+        filesOnly: false,
+        skipEntry: (entry) => SKIP.has(entry.name) || entry.isSymbolicLink(),
+      })
+        .filter((file) => ext.includes(path.extname(file)))
+        .map((file) => path.relative(ROOT, file)),
+    );
   for (const { dir, ext } of SCANNED) walk(dir, ext);
   return out;
 }

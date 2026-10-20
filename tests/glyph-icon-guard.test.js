@@ -30,6 +30,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -276,22 +277,10 @@ export function glyphIcons(text, { keyLegend = false } = {}) {
   return icons;
 }
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name !== 'vendor') walk(full, out);
-    } else if (entry.isFile()) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
 /** @returns {Map<string, string[]>} file → `line: glyph` per glyph icon */
 function scan() {
   const hits = new Map();
-  for (const file of walk(CLIENT_DIR)) {
+  for (const file of walkFiles(CLIENT_DIR, { skipDirs: ['vendor'] })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     if (rel in SLIDE_CONTENT) continue;
     const src = fs.readFileSync(file, 'utf8');
