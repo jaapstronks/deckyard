@@ -1,3 +1,4 @@
+import { walkFiles } from './helpers/walk-files.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -35,17 +36,11 @@ const REPO_ROOT = path.resolve(
 // (not member access) after `body`, so it does not match.
 const FIELD_TYPEOF = /\btypeof\s+body\s*[?.[]/;
 
-async function walk(dir, out = []) {
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) await walk(full, out);
-    else if (entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
 test('no route type-checks a request-body field with a bare typeof', async () => {
-  const files = await walk(path.join(REPO_ROOT, 'server/routes'));
+  const files = walkFiles(path.join(REPO_ROOT, 'server/routes'), {
+    extensions: ['.js'],
+    filesOnly: false,
+  });
   const offenders = [];
 
   for (const file of files) {

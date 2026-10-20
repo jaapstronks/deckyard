@@ -20,6 +20,7 @@
  * Run with: node --test tests/form-input-size-ladder.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
@@ -29,21 +30,14 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PRIMITIVES = 'client/styles/shared/primitives.css';
 
-/** Every `.js` file under a directory, recursively. */
-async function walkJs(dir, out = []) {
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    if (entry.name === 'vendor' || entry.name === 'node_modules') continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) await walkJs(full, out);
-    else if (entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
 describe('form-input size ladder', () => {
   it('every size modifier used in markup has an unscoped definition', async () => {
     const used = new Set();
-    for (const file of await walkJs(path.join(ROOT, 'client'))) {
+    for (const file of walkFiles(path.join(ROOT, 'client'), {
+      extensions: ['.js'],
+      filesOnly: false,
+      skipEntry: (entry) => ['vendor', 'node_modules'].includes(entry.name),
+    })) {
       const src = await fs.readFile(file, 'utf8');
       for (const m of src.matchAll(/form-input-[a-z0-9-]+/g)) used.add(m[0]);
     }
