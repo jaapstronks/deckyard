@@ -12,10 +12,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { mkdtempSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import {
   writeUploadedFile,
@@ -99,20 +100,17 @@ test('collab authorization failures keep their statuses', async () => {
 
 test('no bare .statusCode assignment left under storage/ and collab/', () => {
   const offenders = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir)) {
-      const full = path.join(dir, entry);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (
-        entry.endsWith('.js') &&
-        /\.statusCode = /.test(readFileSync(full, 'utf8'))
-      ) {
-        offenders.push(path.relative(repoRoot, full));
+  for (const dir of ['server/storage', 'server/collab']) {
+    for (const file of walkFiles(path.join(repoRoot, dir), {
+      extensions: ['.js'],
+      followSymlinks: true,
+      filesOnly: false,
+    })) {
+      if (/\.statusCode = /.test(readFileSync(file, 'utf8'))) {
+        offenders.push(path.relative(repoRoot, file));
       }
     }
-  };
-  walk(path.join(repoRoot, 'server/storage'));
-  walk(path.join(repoRoot, 'server/collab'));
+  }
   assert.deepEqual(
     offenders,
     [],

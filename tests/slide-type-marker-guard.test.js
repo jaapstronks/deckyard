@@ -25,6 +25,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import { buildStandaloneHtml } from '../server/export/html.js';
 import { buildEmbedHtml } from '../server/utils/embed-html/index.js';
@@ -78,16 +79,14 @@ test('no source spells a slide wrapper without the type marker', () => {
   const roots = ['client', 'server', 'shared'].map((d) =>
     path.join(repoRoot, d),
   );
-  const files = [];
-  const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === 'vendor' || entry.name === 'node_modules') continue;
-      const p = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(p);
-      else if (entry.name.endsWith('.js')) files.push(p);
-    }
-  };
-  roots.forEach(walk);
+  const files = roots.flatMap((root) =>
+    walkFiles(root, {
+      extensions: ['.js'],
+      skipEntry: (entry) =>
+        entry.name === 'vendor' || entry.name === 'node_modules',
+      filesOnly: false,
+    }),
+  );
 
   // A wrapper literal: an HTML attribute `class="deck-slide…"` or an h() prop
   // `class: 'deck-slide…'`. Selectors (`.deck-slide`) are not wrappers.
