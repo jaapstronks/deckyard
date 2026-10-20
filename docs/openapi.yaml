@@ -407,7 +407,7 @@ paths:
       tags:
         - Presentations
       summary: Get a presentation
-      description: Returns a single presentation by ID.
+      description: Returns a single presentation by ID. Deck readers without write rights receive only viewer-visible slides, without speaker notes or AI review metadata in any language version. Owners and editors keep author data even with a read-only API key.
       parameters:
         - name: id
           in: path
@@ -679,7 +679,7 @@ paths:
       tags:
         - Slides
       summary: Get a slide
-      description: Returns a single slide from a presentation.
+      description: Returns a single slide from the same audience projection as the presentation GET. Hidden slides return 404 to readers without deck-write rights; reader responses omit notes.
       parameters:
         - name: id
           in: path
