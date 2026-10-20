@@ -25,8 +25,6 @@ export function createThemesTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-themes',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-themes-btn',
     'data-tab': 'themes',
   });
 

@@ -69,7 +69,7 @@ function visibleTabKeys(user) {
     canSeeOrganization: isOrganizationMember(user),
     canSeeMembers: canSeeMemberList(user),
     activeTab: 'account',
-    onTabChange: () => {},
+    onNavigate: () => {},
   });
   return Array.from(sidebar.el.querySelectorAll('[data-tab]')).map(
     (b) => b.dataset.tab,

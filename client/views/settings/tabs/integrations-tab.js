@@ -4,19 +4,18 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createAdminWebhooksSection } from '../sections/index.js';
+import { createUnsavedTracker } from '../unsaved-changes.js';
 import {
   fetchAppSettings,
   updateAppSettings,
   invalidateSettingsCache,
 } from '../../../lib/net/settings.js';
 
-/** @returns {{el: HTMLElement, load: () => Promise<void>}} */
+/** @returns {{el: HTMLElement, load: () => Promise<void>, hasUnsavedChanges: () => boolean, discardChanges: () => void}} */
 export function createIntegrationsTab() {
   const el = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-integrations',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-integrations-btn',
     'data-tab': 'integrations',
   });
   const title = h('h2', {
@@ -38,12 +37,20 @@ export function createIntegrationsTab() {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),
   });
+  const unsaved = createUnsavedTracker({
+    root: card,
+    read: webhooks.getValues,
+    write: webhooks.setValues,
+  });
   el.append(
     title,
     description,
     card,
     error.el,
-    h('div', { class: 'row is-end settings-policy-actions' }, [save]),
+    h('div', { class: 'row is-end settings-policy-actions' }, [
+      unsaved.statusEl,
+      save,
+    ]),
   );
   let loaded = false;
   let loading = false;
@@ -58,6 +65,7 @@ export function createIntegrationsTab() {
     try {
       const app = await fetchAppSettings();
       webhooks.setValues(app?.webhooks);
+      unsaved.markSaved();
       loaded = true;
       webhooks.setDisabled(false);
       save.textContent = t('common.save', 'Save');
@@ -81,6 +89,7 @@ export function createIntegrationsTab() {
     try {
       await updateAppSettings({ webhooks: webhooks.getValues() });
       invalidateSettingsCache();
+      unsaved.markSaved();
       toast.success(t('settings.saved', 'Saved.'));
     } catch (err) {
       error.show(err.message);
@@ -89,5 +98,10 @@ export function createIntegrationsTab() {
       webhooks.setDisabled(!loaded);
     }
   });
-  return { el, load };
+  return {
+    el,
+    load,
+    hasUnsavedChanges: unsaved.isDirty,
+    discardChanges: unsaved.discard,
+  };
 }

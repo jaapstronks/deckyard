@@ -218,8 +218,6 @@ export function createAnalyticsTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-analytics',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-analytics-btn',
     'data-tab': 'analytics',
   });
 

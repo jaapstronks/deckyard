@@ -603,6 +603,7 @@
   "settings.organization.themeListCustom": "This organization chooses its available themes.",
   "settings.organization.themeListInherited": "The installation allowlist is in effect.",
   "settings.organization.themePolicyHint": "The stored list limits available themes. An empty stored list inherits the installation allowlist.",
+  "settings.overview": "Overview",
   "settings.privacy.allowAttribution": "Allow my views to be attributed to me",
   "settings.privacy.allowAttributionHint": "When enabled, presenters can see your name when you view their presentations.",
   "settings.privacy.disableTracking": "Opt out of all engagement tracking",
@@ -775,6 +776,7 @@
   "settings.tabs.organization": "Organization",
   "settings.tabs.organizationSection": "Organization",
   "settings.tabs.preferences": "Preferences",
+  "settings.tabs.sectionCaption": "Section",
   "settings.tabs.slideTypes": "Slide Types",
   "settings.tabs.themes": "Themes",
   "settings.tabs.users": "Users",
@@ -908,5 +910,7 @@
   "settings.uiLocale.hint": "The language of this application's interface, unrelated to the language used in slides.",
   "settings.uiLocale.tier1": "Fully supported",
   "settings.uiLocale.tier2": "Best effort — falls back to English",
-  "settings.uiLocale.title": "Application language"
+  "settings.uiLocale.title": "Application language",
+  "settings.unsaved.message": "This section has changes that are not saved yet. Leaving it discards them.",
+  "settings.unsaved.title": "Discard unsaved changes?"
 }

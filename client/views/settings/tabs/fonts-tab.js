@@ -33,7 +33,6 @@ export function createFontsTab({ user } = {}) {
   const el = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-fonts',
-    role: 'tabpanel',
   });
 
   let families = [];

@@ -603,6 +603,7 @@
   "settings.organization.themeListCustom": "Deze organisatie kiest zelf de beschikbare thema’s.",
   "settings.organization.themeListInherited": "De installatielijst voor thema’s is actief.",
   "settings.organization.themePolicyHint": "De opgeslagen lijst beperkt welke thema’s beschikbaar zijn. Een lege lijst erft de installatielijst.",
+  "settings.overview": "Overzicht",
   "settings.privacy.allowAttribution": "Mijn naam mag worden getoond in engagement inzichten",
   "settings.privacy.allowAttributionHint": "Indien ingeschakeld kunnen presentatoren je naam zien in plaats van alleen \"teamlid bekeken\".",
   "settings.privacy.disableTracking": "Opt-out van alle engagement tracking",
@@ -775,6 +776,7 @@
   "settings.tabs.organization": "Organisatie",
   "settings.tabs.organizationSection": "Organisatie",
   "settings.tabs.preferences": "Voorkeuren",
+  "settings.tabs.sectionCaption": "Onderdeel",
   "settings.tabs.slideTypes": "Slide-types",
   "settings.tabs.themes": "Thema's",
   "settings.tabs.users": "Gebruikers",
@@ -908,5 +910,7 @@
   "settings.uiLocale.hint": "De taal van de interface van deze applicatie, los van de taal die in slides wordt gebruikt.",
   "settings.uiLocale.tier1": "Volledig ondersteund",
   "settings.uiLocale.tier2": "Best effort — valt terug op Engels",
-  "settings.uiLocale.title": "Applicatietaal"
+  "settings.uiLocale.title": "Applicatietaal",
+  "settings.unsaved.message": "Dit onderdeel heeft wijzigingen die nog niet zijn opgeslagen. Als je het verlaat, gaan ze verloren.",
+  "settings.unsaved.title": "Niet-opgeslagen wijzigingen weggooien?"
 }

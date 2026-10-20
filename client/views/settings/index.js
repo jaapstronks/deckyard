@@ -1,6 +1,11 @@
 /**
  * Settings Page
- * Main settings page with tabbed navigation
+ *
+ * One section on screen at a time, addressed by the URL hash (B805): a
+ * sidebar link pushes a history entry, Back/Forward/reload restore the
+ * section, and an unknown or unreachable hash is replaced by the default in
+ * one place (`resolveTab`). A switch away from a form with unsaved changes
+ * asks first.
  */
 
 import { h } from '../../lib/dom/index.js';
@@ -12,26 +17,43 @@ import {
   isOrganizationMember,
 } from '../../../shared/organization-role.js';
 import { reachableTabs, resolveTab } from './tab-registry.js';
-import { nav, replaceHash } from '../../lib/state/router.js';
+import {
+  nav,
+  pushHash,
+  replaceHash,
+  currentHash,
+} from '../../lib/state/router.js';
 import { icon } from '../../lib/dom/icons.js';
+import { confirmModal } from '../../lib/dom/modal.js';
 import { debugLog } from '../../lib/state/debug.js';
 
 /**
- * The tab named in the URL hash, or the default when this viewer may not
- * reach it.
- * @param {import('./tab-registry.js').SettingsAccess} access
- * @returns {string} Tab key
+ * Ask before dropping unsaved edits. Resolves true when there are none or the
+ * user chose to discard them.
+ * @returns {Promise<boolean>}
  */
-function getTabFromHash(access) {
-  return resolveTab(location.hash.slice(1), access);
+function confirmDiscard() {
+  return confirmModal(document.body, {
+    title: t('settings.unsaved.title', 'Discard unsaved changes?'),
+    message: t(
+      'settings.unsaved.message',
+      'This section has changes that are not saved yet. Leaving it discards them.',
+    ),
+    confirmLabel: t('common.discardChanges', 'Discard changes'),
+    cancelLabel: t('common.keepEditing', 'Keep editing'),
+    danger: true,
+  });
 }
 
 /**
- * Set the URL hash without triggering navigation.
- * @param {string} tab - Tab key
+ * Move focus to the heading of a section that was just navigated to, so a
+ * keyboard or screen-reader user lands where the content starts.
+ * @param {HTMLElement} view
  */
-function setTabHash(tab) {
-  replaceHash(tab);
+function focusSectionHeading(view) {
+  const heading = view.querySelector('h2') || view;
+  if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+  heading.focus({ preventScroll: false });
 }
 
 /**
@@ -54,22 +76,32 @@ export async function renderSettings(root, { user } = {}) {
     canSeeMembers: canSeeMemberList(user),
     canSeeOrganization: isOrganizationMember(user),
   };
-  const initialTab = getTabFromHash(access);
+  const initialTab = resolveTab(currentHash(), access);
 
   const shell = h('div', { class: 'app-shell settings-page' });
 
-  // Topbar
+  // Topbar. The arrow leads to the overview and says so: it is a link to
+  // /app, not the browser's Back, which now walks through the sections.
   const topbar = h('header', {
     class: 'topbar settings-topbar',
     role: 'banner',
   });
-  const backBtn = h('button', {
-    class: 'btn btn-secondary btn-icon',
-    'aria-label': t('common.back', 'Back'),
-    title: t('common.back', 'Back'),
-    onclick: () => nav('/app'),
-  });
-  backBtn.append(icon('arrow-left'));
+  const overviewLink = h(
+    'a',
+    {
+      class: 'btn btn-secondary settings-overview-link',
+      href: '/app',
+      onclick: async (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey) return;
+        event.preventDefault();
+        if (await mayLeaveSection()) nav('/app');
+      },
+    },
+    [
+      icon('arrow-left'),
+      h('span', { text: t('settings.overview', 'Overview') }),
+    ],
+  );
 
   const topbarTitle = h('div', { class: 'topbar-title' });
   topbarTitle.append(
@@ -79,26 +111,29 @@ export async function renderSettings(root, { user } = {}) {
     }),
   );
 
-  topbar.append(backBtn, topbarTitle);
+  topbar.append(overviewLink, topbarTitle);
   shell.append(topbar);
 
   // Create tabs
   const tabs = {};
   const tabLoaders = {};
   const tabDestroyers = [];
+  const tabGuards = {};
 
   /**
    * Register a tab. Going through one seam means a tab that owns a timer or a
    * stream (the export tab polls a job every 2s and holds a notification
-   * EventSource) can hand back a `destroy` and be sure it runs on unmount —
-   * these used to run for the lifetime of the browser tab.
+   * EventSource) can hand back a `detach` and be sure it runs on unmount —
+   * these used to run for the lifetime of the browser tab. A tab with
+   * explicit-Save forms hands back `hasUnsavedChanges` and `discardChanges`.
    * @param {string} key - Tab key (matches the URL hash)
-   * @param {{el: HTMLElement, load?: Function, destroy?: Function}} tab
+   * @param {{el: HTMLElement, load?: Function, detach?: Function, hasUnsavedChanges?: () => boolean, discardChanges?: () => void}} tab
    */
   const addTab = (key, tab) => {
     tabs[key] = tab.el;
     if (tab.load) tabLoaders[key] = tab.load;
     if (tab.detach) tabDestroyers.push(tab.detach);
+    if (tab.hasUnsavedChanges) tabGuards[key] = tab;
   };
 
   for (const tab of reachableTabs(access)) {
@@ -108,11 +143,26 @@ export async function renderSettings(root, { user } = {}) {
   // Current active tab
   let activeTab = initialTab;
 
-  // Set active tab
-  const setActiveTab = (tabKey) => {
-    tabKey = resolveTab(tabKey, access);
+  /**
+   * Whether the section on screen may be left: true when it holds no unsaved
+   * edits or the user chose to discard them (which restores the saved state).
+   * @returns {Promise<boolean>}
+   */
+  async function mayLeaveSection() {
+    const guard = tabGuards[activeTab];
+    if (!guard?.hasUnsavedChanges()) return true;
+    if (!(await confirmDiscard())) return false;
+    guard.discardChanges?.();
+    return true;
+  }
+
+  /**
+   * Show a section. The caller has already settled the URL.
+   * @param {string} tabKey - A resolved key
+   * @param {{ focus?: boolean }} [opts]
+   */
+  const showTab = (tabKey, { focus = false } = {}) => {
     activeTab = tabKey;
-    setTabHash(tabKey);
     sidebar.setActiveTab(tabKey);
 
     // Update tab visibility
@@ -123,6 +173,24 @@ export async function renderSettings(root, { user } = {}) {
     // Lazy load tab data
     const loader = tabLoaders[tabKey];
     if (loader) loader();
+    if (focus && tabs[tabKey]) focusSectionHeading(tabs[tabKey]);
+  };
+
+  /**
+   * A sidebar link was followed: ask about unsaved edits, then push the
+   * section as a history entry.
+   * @param {string} requested
+   */
+  const navigateTo = async (requested) => {
+    const tabKey = resolveTab(requested, access);
+    sidebar.close();
+    if (tabKey === activeTab) {
+      focusSectionHeading(tabs[tabKey]);
+      return;
+    }
+    if (!(await mayLeaveSection())) return;
+    pushHash(tabKey);
+    showTab(tabKey, { focus: true });
   };
 
   // Sidebar
@@ -130,7 +198,7 @@ export async function renderSettings(root, { user } = {}) {
     ...access,
     organizationId: user?.organizationId,
     activeTab: initialTab,
-    onTabChange: setActiveTab,
+    onNavigate: navigateTo,
   });
   shell.append(sidebar.el);
 
@@ -149,14 +217,34 @@ export async function renderSettings(root, { user } = {}) {
   shell.append(content);
   root.append(shell);
 
-  // Set initial active tab (triggers load)
-  setActiveTab(initialTab);
+  // `/settings` and an unknown or unreachable hash land on the default,
+  // corrected in place rather than as a new history entry.
+  replaceHash(initialTab);
+  showTab(initialTab);
 
-  // Handle hash changes
-  const handleHashChange = () => {
-    const newTab = getTabFromHash(access);
-    if (newTab !== activeTab) {
-      setActiveTab(newTab);
+  // Back/Forward and a hand-edited hash. The router leaves hash-only history
+  // steps to this listener, so the page (and its unsaved edits) survives.
+  let restoring = false;
+  const handleHashChange = async () => {
+    if (restoring) return;
+    const requested = currentHash();
+    const tabKey = resolveTab(requested, access);
+    if (tabKey === activeTab) {
+      if (requested !== tabKey) replaceHash(tabKey);
+      return;
+    }
+    restoring = true;
+    try {
+      if (!(await mayLeaveSection())) {
+        // The address already moved; put it back on the section that kept
+        // its edits.
+        replaceHash(activeTab);
+        return;
+      }
+      if (requested !== tabKey) replaceHash(tabKey);
+      showTab(tabKey, { focus: true });
+    } finally {
+      restoring = false;
     }
   };
   window.addEventListener('hashchange', handleHashChange);
@@ -164,6 +252,7 @@ export async function renderSettings(root, { user } = {}) {
   // Cleanup
   return () => {
     window.removeEventListener('hashchange', handleHashChange);
+    sidebar.detach();
     for (const destroy of tabDestroyers) {
       try {
         destroy();

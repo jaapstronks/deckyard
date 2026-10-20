@@ -215,6 +215,14 @@ mutations.length = 0;
 denyOrganizationSave = false;
 
 await open('integrations');
+// A hash-only goto stays in the same document since B805, so the section
+// loads after it becomes active; Save is usable once that load settled.
+await page.waitForFunction(
+  () =>
+    !document.querySelector(
+      '#settings-tab-integrations .settings-policy-actions button',
+    ).disabled,
+);
 await page.evaluate(() =>
   document
     .querySelector('#settings-tab-integrations .settings-policy-actions button')
@@ -229,6 +237,14 @@ assert.deepEqual(Object.keys(mutations[0].body), ['webhooks']);
 mutations.length = 0;
 
 await open('email');
+// A hash-only goto stays in the same document since B805, so the section
+// loads after it becomes active; Save is usable once that load settled.
+await page.waitForFunction(
+  () =>
+    !document.querySelector(
+      '#settings-tab-email .settings-policy-actions button',
+    ).disabled,
+);
 await page.evaluate(() =>
   document
     .querySelector('#settings-tab-email .settings-policy-actions button')

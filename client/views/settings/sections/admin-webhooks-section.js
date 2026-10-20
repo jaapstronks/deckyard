@@ -5,6 +5,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
+import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
 
 /**
  * Webhook configuration definition.
@@ -96,38 +97,24 @@ export function createAdminWebhooksSection() {
 
   // Create input fields for each webhook
   for (const config of WEBHOOK_CONFIGS) {
-    const label = h('div', {
-      class: 'field-label',
-      text: t(config.titleKey, config.title),
-    });
-
     const input = h('input', {
       class: 'form-input',
+      inputmode: 'url',
       placeholder: 'https://…',
       value: '',
     });
 
-    const inputHint = h('div', {
-      class: 'help',
-      text: t(config.hintKey, config.hint),
-    });
-
     inputs[config.key] = input;
-    elements.push(label, input, inputHint);
+    elements.push(
+      createFieldWrap(t(config.titleKey, config.title), input, {
+        helpText: t(config.hintKey, config.hint),
+      }),
+    );
   }
 
   // Optional HMAC signing secret. Not per-event: one secret signs every
   // delivery, sent in the `x-sb-signature` header (B81). A password field so
   // the value is not shoulder-surfed in the admin UI.
-  const secretLabel = h('div', {
-    class: 'field-label',
-    style: 'margin-top:10px;',
-    text: t(
-      'settings.admin.webhooks.signingSecret.title',
-      'Signing secret (optional)',
-    ),
-  });
-
   const secretInput = h('input', {
     class: 'form-input',
     type: 'password',
@@ -136,16 +123,22 @@ export function createAdminWebhooksSection() {
     value: '',
   });
 
-  const secretHint = h('div', {
-    class: 'help',
-    text: t(
-      'settings.admin.webhooks.signingSecret.hint',
-      'When set, each delivery is signed with HMAC-SHA256 over the request body and the signature is sent in the x-sb-signature header as sha256=<hex>. Leave empty to send unsigned.',
-    ),
-  });
-
   inputs.signingSecret = secretInput;
-  elements.push(secretLabel, secretInput, secretHint);
+  elements.push(
+    createFieldWrap(
+      t(
+        'settings.admin.webhooks.signingSecret.title',
+        'Signing secret (optional)',
+      ),
+      secretInput,
+      {
+        helpText: t(
+          'settings.admin.webhooks.signingSecret.hint',
+          'When set, each delivery is signed with HMAC-SHA256 over the request body and the signature is sent in the x-sb-signature header as sha256=<hex>. Leave empty to send unsigned.',
+        ),
+      },
+    ),
+  );
 
   return {
     elements,

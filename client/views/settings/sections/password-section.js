@@ -8,6 +8,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
 
 /**
  * Create the password change section component.
@@ -34,27 +35,18 @@ export function createPasswordSection() {
   const currentPasswordInput = h('input', {
     class: 'form-input settings-compact-control',
     type: 'password',
-    placeholder: t(
-      'settings.changePassword.currentPassword',
-      'Current password',
-    ),
     autocomplete: 'current-password',
   });
 
   const newPasswordInput = h('input', {
     class: 'form-input settings-compact-control',
     type: 'password',
-    placeholder: t('settings.changePassword.newPassword', 'New password'),
     autocomplete: 'new-password',
   });
 
   const confirmPasswordInput = h('input', {
     class: 'form-input settings-compact-control',
     type: 'password',
-    placeholder: t(
-      'settings.changePassword.confirmPassword',
-      'Confirm new password',
-    ),
     autocomplete: 'new-password',
   });
 
@@ -160,9 +152,18 @@ export function createPasswordSection() {
 
   card.append(
     hint,
-    currentPasswordInput,
-    newPasswordInput,
-    confirmPasswordInput,
+    createFieldWrap(
+      t('settings.changePassword.currentPassword', 'Current password'),
+      currentPasswordInput,
+    ),
+    createFieldWrap(
+      t('settings.changePassword.newPassword', 'New password'),
+      newPasswordInput,
+    ),
+    createFieldWrap(
+      t('settings.changePassword.confirmPassword', 'Confirm new password'),
+      confirmPasswordInput,
+    ),
     btnChangePassword,
     statusEl,
     refusal.el,

@@ -7,6 +7,8 @@ import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
+import { createUnsavedTracker } from '../unsaved-changes.js';
 import { createEmailTemplatesPanel } from '../email-templates/index.js';
 import { createAdminNotificationsSection } from '../sections/index.js';
 import { getAppName } from '../../../lib/theme/branding.js';
@@ -20,14 +22,12 @@ import {
  * Create the email tab component.
  * @param {Object} options
  * @param {Object} options.user - Current user
- * @returns {Object} { el, load }
+ * @returns {Object} { el, load, hasUnsavedChanges, discardChanges }
  */
 export function createEmailTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-email',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-email-btn',
     'data-tab': 'email',
   });
 
@@ -65,20 +65,11 @@ export function createEmailTab({ user }) {
     placeholder: getAppName(),
   });
   senderCard.append(
-    h('label', { class: 'field-row' }, [
-      h('span', {
-        class: 'field-row-label',
-        text: t('settings.admin.emailSender.email', 'Email'),
-      }),
+    createFieldWrap(
+      t('settings.admin.emailSender.email', 'Email'),
       senderEmail,
-    ]),
-    h('label', { class: 'field-row' }, [
-      h('span', {
-        class: 'field-row-label',
-        text: t('settings.admin.emailSender.name', 'Name'),
-      }),
-      senderName,
-    ]),
+    ),
+    createFieldWrap(t('settings.admin.emailSender.name', 'Name'), senderName),
   );
   const senderError = createInlineError({ callout: true });
   const saveSender = h('button', {
@@ -86,9 +77,20 @@ export function createEmailTab({ user }) {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),
   });
+  const senderUnsaved = createUnsavedTracker({
+    root: senderCard,
+    read: () => ({ email: senderEmail.value, name: senderName.value }),
+    write: ({ email, name }) => {
+      senderEmail.value = email;
+      senderName.value = name;
+    },
+  });
   senderCard.append(
     senderError.el,
-    h('div', { class: 'row is-end settings-policy-actions' }, [saveSender]),
+    h('div', { class: 'row is-end settings-policy-actions' }, [
+      senderUnsaved.statusEl,
+      saveSender,
+    ]),
   );
 
   // Admin notifications section
@@ -136,6 +138,7 @@ export function createEmailTab({ user }) {
       const app = await fetchAppSettings();
       senderEmail.value = app?.emailSender?.email || '';
       senderName.value = app?.emailSender?.name || '';
+      senderUnsaved.markSaved();
       const notif =
         app?.notifications && typeof app.notifications === 'object'
           ? app.notifications
@@ -212,6 +215,7 @@ export function createEmailTab({ user }) {
         },
       });
       invalidateSettingsCache();
+      senderUnsaved.markSaved();
       toast.success(t('settings.saved', 'Saved.'));
     } catch (err) {
       senderError.show(err.message);
@@ -227,5 +231,7 @@ export function createEmailTab({ user }) {
   return {
     el: container,
     load,
+    hasUnsavedChanges: senderUnsaved.isDirty,
+    discardChanges: senderUnsaved.discard,
   };
 }

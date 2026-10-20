@@ -28,8 +28,6 @@ export function createUsersTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-users',
-    role: 'tabpanel',
-    'aria-labelledby': 'settings-tab-users-btn',
     'data-tab': 'users',
   });
 
