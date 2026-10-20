@@ -225,7 +225,7 @@ export function createAnalyticsTab({ user }) {
 
   const title = h('h2', {
     class: 'settings-tab-title',
-    text: t('settings.tabs.analytics', 'External Analytics'),
+    text: t('settings.tabs.analytics', 'External analytics'),
   });
 
   const description = h('p', {

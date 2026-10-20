@@ -14,6 +14,7 @@ import {
 import { reachableTabs, resolveTab } from './tab-registry.js';
 import { nav, replaceHash } from '../../lib/state/router.js';
 import { icon } from '../../lib/dom/icons.js';
+import { debugLog } from '../../lib/state/debug.js';
 
 /**
  * The tab named in the URL hash, or the default when this viewer may not
@@ -46,6 +47,8 @@ export async function renderSettings(root, { user } = {}) {
   // member must take the admin surfaces with it. See shared/organization-role.js.
   const access = {
     isAdmin: isOrganizationAdmin(user),
+    // eslint-disable-next-line no-restricted-syntax -- Installation routes use the instance-wide flag even for a member of the active organization.
+    isInstanceAdmin: Boolean(user?.isAdmin),
     isDesigner: Boolean(user?.isDesigner),
     // Wider than `isAdmin` on purpose; see tab-registry.js.
     canSeeMembers: canSeeMemberList(user),
@@ -125,6 +128,7 @@ export async function renderSettings(root, { user } = {}) {
   // Sidebar
   const sidebar = createSettingsSidebar({
     ...access,
+    organizationId: user?.organizationId,
     activeTab: initialTab,
     onTabChange: setActiveTab,
   });
@@ -163,8 +167,8 @@ export async function renderSettings(root, { user } = {}) {
     for (const destroy of tabDestroyers) {
       try {
         destroy();
-      } catch {
-        // a failing tab teardown must not block the rest
+      } catch (err) {
+        debugLog('Settings tab teardown failed', err);
       }
     }
   };

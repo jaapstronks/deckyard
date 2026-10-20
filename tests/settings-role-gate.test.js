@@ -40,6 +40,8 @@ globalThis.Event = dom.window.Event;
 
 const {
   isOrganizationAdmin,
+  isOrganizationMember,
+  canSeeMemberList,
   getOrganizationRole,
   WORKSPACE_ROLES,
   hasOrganizationRole,
@@ -62,7 +64,10 @@ const admin = (role) => ({
 function visibleTabKeys(user) {
   const sidebar = createSettingsSidebar({
     isAdmin: isOrganizationAdmin(user),
+    isInstanceAdmin: Boolean(user?.isAdmin),
     isDesigner: false,
+    canSeeOrganization: isOrganizationMember(user),
+    canSeeMembers: canSeeMemberList(user),
     activeTab: 'account',
     onTabChange: () => {},
   });
@@ -193,29 +198,36 @@ test('there is one ladder, and the client reads that one', async () => {
 const ADMIN_TABS = [
   'admin',
   'users',
-  'api-keys',
   'email',
   'integrations',
   'analytics',
   'health',
 ];
-const USER_TABS = ['account', 'preferences', 'export'];
+const USER_TABS = ['account', 'preferences', 'export', 'api-keys'];
 
-test('the admin tabs disappear in an organization where you are a member', () => {
+test('installation tabs persist for an instance admin who is an organization member', () => {
   assert.deepEqual(visibleTabKeys(admin('admin')), [
     ...USER_TABS,
-    ...ADMIN_TABS,
+    'organization',
+    'users',
+    ...ADMIN_TABS.filter((key) => key !== 'users'),
   ]);
   assert.deepEqual(
     visibleTabKeys(admin('member')),
-    USER_TABS,
-    'switching to an organization where you are a member takes the tabs with it',
+    [
+      ...USER_TABS,
+      'organization',
+      'users',
+      ...ADMIN_TABS.filter((key) => key !== 'users'),
+    ],
+    'organization policy is hidden inside the tab, while instance rights persist',
   );
 });
 
 test('single-organization keeps every admin tab it had', () => {
   assert.deepEqual(visibleTabKeys(admin(undefined)), [
     ...USER_TABS,
+    'organization',
     ...ADMIN_TABS,
   ]);
 });
@@ -224,8 +236,9 @@ test('without the public API cluster the API keys tab is absent (B525, D260)', (
   setFeatures({ enablePublicApi: false });
   try {
     assert.deepEqual(visibleTabKeys(admin(undefined)), [
-      ...USER_TABS,
-      ...ADMIN_TABS.filter((key) => key !== 'api-keys'),
+      ...USER_TABS.filter((key) => key !== 'api-keys'),
+      'organization',
+      ...ADMIN_TABS,
     ]);
   } finally {
     setFeatures({ enablePublicApi: true });

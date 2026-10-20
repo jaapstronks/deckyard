@@ -15,6 +15,13 @@
     'sidebar content';
   min-height: 100vh;
   min-height: 100dvh;
+  min-width: 0;
+}
+
+.settings-page > .settings-topbar,
+.settings-page > .settings-sidebar,
+.settings-page > .settings-content {
+  min-width: 0;
 }
 
 /* Settings topbar */
@@ -66,6 +73,7 @@
   gap: var(--ps-space-3);
   width: 100%;
   padding: var(--ps-space-2) var(--ps-space-3);
+  min-height: 44px;
   border: none;
   border-radius: var(--ps-radius-md);
   background: transparent;
@@ -78,6 +86,65 @@
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
+}
+
+.settings-page .settings-policy-actions {
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+}
+
+.settings-page .settings-policy-actions .btn,
+.settings-page .settings-rss-url .btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.settings-page .settings-policy-actions .btn {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.settings-page .settings-rss-url {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.settings-page .settings-rss-url code {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.settings-page .email-templates-panel button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.settings-page .email-templates-panel .row {
+  flex-wrap: wrap;
+}
+
+.settings-page .themes-list-header .btn,
+.settings-page .api-keys-card button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.settings-page #settings-tab-organization .editor-card button {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.settings-page .themes-workspace-card .form-input.is-compact {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.settings-page .themes-inherit-row {
+  min-height: 44px;
+  flex-wrap: wrap;
 }
 
 .settings-sidebar-tab:hover {
@@ -300,13 +367,92 @@
   }
 }
 
+@media (max-width: 480px) {
+  .settings-page > .settings-topbar {
+    gap: var(--ps-space-1);
+    padding-inline: var(--ps-space-1);
+  }
+
+  .settings-page > .settings-content {
+    padding: var(--ps-space-1);
+  }
+
+  .settings-page #settings-tab-organization .editor-card {
+    padding: var(--ps-space-2);
+  }
+
+  .settings-page #settings-tab-email .editor-card,
+  .settings-page #settings-tab-integrations .editor-card,
+  .settings-page #settings-tab-preferences .editor-card,
+  .settings-page #settings-tab-api-keys .editor-card {
+    padding: var(--ps-space-2);
+  }
+
+  .settings-page #settings-tab-organization .help,
+  .settings-page #settings-tab-email .help,
+  .settings-page #settings-tab-integrations .help,
+  .settings-page #settings-tab-integrations .field-label,
+  .settings-page #settings-tab-preferences .help,
+  .settings-page #settings-tab-preferences .field-label,
+  .settings-page #settings-tab-api-keys .help,
+  .settings-page #settings-tab-api-keys .settings-tab-description,
+  .settings-page #settings-tab-api-keys .field-label,
+  .settings-page #settings-tab-api-keys .api-keys-list {
+    overflow-wrap: anywhere;
+  }
+
+  .settings-page #settings-tab-preferences .row,
+  .settings-page #settings-tab-preferences .field-row,
+  .settings-page #settings-tab-api-keys .row {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .settings-page #settings-tab-preferences .form-input,
+  .settings-page #settings-tab-api-keys .mcp-connect-code {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .settings-page #settings-tab-api-keys .mcp-connect-code {
+    overflow-x: auto;
+  }
+
+  .settings-page #settings-tab-api-keys .btn {
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .settings-page .themes-visible-row {
+    flex-wrap: wrap;
+  }
+
+  .settings-page .email-templates-panel .row {
+    flex-wrap: wrap;
+  }
+
+  .settings-page .email-templates-panel select {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .settings-page .email-templates-panel button {
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
 /* ============================================================
    SETTINGS PAGE MOBILE RESPONSIVE
    ============================================================ */
 
 @media (max-width: 768px) {
   .app-shell.settings-page {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto 1fr;
     grid-template-areas:
       'topbar'
@@ -363,6 +509,10 @@
 
   .settings-tab-cards {
     grid-template-columns: 1fr;
+  }
+
+  .settings-page .email-templates-panel .row {
+    flex-wrap: wrap;
   }
 }
 

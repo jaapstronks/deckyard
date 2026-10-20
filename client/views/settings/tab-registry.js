@@ -30,6 +30,7 @@ import {
  * (shared/organization-role.js).
  * @typedef {Object} SettingsAccess
  * @property {boolean} isAdmin - Admin in the active organization
+ * @property {boolean} isInstanceAdmin - Installation administrator
  * @property {boolean} isDesigner - Has designer capability
  * @property {boolean} canSeeMembers - The members tab is reachable
  * @property {boolean} canSeeOrganization - The organization tab is reachable
@@ -39,30 +40,28 @@ import {
 const REACH = {
   everyone: () => true,
   designer: ({ isDesigner }) => isDesigner,
-  admin: ({ isAdmin }) => isAdmin,
+  instance: ({ isInstanceAdmin }) => isInstanceAdmin,
   // Wider than `admin` on purpose: in multi-workspace mode every member may
   // see who else is in the organization and may leave it, and this is the tab
   // where both live.
   members: ({ canSeeMembers }) => canSeeMembers,
-  // Multi-workspace only, and then for everyone in the organization:
-  // `GET /api/organizations/:id` answers to any member, and what may be
-  // changed is decided inside the panel.
-  organization: ({ canSeeOrganization }) => canSeeOrganization,
+  // Profile is readable by every active member in multi-org; policy forms
+  // need the active organization admin gate even in single-org mode.
+  organizationOrPolicy: ({ canSeeOrganization, isAdmin }) =>
+    canSeeOrganization || isAdmin,
 };
 
 /**
  * Every settings tab, in sidebar order.
  *
- * `section: 'admin'` with a reach wider than `admin` (organization, members)
- * sits in the Admin group for an admin, where the people tab has always been;
- * a plain member who reaches it gets it with the personal tabs instead,
- * because an "Admin" divider over someone who is not one is a lie about what
- * they are looking at. The organization comes before its people: what this
- * workspace is, then who is in it.
+ * Technical keys remain stable while sections describe the scope shown to
+ * the user. The users key is Organization members in multi-org mode and
+ * Installation users in single-org mode.
  */
 export const SETTINGS_TABS = Object.freeze([
   {
     key: 'account',
+    scope: 'personal',
     section: 'personal',
     reach: 'everyone',
     labelKey: 'settings.tabs.account',
@@ -71,6 +70,7 @@ export const SETTINGS_TABS = Object.freeze([
   },
   {
     key: 'preferences',
+    scope: 'personal',
     section: 'personal',
     reach: 'everyone',
     labelKey: 'settings.tabs.preferences',
@@ -79,14 +79,46 @@ export const SETTINGS_TABS = Object.freeze([
   },
   {
     key: 'export',
+    scope: 'personal',
     section: 'personal',
     reach: 'everyone',
     labelKey: 'settings.tabs.export',
-    label: 'Data Export',
+    label: 'Export my data',
     create: createExportTab,
   },
   {
+    key: 'api-keys',
+    scope: 'personal',
+    section: 'personal',
+    reach: 'everyone',
+    feature: 'publicApi',
+    labelKey: 'settings.tabs.apiKeys',
+    label: 'My API keys',
+    create: createApiKeysTab,
+  },
+  {
+    key: 'organization',
+    scope: 'organization',
+    section: 'organization',
+    reach: 'organizationOrPolicy',
+    labelKey: 'settings.tabs.organization',
+    label: 'Organization',
+    create: createOrganizationTab,
+  },
+  {
+    key: 'users',
+    scope: 'contextual',
+    section: 'organization',
+    reach: 'members',
+    labelKey: 'settings.tabs.users',
+    label: 'Users',
+    multiOrganizationLabelKey: 'settings.tabs.members',
+    multiOrganizationLabel: 'Members',
+    create: createUsersTab,
+  },
+  {
     key: 'fonts',
+    scope: 'organization',
     section: 'designer',
     reach: 'designer',
     labelKey: 'settings.tabs.fonts',
@@ -95,6 +127,7 @@ export const SETTINGS_TABS = Object.freeze([
   },
   {
     key: 'themes',
+    scope: 'organization',
     section: 'designer',
     reach: 'designer',
     labelKey: 'settings.tabs.themes',
@@ -103,6 +136,7 @@ export const SETTINGS_TABS = Object.freeze([
   },
   {
     key: 'slide-types',
+    scope: 'organization',
     section: 'designer',
     reach: 'designer',
     labelKey: 'settings.tabs.slideTypes',
@@ -111,74 +145,47 @@ export const SETTINGS_TABS = Object.freeze([
   },
   {
     key: 'admin',
-    section: 'admin',
-    reach: 'admin',
+    scope: 'installation',
+    section: 'instance',
+    reach: 'instance',
     labelKey: 'settings.tabs.admin',
-    label: 'Admin',
+    label: 'General',
     create: createAdminTab,
   },
   {
-    key: 'organization',
-    section: 'admin',
-    reach: 'organization',
-    labelKey: 'settings.tabs.organization',
-    label: 'Organization',
-    create: createOrganizationTab,
-  },
-  {
-    key: 'users',
-    section: 'admin',
-    reach: 'members',
-    labelKey: 'settings.tabs.users',
-    label: 'Users',
-    // In multi-workspace mode this tab lists the members of the organization
-    // the session is in, not every user on the instance, so it says so. See
-    // tabs/users-tab.js.
-    multiOrganizationLabelKey: 'settings.tabs.members',
-    multiOrganizationLabel: 'Members',
-    create: createUsersTab,
-  },
-  {
-    key: 'api-keys',
-    section: 'admin',
-    reach: 'admin',
-    // The public API cluster: without it the tab is absent and its hash lands
-    // on the default (D260).
-    feature: 'publicApi',
-    labelKey: 'settings.tabs.apiKeys',
-    label: 'API Keys',
-    create: createApiKeysTab,
-  },
-  {
     key: 'email',
-    section: 'admin',
-    reach: 'admin',
+    scope: 'installation',
+    section: 'instance',
+    reach: 'instance',
     labelKey: 'settings.tabs.email',
     label: 'Email',
     create: createEmailTab,
   },
   {
     key: 'integrations',
-    section: 'admin',
-    reach: 'admin',
+    scope: 'installation',
+    section: 'instance',
+    reach: 'instance',
     labelKey: 'settings.tabs.integrations',
-    label: 'Integrations',
+    label: 'Webhooks',
     create: createIntegrationsTab,
   },
   {
     key: 'analytics',
-    section: 'admin',
-    reach: 'admin',
+    scope: 'installation',
+    section: 'instance',
+    reach: 'instance',
     labelKey: 'settings.tabs.analytics',
-    label: 'External Analytics',
+    label: 'External analytics',
     create: createAnalyticsTab,
   },
   {
     key: 'health',
-    section: 'admin',
-    reach: 'admin',
+    scope: 'installation',
+    section: 'instance',
+    reach: 'instance',
     labelKey: 'settings.tabs.health',
-    label: 'Instance Health',
+    label: 'Installation overview',
     create: createHealthTab,
   },
 ]);
@@ -221,18 +228,27 @@ export function resolveTab(key, access) {
 }
 
 /**
- * The sidebar's groups for this viewer. An admin-section tab reached by
- * someone who is not an admin moves to the personal group (see SETTINGS_TABS).
+ * The sidebar groups tabs by visible scope. The contextual users tab belongs
+ * to Organization in multi-org mode and Installation in single-org mode.
  * @param {SettingsAccess} access
- * @returns {{personal: Array<Object>, designer: Array<Object>, admin: Array<Object>}}
+ * @returns {{personal: Array<Object>, organization: Array<Object>, designer: Array<Object>, instance: Array<Object>}}
  */
 export function sidebarSections(access) {
-  const { isAdmin } = access;
-  const sections = { personal: [], designer: [], admin: [] };
+  const sections = {
+    personal: [],
+    organization: [],
+    designer: [],
+    instance: [],
+  };
   for (const tab of reachableTabs(access)) {
     const section =
-      tab.section === 'admin' && !isAdmin ? 'personal' : tab.section;
+      tab.key === 'users' && !access.canSeeOrganization
+        ? 'instance'
+        : tab.section;
     sections[section].push(tab);
   }
+  sections.instance.sort((a, b) =>
+    a.key === 'admin' ? -1 : b.key === 'admin' ? 1 : 0,
+  );
   return sections;
 }

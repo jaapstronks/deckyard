@@ -48,12 +48,11 @@ const { renderSettings } = await import('../client/views/settings/index.js');
 const { SETTINGS_TABS, DEFAULT_TAB } =
   await import('../client/views/settings/tab-registry.js');
 
-const PERSONAL = ['account', 'preferences', 'export'];
+const PERSONAL = ['account', 'preferences', 'export', 'api-keys'];
 const DESIGNER = ['fonts', 'themes', 'slide-types'];
 const ADMIN = [
   'admin',
   'users',
-  'api-keys',
   'email',
   'integrations',
   'analytics',
@@ -74,11 +73,19 @@ async function renderFor(user, hash = '') {
     ...root.querySelectorAll('.settings-sidebar [data-tab]'),
   ].map((el) => el.dataset.tab);
   const active = root.querySelector('.settings-content > .is-active');
+  const policyControls = root.querySelectorAll(
+    '#settings-tab-organization .themes-workspace-card, #settings-tab-organization .settings-policy-actions',
+  ).length;
+  const translationFields = root.querySelectorAll(
+    '#settings-tab-organization textarea[name="terminology"]',
+  ).length;
   cleanup?.();
   return {
     panels,
     buttons,
     active: active?.id.replace(/^settings-tab-/, ''),
+    policyControls,
+    translationFields,
   };
 }
 
@@ -118,7 +125,31 @@ test('neither the page nor the sidebar names a tab of its own', () => {
   }
 });
 
-test('a plain user reaches the personal tabs only', async () => {
+test('each technical address declares its storage scope and reach gate', () => {
+  assert.equal(SETTINGS_TABS.length, 14);
+  assert.deepEqual(
+    SETTINGS_TABS.map(({ key, scope }) => [key, scope]),
+    [
+      ['account', 'personal'],
+      ['preferences', 'personal'],
+      ['export', 'personal'],
+      ['api-keys', 'personal'],
+      ['organization', 'organization'],
+      ['users', 'contextual'],
+      ['fonts', 'organization'],
+      ['themes', 'organization'],
+      ['slide-types', 'organization'],
+      ['admin', 'installation'],
+      ['email', 'installation'],
+      ['integrations', 'installation'],
+      ['analytics', 'installation'],
+      ['health', 'installation'],
+    ],
+  );
+  assert.ok(SETTINGS_TABS.every((tab) => tab.reach));
+});
+
+test('a plain user reaches personal settings including API keys', async () => {
   const seen = await renderFor({ email: 'a@example.com', isAdmin: false });
   assertSameTabs(seen, PERSONAL, 'plain user');
 });
@@ -132,9 +163,9 @@ test('a designer adds the designer tabs', async () => {
   assertSameTabs(seen, [...PERSONAL, ...DESIGNER], 'designer');
 });
 
-test('a single-workspace admin reaches every admin tab, no organization tab', async () => {
+test('a single-workspace admin reaches organization policy and installation tabs', async () => {
   const seen = await renderFor({ email: 'jaap@example.com', isAdmin: true });
-  assertSameTabs(seen, [...PERSONAL, ...ADMIN], 'admin');
+  assertSameTabs(seen, [...PERSONAL, 'organization', ...ADMIN], 'admin');
 });
 
 test('without the public API cluster the API keys tab is absent (D260)', async () => {
@@ -142,7 +173,7 @@ test('without the public API cluster the API keys tab is absent (D260)', async (
   const seen = await renderFor({ email: 'jaap@example.com', isAdmin: true });
   assertSameTabs(
     seen,
-    [...PERSONAL, ...ADMIN.filter((key) => key !== 'api-keys')],
+    [...PERSONAL.filter((key) => key !== 'api-keys'), 'organization', ...ADMIN],
     'admin without public API',
   );
 });
@@ -152,12 +183,17 @@ test('a multi-workspace admin finds the organization before its members', async 
   const seen = await renderFor(member('admin'));
   assertSameTabs(
     seen,
-    [...PERSONAL, 'admin', 'organization', ...ADMIN.slice(1)],
+    [
+      ...PERSONAL,
+      'organization',
+      'users',
+      ...ADMIN.filter((key) => key !== 'users'),
+    ],
     'organization admin',
   );
 });
 
-test('a multi-workspace member gets the organization tabs with the personal ones', async () => {
+test('a multi-workspace member gets the read-only organization tabs with the personal ones', async () => {
   setFeatures({ enablePublicApi: true, multiOrganization: true });
   const seen = await renderFor(member('member'));
   assertSameTabs(
@@ -165,6 +201,72 @@ test('a multi-workspace member gets the organization tabs with the personal ones
     [...PERSONAL, 'organization', 'users'],
     'organization member',
   );
+});
+
+test('organization owner without instance admin reads profile but cannot save policy', async () => {
+  setFeatures({
+    enablePublicApi: true,
+    multiOrganization: true,
+    enableAi: true,
+  });
+  const seen = await renderFor(
+    { ...member('owner'), isAdmin: false },
+    'organization',
+  );
+  assertSameTabs(
+    seen,
+    [...PERSONAL, 'organization', 'users'],
+    'owner without instance admin',
+  );
+  assert.equal(seen.policyControls, 0);
+});
+
+test('instance admin in an organization where they are only a member keeps instance tools but no policy Save', async () => {
+  setFeatures({
+    enablePublicApi: true,
+    multiOrganization: true,
+    enableAi: true,
+  });
+  const seen = await renderFor(
+    { ...member('member'), isAdmin: true },
+    'organization',
+  );
+  assertSameTabs(
+    seen,
+    [
+      ...PERSONAL,
+      'organization',
+      'users',
+      ...ADMIN.filter((key) => key !== 'users'),
+    ],
+    'instance admin, organization member',
+  );
+  assert.equal(seen.policyControls, 0);
+});
+
+test('organization admin with instance admin gets the policy forms', async () => {
+  setFeatures({
+    enablePublicApi: true,
+    multiOrganization: true,
+    enableAi: true,
+  });
+  const seen = await renderFor(member('admin'), 'organization');
+  assert.ok(seen.policyControls >= 2);
+  assert.equal(seen.translationFields, 1);
+});
+
+test('the AI feature gate hides organization translation instructions', async () => {
+  setFeatures({
+    enablePublicApi: true,
+    multiOrganization: false,
+    enableAi: false,
+  });
+  const seen = await renderFor(
+    { email: 'a@example.com', isAdmin: true },
+    'organization',
+  );
+  assert.equal(seen.policyControls >= 2, true);
+  assert.equal(seen.translationFields, 0);
 });
 
 test('a hash for a tab out of reach lands on the default', async () => {

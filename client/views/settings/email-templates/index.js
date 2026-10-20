@@ -83,7 +83,7 @@ export function createEmailTemplatesPanel({ user }) {
   });
   const templateSelect = h('select', {
     class: 'form-input',
-    style: 'width: auto; min-width: 200px;',
+    style: 'width: auto;',
   });
   templateRow.append(templateLabel, templateSelect);
 
