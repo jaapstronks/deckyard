@@ -33,8 +33,9 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -94,14 +95,6 @@ function prefixGuardRe(alt) {
   );
 }
 
-function* walk(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, entry.name);
-    if (entry.isDirectory()) yield* walk(p);
-    else if (entry.name.endsWith('.js')) yield p;
-  }
-}
-
 function isComment(line) {
   const t = line.trim();
   return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*');
@@ -155,7 +148,10 @@ function scanFile(path) {
 test('no hand-written path compares in server/routes/** outside a ROUTES table', () => {
   const offenders = [];
 
-  for (const abs of walk(ROUTES_ROOT)) {
+  for (const abs of walkFiles(ROUTES_ROOT, {
+    extensions: ['.js'],
+    filesOnly: false,
+  })) {
     const rel = relative(ROUTES_ROOT, abs).split('\\').join('/');
     if (EXEMPT_TREES.some((prefix) => rel.startsWith(prefix))) continue;
 
