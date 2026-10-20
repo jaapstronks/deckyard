@@ -133,7 +133,12 @@ export function createOrganizationRssPolicy() {
   );
 
   let loaded = false;
+  let loading = false;
   let customFeedUrl = '';
+  save.disabled = true;
+  enabled.disabled = true;
+  language.disabled = true;
+  for (const input of Object.values(inputs)) input.disabled = true;
   const updateVisibility = () => {
     fields.hidden = !enabled.checked;
     urls.hidden = !enabled.checked;
@@ -142,8 +147,10 @@ export function createOrganizationRssPolicy() {
   updateVisibility();
 
   async function load() {
-    if (loaded) return;
-    loaded = true;
+    if (loaded || loading) return;
+    loading = true;
+    save.disabled = true;
+    error.clear();
     try {
       const rss = (await fetchOrgSettings({ maxAgeMs: 0 }))?.rss || {};
       enabled.checked = rss.enabled === true;
@@ -152,14 +159,25 @@ export function createOrganizationRssPolicy() {
       language.value = rss.language || 'en';
       customFeedUrl = rss.customFeedUrl || '';
       updateVisibility();
+      loaded = true;
+      enabled.disabled = false;
+      language.disabled = false;
+      for (const input of Object.values(inputs)) input.disabled = false;
+      save.textContent = t('common.save', 'Save');
     } catch (err) {
       error.show(err.message);
-      loaded = false;
+      save.textContent = t('common.retry', 'Retry');
+    } finally {
+      loading = false;
+      save.disabled = false;
     }
   }
 
   save.addEventListener('click', async () => {
-    if (!loaded) return;
+    if (!loaded) {
+      await load();
+      return;
+    }
     error.clear();
     save.disabled = true;
     try {

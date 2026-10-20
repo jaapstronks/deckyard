@@ -115,11 +115,21 @@ export function createEmailTab({ user }) {
 
   let busy = false;
   let loaded = false;
+  let loading = false;
   let emailPanel = null;
+  saveSender.disabled = true;
+  senderEmail.disabled = true;
+  senderName.disabled = true;
+  btnSaveNotif.disabled = true;
+  adminNotifications.setDisabled(true);
 
   const load = async () => {
-    if (loaded) return;
-    loaded = true;
+    if (loaded || loading) return;
+    loading = true;
+    saveSender.disabled = true;
+    btnSaveNotif.disabled = true;
+    senderError.clear();
+    notifError.clear();
 
     // Load admin notification settings
     try {
@@ -131,16 +141,35 @@ export function createEmailTab({ user }) {
           ? app.notifications
           : {};
       adminNotifications.setValue(notif?.emailEnabled === true);
+      loaded = true;
+      senderEmail.disabled = false;
+      senderName.disabled = false;
+      adminNotifications.setDisabled(false);
+      saveSender.textContent = t('common.save', 'Save');
+      btnSaveNotif.textContent = t('common.save', 'Save');
     } catch (e) {
-      toast.error(e, { id: 'settings-load' });
+      senderError.show(e.message);
+      notifError.show(e.message);
+      saveSender.textContent = t('common.retry', 'Retry');
+      btnSaveNotif.textContent = t('common.retry', 'Retry');
+    } finally {
+      loading = false;
+      saveSender.disabled = false;
+      btnSaveNotif.disabled = false;
     }
 
     // Render email templates panel (it handles its own data loading)
-    emailPanel = createEmailTemplatesPanel({ user });
-    container.append(emailPanel);
+    if (!emailPanel) {
+      emailPanel = createEmailTemplatesPanel({ user });
+      container.append(emailPanel);
+    }
   };
 
   btnSaveNotif.addEventListener('click', async () => {
+    if (!loaded) {
+      await load();
+      return;
+    }
     if (busy) return;
     notifError.clear();
     busy = true;
@@ -167,6 +196,10 @@ export function createEmailTab({ user }) {
   });
 
   saveSender.addEventListener('click', async () => {
+    if (!loaded) {
+      await load();
+      return;
+    }
     senderError.clear();
     saveSender.disabled = true;
     senderEmail.disabled = true;
@@ -183,9 +216,9 @@ export function createEmailTab({ user }) {
     } catch (err) {
       senderError.show(err.message);
     } finally {
-      saveSender.disabled = false;
-      senderEmail.disabled = false;
-      senderName.disabled = false;
+      saveSender.disabled = !loaded;
+      senderEmail.disabled = !loaded;
+      senderName.disabled = !loaded;
     }
   });
 

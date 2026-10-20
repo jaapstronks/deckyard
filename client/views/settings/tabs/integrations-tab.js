@@ -46,20 +46,35 @@ export function createIntegrationsTab() {
     h('div', { class: 'row is-end settings-policy-actions' }, [save]),
   );
   let loaded = false;
+  let loading = false;
+  save.disabled = true;
+  webhooks.setDisabled(true);
 
   async function load() {
-    if (loaded) return;
-    loaded = true;
+    if (loaded || loading) return;
+    loading = true;
+    save.disabled = true;
+    error.clear();
     try {
       const app = await fetchAppSettings();
       webhooks.setValues(app?.webhooks);
+      loaded = true;
+      webhooks.setDisabled(false);
+      save.textContent = t('common.save', 'Save');
     } catch (err) {
       error.show(err.message);
-      loaded = false;
+      save.textContent = t('common.retry', 'Retry');
+    } finally {
+      loading = false;
+      save.disabled = false;
     }
   }
 
   save.addEventListener('click', async () => {
+    if (!loaded) {
+      await load();
+      return;
+    }
     error.clear();
     save.disabled = true;
     webhooks.setDisabled(true);
@@ -70,8 +85,8 @@ export function createIntegrationsTab() {
     } catch (err) {
       error.show(err.message);
     } finally {
-      save.disabled = false;
-      webhooks.setDisabled(false);
+      save.disabled = !loaded;
+      webhooks.setDisabled(!loaded);
     }
   });
   return { el, load };

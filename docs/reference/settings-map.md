@@ -16,6 +16,8 @@ The settings menu groups tabs as Personal, Organization, Design and Installation
 
 Organization policy uses [`isOrganizationAdmin`](../../shared/organization-role.js): instance admin, narrowed by active admin/owner membership when present. Installation settings use the backend's instance-only admin check. Organization ownership alone permits profile and membership operations but does not grant organization policy. Designers manage custom themes without theme policy writes. An empty stored theme allowlist inherits installation `ENABLED_THEMES`; saving explicit checked IDs does not clear that restriction accidentally.
 
+In multi-organization mode, a policy admin without designer capability sees only the filtered theme list, even in the policy editor. They cannot re-enable a theme excluded from that list; the full list requires the existing designer capability on `GET /api/themes?all=1`.
+
 ## Tab inventory
 
 Addresses below are current `/settings#…` hashes. Field names identify the stored settings object or request body; read-only diagnostics and temporary operation options are marked explicitly. Main settings forms use explicit Save, inline refusal feedback and a success toast unless a row states a different interaction.

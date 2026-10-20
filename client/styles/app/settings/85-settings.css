@@ -99,6 +99,12 @@
   min-width: 44px;
 }
 
+.settings-page .settings-policy-actions .btn {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .settings-page .settings-rss-url {
   flex-wrap: wrap;
   min-width: 0;

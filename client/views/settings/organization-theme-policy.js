@@ -78,7 +78,11 @@ export function createOrganizationThemePolicy() {
   let allThemes = [];
   let checked = new Map();
   let loaded = false;
+  let loading = false;
   let inheritedDefault = '';
+  save.disabled = true;
+  defaultSelect.disabled = true;
+  inherit.disabled = true;
 
   function syncListState() {
     source.textContent = inherit.checked
@@ -92,7 +96,7 @@ export function createOrganizationThemePolicy() {
         );
     for (const [id, input] of checked) {
       const isDefault = id === (defaultSelect.value || inheritedDefault);
-      input.disabled = inherit.checked || isDefault;
+      input.disabled = !loaded || inherit.checked || isDefault;
       if (isDefault) input.checked = true;
     }
   }
@@ -100,8 +104,10 @@ export function createOrganizationThemePolicy() {
   inherit.addEventListener('change', syncListState);
 
   async function load() {
-    if (loaded) return;
-    loaded = true;
+    if (loaded || loading) return;
+    loading = true;
+    save.disabled = true;
+    error.clear();
     try {
       const [themesResponse, org] = await Promise.all([
         api('/api/themes?all=1'),
@@ -161,15 +167,26 @@ export function createOrganizationThemePolicy() {
           ]),
         );
       }
+      loaded = true;
+      defaultSelect.disabled = false;
+      inherit.disabled = false;
+      save.textContent = t('common.save', 'Save');
       syncListState();
     } catch (err) {
       error.show(err.message);
-      loaded = false;
+      save.textContent = t('common.retry', 'Retry');
+      save.disabled = false;
+    } finally {
+      loading = false;
+      if (loaded) save.disabled = false;
     }
   }
 
   save.addEventListener('click', async () => {
-    if (!loaded) return;
+    if (!loaded) {
+      await load();
+      return;
+    }
     error.clear();
     save.disabled = true;
     try {
@@ -186,7 +203,7 @@ export function createOrganizationThemePolicy() {
     } catch (err) {
       error.show(err.message);
     } finally {
-      save.disabled = false;
+      save.disabled = !loaded;
     }
   });
 

@@ -14,6 +14,7 @@ import { getFeatures, featureEnabled } from '../../../lib/state/features.js';
 import { createOrganizationThemePolicy } from '../organization-theme-policy.js';
 import { createOrganizationRssPolicy } from '../organization-rss-policy.js';
 import { createTranslationInstructionsCard } from '../translation-instructions/index.js';
+import { getSupportedLangs } from '../../../lib/format/i18n.js';
 
 /**
  * Create the organization tab component.
@@ -47,13 +48,16 @@ export function createOrganizationTab({ user }) {
       : null;
 
   const load = () => {
+    translationPolicy?.syncSupportedLanguages(getSupportedLangs());
     if (loaded) return;
     loaded = true;
     if (getFeatures()?.multiOrganization) {
       container.append(renderOrganizationProfilePanel({ user }).el);
     }
     if (canWritePolicy) {
-      container.append(themePolicy.el, translationPolicy?.el, rssPolicy.el);
+      container.append(themePolicy.el);
+      if (translationPolicy) container.append(translationPolicy.el);
+      container.append(rssPolicy.el);
       themePolicy.load();
       translationPolicy?.load();
       rssPolicy.load();
