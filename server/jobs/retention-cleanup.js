@@ -5,12 +5,15 @@
  * bound — several of them carry personal data (actor emails on activity
  * events), so leaving them unwired is a GDPR-shaped liability, not just disk.
  *
- * Covers five tables the analytics cleanup does not:
+ * Covers six tables the analytics cleanup does not:
  *  - api_usage_daily   — rate-limit accounting, kept 90 days (in the query).
  *  - instance_health   — surface counters, kept 400 days (D248).
  *  - presentation_share_links — expired links flipped to revoked every run.
  *  - activity_events   — organization feed, kept ACTIVITY_RETENTION_DAYS (180).
  *  - slide_locks       — expired collaboration locks, deleted every run.
+ *  - access_attempt_log — revoked-link notification records, kept for the
+ *    ACCESS_ATTEMPT_WINDOW_MS deduplication window (24 hours, B785): past it
+ *    a row has no reader, and it holds an accessor IP.
  *
  * …and the trash: decks trashed longer ago than TRASH_RETENTION_DAYS (30) are
  * purged for good, which is the promise the trash hint makes. It is a
@@ -26,6 +29,10 @@ import {
 import { cleanupExpiredShareLinks } from '../storage/share-links/index.js';
 import { deleteOldActivityEvents } from '../storage/activity-events.js';
 import { cleanupExpiredSlideLocks } from '../storage/slide-locks.js';
+import {
+  ACCESS_ATTEMPT_WINDOW_MS,
+  deleteOldAccessAttempts,
+} from '../storage/access-attempts.js';
 import { listTrashedPresentationsBefore } from '../storage/presentations/index.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { permanentlyDeletePresentation } from '../services/permanent-delete.js';
@@ -126,7 +133,7 @@ async function purgeExpiredTrash({ repoRoot, retentionDays }) {
  * @param {string} [options.repoRoot] - Repository root, for the thumbnail cache
  * @param {number} [options.activityRetentionDays] - Days to retain activity events
  * @param {number} [options.trashRetentionDays] - Days a trashed deck stays recoverable
- * @returns {Promise<{usage: number, instanceHealth: number, shareLinks: number, activityEvents: number, slideLocks: number, trashedDecks: number}>}
+ * @returns {Promise<{usage: number, instanceHealth: number, shareLinks: number, activityEvents: number, slideLocks: number, accessAttempts: number, trashedDecks: number}>}
  */
 export async function runRetentionCleanup({
   repoRoot = defaultRepoRoot,
@@ -162,6 +169,15 @@ export async function runRetentionCleanup({
   );
   log.info(`Deleted ${slideLocks} expired slide locks`);
 
+  const { deleted: accessAttempts } = await deleteOldAccessAttempts(
+    crossOrganizationScope(
+      null,
+      'access-attempt retention: instance-wide deduplication window',
+    ),
+    new Date(Date.now() - ACCESS_ATTEMPT_WINDOW_MS).toISOString(),
+  );
+  log.info(`Deleted ${accessAttempts} access attempt records past the window`);
+
   const { purged: trashedDecks, failed } = await purgeExpiredTrash({
     repoRoot,
     retentionDays: trashDays,
@@ -179,6 +195,7 @@ export async function runRetentionCleanup({
     shareLinks,
     activityEvents,
     slideLocks,
+    accessAttempts,
     trashedDecks,
   };
 }
@@ -238,6 +255,7 @@ if (process.argv[1]?.endsWith('retention-cleanup.js')) {
       console.log(`  Expired share links revoked:  ${result.shareLinks}`);
       console.log(`  Activity events deleted:      ${result.activityEvents}`);
       console.log(`  Expired slide locks deleted:  ${result.slideLocks}`);
+      console.log(`  Access attempts deleted:      ${result.accessAttempts}`);
       console.log(`  Trashed decks purged:         ${result.trashedDecks}`);
       process.exit(0);
     })
