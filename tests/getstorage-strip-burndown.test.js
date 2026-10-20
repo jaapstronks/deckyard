@@ -22,8 +22,9 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -56,18 +57,14 @@ export function detectCallers(fileTexts) {
   return callers.sort();
 }
 
-function* walk(dir) {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) yield* walk(p);
-    else if (p.endsWith('.js')) yield p;
-  }
-}
-
 function scanServer() {
   /** @type {Record<string, string>} */
   const fileTexts = {};
-  for (const file of walk(serverRoot)) {
+  for (const file of walkFiles(serverRoot, {
+    extensions: ['.js'],
+    filesOnly: false,
+    followSymlinks: true,
+  })) {
     fileTexts[relative(repoRoot, file)] = readFileSync(file, 'utf8');
   }
   return detectCallers(fileTexts);

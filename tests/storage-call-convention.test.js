@@ -55,9 +55,10 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import { parse } from 'acorn';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -97,14 +98,6 @@ const PERMANENT_EXCEPTIONS = new Map([
 ]);
 
 // ─── signature scanner ───────────────────────────────────────────────────────
-
-function* walk(dir) {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) yield* walk(p);
-    else if (p.endsWith('.js')) yield p;
-  }
-}
 
 /** Split a parameter list on top-level commas (defaults and destructuring stay intact). */
 function splitParams(src) {
@@ -295,7 +288,11 @@ function scanFailureShapes(rel, text) {
  */
 function scanViolations() {
   const violations = [];
-  for (const file of walk(storageRoot)) {
+  for (const file of walkFiles(storageRoot, {
+    extensions: ['.js'],
+    filesOnly: false,
+    followSymlinks: true,
+  })) {
     const rel = relative(repoRoot, file);
     const text = readFileSync(file, 'utf8');
     const exportRe =
@@ -417,10 +414,13 @@ test('no burndown line doubles as a permanent exception', () => {
 // independent; a scope cannot conceal an invalid mutation failure shape.
 const inventory = storageScopeInventory(
   new Map(
-    [...walk(storageRoot)].map((file) => [
-      relative(repoRoot, file),
-      readFileSync(file, 'utf8'),
-    ]),
+    [
+      ...walkFiles(storageRoot, {
+        extensions: ['.js'],
+        filesOnly: false,
+        followSymlinks: true,
+      }),
+    ].map((file) => [relative(repoRoot, file), readFileSync(file, 'utf8')]),
   ),
 );
 const scopeViolations = scopeFirstViolations(

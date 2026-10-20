@@ -23,10 +23,6 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/getstorage-strip-burndown.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/i18n-sync-plan.test.js": {
     "http": 0,
     "walkers": 1
@@ -55,10 +51,6 @@
     "http": 0,
     "walkers": 2
   },
-  "tests/route-dispatch-guard.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/slide-type-directory-boundary.test.js": {
     "http": 0,
     "walkers": 1
@@ -67,19 +59,7 @@
     "http": 0,
     "walkers": 1
   },
-  "tests/storage-call-convention.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/storage-caller-convention.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
   "tests/storage-collab-app-error.test.js": {
-    "http": 0,
-    "walkers": 1
-  },
-  "tests/storage-reason-vocabulary.test.js": {
     "http": 0,
     "walkers": 1
   }
