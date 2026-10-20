@@ -15,6 +15,7 @@
  * Run with: node --test tests/deck-language-axis.test.js
  */
 import { test } from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,14 +38,14 @@ const repoRoot = path.resolve(
 function sourceFiles(roots) {
   const out = [];
   const skip = new Set(['node_modules', 'vendor', 'dist', '.git']);
-  const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (skip.has(entry.name)) continue;
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith('.js')) out.push(full);
-    }
-  };
+  const walk = (dir) =>
+    out.push(
+      ...walkFiles(dir, {
+        extensions: ['.js'],
+        skipEntry: (entry) => skip.has(entry.name),
+        filesOnly: false,
+      }),
+    );
   for (const root of roots) walk(path.join(repoRoot, root));
   return out;
 }

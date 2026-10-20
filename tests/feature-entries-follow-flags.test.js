@@ -36,6 +36,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -435,13 +436,8 @@ function hits(patterns, p) {
 
 // ------------------------------------------------------------ the client scan
 
-function walk(dir, out = []) {
-  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, ent.name);
-    if (ent.isDirectory()) walk(full, out);
-    else if (ent.name.endsWith('.js')) out.push(full);
-  }
-  return out;
+function walk(dir) {
+  return walkFiles(dir, { extensions: ['.js'], filesOnly: false });
 }
 
 const clientFiles = walk(path.join(repoRoot, 'client')).map((f) =>

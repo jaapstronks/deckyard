@@ -26,9 +26,9 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { buildReaderHtml } from '../server/export/reader.js';
 
 const STYLES_ROOT = 'client/styles';
@@ -48,14 +48,13 @@ const RETIRED_NAMES = [
 
 const CLIP_IDIOM = /\bclip-path\s*:\s*inset\(\s*50%\s*\)|\bclip\s*:\s*rect\(/g;
 
-function walk(dir, exts, out = []) {
-  for (const name of readdirSync(dir)) {
-    if (SKIP_DIRS.has(name)) continue;
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) walk(full, exts, out);
-    else if (exts.some((ext) => name.endsWith(ext))) out.push(full);
-  }
-  return out;
+function walk(dir, exts) {
+  return walkFiles(dir, {
+    extensions: exts,
+    skipEntry: (entry) => SKIP_DIRS.has(entry.name),
+    followSymlinks: true,
+    filesOnly: false,
+  });
 }
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');

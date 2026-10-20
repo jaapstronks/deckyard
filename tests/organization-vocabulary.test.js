@@ -35,6 +35,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -109,22 +110,12 @@ const FORBIDDEN = [
   },
 ];
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    const rel = path.relative(repoRoot, full);
-    if (entry.isDirectory()) {
-      if (EXCLUDED_DIRS.has(rel)) continue;
-      walk(full, out);
-    } else if (
-      entry.isFile() &&
-      entry.name.endsWith('.js') &&
-      entry.name !== SELF
-    ) {
-      out.push(full);
-    }
-  }
-  return out;
+function walk(dir) {
+  return walkFiles(dir, {
+    extensions: ['.js'],
+    skipEntry: (entry, full) =>
+      entry.isDirectory() && EXCLUDED_DIRS.has(path.relative(repoRoot, full)),
+  }).filter((file) => path.basename(file) !== SELF);
 }
 
 test('organization vocabulary: no workspace/scope-as-visibility spellings survive in code', () => {

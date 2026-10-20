@@ -27,6 +27,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -55,26 +56,15 @@ function collectMarkdown() {
     // No git: walk the repo.
   }
   const out = [];
-  const walk = (relDir) => {
-    let entries;
-    try {
-      entries = fs.readdirSync(path.join(REPO_ROOT, relDir || '.'), {
-        withFileTypes: true,
-      });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const rel = relDir ? `${relDir}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) {
-        if (['.git', 'node_modules', 'docs/plans'].includes(entry.name))
-          continue;
-        walk(rel);
-      } else if (entry.name.endsWith('.md')) {
-        out.push(rel);
-      }
-    }
-  };
+  const walk = (relDir) =>
+    out.push(
+      ...walkFiles(path.join(REPO_ROOT, relDir || '.'), {
+        extensions: ['.md'],
+        skipDirs: ['.git', 'node_modules', 'docs/plans'],
+        filesOnly: false,
+        ignoreReadErrors: true,
+      }).map((file) => path.relative(REPO_ROOT, file)),
+    );
   walk('');
   return out;
 }

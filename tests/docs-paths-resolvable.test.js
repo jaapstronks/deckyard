@@ -17,6 +17,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -158,25 +159,14 @@ function collectTracked() {
     // No git: walk the repo.
   }
   const out = [];
-  const walk = (relDir) => {
-    let entries;
-    try {
-      entries = fs.readdirSync(path.join(REPO_ROOT, relDir || '.'), {
-        withFileTypes: true,
-      });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const rel = relDir ? `${relDir}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) {
-        if (entry.name === '.git' || entry.name === 'node_modules') continue;
-        walk(rel);
-      } else {
-        out.push(rel);
-      }
-    }
-  };
+  const walk = (relDir) =>
+    out.push(
+      ...walkFiles(path.join(REPO_ROOT, relDir || '.'), {
+        skipDirs: ['.git', 'node_modules'],
+        filesOnly: false,
+        ignoreReadErrors: true,
+      }).map((file) => path.relative(REPO_ROOT, file)),
+    );
   walk('');
   return out;
 }

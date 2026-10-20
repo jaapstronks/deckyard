@@ -24,6 +24,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,19 +38,16 @@ const CONTRACT = 'client/lib/dom/escape.js';
 /** Every client source file, repo-relative, vendored code left out. */
 function clientSources() {
   const out = [];
-  const walk = (dir) => {
-    for (const ent of fs.readdirSync(path.join(repoRoot, dir), {
-      withFileTypes: true,
-    })) {
-      const rel = `${dir}/${ent.name}`;
-      if (ent.isDirectory()) {
-        if (ent.name === 'vendor' || ent.name === 'node_modules') continue;
-        walk(rel);
-      } else if (ent.name.endsWith('.js') && !ent.name.endsWith('.min.js')) {
-        out.push(rel);
-      }
-    }
-  };
+  const walk = (dir) =>
+    out.push(
+      ...walkFiles(path.join(repoRoot, dir), {
+        extensions: ['.js'],
+        skipDirs: ['vendor', 'node_modules'],
+        filesOnly: false,
+      })
+        .filter((file) => !file.endsWith('.min.js'))
+        .map((file) => path.relative(repoRoot, file)),
+    );
   walk('client');
   return out;
 }

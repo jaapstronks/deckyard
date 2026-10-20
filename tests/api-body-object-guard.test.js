@@ -28,6 +28,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -140,17 +141,14 @@ test('FormData passes through untouched as well', async () => {
 /** Every `.js` file under `client/`, minus the vendored bundles. */
 function clientSources() {
   const out = [];
-  const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name === 'vendor') continue;
-        walk(full);
-      } else if (entry.name.endsWith('.js')) {
-        out.push(full);
-      }
-    }
-  };
+  const walk = (dir) =>
+    out.push(
+      ...walkFiles(dir, {
+        extensions: ['.js'],
+        skipDirs: ['vendor'],
+        filesOnly: false,
+      }),
+    );
   walk(path.join(REPO_ROOT, 'client'));
   return out;
 }
