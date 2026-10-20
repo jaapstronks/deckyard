@@ -31,6 +31,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -75,11 +76,11 @@ function referenceSources() {
   const walk = (dir, filter) => {
     const abs = path.join(REPO_ROOT, dir);
     if (!fs.existsSync(abs)) return;
-    for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
-      const rel = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(rel, filter);
-      else if (filter(entry.name)) files.push(rel);
-    }
+    files.push(
+      ...walkFiles(abs, { filesOnly: false })
+        .filter((file) => filter(path.basename(file)))
+        .map((file) => path.relative(REPO_ROOT, file)),
+    );
   };
   walk('.github/workflows', (n) => n.endsWith('.yml') || n.endsWith('.yaml'));
   walk('docs', (n) => n.endsWith('.md') || n.endsWith('.yaml'));

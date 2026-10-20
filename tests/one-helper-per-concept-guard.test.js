@@ -14,6 +14,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,18 +26,12 @@ const repoRoot = path.join(here, '..');
 /** Third-party code we neither wrote nor patch. */
 const SKIP_DIRS = new Set(['vendor', 'node_modules']);
 
-function walk(dir, out = []) {
-  if (!fs.existsSync(dir)) return out;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      walk(full, out);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      out.push(full);
-    }
-  }
-  return out;
+function walk(dir) {
+  return walkFiles(dir, {
+    extensions: ['.js'],
+    skipDirs: [...SKIP_DIRS],
+    missingOk: true,
+  });
 }
 
 const files = [

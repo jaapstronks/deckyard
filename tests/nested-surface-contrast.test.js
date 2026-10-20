@@ -16,6 +16,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -201,13 +202,7 @@ test('every element that paints a known surface declares which one', () => {
     .join('\n');
 
   const walk = (dir) =>
-    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
-      e.isDirectory()
-        ? walk(join(dir, e.name))
-        : e.name.endsWith('.css')
-          ? [join(dir, e.name)]
-          : [],
-    );
+    walkFiles(dir, { extensions: ['.css'], filesOnly: false });
 
   const unpaired = [];
   for (const file of walk(stylesDir)) {

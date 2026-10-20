@@ -64,6 +64,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -146,15 +147,12 @@ function trackedFiles(dir) {
     // No git: walk the tree directly.
   }
   const out = [];
-  const walk = (rel) => {
-    for (const entry of fs.readdirSync(path.join(repoRoot, rel), {
-      withFileTypes: true,
-    })) {
-      const child = `${rel}/${entry.name}`;
-      if (entry.isDirectory()) walk(child);
-      else if (entry.isFile()) out.push(child);
-    }
-  };
+  const walk = (rel) =>
+    out.push(
+      ...walkFiles(path.join(repoRoot, rel)).map((file) =>
+        path.relative(repoRoot, file),
+      ),
+    );
   walk(dir);
   return out;
 }

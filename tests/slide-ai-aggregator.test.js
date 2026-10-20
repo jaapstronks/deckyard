@@ -17,6 +17,7 @@
  */
 
 import test from 'node:test';
+import { walkFiles } from './helpers/walk-files.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -186,15 +187,17 @@ test('the editorial copy stays out of the browser payload', () => {
   );
   const offenders = [];
   for (const dir of ['client', 'shared']) {
-    walk(path.join(REPO_ROOT, dir), (file) => {
-      if (!file.endsWith('.js')) return;
-      const src = fs.readFileSync(file, 'utf8');
-      // Anchored on the type directory: `shared/constants/ai.js` is a different
-      // file with the same basename, and it is browser-side on purpose.
-      if (/from\s+['"][^'"]*types\/[a-z0-9-]+\/ai\.js['"]/.test(src)) {
-        offenders.push(path.relative(REPO_ROOT, file));
-      }
-    });
+    walkFiles(path.join(REPO_ROOT, dir), { filesOnly: false }).forEach(
+      (file) => {
+        if (!file.endsWith('.js')) return;
+        const src = fs.readFileSync(file, 'utf8');
+        // Anchored on the type directory: `shared/constants/ai.js` is a different
+        // file with the same basename, and it is browser-side on purpose.
+        if (/from\s+['"][^'"]*types\/[a-z0-9-]+\/ai\.js['"]/.test(src)) {
+          offenders.push(path.relative(REPO_ROOT, file));
+        }
+      },
+    );
   }
   assert.deepEqual(
     offenders,
@@ -202,12 +205,3 @@ test('the editorial copy stays out of the browser payload', () => {
     "a browser-side module imports a type's ai.js",
   );
 });
-
-/** Depth-first walk over a directory tree. */
-function walk(dir, visit) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, visit);
-    else visit(full);
-  }
-}

@@ -217,3 +217,70 @@ test('event stream records raw writes, flushes headers and rejects write after e
   res.emit('close');
   assert.deepEqual(events, ['finish', 'close']);
 });
+
+test('file walker preserves entry filtering, leaf links and stat traversal order', (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'walk-policies-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(path.join(root, 'b-dir'));
+  writeFileSync(path.join(root, 'a.js'), 'a');
+  writeFileSync(path.join(root, 'b-dir', 'child.js'), 'child');
+  writeFileSync(path.join(root, 'skip.js'), 'skip');
+  symlinkSync('a.js', path.join(root, 'c-link.js'));
+  symlinkSync('b-dir', path.join(root, 'd-link'));
+  const rel = (files) => files.map((file) => path.relative(root, file));
+  const options = {
+    extensions: ['.js'],
+    skipEntry: (entry) => entry.name === 'skip.js',
+  };
+  assert.deepEqual(rel(walkFiles(root, options)), ['a.js', 'b-dir/child.js']);
+  assert.deepEqual(rel(walkFiles(root, { ...options, filesOnly: false })), [
+    'a.js',
+    'b-dir/child.js',
+    'c-link.js',
+  ]);
+  assert.deepEqual(rel(walkFiles(root, { ...options, followSymlinks: true })), [
+    'a.js',
+    'b-dir/child.js',
+    'c-link.js',
+    'd-link/child.js',
+  ]);
+  assert.deepEqual(
+    rel(
+      walkFiles(root, {
+        ...options,
+        skipEntry: (entry, full) =>
+          options.skipEntry(entry) ||
+          (entry.isDirectory() && full === path.join(root, 'b-dir')),
+      }),
+    ),
+    ['a.js'],
+  );
+  const spelledRoot = path.relative(process.cwd(), root);
+  assert.deepEqual(walkFiles(spelledRoot, options), [
+    path.join(spelledRoot, 'a.js'),
+    path.join(spelledRoot, 'b-dir', 'child.js'),
+  ]);
+});
+
+test('file walker confines read-error tolerance to directory reads', (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'walk-errors-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const file = path.join(root, 'file.js');
+  writeFileSync(file, 'a');
+  assert.deepEqual(walkFiles(file, { ignoreReadErrors: true }), []);
+  assert.throws(() => walkFiles(file), { code: 'ENOTDIR' });
+  symlinkSync('absent', path.join(root, 'broken.js'));
+  assert.deepEqual(walkFiles(root), [file]);
+  assert.deepEqual(walkFiles(root, { filesOnly: false }), [
+    path.join(root, 'broken.js'),
+    file,
+  ]);
+  assert.throws(
+    () =>
+      walkFiles(root, {
+        followSymlinks: true,
+        ignoreReadErrors: true,
+      }),
+    { code: 'ENOENT' },
+  );
+});
