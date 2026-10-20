@@ -4,9 +4,10 @@
  * The storage cleanups it drives were complete but never scheduled, so
  * api_usage_daily, presentation_share_links, activity_events and slide_locks
  * grew without bound. These tests pin the behaviour that matters: old rows go,
- * recent rows stay, and activity events plus slide locks are trimmed across
- * every organization (a scheduled job has no org context) — plus the scheduler
- * returns a stoppable handle.
+ * recent rows stay, and activity events, slide locks and access attempt
+ * records are trimmed across every organization (a scheduled job has no org
+ * context) — plus the scheduler returns a stoppable handle. The access attempt
+ * window itself is pinned in tests/access-attempt-retention.test.js.
  *
  * Run with: node --test tests/retention-cleanup.test.js
  */
@@ -104,6 +105,17 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
       { id: 'l-expired-b', organization_id: ORG_B, expires_at: daysAgoIso(30) },
       { id: 'l-live-a', organization_id: ORG_A, expires_at: daysAheadIso(1) },
     ],
+    // Access attempt records across two orgs: past the 24-hour window goes
+    // instance-wide, inside it stays.
+    access_attempt_log: [
+      { id: 'x-old-a', organization_id: ORG_A, attempted_at: daysAgoIso(2) },
+      { id: 'x-old-b', organization_id: ORG_B, attempted_at: daysAgoIso(40) },
+      {
+        id: 'x-fresh-a',
+        organization_id: ORG_A,
+        attempted_at: new Date(now - 60 * 60 * 1000).toISOString(),
+      },
+    ],
     // The trash across two orgs: past the window goes, inside it stays, and a
     // deck that was never trashed is not a candidate at all.
     presentations: [
@@ -143,6 +155,7 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
     shareLinks: 1,
     activityEvents: 2,
     slideLocks: 2,
+    accessAttempts: 2,
     trashedDecks: 2,
   });
 
@@ -177,6 +190,13 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
   assert.deepEqual(
     db.__tables.slide_locks.map((r) => r.id),
     ['l-live-a'],
+  );
+
+  // Access attempts: both records past the window gone regardless of org; the
+  // one inside it stays.
+  assert.deepEqual(
+    db.__tables.access_attempt_log.map((r) => r.id),
+    ['x-fresh-a'],
   );
 
   // Trash: both decks past the window are gone, in whichever organization they

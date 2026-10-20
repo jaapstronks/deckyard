@@ -141,6 +141,9 @@ export const JSONB_COLUMNS = {
   // Migrations 017/041/043: a comment's proposed slide, create-time slide
   // snapshot and parsed @-mentions are jsonb.
   presentation_comments: ['proposed_slide', 'slide_snapshot', 'mentions'],
+  // Migration 012: a notification's `data` bag is jsonb; migration 093 strips
+  // a key from it in place.
+  user_notifications: ['data'],
 };
 
 /**
@@ -181,11 +184,12 @@ function isRawExpression(value) {
 /**
  * Evaluate a `sql` template against the row it updates.
  *
- * Three shapes are understood: `<column> ± <number>` (the `revision + 1`
+ * Four shapes are understood: `<column> ± <number>` (the `revision + 1`
  * write), `now()` (the server-clock timestamp `writeUserSettings` stamps on
  * `updated_at`), which resolves to an ISO string as PostgreSQL's `now()` would
- * to a timestamp, and `COALESCE(<table>.<column>, 0) ± $n` — the counter
- * upsert `incrementUsage` runs on every API/MCP request. Anything else throws,
+ * to a timestamp, `COALESCE(<table>.<column>, 0) ± $n` — the counter
+ * upsert `incrementUsage` runs on every API/MCP request — and
+ * `<column> - '<key>'`, jsonb key removal. Anything else throws,
  * so an unmodelled expression fails the test instead of landing in a row as a
  * builder object.
  *
@@ -207,6 +211,20 @@ function evaluateRawExpression(value, row, column) {
     /^'\{\}'::[a-z]+\[\]$/i.test(text)
   ) {
     return [];
+  }
+  // `<column> - '<key>'` — jsonb key removal (migration 093 strips the
+  // accessor IP out of a notification's `data`). The stored value is the
+  // parsed object (see JSONB_COLUMNS); a key that is absent leaves it as is,
+  // which is also what PostgreSQL does.
+  const keyRemoval = text.match(/^"?([a-z_]+)"?\s*-\s*'([^']+)'$/i);
+  if (keyRemoval && (node.parameters || []).length === 0) {
+    const [, operand, key] = keyRemoval;
+    const current = row[operand];
+    const bag =
+      typeof current === 'string' ? JSON.parse(current) : { ...current };
+    if (!bag || typeof bag !== 'object') return current;
+    delete bag[key];
+    return bag;
   }
   const arithmetic = text.match(/^"?([a-z_]+)"?\s*([+-])\s*(\d+)$/i);
   if (arithmetic && (node.parameters || []).length === 0) {
