@@ -94,6 +94,7 @@ function isMultiline(meta, ...values) {
  * @param {Object} opts.pres - the editor's live presentation (read live)
  * @param {Object} opts.slideTypes - slide-type registry
  * @param {Function} opts.normalizeLang
+ * @param {string} [opts.targetLang] - target selected when adding a language
  * @param {Function} [opts.api] - translation preview endpoint
  * @param {(lang: string, slideId: string|null, path: Array<string|number>,
  *   value: string) => boolean} opts.write - the editor's writeVersionText
@@ -117,6 +118,7 @@ export function openTranslateView({
   pres,
   slideTypes,
   normalizeLang,
+  targetLang,
   api,
   write,
   canWrite,
@@ -133,7 +135,10 @@ export function openTranslateView({
   const pair = defaultLanguagePair(pres, activeLang());
   const state = {
     source: pair?.source || null,
-    target: pair?.target || null,
+    target:
+      pair?.langs.includes(targetLang) && targetLang !== pair.source
+        ? targetLang
+        : pair?.target || null,
     filter: '',
   };
   /** Row keys the filter keeps, frozen while typing (see `freezeFilter`). */

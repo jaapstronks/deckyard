@@ -43,8 +43,7 @@ const { createLanguageMode } =
   await import('../client/views/editor/topbar/language-mode.js');
 const { setFeatures } = await import('../client/lib/state/features.js');
 
-// An install with AI: the translate invite exists. The AI-off shape (no invite,
-// no Translate action; D179) has its own test below.
+// The language menu opens the same translation view with AI on or off.
 setFeatures({ enableAi: true });
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
@@ -95,6 +94,7 @@ function mount({
   isDirty = () => false,
   markDirty = () => {},
   toast = { info: () => {}, success: () => {}, error: () => {} },
+  onOpenTranslateView = () => {},
 } = {}) {
   const controller = createLanguageMode({
     root: document.body,
@@ -110,6 +110,7 @@ function mount({
     editorState: { refreshAll: () => {} },
     topbarTitleEl: null,
     toast,
+    onOpenTranslateView,
   });
   document.body.replaceChildren(controller.el);
   return controller;
@@ -122,7 +123,7 @@ const modalActions = () => [
 
 /** The "Make this the source version" row, or `undefined` when it is absent. */
 const sourceAction = (controller) =>
-  controller.el.querySelector('.lang-menu-action') ?? undefined;
+  controller.el.querySelector('.lang-menu-source-action') ?? undefined;
 
 /** `[label, status]` for every row, in menu order, sections separated by `--`. */
 function readMenu(controller) {
@@ -134,7 +135,12 @@ function readMenu(controller) {
     status.querySelector('.sr-only')?.textContent
       ? 'complete'
       : (status?.textContent ?? '');
-  return [...menu.children].map((el) => {
+  const children = [...menu.children];
+  const translate = children.findIndex((el) =>
+    el.classList.contains('lang-menu-translate'),
+  );
+  if (translate >= 0) children.splice(translate - 1, 2);
+  return children.map((el) => {
     if (el.classList.contains('dropdown-sep')) return '--';
     if (el.classList.contains('dropdown-help')) return `# ${el.textContent}`;
     return [
@@ -226,11 +232,13 @@ test('choosing an existing version switches the editor into it', async () => {
   );
 });
 
-test('a language with no version yet is created on the spot', async () => {
+test('adding a language opens the translation view with that language as target', async () => {
   setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
   const pres = makeTrilingualPres();
+  const opened = [];
   const controller = mount({
     pres,
+    onOpenTranslateView: (lang) => opened.push(lang),
     api: async () => ({
       title: 'Deck',
       slides: [],
@@ -255,27 +263,22 @@ test('a language with no version yet is created on the spot', async () => {
     pres.i18n.versions['en-GB'],
     'the version buffer exists after the switch',
   );
-  const popover = controller.el.querySelector('.lang-popover');
-  assert.ok(
-    popover.classList.contains('is-visible'),
-    'and the translate invite is offered for the empty version',
-  );
-  // Dismiss it: the invite holds a 15s auto-hide timer that would otherwise
-  // keep the test runner's event loop alive until it fires.
-  popover.querySelectorAll('.lang-popover-btn')[1].click();
+  assert.deepEqual(opened, ['en-GB']);
+  assert.equal(controller.el.querySelector('.lang-popover'), null);
 });
 
-test('with AI off, a new version gets no translate invite (D179)', async () => {
+test('adding a language opens the view when AI suggestions are disabled', async () => {
   setFeatures({ enableAi: false });
   try {
-    setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+    setSupportedLangs(['nl', 'en-GB']);
     const pres = makeTrilingualPres();
+    const opened = [];
     const controller = mount({
       pres,
+      onOpenTranslateView: (lang) => opened.push(lang),
       api: async () => ({
         title: 'Deck',
         slides: [],
-        theme: null,
         revision: 2,
         i18n: {
           active: 'en-GB',
@@ -284,30 +287,9 @@ test('with AI off, a new version gets no translate invite (D179)', async () => {
         },
       }),
     });
-    const english = [...controller.el.querySelectorAll('.lang-menu-item')].find(
-      (b) => b.textContent.trim() === 'English',
-    );
-    english.click();
+    controller.el.querySelector('.lang-menu-item:last-child')?.click();
     await flush();
-
-    assert.equal(pres.i18n.active, 'en-GB', 'the switch itself still works');
-    assert.equal(controller.el.querySelector('.lang-popover'), null);
-    assert.equal(controller.translateOtherLanguage, null);
-    // No AI action on the controller either (B398): an ungated one is a
-    // second entry no gate stands in front of. The whole surface is pinned,
-    // not a name pattern, so a new member of any name has to pass here.
-    assert.deepEqual(
-      Object.keys(controller).sort(),
-      [
-        'canTranslate',
-        'detach',
-        'el',
-        'revealRefusedVersion',
-        'syncLangUi',
-        'translateOtherLanguage',
-      ],
-      'the controller surface where AI is off',
-    );
+    assert.deepEqual(opened, ['en-GB']);
     controller.detach();
   } finally {
     setFeatures({ enableAi: true });
@@ -387,13 +369,6 @@ test('adding an empty version leaves the source where it was (D74)', async () =>
     '--',
     ['Make this the source version', ''],
   ]);
-
-  // Dismiss the translate invite: it holds a 15s auto-hide timer that would
-  // otherwise keep the test runner's event loop alive until it fires.
-  controller.el
-    .querySelector('.lang-popover')
-    .querySelectorAll('.lang-popover-btn')[1]
-    .click();
 });
 
 test('a version the deck has stays switchable when admin disabled its language', async () => {

@@ -426,10 +426,6 @@ fields (render post-submit only).
   card add/remove, reorder grip) are mouse-only - no keyboard entry into
   fields (Tab/Enter to edit), no focus-visible states, and no ARIA beyond
   labels on individual buttons.
-- **Per-slide translate entry point in the empty-version view**: the
-  language-switch invite popover offers only full-deck fill-missing;
-  `onTranslateSlide` exists in the form surface but the empty-version view
-  has no per-slide entry.
 - **Legacy numbered-field decks**: text-blocks decks stored in the numbered
   form never get inline card add/remove; a `rows[]` migration would unlock it,
   the way schema v7 -> v8 did for icon-card-grid, team-cards and logo-wall.
