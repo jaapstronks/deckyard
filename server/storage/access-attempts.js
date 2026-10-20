@@ -1,6 +1,14 @@
 /**
- * Storage layer for access attempt logging.
- * Tracks attempts to access revoked content for author notifications.
+ * Storage layer for revoked-link access attempts.
+ *
+ * A row here means one thing: the deck author was notified of an attempt to
+ * open revoked content. It exists to deduplicate that notification per
+ * accessor, and for nothing else (B785): the only reader is
+ * `shouldNotifyAuthor`, which looks back {@link ACCESS_ATTEMPT_WINDOW_MS}, so
+ * an attempt that produced no notification is never written, and the
+ * retention job deletes every row once it leaves the window. The accessor's
+ * IP is the identity the deduplication matches on when no e-mail is known;
+ * it is kept for the window and no longer.
  */
 
 import { getOrgId } from '../utils/context.js';
@@ -19,7 +27,17 @@ export const ACCESS_TYPES = {
 };
 
 /**
- * Log an access attempt.
+ * The one window an attempt record lives in: the author is notified at most
+ * once per accessor per window, and a row older than the window has no
+ * reader left, so the retention job removes it. Functional, not configurable.
+ */
+export const ACCESS_ATTEMPT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Record that the author was notified of an access attempt. The row is the
+ * deduplication record for {@link shouldNotifyAuthor}: it is written only
+ * once the notification is due, and `author_notified_at` is set in the same
+ * insert, so there is no unnotified attempt row.
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} data - Access attempt data
  * @param {string} data.presentationId - Presentation ID
@@ -38,6 +56,7 @@ export async function logAccessAttempt(scope, data) {
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
+    const now = nowIso();
 
     const row = await db
       .insertInto('access_attempt_log')
@@ -48,7 +67,8 @@ export async function logAccessAttempt(scope, data) {
         access_reference_id: data.accessReferenceId || null,
         accessor_email: normalizeEmail(data.accessorEmail) || null,
         accessor_ip: data.accessorIp || null,
-        attempted_at: nowIso(),
+        attempted_at: now,
+        author_notified_at: now,
       })
       .returningAll()
       .executeTakeFirst();
@@ -61,7 +81,7 @@ export async function logAccessAttempt(scope, data) {
 }
 
 /**
- * Check if author should be notified (rate limit: 1 per accessor per 24h).
+ * Check if author should be notified (rate limit: 1 per accessor per window).
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - Presentation ID
  * @param {string} [accessorEmail] - Accessor's email
@@ -82,8 +102,8 @@ export async function shouldNotifyAuthor(
 
   return withDbGuard(false, async (db) => {
     const orgId = getOrgId(scope);
-    const twentyFourHoursAgo = new Date(
-      Date.now() - 24 * 60 * 60 * 1000,
+    const windowStart = new Date(
+      Date.now() - ACCESS_ATTEMPT_WINDOW_MS,
     ).toISOString();
 
     let query = db
@@ -92,7 +112,7 @@ export async function shouldNotifyAuthor(
       .where('presentation_id', '=', pid)
       .where('organization_id', '=', orgId)
       .where('author_notified_at', 'is not', null)
-      .where('attempted_at', '>', twentyFourHoursAgo);
+      .where('attempted_at', '>', windowStart);
 
     // Match by email if available, otherwise by IP
     if (email) {
@@ -112,29 +132,34 @@ export async function shouldNotifyAuthor(
 }
 
 /**
- * Mark an access attempt as having notified the author.
- * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
- * @param {string} attemptId - Access attempt ID
- * @returns {Promise<Object>} - Result
+ * Delete access attempt records older than the window (retention job).
+ *
+ * Instance-wide: a scheduled retention job has no organization context, so
+ * this deletes across every organization, the same model as
+ * `deleteOldActivityEvents`. Only an instance retention scope is accepted
+ * (storage-scope.md category 7).
+ * @param {import('./scope.js').StorageScope} scope - Reasoned instance retention scope
+ * @param {string} olderThan - ISO timestamp; attempts before it are removed
+ * @returns {Promise<{deleted: number}>}
  */
-export async function markAuthorNotified(scope, attemptId) {
-  toStorageContext(scope, 'markAuthorNotified');
-  const id = norm(attemptId);
-  if (!id) {
-    return { ok: false, reason: 'invalid' };
-  }
+export async function deleteOldAccessAttempts(scope, olderThan) {
+  const context = toStorageContext(
+    scope,
+    'deleteOldAccessAttempts',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (context.organizationId || !context.crossOrganization)
+    throw new TypeError(
+      'deleteOldAccessAttempts() requires an instance retention scope',
+    );
+  return withDbGuard({ deleted: 0 }, async (db) => {
+    const result = await db
+      .deleteFrom('access_attempt_log')
+      .where('attempted_at', '<', olderThan)
+      .executeTakeFirst();
 
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
-
-    await db
-      .updateTable('access_attempt_log')
-      .set({ author_notified_at: nowIso() })
-      .where('id', '=', id)
-      .where('organization_id', '=', orgId)
-      .execute();
-
-    return { ok: true };
+    return { deleted: Number(result.numDeletedRows) || 0 };
   });
 }
 
