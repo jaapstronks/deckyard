@@ -96,7 +96,7 @@ const DE = {
  * @param {string} [opts.active='nl'] - The stored active language.
  * @param {Object} [opts.de=DE] - The German version (`null` for none).
  */
-async function installDb({ active = 'nl', de = DE } = {}) {
+async function installDb({ active = 'nl', de = DE, nl = NL } = {}) {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     users: userRows(OWNER_EMAIL, COLLAB_EMAIL, OUTSIDER_EMAIL),
@@ -110,7 +110,7 @@ async function installDb({ active = 'nl', de = DE } = {}) {
         owner_user_id: userIdFor(OWNER_EMAIL),
         created_by_user_id: userIdFor(OWNER_EMAIL),
         updated_by_user_id: userIdFor(OWNER_EMAIL),
-        title: NL.title,
+        title: nl.title,
         description: null,
         theme: 'default',
         lang: 'nl',
@@ -122,11 +122,11 @@ async function installDb({ active = 'nl', de = DE } = {}) {
           dominant: 'nl',
           active,
           versions: {
-            nl: structuredClone(NL),
+            nl: structuredClone(nl),
             ...(de ? { de: structuredClone(de) } : {}),
           },
         },
-        slides: structuredClone(NL.slides),
+        slides: structuredClone(nl.slides),
         published: null,
         created_at: '2026-07-01T00:00:00.000Z',
         modified_at: '2026-07-01T00:00:00.000Z',
@@ -855,3 +855,369 @@ test('worker: a job without an actorEmail is refused, not run as the operator', 
   assert.equal(calls.length, 0);
   assert.deepEqual(storedDeck(db), before);
 });
+
+/** The vendor refuses responses above a small token ceiling. */
+function stubBudgetedModel(
+  t,
+  {
+    failAt = 0,
+    beforeResponse = async () => {},
+    answerFor = (answer) => answer,
+  } = {},
+) {
+  const saved = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (_url, options) => {
+    calls += 1;
+    const user = JSON.parse(options.body).messages.find(
+      (m) => m.role === 'user',
+    ).content;
+    const source = JSON.parse(
+      user
+        .split('TRANSLATE THIS PRESENTATION JSON:\n')[1]
+        .split('\n\nSLIDE META')[0],
+    );
+    const answer = JSON.stringify(
+      answerFor(
+        {
+          title: 'Translated roadmap',
+          slides: source.slides.map((s) => ({
+            id: s.id,
+            type: s.type,
+            content: { title: `Translated ${s.content.title}` },
+          })),
+        },
+        calls,
+      ),
+    );
+    await beforeResponse(calls);
+    if (calls === failAt || answer.length > 1200) {
+      return new Response(
+        JSON.stringify({ choices: [{ message: { content: '{' } }] }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: answer } }] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    );
+  };
+  t.after(() => {
+    globalThis.fetch = saved;
+  });
+  return {
+    count: () => calls,
+    resume: () => {
+      failAt = 0;
+    },
+  };
+}
+
+const LARGE_NL = {
+  title: 'Roadmap',
+  slides: Array.from({ length: 80 }, (_, index) =>
+    slide(`slide-${index}`, `Titel ${index}`, 'title-slide'),
+  ),
+};
+
+for (const [name, translate] of [
+  ['editor', (body) => editorPost(OWNER, body)],
+  ['v1', (body) => v1Post(OWNER, v1Body(body))],
+  ['worker', (body) => workerJob(OWNER, body)],
+]) {
+  test(`${name}: 80 slides translate below the vendor response ceiling`, async (t) => {
+    const db = await installDb({ nl: LARGE_NL, de: null });
+    const vendor = stubBudgetedModel(t);
+    const result = await translate({ from: 'nl', to: 'en-GB' });
+    if (name !== 'worker') assert.equal(result.statusCode, 200);
+    const target = storedDeck(db).i18n.versions['en-GB'];
+    assert.equal(target.slides.length, 80);
+    assert.equal(target.slides[79].content.title, 'Translated Titel 79');
+    assert.ok(
+      target.translationSources[translationFieldKey('slide-79', ['title'])],
+    );
+    assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'done');
+    assert.ok(vendor.count() > 1);
+  });
+}
+
+test('a failed batch saves earlier slides and a retry fills the gaps', async (t) => {
+  const db = await installDb({ nl: LARGE_NL, de: null });
+  const vendor = stubBudgetedModel(t, { failAt: 2 });
+  const failed = await editorPost(OWNER, { from: 'nl', to: 'en-GB' });
+  assert.equal(failed.statusCode, 502);
+  assert.equal(failed.json().error, 'translation_partial');
+  assert.match(failed.json().message, /retry with fillMissing: true/);
+  const partial = storedDeck(db).i18n.versions['en-GB'];
+  assert.equal(partial.slides[0].content.title, 'Translated Titel 0');
+  assert.equal(partial.slides[79].content.title, '');
+  assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'partial');
+
+  vendor.resume();
+  const retried = await editorPost(OWNER, { from: 'nl', to: 'en-GB' });
+  assert.equal(retried.statusCode, 200);
+  assert.equal(
+    storedDeck(db).i18n.versions['en-GB'].slides[79].content.title,
+    'Translated Titel 79',
+  );
+  assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'done');
+});
+
+for (const [name, translate] of [
+  ['v1', (body) => v1Post(OWNER, v1Body(body))],
+  ['worker', (body) => workerJob(OWNER, body)],
+]) {
+  test(`${name}: a failed batch reports partial progress and keeps earlier slides`, async (t) => {
+    const db = await installDb({ nl: LARGE_NL, de: null });
+    stubBudgetedModel(t, { failAt: 2 });
+    if (name === 'worker') {
+      await assert.rejects(
+        () => translate({ from: 'nl', to: 'en-GB' }),
+        (error) => error.code === 'translation_partial',
+      );
+    } else {
+      const response = await translate({ from: 'nl', to: 'en-GB' });
+      assert.equal(response.statusCode, 502);
+      assert.equal(response.json().error, 'translation_partial');
+    }
+    const stored = storedDeck(db);
+    assert.equal(
+      stored.i18n.versions['en-GB'].slides[0].content.title,
+      'Translated Titel 0',
+    );
+    assert.equal(stored.i18n.versions['en-GB'].slides[79].content.title, '');
+    assert.equal(stored.i18n.translation['en-GB'].status, 'partial');
+  });
+}
+
+for (const [name, translate] of Object.entries(CONTRACTS)) {
+  test(`${name}: delayed batches preserve concurrent edits, deletions and source provenance`, async (t) => {
+    const source = { ...LARGE_NL, slides: LARGE_NL.slides.slice(0, 8) };
+    const db = await installDb({ nl: source, de: source });
+    let release;
+    let started;
+    const gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    const waiting = new Promise((resolve) => {
+      started = resolve;
+    });
+    stubBudgetedModel(t, {
+      beforeResponse: async (batch) => {
+        if (batch === 2) {
+          started();
+          await gate;
+        }
+      },
+    });
+    const pending = translate(OWNER, { from: 'nl', to: 'de', overwrite: true });
+    await waiting;
+    const row = storedDeck(db);
+    row.description = 'Concurrent deck edit';
+    row.i18n.versions.nl.slides[6].content.title = 'Nieuwe bron';
+    row.slides[6].content.title = 'Nieuwe bron';
+    const target = row.i18n.versions.de;
+    target.title = 'Human title';
+    target.slides[0].content.title = 'Edited earlier batch';
+    target.slides[4].content.title = 'Human translation';
+    target.slides.splice(5, 1);
+    target.translationSources[translationFieldKey('slide-4', ['title'])] =
+      translationSource('nl', 'Human source');
+    release();
+    const result = await pending;
+    assert.equal(result.status, 200);
+    const saved = storedDeck(db);
+    assert.equal(saved.description, 'Concurrent deck edit');
+    assert.equal(saved.i18n.versions.nl.slides[6].content.title, 'Nieuwe bron');
+    const translated = saved.i18n.versions.de;
+    assert.equal(translated.title, 'Human title');
+    assert.equal(translated.slides[0].content.title, 'Edited earlier batch');
+    assert.equal(translated.slides[4].content.title, 'Human translation');
+    assert.equal(
+      translated.slides.find((slide) => slide.id === 'slide-5'),
+      undefined,
+    );
+    assert.deepEqual(
+      translated.translationSources[translationFieldKey('slide-4', ['title'])],
+      translationSource('nl', 'Human source'),
+    );
+    assert.deepEqual(
+      translated.translationSources[translationFieldKey('slide-6', ['title'])],
+      translationSource('nl', 'Titel 6'),
+    );
+  });
+}
+
+test('a target deleted while a later batch is pending stays deleted', async (t) => {
+  const db = await installDb({
+    nl: { ...LARGE_NL, slides: LARGE_NL.slides.slice(0, 8) },
+    de: null,
+  });
+  stubBudgetedModel(t, {
+    beforeResponse: async (batch) => {
+      if (batch === 2) delete storedDeck(db).i18n.versions['en-GB'];
+    },
+  });
+  const response = await editorPost(OWNER, { from: 'nl', to: 'en-GB' });
+  assert.equal(response.statusCode, 200);
+  assert.equal(storedDeck(db).i18n.versions['en-GB'], undefined);
+  assert.equal(storedDeck(db).i18n.translation['en-GB'], undefined);
+});
+
+test('a retry with no gaps reconciles a partial marker without calling the model', async (t) => {
+  const db = await installDb();
+  storedDeck(db).i18n.translation = {
+    de: { status: 'partial', from: 'nl', missingCount: 1 },
+  };
+  const calls = stubModel(t);
+  const response = await editorPost(OWNER, { from: 'nl', to: 'de' });
+  assert.equal(response.statusCode, 200);
+  assert.equal(calls.length, 0);
+  assert.equal(storedDeck(db).i18n.translation.de.status, 'done');
+  assert.equal(storedDeck(db).i18n.translation.de.missingCount, 0);
+});
+
+test('missing model answers stay partial; a later batch can supply the title and retry fills omitted fields', async (t) => {
+  const db = await installDb({
+    nl: { ...LARGE_NL, slides: LARGE_NL.slides.slice(0, 8) },
+    de: null,
+  });
+  let omit = true;
+  stubBudgetedModel(t, {
+    answerFor: (answer, batch) => {
+      if (omit && batch === 1) {
+        answer.title = '';
+        answer.slides[0].content = {};
+      }
+      return answer;
+    },
+  });
+  const response = await editorPost(OWNER, { from: 'nl', to: 'en-GB' });
+  assert.equal(response.statusCode, 502);
+  const partial = storedDeck(db).i18n.versions['en-GB'];
+  assert.equal(
+    partial.title,
+    'Translated roadmap',
+    'later valid title is accepted',
+  );
+  assert.equal(partial.slides[0].content.title, '');
+  assert.equal(
+    partial.translationSources[translationFieldKey('slide-0', ['title'])],
+    undefined,
+  );
+  assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'partial');
+  omit = false;
+  const retry = await editorPost(OWNER, { from: 'nl', to: 'en-GB' });
+  assert.equal(retry.statusCode, 200);
+  assert.equal(
+    storedDeck(db).i18n.versions['en-GB'].slides[0].content.title,
+    'Translated Titel 0',
+  );
+  assert.equal(storedDeck(db).i18n.translation['en-GB'].status, 'done');
+});
+
+test('an interrupted overwrite leaves future batches blank so fillMissing retry completes the replacement', async (t) => {
+  const source = { ...LARGE_NL, slides: LARGE_NL.slides.slice(0, 8) };
+  const db = await installDb({ nl: source, de: source });
+  const vendor = stubBudgetedModel(t, {
+    failAt: 2,
+    beforeResponse: async (batch) => {
+      if (batch === 1)
+        storedDeck(db).i18n.versions.de.slides[6].content.title =
+          'Concurrent translation';
+    },
+  });
+  const failed = await editorPost(OWNER, {
+    from: 'nl',
+    to: 'de',
+    overwrite: true,
+  });
+  assert.equal(failed.statusCode, 502);
+  assert.equal(storedDeck(db).i18n.versions.de.slides[4].content.title, '');
+  vendor.resume();
+  const retry = await editorPost(OWNER, {
+    from: 'nl',
+    to: 'de',
+    fillMissing: true,
+  });
+  assert.equal(retry.statusCode, 200);
+  assert.equal(
+    storedDeck(db).i18n.versions.de.slides[7].content.title,
+    'Translated Titel 7',
+  );
+  assert.equal(
+    storedDeck(db).i18n.versions.de.slides[6].content.title,
+    'Concurrent translation',
+  );
+  assert.equal(storedDeck(db).i18n.translation.de.status, 'done');
+});
+
+test('overwrite refreshes provenance for an accepted answer equal to existing target text', async (t) => {
+  const db = await installDb({
+    de: {
+      title: 'Feuille de route',
+      slides: [
+        slide('slide-1', 'Bonjour', 'title-slide'),
+        slide('slide-2', 'Deux', 'content-slide'),
+      ],
+    },
+  });
+  storedDeck(db).i18n.versions.de.translationSources = {
+    [translationFieldKey('slide-1', ['title'])]: translationSource(
+      'nl',
+      'Old source',
+    ),
+  };
+  stubModel(t);
+  const response = await editorPost(OWNER, {
+    from: 'nl',
+    to: 'de',
+    overwrite: true,
+  });
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(
+    storedDeck(db).i18n.versions.de.translationSources[
+      translationFieldKey('slide-1', ['title'])
+    ],
+    translationSource('nl', 'Hoi'),
+  );
+});
+
+test('creating a target does not restore source slides deleted during the model call', async (t) => {
+  const db = await installDb({ de: null });
+  const model = stubDelayedModel(t);
+  const pending = editorPost(OWNER, { from: 'nl', to: 'fr' });
+  await model.started;
+  storedDeck(db).i18n.versions.nl.slides.pop();
+  storedDeck(db).slides.pop();
+  model.release();
+  const response = await pending;
+  assert.equal(response.statusCode, 200);
+  assert.equal(storedDeck(db).i18n.versions.fr.slides.length, 1);
+});
+
+for (const overwrite of [false, true]) {
+  test(`translation creates target slides missing at the start (overwrite: ${overwrite})`, async (t) => {
+    const db = await installDb({
+      de: { ...DE, slides: DE.slides.slice(0, 1) },
+    });
+    stubModel(t);
+    const response = await editorPost(OWNER, {
+      from: 'nl',
+      to: 'de',
+      overwrite,
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(storedDeck(db).i18n.versions.de.slides.length, 2);
+    assert.equal(
+      storedDeck(db).i18n.versions.de.slides[1].content.title,
+      'Deux',
+    );
+    assert.deepEqual(
+      storedDeck(db).i18n.versions.de.translationSources[
+        translationFieldKey('slide-2', ['title'])
+      ],
+      translationSource('nl', 'Twee'),
+    );
+  });
+}
