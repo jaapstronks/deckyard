@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { filterForPublished } from '../utils/public-output.js';
 import { getOgImageUrl } from '../config/branding.js';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { firstPublicSlide } from '../utils/public-output.js';
@@ -53,16 +52,20 @@ export function pickOgImageUrlFromPresentation(pres, options) {
   return '';
 }
 
-/** Versioned evidence for a rendered published preview, never an author snapshot. */
+/**
+ * Versioned evidence for a rendered published preview: the slide the image
+ * shows, as the publication channel selects it, plus the theme and preview
+ * settings it was rendered with. Never an author snapshot. The rest of the
+ * deck is not part of the image, so an edit elsewhere keeps the proof; hiding
+ * or editing the previewed slide (or hiding everything) expires it.
+ */
 export function publishedPreviewFingerprint(pres) {
-  const projected = filterForPublished(pres);
   return crypto
     .createHash('sha256')
     .update(
       JSON.stringify({
         contract: 'published-preview-v2',
-        slides: projected?.slides || [],
-        versions: projected?.i18n?.versions || {},
+        slide: firstPublicSlide(pres, { channel: 'published' }),
         theme: pres?.theme,
         settings: pres?.settings?.ogPreview,
       }),

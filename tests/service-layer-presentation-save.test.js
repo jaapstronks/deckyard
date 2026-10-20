@@ -939,3 +939,34 @@ test('a new deck may leave translation prose empty, never its source language', 
   assert.equal(source.json().details.field, 'title');
   assert.equal(source.json().details.lang, 'nl');
 });
+
+test('v1 and editor: a save never moves the publication column, so an echoed copy without the preview proof keeps it', async () => {
+  // The editor rebuilds `pres.published` from the publish and regenerate
+  // answers, which carry no `previewFingerprint`; an autosave echoing that copy
+  // must not erase the proof the public preview is served on (B769.4).
+  const proof = {
+    id: 'abcd1234',
+    slug: 'roadmap',
+    ogImageUrl:
+      '/uploads/og-v2-abcd1234-0123456789abcdef0123-00000000-0000-4000-8000-000000000002.png',
+    previewFingerprint: 'proof-of-the-rendered-slide',
+    created: '2026-07-02T00:00:00.000Z',
+    modified: '2026-07-02T00:00:00.000Z',
+  };
+  const echoes = [
+    { id: proof.id, slug: proof.slug, ogImageUrl: proof.ogImageUrl },
+    null,
+    { id: 'other000', slug: 'elsewhere', ogImageUrl: '/uploads/LEGACY.png' },
+  ];
+  for (const save of [editorSave, v1Save]) {
+    for (const published of echoes) {
+      const db = await installDb();
+      storedDeck(db).published = structuredClone(proof);
+      const res = await save(OWNER, { title: 'Changed', published });
+      const why = `${save.name} ${JSON.stringify(published)}`;
+      assert.equal(res.statusCode, 200, why);
+      assert.equal(storedDeck(db).title, 'Changed', why);
+      assert.deepEqual(storedDeck(db).published, proof, why);
+    }
+  }
+});

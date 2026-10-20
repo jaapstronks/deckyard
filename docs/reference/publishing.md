@@ -89,11 +89,11 @@ Client surfaces:
 | `created_at`, `modified_at` |                                                                                                                                                                        |
 
 The same facts are mirrored onto **`presentations.published`** (a JSONB column,
-migration 001) as `{ id, slug, ogImageUrl, created, modified }`, so exports and
+migration 001) as `{ id, slug, ogImageUrl, previewFingerprint, created, modified }`, so exports and
 the editor UI can see publish state without a second query. Unpublishing writes
 an explicit `null` there rather than deleting the key — the storage layer reads
 an absent key as "leave this column alone", so dropping it would leave the deck
-published in the database.
+published in the database. Only the publish, unpublish, slug and preview routes write this column: a deck save drops whatever `published` its body carries, so the editor's echoed copy cannot erase `previewFingerprint`, the proof on which the generated preview is served ([viewer-read-data.md](viewer-read-data.md) § Implementation boundary).
 
 **Per-deck**: `presentations.settings.excludeFromFeed` — published, but not
 listed in the feed.

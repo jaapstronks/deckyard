@@ -146,7 +146,7 @@ test('image fallback uses the selected channel, never a hidden opening image', a
   );
 });
 
-test('legacy snapshots fail closed; current proof expires on visibility and translation edits', () => {
+test('legacy snapshots fail closed; proof follows the previewed slide, not the rest of the deck', () => {
   const pres = deck();
   pres.published = { ogImageUrl: '/uploads/legacy-secret.png' };
   assert.equal(safePublishedOgImage(pres), getOgImageUrl());
@@ -156,10 +156,20 @@ test('legacy snapshots fail closed; current proof expires on visibility and tran
     safePublishedOgImage(pres, '/uploads/other.png'),
     getOgImageUrl(),
   );
-  pres.slides[2].visibility.hideInPublished = true;
+  // What the image does not show may change: a later slide, a translation.
+  pres.slides[3].content.title = 'changed later slide';
+  pres.i18n.versions.de.slides[1].content.title = 'changed translation';
+  assert.equal(safePublishedOgImage(pres), '/uploads/legacy-secret.png');
+  // The previewed slide itself, its publication visibility and the theme
+  // expire the proof; making the same slide the opening again restores it.
+  pres.slides[2].content.title = 'changed opening';
   assert.equal(safePublishedOgImage(pres), getOgImageUrl());
   pres.published.previewFingerprint = publishedPreviewFingerprint(pres);
-  pres.i18n.versions.de.slides[1].content.title = 'changed';
+  pres.slides[2].visibility.hideInPublished = true;
+  assert.equal(safePublishedOgImage(pres), getOgImageUrl());
+  delete pres.slides[2].visibility.hideInPublished;
+  assert.equal(safePublishedOgImage(pres), '/uploads/legacy-secret.png');
+  pres.theme = 'other-theme';
   assert.equal(safePublishedOgImage(pres), getOgImageUrl());
 });
 
