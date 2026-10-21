@@ -12,7 +12,11 @@
  *   (a) every `insertInto('<table>').values({ … })` under `server/` whose
  *       keys include an identity key belongs to a registered table, through
  *       a registered producer (`file :: function`), with those keys among
- *       the table's `identityColumns`;
+ *       the table's `identityColumns`; an `updateTable('<table>').set({ … })`
+ *       that writes an identity key belongs to a registered table with those
+ *       keys among its `identityColumns` (an update is not a producer: it
+ *       changes a row a producer made), and a spread in either argument is
+ *       a violation of its own, because the gate cannot read its keys (B811);
  *   (b) every `insertInto('<registered table>')` is a registered producer,
  *       and every registered producer is an insert site that exists (a stale
  *       register line is a violation too);
@@ -76,30 +80,37 @@ function propertyKeyName(property) {
 }
 
 /**
- * Every object key written anywhere inside a `.values(…)` argument: the
- * literal `{ … }`, an array of them, or the object a `.map()` callback
- * returns.
- * @param {object} arg
- * @returns {string[]}
+ * Every object key written anywhere inside a `.values(…)` or `.set(…)`
+ * argument: the literal `{ … }`, an array of them, or the object a `.map()`
+ * or `.set((eb) => …)` callback returns. A spread anywhere in it makes the
+ * key list incomplete, so it is reported rather than guessed at.
+ * @param {object|undefined} arg
+ * @returns {{keys: string[], spread: boolean}}
  */
 function collectKeys(arg) {
   const keys = new Set();
-  walk(arg, (node) => {
-    if (node.type === 'Property') {
-      const name = propertyKeyName(node);
-      if (name) keys.add(name);
-    }
-  });
-  return [...keys].sort();
+  let spread = false;
+  if (arg) {
+    walk(arg, (node) => {
+      if (node.type === 'SpreadElement') spread = true;
+      if (node.type === 'Property') {
+        const name = propertyKeyName(node);
+        if (name) keys.add(name);
+      }
+    });
+  }
+  return { keys: [...keys].sort(), spread };
 }
 
 /**
- * The `.values(…)` call chained onto an `insertInto(…)` call, if any.
- * @param {object} insertCall
+ * The `.<method>(…)` call chained onto a builder call (`insertInto(…)`,
+ * `updateTable(…)`), through any calls in between, if any.
+ * @param {object} startCall
  * @param {object[]} ancestors
+ * @param {string} method
  */
-function chainedValuesCall(insertCall, ancestors) {
-  let current = insertCall;
+function chainedCall(startCall, ancestors, method) {
+  let current = startCall;
   for (let i = ancestors.length - 1; i > 0; i--) {
     const member = ancestors[i];
     const call = ancestors[i - 1];
@@ -110,7 +121,7 @@ function chainedValuesCall(insertCall, ancestors) {
       call.callee !== member
     )
       return null;
-    if (memberName(member) === 'values') return call;
+    if (memberName(member) === method) return call;
     current = call;
     i--;
   }
@@ -156,22 +167,31 @@ function enclosingFunctionName(ancestors) {
 // ─── Source scan ───────────────────────────────────────────────────────────
 
 /**
- * @typedef {object} InsertSite
+ * @typedef {object} WriteSite
+ * @property {'insert'|'update'} kind - `insertInto(…).values(…)` or
+ *   `updateTable(…).set(…)`.
  * @property {string} file - Repo-relative path.
  * @property {string|null} table - The literal table name, or null when dynamic.
  * @property {string} fn - The enclosing named function.
  * @property {string} producer - `file :: fn`.
- * @property {string[]} keys - Keys written by the chained `.values(…)`.
+ * @property {string[]} keys - Keys written by the chained `.values(…)` or
+ *   `.set(…)`.
+ * @property {boolean} spread - The argument spreads an object or array, so
+ *   `keys` may be incomplete.
  * @property {number} line
  */
 
+/** @typedef {WriteSite} InsertSite */
+
+const WRITE_BUILDERS = { insertInto: 'values', updateTable: 'set' };
+
 /**
- * Every `insertInto(…)` site in one module.
+ * Every `insertInto(…)` and `updateTable(…)` site in one module.
  * @param {string} file - Repo-relative path.
  * @param {string} text - Module source.
- * @returns {InsertSite[]}
+ * @returns {WriteSite[]}
  */
-export function collectInsertSites(file, text) {
+export function collectWriteSites(file, text) {
   const ast = parse(text, {
     ecmaVersion: 'latest',
     sourceType: 'module',
@@ -180,27 +200,36 @@ export function collectInsertSites(file, text) {
   const sites = [];
   walk(ast, (node, ancestors) => {
     if (node.type !== 'CallExpression') return;
-    if (memberName(node.callee) !== 'insertInto') return;
+    const builder = memberName(node.callee);
+    if (!Object.hasOwn(WRITE_BUILDERS, builder)) return;
     const arg = node.arguments[0];
     const table =
       arg && arg.type === 'Literal' && typeof arg.value === 'string'
         ? arg.value
         : null;
-    const valuesCall = chainedValuesCall(node, ancestors);
+    const written = chainedCall(node, ancestors, WRITE_BUILDERS[builder]);
     const fn = enclosingFunctionName(ancestors);
     sites.push({
+      kind: builder === 'insertInto' ? 'insert' : 'update',
       file,
       table,
       fn,
       producer: `${file} :: ${fn}`,
-      keys:
-        valuesCall && valuesCall.arguments[0]
-          ? collectKeys(valuesCall.arguments[0])
-          : [],
+      ...collectKeys(written?.arguments[0]),
       line: node.loc.start.line,
     });
   });
   return sites;
+}
+
+/**
+ * Every `insertInto(…)` site in one module.
+ * @param {string} file - Repo-relative path.
+ * @param {string} text - Module source.
+ * @returns {InsertSite[]}
+ */
+export function collectInsertSites(file, text) {
+  return collectWriteSites(file, text).filter((s) => s.kind === 'insert');
 }
 
 // ─── Register checks ───────────────────────────────────────────────────────
@@ -257,7 +286,7 @@ function isException(value) {
  * @param {string} input.referenceText - The reference document.
  * @param {(file: string) => string|null} input.readFile - Repo-relative read;
  *   null when the file does not exist.
- * @returns {{violations: string[], sites: InsertSite[]}}
+ * @returns {{violations: string[], sites: InsertSite[], updates: WriteSite[]}}
  */
 export function auditAnonymousVisitorStores({
   register,
@@ -267,21 +296,32 @@ export function auditAnonymousVisitorStores({
 }) {
   const violations = [];
   const stores = register.stores || {};
-  const sites = sources.flatMap(({ file, text }) =>
-    collectInsertSites(file, text),
+  const writes = sources.flatMap(({ file, text }) =>
+    collectWriteSites(file, text),
   );
+  const sites = writes.filter((s) => s.kind === 'insert');
+  const updates = writes.filter((s) => s.kind === 'update');
   const sourceText = new Map(sources.map((s) => [s.file, s.text]));
   const read = (file) =>
     sourceText.has(file) ? sourceText.get(file) : readFile(file);
 
-  // (a) identity writes belong to a registered table and producer.
-  for (const site of sites) {
+  // (a) identity writes belong to a registered table (and, for an insert,
+  //     a registered producer); a spread hides the keys, so it is refused.
+  for (const site of writes) {
+    const where = `${site.file}:${site.line}`;
+    const method = site.kind === 'insert' ? 'values' : 'set';
+    if (site.spread) {
+      violations.push(
+        `${where}: .${method}() spreads an object the gate cannot read; write the keys out`,
+      );
+      continue;
+    }
     const identityKeys = site.keys.filter((k) => IDENTITY_KEY_PATTERN.test(k));
     if (!identityKeys.length) continue;
-    const where = `${site.file}:${site.line}`;
+    const builder = site.kind === 'insert' ? 'insertInto' : 'updateTable';
     if (site.table === null) {
       violations.push(
-        `${where}: insertInto() with a dynamic table name writes ${identityKeys.join(', ')}; the gate needs a literal table`,
+        `${where}: ${builder}() with a dynamic table name writes ${identityKeys.join(', ')}; the gate needs a literal table`,
       );
       continue;
     }
@@ -292,7 +332,10 @@ export function auditAnonymousVisitorStores({
       );
       continue;
     }
-    if (!(store.producers || []).includes(site.producer)) {
+    if (
+      site.kind === 'insert' &&
+      !(store.producers || []).includes(site.producer)
+    ) {
       violations.push(
         `${where}: \`${site.table}\` is written by ${site.producer}, which is not a registered producer`,
       );
@@ -454,5 +497,5 @@ export function auditAnonymousVisitorStores({
     }
   }
 
-  return { violations, sites };
+  return { violations, sites, updates };
 }

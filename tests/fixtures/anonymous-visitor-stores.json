@@ -118,6 +118,29 @@
       "tests": ["tests/access-attempt-retention.test.js"],
       "reference": "#revoked-link-attempts-and-the-author-notification"
     },
+    "share_link_guests": {
+      "identityColumns": ["session_token"],
+      "note": "Share-link guest: an e-mail-verified person invited to or verified on one share link, not an anonymous visitor. The insert writes the e-mail; the possessed session token arrives through updateTable().set() in verifyGuestEmail, so this line exists since the gate reads .set() as well (B811).",
+      "producers": [
+        "server/storage/share-links/guests.js :: requestGuestVerification",
+        "server/storage/share-links/guests.js :: preRegisterGuest"
+      ],
+      "readers": [
+        "server/storage/share-links/guests.js :: getGuestBySessionToken",
+        "server/storage/share-links/guests.js :: listGuestsForShareLink"
+      ],
+      "cleanup": {
+        "exception": "The row is the guest's access grant to one share link and lives as long as the link (share_link_id → presentation_share_links ON DELETE CASCADE) or until the author removes the guest. The session token stops resolving at session_expires_at, seven days after verification, and on a revoked or expired link, checked on every read by getGuestBySessionToken; it is not cleared from the row, and there is no age cleanup."
+      },
+      "erase": {
+        "functions": ["server/storage/share-links/guests.js :: removeGuest"]
+      },
+      "tests": [
+        "tests/share-link-guest-lifetime.test.js",
+        "tests/share-link-guest-scope.test.js"
+      ],
+      "reference": "#share-link-guests"
+    },
     "feedback": {
       "identityColumns": ["device_id"],
       "note": "Audience member of a live session: a browser-generated device id keyed to the session, so one entry per device. Not a visitor of a share link; registered because the id is the same kind of identifier analytics protects.",
