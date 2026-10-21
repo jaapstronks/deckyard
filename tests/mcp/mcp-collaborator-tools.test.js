@@ -384,11 +384,16 @@ describe('add_collaborator — who may share', () => {
 describe('add_collaborator — repeats and existing access', () => {
   test('an identical repeat changes nothing and announces nothing twice', async () => {
     await share(P.owner, { permission: 'edit' });
-    const again = await share(P.owner, { permission: 'edit' });
+    const again = await share(P.owner, {
+      permission: 'edit',
+      sendInvitation: true,
+    });
 
     assert.equal(again.isError, false, again.text);
     assert.equal(again.data.status, 'unchanged');
     assert.equal(again.data.collaborator.permission, 'edit');
+    // Even when asked for: an unchanged grant sends no mail.
+    assert.equal(again.data.invitationEmail, 'not_sent');
     assert.equal(activeRows(P.colleague.email).length, 1);
     assert.equal(
       db.__tables.user_notifications.filter(
