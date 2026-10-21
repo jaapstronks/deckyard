@@ -25,6 +25,9 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
 - `client/lib/dom/sharing-off.js` — the greyed-out treatment of a
   sharing entry: the one-sentence note (`sandbox.sharing.off`) and the
   disabled fieldset.
+- `client/lib/dom/sandbox-banner.js` — the bottom-left banner on every
+  route but the audience screens: the TTL notice plus the two ways out, the
+  self-host quickstart on deckyard.eu and a contact link for hosting by us.
 - `server/auth/sandbox.js` — the throwaway guest identity (`ensureSandboxUser`,
   `getSandboxUserFromRequest`); cookie `sb_sandbox`, synthetic
   `guest-<uuid>@sandbox.local` emails.
