@@ -149,7 +149,10 @@ test('a revoked key is refused', async () => {
 
 test('invalid, empty and unknown permissions are refused with field permissions', async () => {
   const created = await seedKey();
-  for (const bad of [[], ['read', 'impersonate'], 'read', undefined]) {
+  // The unknown name is deliberately one no fork declares: a fork extends
+  // AVAILABLE_PERMISSIONS (ciiic-slides adds `impersonate`), and this test
+  // must stay red for an unknown scope there too.
+  for (const bad of [[], ['read', 'not-a-permission'], 'read', undefined]) {
     const result = await updateApiKeyPermissions(
       scopeFor(OWNER),
       created.id,
