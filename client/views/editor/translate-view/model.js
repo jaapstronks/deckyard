@@ -72,6 +72,15 @@ export const isEmptyTarget = (row) =>
   isFilled(row.source) && !isFilled(row.target);
 
 /**
+ * A row with text on either side: what the view shows by default (B815). A
+ * field empty in both languages (an unused subheading, a blank side note) has
+ * nothing to translate yet; "All fields" brings it back.
+ * @param {{source: string, target: string}} row
+ * @returns {boolean}
+ */
+export const hasText = (row) => isFilled(row.source) || isFilled(row.target);
+
+/**
  * @param {Object} args
  * @param {Object} args.pres - the editor's live presentation
  * @param {string} args.source - language of the left column
@@ -166,9 +175,18 @@ export function onlyEmptyTargets(model) {
   };
 }
 
-/** Filter rows and index together, leaving the unfiltered status available. */
+/**
+ * Filter rows and index together, leaving the unfiltered status available.
+ * `filled` drops the rows empty in both languages but keeps every slide, so
+ * the index stays the whole deck and a slide without text still says so.
+ */
 export function filterTranslationRows(model, status) {
   if (status === 'empty') return onlyEmptyTargets(model);
+  if (status === 'filled')
+    return {
+      deck: model.deck && hasText(model.deck) ? model.deck : null,
+      slides: model.slides.map((s) => ({ ...s, rows: s.rows.filter(hasText) })),
+    };
   if (!status) return model;
   return {
     deck: model.deck?.status === status ? model.deck : null,

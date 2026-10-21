@@ -139,7 +139,9 @@ export function openTranslateView({
       pair?.langs.includes(targetLang) && targetLang !== pair.source
         ? targetLang
         : pair?.target || null,
-    filter: '',
+    // Fields with text by default; an empty-in-both field is one filter away
+    // (B815).
+    filter: 'filled',
   };
   /** Row keys the filter keeps, frozen while typing (see `freezeFilter`). */
   let filterKeep = null;
@@ -193,6 +195,10 @@ export function openTranslateView({
     },
     [
       h('option', {
+        value: 'filled',
+        text: t('editor.translateView.filledFields', 'Fields with text'),
+      }),
+      h('option', {
         value: '',
         text: t('editor.translateView.allFields', 'All fields'),
       }),
@@ -210,6 +216,7 @@ export function openTranslateView({
       }),
     ],
   );
+  filterSelect.value = state.filter;
   filterSelect.addEventListener('change', () => {
     state.filter = filterSelect.value;
     filterKeep = null;
@@ -801,10 +808,7 @@ export function openTranslateView({
                 class: 'translate-view-proposal-text',
                 text: proposal.value,
               })
-            : h('span', {
-                class: 'help',
-                text: t('editor.translateView.noProposal', 'No suggestion yet'),
-              }),
+            : null,
           proposal && !proposalIsFresh(proposal)
             ? h('span', {
                 class: 'help',
