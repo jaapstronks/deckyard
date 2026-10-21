@@ -375,7 +375,6 @@
   ],
   "settings/85-settings.css": [
     "admin-checkbox-item",
-    "editor-callout",
     "is-sandbox-disabled",
     "modal-backdrop",
     "modal-box",
@@ -383,7 +382,6 @@
     "ps-modal-body",
     "ps-modal-header",
     "sandbox-settings-note",
-    "settings-modal-grid",
     "sharing-off-note"
   ],
   "settings/87-slide-type-curation.css": ["slide-type-retired-badge"],

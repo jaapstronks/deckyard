@@ -13,7 +13,9 @@
  * router matches on pathname only, so a query-only write must not create a
  * history entry the back button re-enters on the same view. A query change
  * that *should* be navigable is `nav(urlWithQuery(...))`, which is a
- * navigation and re-routes like any other.
+ * navigation and re-routes like any other — unless the mounted view claims
+ * the keys with `claimQuery()`, which makes a step between them a history
+ * step inside the view instead of a re-route (B804).
  */
 
 let renderFn = () => {};
@@ -26,31 +28,115 @@ let renderFn = () => {};
  */
 let documentKey = null;
 
+/**
+ * The query keys the mounted view claims (`claimQuery`), or `null`. Claimed
+ * keys are not part of `documentKey`, so a history step that only changes
+ * them keeps the view mounted.
+ * @type {{ navigable: string[], sticky: string[], onStep: Function }|null}
+ */
+let queryClaim = null;
+
+/** Query params of the last URL the router rendered or wrote. */
+let documentParams = null;
+
 export function setRenderer(fn) {
   renderFn = fn;
 }
 
 export function startRouter() {
-  documentKey = locationKey();
+  rememberDocument();
   // Deliberately document-long: the router is a boot-time singleton that lives
   // for the whole page, so this listener has no teardown by design. Called
   // exactly once from bootstrap() — do not call it per view.
   window.addEventListener('popstate', () => {
     const key = locationKey();
-    if (key === documentKey) return;
-    documentKey = key;
+    if (key === documentKey) {
+      stepWithinClaim();
+      return;
+    }
+    rememberDocument();
     renderFn();
   });
 }
 
-/** Path + query of the live location; `null` where there is none. */
+/**
+ * Path + query of the live location, without the claimed query keys; `null`
+ * where there is no location.
+ */
 function locationKey() {
   const url = liveUrl();
-  return url ? `${url.pathname}${url.search}` : null;
+  if (!url) return null;
+  if (queryClaim) {
+    for (const key of [...queryClaim.navigable, ...queryClaim.sticky]) {
+      url.searchParams.delete(key);
+    }
+  }
+  return `${url.pathname}${url.search}`;
+}
+
+/** Record the live location as the one the view now shows. */
+function rememberDocument() {
+  documentKey = locationKey();
+  documentParams = liveUrl()?.searchParams ?? null;
+}
+
+/**
+ * A history step that changed only claimed keys. Sticky keys describe state
+ * the view keeps across the step (the selected slide), so the entry gets the
+ * values the view showed; the navigable keys are the step itself and go to
+ * the view's `onStep`.
+ */
+function stepWithinClaim() {
+  const claim = queryClaim;
+  const before = documentParams;
+  if (claim && before) {
+    const patch = {};
+    for (const key of claim.sticky) patch[key] = before.get(key);
+    if (Object.keys(patch).length) writeUrl(urlWithQuery(patch));
+  }
+  rememberDocument();
+  if (!claim) return;
+  const values = {};
+  for (const key of claim.navigable) values[key] = queryParam(key);
+  claim.onStep(values);
+}
+
+/**
+ * Let the mounted view own a set of query keys, so Back and Forward between
+ * entries that differ only in those keys step inside the view instead of
+ * re-routing it. One claim at a time; a new claim replaces the old.
+ *
+ * - `navigable` keys are history state: the view writes them with
+ *   `pushQueryParams` and follows a step through `onStep(values)`.
+ * - `sticky` keys belong to the view but not to history (the view replaces
+ *   them as it goes): a step keeps the value the view showed.
+ *
+ * @param {{ navigable?: string[], sticky?: string[], onStep: (values: Record<string, string|null>) => void }} claim
+ * @returns {() => void} release — call it when the view unmounts
+ */
+export function claimQuery({ navigable = [], sticky = [], onStep }) {
+  const claim = { navigable, sticky, onStep };
+  queryClaim = claim;
+  rememberDocument();
+  return () => {
+    if (queryClaim !== claim) return;
+    queryClaim = null;
+    rememberDocument();
+  };
 }
 
 export function nav(to) {
   writeUrl(String(to || '/'), { push: true });
+  renderFn();
+}
+
+/**
+ * Render the current URL again, as a fresh mount of its view, without a
+ * history entry: for a view whose stored state changed under it (the editor
+ * after a theme change rewrote the deck on the server).
+ */
+export function reenterRoute() {
+  rememberDocument();
   renderFn();
 }
 
@@ -97,7 +183,7 @@ function writeUrl(dest, { push = false } = {}) {
   try {
     if (push) history.pushState(null, '', dest);
     else history.replaceState(history.state, '', dest);
-    documentKey = locationKey();
+    rememberDocument();
     /* eslint-disable-next-line no-restricted-syntax -- Nothing to record with: the debug logger reads `?debugLog=` through `queryString()` below, so importing it here would be a cycle. A history-less environment is a bare test or a sandboxed embed; the view already shows the state and only the address bar lags. */
   } catch {
     // See the disable above.
@@ -242,6 +328,28 @@ export function urlWithQuery(patch) {
  */
 export function setQueryParams(patch) {
   writeUrl(urlWithQuery(patch));
+}
+
+/**
+ * Write query params as a new history entry without re-routing, so Back
+ * returns to the URL before them. Only for keys the mounted view claimed as
+ * navigable (`claimQuery`); anything else would re-route on that Back.
+ * @param {Record<string, string|number|null|undefined>} patch
+ */
+export function pushQueryParams(patch) {
+  const dest = urlWithQuery(patch);
+  if (dest === currentUrl()) return;
+  writeUrl(dest, { push: true });
+}
+
+/** Step one entry back in the session history, as the browser's Back does. */
+export function historyBack() {
+  try {
+    history.back();
+    /* eslint-disable-next-line no-restricted-syntax -- Same as writeUrl: a history-less environment has nothing to step back to, and the view has already closed what Back would close. */
+  } catch {
+    // See the disable above.
+  }
 }
 
 export function route() {

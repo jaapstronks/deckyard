@@ -12,7 +12,7 @@
  *      exposes no toggle.
  *   2. **Ask for the deck's own theme back.** Both pickers send
  *      `?current=<id>` when they know the theme in use, which is the single
- *      exception the server honours — without it, opening the settings modal on
+ *      exception the server honours — without it, opening the deck settings on
  *      a deck whose theme was withdrawn would silently offer something else.
  *
  * Run with: node --test tests/theme-picker-allowlist-client.test.js
@@ -42,7 +42,7 @@ const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 const { createVisualThemePicker, createAndPopulateThemeSelect } =
   await import('../client/views/theme-select/index.js');
 const { buildThemeSection } =
-  await import('../client/views/editor/modals/settings-modal/theme.js');
+  await import('../client/views/editor/deck-settings/theme.js');
 
 /**
  * A `GET /api/themes` double that records what the picker asked for and answers
@@ -236,7 +236,6 @@ test('the deck-settings section reads the deck theme under its real name', async
     root: document.body,
     pres: { id: 'deck-1', theme: MIDNIGHT },
     api,
-    modal: { close() {} },
   });
   // The select is populated asynchronously; one microtask drain is enough for
   // the fake api, which never touches the network.

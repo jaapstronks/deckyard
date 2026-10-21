@@ -1,11 +1,7 @@
 // Debounce visibility change beacons: only send if tab hidden for 30+ seconds
 const VISIBILITY_DEBOUNCE_MS = 30 * 1000;
 
-export function attachEditorLifecycle({
-  saveManager,
-  detachThumbScale,
-  onWake,
-} = {}) {
+export function attachEditorLifecycle({ saveManager, onWake } = {}) {
   let visibilityDebounceTimer = null;
   let beaconSentForCurrentHide = false;
 
@@ -48,11 +44,6 @@ export function attachEditorLifecycle({
     sendSessionEndBeacon();
   };
 
-  const onPopState = () => {
-    saveManager?.cancelAutosave?.();
-    detachThumbScale?.();
-  };
-
   // Handle visibility change (tab hidden) - trigger session-end if idle for 30+ seconds
   // Debounced to avoid excessive snapshots from frequent alt-tabbing
   const onVisibilityChange = () => {
@@ -81,14 +72,12 @@ export function attachEditorLifecycle({
   };
 
   window.addEventListener('beforeunload', onBeforeUnload);
-  window.addEventListener('popstate', onPopState);
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('focus', handleWake);
   window.addEventListener('online', handleWake);
 
   return () => {
     window.removeEventListener('beforeunload', onBeforeUnload);
-    window.removeEventListener('popstate', onPopState);
     document.removeEventListener('visibilitychange', onVisibilityChange);
     window.removeEventListener('focus', handleWake);
     window.removeEventListener('online', handleWake);

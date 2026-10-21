@@ -255,8 +255,6 @@
   "editor.deckSettings.description.help": "Utilisée comme méta-description publique lors de la publication. Gardez-la courte (deux phrases).",
   "editor.deckSettings.description.placeholder": "Une courte description de cette présentation en deux phrases…",
   "editor.deckSettings.description.tooLong": "Trop long ({n}/{max}). Veuillez raccourcir.",
-  "editor.deckSettings.lang.help": "Utilisée pour le partage public et les exports (attribut HTML lang).",
-  "editor.deckSettings.lang.title": "Langue du document",
   "editor.deckSettings.liveVideo.detected": "Détecté : {provider}",
   "editor.deckSettings.liveVideo.enable": "Activer l'incrustation vidéo",
   "editor.deckSettings.liveVideo.mobilePosition": "Position sur mobile",

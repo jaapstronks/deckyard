@@ -259,8 +259,6 @@
   "editor.deckSettings.description.placeholder": "Lyhyt, kahden lauseen kuvaus tästä esityksestä…",
   "editor.deckSettings.description.title": "Kuvaus",
   "editor.deckSettings.description.tooLong": "Liian pitkä ({n}/{max}). Lyhennä.",
-  "editor.deckSettings.lang.help": "Käytetään julkiseen jakamiseen ja vienteihin (HTML lang -attribuutti).",
-  "editor.deckSettings.lang.title": "Asiakirjan kieli",
   "editor.deckSettings.liveVideo.detected": "Tunnistettu: {provider}",
   "editor.deckSettings.liveVideo.enable": "Ota videopäällys käyttöön",
   "editor.deckSettings.liveVideo.mobilePosition": "Sijainti mobiilissa",

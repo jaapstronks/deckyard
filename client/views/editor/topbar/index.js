@@ -7,7 +7,6 @@
  */
 
 import { createDropdown } from '../../../lib/dom/dropdown.js';
-import { openSettingsModal as openSettingsModalImpl } from '../modals/settings-modal/index.js';
 import { openVersionsModal as openVersionsModalImpl } from '../modals/versions-modal.js';
 import {
   getUiModePreference,
@@ -53,6 +52,7 @@ export function createEditorTopbar({
   canUndo,
   canRedo,
   onShowShortcuts,
+  onOpenDeckSettings,
   normalizeLang,
   topbarExportEl,
   topbarShareEl,
@@ -155,19 +155,6 @@ export function createEditorTopbar({
     collabLanguage,
     onOpenTranslateView,
   });
-
-  // ============================================================
-  // SETTINGS BUTTON
-  // ============================================================
-
-  const openSettings = () =>
-    openSettingsModalImpl({
-      root,
-      pres,
-      api,
-      markDirty,
-      requestSave,
-    });
 
   // ============================================================
   // DECK OVERVIEW (LIGHT TABLE) BUTTON
@@ -288,7 +275,7 @@ export function createEditorTopbar({
     onAnalyze,
     onOpenAnalytics: hasAnalytics ? () => nav(`/analytics/${id}`) : null,
     onShowShortcuts: () => onShowShortcuts?.(),
-    onOpenSettings: () => openSettings(),
+    onOpenSettings: () => onOpenDeckSettings?.(),
     onSubscription: () =>
       openSubscriptionModal({ api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),

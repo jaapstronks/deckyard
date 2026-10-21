@@ -1,0 +1,98 @@
+/* Deck settings pane (B804): the third pane of the inspector rail, one
+   section on screen at a time. The section buttons wrap rather than scroll
+   or clip, so every label stays whole at the narrowest rail and at 200%
+   zoom; the head keeps the title and its close button together, the title
+   wrapping before the button is pushed out. */
+.deck-settings-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3) var(--ps-space-3) 0;
+}
+.deck-settings-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ps-text-base);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.deck-settings-title:focus-visible {
+  outline: var(--app-focus-ring);
+  outline-offset: 2px;
+}
+.deck-settings-close {
+  flex: none;
+  color: hsl(var(--app-text-secondary));
+}
+.deck-settings-close:hover,
+.deck-settings-close:focus-visible {
+  color: hsl(var(--app-text-primary));
+}
+
+.deck-settings-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-2) var(--ps-space-3) var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+.deck-settings-nav-btn {
+  max-width: 100%;
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  background: transparent;
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-sm);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.deck-settings-nav-btn:hover {
+  color: hsl(var(--app-text-primary));
+}
+.deck-settings-nav-btn[aria-current='true'] {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-sunken));
+  border-color: hsl(var(--app-border-strong));
+}
+.deck-settings-nav-btn:focus-visible {
+  outline: var(--app-focus-ring);
+  outline-offset: 1px;
+}
+
+.deck-settings-section > .editor-callout,
+.deck-settings-section > .row {
+  margin: 0;
+}
+
+.deck-settings-lang-source {
+  font-weight: 600;
+}
+.deck-settings-lang-versions {
+  margin: 0;
+  padding-inline-start: var(--ps-space-4);
+}
+.deck-settings-lang-translate {
+  align-self: flex-start;
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* A lock on the selected slide does not reach the deck's own settings: the
+   slide-locked overlay and banner stand down while this pane is the one
+   shown (93-read-only-mode.css). A read-only editor keeps both. */
+.editor-shell.is-slide-locked
+  .inspector-panel:has(> .deck-settings-pane.is-active)::after,
+.editor-shell.is-slide-locked
+  .inspector-panel:has(> .deck-settings-pane.is-active)::before {
+  content: none;
+}
+.editor-shell.is-slide-locked:not(.is-read-only)
+  .deck-settings-pane
+  :is(input, textarea, select, button, [contenteditable]) {
+  opacity: 1;
+  pointer-events: auto;
+}

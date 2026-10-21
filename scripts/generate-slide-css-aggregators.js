@@ -300,6 +300,7 @@ export const APP_FEATURE_LAYER = {
     'editor/inspector/120-color-field.css',
     'editor/inspector/130-card-link-field.css',
     'editor/inspector/140-default-mark.css',
+    'editor/inspector/150-deck-settings.css',
     'editor/modals/10-modals-editor.css',
     'editor/modals/12-modals-share.css',
     'editor/modals/13-modals-misc.css',

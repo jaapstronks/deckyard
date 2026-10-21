@@ -1,16 +1,18 @@
-import { t } from '../../../../lib/ui-i18n.js';
-import { createAndPopulateThemeSelect } from '../../../theme-select/index.js';
-import { analyzeAndApplyThemeChange } from '../change-theme-modal.js';
-import { DEFAULT_THEME_REF } from '../../../../../shared/constants/themes.js';
-import { h } from '../../../../lib/dom/index.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { createAndPopulateThemeSelect } from '../../theme-select/index.js';
+import { analyzeAndApplyThemeChange } from '../modals/change-theme-modal.js';
+import { DEFAULT_THEME_REF } from '../../../../shared/constants/themes.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
- * Theme selector. Changing theme runs the analyze-and-apply flow, which may
- * close the modal and navigate. Falls back to a disabled note without an API.
+ * Theme selector. Changing theme runs the analyze-and-apply flow, whose
+ * warning modal can send the user to a slide to review. Falls back to a
+ * disabled note without an API.
  *
  * @param {object} ctx - {
- *   root, pres, api, toast, modal, onThemeChanged, onNavigateToSlide
- * }
+ *   root, pres, api, toast, beforeChange, onThemeChanged, onNavigateToSlide
+ * } — `beforeChange` (async) runs before the server is asked, so a pending
+ *   save is stored before the server rewrites the deck
  * @returns {{ el: HTMLElement }}
  */
 export function buildThemeSection({
@@ -18,7 +20,7 @@ export function buildThemeSection({
   pres,
   api,
   toast,
-  modal,
+  beforeChange,
   onThemeChanged,
   onNavigateToSlide,
 }) {
@@ -62,6 +64,7 @@ export function buildThemeSection({
     className: '',
     onChange: async (newThemeId) => {
       if (newThemeId === currentTheme) return;
+      await beforeChange?.();
 
       const result = await analyzeAndApplyThemeChange({
         root,
@@ -70,16 +73,12 @@ export function buildThemeSection({
         pres,
         presId: pres.id,
         newThemeId,
-        onNavigateToSlide: (slideIndex) => {
-          modal.close();
-          onNavigateToSlide?.(slideIndex);
-        },
+        onNavigateToSlide,
         onThemeChanged: (updatedPres) => {
           pres.theme = updatedPres.theme;
           if (Array.isArray(updatedPres.slides)) {
             pres.slides = updatedPres.slides;
           }
-          modal.close();
           onThemeChanged?.(updatedPres);
         },
       });

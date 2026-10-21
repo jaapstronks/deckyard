@@ -256,8 +256,6 @@
   "editor.deckSettings.description.placeholder": "En kort beskrivning av denna presentation på två meningar…",
   "editor.deckSettings.description.title": "Beskrivning",
   "editor.deckSettings.description.tooLong": "För lång ({n}/{max}). Förkorta.",
-  "editor.deckSettings.lang.help": "Används för offentlig delning och export (HTML lang-attribut).",
-  "editor.deckSettings.lang.title": "Dokumentspråk",
   "editor.deckSettings.liveVideo.detected": "Hittade: {provider}",
   "editor.deckSettings.liveVideo.enable": "Aktivera videoöverlägg",
   "editor.deckSettings.liveVideo.mobilePosition": "Placering på mobil",

@@ -1,8 +1,8 @@
 /**
  * Pane host for the inspector rail.
  *
- * The inspector is one right-hand rail with swappable panes: settings today,
- * comments in phase 4 of the editor-UI track. Exactly one pane is active at a
+ * The inspector is one right-hand rail with swappable panes: the slide
+ * inspector, comments and the deck settings (B804). Exactly one pane is active at a
  * time; toggling the active pane's trigger dismisses the rail entirely (the
  * canvas gets the space via the is-inspector-collapsed machinery).
  *

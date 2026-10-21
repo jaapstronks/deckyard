@@ -246,7 +246,7 @@ describe('one tag shape in the client (B402)', () => {
     'client/views/slide-library/modals.js',
     'client/views/list/tag-filter.js',
     'client/views/list/presentation-card.js',
-    'client/views/editor/modals/settings-modal/tags.js',
+    'client/views/editor/deck-settings/tags.js',
   ];
   for (const file of readers) {
     it(`${file} reads a tag as an object only`, () => {
