@@ -50,6 +50,7 @@ export {
 } from './geometry-detector.js';
 export { detectStruct } from './struct-detector.js';
 export { blockText, pageText } from './page-text.js';
+export { boxArea, lineBox, liesWithin, overlapArea } from './boxes.js';
 export {
   documentFigures,
   furnitureKey,
@@ -346,6 +347,22 @@ const median = (values) => {
 };
 
 /**
+ * Which of a page's lines are body text: a body role, at least
+ * `BODY_SIZE_RATIO` of the body size (the median size of the lines under the
+ * heading). The rest (labels, small text) can belong to a drawing; the
+ * drawing's box is built from them, and the mapper asks the same question of
+ * what lies inside it (B831).
+ * @param {PageLine[]} lines - every line of the page
+ * @returns {(line: PageLine) => boolean}
+ */
+export function bodyLineTest(lines) {
+  const bodySize = median(
+    lines.filter((l) => l.role !== 'heading').map((l) => l.size),
+  );
+  return (l) => BODY_ROLES.has(l.role) && l.size >= BODY_SIZE_RATIO * bodySize;
+}
+
+/**
  * The box of the page's drawing: every path outside the body text (and
  * outside the table, and smaller than a background), together with the lines
  * that are not body text and do not sit inside it: labels, and text under
@@ -355,11 +372,7 @@ const median = (values) => {
  * page with no body line in it.
  */
 function drawingBox(lines, paths, tableBox, page) {
-  const bodySize = median(
-    lines.filter((l) => l.role !== 'heading').map((l) => l.size),
-  );
-  const isBody = (l) =>
-    BODY_ROLES.has(l.role) && l.size >= BODY_SIZE_RATIO * bodySize;
+  const isBody = bodyLineTest(lines);
   const bodyBoxes = lines.filter(isBody).map(lineBox);
   const bodyUnion = unionBoxes(bodyBoxes);
   const maxArea = DRAWING_PATH_MAX_COVERAGE * page.width * page.height;

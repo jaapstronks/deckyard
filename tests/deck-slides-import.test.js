@@ -19,15 +19,24 @@ import fs from 'node:fs/promises';
 
 import {
   extractPdfPages,
+  lineBox,
+  overlapArea,
   pageText,
 } from '../server/utils/pdf-extract/index.js';
+import sharp from 'sharp';
+
 import {
+  CROP_MAX_COVER,
+  CROP_MIN_COVER,
+  DECORATION_MAX_COVER,
   FALLBACK_REASONS,
   REPORT_ERROR_CODES,
   blocksToMarkdown,
   buildDeckSlides,
   chooseSlide,
   composeNotes,
+  cutOutOfRendering,
+  findDecorations,
   planPage,
 } from '../server/services/deck-slides-import.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
@@ -616,4 +625,304 @@ test('a missing or unreadable PDF is refused, and an abort stops the reading', a
     }),
     { name: 'AbortError' },
   );
+});
+
+// ---------------------------------------------------------------------------
+// Mixed pages and decoration (B831)
+// ---------------------------------------------------------------------------
+
+test('a tagged table beside text is no drawing: its paths are the table', () => {
+  const page = model({
+    heading: 'Cash flow',
+    lines: [
+      line('Cash flow', 'heading', 28),
+      line('Free cash flow rose'),
+      line('Q4', 'table-cell', 12),
+    ],
+    blocks: [
+      para('Free cash flow rose'),
+      {
+        kind: 'table',
+        y: 200,
+        headerRow: true,
+        rows: [
+          ['Measure', 'Q4'],
+          ['Free cash flow', '1.2'],
+        ],
+      },
+    ],
+    // Philips p20: 70 paths, 14 of them the table's rules and fills.
+    drawing: { paths: 70, tablePaths: 14, labels: [], box: null },
+  });
+  const plan = planPage(page, ctx);
+  assert.equal(plan.slide.type, 'content-slide');
+  assert.match(
+    plan.slide.content.body,
+    /\| Measure \| Q4 \|\n\| --- \| --- \|\n\| Free cash flow \| 1\.2 \|/,
+  );
+  assertInOrder(slideText(plan.slide), keptLines(page), 'table beside text');
+  // The same paths outside a table are a drawing.
+  page.drawing.tablePaths = 0;
+  assert.equal(chooseSlide(page).reason, 'drawing');
+});
+
+const chartFixture = await fs.readFile(
+  new URL('./fixtures/chart-slide-tagged.pdf', import.meta.url),
+);
+const {
+  pages: [chartPage],
+} = await extractPdfPages(chartFixture);
+
+/**
+ * The chart slide of the fixture with a body beside the chart: two
+ * paragraphs left of it, at a size above the chart's labels, and the paths
+ * of a real chart (the fixture's own 17 are under the drawing threshold).
+ */
+function chartWithBody() {
+  const body = ['Alfa leads the quarter', 'Charlie closes the gap by year end'];
+  const lines = body.map((text, i) => ({
+    text,
+    role: 'para',
+    size: 24,
+    x: 48,
+    y: 260 + i * 80,
+    width: 250,
+    bold: false,
+    color: '#000000',
+  }));
+  return {
+    ...chartPage,
+    lines: [...chartPage.lines, ...lines],
+    blocks: lines.map((l) => ({
+      kind: 'para',
+      y: l.y,
+      text: l.text,
+      bold: false,
+      size: l.size,
+      box: lineBox(l),
+    })),
+    drawing: { ...chartPage.drawing, paths: 120 },
+  };
+}
+
+test('a drawing beside text is cut out of the page, with no heading or body line in it', () => {
+  const page = chartWithBody();
+  const plan = planPage(page, ctx);
+  assert.equal(plan.slide.type, 'image-text-slide');
+  assert.equal(plan.slide.content.imageSide, 'right');
+  assert.equal(plan.slide.content.alt, 'Chart data');
+  const [upload] = plan.uploads;
+  assert.equal(upload.key, 'image');
+  assert.deepEqual(upload.crop, page.drawing.box);
+  const share =
+    (upload.crop.width * upload.crop.height) / (page.width * page.height);
+  assert.ok(share >= CROP_MIN_COVER && share <= CROP_MAX_COVER, `${share}`);
+  for (const l of page.lines.filter((l) => l.role !== 'label')) {
+    assert.equal(
+      overlapArea(lineBox(l), upload.crop),
+      0,
+      `"${l.text}" is in the cut-out`,
+    );
+  }
+  // Every kept line stands literally on the slide; the labels are in the
+  // picture and, through the import, in the notes.
+  assertInOrder(slideText(plan.slide), keptLines(page), 'chart with body');
+});
+
+test('a drawing with a body line in it, or without pixels to cut from, keeps its page whole', () => {
+  const page = chartWithBody();
+  assert.equal(chooseSlide(page, { pagePixels: false }).reason, 'drawing');
+  assert.equal(planPage(page, { ...ctx, pagePixels: false }).reason, 'drawing');
+  // The second paragraph moved into the chart.
+  const [first, second] = page.blocks;
+  const moved = { ...page.lines.at(-1), x: 500, y: 400 };
+  const inside = {
+    ...page,
+    lines: [...page.lines.slice(0, -1), moved],
+    blocks: [first, { ...second, y: moved.y, box: lineBox(moved) }],
+  };
+  assert.equal(chooseSlide(inside).reason, 'drawing');
+  // Nothing outside the drawing: no text for the slide beside it.
+  assert.equal(chooseSlide({ ...page, blocks: [] }).reason, 'drawing');
+});
+
+test('the cut-out is the box of the page in the rendering, at its scale and offset', async () => {
+  // A 1920×1080 rendering of a 1200×675 page (scale 1.6) with a red block
+  // where the page has its drawing.
+  const page = { width: 1200, height: 675 };
+  const box = { x: 600, y: 200, width: 300, height: 200 };
+  const rendering = await sharp({
+    create: { width: 1920, height: 1080, channels: 3, background: '#ffffff' },
+  })
+    .composite([
+      {
+        input: await sharp({
+          create: {
+            width: 480,
+            height: 320,
+            channels: 3,
+            background: '#ff0000',
+          },
+        })
+          .png()
+          .toBuffer(),
+        left: 960,
+        top: 320,
+      },
+    ])
+    .png()
+    .toBuffer();
+  const cut = await cutOutOfRendering(rendering, page, box);
+  const { data, info } = await sharp(cut)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  assert.deepEqual([info.width, info.height], [480, 320]);
+  const corners = [0, info.width - 1, (info.height - 1) * info.width];
+  for (const at of corners) {
+    const px = at * info.channels;
+    assert.deepEqual([...data.subarray(px, px + 3)], [255, 0, 0]);
+  }
+});
+
+/** A heading, two lines of body and a drawing of 120 paths right of them. */
+const mixedPdf = minimalPdf([
+  {
+    texts: [
+      { text: 'Growth per region', size: 28, x: 50, y: 60, bold: true },
+      { text: 'North doubled its revenue', size: 14, x: 50, y: 120 },
+      { text: 'South held steady', size: 14, x: 50, y: 150 },
+    ],
+    paths: 120,
+  },
+]);
+
+async function solidRendering() {
+  return sharp({
+    create: { width: 1920, height: 1080, channels: 3, background: '#3366cc' },
+  })
+    .png()
+    .toBuffer();
+}
+
+test('the import renders the page a drawing is cut out of, and uploads the cut-out', async () => {
+  const calls = [];
+  const buffer = await solidRendering();
+  const { slides, report } = await buildDeckSlides({
+    files: { pdfBytes: mixedPdf, pptxBytes: null, filename: 'mixed.pdf' },
+    theme: null,
+    lang: 'en',
+    slideTypes: SLIDE_TYPES,
+    signal: new AbortController().signal,
+    onProgress: () => {},
+    renderPages: async ({ pages }) => {
+      calls.push(pages);
+      return pages.map((page) => ({ page, buffer }));
+    },
+  });
+  assert.deepEqual(calls, [[1]]);
+  assert.equal(slides[0].type, 'image-text-slide');
+  assert.equal(
+    unescape(slides[0].content.body),
+    'North doubled its revenue\n\nSouth held steady',
+  );
+  assert.deepEqual(report.pages[0].reason, undefined);
+  assert.equal(report.slidesConverted, 1);
+  // The cut was made; the media library of this test refuses it.
+  assert.deepEqual(report.errors, [{ page: 1, code: 'upload-failed' }]);
+});
+
+test('a page whose rendering is missing keeps its page whole instead of a cut-out', async () => {
+  const { slides, report } = await buildDeckSlides({
+    files: { pdfBytes: mixedPdf, pptxBytes: null, filename: 'mixed.pdf' },
+    theme: null,
+    lang: 'en',
+    slideTypes: SLIDE_TYPES,
+    signal: new AbortController().signal,
+    onProgress: () => {},
+    renderPages: async () => [],
+  });
+  assert.equal(slides[0].type, 'image-slide');
+  assert.equal(report.pages[0].reason, 'drawing');
+  assert.deepEqual(report.errors, [{ page: 1, code: 'not-rendered' }]);
+});
+
+/** Three list pages with the same picture in the top right corner. */
+function decoratedPdf(picture) {
+  return minimalPdf(
+    [1, 2, 3].map((n) => ({
+      texts: [
+        { text: `Plans ${n}`, size: 28, x: 50, y: 60, bold: true },
+        { text: '- Hire two engineers', size: 16, x: 50, y: 120 },
+        { text: '- Open an office in Ghent', size: 16, x: 50, y: 150 },
+      ],
+      images: [picture],
+    })),
+  );
+}
+
+test('a small picture in the same place on three pages is decoration: left out, named once', async () => {
+  const logo = { x: 670, y: 15, width: 30, height: 30 };
+  assert.ok((30 * 30) / (720 * 405) <= DECORATION_MAX_COVER);
+  const { slides, report } = await buildDeckSlides({
+    files: { pdfBytes: decoratedPdf(logo), pptxBytes: null, filename: 'd.pdf' },
+    theme: null,
+    lang: 'en',
+    slideTypes: SLIDE_TYPES,
+    signal: new AbortController().signal,
+    onProgress: () => {},
+    renderPages: () => assert.fail('nothing falls back'),
+  });
+  assert.deepEqual(
+    slides.map((s) => s.type),
+    ['list-slide', 'list-slide', 'list-slide'],
+  );
+  assert.deepEqual(report.decorations, [{ pages: [1, 2, 3] }]);
+  assert.deepEqual(report.errors, []);
+});
+
+test('the same picture at 20% of the page is content and stays on every page', async () => {
+  const photo = { x: 400, y: 100, width: 300, height: 195 };
+  assert.ok(Math.abs((300 * 195) / (720 * 405) - 0.2) < 0.01);
+  const { slides, report } = await buildDeckSlides({
+    files: {
+      pdfBytes: decoratedPdf(photo),
+      pptxBytes: null,
+      filename: 'd.pdf',
+    },
+    theme: null,
+    lang: 'en',
+    slideTypes: SLIDE_TYPES,
+    signal: new AbortController().signal,
+    onProgress: () => {},
+    renderPages: () => assert.fail('nothing falls back'),
+  });
+  assert.deepEqual(
+    slides.map((s) => s.type),
+    ['image-text-slide', 'image-text-slide', 'image-text-slide'],
+  );
+  assert.deepEqual(report.decorations, []);
+});
+
+test('decoration needs the same pixels, the same place and three pages', () => {
+  const png = Buffer.from('logo');
+  const at = (page, box, bytes = png) =>
+    model({ page, images: [{ png: bytes, box, pixels: box }] });
+  const corner = { x: 670, y: 15, width: 30, height: 30 };
+  const nudged = { ...corner, x: corner.x + 1.5 };
+  // Within two points is the same place.
+  assert.deepEqual(
+    findDecorations([at(1, corner), at(2, nudged), at(3, corner)]).decorations,
+    [{ pages: [1, 2, 3] }],
+  );
+  // Two pages are no pattern; other pixels are another picture; a box
+  // three points off is another place.
+  for (const pages of [
+    [at(1, corner), at(2, corner)],
+    [at(1, corner), at(2, corner), at(3, corner, Buffer.from('other'))],
+    [at(1, corner), at(2, corner), at(3, { ...corner, y: 18.5 })],
+  ]) {
+    const { pages: kept, decorations } = findDecorations(pages);
+    assert.deepEqual(decorations, []);
+    assert.ok(kept.every((p) => p.images.length === 1));
+  }
 });

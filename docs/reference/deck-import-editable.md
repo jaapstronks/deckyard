@@ -107,23 +107,67 @@ measured on.
 The background goes only to a type that declares the field: the section
 title has none.
 
+## Mixed pages
+
+A page with a heading, text and a vector drawing (a chart, a diagram) is
+the most common page a slide type cannot hold as such. Three rules decide
+what it becomes (B831); the thresholds are constants in
+`deck-slides-import.js` with what they were measured on:
+
+- **A tagged table is no drawing.** Its borders and cell fills are paths
+  too; the drawing threshold of 60 paths counts `paths − tablePaths` (the
+  paths inside the table's box, `drawing.tablePaths` in the page model). A
+  tagged table beside text under that threshold becomes a `content-slide`
+  with the table as a pipe table in its body. A page that holds only the
+  table was already a `table-slide`.
+- **A drawing that stands apart from the text is cut out.** When the
+  page has a heading and no picture of its own, the drawing's box
+  (`drawing.box`) covers 8–75% of the page, neither the heading, a body
+  line nor a table cell reaches into it, at least one block stands outside
+  it and no block straddles its edge, the page becomes an
+  `image-text-slide`: the text outside the box as the body, literally, and
+  the box cut out of the rendered page as the picture
+  (`page-NNN-drawing.png`, `alt` = the heading), on the side away from the
+  text. Small paragraphs inside the box are the drawing's labels: they are
+  in the picture and go to the notes under "Not on the slide:". The cut
+  stops above the footer band (the bottom 15% of the page) when a footer,
+  footnote or page number reaches into the box, so a logo beside the
+  footer stays out. Measured on Philips Q4 2024, two of the seventeen
+  drawing pages qualify (p13, p24); every other drawing page keeps the
+  `drawing` fallback, because no cut could avoid losing or repeating text.
+- **Only with pixels to cut from.** The cut-out needs a rendering of the
+  page: the PDF is rendered for the pages that fall back and the pages a
+  drawing is cut out of. A source without a rendering (a PowerPoint file
+  alone, B829) passes `pagePixels: false` and keeps such a page as a
+  `drawing` fallback; a page the rasteriser skipped falls back the same
+  way, with `not-rendered` in the report.
+
+**Decoration.** Before any page is mapped, a picture with the same pixels
+(PNG hash) in the same place (within 2 pt) on three pages or more, covering
+at most 3% of each, is left out of every page: a logo in a corner would
+otherwise turn each page into a picture beside text. The report names it
+once (`decorations`). The bound comes from the measurement: the repeated
+pictures in both measured decks (one photo at 50%, five at 14%) are content
+and stay.
+
 ## The six fallback reasons
 
 A closed set, `FALLBACK_REASONS` in `deck-slides-import.js`. The creation
 view names each one in its report line; a test pins that every reason the
 server names has its own words.
 
-| Reason           | When                                                                                                                                    | In the report (en / nl)                                    |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `no-text`        | no text to edit: a drawing, or nothing                                                                                                  | no text / geen tekst                                       |
-| `drawing`        | a heading and text beside a vector drawing of more than 60 paths (a chart, a diagram); a page holding only a tagged table is exempt     | chart / grafiek                                            |
-| `table-untagged` | a table found by geometry only, whose cells would be a guess                                                                            | table / tabel                                              |
-| `multi-image`    | more than one picture (beside text, or alone)                                                                                           | several images / meerdere beelden                          |
-| `no-heading`     | text without a heading that is no section title either                                                                                  | no heading / geen kop                                      |
-| `too-long`       | the literal text fits no field (a heading over its limit, a table over 10 columns or 40 rows); cutting it would break the first promise | too much text for one slide / te veel tekst voor één slide |
+| Reason           | When                                                                                                                                                                                           | In the report (en / nl)                                    |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `no-text`        | no text to edit: a drawing, or nothing                                                                                                                                                         | no text / geen tekst                                       |
+| `drawing`        | a heading and text beside a vector drawing of more than 60 paths, a tagged table's own paths not counted, that cannot be cut out (§ Mixed pages); a page holding only a tagged table is exempt | chart / grafiek                                            |
+| `table-untagged` | a table found by geometry only, whose cells would be a guess                                                                                                                                   | table / tabel                                              |
+| `multi-image`    | more than one picture (beside text, or alone)                                                                                                                                                  | several images / meerdere beelden                          |
+| `no-heading`     | text without a heading that is no section title either                                                                                                                                         | no heading / geen kop                                      |
+| `too-long`       | the literal text fits no field (a heading over its limit, a table over 10 columns or 40 rows); cutting it would break the first promise                                                        | too much text for one slide / te veel tekst voor één slide |
 
-Only the fallback pages are rendered (in the browser-backed rasteriser), so
-an all-editable deck never starts a browser.
+Only the fallback pages and the pages a drawing is cut out of are rendered
+(in the browser-backed rasteriser), so a deck without either never starts
+a browser.
 
 ## Notes
 
@@ -135,7 +179,8 @@ Every slide's notes are built in one order, parts separated by a blank line:
 2. on a fallback slide only, the page's text, so it can still be copied;
 3. under "Not on the slide:" ("Niet op de slide:" in a Dutch deck), the text
    the slide does not show: dropped footers, page numbers and footnotes, and
-   on a mapped slide the labels of a drawing. Reference marks are left out:
+   on a mapped slide the labels of a drawing (and on a cut-out the small
+   paragraphs inside it). Reference marks are left out:
    without their footnote's text beside them they say nothing.
 
 The AI route reads a PDF through the same model (`readPdf()` in
@@ -179,7 +224,8 @@ generation route uses:
   "errors": [{ "page": 4, "code": "upload-failed" }],
   "pages": [
     { "page": 5, "type": "image-slide", "reason": "drawing", "dropped": 2 }
-  ]
+  ],
+  "decorations": [{ "pages": [1, 2, 3] }]
 }
 ```
 
@@ -193,11 +239,12 @@ sentence per missing picture, and an "Open presentation" button. An entry in
 page that fell back got no image from the rasteriser) and the client puts it
 into words in the deck's language ("Page 4: an image could not be
 uploaded"); the server sends no sentence of its own. The slide keeps an empty
-image either way.
+image either way. Pictures left out as decoration add one sentence after
+those ("A picture repeated on 3 pages (a logo or mark) was left out."), and
+an import with one is not clean, so the sub-tab shows it.
 
 ## Not on this route
 
-PowerPoint as the source of editable slides, the source's colours and layout
-variants, cutting a drawing out as a picture for mixed pages, inserting
+PowerPoint as the source of editable slides (B828, B829), inserting
 editable slides into an open deck (B307), OCR of text inside images, form
 content and annotations.
