@@ -16,6 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Every job below needs `classify` and gates on `!cancelled()`, not
+  # `always()`: a failed classify still runs the full path (fail-closed), but a
+  # run that `cancel-in-progress` superseded starts nothing (B814).
+  # tests/ci-workflow-gates.test.js pins this.
   classify:
     runs-on: ubuntu-latest
     outputs:
@@ -33,7 +37,7 @@ jobs:
 
   test:
     needs: classify
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     # PostgreSQL and Redis come from the runner image and apt, not from service
     # containers: anonymous registry pulls hit a quota shared per runner IP
@@ -132,7 +136,7 @@ jobs:
   # in, so a local `npm test` (no copy) still runs the pure core suite.
   test-fork:
     needs: classify
-    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
+    if: ${{ !cancelled() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -202,7 +206,7 @@ jobs:
   # run.
   vendor-freshness:
     needs: classify
-    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
+    if: ${{ !cancelled() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -240,7 +244,7 @@ jobs:
   # as "a migration broke" without opening the run.
   migrations:
     needs: classify
-    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
+    if: ${{ !cancelled() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -305,7 +309,7 @@ jobs:
   # only), so a local `npm test` with no database still runs the pure suite.
   test-postgres:
     needs: classify
-    if: always() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true')
+    if: ${{ !cancelled() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true') }}
     runs-on: ubuntu-latest
     env:
       # Read by server/config/database.js for every connection this job opens
