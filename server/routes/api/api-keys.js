@@ -221,13 +221,18 @@ async function handleApiKeyUpdate(
   // from its next request on, so it is recorded. A failed write here is
   // logged, not answered: the change itself has landed.
   try {
-    await recordApiKeyPermissionsChanged({
+    const recorded = await recordApiKeyPermissionsChanged({
       key: result.key,
       before: result.before,
       after: result.key.permissions,
       actor: authedUser,
       scope: storageScope,
     });
+    if (!recorded?.ok) {
+      log.error(
+        `Failed to record permission change for key ${keyId}: ${recorded?.reason}`,
+      );
+    }
   } catch (err) {
     log.error(`Failed to record permission change for key ${keyId}:`, err);
   }

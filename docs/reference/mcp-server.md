@@ -123,20 +123,19 @@ The contract an agent can rely on:
   (`status: "reactivated"`).
 - **Mail is explicit.** Every grant writes an in-app `share_received`
   notification and a `collaborator.added` activity event, as in the editor.
+  The invitation email goes out only with `sendInvitation: true`
+  (`invitationEmail: "queued"`); by default the result says
+  `invitationEmail: "not_requested"`, and an `unchanged` repeat says
+  `"not_sent"` whatever was asked. The editor sends it by default.
+- **A success names the result.** `status` is `added`, `reactivated` or
+  `unchanged`, and `collaborator` carries the permission as stored; confirm
+  with `list_collaborators`.
 
 Both tools need an opt-in scope, `collaborators:read` or
 `collaborators:write`. An existing key gets it without rotation: Settings →
 API Keys → **Edit permissions**, or `PATCH /api/api-keys/:id` with
-`{ "permissions": [...] }`. The gate re-reads the key on every request, so the
-new scope applies from the next call.
-The invitation email goes out only with `sendInvitation: true`
-(`invitationEmail: "queued"`); by default the result says
-`invitationEmail: "not_requested"`, and an `unchanged` repeat says
-`"not_sent"` whatever was asked. The editor sends it by default.
-
-- **A success names the result.** `status` is `added`, `reactivated` or
-  `unchanged`, and `collaborator` carries the permission as stored; confirm
-  with `list_collaborators`.
+`{ "permissions": [...] }` (B813). The gate re-reads the key on every request,
+so the new scope applies from the next call.
 
 ### Analyzing
 
