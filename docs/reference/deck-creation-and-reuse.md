@@ -109,7 +109,11 @@ lives in `shared/slide-types/instance-keys.js`; the declaration travels on
 every copy path without touching a file outside its own directory.
 
 Whole-deck duplication (`POST /api/presentations/:id/duplicate`) is a different
-path and does not run this recipe.
+path and does not run this recipe. It names the copy a copy in every language
+version, not only top-level: each version title gets the prefix in that
+version's language ("Copy of …" for `en-GB`, "Kopie van …" otherwise), so the
+first save, which re-projects the top level from the dominant version, keeps it
+(`duplicatePresentationRow`, `tests/duplicate-version-titles.test.js`).
 
 ### Saving a slide: the same declaration, a different rule
 
