@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.83.1](https://github.com/jaapstronks/deckyard/compare/v1.83.0...v1.83.1) (2026-10-21)
+
+
+### Fixed
+
+* duplicate names every language version and the translate view saves source-language slide text (B816) ([#1797](https://github.com/jaapstronks/deckyard/issues/1797)) ([27505fa](https://github.com/jaapstronks/deckyard/commit/27505fad7fd59da92c99f290ec15f62b78198cda))
+
 ## [1.83.0](https://github.com/jaapstronks/deckyard/compare/v1.82.0...v1.83.0) (2026-10-21)
 
 
