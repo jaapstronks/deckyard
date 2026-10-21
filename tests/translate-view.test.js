@@ -53,7 +53,7 @@ const { computeMissingTranslation, slideTextRows, pickVersion } =
   await import('../shared/i18n-progress.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { setFeatures } = await import('../client/lib/state/features.js');
-const { translationFieldKey } =
+const { translationFieldKey, translationSource, recordTranslationSource } =
   await import('../shared/translation-provenance.js');
 
 const normalizeLang = (l) => (l === 'nl' || l === 'en-GB' ? l : null);
@@ -349,6 +349,17 @@ test('proposals: filled target needs individual acceptance; changed source canno
     pres.i18n.versions['en-GB'].slides[0].content.title,
     'Suggestion',
   );
+  assert.deepEqual(
+    pres.i18n.versions['en-GB'].translationSources[
+      translationFieldKey('s1', ['title'])
+    ],
+    translationSource('nl', 'Waarom'),
+    'an accepted suggestion stamps the source it was made from (B817)',
+  );
+  assert.equal(
+    field('en-GB', 's1', 'Title').parentElement.textContent.includes('Current'),
+    true,
+  );
   document
     .querySelector('section[data-slide-id="s2"] .translate-view-propose-slide')
     .click();
@@ -470,7 +481,7 @@ test('view: typing in the target writes that language at that path', () => {
     's1',
     ['items', 1, 'title'],
     'Open',
-    { sourceLang: 'nl' },
+    { sourceLang: null },
   ]);
   assert.equal(
     pres.i18n.versions['en-GB'].slides[0].content.items[1].title,
@@ -860,16 +871,79 @@ test('navigation: the caret holds the selection until its slide leaves the view'
   cleanup();
 });
 
-test('view: statuses follow source edits and filters match rows and index', () => {
+// ── B817: only an accepted suggestion stamps provenance ─────────────────
+
+const titleSource = (pres, lang) =>
+  pres.i18n.versions[lang].translationSources?.[
+    translationFieldKey('s1', ['title'])
+  ];
+
+test('view: a typed target write stamps nothing', () => {
   const pres = bilingualPres();
-  const { view, signal, field, type } = openWith(pres);
+  const { view, field, type } = openWith(pres);
   const target = field('en-GB', 's1', 'Title');
   assert.match(target.parentElement.textContent, /No history/);
   type(target, 'Why us');
+  assert.equal(pres.i18n.versions['en-GB'].slides[0].content.title, 'Why us');
+  assert.equal(titleSource(pres, 'en-GB'), undefined, 'no record written');
+  assert.match(target.parentElement.textContent, /No history/);
+  view.close();
+  cleanup();
+});
+
+test('view: a typed source write stamps nothing in either version', () => {
+  const pres = bilingualPres();
+  const { view, field, type } = openWith(pres);
+  type(field('nl', 's1', 'Title'), 'Waarom nu');
+  assert.equal(pres.slides[0].content.title, 'Waarom nu');
+  assert.equal(titleSource(pres, 'nl'), undefined, 'source not stamped');
+  assert.equal(titleSource(pres, 'en-GB'), undefined, 'target not stamped');
+  view.close();
+  cleanup();
+});
+
+test('view: typed writes leave an existing stamp, so a source edit shows as changed', () => {
+  const pres = bilingualPres();
+  const stamp = translationSource('nl', 'Waarom');
+  recordTranslationSource(pres.i18n.versions['en-GB'], 's1', ['title'], stamp);
+  const { view, field, type } = openWith(pres);
+  const target = field('en-GB', 's1', 'Title');
   assert.match(target.parentElement.textContent, /Current/);
+  type(target, 'Why us');
+  assert.deepEqual(titleSource(pres, 'en-GB'), stamp, 'kept on a target edit');
+  assert.match(target.parentElement.textContent, /Current/);
+  type(field('nl', 's1', 'Title'), 'Waarom nu');
+  assert.deepEqual(titleSource(pres, 'en-GB'), stamp, 'kept on a source edit');
+  assert.equal(titleSource(pres, 'nl'), undefined);
+  assert.match(
+    field('en-GB', 's1', 'Title').parentElement.textContent,
+    /Source changed/,
+  );
+  type(field('en-GB', 's1', 'Title'), 'Why now');
+  assert.match(
+    field('en-GB', 's1', 'Title').parentElement.textContent,
+    /Source changed/,
+    'typing the new translation does not claim it is current',
+  );
+  view.close();
+  cleanup();
+});
+
+test('view: filters match rows and index', () => {
+  const pres = bilingualPres();
+  recordTranslationSource(
+    pres.i18n.versions['en-GB'],
+    's1',
+    ['title'],
+    translationSource('nl', 'Waarom'),
+  );
+  const { view, signal, field, type } = openWith(pres);
   pres.slides[0].content.title = 'Waarom nu';
   signal.emit();
-  assert.match(target.parentElement.textContent, /Source changed/);
+  assert.match(
+    field('en-GB', 's1', 'Title').parentElement.textContent,
+    /Source changed/,
+  );
   const filter = document.querySelector('.translate-view-filter');
   filter.value = 'changed';
   filter.dispatchEvent(new dom.window.Event('change'));
