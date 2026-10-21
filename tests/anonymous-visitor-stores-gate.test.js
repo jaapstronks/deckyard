@@ -9,8 +9,11 @@
  * under `server/` (migrations excluded) and refuses an identity write without
  * a register line, a second write path into a registered table, a stale
  * register line, evidence that does not exist, and a reference inventory
- * that does not name a registered table. The docs gates test words; this one
- * tests `insertInto(…).values({ … })`.
+ * that does not name a registered table. An `updateTable(…).set({ … })` that
+ * writes an identity key must target a registered table that lists it, and a
+ * spread in `.values()` or `.set()` is refused as unreadable (B811). The docs
+ * gates test words; this one tests `insertInto(…).values({ … })` and
+ * `updateTable(…).set({ … })`.
  *
  * The negative cases below feed the same audit a synthetic source, so the
  * gate is shown to bite rather than assumed to.
@@ -26,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import { walkFiles } from './helpers/walk-files.js';
 import {
+  IDENTITY_KEY_PATTERN,
   auditAnonymousVisitorStores,
   collectInsertSites,
 } from './helpers/anonymous-visitor-stores.js';
@@ -102,6 +106,25 @@ test('the scan reads keys through a .values() literal and through a .map() callb
   );
 });
 
+test('the scan reads the keys of the identity .set() sites on the tree', () => {
+  const { updates } = runAudit();
+  const identityUpdates = updates
+    .filter((s) => s.keys.some((k) => IDENTITY_KEY_PATTERN.test(k)))
+    .map((s) => [s.file, s.table, s.fn]);
+  assert.deepEqual(identityUpdates.sort(), [
+    [
+      'server/storage/analytics/view-sessions-gdpr.js',
+      'view_sessions',
+      'anonymizeOldIpAddresses',
+    ],
+    [
+      'server/storage/share-links/guests.js',
+      'share_link_guests',
+      'verifyGuestEmail',
+    ],
+  ]);
+});
+
 // ─── the negative cases: the gate bites ─────────────────────────────────────
 
 const withSource = (file, text) => ({
@@ -170,6 +193,60 @@ test('an identity key the register does not list for the table fails', () => {
     ),
     violations.join('\n'),
   );
+});
+
+test('an identity write through .set() into an unregistered table fails', () => {
+  const { violations } = runAudit(
+    withSource(
+      'server/storage/fictional-log.js',
+      `export async function stampAgent(scope, id, ua) {
+         return db.updateTable('fictional_visit_log').set({ user_agent: ua }).where('id', '=', id).execute();
+       }`,
+    ),
+  );
+  assert.equal(violations.length, 1, violations.join('\n'));
+  assert.match(
+    violations[0],
+    /`fictional_visit_log` receives user_agent but is not in tests\/fixtures\/anonymous-visitor-stores\.json/,
+  );
+});
+
+test('a .set() identity key the register does not list for the table fails', () => {
+  const { violations } = runAudit(
+    withSource(
+      'server/storage/fictional-guests.js',
+      `export async function stampGuestIp(scope, id, ip) {
+         return db.updateTable('share_link_guests').where('id', '=', id).set({ ip_address: ip }).execute();
+       }`,
+    ),
+  );
+  assert.equal(violations.length, 1, violations.join('\n'));
+  assert.match(
+    violations[0],
+    /`share_link_guests` is written with ip_address, missing from its identityColumns/,
+  );
+});
+
+test('a spread in .values() or .set() fails as unreadable, once per site', () => {
+  for (const [method, body] of [
+    ['values', `db.insertInto('spread_log').values({ ...row }).execute()`],
+    [
+      'set',
+      `db.updateTable('spread_log').set({ ...row }).where('id', '=', 1).execute()`,
+    ],
+  ]) {
+    const { violations } = runAudit(
+      withSource(
+        'server/storage/fictional-spread.js',
+        `export async function copyRow(scope, row) { return ${body}; }`,
+      ),
+    );
+    assert.equal(violations.length, 1, violations.join('\n'));
+    assert.equal(
+      violations[0],
+      `server/storage/fictional-spread.js:1: .${method}() spreads an object the gate cannot read; write the keys out`,
+    );
+  }
 });
 
 test('a register line whose evidence does not exist fails', () => {
