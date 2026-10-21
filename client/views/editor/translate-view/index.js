@@ -424,7 +424,16 @@ export function openTranslateView({
     entry.error.show(message, { control: entry.el, focus: false });
   };
 
-  const writeValue = (entry, value, { refresh = true } = {}) => {
+  /**
+   * Write one field. Only an accepted suggestion passes `sourceLang`, which
+   * stamps provenance; a typed write in either column stamps nothing and
+   * leaves an existing stamp where it is (B817).
+   */
+  const writeValue = (
+    entry,
+    value,
+    { refresh = true, sourceLang = null } = {},
+  ) => {
     const inert = inertReason();
     if (inert) {
       showRefusal(entry, inert);
@@ -443,11 +452,7 @@ export function openTranslateView({
       getSelectedSlideId?.() !== entry.slideId
     )
       selectSlide?.(entry.slideId);
-    if (
-      !write(entry.lang, entry.slideId, entry.path, value, {
-        sourceLang: entry.lang === state.target ? state.source : state.target,
-      })
-    ) {
+    if (!write(entry.lang, entry.slideId, entry.path, value, { sourceLang })) {
       showRefusal(
         entry,
         entry.slideId && lockOf(entry.slideId)
@@ -674,7 +679,14 @@ export function openTranslateView({
     const entry = controls.get(
       addressKey(state.target, proposal.slideId, proposal.path),
     );
-    if (!entry || !writeValue(entry, proposal.value, { refresh })) return false;
+    if (
+      !entry ||
+      !writeValue(entry, proposal.value, {
+        refresh,
+        sourceLang: proposal.sourceLang,
+      })
+    )
+      return false;
     proposals.delete(rowKey(proposal.slideId, proposal.path));
     if (refresh) render();
     return true;
