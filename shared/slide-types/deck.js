@@ -5,7 +5,7 @@ import {
   applyContentTranslation,
   contentTranslation,
   isTextField,
-  textFieldSpec,
+  textFieldSpecForDef,
   textFieldSpecForType,
 } from './text-fields.js';
 import { DEFAULT_DECK_LANG, normalizeLang } from '../i18n-utils.js';
@@ -622,7 +622,7 @@ function deckTranslations(deck, slidesRaw, slides, baseLang, resolveType) {
           ...slide,
           content: def
             ? applyContentTranslation(
-                textFieldSpec(def.fields),
+                textFieldSpecForDef(def),
                 slide.content,
                 contentTr,
               )

@@ -60,6 +60,15 @@
  *   machine value (one per deck). `normalizeSlides` deliberately lets unknown
  *   keys through — never throw data away — and this is what that passthrough
  *   means for translation (D79).
+ * - The keys a type carries **without a field** are declared too, as machine
+ *   values: `instanceKeys` (`pollId`), the `textStyles` map and the derived
+ *   background-contrast keys (`slideBgAutoFor`, `slideBgTextAuto`,
+ *   `slideBgNeedsScrim`, `compose.js`), which the system writes on any slide
+ *   with a background image, of any type. Left undeclared, the value rule read
+ *   an image path and `light` as prose: the translate view offered them as
+ *   rows and the missing scan counted them (B818). The list is
+ *   `nonFieldContentKeys()` (`declared-keys.js`), the same one strict
+ *   validation and the deck import read; not a copy.
  *
  * `tests/text-field-vocabulary-gate.test.js` keeps copy number nine from
  * growing back.
@@ -71,6 +80,7 @@
 // `deck.js` is a text-field consumer and the barrel re-exports it, so going
 // through the barrel would make this module part of an import cycle.
 import { SLIDE_TYPES } from './registry.js';
+import { nonFieldContentKeys } from './declared-keys.js';
 
 /** Field types whose value is prose, and therefore per-language. */
 export const TEXT_FIELD_TYPES = Object.freeze(['string', 'markdown', 'csv']);
@@ -203,17 +213,29 @@ export function perLanguageKeys(spec, ...contents) {
 }
 
 /**
- * Text spec for a slide type (recursive over items fields). Unknown types get
- * an empty spec: they declare nothing, so every stored key falls to the value
- * rule.
+ * Text spec for one slide-type definition: its fields' spec (recursive over
+ * items fields), with the top level also declaring the keys the type carries
+ * without a field (`nonFieldContentKeys`) as machine values. A missing
+ * definition declares only those that every slide may carry (the derived
+ * background keys), so every other stored key falls to the value rule.
+ * @param {Object|null|undefined} def - Slide-type definition
+ * @returns {{textKeys: Set<string>, declaredKeys: Set<string>, items: Map<string, Object>}}
+ */
+export function textFieldSpecForDef(def) {
+  const spec = textFieldSpec(def?.fields);
+  for (const key of nonFieldContentKeys(def)) spec.declaredKeys.add(key);
+  return spec;
+}
+
+/**
+ * Text spec for a slide type: `textFieldSpecForDef` of its registry entry.
+ * An unknown type declares only the derived background keys.
  * @param {string} type - Slide type name
  * @param {Object} [slideTypes] - Slide-type registry (forks/tests override)
  * @returns {{textKeys: Set<string>, declaredKeys: Set<string>, items: Map<string, Object>}}
  */
 export function textFieldSpecForType(type, slideTypes = SLIDE_TYPES) {
-  const def = slideTypes?.[type];
-  if (!def || !Array.isArray(def.fields)) return emptyTextFieldSpec();
-  return textFieldSpec(def.fields);
+  return textFieldSpecForDef(slideTypes?.[type]);
 }
 
 /**
