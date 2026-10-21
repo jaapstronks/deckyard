@@ -5,6 +5,7 @@
  * GET /api/api-keys - List user's API keys
  * POST /api/api-keys - Create a new API key
  * GET /api/api-keys/:id - Get API key details
+ * PATCH /api/api-keys/:id - Change an API key's permissions
  * DELETE /api/api-keys/:id - Revoke an API key
  * GET /api/api-keys/:id/usage - Get usage statistics
  */
@@ -14,8 +15,11 @@ import {
   listApiKeys,
   getApiKeyById,
   revokeApiKey,
+  updateApiKeyPermissions,
   AVAILABLE_PERMISSIONS,
 } from '../../storage/api-keys.js';
+import { recordApiKeyPermissionsChanged } from '../../services/activity-events.js';
+import { createLogger } from '../../utils/logger.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
 import {
   badRequest,
@@ -27,6 +31,11 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
+
+const log = createLogger('api-keys');
+
+/** The refusal text for a bad permission list, on create and on change. */
+const INVALID_PERMISSIONS_MESSAGE = `Invalid permissions. Available: ${AVAILABLE_PERMISSIONS.join(', ')}`;
 
 // GET /api/api-keys - List user's API keys
 async function handleApiKeyList({ storageScope, res, url, authedUser }) {
@@ -63,7 +72,7 @@ async function handleApiKeyCreate({ storageScope, req, res, authedUser }) {
     // other reason names its own meaning.
     const fieldMessages = {
       email: 'Invalid email',
-      permissions: `Invalid permissions. Available: ${AVAILABLE_PERMISSIONS.join(', ')}`,
+      permissions: INVALID_PERMISSIONS_MESSAGE,
     };
     const messages = {
       name_required: 'Name is required',
@@ -180,6 +189,53 @@ async function handleApiKeyRevoke({ storageScope, res, authedUser }, keyId) {
   return true;
 }
 
+// PATCH /api/api-keys/:id - Change an API key's permissions (B813)
+async function handleApiKeyUpdate(
+  { storageScope, req, res, authedUser },
+  keyId,
+) {
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+
+  const result = await updateApiKeyPermissions(
+    storageScope,
+    keyId,
+    parsed.body?.permissions,
+  );
+
+  if (!result.ok) {
+    const messages = {
+      invalid: INVALID_PERMISSIONS_MESSAGE,
+      api_key_id_required: 'Key ID is required',
+      not_found_or_already_revoked: 'API key not found or already revoked',
+      unavailable: 'Database unavailable',
+    };
+    return storageError(
+      res,
+      result,
+      messages[result.reason] || 'Failed to update API key',
+    );
+  }
+
+  // The audit line: a permission change alters what an integration may do
+  // from its next request on, so it is recorded. A failed write here is
+  // logged, not answered: the change itself has landed.
+  try {
+    await recordApiKeyPermissionsChanged({
+      key: result.key,
+      before: result.before,
+      after: result.key.permissions,
+      actor: authedUser,
+      scope: storageScope,
+    });
+  } catch (err) {
+    log.error(`Failed to record permission change for key ${keyId}:`, err);
+  }
+
+  serveJson(res, 200, result.key);
+  return true;
+}
+
 /**
  * Declarative route table for `/api/api-keys*` (A7.19 C8). Order matches the
  * previous if-chain: the `/usage` row comes before the `/:id` rows, and the
@@ -211,12 +267,18 @@ export const ROUTES = [
     handler: handleApiKeyRevoke,
   },
   {
+    method: 'PATCH',
+    pattern: /^\/api\/api-keys\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleApiKeyUpdate,
+  },
+  {
     pattern: '/api/api-keys',
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
   },
   {
     pattern: /^\/api\/api-keys\/[^/]+$/,
-    handler: ({ res }) => methodNotAllowed(res, ['GET', 'DELETE']),
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']),
   },
   {
     pattern: /^\/api\/api-keys\/[^/]+\/usage$/,

@@ -38,6 +38,9 @@ export const EVENT_TYPES = {
   // so the type and its SHARE_LINK entity below stay as a rendering contract.
   SHARE_ACCESSED: 'share.accessed',
   SLIDE_ADDED: 'slide.added',
+  // An API key's permission list was changed in place (B813). Carries no
+  // presentation, so the feed shows it to the key owner's organization.
+  API_KEY_PERMISSIONS_CHANGED: 'api_key.permissions_changed',
 };
 
 export const ENTITY_TYPES = {
@@ -45,6 +48,7 @@ export const ENTITY_TYPES = {
   COMMENT: 'comment',
   SHARE_LINK: 'share_link',
   COLLABORATOR: 'collaborator',
+  API_KEY: 'api_key',
 };
 
 export const ACTOR_TYPES = {

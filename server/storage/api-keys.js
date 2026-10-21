@@ -64,6 +64,78 @@ export const AVAILABLE_PERMISSIONS = [
   'collaborators:write', // Grant organization members access to those presentations
 ];
 
+/**
+ * Validate a requested permission list: a non-empty array whose every entry is
+ * one of {@link AVAILABLE_PERMISSIONS}. The one check behind both creating a
+ * key and changing an existing key's permissions, so the two cannot drift.
+ * Duplicates are dropped, order is kept.
+ *
+ * @param {unknown} permissions - The permissions as the caller sent them
+ * @returns {{ ok: true, permissions: string[] } | { ok: false, reason: 'invalid', field: 'permissions', invalidPermissions: unknown[] }}
+ */
+export function validatePermissions(permissions) {
+  if (!Array.isArray(permissions) || permissions.length === 0) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'permissions',
+      invalidPermissions: [],
+    };
+  }
+  const invalidPermissions = permissions.filter(
+    (s) => !AVAILABLE_PERMISSIONS.includes(s),
+  );
+  if (invalidPermissions.length > 0) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'permissions',
+      invalidPermissions,
+    };
+  }
+  return { ok: true, permissions: [...new Set(permissions)] };
+}
+
+/**
+ * Read the stored `permissions` column (jsonb, or a JSON string from older
+ * rows) back into an array, falling back to the creation default.
+ *
+ * @param {unknown} raw - The stored column value
+ * @returns {string[]}
+ */
+function parseStoredPermissions(raw) {
+  try {
+    if (raw) {
+      return typeof raw === 'string' ? JSON.parse(raw) : raw;
+    }
+  } catch {
+    // Use default permissions on parse error
+  }
+  return ['read', 'write'];
+}
+
+/**
+ * The listed shape of a stored key: what {@link listApiKeys} returns per key
+ * and {@link updateApiKeyPermissions} returns for the changed one. Never the
+ * hash.
+ *
+ * @param {Object} row - An `api_keys` row
+ * @returns {Object}
+ */
+function toListedKey(row) {
+  return {
+    id: row.id,
+    ownerEmail: row.owner_email,
+    name: row.name,
+    prefix: row.key_prefix,
+    tier: row.tier || 'free',
+    permissions: parseStoredPermissions(row.permissions),
+    lastUsedAt: row.last_used_at,
+    revokedAt: row.revoked_at,
+    createdAt: row.created_at,
+  };
+}
+
 // ============================================================
 // KEY GENERATION
 // ============================================================
@@ -118,18 +190,9 @@ export async function createApiKey(scope, { name, ownerEmail, permissions }) {
   }
 
   // Validate permissions if provided
-  const keyPermissions = permissions || ['read', 'write'];
-  const invalidPermissions = keyPermissions.filter(
-    (s) => !AVAILABLE_PERMISSIONS.includes(s),
-  );
-  if (invalidPermissions.length > 0) {
-    return {
-      ok: false,
-      reason: 'invalid',
-      field: 'permissions',
-      invalidPermissions,
-    };
-  }
+  const checked = validatePermissions(permissions || ['read', 'write']);
+  if (!checked.ok) return checked;
+  const keyPermissions = checked.permissions;
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
@@ -215,18 +278,7 @@ export async function validateApiKey(rawKey) {
       return { ok: false, reason: 'invalid_or_revoked' };
     }
 
-    // Parse permissions
-    let permissions = ['read', 'write'];
-    try {
-      if (row.permissions) {
-        permissions =
-          typeof row.permissions === 'string'
-            ? JSON.parse(row.permissions)
-            : row.permissions;
-      }
-    } catch {
-      // Use default permissions on parse error
-    }
+    const permissions = parseStoredPermissions(row.permissions);
 
     return {
       ok: true,
@@ -279,6 +331,72 @@ export async function revokeApiKey(scope, keyId, revokerEmail) {
 }
 
 /**
+ * Replace the permissions of an existing, unrevoked API key.
+ *
+ * Scoped exactly like {@link revokeApiKey}: the caller's own key, in the
+ * caller's organization, not revoked. Anything else — another organization,
+ * another user's key, a revoked key, an unknown id — is the same
+ * `not_found_or_already_revoked`, so the answer never confirms a key the caller
+ * may not touch. The new list is validated by {@link validatePermissions}, the
+ * check creation uses.
+ *
+ * Takes effect on the key's next request: the MCP and public-API gates read the
+ * key per request through {@link validateApiKey}, nothing caches it.
+ *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} keyId - The key to change
+ * @param {unknown} permissions - The complete new permission list
+ * @returns {Promise<{ ok: true, key: Object, before: string[] } | { ok: false, reason: string, field?: string }>}
+ *   `key` has the shape {@link listApiKeys} returns; `before` is the list it replaced.
+ */
+export async function updateApiKeyPermissions(scope, keyId, permissions) {
+  toStorageContext(scope, 'updateApiKeyPermissions');
+  if (!keyId) {
+    return { ok: false, reason: 'api_key_id_required' };
+  }
+  const checked = validatePermissions(permissions);
+  if (!checked.ok) return checked;
+
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    const orgId = getOrgId(scope);
+    const current = await db
+      .selectFrom('api_keys')
+      .select(['id', 'permissions'])
+      .where('id', '=', keyId)
+      .where('organization_id', '=', orgId)
+      .where('owner_email', '=', getOwnerEmail(scope))
+      .where('revoked_at', 'is', null)
+      .executeTakeFirst();
+
+    if (!current) {
+      return { ok: false, reason: 'not_found_or_already_revoked' };
+    }
+
+    // The same filters again: a revoke landing between the read and this
+    // write leaves the key revoked and the update a no-op, never the reverse.
+    const row = await db
+      .updateTable('api_keys')
+      .set({ permissions: JSON.stringify(checked.permissions) })
+      .where('id', '=', keyId)
+      .where('organization_id', '=', orgId)
+      .where('owner_email', '=', getOwnerEmail(scope))
+      .where('revoked_at', 'is', null)
+      .returningAll()
+      .executeTakeFirst();
+
+    if (!row) {
+      return { ok: false, reason: 'not_found_or_already_revoked' };
+    }
+
+    return {
+      ok: true,
+      before: parseStoredPermissions(current.permissions),
+      key: toListedKey(row),
+    };
+  });
+}
+
+/**
  * List API keys for an organization.
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} options - List options
@@ -314,31 +432,7 @@ export async function listApiKeys(scope, options = {}) {
 
     const rows = await query.execute();
 
-    const keys = rows.map((row) => {
-      let permissions = ['read', 'write'];
-      try {
-        if (row.permissions) {
-          permissions =
-            typeof row.permissions === 'string'
-              ? JSON.parse(row.permissions)
-              : row.permissions;
-        }
-      } catch {
-        // Use default permissions on parse error
-      }
-
-      return {
-        id: row.id,
-        ownerEmail: row.owner_email,
-        name: row.name,
-        prefix: row.key_prefix,
-        tier: row.tier || 'free',
-        permissions,
-        lastUsedAt: row.last_used_at,
-        revokedAt: row.revoked_at,
-        createdAt: row.created_at,
-      };
-    });
+    const keys = rows.map(toListedKey);
 
     return { ok: true, keys };
   });
@@ -371,17 +465,7 @@ export async function getApiKeyById(scope, keyId) {
       return { ok: false, reason: 'not_found' };
     }
 
-    let permissions = ['read', 'write'];
-    try {
-      if (row.permissions) {
-        permissions =
-          typeof row.permissions === 'string'
-            ? JSON.parse(row.permissions)
-            : row.permissions;
-      }
-    } catch {
-      // Use default permissions on parse error
-    }
+    const permissions = parseStoredPermissions(row.permissions);
 
     return {
       ok: true,

@@ -10,6 +10,8 @@ import { renderKeyList } from './key-list.js';
 import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import { showCreateModal } from './create-modal.js';
 import { showRevokeModal } from './revoke-modal.js';
+import { showEditPermissionsModal } from './edit-permissions-modal.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { showUsagePanel } from './usage-panel.js';
 
 /**
@@ -107,6 +109,7 @@ export function renderApiKeysPanel({ user }) {
     renderKeyList(keysList, keys, {
       onRevoke: handleRevoke,
       onViewUsage: handleViewUsage,
+      onEditPermissions: handleEditPermissions,
     });
   };
 
@@ -129,6 +132,29 @@ export function renderApiKeysPanel({ user }) {
     showRevokeModal(key, async () => {
       await loadKeys();
       land();
+    });
+  };
+
+  /**
+   * Handle edit permissions button click (B813). The list is re-rendered from
+   * the server, so the button that opened the dialog is replaced: focus goes
+   * to its successor in the same key's row.
+   * @param {Object} key - The key whose permissions to edit
+   */
+  const handleEditPermissions = (key) => {
+    showEditPermissionsModal(key, async (updated) => {
+      await loadKeys();
+      toast.success(
+        t(
+          'settings.apiKeys.editModal.saved',
+          'Permissions updated for "{name}".',
+          { name: updated?.name || key.name },
+        ),
+      );
+      const row = Array.from(keysList.querySelectorAll('[data-key-id]')).find(
+        (el) => el.getAttribute('data-key-id') === key.id,
+      );
+      row?.querySelector('.api-key-edit-permissions')?.focus();
     });
   };
 

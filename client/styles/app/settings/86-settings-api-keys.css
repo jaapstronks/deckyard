@@ -7,17 +7,20 @@
   grid-column: 1 / -1;
 }
 
-/* Key list container */
+/* Key list container. It is the size container the row layout reads
+   (B813): the settings sidebar takes width the viewport cannot see, so the
+   four-column row switches to a stack on the list's own width. */
 .api-keys-list {
   display: flex;
   flex-direction: column;
   gap: 0;
+  container: api-keys-list / inline-size;
 }
 
 /* Key row styles */
 .api-key-row {
   display: grid;
-  grid-template-columns: 1fr 140px 160px 140px;
+  grid-template-columns: minmax(140px, 1fr) 140px 160px 200px;
   gap: var(--ps-space-3);
   align-items: center;
   padding: var(--ps-space-3);
@@ -149,9 +152,11 @@
   color: hsl(var(--app-text-tertiary));
 }
 
-/* Actions column */
+/* Actions column. Three actions (B813): whole buttons wrap onto a next line
+   when their labels do not fit side by side; a label never breaks or clips. */
 .api-key-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--ps-space-2);
   justify-content: flex-end;
 }
@@ -159,6 +164,7 @@
 .api-key-actions .btn {
   padding: 4px 10px;
   font-size: 12px;
+  white-space: nowrap;
 }
 
 /* ============================================================
@@ -377,7 +383,9 @@
    MOBILE RESPONSIVE
    ============================================================ */
 
-@media (max-width: 768px) {
+/* 700px is the four columns' minimum (140 + 140 + 160 + 200, three gaps and
+   the row padding); below it the row stacks. */
+@container api-keys-list (max-width: 700px) {
   .api-key-row {
     grid-template-columns: 1fr;
     gap: var(--ps-space-2);
@@ -399,19 +407,26 @@
     flex-wrap: wrap;
     gap: var(--ps-space-3);
   }
-
-  .api-key-usage-stats {
-    grid-template-columns: 1fr;
-  }
 }
 
-@media (max-width: 480px) {
+/* A phone-wide list: one full-width action per line, touch-sized. */
+@container api-keys-list (max-width: 480px) {
   .api-key-actions {
     flex-direction: column;
   }
 
   .api-key-actions .btn {
     width: 100%;
+    min-height: 44px;
     justify-content: center;
+    /* Full width now: a long translation may wrap at a word, inside its own
+       button, rather than overflow it. */
+    white-space: normal;
+  }
+}
+
+@media (max-width: 768px) {
+  .api-key-usage-stats {
+    grid-template-columns: 1fr;
   }
 }

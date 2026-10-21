@@ -76,6 +76,7 @@ export const UI_ICON_NAMES = [
   'image',
   'info',
   'italic',
+  'key-round',
   'layers',
   'layout-grid',
   'layout-template',

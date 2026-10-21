@@ -20,6 +20,11 @@ import { loadThemeById } from '../../../lib/theme/theme.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
 import { debugLog } from '../../../lib/state/debug.js';
+import {
+  API_KEY_PERMISSIONS_CHANGED,
+  apiKeyPermissionsAction,
+  apiKeyPermissionsSummary,
+} from '../activity-api-key.js';
 
 /**
  * Create the home view with recent presentations and activity preview
@@ -775,11 +780,17 @@ function renderActivityPreviewItem({ event, count }, detachThumbs) {
       );
       break;
     }
+    case API_KEY_PERMISSIONS_CHANGED:
+      actionText = apiKeyPermissionsAction();
+      break;
     default:
       actionText = t('activity.modified', 'modified');
   }
 
   const targetTitle =
+    (event.eventType === API_KEY_PERMISSIONS_CHANGED
+      ? event.data?.name
+      : null) ||
     event.presentation?.title ||
     event.data?.title ||
     event.data?.presentationTitle ||
@@ -800,7 +811,9 @@ function renderActivityPreviewItem({ event, count }, detachThumbs) {
   const snippet =
     event.eventType === 'comment.created'
       ? cleanSnippet(event.data?.bodyPreview)
-      : '';
+      : event.eventType === API_KEY_PERMISSIONS_CHANGED
+        ? apiKeyPermissionsSummary(event)
+        : '';
   if (snippet) {
     content.append(h('div', { class: 'home-activity-snippet', text: snippet }));
   }

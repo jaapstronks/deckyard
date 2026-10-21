@@ -18,7 +18,10 @@ Two dedicated permissions gate comment access (Settings → API Keys):
 | `comments:write` | Create comments/replies, resolve/reopen/dismiss       |
 
 Existing keys don't have these permissions and get a `403 API key lacks
-required permission` until recreated (or granted the permission).
+required permission` until their owner grants them: Settings → API Keys →
+**Edit permissions**, or `PATCH /api/api-keys/:id` with
+`{ "permissions": [...] }`. No rotation is needed; the key is re-read on every
+request, so the new permission applies from the next one.
 
 ## Payload: slide context and snapshots
 

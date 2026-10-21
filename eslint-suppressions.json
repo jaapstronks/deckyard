@@ -997,7 +997,7 @@
   },
   "server/storage/api-keys.js": {
     "no-restricted-syntax": {
-      "count": 3
+      "count": 1
     }
   },
   "server/storage/feedback.js": {

@@ -86,3 +86,28 @@ export async function fetchKeyUsage(id, days = 30) {
     };
   }
 }
+
+/**
+ * Replace the permissions of an existing API key (B813).
+ * @param {string} id - Key ID
+ * @param {string[]} permissions - The complete new permission list
+ * @returns {Promise<{key: Object}|{error: string}>} `key` in the listed shape.
+ */
+export async function updateApiKeyPermissions(id, permissions) {
+  try {
+    const data = await api(`/api/api-keys/${id}`, {
+      method: 'PATCH',
+      body: { permissions },
+    });
+    return { key: data };
+  } catch (e) {
+    return {
+      error:
+        e.message ||
+        t(
+          'settings.apiKeys.editModal.error',
+          'Failed to update the permissions.',
+        ),
+    };
+  }
+}
