@@ -256,8 +256,6 @@
   "editor.deckSettings.description.placeholder": "En kort beskrivelse av denne presentasjonen på to setninger…",
   "editor.deckSettings.description.title": "Beskrivelse",
   "editor.deckSettings.description.tooLong": "For lang ({n}/{max}). Forkort.",
-  "editor.deckSettings.lang.help": "Brukes for offentlig deling og eksport (HTML lang-attributt).",
-  "editor.deckSettings.lang.title": "Dokumentspråk",
   "editor.deckSettings.liveVideo.detected": "Fant: {provider}",
   "editor.deckSettings.liveVideo.enable": "Slå på videooverlegg",
   "editor.deckSettings.liveVideo.mobilePosition": "Plassering på mobil",

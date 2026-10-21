@@ -1,10 +1,10 @@
-import { t } from '../../../../lib/ui-i18n.js';
+import { t } from '../../../lib/ui-i18n.js';
 import {
   detectStreamProvider,
   POSITION_PRESET_LABELS,
   MOBILE_POSITIONS,
-} from '../../../../../shared/video-stream-providers.js';
-import { h } from '../../../../lib/dom/index.js';
+} from '../../../../shared/video-stream-providers.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Live Video overlay: enable toggle plus stream URL, provider detection, and

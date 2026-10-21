@@ -1,9 +1,9 @@
-import { t } from '../../../../lib/ui-i18n.js';
+import { t } from '../../../lib/ui-i18n.js';
 import {
   calculateDeckTime,
   DEFAULT_ADVANCE_INTERVAL_SECONDS,
-} from '../../../../../shared/slide-timing.js';
-import { h } from '../../../../lib/dom/index.js';
+} from '../../../../shared/slide-timing.js';
+import { h } from '../../../lib/dom/index.js';
 
 // Named presets: fill interval + loop + auto mode in one pick.
 // "Custom" is the catch-all for any values that don't match a preset.

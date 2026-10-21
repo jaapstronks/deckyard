@@ -254,8 +254,6 @@
   "editor.deckSettings.description.placeholder": "En kort beskrivelse af denne præsentation på to sætninger…",
   "editor.deckSettings.description.title": "Beskrivelse",
   "editor.deckSettings.description.tooLong": "For lang ({n}/{max}). Forkort.",
-  "editor.deckSettings.lang.help": "Bruges til offentlig deling og eksport (HTML lang-attribut).",
-  "editor.deckSettings.lang.title": "Dokumentsprog",
   "editor.deckSettings.liveVideo.detected": "Fundet: {provider}",
   "editor.deckSettings.liveVideo.enable": "Slå videooverlay til",
   "editor.deckSettings.liveVideo.mobilePosition": "Placering på mobil",

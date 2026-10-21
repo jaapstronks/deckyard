@@ -356,7 +356,7 @@
       "count": 1
     }
   },
-  "client/views/editor/modals/settings-modal/toggles.js": {
+  "client/views/editor/deck-settings/toggles.js": {
     "no-restricted-syntax": {
       "count": 1
     }

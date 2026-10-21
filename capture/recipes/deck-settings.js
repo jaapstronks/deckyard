@@ -1,12 +1,12 @@
 /**
- * Recipe: the deck settings dialog, opened from the editor's "More options"
- * menu, clipped to the dialog.
+ * Recipe: the deck settings pane of the editor's rail, opened on its General
+ * section by its own address (B804), clipped to the rail.
  * Registry id: shot-deck-settings → public/images/screenshots/deck-settings.png
  * Doc page: docs/editing/index.md § Settings
  *
- * The docs name Q&A, Builds, Presenter transition, Document language, Tags and
- * Description. The dialog is capped at 80vh and scrolls below that, so the
- * viewport is tall enough (2000px) for the whole form to render unscrolled.
+ * General holds the source language, Tags and Description; the other sections
+ * (Appearance, Playback, Publishing, Analytics, Live video) are one click
+ * along the pane's section buttons.
  */
 
 import {
@@ -24,8 +24,8 @@ export default {
   id: 'deck-settings',
   output: 'deck-settings.png',
   registryPath: 'public/images/screenshots/deck-settings.png',
-  viewport: { ...DEFAULT_VIEWPORT, height: 2000 },
-  clip: '.modal',
+  viewport: DEFAULT_VIEWPORT,
+  clip: '.inspector-panel',
 
   localStorage: { 'editor.inline.coachSeen': '1' },
 
@@ -43,7 +43,8 @@ export default {
     return { deckId, slideId: slides[0].id };
   },
 
-  navigate: (ctx) => `/app/${ctx.deckId}?slideId=${ctx.slideId}`,
+  navigate: (ctx) =>
+    `/app/${ctx.deckId}?slideId=${ctx.slideId}&panel=settings&section=general`,
 
   waitFor: '.app-shell.editor-shell .slides-add-btn',
 
@@ -54,18 +55,9 @@ export default {
         { timeout: 15_000 },
       )
       .catch(() => {});
-    // The menu item has no class of its own; its label is the stable handle,
-    // and the UI locale is pinned to English above.
-    await page.click(
-      'button[aria-label="More options"], summary[aria-label="More options"]',
-    );
-    const item = await page.waitForSelector(
-      '::-p-xpath(//*[contains(@class,"dropdown-item")][normalize-space()="Settings"])',
+    await page.waitForSelector(
+      '.deck-settings-pane.is-active .deck-settings-section:not([hidden])',
       { visible: true },
     );
-    await item.click();
-    await page.waitForSelector('.modal .settings-modal-grid', {
-      visible: true,
-    });
   },
 };

@@ -12,7 +12,7 @@ the settings as opaque JSON and does no validation or embedding.
 ## Settings shape
 
 Deck-wide config lives at `presentation.settings.liveVideo` (defaults from
-`shared/slide-types/presentation.js`, normalized on settings-modal open):
+`shared/slide-types/presentation.js`, normalized when the deck settings pane opens):
 
 ```json
 {
@@ -36,8 +36,8 @@ Deck-wide config lives at `presentation.settings.liveVideo` (defaults from
   offers presets.
 - `mobilePosition` — `bottom` | `top` | `hidden` | `pip`.
 
-Configured in the editor under **Deck settings → Live Video**
-(`client/views/editor/modals/settings-modal/index.js`): enable-toggle, URL input with
+Configured in the editor under **Deck settings → Live video**
+(`client/views/editor/deck-settings/live-video.js`): enable-toggle, URL input with
 live provider-detection hint, position select, mobile-position select.
 
 ## Per-slide override
@@ -142,7 +142,7 @@ shows no video.
 | `client/lib/slide-runtime/ensure-hls.js`                                                                | Lazy loader for the vendored hls.js (`client/vendor/hls/`)                                                                |
 | `client/styles/app/presenter/72-video-layer.css`                                                        | Layer positioning, transitions, mobile docks, error/unmute styling                                                        |
 | `shared/slide-types/presentation.js`                                                                    | `settings.liveVideo` defaults on new presentations                                                                        |
-| `client/views/editor/modals/settings-modal/index.js`                                                    | Settings normalization + "Live Video" section UI                                                                          |
+| `client/views/editor/deck-settings/live-video.js`                                                       | Settings normalization + "Live Video" section UI                                                                          |
 | `client/views/presenter/index.js`, `client/views/follow/index.js`, `client/views/share-viewer/index.js` | Mount points                                                                                                              |
 
 ## Not built (boundary notes)
