@@ -2,9 +2,10 @@
 <!--
   Source of tests/fixtures/slide-deck-tagged.pdf (B751): four 960×540 slide
   pages with real semantic HTML, so Chrome writes a tagged PDF (H1, L/LI,
-  Table/TR/TH/TD, Figure with alt). The PDF is committed; the tests never
-  start a browser. To regenerate it after editing this file, run from the
-  core root:
+  Table/TR/TH/TD, Figure with alt). The table has cell borders and a shaded
+  header row, so its page carries vector paths inside the table (B827). The
+  PDF is committed; the tests never start a browser. To regenerate it after
+  editing this file, run from the core root:
 
   node --input-type=module -e "
     import fs from 'node:fs';
@@ -69,7 +70,11 @@
       th,
       td {
         text-align: left;
-        padding: 6px 28px 6px 0;
+        padding: 6px 28px 6px 12px;
+        border-bottom: 1px solid #999;
+      }
+      th {
+        background: #e6e6e6;
       }
       .footnote {
         position: absolute;

@@ -7,6 +7,13 @@
  * the detectors read: position (origin top-left, y down, the baseline),
  * font size, bold, the marked-content id that ties the run to the structure
  * tree, and whether it sits inside an `Artifact` (footer, page number).
+ *
+ * Colour (B827) is not in the text content: it is the fill colour in force
+ * at each `showText` in the operator list (`images.js` records those as
+ * `textPaints`). Both are the same glyph stream in the same order, so the
+ * runs are aligned with the paints character by character, within each
+ * marked content so a slip stays local; a group whose characters do not add
+ * up falls back to the colour most of its paints share.
  */
 
 /**
@@ -38,6 +45,8 @@ export function isBoldFont(fontName) {
  * @property {number} size - font size in page units
  * @property {boolean} bold
  * @property {string} font - the embedded font name, '' when unknown
+ * @property {string | null} color - `#rrggbb` the run is drawn in, null when
+ *   unknown (a pattern, or no paints to align with)
  * @property {string | null} mcid - innermost marked-content id, if any
  * @property {boolean} artifact - inside `Artifact` marked content
  */
@@ -52,9 +61,14 @@ export function isBoldFont(fontName) {
  * @param {object} opts
  * @param {{ convertToViewportPoint: (x: number, y: number) => number[] }} opts.viewport
  * @param {(fontId: string) => string} [opts.fontNameOf]
+ * @param {Array<import('./images.js').TextPaint>} [opts.textPaints] - the
+ *   page's `showText` operations in content order, for the colour
  * @returns {TextRun[]}
  */
-export function readTextRuns(textContent, { viewport, fontNameOf = () => '' }) {
+export function readTextRuns(
+  textContent,
+  { viewport, fontNameOf = () => '', textPaints = [] },
+) {
   const stack = [];
   const runs = [];
   for (const item of textContent.items) {
@@ -82,11 +96,73 @@ export function readTextRuns(textContent, { viewport, fontNameOf = () => '' }) {
       size,
       bold: isBoldFont(font),
       font,
+      color: null,
       mcid: stack.findLast((m) => m.id)?.id ?? null,
       artifact: stack.some((m) => m.tag === 'Artifact'),
     });
   }
+  assignColors(runs, textPaints);
   return runs;
+}
+
+/** The characters that count for alignment: no whitespace, ligatures expanded. */
+const alignKey = (text) => String(text).normalize('NFKC').replace(/\s+/g, '');
+
+const mcidNumber = (id) => {
+  const match = /_mc(\d+)$/.exec(String(id ?? ''));
+  return match ? Number(match[1]) : null;
+};
+
+const dominant = (colors) => {
+  const counts = new Map();
+  let best = null;
+  let bestCount = 0;
+  for (const color of colors) {
+    if (color === null) continue;
+    const count = (counts.get(color) || 0) + 1;
+    counts.set(color, count);
+    if (count > bestCount) {
+      best = color;
+      bestCount = count;
+    }
+  }
+  return best;
+};
+
+/**
+ * Give each run the colour of the paint its characters came from. Runs and
+ * paints are grouped by marked-content id (untagged pages form one group);
+ * within a group the characters are consumed in order.
+ */
+function assignColors(runs, textPaints) {
+  if (!textPaints.length) return;
+  const groups = new Map();
+  const group = (key) => {
+    if (!groups.has(key)) groups.set(key, { runs: [], paints: [] });
+    return groups.get(key);
+  };
+  for (const run of runs) group(mcidNumber(run.mcid)).runs.push(run);
+  for (const paint of textPaints) group(paint.mcid ?? null).paints.push(paint);
+  for (const { runs: groupRuns, paints } of groups.values()) {
+    if (!groupRuns.length) continue;
+    const perChar = paints.flatMap((p) =>
+      Array.from(alignKey(p.text), () => p.color),
+    );
+    const wanted = groupRuns.reduce((n, r) => n + alignKey(r.str).length, 0);
+    if (perChar.length !== wanted) {
+      const fallback = dominant(paints.map((p) => p.color));
+      for (const run of groupRuns) run.color = fallback;
+      continue;
+    }
+    let at = 0;
+    for (const run of groupRuns) {
+      const length = alignKey(run.str).length;
+      run.color = length
+        ? dominant(perChar.slice(at, at + length))
+        : (perChar[at] ?? perChar.at(-1) ?? null);
+      at += length;
+    }
+  }
 }
 
 /**

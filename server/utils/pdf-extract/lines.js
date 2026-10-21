@@ -49,6 +49,8 @@ export function normalizeText(text) {
  * @property {number} width
  * @property {number} size - the largest font size on the line
  * @property {boolean} bold - every visible run on the line is bold
+ * @property {string | null} color - `#rrggbb` of the line's largest run
+ *   (B827), null when unknown
  * @property {LineSegment[]} segments
  * @property {string[]} mcids - marked-content ids of the runs, in x order
  * @property {Array<import('./text-runs.js').TextRun>} runs
@@ -147,6 +149,7 @@ function buildLine(group) {
     width: end - x,
     size: largest.size,
     bold: runsByX.every((r) => r.bold),
+    color: largest.color ?? null,
     segments: cleanSegments,
     mcids: [...new Set(runsByX.map((r) => r.mcid).filter(Boolean))],
     runs: runsByX,

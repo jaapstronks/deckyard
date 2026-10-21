@@ -23,6 +23,7 @@
  */
 
 import { joinLineText, normalizeText } from './lines.js';
+import { lineBox, unionBoxes } from './boxes.js';
 
 /** Glyphs that open a bulleted list item when they start a line. */
 export const BULLET_GLYPHS = '•·▪●◦▸►✓';
@@ -167,7 +168,9 @@ function findTables(lines, skip) {
  * @param {boolean} [opts.heading=true] - look for a heading at all
  * @param {Set<number>} [opts.exclude] - line indices that are not body text
  *   (drawing labels); they get no block and keep the role they have
- * @returns {{ heading: string | null, roles: Array<string | null>, blocks: object[] }}
+ * @returns {{ heading: string | null, roles: Array<string | null>, blocks: object[], boxes: Array<import('./boxes.js').Box> }}
+ *   `boxes[i]` is the box around the lines of `blocks[i]` (B827); the page
+ *   model carries it as the block's `box`
  */
 export function detectGeometry(
   lines,
@@ -211,6 +214,7 @@ export function detectGeometry(
         y: line.y,
         headerRow: rows[0].bold && rows.slice(1).every((r) => !r.bold),
         rows: rows.map((r) => r.segments.map((s) => s.text)),
+        lines: rows,
       });
       i = end - 1;
       continue;
@@ -219,10 +223,17 @@ export function detectGeometry(
     if (marker) {
       para = null;
       if (!list || !followsClosely(list.last, line)) {
-        list = { kind: 'list', y: line.y, variant: marker.variant, items: [] };
+        list = {
+          kind: 'list',
+          y: line.y,
+          variant: marker.variant,
+          items: [],
+          lines: [],
+        };
         blocks.push(list);
       }
       list.items.push({ text: marker.text, parts: [marker.text], first: line });
+      list.lines.push(line);
       list.last = line;
       roles[i] = 'list-item';
       continue;
@@ -236,6 +247,7 @@ export function detectGeometry(
     ) {
       item.text = normalizeText(`${item.text} ${line.text}`);
       item.parts = [item.text];
+      list.lines.push(line);
       list.last = line;
       roles[i] = 'list-item';
       continue;
@@ -261,6 +273,7 @@ export function detectGeometry(
       : null,
     roles,
     blocks: blocks.map(finishBlock),
+    boxes: blocks.map((block) => unionBoxes(block.lines.map(lineBox))),
   };
 }
 
@@ -282,7 +295,8 @@ function finishBlock(block) {
       items: block.items.map(({ text, parts }) => ({ text, parts })),
     };
   }
-  return block;
+  const { lines, ...table } = block;
+  return table;
 }
 
 /** Pages with fewer paths than this have no drawing to label. */
