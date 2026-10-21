@@ -213,6 +213,8 @@
   "notifications.markAllRead": "Mark all read",
   "notifications.title": "Notifications",
   "qr.alt": "QR code",
+  "sandbox.banner.hosted": "Or let us host it for you",
+  "sandbox.banner.selfHost": "Install Deckyard yourself",
   "sandbox.banner.text": "Temporary Deckyard sandbox - your work is deleted after {hours} hours.",
   "sandbox.examples.count.many": "{count} slides",
   "sandbox.examples.count.one": "1 slide",

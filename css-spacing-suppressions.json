@@ -264,11 +264,6 @@
       "count": 8
     }
   },
-  "client/styles/app/shell/110-sandbox-banner.css": {
-    "tokenisable-spacing": {
-      "count": 4
-    }
-  },
   "client/styles/app/shell/111-maintenance-banner.css": {
     "tokenisable-spacing": {
       "count": 5

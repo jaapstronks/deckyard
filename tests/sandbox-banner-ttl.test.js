@@ -14,7 +14,8 @@
  *      carries `{hours}`.
  *
  * Plus where it is mounted: not on the presenter or follow-along screens the
- * audience sees (B357).
+ * audience sees (B357), and the two exits it carries (A4): install it
+ * yourself, the main route, and ask us to host it.
  *
  * Run with: node --test tests/sandbox-banner-ttl.test.js
  */
@@ -55,7 +56,7 @@ globalThis.fetch = async (url) => {
 
 const { setFeatures } = await import('../client/lib/state/features.js');
 const { setUiLocale } = await import('../client/lib/ui-i18n.js');
-const { syncSandboxBanner } =
+const { syncSandboxBanner, SELF_HOST_URL, HOSTED_CONTACT_URL } =
   await import('../client/lib/dom/sandbox-banner.js');
 
 function withEnv(env, fn) {
@@ -141,6 +142,48 @@ test('the banner stays off the screens the audience sees (B357)', () => {
   syncSandboxBanner('present');
   assert.equal(document.querySelector('.sandbox-banner'), null);
   setFeatures({ sandboxMode: false });
+});
+
+test('the banner carries the self-host and the hosted exit (A4)', async () => {
+  setFeatures({ sandboxMode: true, sandboxTtlHours: 24 });
+  await setUiLocale('en', { persist: false });
+  syncSandboxBanner('home');
+
+  const links = [...document.querySelectorAll('.sandbox-banner a')];
+  assert.equal(links.length, 2, 'two exits, nothing else to click');
+  const [selfHost, hosted] = links;
+
+  assert.equal(
+    SELF_HOST_URL,
+    'https://deckyard.eu/docs/deployment/quickstart/',
+  );
+  assert.equal(selfHost.getAttribute('href'), SELF_HOST_URL);
+  assert.equal(selfHost.textContent, 'Install Deckyard yourself');
+  assert.equal(selfHost.getAttribute('target'), '_blank');
+  assert.match(selfHost.getAttribute('rel'), /noopener/);
+
+  assert.match(HOSTED_CONTACT_URL, /^mailto:jaap@jaapstronks\.nl\?/);
+  assert.equal(hosted.getAttribute('href'), HOSTED_CONTACT_URL);
+  assert.equal(hosted.textContent, 'Or let us host it for you');
+
+  // The status line announces the TTL only, not the links.
+  const status = document.querySelector('.sandbox-banner [role="status"]');
+  assert.ok(status && !status.querySelector('a'));
+
+  // A locale switch refreshes the link copy in place too.
+  await setUiLocale('nl', { persist: false });
+  syncSandboxBanner('edit');
+  assert.equal(selfHost.isConnected, true, 'same node, not rebuilt');
+  assert.equal(selfHost.textContent, 'Installeer Deckyard zelf');
+  assert.equal(hosted.textContent, 'Of laat ons het voor je hosten');
+
+  // The audience screens carry neither exit.
+  for (const name of ['present', 'presentWindow', 'follow']) {
+    syncSandboxBanner(name);
+    assert.equal(document.querySelector('.sandbox-banner a'), null, name);
+  }
+  setFeatures({ sandboxMode: false });
+  syncSandboxBanner('home');
 });
 
 test('no locale hardcodes the TTL in sandbox.banner.text', async () => {
