@@ -1,0 +1,229 @@
+{
+  "schema": "One entry per table that holds a visitor datum (IP, user agent, browser device id, possessed session token, accessor e-mail). identityColumns: the columns that carry it. producers: every insertInto site as `file :: function`. readers: the functions that read the datum back (`file :: function`). cleanup: { job, functions } (functions as `file :: function`, exported by that file and called by the job) or { exception: reason }. erase: { routes, functions } or { exception: reason }. tests: files that pin the lifetime or the exception and name the table. reference: the heading anchor in docs/reference/analytics-privacy.md. Checked against the source tree by tests/anonymous-visitor-stores-gate.test.js (B786).",
+  "reference": "docs/reference/analytics-privacy.md",
+  "scan": {
+    "root": "server",
+    "excluded": ["server/db/migrations/", "vendor/"]
+  },
+  "stores": {
+    "view_sessions": {
+      "identityColumns": [
+        "session_token",
+        "viewer_email",
+        "device_id",
+        "ip_address",
+        "user_agent"
+      ],
+      "producers": [
+        "server/storage/analytics/view-sessions.js :: createViewSession",
+        "server/storage/analytics/seeded-sessions.js :: insertSeededViewSessions"
+      ],
+      "readers": [
+        "server/storage/analytics/view-sessions.js :: getViewSessionByToken",
+        "server/storage/analytics/view-sessions.js :: getViewSessionsForPresentation",
+        "server/routes/api/analytics/metrics.js :: handleSessions"
+      ],
+      "cleanup": {
+        "job": "server/jobs/analytics-cleanup.js",
+        "functions": [
+          "server/storage/analytics/view-sessions.js :: deleteOldViewSessions",
+          "server/storage/analytics/view-sessions-gdpr.js :: anonymizeOldIpAddresses"
+        ]
+      },
+      "erase": {
+        "routes": [
+          "POST /api/track/my-data/erase",
+          "DELETE /api/analytics/my-data"
+        ],
+        "functions": [
+          "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForDevice",
+          "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForSession",
+          "server/storage/analytics/view-sessions-gdpr.js :: deleteUserAnalyticsData"
+        ]
+      },
+      "tests": [
+        "tests/analytics-track-erase.test.js",
+        "tests/analytics-gdpr-delete-path.test.js",
+        "tests/sandbox-analytics-seed.test.js",
+        "tests/pg/cleanup-jobs.pgtest.js"
+      ],
+      "reference": "#anonymous-visitor-records-adjacent-to-analytics"
+    },
+    "slide_views": {
+      "identityColumns": [],
+      "note": "No identity column of its own: a row belongs to a view_sessions row through view_session_id and shares its lifetime and erasure.",
+      "producers": [
+        "server/storage/analytics/slide-views.js :: transitionToSlide",
+        "server/storage/analytics/seeded-sessions.js :: insertSeededViewSessions"
+      ],
+      "readers": [
+        "server/routes/api/analytics/metrics.js :: handleSlides",
+        "server/routes/api/analytics/metrics.js :: handleJourney"
+      ],
+      "cleanup": {
+        "job": "server/jobs/analytics-cleanup.js",
+        "functions": [
+          "server/storage/analytics/slide-views.js :: deleteOldSlideViews"
+        ]
+      },
+      "erase": {
+        "routes": [
+          "POST /api/track/my-data/erase",
+          "DELETE /api/analytics/my-data"
+        ],
+        "functions": [
+          "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForDevice",
+          "server/storage/analytics/view-sessions-gdpr.js :: eraseAnalyticsDataForSession",
+          "server/storage/analytics/view-sessions-gdpr.js :: deleteUserAnalyticsData"
+        ]
+      },
+      "tests": [
+        "tests/analytics-track-erase.test.js",
+        "tests/analytics-gdpr-delete-path.test.js",
+        "tests/sandbox-analytics-seed.test.js",
+        "tests/pg/cleanup-jobs.pgtest.js"
+      ],
+      "reference": "#anonymous-visitor-records-adjacent-to-analytics"
+    },
+    "access_attempt_log": {
+      "identityColumns": ["accessor_email", "accessor_ip"],
+      "producers": ["server/storage/access-attempts.js :: logAccessAttempt"],
+      "readers": ["server/storage/access-attempts.js :: shouldNotifyAuthor"],
+      "cleanup": {
+        "job": "server/jobs/retention-cleanup.js",
+        "functions": [
+          "server/storage/access-attempts.js :: deleteOldAccessAttempts"
+        ]
+      },
+      "erase": {
+        "exception": "IP-only deduplication record without an identifier a visitor could present to prove it is theirs; it expires within ACCESS_ATTEMPT_WINDOW_MS (24 hours) plus one job interval regardless (GDPR art. 11, B785)."
+      },
+      "tests": [
+        "tests/access-attempt-retention.test.js",
+        "tests/pg/access-attempt-retention.pgtest.js"
+      ],
+      "reference": "#revoked-link-attempts-and-the-author-notification"
+    },
+    "user_notifications": {
+      "identityColumns": [],
+      "note": "No visitor datum since B785: the access_attempt notification names the deck and the access type, and migration 093 stripped accessorIp from older rows. Listed so a producer that puts a visitor datum back into the JSON data fails rule (b) review.",
+      "producers": ["server/storage/notifications.js :: createNotification"],
+      "readers": ["server/storage/notifications.js :: listNotifications"],
+      "cleanup": {
+        "exception": "The recipient's own inbox data, holding nothing of the visitor; it falls under inbox controls (read, archive) and cascades away with the deck or organization. There is no age cleanup of notifications (out of scope of the privacy work, B786 brief § Buiten scope)."
+      },
+      "erase": {
+        "exception": "Nothing of the visitor remains in the row to erase (B785); tests/access-attempt-retention.test.js pins the absence of accessorIp."
+      },
+      "tests": ["tests/access-attempt-retention.test.js"],
+      "reference": "#revoked-link-attempts-and-the-author-notification"
+    },
+    "feedback": {
+      "identityColumns": ["device_id"],
+      "note": "Audience member of a live session: a browser-generated device id keyed to the session, so one entry per device. Not a visitor of a share link; registered because the id is the same kind of identifier analytics protects.",
+      "producers": ["server/storage/feedback.js :: submitFeedback"],
+      "readers": [
+        "server/storage/feedback.js :: getFeedbackAggregate",
+        "server/storage/feedback.js :: listFeedbackEntries"
+      ],
+      "cleanup": {
+        "job": "server/jobs/live-session-cleanup.js",
+        "functions": [
+          "server/storage/live-sessions/db.js :: sweepExpiredSessions"
+        ]
+      },
+      "erase": {
+        "exception": "The row lives and dies with its 24-hour live session (feedback.session_id → present_sessions ON DELETE CASCADE, collected by the live-session sweep) and the presenter can clear the slide with resetFeedback; the device id is browser-generated and proves nothing about whose it is (GDPR art. 11, same reasoning as the analytics device id), so there is no visitor erase route."
+      },
+      "tests": ["tests/pg/live-interactions.pgtest.js"],
+      "reference": "#live-session-audience-records"
+    },
+    "interaction_votes": {
+      "identityColumns": ["device_id"],
+      "note": "Audience member of a live session: one vote per device per poll or likert interaction, keyed by a browser-generated device id.",
+      "producers": ["server/storage/interactions.js :: voteInteraction"],
+      "readers": ["server/storage/interactions.js :: getInteractionAggregate"],
+      "cleanup": {
+        "job": "server/jobs/live-session-cleanup.js",
+        "functions": [
+          "server/storage/live-sessions/db.js :: sweepExpiredSessions"
+        ]
+      },
+      "erase": {
+        "exception": "The row lives and dies with its 24-hour live session (interaction_votes.interaction_id → interactions → present_sessions ON DELETE CASCADE, collected by the live-session sweep) and the presenter can clear the poll with resetPollInteraction / resetLikertInteraction; the device id is browser-generated and proves nothing about whose it is (GDPR art. 11), so there is no visitor erase route."
+      },
+      "tests": ["tests/pg/live-interactions.pgtest.js"],
+      "reference": "#live-session-audience-records"
+    },
+    "magic_link_tokens": {
+      "identityColumns": ["ip_address", "user_agent"],
+      "note": "Account token, not an anonymous visitor: the IP and user agent of the request that asked for a sign-in link for a known address.",
+      "producers": ["server/storage/magic-link.js :: createMagicToken"],
+      "readers": [
+        "server/storage/magic-link.js :: validateMagicToken",
+        "server/storage/magic-link.js :: consumeMagicToken"
+      ],
+      "cleanup": {
+        "job": "server/jobs/auth-cleanup.js",
+        "functions": ["server/storage/magic-link.js :: cleanupExpiredTokens"]
+      },
+      "erase": {
+        "functions": ["server/storage/users.js :: deleteUser"]
+      },
+      "tests": [
+        "tests/auth-routes-reset-and-magic-link.test.js",
+        "tests/auth-cleanup-tokens.test.js",
+        "tests/delete-user-login-tokens.test.js",
+        "tests/pg/cleanup-jobs.pgtest.js"
+      ],
+      "reference": "#account-tokens-and-the-authentication-audit"
+    },
+    "password_reset_tokens": {
+      "identityColumns": ["ip_address", "user_agent"],
+      "note": "Account token, not an anonymous visitor: the IP and user agent of the request that asked for a reset link; invitation tokens written by users.js carry neither.",
+      "producers": [
+        "server/storage/password-reset.js :: createResetToken",
+        "server/storage/users.js :: createUser",
+        "server/storage/users.js :: resendInvitation"
+      ],
+      "readers": [
+        "server/storage/password-reset.js :: validateResetToken",
+        "server/storage/password-reset.js :: consumeResetToken"
+      ],
+      "cleanup": {
+        "job": "server/jobs/auth-cleanup.js",
+        "functions": [
+          "server/storage/password-reset.js :: cleanupExpiredTokens"
+        ]
+      },
+      "erase": {
+        "functions": ["server/storage/users.js :: deleteUser"]
+      },
+      "tests": [
+        "tests/auth-routes-reset-and-magic-link.test.js",
+        "tests/auth-cleanup-tokens.test.js",
+        "tests/delete-user-login-tokens.test.js",
+        "tests/pg/cleanup-jobs.pgtest.js"
+      ],
+      "reference": "#account-tokens-and-the-authentication-audit"
+    },
+    "auth_audit_log": {
+      "identityColumns": ["ip_address", "user_agent"],
+      "note": "Authentication audit: the IP and user agent of sign-in, reset and magic-link events, with the address they were attempted for. Security record of the instance, kept 90 days.",
+      "producers": ["server/storage/password-reset.js :: logAuthEvent"],
+      "readers": ["server/storage/users.js :: listUsers"],
+      "cleanup": {
+        "job": "server/jobs/auth-cleanup.js",
+        "functions": ["server/storage/password-reset.js :: cleanupOldAuditLogs"]
+      },
+      "erase": {
+        "exception": "An instance security record: a failed sign-in for an address has to stay visible to the operator for the 90-day window whoever asks, and the row has no organization column to bind a request to (storage-scope.md category 5). It ages out through cleanupOldAuditLogs."
+      },
+      "tests": [
+        "tests/auth-routes-reset-and-magic-link.test.js",
+        "tests/pg/cleanup-jobs.pgtest.js"
+      ],
+      "reference": "#account-tokens-and-the-authentication-audit"
+    }
+  }
+}
