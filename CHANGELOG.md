@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.83.4](https://github.com/jaapstronks/deckyard/compare/v1.83.3...v1.83.4) (2026-10-21)
+
+
+### Fixed
+
+* the translation view shows fields with text by default and drops "No suggestion yet" (B815) ([#1803](https://github.com/jaapstronks/deckyard/issues/1803)) ([a4f5436](https://github.com/jaapstronks/deckyard/commit/a4f543665c0721c66b4caddb4976e33e13a108b6))
+
 ## [1.83.3](https://github.com/jaapstronks/deckyard/compare/v1.83.2...v1.83.3) (2026-10-21)
 
 
