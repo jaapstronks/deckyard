@@ -21,6 +21,20 @@ export const DEFAULT_VIEWPORT = {
 };
 
 /**
+ * {@link DEFAULT_VIEWPORT}, made tall enough that a side pane of the editor
+ * rail shows its whole section without scrolling: 1440×1200 at 2×.
+ *
+ * The rail's `.panel-scroll` scrolls once a section outgrows the window, and
+ * the deck settings pane's General section (B804) does at 900 high, so the
+ * runner's `refuseHiddenOverflow()` refuses the shot (B812). The width stays
+ * the harness convention; only the height grows, with headroom to spare.
+ */
+export const TALL_PANE_VIEWPORT = Object.freeze({
+  ...DEFAULT_VIEWPORT,
+  height: 1200,
+});
+
+/**
  * Height of the browser's own chrome (tabs, address bar) above the page, in
  * CSS pixels: what separates a window from a screen.
  */
