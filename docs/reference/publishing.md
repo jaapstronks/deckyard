@@ -151,8 +151,9 @@ so `withdrawPublishedPreview` (`server/services/publish-presentation.js`)
 deletes the object (B806). It acts only when the file name was minted for
 that publication (`publishedPreviewPublishId` equals the publish id) and the
 media provider owns the URL, so a picked content image, any other upload and
-another publication's preview are never touched; what "withdraw" means is the
-provider's `withdrawPublicObject`.
+another publication's preview are never touched (such a URL is still blanked
+from the stored columns once it expires, just not deleted); what "withdraw"
+means is the provider's `withdrawPublicObject`.
 
 It runs when a publish or regenerate replaces the preview, on unpublish, and
 at the public seams: `/p/`, the feed and the v1 publish status ask

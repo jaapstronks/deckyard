@@ -36,7 +36,10 @@ test('a generated local preview is kept on disk', async () => {
   await fs.writeFile(file, 'png');
   try {
     assert.ok(provider.ownsUrl(`/uploads/${name}`));
-    assert.equal(await withdrawPublishedPreview(`/uploads/${name}`), 'kept');
+    assert.equal(
+      await withdrawPublishedPreview(`/uploads/${name}`, 'abcd1234'),
+      'kept',
+    );
     assert.equal(await fs.readFile(file, 'utf8'), 'png');
   } finally {
     await fs.rm(repoRoot, { recursive: true, force: true });

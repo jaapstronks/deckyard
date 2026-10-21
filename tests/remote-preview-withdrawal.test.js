@@ -359,6 +359,16 @@ test('unpublishing withdraws the preview the link advertised', async () => {
   assert.deepEqual(deletedKeys(), [OLD_KEY]);
 });
 
+test("unpublishing leaves another publication's preview on the bucket", async () => {
+  const db = await installPublished({ proven: true });
+  storedDeck(db).published.ogImageUrl = OTHER_URL;
+  storedEntry(db).og_image_url = OTHER_URL;
+  bucket.sent.length = 0;
+  await unpublishPresentation(ownerScope(), { actor: owner }, DECK_ID);
+  assert.equal(db.__tables.published_presentations.length, 0);
+  assert.deepEqual(bucket.sent, []);
+});
+
 // ---------------------------------------------------------------------------
 // Lazily at the public seams
 // ---------------------------------------------------------------------------

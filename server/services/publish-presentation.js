@@ -189,9 +189,10 @@ export async function buildPublishOgImage({
  * ever touched: the file name must carry `publishId`
  * ({@link publishedPreviewPublishId}) and the configured media provider must
  * own the URL. A picked content image, any other upload, and a generated
- * preview of another publication (a stored URL is not always one this
- * generator wrote: the fallback ladder stores a content image the author
- * chose) are left alone. What withdrawing means is the provider's: a remote
+ * preview of another publication are left alone. That last case is real: a
+ * stored URL is not always one this generator wrote, because the fallback
+ * ladder stores a content image the author chose, which may be any URL on
+ * the bucket. What withdrawing means is the provider's: a remote
  * origin deletes the object, the local provider keeps it because its own
  * route refuses an unproven preview. Idempotent and never throws.
  *
