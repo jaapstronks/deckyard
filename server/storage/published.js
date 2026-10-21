@@ -1,4 +1,3 @@
-import { safePublishedOgImage } from '../render/og-image.js';
 /**
  * Published presentations storage facade.
  *
@@ -265,6 +264,34 @@ export async function removePublishedEntry(scope, publishId) {
 }
 
 /**
+ * Blank the entry's OG image URL when it still holds `expectedUrl`: the
+ * preview it named was withdrawn (B806). Title, slug and `modified_at` stay,
+ * so the feed neither re-dates nor re-slugs the entry.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} publishId
+ * @param {string} expectedUrl
+ * @returns {Promise<boolean>} true when the row was written
+ */
+export async function clearPublishedEntryOgImage(
+  scope,
+  publishId,
+  expectedUrl,
+) {
+  const ctx = resolveScope(scope, 'clearPublishedEntryOgImage');
+  const id = String(publishId || '').trim();
+  if (!id || !expectedUrl) return false;
+
+  const result = await getDb()
+    .updateTable('published_presentations')
+    .set({ og_image_url: '' })
+    .where('id', '=', id)
+    .where('organization_id', '=', getOrgId(ctx))
+    .where('og_image_url', '=', expectedUrl)
+    .executeTakeFirst();
+  return Number(result?.numUpdatedRows ?? 0) > 0;
+}
+
+/**
  * Rename the public slug of a publish entry in the scope's organization.
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} publishId
@@ -315,7 +342,9 @@ export async function updatePublishedSlug(scope, publishId, nextSlug) {
  * @param {import('./scope.js').StorageScope} scope
  * @param {Object} [opts]
  * @param {number} [opts.limit=50] - Maximum items to return
- * @returns {Array} Enriched published presentation records
+ * @returns {Array} Enriched published presentation records, each carrying
+ *   the stored deck as `presentation` (the route resolves the advertised
+ *   preview from it through the publish service)
  */
 export async function listPublishedForFeed(scope, opts = {}) {
   resolveScope(scope, 'listPublishedForFeed');
@@ -350,7 +379,9 @@ export async function listPublishedForFeed(scope, opts = {}) {
       if (presSettings.excludeFromFeed) continue;
 
       enriched.push({
-        publicPreviewUrl: safePublishedOgImage(pres, entry.ogImageUrl),
+        // The stored deck: the feed route asks the publish service which
+        // preview it may advertise (`publicPreviewUrl`), never storage.
+        presentation: pres,
         title: pres.title || entry.title || 'Untitled',
         description:
           typeof pres.description === 'string' ? pres.description : '',

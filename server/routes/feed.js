@@ -8,6 +8,7 @@ import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getOrgSettings } from '../utils/org-settings.js';
 import { listPublishedForFeed } from '../storage/published.js';
 import { buildFeed } from '../utils/rss-feed.js';
+import { resolvePublicOgImage } from '../services/publish-presentation.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
 import { matchesIfNoneMatch, notModified } from '../utils/http.js';
@@ -92,6 +93,15 @@ export async function handleFeed({ repoRoot, req, res, url }) {
     { repoRoot, organizationId: orgId },
     { limit: maxItems },
   );
+  // Which preview each item may show; an expired one is withdrawn here (B806).
+  for (const item of presentations) {
+    item.publicPreviewUrl = await resolvePublicOgImage({
+      repoRoot,
+      pres: item.presentation,
+      storedUrl: item.published.ogImageUrl,
+      publishId: item.published.id,
+    });
+  }
 
   // Compute ETag from latest modified timestamp
   const latestModified =

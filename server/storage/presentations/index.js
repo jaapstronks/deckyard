@@ -1751,6 +1751,8 @@ export { getPresentationCached } from './cache.js';
 
 export { updateSlideNotes } from './slide-notes.js';
 
+export { clearPublishedOgImageUrl } from './published-preview.js';
+
 export {
   createComment,
   getComment,
