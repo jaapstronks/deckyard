@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.83.0](https://github.com/jaapstronks/deckyard/compare/v1.82.0...v1.83.0) (2026-10-21)
+
+
+### Added
+
+* edit the permissions of an existing API key (B813) ([#1793](https://github.com/jaapstronks/deckyard/issues/1793)) ([303051e](https://github.com/jaapstronks/deckyard/commit/303051e5e30bfa682666064451fcc14160dfa246))
+
+
+### Fixed
+
+* give the deck-settings capture a viewport its General section fits in (B812) ([#1792](https://github.com/jaapstronks/deckyard/issues/1792)) ([c629830](https://github.com/jaapstronks/deckyard/commit/c6298307de8e76f768eae99d8dee55980931a8ad))
+* skip follow-up CI jobs when a run is cancelled (B814) ([#1794](https://github.com/jaapstronks/deckyard/issues/1794)) ([c445054](https://github.com/jaapstronks/deckyard/commit/c4450540d1263143b776b63b4ca487be641a9de6))
+
 ## [1.82.0](https://github.com/jaapstronks/deckyard/compare/v1.81.0...v1.82.0) (2026-10-21)
 
 
