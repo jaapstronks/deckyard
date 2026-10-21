@@ -26,7 +26,7 @@ globalThis.Element = dom.window.Element;
 
 const { slidesImportOutcome } =
   await import('../client/views/slide-import/index.js');
-const { FALLBACK_REASONS } =
+const { FALLBACK_REASONS, REPORT_ERROR_CODES } =
   await import('../server/services/deck-slides-import.js');
 const { createPptxPdfImportPanel } =
   await import('../client/views/list/modals/creation-view/import-pptx-pdf.js');
@@ -82,14 +82,36 @@ test('a reason the client does not know shows the page alone', () => {
   assert.equal(line, '1 of 2 pages was taken over as an image: 2.');
 });
 
-test('a failed upload is not clean and names its page', () => {
+test("a failed upload is not clean and names its page, in the client's words (B826)", () => {
   const outcome = slidesImportOutcome({
     slidesExtracted: 3,
     pages: [1, 2, 3].map((page) => ({ page, type: 'content-slide' })),
-    errors: [{ page: 2, message: 'An image could not be uploaded' }],
+    errors: [{ page: 2, code: 'upload-failed' }],
   });
   assert.equal(outcome.clean, false);
-  assert.deepEqual(outcome.errors, ['Page 2: An image could not be uploaded']);
+  assert.deepEqual(outcome.errors, ['Page 2: an image could not be uploaded']);
+});
+
+test('every error code the server names has its own words', () => {
+  const { errors } = slidesImportOutcome({
+    slidesExtracted: 2,
+    pages: [1, 2].map((page) => ({ page, type: 'image-slide' })),
+    errors: REPORT_ERROR_CODES.map((code, i) => ({ page: i + 1, code })),
+  });
+  assert.deepEqual(errors, [
+    'Page 1: an image could not be uploaded',
+    'Page 2: the page was not rendered',
+  ]);
+});
+
+test('an error code the client does not know still names the page', () => {
+  const { clean, errors } = slidesImportOutcome({
+    slidesExtracted: 1,
+    pages: [{ page: 1, type: 'image-slide' }],
+    errors: [{ page: 1, code: 'something-new' }],
+  });
+  assert.equal(clean, false);
+  assert.deepEqual(errors, ['Page 1: something went wrong']);
 });
 
 test('the sub-tab offers editable slides first and checked, images second', () => {

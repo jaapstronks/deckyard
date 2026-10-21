@@ -146,7 +146,7 @@ generation route uses:
 {
   "slidesExtracted": 12,
   "slidesConverted": 9,
-  "errors": [{ "page": 4, "message": "An image could not be uploaded" }],
+  "errors": [{ "page": 4, "code": "upload-failed" }],
   "pages": [
     { "page": 5, "type": "image-slide", "reason": "drawing", "dropped": 2 }
   ]
@@ -157,8 +157,13 @@ The creation view reads it with `slidesImportOutcome()`. Every page editable
 and nothing failed: the deck opens with a confirmation ("All 12 pages were
 imported as editable slides."). Otherwise the sub-tab shows one line, "3 of
 12 pages were taken over as images: 5 (chart), 7 (table), 9 (no text).", a
-sentence per failed upload, and an "Open presentation" button. A failed
-upload keeps its slide with an empty image.
+sentence per missing picture, and an "Open presentation" button. An entry in
+`errors` carries a `code` from the closed set `REPORT_ERROR_CODES`
+(`upload-failed`: the media library refused the picture; `not-rendered`: a
+page that fell back got no image from the rasteriser) and the client puts it
+into words in the deck's language ("Page 4: an image could not be
+uploaded"); the server sends no sentence of its own. The slide keeps an empty
+image either way.
 
 ## Not on this route
 

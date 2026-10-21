@@ -2,7 +2,7 @@
  * What an import as editable slides did, in words (B753): the report of
  * `POST /api/presentations/import/slides` (`server/services/deck-slides-import.js`)
  * as one line naming the pages that became an image of themselves and why,
- * plus a sentence per image that could not be uploaded.
+ * plus a sentence per picture that is missing, in the words of its code.
  *
  * Pure: no DOM, no fetch. The host decides where the words go.
  */
@@ -27,10 +27,29 @@ const REASON_LABELS = {
 };
 
 /**
+ * What went wrong with a picture, per code in the closed set of
+ * `REPORT_ERROR_CODES` (`deck-slides-import.js`); a code this client does
+ * not know yet reads as the plain fact that something went wrong (B826).
+ */
+const ERROR_LABELS = {
+  'upload-failed': () =>
+    t(
+      'editor.importSlides.error.uploadFailed',
+      'an image could not be uploaded',
+    ),
+  'not-rendered': () =>
+    t('editor.importSlides.error.notRendered', 'the page was not rendered'),
+};
+
+const errorLabel = (code) =>
+  ERROR_LABELS[code]?.() ??
+  t('editor.importSlides.error.other', 'something went wrong');
+
+/**
  * @param {object} report - The `complete` event's `report`.
  * @param {number} [report.slidesExtracted]
  * @param {Array<{ page: number, reason?: string }>} [report.pages]
- * @param {Array<{ page: number, message: string }>} [report.errors]
+ * @param {Array<{ page: number, code: string }>} [report.errors]
  * @returns {{ clean: boolean, line: string, errors: string[] }} `clean` when
  *   every page became an editable slide and nothing failed; `line` says how
  *   many pages there were or which fell back; `errors` one sentence each.
@@ -40,10 +59,10 @@ export function slidesImportOutcome(report) {
   const total = Number(report?.slidesExtracted) || pages.length;
   const fallbacks = pages.filter((p) => p.reason);
   const errors = (Array.isArray(report?.errors) ? report.errors : []).map(
-    ({ page, message }) =>
+    ({ page, code }) =>
       t('editor.importSlides.report.error', 'Page {page}: {message}', {
         page,
-        message,
+        message: errorLabel(code),
       }),
   );
 
