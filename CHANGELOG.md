@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.83.2](https://github.com/jaapstronks/deckyard/compare/v1.83.1...v1.83.2) (2026-10-21)
+
+
+### Fixed
+
+* a typed write in the translation view no longer stamps provenance (B817) ([#1801](https://github.com/jaapstronks/deckyard/issues/1801)) ([788f09c](https://github.com/jaapstronks/deckyard/commit/788f09c8acb5fc49932f1b3aae8e19c88ad61607))
+
 ## [1.83.1](https://github.com/jaapstronks/deckyard/compare/v1.83.0...v1.83.1) (2026-10-21)
 
 
