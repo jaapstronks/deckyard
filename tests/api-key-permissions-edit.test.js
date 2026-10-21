@@ -1,5 +1,5 @@
 /**
- * B813 — changing the permissions of an existing API key.
+ * Changing the permissions of an existing API key (B813).
  *
  * Storage (`updateApiKeyPermissions`) is scoped exactly like revoke: the
  * caller's own, unrevoked key in the caller's organization. Validation is the
