@@ -889,3 +889,76 @@ test('view: statuses follow source edits and filters match rows and index', () =
   view.close();
   cleanup();
 });
+
+// ── B816: a source-language slide text whose target has no such field ───
+
+/**
+ * The CIIIC proof on v1.81.0: the English version carries slide s2 but no
+ * `title` key on it at all (not an empty string). Every write in the source
+ * column passes the target column as `sourceLang`, and the seam refused the
+ * write because there was no target text to record provenance from.
+ */
+function presWithAbsentTargetTitle() {
+  const pres = bilingualPres();
+  delete pres.i18n.versions['en-GB'].slides[1].content.title;
+  return pres;
+}
+
+test('view: a source-column slide text saves when the target lacks that field (legacy)', () => {
+  const pres = presWithAbsentTargetTitle();
+  const { view, field, type } = openWith(pres);
+  const cell = field('nl', 's2', 'Title');
+  type(cell, 'Hoe het werkt');
+  assert.equal(pres.slides[1].content.title, 'Hoe het werkt', 'written');
+  assert.equal(cell.value, 'Hoe het werkt');
+  assert.equal(cell.getAttribute('aria-invalid'), null, 'not refused');
+  assert.equal(
+    pres.i18n.versions.nl.translationSources?.[
+      translationFieldKey('s2', ['title'])
+    ],
+    undefined,
+    'no provenance from a target text that does not exist',
+  );
+  assert.equal(
+    'title' in pres.i18n.versions['en-GB'].slides[1].content,
+    false,
+    'the target is not touched',
+  );
+  view.close();
+  cleanup();
+});
+
+test('view: that write is still refused on a slide another user holds (D112)', () => {
+  const pres = presWithAbsentTargetTitle();
+  const { view, state, field, type } = openWith(pres, {
+    getSlideLockKind: () => null,
+  });
+  state.locks.s2 = 'other';
+  const cell = field('nl', 's2', 'Title');
+  type(cell, 'Hoe het werkt');
+  assert.equal(cell.value, 'Hoe', 'back to what is stored');
+  view.close();
+  cleanup();
+});
+
+test('collab: a source-column slide text saves when the target lacks that field', () => {
+  const { presA, presB, a, b, signal } = linkedClients();
+  delete presA.i18n.versions['en-GB'].slides[1].content.title;
+  const { view, field, type } = openWith(presA, {
+    write: a.write,
+    subscribe: signal.subscribe,
+  });
+  const cell = field('nl', 's2', 'Title');
+  type(cell, 'Hoe het werkt');
+  assert.equal(cell.getAttribute('aria-invalid'), null, 'not refused');
+  assert.equal(presA.slides[1].content.title, 'Hoe het werkt');
+  assert.equal(
+    presB.slides[1].content.title,
+    'Hoe het werkt',
+    'it reached the shared doc',
+  );
+  view.close();
+  a.binder.detach();
+  b.binder.detach();
+  cleanup();
+});
