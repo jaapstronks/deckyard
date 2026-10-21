@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.80.0](https://github.com/jaapstronks/deckyard/compare/v1.79.0...v1.80.0) (2026-10-21)
+
+
+### Added
+
+* give deck settings an addressable pane in the editor (B804) ([#1782](https://github.com/jaapstronks/deckyard/issues/1782)) ([30b2549](https://github.com/jaapstronks/deckyard/commit/30b254943654ce9b5b38b95c8884f3580634e636))
+
+
+### Security
+
+* drop the share-link verification log and its route (B784) ([#1783](https://github.com/jaapstronks/deckyard/issues/1783)) ([4dc5468](https://github.com/jaapstronks/deckyard/commit/4dc5468abba4e0db24847cf8183c8b92258d8733))
+
 ## [1.79.0](https://github.com/jaapstronks/deckyard/compare/v1.78.0...v1.79.0) (2026-10-20)
 
 
