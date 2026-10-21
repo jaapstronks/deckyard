@@ -3,8 +3,8 @@ import { h } from '../../lib/dom/index.js';
 
 const MIN_WIDTH = 200;
 const BASE_MAX_WIDTH = 500;
-/** Width of `.slide-thumb-row`'s number gutter (`--slide-num-gutter`). */
-const SLIDE_NUM_GUTTER_PX = 24;
+/** Authored slide width; `.thumb .slide` renders at this size, then scales. */
+const SLIDE_WIDTH_PX = 1600;
 
 /**
  * The slides panel's ceiling. Like the inspector's, a flat cap meant a very
@@ -51,16 +51,6 @@ export function createSlidesPanelResize({ panelEl, isSlidesCollapsed }) {
       '--slides-panel-width',
       `${clamped}px`,
     );
-    // Calculate thumb scale: panel width minus padding, borders, scrollbar
-    // gutter and slide-number gutter, divided by slide width (1600).
-    // List padding: 8px each side = 16px, Thumb border: 1px each side = 2px,
-    // Scrollbar gutter: ~15px, number gutter: SLIDE_NUM_GUTTER_PX
-    const thumbWidth = clamped - 16 - 2 - 15 - SLIDE_NUM_GUTTER_PX;
-    const thumbScale = thumbWidth / 1600;
-    document.documentElement.style.setProperty(
-      '--slides-thumb-scale',
-      thumbScale.toFixed(4),
-    );
     return clamped;
   };
 
@@ -104,4 +94,33 @@ export function createSlidesPanelResize({ panelEl, isSlidesCollapsed }) {
   applyWidth(storedWidth || 200);
 
   return { handleEl, applyWidth };
+}
+
+/**
+ * Keeps `--slides-thumb-scale` in step with the width a list thumbnail really
+ * gets. The dragged panel width does not say that: below 769px the panel is
+ * a drawer whose width is a token (B810), and padding, number gutter and
+ * scrollbar sit between the two. So the rendered thumbnail is measured and
+ * nothing else sets the scale. The observer fires on the list's own size
+ * changes, which covers dragging the edge, the drawer layout, a viewport
+ * resize and the first render of the slides.
+ * @param {HTMLElement} listEl - The slide list holding `.thumb-mini` cards
+ * @returns {() => void} Disconnects the observer
+ */
+export function watchSlidesThumbScale(listEl) {
+  if (typeof ResizeObserver === 'undefined') return () => {};
+  let applied = '';
+  const sync = () => {
+    // A collapsed rail hides the thumbnails and an empty deck has none; keep
+    // the last scale so expanding again does not flash a wrong size.
+    const width = listEl.querySelector('.thumb.thumb-mini')?.clientWidth || 0;
+    if (!width) return;
+    const scale = (width / SLIDE_WIDTH_PX).toFixed(4);
+    if (scale === applied) return;
+    applied = scale;
+    document.documentElement.style.setProperty('--slides-thumb-scale', scale);
+  };
+  const observer = new ResizeObserver(sync);
+  observer.observe(listEl);
+  return () => observer.disconnect();
 }
