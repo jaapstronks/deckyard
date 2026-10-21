@@ -79,3 +79,6 @@ docs/plans
 
 # Personal correspondence, never commit
 briefing-maarten.md
+
+# Session scratch (workspace rule: never in the repo root)
+.scratch/
