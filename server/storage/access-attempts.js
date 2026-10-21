@@ -82,6 +82,10 @@ export async function logAccessAttempt(scope, data) {
 
 /**
  * Check if author should be notified (rate limit: 1 per accessor per window).
+ *
+ * Every row is a notified attempt (`author_notified_at` is set in the insert
+ * since B785), so a record inside the window deduplicates on its own; the
+ * column is a timestamp, not a filter (B786).
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - Presentation ID
  * @param {string} [accessorEmail] - Accessor's email
@@ -111,7 +115,6 @@ export async function shouldNotifyAuthor(
       .select('id')
       .where('presentation_id', '=', pid)
       .where('organization_id', '=', orgId)
-      .where('author_notified_at', 'is not', null)
       .where('attempted_at', '>', windowStart);
 
     // Match by email if available, otherwise by IP

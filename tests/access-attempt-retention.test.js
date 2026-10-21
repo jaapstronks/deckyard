@@ -307,3 +307,20 @@ test('migration 093 clears the backlog: old attempts go, the IP key leaves acces
   await migrate093(db);
   assert.equal(JSON.stringify(db.__tables), before);
 });
+
+test('a record inside the window deduplicates whatever author_notified_at says: the column is set at birth, not a filter (B786)', async () => {
+  const db = freshDb({
+    access_attempt_log: [
+      notifiedRow({
+        id: 'legacy-unnotified',
+        attempted_at: insideWindowIso(),
+        author_notified_at: null,
+      }),
+    ],
+  });
+
+  const result = await attempt();
+  assert.equal(result.notified, false);
+  assert.equal(db.__tables.access_attempt_log.length, 1, 'no second row');
+  assert.deepEqual(db.__tables.user_notifications, []);
+});
