@@ -4,7 +4,8 @@
  * `server/storage/reasons.js` is the one place a storage `reason` code is
  * minted. This file is what makes that true rather than aspirational: it parses
  * every `{ ok: false, reason: '<literal>' }` under `server/storage/**`,
- * `server/routes/api/**` and `shared/**` and asserts the code is in `REASONS`.
+ * `server/services/**`, `server/routes/api/**` and `shared/**` and asserts the
+ * code is in `REASONS`.
  * **The allowlist is
  * empty and stays empty** — there is no burndown here, because there is nothing
  * left to burn down. A new code is added to the register or it does not exist.
@@ -49,6 +50,11 @@
  * `createCustomSlideType` hands them straight back, so they reach the wire as
  * storage reasons like any other.
  *
+ * `server/services/**` is in scope because `inviteCollaborators` answers each
+ * invitee with a `{ ok: false, reason }` result (`user_not_found`,
+ * `database_error`) that the collaborator route hands to `storageError`, so
+ * those reach the wire as storage reasons too (B807).
+ *
  * **Four namespaces are deliberately out of scope**, because they answer to
  * something other than `getErrorStatus`:
  *
@@ -82,7 +88,18 @@ import { fileURLToPath } from 'node:url';
 import { REASONS, reasonCodes } from '../server/storage/reasons.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SCANNED_ROOTS = ['server/storage', 'server/routes/api', 'shared'];
+const SCANNED_ROOTS = [
+  'server/storage',
+  'server/services',
+  'server/routes/api',
+  'shared',
+];
+
+/**
+ * Files under a scanned root that belong to an out-of-scope namespace listed
+ * in the header: their reasons never reach a response.
+ */
+const OUT_OF_SCOPE_FILES = new Set(['server/services/access-notifications.js']);
 
 /**
  * Codes minted outside the register that this gate tolerates.
@@ -156,6 +173,7 @@ function scanMintedReasons() {
       followSymlinks: true,
     })) {
       const rel = relative(repoRoot, file).replace(/\\/g, '/');
+      if (OUT_OF_SCOPE_FILES.has(rel)) continue;
       const ast = parse(readFileSync(file, 'utf8'), {
         ecmaVersion: 'latest',
         sourceType: 'module',

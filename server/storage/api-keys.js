@@ -60,6 +60,8 @@ export const AVAILABLE_PERMISSIONS = [
   'ai', // Use AI generation features
   'comments:read', // Read comments on accessible presentations
   'comments:write', // Create comments/replies and change comment status
+  'collaborators:read', // See who has access to presentations the key's owner manages
+  'collaborators:write', // Grant organization members access to those presentations
 ];
 
 // ============================================================

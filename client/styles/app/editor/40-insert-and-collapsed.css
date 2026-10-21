@@ -67,6 +67,93 @@
   pointer-events: auto;
 }
 
+/* Editor slide list, pointer devices: the row between two slides is a thin
+   seam, so more thumbnails fit (B497). The hit band keeps the fixed-size
+   rule above: a ::before reaches 10px into both neighbours, and on hover the
+   neighbours shrink with a transform only, so the layout never moves under
+   the cursor. The "+" sits centred on the seam, in the room the two scaled
+   thumbnails leave, so no thumbnail can cover its edge. Touch keeps the
+   taller row from the (hover: none) block below, and the collapsed rail,
+   whose number tiles do not shrink, keeps the original row. */
+@media (hover: hover) {
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .list
+    > .slide-insert:not(:last-child) {
+    position: relative;
+    z-index: 2;
+    height: 6px;
+  }
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .list
+    > .slide-insert:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    inset: -10px 0;
+  }
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .list
+    > .slide-insert:not(:last-child)
+    .slide-insert-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 26px;
+    height: 26px;
+    margin: -13px 0 0 -13px;
+    padding: 0;
+  }
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .slide-item
+    .slide-thumb-row {
+    transition: transform var(--ps-transition-fast);
+  }
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .slide-item:has(+ .slide-insert:not(:last-child):hover)
+    .slide-thumb-row,
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .slide-item:has(+ .slide-insert.is-kb-active:not(:last-child))
+    .slide-thumb-row {
+    transform: scale(0.85);
+    transform-origin: 60% top;
+  }
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .slide-insert:not(:last-child):hover
+    + .slide-item
+    .slide-thumb-row,
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .slide-insert.is-kb-active:not(:last-child)
+    + .slide-item
+    .slide-thumb-row {
+    transform: scale(0.85);
+    transform-origin: 60% bottom;
+  }
+  /* While a slide is dragged the drop indicator is the only feedback. */
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .list:has(> .slide-item.is-dragging)
+    .slide-item
+    .slide-thumb-row {
+    transform: none;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .is-editor:not(.is-slides-collapsed)
+    .slides-panel
+    .slide-item
+    .slide-thumb-row {
+    transition: none;
+  }
+}
+
 /* The insert row after the LAST slide is otherwise a 2px sliver flush against
    the bottom of the list, so there's nowhere to hover to add a slide at the
    end. Give the trailing insert row a comfortable, always-present hover zone

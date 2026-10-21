@@ -50,6 +50,7 @@ The import above is relative to the repository root. `server/utils/route-middlew
 | `server/services/slides.js`                                                 | Add, update, remove, reorder and replace slides through the shared save path              |
 | `server/services/comments.js`                                               | Comment creation, editing, removal, status changes and lists for supported identities     |
 | `server/services/ownership.js`, `server/services/visibility.js`             | Ownership transfer and visibility changes                                                 |
+| `server/services/collaborators.js`                                          | List a deck's collaborators and invite members of its organization                        |
 | `server/services/theme.js`, `server/services/translate.js`                  | Theme changes and translation operations                                                  |
 | `server/services/deck-versions.js`, `server/services/permanent-delete.js`   | Version operations and permanent removal                                                  |
 | `server/services/import-json.js`, `server/services/publish-presentation.js` | Deck import and publishing workflows                                                      |

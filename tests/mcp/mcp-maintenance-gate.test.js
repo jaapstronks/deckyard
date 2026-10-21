@@ -51,6 +51,7 @@ const READ_ONLY_TOOLS = [
   'preview_presentation',
   'list_comments',
   'list_recent_comments',
+  'list_collaborators',
 ];
 
 function buildServer() {
@@ -136,7 +137,7 @@ describe('MCP tool classification', () => {
       .sort();
     assert.deepEqual(readOnly, [...READ_ONLY_TOOLS].sort());
     // Sanity: the registry is complete and the rest are writes.
-    assert.equal(server.tools.size, 27);
+    assert.equal(server.tools.size, 29);
   });
 
   it('tools/list advertises readOnlyHint for the read-only tools only', async () => {
@@ -173,7 +174,7 @@ describe('MCP write-gate behavior', () => {
     const writeTools = [...server.tools.values()]
       .filter((t) => !t.readOnly)
       .map((t) => t.name);
-    assert.equal(writeTools.length, 15, 'the 15 mutating tools');
+    assert.equal(writeTools.length, 16, 'the 16 mutating tools');
     for (const name of writeTools) {
       // Empty args: the refusal must come from the gate, not from argument
       // validation inside the handler — the maintenance text proves which.

@@ -26,6 +26,8 @@ info:
     | `ai` | AI generation features |
     | `comments:read` | Read comments on accessible presentations |
     | `comments:write` | Create comments/replies and change comment status |
+    | `collaborators:read` | See who has access to presentations the key's owner manages (MCP only) |
+    | `collaborators:write` | Grant organization members access to those presentations (MCP only) |
 
     ## Rate Limits
 

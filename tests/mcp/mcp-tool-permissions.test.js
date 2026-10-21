@@ -48,7 +48,8 @@ const KEY_ID = 'key-under-test';
  * The permission every MCP tool requires, mirroring its `/api/v1` counterpart:
  * reads are `read`, deck/slide mutations are `write`, anything that calls an
  * LLM is `ai` (v1 charges AI generation to `ai`, not `ai` plus `write`),
- * downloads are `export`, comments are `comments:read`/`comments:write`.
+ * downloads are `export`, comments are `comments:read`/`comments:write`,
+ * collaborators are `collaborators:read`/`collaborators:write`.
  *
  * Adding a tool without adding it here fails this file — deliberately.
  */
@@ -80,6 +81,8 @@ const TOOL_PERMISSIONS = {
   add_comment: 'comments:write',
   reply_to_comment: 'comments:write',
   set_comment_status: 'comments:write',
+  list_collaborators: 'collaborators:read',
+  add_collaborator: 'collaborators:write',
 };
 
 /**

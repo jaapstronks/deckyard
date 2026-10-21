@@ -91,14 +91,16 @@ Value of `-1` means unlimited.
 
 API keys can have granular permissions:
 
-| Permission       | Access                                            |
-| ---------------- | ------------------------------------------------- |
-| `read`           | List/get presentations, themes, slide types       |
-| `write`          | Create, update, delete presentations              |
-| `export`         | Export presentations                              |
-| `ai`             | Use AI generation endpoints                       |
-| `comments:read`  | Read comments on accessible presentations         |
-| `comments:write` | Create comments/replies and change comment status |
+| Permission            | Access                                                                 |
+| --------------------- | ---------------------------------------------------------------------- |
+| `read`                | List/get presentations, themes, slide types                            |
+| `write`               | Create, update, delete presentations                                   |
+| `export`              | Export presentations                                                   |
+| `ai`                  | Use AI generation endpoints                                            |
+| `comments:read`       | Read comments on accessible presentations                              |
+| `comments:write`      | Create comments/replies and change comment status                      |
+| `collaborators:read`  | See who has access to presentations the key's owner manages (MCP only) |
+| `collaborators:write` | Grant organization members access to those presentations (MCP only)    |
 
 Check permissions with:
 
