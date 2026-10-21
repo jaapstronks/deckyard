@@ -11,41 +11,32 @@
 
 import { getFirstSlidesForIds } from '../../storage/presentations/index.js';
 import {
-  addCollaborator,
-  listCollaborators,
   removeCollaborator,
   updateCollaboratorPermission,
 } from '../../storage/collaborators.js';
 import { listPresentationsForActor } from '../../services/presentations.js';
-import { listUsers } from '../../storage/users.js';
-import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
+import {
+  inviteCollaborators,
+  listCollaboratorsForActor,
+} from '../../services/collaborators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
-  badRequest,
   requireJsonBody,
   serveJson,
   storageError,
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
-import { validatePermission } from '../../utils/request-validators.js';
-import { assertSharingEnabled } from '../../sandbox/sharing.js';
-import { createNotification } from '../../storage/notifications.js';
-import {
-  broadcastToUser,
-  NotificationEventTypes,
-} from '../../services/notification-events.js';
 import {
   createActivityEvent,
   EVENT_TYPES,
   ENTITY_TYPES,
 } from '../../storage/activity-events.js';
-import { normalizeEmail } from '../../../shared/email.js';
 import { createLogger } from '../../utils/logger.js';
-import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { withDeckCardFields } from '../../utils/deck-card-fields.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { isCollabEnabled } from '../../config/features.js';
+import { validatePermission } from '../../utils/request-validators.js';
 const log = createLogger('collaborators');
 
 /**
@@ -137,201 +128,35 @@ async function handleCollaboratorAdd(
   { repoRoot, storageScope, req, res, authedUser },
   presentationId,
 ) {
-  // Inviting someone onto a deck is sharing it (D181).
-  assertSharingEnabled();
-  const pres = await withPresentationAuth({
-    storageScope,
-    id: presentationId,
-    authedUser,
-    res,
-    permission: 'manage',
-  });
-  if (!pres) return true;
-
   const jsonResult = await requireJsonBody(req, res);
   if (!jsonResult.ok) return true;
   const body = jsonResult.body;
 
-  const permission = body?.permission;
-  if (!validatePermission(permission, res)) return true;
-
   // Support both single email and batch emails
-  let emailsToInvite = [];
-  if (Array.isArray(body?.userEmails) && body.userEmails.length > 0) {
-    // Batch mode
-    emailsToInvite = body.userEmails
-      .map((e) => normalizeEmail(e))
-      .filter((e) => e && e.includes('@'));
-  } else if (body?.userEmail) {
-    // Single mode (backward compatible)
-    const singleEmail = normalizeEmail(body.userEmail);
-    if (singleEmail && singleEmail.includes('@')) {
-      emailsToInvite = [singleEmail];
-    }
-  }
+  const batch = Array.isArray(body?.userEmails) && body.userEmails.length > 0;
+  const userEmails = batch ? body.userEmails : [body?.userEmail];
 
-  if (emailsToInvite.length === 0) {
-    return badRequest(res, 'Valid userEmail or userEmails array is required');
-  }
-
-  // Limit batch size
-  if (emailsToInvite.length > 20) {
-    return badRequest(res, 'Maximum 20 users can be invited at once');
-  }
-
-  // Prevent adding self as collaborator
-  const selfEmail = normalizeEmail(authedUser?.email);
-  emailsToInvite = emailsToInvite.filter((e) => e !== selfEmail);
-  if (emailsToInvite.length === 0) {
-    return badRequest(res, 'Cannot add yourself as a collaborator');
-  }
-
-  // Get all users in the organization
-  const users = await listUsers(storageScope);
-  const userMap = new Map(users.map((u) => [u.email, u]));
-
-  // Process invites
-  const results = [];
+  // Include the recipient's address in the link for login pre-fill.
   const host = req.headers.host || 'localhost';
   const protocol = req.headers['x-forwarded-proto'] || 'http';
   const baseEditUrl = `${protocol}://${host}/app/${presentationId}`;
-  const presentationTitle = pres.title || 'Untitled presentation';
-  const inviterName = authedUser?.name || authedUser?.email;
 
-  for (const userEmail of emailsToInvite) {
-    const targetUser = userMap.get(userEmail);
-    if (!targetUser) {
-      results.push({
-        email: userEmail,
-        ok: false,
-        reason: 'user_not_found',
-      });
-      continue;
-    }
-
-    let result;
-    try {
-      result = await addCollaborator(
-        { ...storageScope, organizationId: pres.organizationId },
-        presentationId,
-        {
-          userEmail,
-          permission,
-          invitedBy: authedUser?.email,
-        },
-      );
-    } catch (err) {
-      log.error(
-        `[collaborators] Failed to add collaborator ${userEmail}:`,
-        err,
-      );
-      results.push({
-        email: userEmail,
-        ok: false,
-        reason: 'database_error',
-      });
-      continue;
-    }
-
-    if (!result.ok) {
-      results.push({
-        email: userEmail,
-        ok: false,
-        reason: result.reason,
-      });
-      continue;
-    }
-
-    results.push({
-      email: userEmail,
-      ok: true,
-      collaborator: result.collaborator,
-      isNew: result.isNew,
-      reactivated: result.reactivated || false,
-    });
-
-    // Include recipient email in URL for login pre-fill
-    const editUrl = `${baseEditUrl}?email=${encodeURIComponent(userEmail)}`;
-
-    // Create in-app notification for the invited user (non-blocking)
-    try {
-      const notifResult = await createNotification(storageScope, {
-        userEmail,
-        notificationType: 'share_received',
-        title: `${inviterName} shared a presentation with you`,
-        body: `You have been invited to "${presentationTitle}" with ${permission} access.`,
-        presentationId,
-        actorEmail: authedUser?.email,
-        actorName: authedUser?.name,
-        actionUrl: editUrl,
-        data: { permission, presentationTitle },
-      });
-
-      // Broadcast notification via SSE
-      if (notifResult.ok) {
-        broadcastToUser(
-          userEmail,
-          NotificationEventTypes.NEW,
-          notifResult.notification,
-        );
-      }
-    } catch (err) {
-      // Log but don't fail the invite if notification fails
-      log.error(
-        `[collaborators] Failed to create notification for ${userEmail}:`,
-        err,
-      );
-    }
-
-    // Create activity event for the activity feed (non-blocking)
-    try {
-      await createActivityEvent(storageScope, {
-        eventType: EVENT_TYPES.COLLABORATOR_ADDED,
-        entityType: ENTITY_TYPES.COLLABORATOR,
-        entityId: result.collaborator?.id || presentationId,
-        presentationId,
-        actorEmail: authedUser?.email,
-        actorName: authedUser?.name,
-        data: {
-          collaboratorEmail: userEmail,
-          permission,
-          presentationTitle,
-        },
-      });
-    } catch (err) {
-      // Log but don't fail the invite if activity event fails
-      log.error(
-        `[collaborators] Failed to create activity event for ${userEmail}:`,
-        err,
-      );
-    }
-
-    // Send invitation email (non-blocking)
-    if (body?.sendInvitation !== false) {
-      fireAndForget(
-        sendCollaboratorInviteEmail({
-          recipientEmail: userEmail,
-          recipientName: targetUser.name || null,
-          presentationTitle,
-          inviterName,
-          permission,
-          editUrl,
-          repoRoot,
-        }).then((emailResult) => {
-          if (!emailResult.ok) {
-            // eslint-disable-next-line no-console
-            log.warn(
-              `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim(),
-            );
-          }
-        }),
-        `collaborator invite email to=${userEmail}`,
-      );
-    }
-  }
+  const { results } = await inviteCollaborators(
+    storageScope,
+    { actor: authedUser },
+    presentationId,
+    {
+      userEmails,
+      permission: body?.permission,
+      sendInvitation: body?.sendInvitation !== false,
+      inviteUrlFor: (email) =>
+        `${baseEditUrl}?email=${encodeURIComponent(email)}`,
+      repoRoot,
+    },
+  );
 
   // Return appropriate response based on single or batch mode
-  if (emailsToInvite.length === 1 && !Array.isArray(body?.userEmails)) {
+  if (results.length === 1 && !Array.isArray(body?.userEmails)) {
     // Single mode response (backward compatible)
     const singleResult = results[0];
     if (!singleResult.ok) {
@@ -374,33 +199,12 @@ async function handleCollaboratorList(
   { storageScope, res, authedUser },
   presentationId,
 ) {
-  const pres = await withPresentationAuth({
+  const { collaborators } = await listCollaboratorsForActor(
     storageScope,
-    id: presentationId,
-    authedUser,
-    res,
-    permission: 'manage',
-  });
-  if (!pres) return true;
-
-  const collaborators = await listCollaborators(
-    { ...storageScope, organizationId: pres.organizationId },
+    { actor: authedUser },
     presentationId,
   );
-
-  // Enrich with user names if available
-  const users = await listUsers(storageScope);
-  const userMap = new Map(users.map((u) => [u.email, u]));
-
-  const enrichedCollaborators = collaborators.map((c) => {
-    const user = userMap.get(c.userEmail);
-    return {
-      ...c,
-      userName: user?.name || null,
-    };
-  });
-
-  serveJson(res, 200, { collaborators: enrichedCollaborators });
+  serveJson(res, 200, { collaborators });
   return true;
 }
 

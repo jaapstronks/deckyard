@@ -184,6 +184,30 @@ export function showCreateModal(onSuccess) {
       ),
       defaultChecked: false,
     },
+    {
+      value: 'collaborators:read',
+      label: t(
+        'settings.apiKeys.permissions.collaboratorsRead',
+        'Collaborators: read',
+      ),
+      desc: t(
+        'settings.apiKeys.permissionDesc.collaboratorsRead',
+        'See who has access to presentations you manage',
+      ),
+      defaultChecked: false,
+    },
+    {
+      value: 'collaborators:write',
+      label: t(
+        'settings.apiKeys.permissions.collaboratorsWrite',
+        'Collaborators: write',
+      ),
+      desc: t(
+        'settings.apiKeys.permissionDesc.collaboratorsWrite',
+        'Give organization members access to presentations you manage',
+      ),
+      defaultChecked: false,
+    },
   ];
 
   for (const permission of permissions) {

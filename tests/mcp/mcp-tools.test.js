@@ -18,20 +18,20 @@ import { TRANSLATION_LANGS } from '../../shared/i18n-utils.js';
 // ============================================================================
 
 describe('MCP Tools Registration', () => {
-  it('all 27 tools are registered', async () => {
+  it('all 29 tools are registered', async () => {
     const server = new McpServer();
     registerTools(server, { defaultOwnerEmail: 'test@test.com' });
     assert.strictEqual(
       server.tools.size,
-      27,
-      `Expected 27 tools, got ${server.tools.size}`,
+      29,
+      `Expected 29 tools, got ${server.tools.size}`,
     );
   });
 
   it('registers without defaultOwnerEmail', async () => {
     const server = new McpServer();
     registerTools(server, {});
-    assert.strictEqual(server.tools.size, 27);
+    assert.strictEqual(server.tools.size, 29);
   });
 
   it('all tools have required fields', async () => {
@@ -109,6 +109,8 @@ describe('MCP Tools Inventory', () => {
     'add_comment',
     'reply_to_comment',
     'set_comment_status',
+    'list_collaborators',
+    'add_collaborator',
   ];
 
   it('has all expected tools', async () => {
