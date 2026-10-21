@@ -146,9 +146,8 @@ export function createVersionTextWriter({
             path,
           );
       // No text on the other side means nothing to record provenance from,
-      // not a refused write: a source-column edit whose target version lacks
-      // that field (never translated) must still save (B816). Same rule as
-      // `recordTranslatedVersion`: a blank source stamps nothing.
+      // not a refused write (B816). Same rule as `recordTranslatedVersion`:
+      // a blank source stamps nothing.
       if (typeof text === 'string' && text.trim())
         source = translationSource(from, text);
     }
