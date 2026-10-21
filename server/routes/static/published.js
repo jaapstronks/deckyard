@@ -1,4 +1,3 @@
-import { safePublishedOgImage } from '../../render/og-image.js';
 import { notFound } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
@@ -23,6 +22,7 @@ import { isFeatureEnabled } from '../../config/flags-snapshot.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { toIsoOrNull } from '../../utils/normalize.js';
 import { createTranslator } from '../../i18n/index.js';
+import { resolvePublicOgImage } from '../../services/publish-presentation.js';
 
 /**
  * Semantic reflowable "reader" view of a published deck (open web, no auth).
@@ -164,7 +164,12 @@ async function servePublishedPage(
     origin,
   ).href;
   const ogImageAbs = new URL(
-    safePublishedOgImage(pres, entry.ogImageUrl),
+    await resolvePublicOgImage({
+      repoRoot,
+      pres,
+      storedUrl: entry.ogImageUrl,
+      publishId,
+    }),
     origin,
   ).href;
 

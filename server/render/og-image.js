@@ -94,3 +94,18 @@ export function isPublishedPreviewAssetName(name) {
     name,
   );
 }
+
+/**
+ * The publish id a generated preview name was minted for (`og-<id>-…` and
+ * `og-v2-<id>-…`), or null for any other name. A publication only ever
+ * withdraws its own previews, so a stored URL that names another publication's
+ * object (a picked content image, a hand-edited column) cannot delete it.
+ * @param {unknown} name
+ * @returns {string|null}
+ */
+export function publishedPreviewPublishId(name) {
+  if (typeof name !== 'string' || !isPublishedPreviewAssetName(name)) {
+    return null;
+  }
+  return /^og-(?:v2-)?([a-f0-9]{8})-/.exec(name)?.[1] ?? null;
+}

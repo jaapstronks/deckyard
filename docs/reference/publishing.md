@@ -124,21 +124,47 @@ deliberate no-op that only reserves the number) — `enabled`, `title`,
    no media provider or a render error → `pickOgImageUrlFromPresentation`, and
    failing that, a bundled default asset.
 5. `upsertPublishedEntry` (which derives the slug from the title), then mirror
-   the entry onto `presentations.published`.
+   the entry onto `presentations.published`. A generated preview this replaced
+   is withdrawn from its origin (§ Withdrawing a generated preview).
 6. Warm the deck-grid thumbnail, fire the `presentation.published` webhook
    ([`webhooks.md`](webhooks.md)), and answer with
    `{ publishId, slug, path, ogImageUrl }`.
 
 `PATCH …/publish/slug` renames the slug. It refuses invalid spelling with HTTP 400, code `invalid` and `details.field = "slug"`; the editor shows that refusal inline beside the input. Explicit slugs must be 1-80 lowercase ASCII letters, digits or hyphens, with a letter or digit at both ends. Input is never trimmed, lowercased or otherwise repaired. A deck that is not published also receives HTTP 400.
 
-`POST …/preview/regenerate` re-runs step 4 alone.
+`POST …/preview/regenerate` re-runs step 4 alone, and withdraws the preview it replaced.
 
 ### 2. Unpublish
 
 `DELETE /api/presentations/:id/publish` — write access, then
-`removePublishedEntry` and an explicit `published: null` on the deck. No
-webhook fires. The public URL 404s on the next request; nothing is cached
+`removePublishedEntry` and an explicit `published: null` on the deck, then the
+preview the link advertised is withdrawn from its origin. No webhook fires. The public URL 404s on the next request; nothing is cached
 server-side, and the pages are served `Cache-Control: no-store`.
+
+### Withdrawing a generated preview
+
+A generated preview is public at its URL. With the local provider that URL is
+an app route (`server/routes/static/published-preview.js`), which serves the
+file only while the publication still proves it, so the file stays on disk.
+With an S3-compatible bucket the bucket or CDN answers the URL without the app,
+so `withdrawPublishedPreview` (`server/services/publish-presentation.js`)
+deletes the object (B806). It acts only when the file name was minted for
+that publication (`publishedPreviewPublishId` equals the publish id) and the
+media provider owns the URL, so a picked content image, any other upload and
+another publication's preview are never touched (such a URL is still blanked
+from the stored columns once it expires, just not deleted); what "withdraw"
+means is the provider's `withdrawPublicObject`.
+
+It runs when a publish or regenerate replaces the preview, on unpublish, and
+at the public seams: `/p/`, the feed and the v1 publish status ask
+`resolvePublicOgImage`, which wraps `safePublishedOgImage`. When that declines
+a stored URL, the object is withdrawn and the URL is blanked on the entry and
+the deck, without bumping the deck's revision or either `modified_at`, so the
+next read does not decide again. A delete the bucket refuses leaves the URL in
+place and is retried on the next read. Objects from before this boundary are
+removed once with `node scripts/sweep-published-previews.js --check`, then `--apply`;
+it skips objects younger than an hour, so a publish in flight keeps its image.
+A copy in a crawler's or CDN's cache is outside the deployment.
 
 ### 3. The public canvas page
 

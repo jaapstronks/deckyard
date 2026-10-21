@@ -18,6 +18,7 @@ import {
   publishPresentation,
   assertPublishingEnabled,
   buildPublishOgImage,
+  withdrawReplacedPreview,
   unpublishPresentation,
 } from '../../services/publish-presentation.js';
 import { createLogger } from '../../utils/logger.js';
@@ -187,6 +188,7 @@ async function handlePreviewRegenerate(
         actorEmail: authedUser?.email || null,
       },
     );
+    await withdrawReplacedPreview(pres, ogImageUrl);
 
     serveJson(res, 200, { ok: true, ogImageUrl });
   } catch (err) {

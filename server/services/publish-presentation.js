@@ -18,6 +18,11 @@
  *   - the **deck-grid thumbnail warm**; and
  *   - the **`presentation.published` webhook**.
  *
+ * It also owns the withdrawal of a generated preview from a remote origin
+ * (B806): when a publish replaces the image, on unpublish, and lazily at the
+ * public seams once the proof behind the image expires
+ * ({@link resolvePublicOgImage}).
+ *
  * Before this converged, the v1 route reimplemented a subset and had silently
  * dropped the sandbox guard and the webhook — one concept, two behaviours
  * decided by which client asked (reference-doc-gaps.md § Vondsten, vondst 8).
@@ -25,20 +30,30 @@
  */
 
 import {
+  clearPublishedEntryOgImage,
+  getPublishedById,
   newPublishId,
   removePublishedEntry,
   upsertPublishedEntry,
 } from '../storage/published.js';
-import { updatePresentation } from '../storage/presentations/index.js';
+import {
+  clearPublishedOgImageUrl,
+  updatePresentation,
+} from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import {
   pickOgImageUrlFromPresentation,
   publishedPreviewFingerprint,
+  publishedPreviewPublishId,
+  safePublishedOgImage,
 } from '../render/og-image.js';
 import { firstPublicSlide } from '../utils/public-output.js';
 import { loadThemeAssets } from '../utils/themes.js';
 import { generateAndSaveOgPreview } from '../render/preview-image.js';
-import { isMediaProviderInitialized } from '../media/index.js';
+import {
+  getMediaProvider,
+  isMediaProviderInitialized,
+} from '../media/index.js';
 import { sandboxEnabled } from '../config/sandbox.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
 import { getRequestOrigin } from '../utils/request-url.js';
@@ -168,6 +183,136 @@ export async function buildPublishOgImage({
 }
 
 /**
+ * Withdraw a generated OG preview from the origin that serves it (B806).
+ *
+ * Only an object the publication OG generator minted for *this* publication is
+ * ever touched: the file name must carry `publishId`
+ * ({@link publishedPreviewPublishId}) and the configured media provider must
+ * own the URL. A picked content image, any other upload, and a generated
+ * preview of another publication are left alone. That last case is real: a
+ * stored URL is not always one this generator wrote, because the fallback
+ * ladder stores a content image the author chose, which may be any URL on
+ * the bucket. What withdrawing means is the provider's: a remote
+ * origin deletes the object, the local provider keeps it because its own
+ * route refuses an unproven preview. Idempotent and never throws.
+ *
+ * @param {unknown} url - A stored `ogImageUrl`.
+ * @param {unknown} publishId - The publication the URL is stored on.
+ * @returns {Promise<'deleted'|'kept'|'failed'>}
+ */
+export async function withdrawPublishedPreview(url, publishId) {
+  if (typeof url !== 'string' || !url) return 'kept';
+  if (typeof publishId !== 'string' || !publishId) return 'kept';
+  let name;
+  try {
+    name = new URL(url, 'http://local.invalid').pathname.split('/').pop();
+  } catch {
+    return 'kept';
+  }
+  if (
+    publishedPreviewPublishId(name) !== publishId ||
+    !isMediaProviderInitialized()
+  ) {
+    return 'kept';
+  }
+  const provider = getMediaProvider();
+  if (!provider.ownsUrl(url)) return 'kept';
+  try {
+    return await provider.withdrawPublicObject(url);
+  } catch (err) {
+    log.warn('[publish] Preview withdrawal failed:', err?.message || err);
+    return 'failed';
+  }
+}
+
+/**
+ * Withdraw each preview that no longer belongs to the publication, logging the
+ * ones the origin refused; the legacy sweep (`scripts/sweep-published-previews.js`)
+ * is the fallback for those.
+ * @param {Iterable<string>} urls
+ * @param {string} publishId - The publication the URLs are stored on.
+ * @returns {Promise<boolean>} true when none failed
+ */
+async function withdrawPreviews(urls, publishId) {
+  let ok = true;
+  for (const url of new Set(urls)) {
+    if ((await withdrawPublishedPreview(url, publishId)) === 'failed') {
+      log.warn(`[publish] Preview left on its origin: ${url}`);
+      ok = false;
+    }
+  }
+  return ok;
+}
+
+/**
+ * The OG image a public seam may advertise for a published deck: the canvas
+ * page `/p/`, the feed and the v1 publish status. {@link safePublishedOgImage}
+ * stays the only decider; this adds what follows when it declines a stored
+ * URL. The expired preview is withdrawn from its origin and the stored URLs
+ * are blanked, so the next read does not decide again. A withdrawal that
+ * fails leaves the URLs in place to retry on the next read. Never throws: a
+ * public page does not fail over its preview.
+ *
+ * @param {object} params
+ * @param {string|null} params.repoRoot
+ * @param {object} params.pres - The stored deck.
+ * @param {string} [params.storedUrl] - The URL the seam holds (the entry's on
+ *   `/p/` and in the feed, the deck's on v1).
+ * @param {string} [params.publishId] - The entry to blank; the deck's own by default.
+ * @returns {Promise<string>} The URL to advertise.
+ */
+export async function resolvePublicOgImage({
+  repoRoot,
+  pres,
+  storedUrl = pres?.published?.ogImageUrl,
+  publishId = pres?.published?.id,
+}) {
+  const advertised = safePublishedOgImage(pres, storedUrl);
+  if (!storedUrl || advertised === storedUrl) return advertised;
+
+  // The stored URL is declined, so it goes. The deck's own URL goes with it
+  // only when the decider declines that too: an entry that drifted from a
+  // still-proven deck URL loses just its own.
+  const deckUrl = pres?.published?.ogImageUrl || '';
+  const deckExpired = !!deckUrl && safePublishedOgImage(pres) !== deckUrl;
+  const expired = deckExpired ? [storedUrl, deckUrl] : [storedUrl];
+
+  try {
+    // Each URL is withdrawn under the publication it is stored on: the entry's
+    // under `publishId`, the deck's under its own id (normally the same).
+    const withdrawn =
+      (await withdrawPreviews([storedUrl], publishId)) &&
+      (!deckExpired ||
+        deckUrl === storedUrl ||
+        (await withdrawPreviews([deckUrl], pres?.published?.id)));
+    if (!withdrawn) return advertised;
+    const scope = { repoRoot, organizationId: pres.organizationId };
+    for (const url of new Set(expired)) {
+      await clearPublishedEntryOgImage(scope, publishId, url);
+    }
+    if (deckExpired) await clearPublishedOgImageUrl(scope, pres, deckUrl);
+  } catch (err) {
+    log.warn('[publish] Expired preview cleanup failed:', err?.message || err);
+  }
+  return advertised;
+}
+
+/**
+ * After a new preview replaced the stored one (publish again, regenerate),
+ * withdraw the replaced image. The caller's write already landed, so a
+ * failure is logged and left to the sweep.
+ * @param {object} pres - The deck as loaded before the write.
+ * @param {string} nextUrl - The image the publication names now.
+ * @returns {Promise<void>}
+ */
+export async function withdrawReplacedPreview(pres, nextUrl) {
+  const previous = pres?.published?.ogImageUrl;
+  if (previous && previous !== nextUrl) {
+    await withdrawPreviews([previous], pres?.published?.id);
+  }
+}
+
+/**
  * Publish a presentation and return the public-link descriptor. The caller has
  * already resolved auth and loaded `pres`; this runs the flow both API surfaces
  * must share.
@@ -245,6 +390,8 @@ export async function publishPresentation({
     { actorEmail },
   );
 
+  await withdrawReplacedPreview(pres, published.ogImageUrl);
+
   // Warm the deck-grid thumbnail for the post-publish revision so the next list
   // view shows the raster immediately (fire-and-forget, non-blocking).
   warmDeckThumbnail(storageScope, updated || nextPres);
@@ -296,6 +443,7 @@ export async function unpublishPresentation(scope, identity, presentationId) {
   });
 
   const publishId = String(pres.published?.id || '').trim();
+  const entry = publishId ? await getPublishedById(scope, publishId) : null;
   if (publishId) await removePublishedEntry(scope, publishId);
 
   const updated = await updatePresentation(
@@ -306,5 +454,11 @@ export async function unpublishPresentation(scope, identity, presentationId) {
   );
   if (!updated) throw new NotFoundError('Presentation not found');
   if (updated.ok === false) throwStorageFailure(updated);
+
+  // The link is down; the image it advertised goes too (B806).
+  await withdrawPreviews(
+    [pres.published?.ogImageUrl, entry?.ogImageUrl].filter(Boolean),
+    publishId,
+  );
   return updated;
 }
