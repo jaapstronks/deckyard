@@ -13,7 +13,9 @@
  *    and is dropped on close (review 3);
  *  - both columns are inert before the live doc is ready (review 4);
  *  - with the real binder: a peer's edit and an undo in the inactive
- *    language reach the view, deck title included.
+ *    language reach the view, deck title included;
+ *  - by default only fields with text show, and the suggestion cell is
+ *    empty until a suggestion is asked for (B815).
  *
  * Run with: node --test tests/translate-view.test.js
  */
@@ -47,8 +49,12 @@ const { createVersionTextSignal, createVersionTextWriter } =
   await import('../client/views/editor/version-text.js');
 const { openTranslateView, canOpenTranslateView } =
   await import('../client/views/editor/translate-view/index.js');
-const { translateViewModel, onlyEmptyTargets, defaultLanguagePair } =
-  await import('../client/views/editor/translate-view/model.js');
+const {
+  translateViewModel,
+  onlyEmptyTargets,
+  filterTranslationRows,
+  defaultLanguagePair,
+} = await import('../client/views/editor/translate-view/model.js');
 const { computeMissingTranslation, slideTextRows, pickVersion } =
   await import('../shared/i18n-progress.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
@@ -150,6 +156,34 @@ test('model: the filter keeps exactly what computeMissingTranslation counts', ()
     JSON.stringify([r.kind === 'deck' ? null : r.slideId, r.path || [r.key]]);
   assert.deepEqual(shown.map(key), missing.map(key));
   assert.ok(missing.length > 3, 'the fixture has something to count');
+});
+
+test('model: "filled" drops rows empty in both languages and keeps every slide (B815)', () => {
+  const pres = bilingualPres();
+  const model = translateViewModel({
+    pres,
+    source: 'nl',
+    target: 'en-GB',
+    activeLang: 'nl',
+    slideTypes: SLIDE_TYPES,
+  });
+  const filled = filterTranslationRows(model, 'filled');
+  const all = model.slides.flatMap((s) => s.rows);
+  const kept = filled.slides.flatMap((s) => s.rows);
+  assert.ok(
+    all.some((r) => !r.source.trim() && !r.target.trim()),
+    'the fixture has a field empty in both',
+  );
+  assert.ok(kept.every((r) => r.source.trim() || r.target.trim()));
+  assert.equal(
+    kept.length,
+    all.filter((r) => r.source.trim() || r.target.trim()).length,
+  );
+  assert.deepEqual(
+    filled.slides.map((s) => s.slideId),
+    model.slides.map((s) => s.slideId),
+    'the index stays the whole deck',
+  );
 });
 
 test('model: a target slide is matched on id, not on its index', () => {
@@ -621,6 +655,70 @@ test('view: the filter shows empty targets and keeps a row while you type', () =
   assert.ok(field('en-GB', 's2', 'Title'), 'still there after filling it');
   view.close();
   cleanup();
+});
+
+const rowValues = (row) =>
+  [...row.querySelectorAll('.translate-view-input')].map((el) => el.value);
+
+test('view: by default only fields with text show; "All fields" brings the rest back (B815)', () => {
+  const pres = bilingualPres();
+  const { view, signal, field, type } = openWith(pres);
+  const box = document.querySelector('.translate-view-filter');
+  assert.equal(box.value, 'filled');
+  const rows = () => [
+    ...document.querySelectorAll(
+      '.translate-view-row:not(.translate-view-head)',
+    ),
+  ];
+  const shown = rows();
+  assert.ok(shown.length);
+  assert.ok(
+    shown.every((r) => rowValues(r).some((v) => v.trim())),
+    'no row empty in both languages',
+  );
+  assert.equal(
+    document.querySelectorAll('.translate-view-index [data-slide-id]').length,
+    2,
+    'the index keeps every slide',
+  );
+  // Emptying both sides of a shown field keeps it under the caret.
+  type(field('nl', 's1', 'Title'), '');
+  type(field('en-GB', 's1', 'Title'), '');
+  signal.emit();
+  assert.ok(field('en-GB', 's1', 'Title'), 'still there after emptying it');
+  box.value = '';
+  box.dispatchEvent(new dom.window.Event('change'));
+  assert.ok(rows().length > shown.length);
+  assert.ok(
+    rows().some((r) => rowValues(r).every((v) => !v.trim())),
+    '"All fields" shows the empty ones',
+  );
+  view.close();
+  cleanup();
+});
+
+test('view: the suggestion cell is empty until a suggestion is asked for (B815)', () => {
+  setFeatures({ enableAi: true });
+  const pres = bilingualPres();
+  const { view } = openWith(pres, { api: async () => ({ translations: {} }) });
+  assert.ok(!document.body.textContent.includes('No suggestion yet'));
+  const box = document.querySelector('.translate-view-filter');
+  box.value = '';
+  box.dispatchEvent(new dom.window.Event('change'));
+  const cells = [...document.querySelectorAll('.translate-view-proposal')];
+  assert.ok(cells.length);
+  for (const cell of cells) {
+    const row = cell.closest('.translate-view-row');
+    const [source] = rowValues(row);
+    assert.deepEqual(
+      [...cell.children].map((el) => el.textContent),
+      source.trim() ? ['Suggest field'] : [],
+      'only the action, or nothing when there is no source to translate',
+    );
+  }
+  view.close();
+  cleanup();
+  setFeatures(null);
 });
 
 test('view: closing drops the subscription', () => {

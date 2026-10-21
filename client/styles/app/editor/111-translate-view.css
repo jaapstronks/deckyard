@@ -77,10 +77,22 @@
   grid-template-columns: minmax(110px, 0.55fr) repeat(3, minmax(0, 1fr));
 }
 
+/* The suggestion cell stacks what it holds (text, stale note, one action),
+   each with room of its own; empty until a suggestion is asked for. */
+.translate-view-proposal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ps-space-2);
+}
+
+.translate-view-proposal .btn {
+  white-space: nowrap;
+}
+
 .translate-view-proposal-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  margin-bottom: var(--ps-space-2);
 }
 
 .translate-view-proposal-failure {
