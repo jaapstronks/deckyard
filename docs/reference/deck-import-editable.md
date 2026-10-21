@@ -49,10 +49,11 @@ roles:
 | `dropped`    | text not on the slide: `artifact` (footer, page number), `off-page`, `footnote` (< 7 pt in the bottom 15%, or higher up when smaller than the body, under the last body line, at the body's left edge, worded, on a page with reference marks), `reference` (a short number at most 0.8 × the body size, raised just above a body line)                                                                                                        |
 | `tagged`     | whether the roles came from the PDF's structure tree                                                                                                                                                                                                                                                                                                                                                                                           |
 
-Colour and boxes are data, not decisions: the mapper below reads none of
-them yet. They are there for the next steps of track 1b (layout variant and
-background from the model, a table beside text, the cut-out of a drawing),
-which decide what a blue page or a box of paths means for the slide.
+Colour and boxes are data, not decisions: the mapper below reads the page
+colour, the picture boxes, the block boxes and the heading lines to pick a
+layout variant and a background (§ Layout and background). The drawing's
+`tablePaths` and `box` are there for the next step of track 1b (a table
+beside text, the cut-out of a drawing).
 
 Two detectors fill it. A **tagged** PDF (PowerPoint and Chrome tag by
 default) carries a structure tree: `H1`–`H3`, `P`, `L/LI`, `Table/TR/TH/TD`,
@@ -82,7 +83,29 @@ and text longer than any field holds falls back as `too-long`.
 | Anything else                                                      | fallback              | see below                                                                                                          |
 
 The new deck takes the theme and language chosen in the creation view. The
-source's colours, layout variants and fonts are not carried over yet.
+source's fonts and colours are not carried over; where a type offers a
+choice the page already made, the slide makes it too (below).
+
+## Layout and background
+
+Only options the types already declare, never a free colour or a font; a
+slide that would fail `validateSlideFields` is no slide. The thresholds are
+constants in `server/services/deck-slides-import.js`, with what they were
+measured on.
+
+| From the page                                                                                                  | On the slide                                                                                                                   |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| The picture's share of the page width beside text                                                              | `image-text-slide` `imageWidth`: the nearest of `narrow` (37%), `half` (50%), `wide` (63%)                                     |
+| A picture at most 30% wide and 45% high, its top and outer side within 12% of a page corner                    | `image-text-slide` `layout: 'corner'`                                                                                          |
+| Block boxes split by a gutter into a left and a right column that overlap in height, read left column first    | `content-slide` / `list-slide` `layout: 'two-column'`; three blocks in a row or labels read after their values stay one column |
+| The middle of the heading lines in the top or bottom third of the page                                         | `chapter-title-slide` `layout: 'top'` / `'bottom'` (`center` between)                                                          |
+| Every heading line centred on the page and set at least 15% in                                                 | `titleBlockAlign` (section title) / `headerAlign` (list, text blocks) `center`                                                 |
+| A dark page colour (white text reads better on it)                                                             | `background`: the theme's first own variant with a dark ground; the type's default when the theme has none                     |
+| A light page colour with a channel under `0xf0`                                                                | `background: 'mist'`                                                                                                           |
+| White, no colour, or a picture covering ≥ 90% of the page (the extractor reads white under a full-bleed photo) | the type's default                                                                                                             |
+
+The background goes only to a type that declares the field: the section
+title has none.
 
 ## The six fallback reasons
 
