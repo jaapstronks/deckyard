@@ -23,6 +23,7 @@ import {
 } from '../server/utils/pdf-extract/index.js';
 import {
   FALLBACK_REASONS,
+  REPORT_ERROR_CODES,
   blocksToMarkdown,
   buildDeckSlides,
   chooseSlide,
@@ -352,6 +353,27 @@ test('fallback too-long: literal text longer than any slide field holds', () => 
   assert.deepEqual(planPage(page, ctx), { reason: 'too-long' });
 });
 
+test('a page with a picture has no second home without it: too long falls back (B826)', () => {
+  // The alt text of the figure is longer than `image-text-slide` holds;
+  // `content-slide` would take the text, but only by dropping the picture.
+  const page = model({
+    heading: 'The figure',
+    lines: [line('The figure', 'heading', 28), line('Body')],
+    blocks: [para('Body text')],
+    images: [
+      {
+        ...image({ x: 400, y: 100, width: 280, height: 200 }),
+        alt: `A long description ${'of the figure '.repeat(20)}`.trim(),
+      },
+    ],
+  });
+  assert.ok(page.images[0].alt.length > 180);
+  const choice = chooseSlide(page);
+  assert.equal(choice.type, 'image-text-slide');
+  assert.equal(choice.uploads.length, 1);
+  assert.deepEqual(planPage(page, ctx), { reason: 'too-long' });
+});
+
 test('a list longer than the list slide holds becomes a text slide, still literal', () => {
   const items = Array.from({ length: 10 }, (_v, i) => ({
     text: `Point ${i + 1}`,
@@ -472,11 +494,43 @@ test('only the pages that fall back are rendered; each is an image slide with it
     ],
   );
   // No media provider in this test: the uploads fail, and the report says so
-  // instead of a silently empty slide.
-  assert.deepEqual(
-    report.errors.map((e) => e.page),
-    [1, 2],
-  );
+  // instead of a silently empty slide, with a code and no sentence (B826).
+  assert.deepEqual(report.errors, [
+    { page: 1, code: 'upload-failed' },
+    { page: 2, code: 'upload-failed' },
+  ]);
+});
+
+test('the error codes are a closed set, and a page the rasteriser skipped is one of them', async () => {
+  assert.deepEqual([...REPORT_ERROR_CODES].sort(), [
+    'not-rendered',
+    'upload-failed',
+  ]);
+  // The rasteriser returns page 1 only: page 2 fell back and has no image,
+  // so nothing is uploaded for it and the report names the page.
+  const render = async ({ pages }) =>
+    pages
+      .filter((page) => page === 1)
+      .map((page) => ({ page, buffer: Buffer.from(`page ${page}`) }));
+  const { slides, report } = await buildDeckSlides({
+    files: { pdfBytes: handPdf, pptxBytes: null, filename: 'hand.pdf' },
+    theme: null,
+    lang: 'en',
+    slideTypes: SLIDE_TYPES,
+    signal: new AbortController().signal,
+    onProgress: () => {},
+    renderPages: render,
+  });
+  assert.equal(slides[1].type, 'image-slide');
+  assert.equal(slides[1].content.image, '');
+  assert.deepEqual(report.errors, [
+    { page: 1, code: 'upload-failed' },
+    { page: 2, code: 'not-rendered' },
+  ]);
+  for (const error of report.errors) {
+    assert.ok(REPORT_ERROR_CODES.includes(error.code));
+    assert.equal('message' in error, false);
+  }
 });
 
 test(

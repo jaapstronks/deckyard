@@ -75,6 +75,19 @@ export const FALLBACK_REASONS = Object.freeze([
   'too-long',
 ]);
 
+/**
+ * What went wrong with a page's picture, in `report.errors[].code`. A closed
+ * set the creation view puts into words (B826); the slide keeps an empty
+ * image either way.
+ *
+ * - `upload-failed`: the media library refused the picture.
+ * - `not-rendered`: the page fell back but the rasteriser gave no image.
+ */
+export const REPORT_ERROR_CODES = Object.freeze([
+  'upload-failed',
+  'not-rendered',
+]);
+
 /** More vector paths than this beside the text is a drawing (brief § Mappingtabel). */
 export const DRAWING_MIN_PATHS = 60;
 
@@ -122,7 +135,9 @@ const NOT_ON_SLIDE = {
  *
  * Every candidate is checked against its type's declared fields: a list
  * whose items are longer than the list slide holds becomes a text slide,
- * and text longer than a text slide holds falls back as `too-long`.
+ * and text longer than a text slide holds falls back as `too-long`. A
+ * choice that carries a picture has no second home: the text slide would
+ * drop the picture in silence, so it falls back as `too-long` too (B826).
  *
  * @param {PageModel} page
  * @param {object} ctx
@@ -137,8 +152,13 @@ export function planPage(page, ctx) {
   if (choice.reason) return choice;
   const slide = composeValid(choice, ctx);
   if (slide) return { slide, uploads: choice.uploads || [] };
-  // Too long for the chosen type: the text slide is the widest home.
-  if (choice.type !== 'content-slide' && page.heading) {
+  // Too long for the chosen type: the text slide is the widest home, but
+  // only for a page without a picture to lose.
+  if (
+    choice.type !== 'content-slide' &&
+    page.heading &&
+    !(choice.uploads || []).length
+  ) {
     const text = contentSlide(page);
     const fallback = composeValid(text, ctx);
     if (fallback) return { slide: fallback, uploads: [] };
@@ -629,7 +649,7 @@ export async function buildDeckSlides({
       });
     } catch (err) {
       log.error(`[import-slides] Failed to upload page ${page}:`, err?.message);
-      errors.push({ page, message: 'An image could not be uploaded' });
+      errors.push({ page, code: 'upload-failed' });
       return '';
     }
   };
@@ -657,7 +677,7 @@ export async function buildDeckSlides({
         ? await upload(buffer, `page-${num}`, page.page, errors)
         : '';
       if (!buffer) {
-        errors.push({ page: page.page, message: 'The page was not rendered' });
+        errors.push({ page: page.page, code: 'not-rendered' });
       }
       slide = newSlide({
         type: 'image-slide',
@@ -722,7 +742,8 @@ export async function buildDeckSlides({
  * @typedef {object} DeckSlidesReport
  * @property {number} slidesExtracted - pages read from the PDF
  * @property {number} slidesConverted - pages that became an editable slide
- * @property {Array<{ page: number, message: string }>} errors
+ * @property {Array<{ page: number, code: string }>} errors - one per picture
+ *   that is missing, `code` from {@link REPORT_ERROR_CODES}
  * @property {Array<{ page: number, type: string, reason?: string, dropped: number }>} pages
  *   - one per page; `reason` (from {@link FALLBACK_REASONS}) on a page that
  *   fell back, `dropped` the lines of text not on the slide
