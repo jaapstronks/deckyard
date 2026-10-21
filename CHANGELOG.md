@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.83.3](https://github.com/jaapstronks/deckyard/compare/v1.83.2...v1.83.3) (2026-10-21)
+
+
+### Security
+
+* withdraw generated previews from a remote origin (B806) ([#1800](https://github.com/jaapstronks/deckyard/issues/1800)) ([100fc33](https://github.com/jaapstronks/deckyard/commit/100fc33efc6f8f2f187c76b02ed728912daf2b75))
+
 ## [1.83.2](https://github.com/jaapstronks/deckyard/compare/v1.83.1...v1.83.2) (2026-10-21)
 
 
