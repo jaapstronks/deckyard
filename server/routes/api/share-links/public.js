@@ -22,7 +22,6 @@ import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   validateShareLink,
   verifyShareLinkAccess,
-  logShareLinkAccess,
   requestGuestVerification,
   verifyGuestEmail,
   getGuestBySessionToken,
@@ -233,18 +232,6 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
     storageError(res, result);
     return true;
   }
-
-  // Log access with an explicit cross-organization scope: the public token
-  // has already authorized the link id.
-  const userAgent = req.headers['user-agent'];
-  await logShareLinkAccess(
-    crossOrganizationScope(
-      repoRoot,
-      'validated share token grants access to link',
-    ),
-    result.shareLink.id,
-    { ipAddress, userAgent },
-  );
 
   // The deck itself. `/api/presentations/:id` cannot serve it: that route is
   // id-addressed and behind the login gate, so an anonymous holder of a valid

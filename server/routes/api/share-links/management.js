@@ -6,7 +6,6 @@
  * DELETE /api/presentations/:id/share-links           - Revoke all links
  * DELETE /api/presentations/:id/share-links/:linkId   - Revoke specific link
  * PATCH  /api/presentations/:id/share-links/:linkId   - Update link
- * GET    /api/presentations/:id/share-links/:linkId/access-log - Get access log
  *
  * Form A throughout (route-dispatch.md): the old chain fell through on a
  * method mismatch, no 405. Table order mirrors the old branch order exactly.
@@ -18,7 +17,6 @@ import {
   revokeShareLink,
   revokeAllShareLinks,
   updateShareLink,
-  getShareLinkAccessLog,
   getShareLinkById,
 } from '../../../storage/share-links/index.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
@@ -30,10 +28,7 @@ import {
   serveJson,
   storageError,
 } from '../../../utils/http.js';
-import {
-  validatePermission,
-  parsePaginationParams,
-} from '../../../utils/request-validators.js';
+import { validatePermission } from '../../../utils/request-validators.js';
 import { assertSharingEnabled } from '../../../sandbox/sharing.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 
@@ -53,7 +48,7 @@ export function shareLinkBelongsToPresentation(link, presentationId) {
  * already authorized to write. Prevents a linkId-based IDOR: withPresentationAuth
  * only proves write on `presentationId`, not that `linkId` belongs to that deck,
  * so a forged linkId from another (private) deck could otherwise be
- * revoked/relabeled or have its viewer-PII access log read.
+ * revoked or relabeled.
  *
  * @returns {Promise<Object|null>} the share link if it belongs to the
  *   presentation, or null after sending a 404 (mismatch or unknown link).
@@ -264,51 +259,12 @@ async function handleShareLinkUpdate(
   return true;
 }
 
-/** GET /api/presentations/:id/share-links/:linkId/access-log - Get access log */
-async function handleShareLinkAccessLog(
-  { storageScope, res, url, authedUser },
-  presentationId,
-  linkId,
-) {
-  const pres = await withPresentationAuth({
-    storageScope,
-    id: presentationId,
-    authedUser,
-    res,
-    permission: 'write',
-  });
-  if (!pres) return true;
-
-  // Bind linkId to the authorized presentation before reading viewer PII
-  // (IP/UA access log) — prevents cross-deck IDOR.
-  const link = await loadLinkForPresentation({
-    linkId,
-    presentationId,
-    res,
-    storageScope,
-  });
-  if (!link) return true;
-
-  const { limit, offset } = parsePaginationParams(url.searchParams, {
-    defaultLimit: 100,
-  });
-  const log = await getShareLinkAccessLog(storageScope, linkId, {
-    limit,
-    offset,
-  });
-
-  serveJson(res, 200, { accessLog: log });
-  return true;
-}
-
 const BASE_PATTERN = /^\/api\/presentations\/([^/]+)\/share-links$/;
 const LINK_PATTERN = /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)$/;
-const ACCESS_LOG_PATTERN =
-  /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)\/access-log$/;
 
 /**
  * Management routes in the old chain's exact order: the three base-path
- * branches, then the two :linkId branches, then the access log.
+ * branches, then the two :linkId branches.
  * @type {import('../../../utils/router.js').Route[]}
  */
 export const MANAGEMENT_ROUTES = [
@@ -341,12 +297,6 @@ export const MANAGEMENT_ROUTES = [
     pattern: LINK_PATTERN,
     captures: ['uuid', 'uuid'],
     handler: handleShareLinkUpdate,
-  },
-  {
-    method: 'GET',
-    pattern: ACCESS_LOG_PATTERN,
-    captures: ['uuid', 'uuid'],
-    handler: handleShareLinkAccessLog,
   },
 ];
 

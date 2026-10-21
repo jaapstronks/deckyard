@@ -109,12 +109,6 @@ test('share-links: management routes resolve to their named handlers in order', 
     '/api/presentations/p1/share-links/l1',
     'handleShareLinkUpdate',
   );
-  named(
-    AUTHED_ROUTES,
-    'GET',
-    '/api/presentations/p1/share-links/l1/access-log',
-    'handleShareLinkAccessLog',
-  );
 });
 
 test('share-links: guest management routes resolve to their named handlers in order', () => {
@@ -203,12 +197,6 @@ test('share-links: patterns capture ids in handler-argument order', () => {
   ]);
   captures(
     AUTHED_ROUTES,
-    'GET',
-    '/api/presentations/p1/share-links/l1/access-log',
-    ['p1', 'l1'],
-  );
-  captures(
-    AUTHED_ROUTES,
     'POST',
     '/api/presentations/p1/share-links/l1/guests',
     ['p1', 'l1'],
@@ -233,7 +221,7 @@ test('share-links: patterns capture ids in handler-argument order', () => {
 });
 
 test('share-links: sibling patterns stay distinct — no pattern swallows a deeper path', () => {
-  // The :linkId pattern must not claim /guests, /access-log or /resend paths,
+  // The :linkId pattern must not claim /guests or /resend paths,
   // and the base /api/share/:token must not claim the /verify and /guest/*
   // sub-paths.
   assert.equal(
@@ -254,7 +242,6 @@ test('share-links: a wrong method falls through (no 405, storage-free)', async (
   const cases = [
     ['PATCH', '/api/presentations/p1/share-links'],
     ['GET', '/api/presentations/p1/share-links/l1'],
-    ['POST', '/api/presentations/p1/share-links/l1/access-log'],
     ['PATCH', '/api/presentations/p1/share-links/l1/guests'],
     ['GET', '/api/presentations/p1/share-links/l1/guests/g1/resend'],
   ];
@@ -297,4 +284,16 @@ test('share-links: an unknown sub-path falls through', async () => {
 
   const foreign = ctx('GET', '/api/shared');
   assert.equal(await handleSharePublic(foreign.ctx), false);
+});
+
+test('share-links: the dropped access-log route is claimed by no pattern (B784)', async () => {
+  // The per-link verification log went with its only reader. No table may
+  // claim its old address, so the request falls through to the API's 404
+  // (pinned end to end in tests/share-links-public-path.test.js).
+  const path = '/api/presentations/p1/share-links/l1/access-log';
+  assert.equal(select(AUTHED_ROUTES, 'GET', path), null);
+  assert.equal(select(PUBLIC_ROUTES, 'GET', path), null);
+  const { ctx: c, res } = ctx('GET', path);
+  assert.equal(await handleShareLinks(c), false);
+  assert.equal(res.statusCode, null, 'and nothing was sent');
 });

@@ -92,9 +92,6 @@ export {
   revokeAllShareLinks,
 } from './crud.js';
 
-// Access logging
-export { logShareLinkAccess, getShareLinkAccessLog } from './access-log.js';
-
 // Guest management
 export {
   requestGuestVerification,

@@ -98,8 +98,8 @@ organization and which never will:
   `not_found` before anything is deleted (`replaceTagLinks`, B436).
 - **R2 — Content descendants inherit the organization through their FK chain
   and carry no organization column of their own.** The live stack
-  (live-sessions, interactions, questions, feedback), analytics, the
-  share-link access log and API usage all reach the organization via the row
+  (live-sessions, interactions, questions, feedback), analytics and API
+  usage all reach the organization via the row
   they hang off (`session_id` → `present_sessions.presentation_id` →
   `presentations.organization_id`; `api_key_id` → `api_keys.organization_id`).
   A second copy of the organization on those tables could only drift, so
@@ -147,14 +147,15 @@ Four edge decisions taken with the rules:
    with me" _should_ be organization-scoped is a product question about what that
    list means across organizations, and is the only thing keeping this column
    from being removable outright.
-6. **The share-link access log inherits the link's organization.**
-   `share_link_access_log` rows hang off one globally unique
-   `presentation_share_links.id`. The public write follows a validated share
-   token and passes a reasoned instance scope; storage verifies that the link
-   exists. The management read requires an organization scope and joins the
-   parent link to filter by its organization before returning viewer IP or
-   user-agent. The management route also authorizes the presentation and binds
-   the link id through the organization-filtered `getShareLinkById`.
+6. **A share link is addressed by its token, not by an organization.** The
+   token on `presentation_share_links` is globally unique and is the
+   authorization, so the public routes read the link without an organization
+   and act on what it names under a reasoned instance scope. The management
+   routes are the organization-bound half: they authorize the presentation
+   and bind the link id through the organization-filtered `getShareLinkById`.
+   The link keeps no per-visit record of its own beyond `use_count` and
+   `last_used_at`; the verification log that used to hang off it was dropped
+   with its only reader (B784, migration 094).
 7. **`view_sessions` carries no organization column, and GDPR self-service is
    scoped by person.** The column existed from migration 014 and was never
    trustworthy: the public tracking route stamped it from

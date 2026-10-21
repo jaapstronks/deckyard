@@ -112,8 +112,6 @@
     "server/storage/published.js :: upsertPublishedEntry :: scope-first",
     "server/storage/settings.js :: installationDefaultThemeId :: scope-first",
     "server/storage/settings.js :: resolveSeedThemeSlug :: scope-first",
-    "server/storage/share-links/access-log.js :: getShareLinkAccessLog :: scope-first",
-    "server/storage/share-links/access-log.js :: logShareLinkAccess :: scope-first",
     "server/storage/share-links/crud.js :: getValidShareLinkById :: scope-first",
     "server/storage/share-links/crud.js :: shareLinkCreatorNames :: scope-first",
     "server/storage/share-links/guests.js :: requestGuestVerification :: scope-first",
@@ -168,13 +166,6 @@
       "params": ["scope", "data"],
       "exception": null,
       "callers": ["server/services/access-notifications.js:48"]
-    },
-    {
-      "key": "server/storage/access-attempts.js :: markAuthorNotified",
-      "line": 119,
-      "params": ["scope", "attemptId"],
-      "exception": null,
-      "callers": ["server/services/access-notifications.js:102"]
     },
     {
       "key": "server/storage/access-attempts.js :: shouldNotifyAuthor",
@@ -3457,20 +3448,6 @@
       ]
     },
     {
-      "key": "server/storage/share-links/access-log.js :: getShareLinkAccessLog",
-      "line": 54,
-      "params": ["shareLinkId", "options"],
-      "exception": null,
-      "callers": ["server/routes/api/share-links/management.js:295"]
-    },
-    {
-      "key": "server/storage/share-links/access-log.js :: logShareLinkAccess",
-      "line": 30,
-      "params": ["shareLinkId", "info"],
-      "exception": null,
-      "callers": ["server/routes/api/share-links/public.js:236"]
-    },
-    {
       "key": "server/storage/share-links/crud.js :: createShareLink",
       "line": 71,
       "params": ["scope", "presentationId", "options"],
@@ -4645,8 +4622,6 @@
         "server/storage/settings.js:664",
         "server/storage/settings.js:802",
         "server/storage/settings.js:919",
-        "server/storage/share-links/access-log.js:34",
-        "server/storage/share-links/access-log.js:58",
         "server/storage/share-links/crud.js:142",
         "server/storage/share-links/crud.js:179",
         "server/storage/share-links/crud.js:245",

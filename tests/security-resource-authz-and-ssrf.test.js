@@ -20,10 +20,10 @@
  *       private space.
  *
  * MH2 — share-link management linkId not tied to the authorized presentation
- *       (server/routes/api/share-links/management.js). Revoke/update/access-log
- *       must assert the linkId belongs to the presentation the caller can write,
- *       or a user who can write one deck could act on another (private) deck's
- *       link and read its viewer-PII access log.
+ *       (server/routes/api/share-links/management.js). Revoke/update must
+ *       assert the linkId belongs to the presentation the caller can write, or
+ *       a user who can write one deck could act on another (private) deck's
+ *       link.
  *
  * Run with: node --test tests/security-resource-authz-and-ssrf.test.js
  */
@@ -414,7 +414,7 @@ test('MH2: shareLinkBelongsToPresentation is fail-closed', () => {
   );
 });
 
-test('MH2: revoke/update/access-log run the containment gate before mutating', async () => {
+test('MH2: revoke/update run the containment gate before mutating', async () => {
   const src = await fs.readFile(
     fileURLToPath(
       new URL(
@@ -428,8 +428,8 @@ test('MH2: revoke/update/access-log run the containment gate before mutating', a
   // from another deck can't slip through.
   const gates = src.match(/loadLinkForPresentation\(/g) || [];
   assert.ok(
-    gates.length >= 3,
-    `expected containment on all 3 linkId routes, found ${gates.length}`,
+    gates.length >= 2,
+    `expected containment on both linkId routes, found ${gates.length}`,
   );
 });
 
