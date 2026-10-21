@@ -93,6 +93,43 @@ Add to your Cursor MCP settings:
 Details, payload shape and the matching REST endpoints:
 `docs/reference/comments-api.md`.
 
+### Sharing privately
+
+| Tool                 | Description                                                                       |
+| -------------------- | --------------------------------------------------------------------------------- |
+| `list_collaborators` | Who has private access to a deck, with name and permission                        |
+| `add_collaborator`   | Give one existing member of the organization `view`, `comment`, `edit` or `admin` |
+
+These are the editor's share dialog for an agent: the same service
+(`server/services/collaborators.js`) and the same rule, so only someone who
+may manage the deck's collaborators (owner, creator or an `admin`
+collaborator) may read the list or add to it. The actor is the session owner;
+a fork that sets the session owner from an `X-On-Behalf-Of` header gets the
+acting user's rights, never those of the API key's owner.
+
+The contract an agent can rely on:
+
+- **Private stays private.** Adding a collaborator changes neither the deck's
+  visibility nor its share links; publishing is a separate action.
+- **Only existing colleagues.** The invitee must be a user in the deck's
+  organization. An unknown address, someone from another organization, a deck
+  the session cannot see and the actor's own address are refused as tool
+  errors, and nothing is written.
+- **Idempotent.** Repeating an identical call answers `status: "unchanged"`
+  and writes, notifies and logs nothing new. Someone who already has a
+  different permission is refused (`already_exists`) and keeps it;
+  `add_collaborator` never changes an existing permission. A revoked
+  collaborator is reactivated with the requested permission
+  (`status: "reactivated"`).
+- **Mail is explicit.** Every grant writes an in-app `share_received`
+  notification and a `collaborator.added` activity event, as in the editor.
+  The invitation email goes out only with `sendInvitation: true`
+  (`invitationEmail: "queued"`); by default the result says
+  `invitationEmail: "not_requested"`. The editor sends it by default.
+- **A success names the result.** `status` is `added`, `reactivated` or
+  `unchanged`, and `collaborator` carries the permission as stored; confirm
+  with `list_collaborators`.
+
 ### Analyzing
 
 | Tool                    | Description                                                       |
@@ -498,20 +535,26 @@ do the same things on both. Every tool declares the one API-key permission it
 requires — the same one its v1 counterpart requires — and the dispatch refuses
 a call outside it:
 
-| Permission       | Tools                                                                                                                                                                |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `read`           | `get_slide_types`, `list_presentations`, `get_presentation`, `get_presentation_url`, `list_themes`, `validate_presentation`, `preview_slide`, `preview_presentation` |
-| `write`          | `create_presentation_from_slides`, `add_slide`, `update_slide`, `remove_slide`, `reorder_slides`, `duplicate_presentation`, `delete_presentation`                    |
-| `ai`             | `create_presentation`, `append_slides`, `convert_slide`, `iterate_presentation`, `compress_presentation`, `analyze_presentation`                                     |
-| `export`         | `export_presentation`                                                                                                                                                |
-| `comments:read`  | `list_comments`, `list_recent_comments`                                                                                                                              |
-| `comments:write` | `add_comment`, `reply_to_comment`, `set_comment_status`                                                                                                              |
+| Permission            | Tools                                                                                                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read`                | `get_slide_types`, `list_presentations`, `get_presentation`, `get_presentation_url`, `list_themes`, `validate_presentation`, `preview_slide`, `preview_presentation` |
+| `write`               | `create_presentation_from_slides`, `add_slide`, `update_slide`, `remove_slide`, `reorder_slides`, `duplicate_presentation`, `delete_presentation`                    |
+| `ai`                  | `create_presentation`, `append_slides`, `convert_slide`, `iterate_presentation`, `compress_presentation`, `analyze_presentation`                                     |
+| `export`              | `export_presentation`                                                                                                                                                |
+| `comments:read`       | `list_comments`, `list_recent_comments`                                                                                                                              |
+| `comments:write`      | `add_comment`, `reply_to_comment`, `set_comment_status`                                                                                                              |
+| `collaborators:read`  | `list_collaborators`                                                                                                                                                 |
+| `collaborators:write` | `add_collaborator`                                                                                                                                                   |
 
 A refusal is a JSON-RPC tool error naming the missing permission
 (`API key lacks required permission: write`), not an HTTP status — see
 [`api-error-format.md`](api-error-format.md) § 401 versus 403. `tools/list`
 also hides the tools the key may not call, so an agent is not offered a menu it
 cannot order from.
+
+The collaborator scopes have no `/api/v1` counterpart: managing who has
+access is a right of its own, so a key with `write` cannot share a deck until
+its owner grants `collaborators:write` explicitly. Existing keys gain nothing.
 
 The two previewing tools require `read`, not `export`: they render content the
 key can already fetch with `get_presentation` and produce no file.

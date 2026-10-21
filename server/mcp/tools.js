@@ -7,6 +7,7 @@
 
 import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
+import { ALL_PERMISSIONS } from '../../shared/constants/permissions.js';
 import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { projectReaderPresentation } from '../utils/reader-presentation.js';
 import { singleOrganizationScope } from '../storage/scope.js';
@@ -51,7 +52,12 @@ import {
   AppError,
   UnauthorizedError,
   ValidationError,
+  throwStorageFailure,
 } from '../utils/errors.js';
+import {
+  inviteCollaborators,
+  listCollaboratorsForActor,
+} from '../services/collaborators.js';
 import { generateDeck, generatedDeckToParts } from '../utils/ai/index.js';
 import {
   validateAndFixRefinedSlides,
@@ -120,6 +126,22 @@ function presentationUrl(id, mode = 'edit', { slideId } = {}) {
   const path = mode === 'edit' ? 'app' : mode;
   const anchor = slideId ? `?slideId=${encodeURIComponent(slideId)}` : '';
   return `${base}/${path}/${id}${anchor}`;
+}
+
+/**
+ * A collaborator as the MCP tools report it: who, at what level, invited by
+ * whom and when. Revocation fields stay out; the tools list active rows only.
+ * @param {Object} c - A collaborator from `services/collaborators.js`
+ * @returns {Object}
+ */
+function collaboratorView(c) {
+  return {
+    email: c.userEmail,
+    name: c.userName ?? null,
+    permission: c.permission,
+    invitedBy: c.invitedBy,
+    invitedAt: c.invitedAt,
+  };
 }
 
 /** Render the service's conversion refusal in MCP's tool vocabulary. */
@@ -1829,15 +1851,18 @@ export function registerTools(
   // ─── comment write tools (shared plumbing) ──────────────────────────────
 
   /**
-   * Resolve the acting user for a comment mutation, or throw.
-   * Writes need an author identity; a trusted local session without an
-   * owner email cannot attribute the comment to anyone.
+   * Resolve the acting user for an attributed mutation, or throw.
+   * A comment needs an author and a grant an inviter; a trusted local
+   * session without an owner email cannot attribute either to anyone.
+   * @param {Object} [context] - Per-request context (SSE session)
+   * @param {string} what - What is attributed, for the refusal
+   * @returns {string} the acting owner email
    */
-  function requireCommentActor(context) {
+  function requireActingUser(context, what) {
     const owner = getOwner(context);
     if (!owner) {
       throw new UnauthorizedError(
-        'This tool needs an acting user email to attribute the comment to. Configure the MCP owner email (stdio) or use an API-key session (HTTP).',
+        `This tool needs an acting user email to attribute ${what} to. Configure the MCP owner email (stdio) or use an API-key session (HTTP).`,
       );
     }
     return owner;
@@ -1852,7 +1877,7 @@ export function registerTools(
     { presentationId, body, slideId = null, parentId = null },
     context,
   ) {
-    requireCommentActor(context);
+    requireActingUser(context, 'the comment');
     const { comment, presentation } = await createComment(
       storageScopeOf(context),
       { actor: actorOf(context) },
@@ -1953,7 +1978,7 @@ export function registerTools(
       required: ['presentationId', 'commentId', 'status'],
     },
     async ({ presentationId, commentId, status }, context) => {
-      requireCommentActor(context);
+      requireActingUser(context, 'the comment');
       const { comment } = await setCommentStatus(
         storageScopeOf(context),
         { actor: actorOf(context) },
@@ -1962,6 +1987,130 @@ export function registerTools(
       return { ok: true, comment };
     },
     { permission: 'comments:write' },
+  );
+
+  // ─── collaborator tools ─────────────────────────────────────────────────
+  // Private sharing with a colleague (B807): give a member of the deck's
+  // organization access without publishing anything. The flow is
+  // `services/collaborators.js`, the one the editor's share dialog uses, with
+  // the session owner as the actor: managing collaborators is the deck's
+  // `manage` right (owner, creator or an admin collaborator), whatever the
+  // key's scopes say.
+
+  server.tool(
+    'list_collaborators',
+    "List who has private access to a presentation: each active collaborator's email, name and permission (view, comment, edit or admin). Only the owner, the creator or an admin collaborator may read this list. Use it to confirm a share after add_collaborator. Publishing is separate and not reported here.",
+    {
+      type: 'object',
+      properties: {
+        presentationId: { type: 'string', description: 'Presentation ID' },
+      },
+      required: ['presentationId'],
+    },
+    async ({ presentationId }, context) => {
+      const { collaborators } = await listCollaboratorsForActor(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        presentationId,
+      );
+      return {
+        presentationId,
+        collaborators: collaborators.map(collaboratorView),
+        count: collaborators.length,
+      };
+    },
+    { readOnly: true, permission: 'collaborators:read' },
+  );
+
+  server.tool(
+    'add_collaborator',
+    'Give one existing member of your organization private access to a presentation, as the acting user, with an explicit permission: "view", "comment", "edit" or "admin". This does not publish the presentation or create a link; only the invited person gains access. Only the owner, the creator or an admin collaborator may share. Repeating the same call changes nothing (`status: "unchanged"`); someone who already has a different permission is refused and keeps it. The invitee always gets an in-app notification; an invitation email goes out only with `sendInvitation: true`.',
+    {
+      type: 'object',
+      properties: {
+        presentationId: { type: 'string', description: 'Presentation ID' },
+        userEmail: {
+          type: 'string',
+          description:
+            "Email address of the colleague, a member of the presentation's organization",
+        },
+        permission: {
+          type: 'string',
+          description: 'The access to grant',
+          enum: [...ALL_PERMISSIONS],
+        },
+        sendInvitation: {
+          type: 'boolean',
+          description:
+            'Also send the invitation email (default: false, in-app notification only)',
+        },
+      },
+      required: ['presentationId', 'userEmail', 'permission'],
+    },
+    async (
+      { presentationId, userEmail, permission, sendInvitation = false },
+      context,
+    ) => {
+      requireActingUser(context, 'the share');
+      if (typeof userEmail !== 'string') {
+        throw new ValidationError('userEmail must be an email address.');
+      }
+      if (typeof sendInvitation !== 'boolean') {
+        throw new ValidationError('sendInvitation must be a boolean.');
+      }
+      const scope = storageScopeOf(context);
+      const identity = { actor: actorOf(context) };
+      const editUrl =
+        presentationUrl(presentationId, 'edit') || `/app/${presentationId}`;
+      const {
+        results: [result],
+      } = await inviteCollaborators(scope, identity, presentationId, {
+        userEmails: [userEmail],
+        permission,
+        sendInvitation,
+        inviteUrlFor: (email) =>
+          `${editUrl}?email=${encodeURIComponent(email)}`,
+        repoRoot,
+      });
+
+      if (result.ok) {
+        return {
+          ok: true,
+          status: result.reactivated ? 'reactivated' : 'added',
+          collaborator: collaboratorView(result.collaborator),
+          invitationEmail: sendInvitation ? 'queued' : 'not_requested',
+        };
+      }
+      if (result.reason === 'already_exists') {
+        const { collaborators } = await listCollaboratorsForActor(
+          scope,
+          identity,
+          presentationId,
+        );
+        const current = collaborators.find((c) => c.userEmail === result.email);
+        if (current?.permission === permission) {
+          return {
+            ok: true,
+            status: 'unchanged',
+            collaborator: collaboratorView(current),
+            invitationEmail: 'not_sent',
+          };
+        }
+        throw new AppError(
+          `${result.email} already has ${current?.permission || 'other'} access; add_collaborator does not change an existing permission.`,
+          409,
+          null,
+          'already_exists',
+        );
+      }
+      throwStorageFailure(
+        result,
+        result.reason === 'user_not_found'
+          ? `No member of this organization has the address ${result.email}.`
+          : undefined,
+      );
+    },
+    { permission: 'collaborators:write' },
   );
 
   // ─── custom tools (fork extension seam) ─────────────────────────────────
