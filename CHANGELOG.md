@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.81.0](https://github.com/jaapstronks/deckyard/compare/v1.80.0...v1.81.0) (2026-10-21)
+
+
+### Added
+
+* let MCP agents share a deck privately with a colleague (B807) ([#1786](https://github.com/jaapstronks/deckyard/issues/1786)) ([9390ec0](https://github.com/jaapstronks/deckyard/commit/9390ec09619c4a9564fb8bee30f8f05d6a39ad68))
+
 ## [1.80.0](https://github.com/jaapstronks/deckyard/compare/v1.79.0...v1.80.0) (2026-10-21)
 
 
