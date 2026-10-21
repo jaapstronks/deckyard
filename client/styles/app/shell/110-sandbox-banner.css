@@ -1,18 +1,20 @@
 /* Sandbox banner: a compact, always-visible notice pinned to the bottom-left.
    Bottom-left keeps it clear of the bottom-right toast stack (z-index 1200)
-   and does not fight the fixed editor grid the way a top bar would. */
+   and does not fight the fixed editor grid the way a top bar would. Below the
+   notice sit the two exits (A4); only they take clicks, the rest of the card
+   lets them through to the page underneath. */
 
 .sandbox-banner {
   position: fixed;
-  left: calc(12px + env(safe-area-inset-left, 0px));
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  left: calc(var(--ps-space-3) + env(safe-area-inset-left, 0px));
+  bottom: calc(var(--ps-space-3) + env(safe-area-inset-bottom, 0px));
   z-index: var(--z-banner);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: min(360px, calc(100vw - 24px));
-  padding: 8px 14px;
-  border-radius: 999px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1-5);
+  max-width: min(400px, calc(100vw - 24px));
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
+  border-radius: 12px;
   font-size: var(--ps-text-sm);
   line-height: 1.3;
   color: hsl(var(--app-text-primary));
@@ -20,6 +22,13 @@
   border: 1px solid hsl(var(--app-border-default));
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
   pointer-events: none;
+}
+
+.sandbox-banner-line {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  margin: 0;
 }
 
 .sandbox-banner-dot {
@@ -36,10 +45,52 @@
   font-weight: 500;
 }
 
+/* The exits wrap as whole links: a label never breaks inside itself, and when
+   both do not fit on one line the hosted one moves under the self-host one. */
+.sandbox-banner-exits {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-1) var(--ps-space-3-5);
+  padding-left: var(--ps-space-4);
+}
+
+.sandbox-banner-link {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  pointer-events: auto;
+  color: hsl(var(--app-text-secondary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sandbox-banner-self-host {
+  font-weight: 600;
+  color: hsl(var(--app-accent-text));
+}
+
+.sandbox-banner-link:hover {
+  color: hsl(var(--app-text-primary));
+}
+
+.sandbox-banner-link:focus-visible {
+  outline: var(--app-focus-ring);
+  outline-offset: var(--ps-focus-ring-offset);
+  border-radius: 2px;
+}
+
+/* A finger needs a 44px target; the links grow to it, the text stays put. */
+@media (pointer: coarse) {
+  .sandbox-banner-link {
+    min-height: 44px;
+  }
+}
+
 @media (max-width: 640px) {
   .sandbox-banner {
     font-size: 12px;
-    padding: 7px 12px;
+    padding: var(--ps-space-2) var(--ps-space-3);
   }
 }
 
