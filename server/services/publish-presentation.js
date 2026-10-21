@@ -42,9 +42,9 @@ import {
 } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import {
-  isPublishedPreviewAssetName,
   pickOgImageUrlFromPresentation,
   publishedPreviewFingerprint,
+  publishedPreviewPublishId,
   safePublishedOgImage,
 } from '../render/og-image.js';
 import { firstPublicSlide } from '../utils/public-output.js';
@@ -185,25 +185,33 @@ export async function buildPublishOgImage({
 /**
  * Withdraw a generated OG preview from the origin that serves it (B806).
  *
- * Only an object the publication OG generator minted is ever touched: the file
- * name must pass {@link isPublishedPreviewAssetName} and the configured media
- * provider must own the URL, so a picked content image or any other upload is
- * left alone. What withdrawing means is the provider's: a remote origin
- * deletes the object, the local provider keeps it because its own route
- * refuses an unproven preview. Idempotent and never throws.
+ * Only an object the publication OG generator minted for *this* publication is
+ * ever touched: the file name must carry `publishId`
+ * ({@link publishedPreviewPublishId}) and the configured media provider must
+ * own the URL. A picked content image, any other upload, and a generated
+ * preview of another publication (a stored URL is not always one this
+ * generator wrote: the fallback ladder stores a content image the author
+ * chose) are left alone. What withdrawing means is the provider's: a remote
+ * origin deletes the object, the local provider keeps it because its own
+ * route refuses an unproven preview. Idempotent and never throws.
  *
  * @param {unknown} url - A stored `ogImageUrl`.
+ * @param {unknown} publishId - The publication the URL is stored on.
  * @returns {Promise<'deleted'|'kept'|'failed'>}
  */
-export async function withdrawPublishedPreview(url) {
+export async function withdrawPublishedPreview(url, publishId) {
   if (typeof url !== 'string' || !url) return 'kept';
+  if (typeof publishId !== 'string' || !publishId) return 'kept';
   let name;
   try {
     name = new URL(url, 'http://local.invalid').pathname.split('/').pop();
   } catch {
     return 'kept';
   }
-  if (!isPublishedPreviewAssetName(name) || !isMediaProviderInitialized()) {
+  if (
+    publishedPreviewPublishId(name) !== publishId ||
+    !isMediaProviderInitialized()
+  ) {
     return 'kept';
   }
   const provider = getMediaProvider();
@@ -221,12 +229,13 @@ export async function withdrawPublishedPreview(url) {
  * ones the origin refused; the legacy sweep (`scripts/sweep-published-previews.js`)
  * is the fallback for those.
  * @param {Iterable<string>} urls
+ * @param {string} publishId - The publication the URLs are stored on.
  * @returns {Promise<boolean>} true when none failed
  */
-async function withdrawPreviews(urls) {
+async function withdrawPreviews(urls, publishId) {
   let ok = true;
   for (const url of new Set(urls)) {
-    if ((await withdrawPublishedPreview(url)) === 'failed') {
+    if ((await withdrawPublishedPreview(url, publishId)) === 'failed') {
       log.warn(`[publish] Preview left on its origin: ${url}`);
       ok = false;
     }
@@ -268,7 +277,14 @@ export async function resolvePublicOgImage({
   const expired = deckExpired ? [storedUrl, deckUrl] : [storedUrl];
 
   try {
-    if (!(await withdrawPreviews(expired))) return advertised;
+    // Each URL is withdrawn under the publication it is stored on: the entry's
+    // under `publishId`, the deck's under its own id (normally the same).
+    const withdrawn =
+      (await withdrawPreviews([storedUrl], publishId)) &&
+      (!deckExpired ||
+        deckUrl === storedUrl ||
+        (await withdrawPreviews([deckUrl], pres?.published?.id)));
+    if (!withdrawn) return advertised;
     const scope = { repoRoot, organizationId: pres.organizationId };
     for (const url of new Set(expired)) {
       await clearPublishedEntryOgImage(scope, publishId, url);
@@ -290,7 +306,9 @@ export async function resolvePublicOgImage({
  */
 export async function withdrawReplacedPreview(pres, nextUrl) {
   const previous = pres?.published?.ogImageUrl;
-  if (previous && previous !== nextUrl) await withdrawPreviews([previous]);
+  if (previous && previous !== nextUrl) {
+    await withdrawPreviews([previous], pres?.published?.id);
+  }
 }
 
 /**
@@ -439,6 +457,7 @@ export async function unpublishPresentation(scope, identity, presentationId) {
   // The link is down; the image it advertised goes too (B806).
   await withdrawPreviews(
     [pres.published?.ogImageUrl, entry?.ogImageUrl].filter(Boolean),
+    publishId,
   );
   return updated;
 }

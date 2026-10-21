@@ -89,6 +89,10 @@ const generatedName = (n) =>
   `og-v2-${PUBLISH_ID}-0123456789abcdef0123-00000000-0000-4000-8000-00000000000${n}.png`;
 const OLD_KEY = `uploads/2026/10/${generatedName(1)}`;
 const OLD_URL = `${CDN}/${OLD_KEY}`;
+/** A generated preview on the same bucket that another publication minted. */
+const OTHER_KEY =
+  'uploads/2026/09/og-v2-beef0001-ffffffffffffffffffff-11111111-2222-4333-8444-555555555555.png';
+const OTHER_URL = `${CDN}/${OTHER_KEY}`;
 
 function deckRow(slides) {
   return {
@@ -241,16 +245,18 @@ async function getV1Status() {
 
 test('a generated preview on the bucket is deleted by its key, under every address of the bucket', async () => {
   bucket.sent.length = 0;
-  assert.equal(await withdrawPublishedPreview(OLD_URL), 'deleted');
+  assert.equal(await withdrawPublishedPreview(OLD_URL, PUBLISH_ID), 'deleted');
   assert.equal(
     await withdrawPublishedPreview(
       `https://media.s3.nl-ams.example.com/${OLD_KEY}`,
+      PUBLISH_ID,
     ),
     'deleted',
   );
   assert.equal(
     await withdrawPublishedPreview(
       `https://s3.nl-ams.example.com/media/${OLD_KEY}?v=2`,
+      PUBLISH_ID,
     ),
     'deleted',
   );
@@ -267,8 +273,27 @@ test('an ordinary upload, a foreign host or a local path is never touched', asyn
     '',
     null,
   ]) {
-    assert.equal(await withdrawPublishedPreview(url), 'kept', String(url));
+    assert.equal(
+      await withdrawPublishedPreview(url, PUBLISH_ID),
+      'kept',
+      String(url),
+    );
   }
+  assert.deepEqual(bucket.sent, []);
+});
+
+test('a generated preview of another publication is never touched', async () => {
+  bucket.sent.length = 0;
+  // The legacy and the v2 spelling both carry the publish id they were minted for.
+  for (const url of [
+    OTHER_URL,
+    `${CDN}/uploads/2026/09/og-beef0001-00000000-0000-4000-8000-000000000009.png`,
+  ]) {
+    assert.equal(await withdrawPublishedPreview(url, PUBLISH_ID), 'kept', url);
+  }
+  // Without a publication there is nothing to withdraw under.
+  assert.equal(await withdrawPublishedPreview(OLD_URL, ''), 'kept');
+  assert.equal(await withdrawPublishedPreview(OLD_URL, undefined), 'kept');
   assert.deepEqual(bucket.sent, []);
 });
 
@@ -276,7 +301,7 @@ test('a delete the bucket refuses is reported as failed, not as done', async () 
   bucket.sent.length = 0;
   bucket.failDeletes = true;
   try {
-    assert.equal(await withdrawPublishedPreview(OLD_URL), 'failed');
+    assert.equal(await withdrawPublishedPreview(OLD_URL, PUBLISH_ID), 'failed');
   } finally {
     bucket.failDeletes = false;
   }
@@ -378,6 +403,21 @@ for (const [seam, read, advertised] of [
     assert.equal(storedEntry(db).og_image_url, OLD_URL);
   });
 }
+
+test("a stored URL that names another publication's preview is blanked, not deleted", async () => {
+  // The fallback ladder stores a content image the author chose; that may be
+  // any URL on the bucket, including another deck's generated preview.
+  const db = await installPublished({ proven: false });
+  storedDeck(db).published.ogImageUrl = OTHER_URL;
+  storedEntry(db).og_image_url = OTHER_URL;
+  bucket.sent.length = 0;
+  const res = await getPage();
+  assert.equal(res.status, 200);
+  assert.ok(!res.body.includes(OTHER_KEY));
+  assert.deepEqual(bucket.sent, [], 'the other publication keeps its object');
+  assert.equal(storedEntry(db).og_image_url, '');
+  assert.equal(deckOgUrl(db), '');
+});
 
 test('a failed withdrawal keeps the stored URL, so the next read retries', async () => {
   const db = await installPublished({ proven: false });
