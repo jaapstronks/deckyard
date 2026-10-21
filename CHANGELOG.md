@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.82.0](https://github.com/jaapstronks/deckyard/compare/v1.81.0...v1.82.0) (2026-10-21)
+
+
+### Added
+
+* give the sandbox banner a self-host exit (A4) ([#1791](https://github.com/jaapstronks/deckyard/issues/1791)) ([dfa3d6b](https://github.com/jaapstronks/deckyard/commit/dfa3d6b6d49184912a8e4bdf1c165d67b0e3cc81))
+
+
+### Fixed
+
+* insert between slides from a thin seam instead of a fixed strip (B497) ([#1788](https://github.com/jaapstronks/deckyard/issues/1788)) ([d12a470](https://github.com/jaapstronks/deckyard/commit/d12a470ad013c0f3efac667c6a7a7abf2604d941))
+* size slide-list thumbnails from their rendered width (B810) ([#1790](https://github.com/jaapstronks/deckyard/issues/1790)) ([21edb1a](https://github.com/jaapstronks/deckyard/commit/21edb1a41c8bc9733d43e92c94a501f7b3914552))
+
 ## [1.81.0](https://github.com/jaapstronks/deckyard/compare/v1.80.0...v1.81.0) (2026-10-21)
 
 
