@@ -1534,9 +1534,22 @@ async function duplicatePresentationRow(id, ctx) {
     }
   }
 
+  // The copy is named a copy in every language version, not only top-level:
+  // the top level is a projection of the dominant version, so the first save
+  // re-derived it from an unprefixed version title and the copy got its
+  // source's name back (B816). Each version keeps its own title, prefixed in
+  // its own language; a version without a title of its own stays without.
+  const copyPrefix = (lang) => (lang === 'en-GB' ? 'Copy of ' : 'Kopie van ');
   const lang = existing.i18n?.dominant || existing.lang || DEFAULT_DECK_LANG;
-  const prefix = lang === 'en-GB' ? 'Copy of ' : 'Kopie van ';
-  const newTitle = prefix + existing.title;
+  const newTitle = copyPrefix(lang) + existing.title;
+  for (const [versionLang, version] of Object.entries(newI18n.versions || {})) {
+    if (typeof version?.title === 'string' && version.title) {
+      newI18n.versions[versionLang] = {
+        ...version,
+        title: copyPrefix(versionLang) + version.title,
+      };
+    }
+  }
 
   // Mint the copy's id here rather than leaving it to the insert: the slides
   // are rekeyed against it (a follow-invite slide's QR code has to point at the

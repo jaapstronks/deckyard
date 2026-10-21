@@ -22,7 +22,7 @@ Both editable columns use `writeVersionText` in `client/views/editor/version-tex
 | Current        | The stored source hash matches.                                                                 |
 | No history     | Both texts exist without a record for the selected source language.                             |
 
-Status is derived on read. `writeVersionText` stamps the target field when a suggestion is accepted with `sourceLang`; ordinary edits do not pretend to be accepted translations. The shared `recordTranslatedVersion` seam stamps fields actually translated by the server's whole-deck paths, preserving provenance for previously filled targets when filling gaps. The internal translate routes and worker use the translation service. Existing records survive collaborative projection and ordinary saves.
+Status is derived on read. `writeVersionText` stamps the target field when a suggestion is accepted with `sourceLang`; ordinary edits do not pretend to be accepted translations. Where the other version has no text at that address (a field it never had), the view's write saves without a stamp instead of being refused. The shared `recordTranslatedVersion` seam stamps fields actually translated by the server's whole-deck paths, preserving provenance for previously filled targets when filling gaps. The internal translate routes and worker use the translation service. Existing records survive collaborative projection and ordinary saves.
 
 ## API and MCP
 

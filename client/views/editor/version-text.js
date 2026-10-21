@@ -59,7 +59,10 @@ const isDeckTitle = (slideId, path) =>
  *   before it loaded
  * @param {Function} [opts.onTitleChanged] - (title) after the active title changed
  * @returns {(lang: string, slideId: string|null, path: Array<string|number>,
- *   value: string, options?: {sourceLang?: string}) => boolean} the write seam; false when nothing was written
+ *   value: string, options?: {sourceLang?: string}) => boolean} the write seam;
+ *   false when nothing was written. `sourceLang` stamps provenance from that
+ *   version's text at the same address; where it has none, the write stands
+ *   without a stamp.
  */
 export function createVersionTextWriter({
   pres,
@@ -142,8 +145,12 @@ export function createVersionTextWriter({
             version.slides?.find((s) => s.id === slideId)?.content,
             path,
           );
-      if (typeof text !== 'string') return false;
-      source = translationSource(from, text);
+      // No text on the other side means nothing to record provenance from,
+      // not a refused write: a source-column edit whose target version lacks
+      // that field (never translated) must still save (B816). Same rule as
+      // `recordTranslatedVersion`: a blank source stamps nothing.
+      if (typeof text === 'string' && text.trim())
+        source = translationSource(from, text);
     }
     if (l === normalizeLang?.(pres.i18n?.active))
       return writeActive(slideId, path, value, source);
