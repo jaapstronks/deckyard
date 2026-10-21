@@ -312,27 +312,80 @@ export class S3Provider extends MediaProvider {
 
   ownsUrl(url) {
     if (!url || typeof url !== 'string') return false;
+    return this._urlBases().some((base) => url.startsWith(base));
+  }
 
-    const { bucket, endpoint, publicUrl } = this.config;
-    if (publicUrl && url.startsWith(`${publicUrl}/`)) return true;
-    if (!endpoint || !bucket) return false;
+  /**
+   * Every object under a key prefix, page by page. S3-specific: only the
+   * remote-origin sweeps (`scripts/sweep-published-previews.js`) enumerate a
+   * bucket; the app itself always addresses objects by key.
+   * @param {string} prefix
+   * @returns {AsyncGenerator<{ key: string, lastModified: Date|null }>}
+   */
+  async *listObjects(prefix) {
+    const client = await this._getClient();
+    let ContinuationToken;
+    do {
+      const page = await client.send(
+        new s3Commands.ListObjectsV2Command({
+          Bucket: this.config.bucket,
+          Prefix: prefix,
+          ContinuationToken,
+        }),
+      );
+      for (const obj of page.Contents || []) {
+        yield { key: obj.Key, lastModified: obj.LastModified || null };
+      }
+      ContinuationToken = page.IsTruncated
+        ? page.NextContinuationToken
+        : undefined;
+    } while (ContinuationToken);
+  }
 
-    // Both addressing styles for the configured endpoint: virtual-hosted
-    // (https://<bucket>.<host>/) and path style (https://<host>/<bucket>/).
-    let host;
-    try {
-      const u = new URL(endpoint);
-      host = `${u.protocol}//${u.host}`;
-    } catch {
-      return false;
-    }
-    return (
-      url.startsWith(`${host.replace('//', `//${bucket}.`)}/`) ||
-      url.startsWith(`${host}/${bucket}/`)
-    );
+  async withdrawPublicObject(url) {
+    const key = this._keyForUrl(url);
+    if (!key) return 'kept';
+    return (await this.deleteFile(key)) ? 'deleted' : 'failed';
   }
 
   // Private helpers
+
+  /**
+   * The URL prefixes an object of this bucket can be addressed under, each
+   * ending in `/` and followed directly by the key: the configured public base,
+   * and both addressing styles for the configured endpoint, virtual-hosted
+   * (https://<bucket>.<host>/) and path style (https://<host>/<bucket>/).
+   * @returns {string[]}
+   */
+  _urlBases() {
+    const { bucket, endpoint, publicUrl } = this.config;
+    const bases = publicUrl ? [`${publicUrl}/`] : [];
+    if (!endpoint || !bucket || !URL.canParse(endpoint)) return bases;
+    const u = new URL(endpoint);
+    bases.push(
+      `${u.protocol}//${bucket}.${u.host}/`,
+      `${u.protocol}//${u.host}/${bucket}/`,
+    );
+    return bases;
+  }
+
+  /**
+   * The storage key a URL of this bucket addresses, or null when the URL is
+   * not one of its objects. Query and fragment are not part of the key.
+   * @param {unknown} url
+   * @returns {string|null}
+   */
+  _keyForUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    const base = this._urlBases().find((b) => url.startsWith(b));
+    if (!base) return null;
+    const key = url.slice(base.length).split(/[?#]/)[0];
+    try {
+      return decodeURIComponent(key) || null;
+    } catch {
+      return null;
+    }
+  }
 
   /**
    * The public addresses an object with this key could be reached at: the

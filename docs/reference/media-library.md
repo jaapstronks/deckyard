@@ -28,7 +28,10 @@ Media providers (`server/media/`):
   `getMediaStatus()` (provider name + presign support, no credentials).
 - `server/media/interface.js` — the `MediaProvider` base class: `getStatus`,
   `createPresignedUpload`, `uploadBuffer`, `uploadDataUrl`, `confirmUpload`,
-  `deleteFile`, `ownsUrl`. Every method throws unless a subclass implements it.
+  `deleteFile`, `withdrawPublicObject`, `ownsUrl`. Every method throws unless a
+  subclass implements it. `withdrawPublicObject(url)` deletes on S3 and keeps
+  the file locally, where an app route is the boundary
+  ([publishing.md](publishing.md) § Withdrawing a generated preview).
 - `server/media/config.js` — reads `MEDIA_STORAGE_MODE` and the `S3_*` vars;
   `isS3Configured()`, `getS3Config()`, `derivePublicBaseUrl()`,
   `getEffectiveMediaProvider()`, `mediaConfigWarnings()` (the legacy `SCW_*`
@@ -315,7 +318,9 @@ Known gaps and rough edges, honestly:
 
 - **No garbage collection.** `deleteFile()` exists on the interface, but deleting
   a library item does not delete the bytes, and nothing sweeps uploads that no
-  deck references. Storage grows monotonically.
+  deck references. Storage grows monotonically. The one exception is a
+  generated published preview on a remote origin, withdrawn when it stops
+  belonging to its publication.
 - **Deleting an image does not repair the decks that use it.** `usage` tells you
   who would break; nothing enforces it.
 - **The catalogue and the bytes can drift.** A library item is just a URL; if the
