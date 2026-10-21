@@ -106,7 +106,7 @@
     },
     "user_notifications": {
       "identityColumns": [],
-      "note": "No visitor datum since B785: the access_attempt notification names the deck and the access type, and migration 093 stripped accessorIp from older rows. Listed so a producer that puts a visitor datum back into the JSON data fails rule (b) review.",
+      "note": "No visitor datum since B785: the access_attempt notification names the deck and the access type, and migration 093 stripped accessorIp from older rows. Listed so a second insert site fails rule (b); createNotification receives data opaquely, so the absence of accessorIp in the JSON is pinned by tests/access-attempt-retention.test.js, not by this gate.",
       "producers": ["server/storage/notifications.js :: createNotification"],
       "readers": ["server/storage/notifications.js :: listNotifications"],
       "cleanup": {
