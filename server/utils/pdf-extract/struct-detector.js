@@ -38,6 +38,7 @@ import {
   markerVariant,
   splitListMarker,
 } from './geometry-detector.js';
+import { lineBox, unionBoxes } from './boxes.js';
 
 const HEADING_ROLE = /^H([1-6])?$/;
 
@@ -226,6 +227,8 @@ const withRole = (lines, role) => lines.map((line) => ({ ...line, role }));
  * @property {'struct' | 'geometry' | null} headingSource
  * @property {Array<import('./lines.js').Line & { role: string }>} lines
  * @property {object[]} blocks
+ * @property {Array<import('./boxes.js').Box>} boxes - the box around the
+ *   lines of each block, index-aligned with `blocks` (B827)
  * @property {Array<import('./lines.js').Line>} labels - text inside figures
  * @property {Array<{ alt: string | null, ids: string[] }>} figures
  */
@@ -270,11 +273,13 @@ export function detectStruct(tree, runs, page) {
 
   const headingSource = chooseHeading(entries, page);
   const heading = entries.find((e) => e.kind === 'heading');
+  const withBlock = entries.filter((e) => e.block);
   return {
     heading: heading ? heading.text : null,
     headingSource,
     lines: entries.flatMap((e) => e.lines),
-    blocks: entries.filter((e) => e.block).map((e) => e.block),
+    blocks: withBlock.map((e) => e.block),
+    boxes: withBlock.map((e) => e.box ?? unionBoxes(e.lines.map(lineBox))),
     labels,
     figures,
   };
@@ -460,10 +465,11 @@ function placeOrphans(entries, orphanLines, page) {
   }
   if (!rest.length) return;
   const geometry = detectGeometry(rest, page, { heading: false });
-  const byBlock = geometry.blocks.map((block) => ({
+  const byBlock = geometry.blocks.map((block, i) => ({
     kind: block.kind,
     y: block.y,
     block,
+    box: geometry.boxes[i],
     lines: [],
   }));
   // Lines belong to the block whose y range they fall in, in order.

@@ -16,7 +16,10 @@
  *
  * Both give the same shape, so a mapper downstream knows only the model.
  * The text is literal (see `lines.js`): what is not on the slide is listed
- * under `dropped` with a reason, never silently lost. Pure computation: no
+ * under `dropped` with a reason, never silently lost. Since B827 the model
+ * also carries colour and boxes (the page's background, each line's colour,
+ * each block's box, the paths a tagged table owns and the drawing's box):
+ * data for the mapper, which still decides on its own. Pure computation: no
  * uploads, no storage, no HTTP.
  */
 
@@ -28,6 +31,14 @@ import { detectStruct } from './struct-detector.js';
 import { detectGeometry, findDrawingLabels } from './geometry-detector.js';
 import { readPageGraphics } from './images.js';
 import { readDocument } from './document.js';
+import {
+  boxArea,
+  growBox,
+  liesWithin,
+  lineBox,
+  overlapArea,
+  unionBoxes,
+} from './boxes.js';
 
 export { assembleLines, joinLineText, normalizeText } from './lines.js';
 export { isBoldFont } from './text-runs.js';
@@ -66,6 +77,45 @@ export const REFERENCE_MAX_RATIO = 0.8;
 const REFERENCE_TEXT = /^\d{1,3}(?:[,\s]+\d{1,3})*$/;
 
 /**
+ * A tagged table owns the paths inside the box of its cell lines, widened
+ * by this many em: its borders and cell fills sit just outside the text
+ * (B827). Measured on Philips Q4 2024: the ten `drawing` pages with a tagged
+ * table beside their text carry 14–108 such paths each; without them p20
+ * and p25 fall under the mapper's drawing threshold (brief § Meting 1b).
+ */
+export const TABLE_BOX_GROW_EM = 1;
+
+/** A path is a table's when this fraction of its area lies in the table box. */
+export const TABLE_PATH_INSIDE = 0.8;
+
+/**
+ * A line is body text when it has a body role and is at least this fraction
+ * of the body size (the median size of the lines under the heading); smaller
+ * text and labels belong to the drawing (B827). Chart labels measured 6–8 pt
+ * beside 10–12 pt body text on Philips Q4 2024.
+ */
+export const BODY_SIZE_RATIO = 0.9;
+
+/**
+ * A path covering at least this fraction of the page is a background, not
+ * part of a drawing (the same bound `findDrawingLabels` uses).
+ */
+export const DRAWING_PATH_MAX_COVERAGE = 0.5;
+
+/** A small line more than this far inside the body text is not drawing. */
+const SMALL_LINE_INSIDE_BODY = 0.5;
+
+const BODY_ROLES = new Set([
+  'heading',
+  'subheading',
+  'para',
+  'list-item',
+  'quote',
+  'card-title',
+  'card-body',
+]);
+
+/**
  * @typedef {object} PageLine
  * @property {string} text
  * @property {number} x
@@ -73,11 +123,14 @@ const REFERENCE_TEXT = /^\d{1,3}(?:[,\s]+\d{1,3})*$/;
  * @property {number} width
  * @property {number} size - font size in page units (pt)
  * @property {boolean} bold - every run on the line is set in a bold font
+ * @property {string | null} color - `#rrggbb` of the line's largest run,
+ *   null when unknown
  * @property {'heading'|'subheading'|'para'|'list-item'|'list-label'|'table-cell'|'caption'|'quote'|'card-title'|'card-body'|'label'} role
  */
 
 /**
- * Blocks, in reading order; each carries `y`, the baseline of its first line.
+ * Blocks, in reading order; each carries `y`, the baseline of its first
+ * line, and `box`, the box around all its lines (B827).
  *
  * - `{ kind: 'para', text, bold, size, subheading? }` (`size`: the largest
  *   font size on its lines)
@@ -102,7 +155,15 @@ const REFERENCE_TEXT = /^\d{1,3}(?:[,\s]+\d{1,3})*$/;
  *   list labels and drawing labels
  * @property {PageBlock[]} blocks
  * @property {Array<{ png: Buffer, box: { x: number, y: number, width: number, height: number }, pixels: { width: number, height: number }, alt?: string }>} images
- * @property {{ paths: number, labels: Array<{ text: string, x: number, y: number }> }} drawing
+ * @property {{ color: string } | null} background - the page colour: the
+ *   last solid fill covering the page (a pattern painted over it does not
+ *   change it), white when nothing covers it, null when only a pattern
+ *   covers it (`images.js`)
+ * @property {{ paths: number, labels: Array<{ text: string, x: number, y: number }>, tablePaths: number, box: import('./boxes.js').Box | null }} drawing -
+ *   `paths` counts every path; `tablePaths` those inside a tagged table's
+ *   box (`TABLE_BOX_GROW_EM`); `box` is the drawing's box: the paths and
+ *   the small or non-body lines outside the body text, null when no path
+ *   lies outside it
  * @property {DroppedLine[]} dropped
  */
 
@@ -224,11 +285,12 @@ async function readPage(page, n, { useStructTree, columns }) {
   // Fonts are only loaded (and their names readable) after the operator list.
   const operatorList = await page.getOperatorList();
   const textContent = await page.getTextContent({ includeMarkedContent: true });
+  const graphics = await readPageGraphics(page, operatorList, viewport);
   const runs = readTextRuns(textContent, {
     viewport,
     fontNameOf: (id) => fontName(page, id),
+    textPaints: graphics.textPaints,
   });
-  const graphics = await readPageGraphics(page, operatorList, viewport);
   const tree = useStructTree ? await page.getStructTree() : null;
 
   const { body, dropped } = dropNonSlideText(runs, box);
@@ -236,6 +298,8 @@ async function readPage(page, n, { useStructTree, columns }) {
   const tagged = Boolean(detected);
   if (!detected) detected = detectByGeometry(body, box, graphics, { columns });
 
+  const lines = detected.lines.map(publicLine);
+  const tableBox = tableBoxOf(lines);
   return {
     page: n,
     width: box.width,
@@ -243,15 +307,81 @@ async function readPage(page, n, { useStructTree, columns }) {
     tagged,
     heading: detected.heading,
     headingSource: detected.headingSource,
-    lines: detected.lines.map(publicLine),
-    blocks: detected.blocks,
+    lines,
+    blocks: detected.blocks.map((block, i) => ({
+      ...block,
+      box: detected.boxes[i],
+    })),
     images: attachAlt(graphics.images, detected.figures),
+    background: graphics.background,
     drawing: {
-      paths: graphics.paths,
+      paths: graphics.paths.length,
       labels: detected.labels.map(({ text, x, y }) => ({ text, x, y })),
+      tablePaths: tableBox
+        ? graphics.paths.filter((p) => isTablePath(p, tableBox)).length
+        : 0,
+      box: drawingBox(lines, graphics.paths, tableBox, box),
     },
     dropped,
   };
+}
+
+/** The box of a tagged table: around its cell lines, one em wider. */
+function tableBoxOf(lines) {
+  const cells = lines.filter((l) => l.role === 'table-cell');
+  if (!cells.length) return null;
+  return growBox(
+    unionBoxes(cells.map(lineBox)),
+    TABLE_BOX_GROW_EM * Math.max(...cells.map((l) => l.size)),
+  );
+}
+
+const isTablePath = (path, tableBox) =>
+  Boolean(path.box) && liesWithin(path.box, tableBox, TABLE_PATH_INSIDE);
+
+const median = (values) => {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+};
+
+/**
+ * The box of the page's drawing: every path outside the body text (and
+ * outside the table, and smaller than a background), together with the lines
+ * that are not body text and do not sit inside it: labels, and text under
+ * `BODY_SIZE_RATIO` of the body size. Null when no such path exists. The
+ * mapper decides what the box means (B831); measured on the 17 `drawing`
+ * pages of Philips Q4 2024, p13 and p24 give a box of 63% and 33% of the
+ * page with no body line in it.
+ */
+function drawingBox(lines, paths, tableBox, page) {
+  const bodySize = median(
+    lines.filter((l) => l.role !== 'heading').map((l) => l.size),
+  );
+  const isBody = (l) =>
+    BODY_ROLES.has(l.role) && l.size >= BODY_SIZE_RATIO * bodySize;
+  const bodyBoxes = lines.filter(isBody).map(lineBox);
+  const bodyUnion = unionBoxes(bodyBoxes);
+  const maxArea = DRAWING_PATH_MAX_COVERAGE * page.width * page.height;
+  const free = paths
+    .filter(
+      (p) =>
+        p.box &&
+        boxArea(p.box) < maxArea &&
+        !bodyBoxes.some((b) => overlapArea(p.box, b) > 0) &&
+        !(tableBox && isTablePath(p, tableBox)),
+    )
+    .map((p) => p.box);
+  if (!free.length) return null;
+  const small = lines
+    .filter((l) => !isBody(l) && l.role !== 'table-cell')
+    .map(lineBox)
+    .filter(
+      (b) =>
+        !bodyUnion ||
+        overlapArea(b, bodyUnion) <= SMALL_LINE_INSIDE_BODY * boxArea(b),
+    );
+  return unionBoxes([...free, ...small]);
 }
 
 /** Title and author from the document info, where the producer set them. */
@@ -392,9 +522,12 @@ function raisedAbove(mark, line, bodySize) {
 
 function detectByGeometry(runs, box, graphics, { columns }) {
   const lines = columns ? assembleColumnLines(runs) : assembleLines(runs);
+  const maxArea = DRAWING_PATH_MAX_COVERAGE * box.width * box.height;
   const labels = findDrawingLabels(lines, {
-    paths: graphics.paths,
-    boxes: graphics.pathBoxes,
+    paths: graphics.paths.length,
+    boxes: graphics.paths
+      .filter((p) => p.box && boxArea(p.box) < maxArea)
+      .map((p) => p.box),
   });
   const result = detectGeometry(lines, box, { exclude: labels });
   return {
@@ -402,13 +535,14 @@ function detectByGeometry(runs, box, graphics, { columns }) {
     headingSource: result.heading ? 'geometry' : null,
     lines: lines.map((line, i) => ({ ...line, role: result.roles[i] })),
     blocks: result.blocks,
+    boxes: result.boxes,
     labels: [...labels].map((i) => lines[i]),
     figures: [],
   };
 }
 
-function publicLine({ text, x, y, width, size, bold, role }) {
-  return { text, x, y, width, size, bold, role };
+function publicLine({ text, x, y, width, size, bold, color, role }) {
+  return { text, x, y, width, size, bold, color: color ?? null, role };
 }
 
 const mcNumber = (id) => {
