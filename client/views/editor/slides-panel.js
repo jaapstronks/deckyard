@@ -11,7 +11,10 @@ import { createSlideLibraryPicker } from '../slide-library/index.js';
 import { toast } from '../../lib/dom/toast.js';
 import { debugLog } from '../../lib/state/debug.js';
 import { isInsertableSlideType } from '../../../shared/slide-types/policy.js';
-import { createSlidesPanelResize } from './slides-panel-resize.js';
+import {
+  createSlidesPanelResize,
+  watchSlidesThumbScale,
+} from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import {
@@ -94,6 +97,7 @@ export function createSlidesPanel({
   const drawerBody = h('div', { class: 'slide-add' });
 
   const slideListEl = h('div', { class: 'list' });
+  const stopThumbScale = watchSlidesThumbScale(slideListEl);
 
   const searchInput = h('input', {
     class: 'form-input slides-search-input',
@@ -593,7 +597,10 @@ export function createSlidesPanel({
     setSearchQuery: (q, opts) => applySearchNow(q, opts),
     // Drop a queued keystroke render on unmount — it would otherwise fire up to
     // SEARCH_DEBOUNCE_MS later and rerender a torn-down editor.
-    detach: cancelPendingSearch,
+    detach: () => {
+      cancelPendingSearch();
+      stopThumbScale();
+    },
     setSearchStats,
     updateBulkActionBar,
     pasteFromClipboard,

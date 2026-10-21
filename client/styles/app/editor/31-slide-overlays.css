@@ -1,6 +1,7 @@
 /* Slide number: its own gutter beside the thumbnail, never on top of it, so
-   it covers no slide content. The gutter width is also read by the thumb-scale
-   math in client/views/editor/slides-panel-resize.js (SLIDE_NUM_GUTTER_PX). */
+   it covers no slide content. The thumbnail scale is measured from the
+   rendered card (client/views/editor/slides-panel-resize.js), so the gutter
+   width lives here only. */
 :where(
     .app-shell,
     .modal-backdrop,
