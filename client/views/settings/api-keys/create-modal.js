@@ -4,7 +4,6 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
-import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import {
   confirmModal,
@@ -12,6 +11,7 @@ import {
   createModalActions,
 } from '../../../lib/dom/modal.js';
 import { createApiKey } from './actions.js';
+import { createPermissionCheckboxes } from './permission-options.js';
 
 /**
  * Show modal to display the newly created key (shown only once).
@@ -127,109 +127,9 @@ export function showCreateModal(onSuccess) {
     text: t('settings.apiKeys.createModal.permissionsLabel', 'Permissions'),
   });
 
-  const permissionCheckboxes = h('div', { class: 'stack', style: 'gap: 8px;' });
+  const permissionCheckboxes = createPermissionCheckboxes();
 
-  const permissions = [
-    {
-      value: 'read',
-      label: t('settings.apiKeys.permissions.read', 'Read'),
-      desc: t(
-        'settings.apiKeys.permissionDesc.read',
-        'Read presentations, themes, and slide types',
-      ),
-      defaultChecked: true,
-    },
-    {
-      value: 'write',
-      label: t('settings.apiKeys.permissions.write', 'Write'),
-      desc: t(
-        'settings.apiKeys.permissionDesc.write',
-        'Create, update, and delete presentations',
-      ),
-      defaultChecked: true,
-    },
-    {
-      value: 'ai',
-      label: t('settings.apiKeys.permissions.ai', 'AI'),
-      desc: t(
-        'settings.apiKeys.permissionDesc.ai',
-        'Use AI generation and refinement features',
-      ),
-      defaultChecked: false,
-    },
-    {
-      value: 'export',
-      label: t('settings.apiKeys.permissions.export', 'Export'),
-      desc: t(
-        'settings.apiKeys.permissionDesc.export',
-        'Export presentations to HTML, JSON, or PDF',
-      ),
-      defaultChecked: false,
-    },
-    {
-      value: 'comments:read',
-      label: t('settings.apiKeys.permissions.commentsRead', 'Comments: read'),
-      desc: t(
-        'settings.apiKeys.permissionDesc.commentsRead',
-        'Read comments on accessible presentations',
-      ),
-      defaultChecked: false,
-    },
-    {
-      value: 'comments:write',
-      label: t('settings.apiKeys.permissions.commentsWrite', 'Comments: write'),
-      desc: t(
-        'settings.apiKeys.permissionDesc.commentsWrite',
-        'Add comments and replies, resolve or reopen them',
-      ),
-      defaultChecked: false,
-    },
-    {
-      value: 'collaborators:read',
-      label: t(
-        'settings.apiKeys.permissions.collaboratorsRead',
-        'Collaborators: read',
-      ),
-      desc: t(
-        'settings.apiKeys.permissionDesc.collaboratorsRead',
-        'See who has access to presentations you manage',
-      ),
-      defaultChecked: false,
-    },
-    {
-      value: 'collaborators:write',
-      label: t(
-        'settings.apiKeys.permissions.collaboratorsWrite',
-        'Collaborators: write',
-      ),
-      desc: t(
-        'settings.apiKeys.permissionDesc.collaboratorsWrite',
-        'Give organization members access to presentations you manage',
-      ),
-      defaultChecked: false,
-    },
-  ];
-
-  for (const permission of permissions) {
-    const { el: checkRow } = labeledCheckbox({
-      className: 'api-key-permission-checkbox',
-      checked: permission.defaultChecked,
-      inputAttrs: {
-        value: permission.value,
-        'data-permission': permission.value,
-      },
-      content: h('div', { class: 'api-key-permission-text' }, [
-        h('span', {
-          class: 'api-key-permission-label',
-          text: permission.label,
-        }),
-        h('span', { class: 'api-key-permission-desc', text: permission.desc }),
-      ]),
-    });
-    permissionCheckboxes.append(checkRow);
-  }
-
-  permissionsLabel.append(permissionsLabelText, permissionCheckboxes);
+  permissionsLabel.append(permissionsLabelText, permissionCheckboxes.el);
 
   // `status` carries progress only ("Deleting…", "Saving…"). A refusal is a
   // state of this form, so it goes in the one element for that, beside the
@@ -267,9 +167,7 @@ export function showCreateModal(onSuccess) {
   function setDisabled(disabled) {
     actions.setDisabled(disabled);
     nameInput.disabled = disabled;
-    permissionCheckboxes
-      .querySelectorAll('input')
-      .forEach((cb) => (cb.disabled = disabled));
+    permissionCheckboxes.setDisabled(disabled);
   }
 
   /**
@@ -281,9 +179,7 @@ export function showCreateModal(onSuccess) {
 
     refusal.clear();
     const name = nameInput.value.trim();
-    const selectedPermissions = Array.from(
-      permissionCheckboxes.querySelectorAll('input[type="checkbox"]:checked'),
-    ).map((cb) => cb.value);
+    const selectedPermissions = permissionCheckboxes.selected();
 
     if (!name) {
       status.textContent = '';

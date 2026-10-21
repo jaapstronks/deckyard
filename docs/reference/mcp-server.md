@@ -131,6 +131,12 @@ The contract an agent can rely on:
   `unchanged`, and `collaborator` carries the permission as stored; confirm
   with `list_collaborators`.
 
+Both tools need an opt-in scope, `collaborators:read` or
+`collaborators:write`. An existing key gets it without rotation: Settings →
+API Keys → **Edit permissions**, or `PATCH /api/api-keys/:id` with
+`{ "permissions": [...] }` (B813). The gate re-reads the key on every request,
+so the new scope applies from the next call.
+
 ### Analyzing
 
 | Tool                    | Description                                                       |
@@ -481,6 +487,9 @@ Authorization: Bearer dk_live_your_api_key_here
 ```
 
 Create API keys in the Deckyard web UI (Settings → API Keys) or via the API.
+Change what an existing key may do in the same place (**Edit permissions**) or
+with `PATCH /api/api-keys/:id`; the key stays the same and the change applies
+from its next request, so granting a new opt-in scope never needs a rotation.
 
 ### Protocol
 
@@ -555,7 +564,10 @@ cannot order from.
 
 The collaborator scopes have no `/api/v1` counterpart: managing who has
 access is a right of its own, so a key with `write` cannot share a deck until
-its owner grants `collaborators:write` explicitly. Existing keys gain nothing.
+its owner grants `collaborators:write` explicitly. Existing keys gain nothing
+until their owner adds the scope (Settings → API Keys → Edit permissions), which
+takes effect on the next request without a new key. The same holds for
+`comments:read` and `comments:write`.
 
 The two previewing tools require `read`, not `export`: they render content the
 key can already fetch with `get_presentation` and produce no file.

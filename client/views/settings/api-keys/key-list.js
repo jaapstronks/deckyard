@@ -5,6 +5,7 @@
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
+import { permissionOptions } from './permission-options.js';
 
 /**
  * Format a date as relative time (e.g., "2 days ago").
@@ -52,25 +53,10 @@ function createPermissionBadge(permission) {
  * @returns {string}
  */
 function getPermissionDescription(permission) {
-  const descriptions = {
-    read: t(
-      'settings.apiKeys.permissionDesc.read',
-      'Read presentations, themes, and slide types',
-    ),
-    write: t(
-      'settings.apiKeys.permissionDesc.write',
-      'Create, update, and delete presentations',
-    ),
-    ai: t(
-      'settings.apiKeys.permissionDesc.ai',
-      'Use AI generation and refinement features',
-    ),
-    export: t(
-      'settings.apiKeys.permissionDesc.export',
-      'Export presentations to HTML, JSON, or PDF',
-    ),
-  };
-  return descriptions[permission] || permission;
+  return (
+    permissionOptions().find((option) => option.value === permission)?.desc ||
+    permission
+  );
 }
 
 /**
@@ -92,11 +78,13 @@ function renderEmptyState() {
 /**
  * Render a single API key row.
  * @param {Object} key - Key data
- * @param {Function} onRevoke - Revoke callback
- * @param {Function} onViewUsage - View usage callback
+ * @param {Object} callbacks - Event callbacks
+ * @param {Function} callbacks.onRevoke - Revoke callback
+ * @param {Function} callbacks.onViewUsage - View usage callback
+ * @param {Function} callbacks.onEditPermissions - Edit permissions callback
  * @returns {HTMLElement}
  */
-function renderKeyRow(key, onRevoke, onViewUsage) {
+function renderKeyRow(key, { onRevoke, onViewUsage, onEditPermissions }) {
   const isRevoked = Boolean(key.revokedAt);
 
   const row = h('div', {
@@ -179,6 +167,13 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
     });
     usageBtn.onclick = () => onViewUsage(key);
 
+    const editBtn = h('button', {
+      class: 'btn btn-small btn-secondary api-key-edit-permissions',
+      type: 'button',
+      text: t('settings.apiKeys.editPermissions', 'Edit permissions'),
+    });
+    editBtn.onclick = () => onEditPermissions(key);
+
     const revokeBtn = h('button', {
       class: 'btn btn-small btn-danger',
       type: 'button',
@@ -186,7 +181,7 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
     });
     revokeBtn.onclick = () => onRevoke(key);
 
-    actionsCol.append(usageBtn, revokeBtn);
+    actionsCol.append(usageBtn, editBtn, revokeBtn);
   }
 
   row.append(infoCol, permissionsCol, datesCol, actionsCol);
@@ -200,8 +195,9 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
  * @param {Object} callbacks - Event callbacks
  * @param {Function} callbacks.onRevoke - Called when revoke is clicked
  * @param {Function} callbacks.onViewUsage - Called when usage is clicked
+ * @param {Function} callbacks.onEditPermissions - Called when edit permissions is clicked
  */
-export function renderKeyList(container, keys, { onRevoke, onViewUsage }) {
+export function renderKeyList(container, keys, callbacks) {
   container.replaceChildren();
 
   if (!keys || keys.length === 0) {
@@ -233,6 +229,6 @@ export function renderKeyList(container, keys, { onRevoke, onViewUsage }) {
 
   // Key rows
   for (const key of keys) {
-    container.append(renderKeyRow(key, onRevoke, onViewUsage));
+    container.append(renderKeyRow(key, callbacks));
   }
 }

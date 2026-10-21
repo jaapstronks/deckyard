@@ -169,6 +169,12 @@ test('api-keys: routes resolve to their named handlers in order', () => {
     '/api/api-keys/00000000-0000-4000-8000-0000000000c1',
     'handleApiKeyRevoke',
   );
+  named(
+    KEY_ROUTES,
+    'PATCH',
+    '/api/api-keys/00000000-0000-4000-8000-0000000000c1',
+    'handleApiKeyUpdate',
+  );
 });
 
 test('api-keys: a wrong method 405s with the pinned Allow list', async () => {
@@ -177,7 +183,7 @@ test('api-keys: a wrong method 405s with the pinned Allow list', async () => {
     [
       'PUT',
       '/api/api-keys/00000000-0000-4000-8000-0000000000c1',
-      'GET, DELETE',
+      'GET, PATCH, DELETE',
     ],
     ['POST', '/api/api-keys/00000000-0000-4000-8000-0000000000c1/usage', 'GET'],
   ]) {

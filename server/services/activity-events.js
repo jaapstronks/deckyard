@@ -258,3 +258,41 @@ export async function recordCommentReopened({
     },
   });
 }
+
+/**
+ * Record that an API key's permissions were changed in place (B813). The audit
+ * line for an edit that changes what an integration may do from its next
+ * request on. Carries the key's name and display prefix, never its hash or the
+ * raw key.
+ *
+ * @param {object} args
+ * @param {{ id: string, name: string, prefix: string }} args.key - The changed key
+ * @param {string[]} args.before - The permissions it had
+ * @param {string[]} args.after - The permissions it has now
+ * @param {{ email: string, name?: string }} args.actor - Who changed them
+ * @param {import('../storage/scope.js').StorageScope} args.scope - The caller's storage scope
+ * @returns {Promise<object>}
+ */
+export async function recordApiKeyPermissionsChanged({
+  key,
+  before,
+  after,
+  actor,
+  scope,
+}) {
+  return createActivityEvent(scope, {
+    eventType: EVENT_TYPES.API_KEY_PERMISSIONS_CHANGED,
+    entityType: ENTITY_TYPES.API_KEY,
+    entityId: key.id,
+    presentationId: null,
+    actorEmail: actor?.email,
+    actorName: actor?.name || actor?.email,
+    actorType: ACTOR_TYPES.USER,
+    data: {
+      name: key.name,
+      prefix: key.prefix,
+      before,
+      after,
+    },
+  });
+}

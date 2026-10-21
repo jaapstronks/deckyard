@@ -9,6 +9,11 @@ import { icon } from '../../lib/dom/icons.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom/index.js';
 import { nav } from '../../lib/state/router.js';
+import {
+  API_KEY_PERMISSIONS_CHANGED,
+  apiKeyPermissionsAction,
+  apiKeyPermissionsSummary,
+} from './activity-api-key.js';
 
 /**
  * Get initials from a name or email.
@@ -60,6 +65,7 @@ function getActionText(eventType) {
     'share.accessed': t('activity.action.viewed', 'viewed'),
     // slide.added carries a count, handled separately in createActivityItem.
     'slide.added': t('activity.action.addedSlidesTo', 'added slides to'),
+    [API_KEY_PERMISSIONS_CHANGED]: apiKeyPermissionsAction(),
   };
   return actions[eventType] || t('activity.action.updated', 'updated');
 }
@@ -119,6 +125,7 @@ function getEventIcon(eventType) {
     'comment.reopened': 'refresh-cw',
     'share.accessed': 'eye',
     'slide.added': 'layers',
+    [API_KEY_PERMISSIONS_CHANGED]: 'key-round',
   };
   return icons[eventType] || 'file-text';
 }
@@ -176,23 +183,28 @@ function createActivityItem(event) {
     text: ' ' + actionText + ' ',
   });
 
+  const isApiKeyEvent = event.eventType === API_KEY_PERMISSIONS_CHANGED;
   const presentationTitle =
+    (isApiKeyEvent ? event.data?.name : null) ||
     event.presentation?.title ||
     event.data?.title ||
     event.data?.presentationTitle ||
     t('activity.untitled', 'Untitled');
 
-  const target = h('a', {
-    class: 'activity-target',
-    href: event.presentationId ? `/app/${event.presentationId}` : '#',
-    text: `"${presentationTitle}"`,
-    onclick: (e) => {
-      e.preventDefault();
-      if (event.presentationId) {
-        nav(`/app/${event.presentationId}`);
-      }
-    },
-  });
+  // An API key is not a page to open: its name is plain text, not a link.
+  const target = isApiKeyEvent
+    ? h('span', { class: 'activity-target', text: `"${presentationTitle}"` })
+    : h('a', {
+        class: 'activity-target',
+        href: event.presentationId ? `/app/${event.presentationId}` : '#',
+        text: `"${presentationTitle}"`,
+        onclick: (e) => {
+          e.preventDefault();
+          if (event.presentationId) {
+            nav(`/app/${event.presentationId}`);
+          }
+        },
+      });
 
   header.append(typeIcon, actor, action, target);
 
@@ -215,6 +227,14 @@ function createActivityItem(event) {
   }
 
   content.append(header);
+
+  // What changed, for an API key's permissions (B813).
+  if (isApiKeyEvent) {
+    const summary = apiKeyPermissionsSummary(event);
+    if (summary) {
+      content.append(h('div', { class: 'activity-preview', text: summary }));
+    }
+  }
 
   // Preview for comments
   if (event.eventType === 'comment.created' && event.data?.bodyPreview) {
