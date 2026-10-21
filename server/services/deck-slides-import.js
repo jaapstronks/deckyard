@@ -19,6 +19,12 @@
  *   notes, and the report names the page and a reason from
  *   {@link FALLBACK_REASONS}.
  *
+ * Where a type offers a choice the page already made, the slide follows the
+ * page (B830): the width and corner of a picture beside text, two columns
+ * of blocks, the height and centring of a heading, a tinted or dark page.
+ * Only options the types declare, never a free colour or a font: the theme
+ * stays the user's choice.
+ *
  * The speaker notes of a PowerPoint file beside the PDF come first in every
  * slide's notes, paired by slide order like the import as images
  * (`deck-images-import.js`, whose file reading and pairing this module
@@ -46,6 +52,8 @@ import {
   validateSlideFields,
 } from '../../shared/slide-types/presentation.js';
 import { escapeMarkdownText } from '../../shared/markdown.js';
+import { resolveSlideBgTone } from '../../shared/slide-surface-tone.js';
+import { hexToRgb, pickTextColorForBg } from '../../shared/color-utils.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
   MAX_COLS,
@@ -109,6 +117,54 @@ const TITLE_PAGE_MAX_LINES = 4;
 /** At least this many cards make a text-blocks slide. */
 const CARDS_MIN = 3;
 
+/**
+ * The image-text slide's three split widths (37, 50 and 63% of the slide,
+ * `imageWidth`), each the nearest to the picture's share of the page width;
+ * these are the midpoints. Measured: Philips Q4 2024 puts its photos at 50%
+ * (p4, p9-11, p21) and one at 31% (p15), the fixture one at 25%.
+ */
+export const IMAGE_WIDTH_NARROW_MAX = 0.435;
+export const IMAGE_WIDTH_WIDE_MIN = 0.565;
+
+/**
+ * A picture this small (of the page width and height), with its top and its
+ * outer side this close to a page corner, sits in that corner: the
+ * image-text slide's `corner` layout. Fires on neither measured deck; the
+ * Philips photos fill a half, the 31% one sits 40% down the page.
+ */
+const CORNER_MAX_WIDTH = 0.3;
+const CORNER_MAX_HEIGHT = 0.45;
+const CORNER_MAX_INSET = 0.12;
+
+/**
+ * Two columns of blocks: a gutter at least this wide (of the page width)
+ * that no block crosses, with blocks on both sides that overlap in height.
+ */
+const COLUMN_MIN_GUTTER = 0.02;
+
+/**
+ * A heading whose middle sits above this share of the page height is at the
+ * top, below `1 - this` at the bottom (chapter-title `layout`). Philips puts
+ * both chapter headings at 52%: centred.
+ */
+const HEADING_TOP_MAX = 1 / 3;
+
+/**
+ * A heading line is centred when its middle is this close to the page's
+ * middle (of the page width) and it starts this far in: a left-set heading
+ * as wide as the page has its middle there too. Every heading of both
+ * measured decks is set left at 6% or less.
+ */
+const CENTRED_MAX_OFFSET = 0.05;
+const CENTRED_MIN_INSET = 0.15;
+
+/**
+ * A light page is tinted, and asks for `mist`, when a channel of its colour
+ * is under this: off-white paper is still white. CIIIC's lime (`#e2fe52`) is
+ * tinted; white pages measure `#ffffff`.
+ */
+const WHITE_MIN_CHANNEL = 0xf0;
+
 /** A date on a title page goes to its detail line. */
 const DATE_LIKE =
   /\b(19|20)\d{2}\b|\b\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|mrt|mei|okt)[a-z]*\.?\b/i;
@@ -150,7 +206,8 @@ const NOT_ON_SLIDE = {
 export function planPage(page, ctx) {
   const choice = chooseSlide(page);
   if (choice.reason) return choice;
-  const slide = composeValid(choice, ctx);
+  const background = backgroundOf(page, ctx.theme);
+  const slide = composeValid(choice, ctx, background);
   if (slide) return { slide, uploads: choice.uploads || [] };
   // Too long for the chosen type: the text slide is the widest home, but
   // only for a page without a picture to lose.
@@ -160,14 +217,23 @@ export function planPage(page, ctx) {
     !(choice.uploads || []).length
   ) {
     const text = contentSlide(page);
-    const fallback = composeValid(text, ctx);
+    const fallback = composeValid(text, ctx, background);
     if (fallback) return { slide: fallback, uploads: [] };
   }
   return { reason: 'too-long' };
 }
 
-function composeValid({ type, content }, ctx) {
+/**
+ * The slide `newSlide` composes, or null when one of its fields refuses the
+ * content. The page's background goes only to a type that declares the
+ * field; the field's own check is the boundary for a theme variant's id.
+ */
+function composeValid({ type, content }, ctx, background = null) {
   if (!ctx.slideTypes[type]) return null;
+  const declares = ctx.slideTypes[type].fields?.some(
+    (f) => f.key === 'background',
+  );
+  if (background && declares) content = { ...content, background };
   const slide = newSlide({
     type,
     theme: ctx.theme ?? null,
@@ -210,10 +276,7 @@ export function chooseSlide(page) {
     // an author, which a PDF does not reliably name).
     if (images.length === 0 && isLooseTitle(page)) {
       const [first, ...rest] = blocks.map(blockText);
-      return {
-        type: 'chapter-title-slide',
-        content: { title: first, subheading: rest.join(' ') },
-      };
+      return chapterTitleSlide(page, first, rest.join(' '), blocks[0].box);
     }
     return { reason: 'no-heading' };
   }
@@ -237,10 +300,7 @@ export function chooseSlide(page) {
   }
 
   if (blocks.length === 0 || isSingleLine(page)) {
-    return {
-      type: 'chapter-title-slide',
-      content: { title: heading, subheading: blocks.map(blockText).join(' ') },
-    };
+    return chapterTitleSlide(page, heading, blocks.map(blockText).join(' '));
   }
 
   if (tableOnly) {
@@ -273,9 +333,15 @@ function imageSlide(page, { title = '', caption = '' }) {
   };
 }
 
+/**
+ * A picture beside text: on the side it sits, as wide as the split width
+ * nearest to its share of the page, or in its corner when it is small and
+ * set there.
+ */
 function imageTextSlide(page) {
   const img = page.images[0];
   const centre = img.box.x + img.box.width / 2;
+  const corner = isCornerImage(page, img);
   return {
     type: 'image-text-slide',
     content: {
@@ -283,10 +349,29 @@ function imageTextSlide(page) {
       body: blocksToMarkdown(page.blocks),
       alt: img.alt || '',
       imageRole: 'content',
-      layout: 'split',
+      layout: corner ? 'corner' : 'split',
       imageSide: centre < page.width / 2 ? 'left' : 'right',
+      ...(corner ? {} : { imageWidth: imageWidthOf(page, img) }),
     },
     uploads: [{ key: 'image', index: 0 }],
+  };
+}
+
+/**
+ * A section title: the title where the page set it (top, middle, bottom of
+ * the page) and centred when the page centred it. `box` stands in for the
+ * heading lines on a page whose title is a loose block.
+ */
+function chapterTitleSlide(page, title, subheading, box = null) {
+  const place = headingPlacement(page, box);
+  return {
+    type: 'chapter-title-slide',
+    content: {
+      title,
+      subheading,
+      ...(place ? { layout: place.position } : {}),
+      ...(place?.centred ? { titleBlockAlign: 'center' } : {}),
+    },
   };
 }
 
@@ -357,6 +442,7 @@ function textBlocksSlide(page) {
     type: 'text-blocks-slide',
     content: {
       title: page.heading,
+      ...(headingPlacement(page)?.centred ? { headerAlign: 'center' } : {}),
       subheading: lead,
       rows: [
         {
@@ -390,6 +476,8 @@ function listSlide(page) {
     type: 'list-slide',
     content: {
       title: page.heading,
+      ...(headingPlacement(page)?.centred ? { headerAlign: 'center' } : {}),
+      ...(inTwoColumns(page, body) ? { layout: 'two-column' } : {}),
       subheading: lead,
       variant: body[0].variant === 'numbers' ? 'numbers' : 'bullets',
       items: items.map((item) => {
@@ -406,10 +494,160 @@ export function contentSlide(page) {
     type: 'content-slide',
     content: {
       title: page.heading,
-      layout: 'one-column',
+      layout: inTwoColumns(page, page.blocks) ? 'two-column' : 'one-column',
       body: blocksToMarkdown(page.blocks),
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Layout and background (B830)
+// ---------------------------------------------------------------------------
+
+/** The split width nearest to the picture's share of the page width. */
+function imageWidthOf(page, img) {
+  const share = page.width > 0 ? img.box.width / page.width : 0.5;
+  if (share < IMAGE_WIDTH_NARROW_MAX) return 'narrow';
+  if (share > IMAGE_WIDTH_WIDE_MIN) return 'wide';
+  return 'half';
+}
+
+function isCornerImage(page, { box }) {
+  const { width: w, height: h } = page;
+  if (!(w > 0 && h > 0)) return false;
+  if (box.width > CORNER_MAX_WIDTH * w || box.height > CORNER_MAX_HEIGHT * h) {
+    return false;
+  }
+  const inset = Math.min(box.x, w - (box.x + box.width));
+  return box.y <= CORNER_MAX_INSET * h && inset <= CORNER_MAX_INSET * w;
+}
+
+/**
+ * Whether the blocks stand in two columns: some gutter that no block
+ * crosses, blocks on both sides of it, the two sides overlapping in height
+ * (two blocks one above the other are one column), and the reading order
+ * going down the left column before the right one, as the slide's columns
+ * fill. Labels on the left read after the lists on their right (Philips
+ * p19) stay one column, and so do three or five blocks in a row (CIIIC
+ * p7, p10): each side is one column itself. Blocks without a box (a model from before B827) are
+ * one column.
+ * @param {PageModel} page
+ * @param {object[]} blocks
+ */
+export function inTwoColumns(page, blocks) {
+  const boxes = blocks.map((b) => b.box);
+  if (boxes.length < 2 || boxes.some((b) => !b)) return false;
+  const gutter = COLUMN_MIN_GUTTER * page.width;
+  return columnSplits(boxes, gutter).some(
+    (isLeft) =>
+      // Down the left column first, and each side one column: three cards
+      // in a row are no two columns.
+      isLeft.indexOf(false) > isLeft.lastIndexOf(true) &&
+      !columnSplits(
+        boxes.filter((_b, i) => isLeft[i]),
+        gutter,
+      ).length &&
+      !columnSplits(
+        boxes.filter((_b, i) => !isLeft[i]),
+        gutter,
+      ).length,
+  );
+}
+
+/**
+ * Every way a gutter splits the boxes into a left and a right side that
+ * overlap in height, as one flag per box (true: left of the gutter).
+ */
+function columnSplits(boxes, gutter) {
+  const splits = [];
+  for (const edge of new Set(boxes.map((b) => b.x + b.width))) {
+    const isLeft = boxes.map((b) => b.x + b.width <= edge);
+    const left = boxes.filter((_b, i) => isLeft[i]);
+    const right = boxes.filter((b, i) => !isLeft[i] && b.x >= edge + gutter);
+    if (!left.length || !right.length) continue;
+    if (left.length + right.length !== boxes.length) continue;
+    const [lTop, lBottom] = span(left);
+    const [rTop, rBottom] = span(right);
+    if (lTop < rBottom && rTop < lBottom) splits.push(isLeft);
+  }
+  return splits;
+}
+
+function span(boxes) {
+  return [
+    Math.min(...boxes.map((b) => b.y)),
+    Math.max(...boxes.map((b) => b.y + b.height)),
+  ];
+}
+
+/**
+ * Where the heading sits: `top`, `center` or `bottom` by the middle of its
+ * lines (from one em above the first baseline to the last), and whether
+ * every line of it is centred. Null without heading lines or a `box`.
+ * @param {PageModel} page
+ * @param {{ x: number, y: number, width: number, height: number } | null} [box]
+ * @returns {{ position: 'top'|'center'|'bottom', centred: boolean } | null}
+ */
+export function headingPlacement(page, box = null) {
+  const lines = page.lines.filter((l) => l.role === 'heading');
+  const rects = lines.length
+    ? lines.map((l) => ({
+        x: l.x,
+        y: l.y - l.size,
+        width: l.width,
+        height: l.size,
+      }))
+    : box
+      ? [box]
+      : [];
+  if (!rects.length || !(page.height > 0)) return null;
+  const top = Math.min(...rects.map((r) => r.y));
+  const bottom = Math.max(...rects.map((r) => r.y + r.height));
+  const middle = (top + bottom) / 2 / page.height;
+  const position =
+    middle < HEADING_TOP_MAX
+      ? 'top'
+      : middle > 1 - HEADING_TOP_MAX
+        ? 'bottom'
+        : 'center';
+  const centred = rects.every(
+    (r) =>
+      Math.abs(r.x + r.width / 2 - page.width / 2) <=
+        CENTRED_MAX_OFFSET * page.width &&
+      r.x >= CENTRED_MIN_INSET * page.width,
+  );
+  return { position, centred };
+}
+
+/**
+ * The `background` the page asks for under the deck's theme, or null for
+ * the type's default. A dark page takes the theme's first own background
+ * whose ground is dark (a variant with light text); a light tinted page
+ * `mist`; white, a theme without a dark variant, or a page whose colour a
+ * picture covers (a full-bleed photo over the white the extractor reports:
+ * reviewnote B827) keep the default.
+ * @param {PageModel} page
+ * @param {object} [theme] - the target deck's resolved theme
+ * @returns {string | null}
+ */
+export function backgroundOf(page, theme) {
+  const color = page.background?.color;
+  if (!color || !hexToRgb(color)) return null;
+  if (page.images.some((img) => cover(page, img) >= BLEED_MIN_COVER)) {
+    return null;
+  }
+  if (pickTextColorForBg(color) === '#ffffff') {
+    const variants = Array.isArray(theme?.slideBackgrounds)
+      ? theme.slideBackgrounds
+      : [];
+    const dark = variants.find(
+      (v) =>
+        v?.id && resolveSlideBgTone({ background: v.id }, theme) === 'dark',
+    );
+    return dark ? dark.id : null;
+  }
+  const { r, g, b } = hexToRgb(color);
+  return Math.min(r, g, b) < WHITE_MIN_CHANNEL ? 'mist' : null;
 }
 
 // ---------------------------------------------------------------------------
