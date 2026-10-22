@@ -176,7 +176,8 @@ async function listImages(ctx, filter = {}, { limit, after = null } = {}) {
 
 /**
  * Every tag in the organization's image library, with how many images carry
- * it, most used first: the categories facet, as its own query (B822).
+ * it, most used first and then by name ignoring case (whatever the database
+ * collation), the categories facet as its own query (B822).
  *
  * @param {Object} ctx - Storage context
  * @returns {Promise<Array<{name: string, count: number}>>}
@@ -188,7 +189,7 @@ async function imageTagCounts(ctx) {
     WHERE image_library.organization_id = ${getOrgId(ctx)}
       AND btrim(t.name) <> ''
     GROUP BY t.name
-    ORDER BY count(*) DESC, t.name ASC
+    ORDER BY count(*) DESC, lower(t.name) ASC, t.name ASC
   `.execute(getDb());
   return rows.rows.map((row) => ({ name: row.name, count: Number(row.count) }));
 }
