@@ -127,6 +127,11 @@ const PERMITTED_ADDRESSES = new Map([
       'redacts it for anyone but the owner (public-api/v1/presentations.js).',
   ],
   [
+    'server/storage/presentations/trash-list.js :: ownerEmail',
+    'the deck owner, on a trashed deck the reader may restore: they own, ' +
+      'made or trashed it, or administer the organization (B821).',
+  ],
+  [
     'server/routes/public-api/v1/presentations.js :: ownerEmail',
     'redacted to null unless the requesting API key belongs to the owner — ' +
       'the redaction happens right above this key',
@@ -185,8 +190,8 @@ const PERMITTED_STAMPS = new Map([
   ],
   [
     'server/storage/presentations/deck-list.js :: sharedBy',
-    'who shared this deck with you; the deck list is searchable by it ' +
-      '(client/views/list/views/search-view.js)',
+    'who shared this deck with you, shown on the deck card ' +
+      '(client/views/list/presentation-card.js)',
   ],
   [
     'server/storage/share-links/guests.js :: invitedBy',

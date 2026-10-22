@@ -147,15 +147,21 @@ function buildSlides(themeId, isDarkTheme) {
 }
 
 async function deleteExistingDemos() {
-  let list;
+  // The deck list is paged (D358, B821): read every page of the caller's own
+  // decks before deleting, so a cursor never points at a removed row.
+  const items = [];
+  let cursor = null;
   try {
-    list = await api('GET', '/api/presentations');
+    do {
+      const query = new URLSearchParams({ ownership: 'owned', limit: '100' });
+      if (cursor) query.set('cursor', cursor);
+      const page = await api('GET', `/api/presentations?${query}`);
+      items.push(...(page?.presentations || []));
+      cursor = page?.nextCursor || null;
+    } while (cursor);
   } catch {
     return 0;
   }
-  const items = Array.isArray(list)
-    ? list
-    : list?.items || list?.presentations || [];
   const demos = items.filter((p) =>
     String(p?.title || '').startsWith(DEMO_PREFIX),
   );

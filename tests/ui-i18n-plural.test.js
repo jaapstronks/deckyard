@@ -8,7 +8,7 @@
  *
  *   1. **en and nl pick by the count**: 1 is `one`, 0 and 2 are `many`.
  *   2. **A locale without the form gets the English of the same form**, never
- *      its own other form. Swedish `list.home.greetingCount.one` is absent
+ *      its own other form. Swedish `list.section.count.one` is absent
  *      because "1 presentation" equals the English (D73); its `many` would
  *      render "1 presentationer".
  *   3. **The presenter start screen says "1 slide"**, the case that minted
@@ -49,7 +49,7 @@ const { setUiLocale, t, pluralForm } = await import('../client/lib/ui-i18n.js');
 
 const greeting = (count) =>
   t(
-    'list.home.greetingCount',
+    'list.section.count',
     { one: '1 presentation', many: '{count} presentations' },
     { count },
   );

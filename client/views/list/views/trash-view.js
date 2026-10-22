@@ -2,9 +2,11 @@ import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { getFeatures } from '../../../lib/state/features.js';
+import { createDeckPager } from '../deck-pager.js';
 
 /**
- * Create the trash view (lazy-loaded)
+ * Create the trash view (lazy-loaded): the decks the person may restore,
+ * most recently trashed first, one page at a time (D358, B821).
  *
  * @param {object} opts
  * @param {Function} opts.api - API client
@@ -42,35 +44,36 @@ export function createTrashView({ api, renderCard }) {
 
   let loaded = false;
 
+  const pager = createDeckPager({
+    api,
+    path: '/api/presentations/trash',
+    onPage: (decks, { first }) => {
+      if (first) {
+        trashList.replaceChildren();
+        trashView.replaceChildren(trashTitle, trashHint);
+        trashView.append(decks.length === 0 ? trashEmpty : trashList, pager.el);
+      }
+      for (const p of decks) {
+        trashList.append(
+          renderCard(p, {
+            isOrganization: p.visibility === 'organization',
+            isTrashView: true,
+          }),
+        );
+      }
+    },
+  });
+
   trashView.append(trashTitle, trashHint, trashLoading);
 
   async function load() {
     if (loaded) return;
-
+    loaded = true;
     try {
-      const items = await api('/api/presentations/trash');
-
-      loaded = true;
-      trashView.replaceChildren();
-      trashView.append(trashTitle, trashHint);
-
-      if (!items || items.length === 0) {
-        trashView.append(trashEmpty);
-      } else {
-        for (const p of items) {
-          trashList.append(
-            renderCard(p, {
-              isOrganization: p.visibility === 'organization',
-              isTrashView: true,
-            }),
-          );
-        }
-        trashView.append(trashList);
-      }
+      await pager.load();
     } catch {
       // The view could not load: a state of the view, announced politely.
       const loadError = createInlineError({ live: 'polite' });
-      loaded = true;
       trashView.replaceChildren();
       trashView.append(trashTitle, trashHint, loadError.el);
       loadError.show(t('list.trash.loadError', 'Failed to load trash.'), {
@@ -82,7 +85,6 @@ export function createTrashView({ api, renderCard }) {
   /** Reload the trash from the server; resolves once it is on screen. */
   function refresh() {
     loaded = false;
-    trashList.replaceChildren();
     return load();
   }
 

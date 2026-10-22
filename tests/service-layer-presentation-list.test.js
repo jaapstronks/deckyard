@@ -375,15 +375,51 @@ test('service: a value outside the vocabulary is 400 invalid naming the field', 
 test('internal: Home, search and shared-with-me for owner, collaborator and outsider', async () => {
   await installDb();
 
-  const home = async (as) =>
-    ids(
-      (
-        await internal(handleInternalPresentations, '/api/presentations', as)
-      ).json(),
-    );
+  const homePage = (as, query = '') =>
+    internal(handleInternalPresentations, `/api/presentations${query}`, as);
+  const home = async (as, query) =>
+    ids((await homePage(as, query)).json().presentations);
   assert.deepEqual(await home(OWNER), [OWN, ORG_DECK]);
   assert.deepEqual(await home(COLLAB), [ORG_DECK]);
   assert.deepEqual(await home(OUTSIDER), [ORG_DECK]);
+
+  // Home's chips are the service's filters (B821): All, Mine, Workspace,
+  // Shared, each a page of its own.
+  assert.deepEqual(await home(COLLAB, '?ownership=all'), [SHARED, ORG_DECK]);
+  assert.deepEqual(await home(OWNER, '?ownership=owned'), [OWN]);
+  assert.deepEqual(
+    await home(OWNER, '?ownership=all&visibility=organization'),
+    [ORG_DECK],
+  );
+  assert.deepEqual(await home(COLLAB, '?ownership=shared'), [SHARED]);
+
+  const first = (await homePage(OWNER, '?limit=1')).json();
+  assert.deepEqual(ids(first.presentations), [OWN]);
+  const next = (
+    await homePage(
+      OWNER,
+      `?limit=1&cursor=${encodeURIComponent(first.nextCursor)}`,
+    )
+  ).json();
+  assert.deepEqual(ids(next.presentations), [ORG_DECK]);
+  assert.equal(next.nextCursor, null);
+
+  for (const [query, field] of [
+    ['?ownership=everything', 'ownership'],
+    ['?visibility=public', 'visibility'],
+    [`?${'tag=t&'.repeat(21)}`, 'tags'],
+    ['?limit=0', 'limit'],
+    ['?offset=50', 'offset'],
+    [
+      `?ownership=owned&limit=1&cursor=${encodeURIComponent(first.nextCursor)}`,
+      'cursor',
+    ],
+  ]) {
+    const refused = await homePage(OWNER, query);
+    assert.equal(refused.statusCode, 400, query);
+    assert.equal(refused.json().error, 'invalid', query);
+    assert.equal(refused.json().details.field, field, query);
+  }
 
   const shared = await internal(
     handleCollaborators,
@@ -407,6 +443,12 @@ test('internal: Home, search and shared-with-me for owner, collaborator and outs
   assert.deepEqual(
     ids((await search('q=roadmap', OUTSIDER)).json().results),
     [],
+  );
+  // Home's search view searches every deck the person can open.
+  assert.deepEqual(ids((await search('q=shared', COLLAB)).json().results), []);
+  assert.deepEqual(
+    ids((await search('q=shared&ownership=all', COLLAB)).json().results),
+    [SHARED],
   );
 
   for (const [query, field] of [

@@ -157,8 +157,24 @@
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 
+/* "Load more" below a paged deck grid (B821): one centred action, as wide as
+   its label; on a phone it takes the full width so the tap target is easy. */
+.deck-pager {
+  display: flex;
+  justify-content: center;
+  padding: var(--ps-space-2) 0 var(--ps-space-6);
+}
+
+.deck-pager[hidden] {
+  display: none;
+}
+
 /* Mobile: Single column, cards use full width */
 @media (max-width: 640px) {
+  .deck-pager .deck-pager-more {
+    width: 100%;
+  }
+
   .list.presentation-grid {
     grid-template-columns: 1fr;
     gap: var(--ps-space-3);

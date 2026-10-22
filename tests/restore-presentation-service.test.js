@@ -96,13 +96,16 @@ async function request(
 
 test('owner restores a trashed deck and it returns to the live list', async () => {
   const pres = await deck();
+  const before = await request('GET', 'trash');
+  assert.ok(before.body.presentations.some((item) => item.id === pres.id));
   const restored = await request('POST', `${pres.id}/restore`);
   assert.equal(restored.statusCode, 200, JSON.stringify(restored.body));
   assert.equal(restored.body.id, pres.id);
   assert.equal(rowOf(pres.id).trashed_at, null);
   const trash = await request('GET', 'trash');
   assert.equal(trash.statusCode, 200);
-  assert.ok(!trash.body.some((item) => item.id === pres.id));
+  assert.ok(!trash.body.presentations.some((item) => item.id === pres.id));
+  assert.equal(trash.body.nextCursor, null);
 });
 
 test('admin and the original trasher may restore after ownership changes', async () => {
@@ -131,7 +134,7 @@ test('unrelated actor cannot restore or see another person’s trash', async () 
   assert.equal(denied.body.error, 'forbidden');
   assert.ok(rowOf(pres.id).trashed_at);
   const trash = await request('GET', 'trash', other);
-  assert.ok(!trash.body.some((item) => item.id === pres.id));
+  assert.ok(!trash.body.presentations.some((item) => item.id === pres.id));
 });
 
 test('absent deck is 404 and a live deck is 409', async () => {

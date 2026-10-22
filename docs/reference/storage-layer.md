@@ -192,17 +192,24 @@ that one has no id beside it yet.
     a page is short only at the end of the list. Stamping rows after the
     read (`canEdit`, display names) is fine, it removes nothing.
   - On the contract now: the notification inbox (`listNotifications`,
-    `GET /api/notifications`) and the deck list (`listDecks` in
-    `server/storage/presentations/deck-list.js`, `GET /api/v1/presentations`
-    and MCP `list_presentations`, B820). The deck list's predicate (who sees
-    which deck per `ownership`) is SQL, the same rule as the per-deck
-    `belongsInCollection`; `tests/pg/deck-list-page.pgtest.js` holds the two
-    equal. Without `limit` the same query answers the whole list, which the
-    internal Home, shared-with-me and search still read until they move onto
-    the contract (B821). The other
-    lists follow one by one (B821–B825); until a list has moved, it is read
-    whole (`listTrashedPresentations`,
-    `listPresentationVersions`,
+    `GET /api/notifications`), the deck list (`listDecks` in
+    `server/storage/presentations/deck-list.js`: `GET /api/v1/presentations`
+    and MCP `list_presentations` since B820, and the internal Home grid
+    `GET /api/presentations` and `GET /api/presentations/shared-with-me`
+    since B821) and the trash (`listTrashedDecks` in
+    `server/storage/presentations/trash-list.js`,
+    `GET /api/presentations/trash`, B821). The deck list's predicate (who
+    sees which deck per `ownership`) is SQL, the same rule as the per-deck
+    `belongsInCollection`; Home's two narrowing filters, `visibility` and
+    `tags` (a deck carrying one of the named tags, compared on
+    `lower(name)`), are in the same query. The trash's predicate is the
+    per-deck `canRestorePresentation` in SQL (owner, maker or trasher by id;
+    an admin or the auth-off operator sees all). `tests/pg/deck-list-page.pgtest.js`
+    and `tests/pg/trash-list-page.pgtest.js` hold each pair equal. Without
+    `limit` the deck query answers the whole list, which search (a result
+    set in relevance order) and the comment service's deck set (B824) still
+    read. The other lists follow one by one (B822–B825); until a list has
+    moved, it is read whole (`listPresentationVersions`,
     `listOrganizationLibrary`/`listPersonalLibrary`, `getPublishedIndex`,
     `listImageLibrary`) and the
     v1 routes slice it in memory over `parsePaginationParams`, which goes

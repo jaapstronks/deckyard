@@ -34,6 +34,11 @@
  * Plus migration 096 (NOT NULL backfill, keyset index) and an `EXPLAIN` on
  * 10 000 decks showing the page walks that index without a sort.
  *
+ * B821 adds Home's two narrowing filters, `visibility` and `tags`, to the
+ * same query (parity against the JavaScript reference, full pages), and
+ * drives the internal Home and shared-with-me routes page by page with the
+ * six checks.
+ *
  * Run with: DATABASE_URL=… npm run test:pg
  */
 
@@ -60,6 +65,8 @@ import { listPresentations } from '../../server/storage/presentations/index.js';
 import { __deckList } from '../../server/storage/presentations/deck-list.js';
 import { keysetPage } from '../../server/storage/keyset.js';
 import { handlePresentations as handleV1Presentations } from '../../server/routes/public-api/v1/presentations.js';
+import { handlePresentations as handleInternalPresentations } from '../../server/routes/api/presentations/index.js';
+import { handleCollaborators } from '../../server/routes/api/collaborators.js';
 import {
   belongsInCollection,
   isUnrestricted,
@@ -613,6 +620,245 @@ pgDescribe(
         assert.equal(body.error, 'invalid', query);
         assert.equal(body.details.field, field, query);
         if (field === 'offset') assert.equal(body.details.use, 'cursor');
+      }
+    });
+
+    /**
+     * Tag decks of org A by position in the contract order: `Alpha` on every
+     * third, `beta` on every fifth. Org B holds a tag `alpha` too, attached
+     * to org-A decks: a tag of another organization names nothing here.
+     * @returns {Promise<Map<string, Set<string>>>} deck id → lower tag names
+     */
+    async function seedTags() {
+      const order = await contractOrder(orgA);
+      const tag = async (organizationId, name) => {
+        const id = crypto.randomUUID();
+        await db
+          .insertInto('tags')
+          .values({ id, organization_id: organizationId, name })
+          .execute();
+        return id;
+      };
+      const alpha = await tag(orgA, 'Alpha');
+      const beta = await tag(orgA, 'beta');
+      const foreign = await tag(orgB, 'alpha');
+      const tagged = new Map();
+      const attach = async (deckId, tagId, name) => {
+        await db
+          .insertInto('presentation_tags')
+          .values({ presentation_id: deckId, tag_id: tagId })
+          .execute();
+        if (name) {
+          if (!tagged.has(deckId)) tagged.set(deckId, new Set());
+          tagged.get(deckId).add(name);
+        }
+      };
+      for (const [i, id] of order.entries()) {
+        if (i % 3 === 0) await attach(id, alpha, 'alpha');
+        if (i % 5 === 0) await attach(id, beta, 'beta');
+        if (i % 4 === 1) await attach(id, foreign, null);
+      }
+      return tagged;
+    }
+
+    it('B821 filters: visibility and tags are in the query, full pages, parity with the reference', async () => {
+      await seedMatrix();
+      const tagged = await seedTags();
+      const visibilityOf = new Map(
+        (
+          await db
+            .selectFrom('presentations')
+            .select(['id', 'visibility'])
+            .where('organization_id', '=', orgA)
+            .execute()
+        ).map((row) => [row.id, row.visibility]),
+      );
+      const actors = [
+        ['owner', OWNER],
+        ['collaborator', COLLAB],
+        ['auth-off operator', { email: null, unrestricted: true }],
+      ];
+      const tagFilters = [undefined, ['ALPHA'], ['alpha', 'Beta']];
+      let compared = 0;
+      for (const [label, actor] of actors) {
+        for (const ownership of ['collection', 'owned', 'shared', 'all']) {
+          for (const visibility of [undefined, 'private', 'organization']) {
+            for (const tags of tagFilters) {
+              const wanted = tags?.map((t) => t.toLowerCase());
+              const expected = (
+                await referenceList(actor, ownership, undefined)
+              ).filter((id) => {
+                const row = visibilityOf.get(id);
+                if (visibility && row !== visibility) return false;
+                if (!wanted) return true;
+                return wanted.some((t) => tagged.get(id)?.has(t));
+              });
+              const what = `${label} / ${ownership} / ${visibility} / ${tags}`;
+              const pages = await walk(actor, {
+                ownership,
+                visibility,
+                tags,
+                limit: 4,
+              });
+              for (const page of pages.slice(0, -1)) {
+                assert.equal(page.length, 4, `${what}: a full page`);
+              }
+              assert.deepEqual(pages.flat(), expected, what);
+              compared++;
+            }
+          }
+        }
+      }
+      assert.equal(compared, 3 * 4 * 3 * 3);
+    });
+
+    /** A GET on an internal deck-list route, as `actor`, in `organizationId`. */
+    async function internalList(path, actor, organizationId = orgA) {
+      const res = createMockRes();
+      const handler = path.startsWith('/api/presentations/shared-with-me')
+        ? handleCollaborators
+        : handleInternalPresentations;
+      await handler({
+        req: {
+          method: 'GET',
+          headers: { host: 'deck.example' },
+          socket: { remoteAddress: '203.0.113.9' },
+        },
+        res,
+        url: new URL(`http://deck.example${path}`),
+        repoRoot: process.cwd(),
+        storageScope: scopeOf(organizationId, actor),
+        authedUser: actor,
+      });
+      return { status: res.statusCode, body: res.json() };
+    }
+
+    /** Walk an internal route to the end; returns the pages as id lists. */
+    async function walkRoute(path, actor, organizationId = orgA) {
+      const pages = [];
+      let cursor = null;
+      const join = path.includes('?') ? '&' : '?';
+      for (let guard = 0; guard < 100; guard++) {
+        const { status, body } = await internalList(
+          cursor ? `${path}${join}cursor=${encodeURIComponent(cursor)}` : path,
+          actor,
+          organizationId,
+        );
+        assert.equal(status, 200, JSON.stringify(body));
+        pages.push(body.presentations.map((p) => p.id));
+        cursor = body.nextCursor;
+        if (cursor === null) return pages;
+      }
+      throw new Error('the list never ended');
+    }
+
+    it('B821 routes 1+2+5+6: Home and shared-with-me page on the contract and refuse what it refuses', async () => {
+      await seedMatrix();
+      const cases = [
+        ['/api/presentations?limit=4', OWNER, 'collection'],
+        ['/api/presentations?ownership=all&limit=4', COLLAB, 'all'],
+        ['/api/presentations?ownership=owned&limit=4', MAKER, 'owned'],
+        ['/api/presentations/shared-with-me?limit=4', COLLAB, 'shared'],
+      ];
+      for (const [path, actor, ownership] of cases) {
+        const pages = await walkRoute(path, actor);
+        const expected = await referenceList(actor, ownership, undefined);
+        assert.ok(pages.length > 2, `${path}: more than two pages`);
+        for (const page of pages.slice(0, -1)) {
+          assert.equal(page.length, 4, `${path}: a full page`);
+        }
+        const seen = pages.flat();
+        assert.equal(new Set(seen).size, seen.length, `${path}: no deck twice`);
+        assert.deepEqual(seen, expected, `${path}: every deck, in order`);
+      }
+
+      const home = await internalList('/api/presentations?limit=4', OWNER);
+      const shared = await internalList(
+        '/api/presentations/shared-with-me?limit=4',
+        COLLAB,
+      );
+      const homeCursor = encodeURIComponent(home.body.nextCursor);
+      const sharedCursor = encodeURIComponent(shared.body.nextCursor);
+      for (const [path, actor, field] of [
+        ['/api/presentations?offset=4', OWNER, 'offset'],
+        ['/api/presentations?limit=0', OWNER, 'limit'],
+        ['/api/presentations?limit=101', OWNER, 'limit'],
+        ['/api/presentations?limit=abc', OWNER, 'limit'],
+        ['/api/presentations?cursor=broken', OWNER, 'cursor'],
+        [
+          `/api/presentations?ownership=all&cursor=${homeCursor}`,
+          OWNER,
+          'cursor',
+        ],
+        [
+          `/api/presentations?visibility=organization&cursor=${homeCursor}`,
+          OWNER,
+          'cursor',
+        ],
+        [`/api/presentations?cursor=${sharedCursor}`, OWNER, 'cursor'],
+        ['/api/presentations?visibility=public', OWNER, 'visibility'],
+        ['/api/presentations?ownership=mine', OWNER, 'ownership'],
+        ['/api/presentations/shared-with-me?offset=4', COLLAB, 'offset'],
+        ['/api/presentations/shared-with-me?limit=500', COLLAB, 'limit'],
+        [
+          `/api/presentations/shared-with-me?cursor=${homeCursor}`,
+          COLLAB,
+          'cursor',
+        ],
+      ]) {
+        const { status, body } = await internalList(path, actor);
+        assert.equal(status, 400, path);
+        assert.equal(body.error, 'invalid', path);
+        assert.equal(body.details.field, field, path);
+      }
+    });
+
+    it('B821 routes 3+4: Home keeps page 2 when a deck moves to the top; an org-A cursor shows only B decks', async () => {
+      const ids = [];
+      for (let i = 0; i < 9; i++) {
+        ids.push(
+          await insertDeck({
+            owner: OWNER,
+            visibility: 'organization',
+            modifiedAt: `2026-09-${10 + i} 08:00:00+00`,
+          }),
+        );
+      }
+      const first = await internalList('/api/presentations?limit=3', OWNER);
+      const page2 = `/api/presentations?limit=3&cursor=${encodeURIComponent(first.body.nextCursor)}`;
+      const before = await internalList(page2, OWNER);
+      await db
+        .updateTable('presentations')
+        .set({ modified_at: '2026-10-22 09:00:00.000001+00' })
+        .where('id', '=', ids[0])
+        .execute();
+      await insertDeck({
+        owner: OWNER,
+        modifiedAt: '2026-10-22 09:00:00.000002+00',
+      });
+      const after = await internalList(page2, OWNER);
+      assert.deepEqual(after.body, before.body);
+
+      const idsB = [];
+      for (const modifiedAt of [
+        '2026-09-30 00:00:00+00',
+        '2026-09-11 00:00:00+00',
+        '2026-08-01 00:00:00+00',
+      ]) {
+        idsB.push(
+          await insertDeck({
+            organizationId: orgB,
+            visibility: 'organization',
+            owner: OWNER,
+            modifiedAt,
+          }),
+        );
+      }
+      const inB = await internalList(page2, OWNER, orgB);
+      assert.equal(inB.status, 200);
+      assert.ok(inB.body.presentations.length > 0);
+      for (const p of inB.body.presentations) {
+        assert.ok(idsB.includes(p.id), 'only B decks');
       }
     });
 
