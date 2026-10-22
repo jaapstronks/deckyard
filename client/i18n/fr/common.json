@@ -185,6 +185,7 @@
   "notifications.label.body": "{title} : {body}",
   "notifications.label.bodyUnread": "{title} : {body} (non lu)",
   "notifications.label.unread": "{title} (non lu)",
+  "notifications.loadMore": "Charger plus",
   "notifications.loading": "Chargement…",
   "notifications.markAllRead": "Tout marquer comme lu",
   "sandbox.banner.text": "Bac à sable Deckyard temporaire - votre travail est supprimé au bout de {hours} heures.",

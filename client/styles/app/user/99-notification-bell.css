@@ -319,3 +319,33 @@
     opacity: 1;
   }
 }
+
+/* "Load more" closes the list while the server has a next page (D358). It
+   scrolls with the rows, so it never covers one. */
+.notification-bell-load-more {
+  display: block;
+  width: 100%;
+  padding: var(--ps-space-3) var(--ps-space-4);
+  border: none;
+  border-top: 1px solid hsl(var(--app-border-subtle));
+  background: transparent;
+  color: hsl(var(--app-accent-text));
+  font: inherit;
+  font-size: var(--ps-text-sm);
+  text-align: center;
+  cursor: pointer;
+}
+
+.notification-bell-load-more:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+}
+
+.notification-bell-load-more:focus-visible {
+  outline: var(--app-focus-ring);
+  outline-offset: -2px;
+}
+
+.notification-bell-load-more:disabled {
+  color: hsl(var(--app-text-tertiary));
+  cursor: default;
+}

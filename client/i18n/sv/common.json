@@ -183,6 +183,7 @@
   "notifications.filter.unread": "Olästa",
   "notifications.label.bodyUnread": "{title}: {body} (oläst)",
   "notifications.label.unread": "{title} (oläst)",
+  "notifications.loadMore": "Läs in fler",
   "notifications.loading": "Laddar…",
   "notifications.markAllRead": "Markera alla som lästa",
   "notifications.title": "Aviseringar",

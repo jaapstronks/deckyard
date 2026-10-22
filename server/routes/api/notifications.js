@@ -2,8 +2,9 @@
  * API routes for user notifications.
  *
  * Authenticated endpoints:
- *   GET  /api/notifications?limit=20&offset=0&filter=all|unread|mentions|archived
- *                                                         - List notifications
+ *   GET  /api/notifications?limit=20&cursor=…&filter=all|unread|mentions|archived
+ *                                                         - One page of notifications
+ *                                                           (list-page contract, D358)
  *   GET  /api/notifications/unread-count                  - Get unread count
  *   POST /api/notifications/mark-read                     - Mark as read
  *   POST /api/notifications/archive                       - Archive one item or all
@@ -19,6 +20,8 @@ import {
   archiveAllNotifications,
 } from '../../storage/notifications.js';
 import { addClient, removeClient } from '../../services/notification-events.js';
+import { listPageResult, parseListPage } from '../../services/list-page.js';
+import { AppError } from '../../utils/errors.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   badRequest,
@@ -27,7 +30,6 @@ import {
   storageError,
   withErrorHandler,
 } from '../../utils/http.js';
-import { parsePaginationParams } from '../../utils/request-validators.js';
 import { openSseStream, sseWrite } from '../../utils/sse.js';
 
 /**
@@ -172,27 +174,50 @@ async function handleNotificationArchive({
   return true;
 }
 
-// GET /api/notifications - List notifications
+// GET /api/notifications - One page of notifications, newest first. The
+// filter is part of the page's identity: a cursor made under another filter is
+// refused (400 `invalid`, `details.field = 'cursor'`), as are `offset` and an
+// out-of-range `limit` (D358, server/services/list-page.js).
 async function handleNotificationList({ storageScope, res, url, authedUser }) {
   const userEmail = authedUser.email;
 
-  const { limit, offset } = parsePaginationParams(url.searchParams, {
+  if (url.searchParams.has('unread')) {
+    throw new AppError(
+      'Unknown parameter "unread": use "filter=unread"',
+      400,
+      { field: 'unread', use: 'filter=unread' },
+      'invalid',
+    );
+  }
+  const filter = url.searchParams.get('filter') ?? 'all';
+  if (!['all', 'unread', 'mentions', 'archived'].includes(filter)) {
+    throw new AppError(
+      'Invalid filter: use all, unread, mentions or archived',
+      400,
+      { field: 'filter' },
+      'invalid',
+    );
+  }
+
+  const page = parseListPage(url.searchParams, {
+    sortKey: 'created_desc',
+    filters: { filter },
     defaultLimit: 20,
   });
-  // filter=all|unread|mentions|archived (legacy alias: unread=true)
-  const filter =
-    url.searchParams.get('filter') ||
-    (url.searchParams.get('unread') === 'true' ? 'unread' : 'all');
 
-  const opts = { limit, offset };
+  const opts = { limit: page.limit, after: page.after };
   if (filter === 'unread') opts.unreadOnly = true;
   else if (filter === 'mentions') opts.types = ['comment_mention'];
   else if (filter === 'archived') opts.archived = true;
 
-  const notifications = await listNotifications(storageScope, userEmail, opts);
+  const result = await listNotifications(storageScope, userEmail, opts);
   const unreadCount = await getUnreadCount(storageScope, userEmail);
 
-  serveJson(res, 200, { notifications, unreadCount, filter });
+  serveJson(res, 200, {
+    ...listPageResult('notifications', result, page),
+    unreadCount,
+    filter,
+  });
   return true;
 }
 

@@ -186,6 +186,7 @@
   "notifications.filter.unread": "Non lette",
   "notifications.label.bodyUnread": "{title}: {body} (non letto)",
   "notifications.label.unread": "{title} (non letto)",
+  "notifications.loadMore": "Carica altro",
   "notifications.loading": "Caricamento…",
   "notifications.markAllRead": "Segna tutte come lette",
   "notifications.title": "Notifiche",
