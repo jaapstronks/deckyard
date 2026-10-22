@@ -20,7 +20,7 @@
       ],
       "readers": [
         "server/storage/analytics/view-sessions.js :: getViewSessionByToken",
-        "server/storage/analytics/view-sessions.js :: getViewSessionsForPresentation",
+        "server/storage/analytics/view-sessions.js :: listViewSessions",
         "server/routes/api/analytics/metrics.js :: handleSessions"
       ],
       "cleanup": {

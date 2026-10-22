@@ -3,13 +3,13 @@
  */
 
 import { jsonError, serveJson, unauthorized } from '../../../utils/http.js';
+import { listPageResult, parseListPage } from '../../../services/list-page.js';
 import {
   getDashboardSummary,
   getDashboardTimeline,
   getTopPresentations,
   getSourceBreakdown,
-  getPresentationsWithAnalytics,
-  ANALYTICS_LIST_SORTS,
+  listDashboardPresentations,
 } from '../../../storage/analytics/index.js';
 
 const VALID_PERIODS = ['7d', '30d', '90d', '12m'];
@@ -91,9 +91,13 @@ export async function handleDashboard(ctx) {
 }
 
 /**
- * GET /api/analytics/presentations - Get presentations with analytics summary.
- * `sort` is `views` (default), `duration` or `recent`; anything else,
- * `completion` included, is 400 `invalid` with `details.field = 'sort'`.
+ * GET /api/analytics/presentations - One page of the dashboard's decks with
+ * their analytics over `period` (list-page contract, D358): `{ limit, cursor }`
+ * in, `{ presentations, nextCursor }` out, in the one deck-list order, last
+ * change first. `period` is the cursor's fingerprint. The retired `sort`
+ * (`views`, `duration`, `recent`) is refused with 400 `invalid`,
+ * `details.field = 'sort'`: a ranking by views is the dashboard's
+ * `topPresentations`, not a list order.
  */
 export async function handlePresentationsList(ctx) {
   const { res, url, authedUser } = ctx;
@@ -103,29 +107,33 @@ export async function handlePresentationsList(ctx) {
   }
 
   const period = url.searchParams.get('period') || '30d';
-  const sort = url.searchParams.get('sort') || 'views';
-  const limit = Math.min(
-    parseInt(url.searchParams.get('limit') || '20', 10),
-    100,
-  );
-  const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-
   if (!VALID_PERIODS.includes(period)) {
     return invalidQuery(res, 'period', VALID_PERIODS);
   }
-
-  // `completion` is not a sort: the rate is computed after the page is cut
-  // (B622, see `ANALYTICS_LIST_SORTS`).
-  if (!ANALYTICS_LIST_SORTS.includes(sort)) {
-    return invalidQuery(res, 'sort', ANALYTICS_LIST_SORTS);
+  if (url.searchParams.has('sort')) {
+    return jsonError(
+      res,
+      400,
+      'invalid',
+      'Unknown parameter "sort": the list has one order, last change first',
+      { details: { field: 'sort' } },
+    );
   }
+  const page = parseListPage(url.searchParams, {
+    sortKey: 'modified_desc',
+    filters: { period },
+    defaultLimit: 20,
+  });
 
-  const result = await getPresentationsWithAnalytics(
+  const result = await listDashboardPresentations(
     ctx.storageScope,
     authedUser.email,
     authedUser.organizationId,
-    { period, sort, limit, offset },
+    { period, limit: page.limit, after: page.after },
   );
 
-  return (serveJson(res, 200, result), true);
+  return (
+    serveJson(res, 200, listPageResult('presentations', result, page)),
+    true
+  );
 }

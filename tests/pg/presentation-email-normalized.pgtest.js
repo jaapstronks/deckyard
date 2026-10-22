@@ -39,7 +39,7 @@ import {
   up as normalizePresentationEmails,
 } from '../../server/db/migrations/091_presentation_email_normalized.js';
 import { getSandboxUsageForOwner } from '../../server/storage/presentations/sandbox-quota.js';
-import { getPresentationsWithAnalytics } from '../../server/storage/analytics/index.js';
+import { listDashboardPresentations } from '../../server/storage/analytics/index.js';
 import {
   getTeamWeeklyAnalytics,
   getWeeklyAnalyticsForUser,
@@ -167,11 +167,11 @@ pgDescribe('presentation e-mail normalised on write (real PostgreSQL)', () => {
 
   it('2. the analytics dashboard finds the deck from a mixed-case address', async () => {
     await runMigration(db);
-    const { presentations } = await getPresentationsWithAnalytics(
+    const { items: presentations } = await listDashboardPresentations(
       { organizationId: orgId },
       ASKED_AS,
       orgId,
-      { period: '30d' },
+      { period: '30d', limit: 50 },
     );
     assert.deepEqual(
       presentations.map((p) => p.id),

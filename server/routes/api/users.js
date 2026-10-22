@@ -15,15 +15,13 @@ import {
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
-import { parsePaginationParams } from '../../utils/request-validators.js';
+import { parseListLimit } from '../../services/list-page.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/users/search - Search users in organization
 async function handleUserSearch({ storageScope, res, url }) {
   const query = url.searchParams.get('q') || '';
-  const { limit } = parsePaginationParams(url.searchParams, {
-    defaultLimit: 10,
-  });
+  const limit = parseListLimit(url.searchParams, { defaultLimit: 10 });
   const excludeParam = url.searchParams.get('exclude') || '';
   const exclude = excludeParam
     ? excludeParam

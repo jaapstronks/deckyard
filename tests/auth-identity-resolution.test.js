@@ -542,7 +542,7 @@ test('listUsers only returns members of the context organization', async () => {
     updated_at: '2026-02-01T00:00:00.000Z',
   });
 
-  const list = await usersStore.listUsers(ctx);
+  const { items: list } = await usersStore.listUsers(ctx, { limit: 50 });
   assert.deepEqual(
     list.map((u) => u.email),
     ['alice@example.com'],

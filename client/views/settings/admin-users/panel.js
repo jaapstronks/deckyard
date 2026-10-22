@@ -9,6 +9,7 @@ import { renderUsersList } from './user-list.js';
 import { showAddModal } from './add-modal.js';
 import { showEditModal } from './edit-modal.js';
 import { fetchUsers } from './actions.js';
+import { createListPager } from '../../../lib/dom/list-pager.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 
 /**
@@ -50,32 +51,29 @@ export function renderAdminUsersPanel({ user }) {
   });
   usersList.append(loading);
 
-  // State
+  // Everything loaded so far; the pager reads the next page on "Load more".
   let users = [];
-  let isLoading = false;
+  const pager = createListPager({
+    fetchPage: (_params, cursor) => fetchUsers(cursor),
+    onPage: (items, { first }) => {
+      users = first ? items : [...users, ...items];
+      renderUsersList(usersList, users, user, handleEdit, loadUsers);
+    },
+  });
 
-  // Load users
+  // (Re)load from the top: after an add, edit or delete, and on open.
   const loadUsers = async () => {
-    if (isLoading) return;
-    isLoading = true;
-
-    await fetchUsers(
-      (loadedUsers) => {
-        users = loadedUsers;
-        renderUsersList(usersList, users, user, handleEdit, loadUsers);
-      },
-      () => {
-        usersList.replaceChildren();
-        usersList.append(
-          h('div', {
-            class: 'help',
-            text: t('admin.users.loadFailed', 'Failed to load users.'),
-          }),
-        );
-      },
-    );
-
-    isLoading = false;
+    try {
+      await pager.load();
+    } catch {
+      usersList.replaceChildren();
+      usersList.append(
+        h('div', {
+          class: 'help',
+          text: t('admin.users.loadFailed', 'Failed to load users.'),
+        }),
+      );
+    }
   };
 
   // Edit handler
@@ -100,7 +98,7 @@ export function renderAdminUsersPanel({ user }) {
     addBtn,
   );
 
-  card.append(header, usersList);
+  card.append(header, usersList, pager.el);
 
   return card;
 }

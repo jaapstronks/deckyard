@@ -9,6 +9,7 @@ import { normalizeEmail } from '../../../shared/email.js';
 import { withDbGuard } from '../../db/client.js';
 import { toStorageContext } from '../scope.js';
 import { ANALYTICS_CONFIG, applyDateFilters } from '../../analytics/helpers.js';
+import { keysetPage, keysetRows } from '../keyset.js';
 
 async function presentationInScope(db, organizationId, presentationId) {
   return !!(await db
@@ -218,60 +219,45 @@ export async function getViewSessionByToken(sessionToken) {
 // ============================================================
 
 /**
- * Get view sessions for a presentation with pagination.
+ * One page of a deck's view sessions in a date window (B825, D358): order
+ * `(started_at desc, id desc)`, continued after `after`. The window is a
+ * filter of the query, not of the page.
+ *
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId - The presentation ID
- * @param {Object} opts - Query options
- * @param {number} [opts.limit] - Max results (default 50)
- * @param {number} [opts.offset] - Offset for pagination
+ * @param {Object} opts
+ * @param {number} opts.limit - Rows per page.
+ * @param {{value: string, id: string}|null} [opts.after] - Last row seen.
  * @param {string} [opts.since] - Start date filter
  * @param {string} [opts.until] - End date filter
- * @returns {Promise<{sessions: Object[], total: number}>}
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function getViewSessionsForPresentation(
-  scope,
-  presentationId,
-  opts = {},
-) {
-  const { organizationId } = toStorageContext(
-    scope,
-    'getViewSessionsForPresentation',
-  );
+export async function listViewSessions(scope, presentationId, opts) {
+  const { organizationId } = toStorageContext(scope, 'listViewSessions');
   const presId = norm(presentationId);
-  if (!presId) return { sessions: [], total: 0 };
+  const empty = { items: [], next: null };
+  if (!presId) return empty;
 
-  return withDbGuard({ sessions: [], total: 0 }, async (db) => {
+  return withDbGuard(empty, async (db) => {
     if (!(await presentationInScope(db, organizationId, presId))) {
-      return { sessions: [], total: 0 };
+      return empty;
     }
-    let query = db
-      .selectFrom('view_sessions')
-      .selectAll()
-      .where('presentation_id', '=', presId);
-
-    // Apply date range filters
-    query = applyDateFilters(query, opts);
-
-    // Count total
-    const countQuery = query
-      .clearSelect()
-      .select((eb) => eb.fn.count('id').as('count'));
-    const countResult = await countQuery.executeTakeFirst();
-    const total = Number(countResult?.count) || 0;
-
-    // Apply pagination
-    const limit = Math.min(opts?.limit || 50, 100);
-    const offset = opts?.offset || 0;
-
-    query = query.orderBy('started_at', 'desc').limit(limit).offset(offset);
-
-    const rows = await query.execute();
-
-    return {
-      sessions: rows.map(rowToSession),
-      total,
-      limit,
-      offset,
-    };
+    const query = applyDateFilters(
+      db
+        .selectFrom('view_sessions')
+        .selectAll()
+        .where('presentation_id', '=', presId),
+      opts,
+    );
+    const { rows, next } = keysetRows(
+      await keysetPage(query, {
+        column: 'started_at',
+        after: opts.after ?? null,
+        limit: opts.limit,
+      }).execute(),
+      opts.limit,
+    );
+    return { items: rows.map(rowToSession), next };
   });
 }
 

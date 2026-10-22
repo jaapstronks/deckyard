@@ -37,7 +37,8 @@ async function presentationInScope(scope, db, id) {
  * read it, through `completionRate()`.
  *
  * @param {import('kysely').Kysely<any>} db - Database connection.
- * @param {string[]} presentationIds - The decks to count.
+ * @param {string[]|import('kysely').SelectQueryBuilder<any, any, {id: string}>} presentationIds
+ *   The decks to count: ids, or a subquery selecting them.
  * @param {Object} [opts] - Date window, applied to `slide_views.entered_at`.
  * @param {string} [opts.since]
  * @param {string} [opts.until]
@@ -50,10 +51,17 @@ export async function getCompletionCounts(
   presentationIds,
   opts = {},
 ) {
-  toStorageContext(scope, 'getCompletionCounts');
-  if (!presentationIds.length) return new Map();
-  presentationIds = await scopedPresentationIds(scope, db, presentationIds);
-  if (!presentationIds.length) return new Map();
+  const { organizationId } = toStorageContext(scope, 'getCompletionCounts');
+  if (Array.isArray(presentationIds) && !presentationIds.length) {
+    return new Map();
+  }
+  // The scope's organization bounds the set whether it came as ids or as a
+  // subquery (the dashboard's decks, `dashboardDeckIds`).
+  const decks = db
+    .selectFrom('presentations')
+    .select('presentations.id')
+    .where('presentations.organization_id', '=', organizationId)
+    .where('presentations.id', 'in', presentationIds);
 
   let sessions = db
     .selectFrom('slide_views')
@@ -62,7 +70,7 @@ export async function getCompletionCounts(
       'view_session_id',
       (eb) => eb.fn.max('slide_index').as('max_index'),
     ])
-    .where('presentation_id', 'in', presentationIds)
+    .where('presentation_id', 'in', decks)
     .groupBy(['presentation_id', 'view_session_id']);
   sessions = applyDateFilters(sessions, opts, 'entered_at');
 
@@ -72,7 +80,7 @@ export async function getCompletionCounts(
       'presentation_id',
       (eb) => eb.fn.max('slide_index').as('last_index'),
     ])
-    .where('presentation_id', 'in', presentationIds)
+    .where('presentation_id', 'in', decks)
     .groupBy('presentation_id');
 
   const rows = await db
