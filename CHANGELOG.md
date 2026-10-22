@@ -10,16 +10,14 @@ entries are grouped per release rather than exhaustively listed.
 ### ⚠ BREAKING CHANGES
 
 * slide library, collections and image library on the list-page contract (B822) ([#1823](https://github.com/jaapstronks/deckyard/issues/1823))
+* `GET /api/v1/slide-library` and `GET /api/v1/image-library` move onto the list-page contract: `{ limit, cursor }` in, `{ items, nextCursor }` resp. `{ images, nextCursor }` out, ordered `(created_at desc, id desc)`. `offset`, `total` and `pagination` are gone; `offset` is refused with 400 and `use: 'cursor'`, and `limit` outside 1..100 is refused with 400 instead of clamped. The image `categories` list moves to `GET /api/v1/image-library/categories`, and the unused `Pagination` schema leaves the OpenAPI document.
+* Migration 098 backfills `created_at` (from `updated_at`, else now) on `slide_library`, `slide_collections` and `image_library`, makes it NOT NULL, folds `image_library.uploaded_by` to the normalized address and adds four keyset indexes. Migration 097 adds `idx_presentations_trash_keyset` for the trash list.
 
 ### Added
 
 * Home, shared-with-me and the trash page on the list-page contract (B821) ([#1821](https://github.com/jaapstronks/deckyard/issues/1821)) ([9fb4880](https://github.com/jaapstronks/deckyard/commit/9fb4880d82f2df5fcc737dfdbc8706644542fcab))
 * slide library, collections and image library on the list-page contract (B822) ([#1823](https://github.com/jaapstronks/deckyard/issues/1823)) ([f4d938f](https://github.com/jaapstronks/deckyard/commit/f4d938f4f30fc5f4f48f198d3063e603a9f10303))
 
-
-### Changed
-
-* release 1.86.0 as a beta minor ([cf0708d](https://github.com/jaapstronks/deckyard/commit/cf0708d7944360a0b2344a363991641422b71581))
 
 ## [1.85.0](https://github.com/jaapstronks/deckyard/compare/v1.84.0...v1.85.0) (2026-10-22)
 
