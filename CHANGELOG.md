@@ -9,7 +9,9 @@ entries are grouped per release rather than exhaustively listed.
 
 ### ⚠ BREAKING CHANGES
 
-* comment lists are read a page at a time (B824)
+* comment lists are read a page at a time (B824) ([0a0b402](https://github.com/jaapstronks/deckyard/commit/0a0b402d4512b95ca3aa3e6bd0c44a6f6fe9d6a4))
+* `GET /api/v1/presentations/{id}/comments` and the MCP tools `list_comments` and `list_recent_comments` move onto the list-page contract: `{ limit, cursor }` in, `{ comments, nextCursor }` out, ordered `(created_at desc, id desc)`; a deck page counts threads, each with all its replies. `total` is gone; `offset` is refused with 400 and `use: 'cursor'`; `limit` outside 1..100 is refused (MCP allowed up to 200). The internal comment routes, the share-link guest comments and `GET /api/activity` / the Home activity rail (B823) follow the same contract.
+* Migration 099 backfills `activity_events.created_at` (now) where NULL, makes it NOT NULL and replaces `idx_activity_events_org_created` with `(organization_id, created_at DESC, id DESC)`. Migration 100 does the same backfill and NOT NULL on `presentation_comments.created_at` and adds `(presentation_id, created_at DESC, id DESC)` and `(organization_id, created_at DESC, id DESC)`.
 
 ### Added
 
@@ -24,10 +26,6 @@ entries are grouped per release rather than exhaustively listed.
 * the tag count on Presentations leaves trashed decks out (B835) ([#1824](https://github.com/jaapstronks/deckyard/issues/1824)) ([e37feda](https://github.com/jaapstronks/deckyard/commit/e37feda6f3814b494b65324437d71104fd95b19b))
 * the unknown-type placeholder keeps each language's text (B833) ([#1825](https://github.com/jaapstronks/deckyard/issues/1825)) ([9dafcf6](https://github.com/jaapstronks/deckyard/commit/9dafcf67fc26667988ccc8387c78c90d9fcd2efd))
 
-
-### Changed
-
-* release 1.87.0 as a beta minor ([ff04101](https://github.com/jaapstronks/deckyard/commit/ff041013cfd2dd012f13b22cf0f9b7b4cabd5426))
 
 ## [1.86.0](https://github.com/jaapstronks/deckyard/compare/v1.85.0...v1.86.0) (2026-10-22)
 
