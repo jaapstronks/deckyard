@@ -1,6 +1,6 @@
 /**
  * The list-page contract: one shape for every list that grows per
- * organization (D357, brief `db-level-pagination.md`).
+ * organization (D358, brief `db-level-pagination.md`).
  *
  * In: `{ limit, cursor }` — query parameters on the internal API and v1, tool
  * arguments in MCP. Out: `{ <collection>: [...], nextCursor }`, where

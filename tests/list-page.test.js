@@ -1,5 +1,5 @@
 /**
- * The list-page contract (B819, D357): `server/services/list-page.js` reads
+ * The list-page contract (B819, D358): `server/services/list-page.js` reads
  * `{ limit, cursor }`, refuses `offset` and anything out of bounds as a 400
  * `invalid` naming `details.field`, and round-trips the cursor against the
  * list's order and filters. The keyset half (completeness, order, stability,

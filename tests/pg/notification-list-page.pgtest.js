@@ -1,6 +1,6 @@
 /**
  * The notification inbox on the list-page contract, against real PostgreSQL
- * (B819, D357).
+ * (B819, D358).
  *
  * `tests/list-page.test.js` pins the input half (bounds, offset, cursor
  * refusals). This pins what only PostgreSQL can vouch for: the row-value

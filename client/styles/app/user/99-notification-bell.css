@@ -320,7 +320,7 @@
   }
 }
 
-/* "Load more" closes the list while the server has a next page (D357). It
+/* "Load more" closes the list while the server has a next page (D358). It
    scrolls with the rows, so it never covers one. */
 .notification-bell-load-more {
   display: block;

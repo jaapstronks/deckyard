@@ -47,7 +47,7 @@ export function createNotificationBell({ api }) {
   let notifications = [];
   let unreadCount = 0;
   let isLoading = false;
-  // The list is paged by cursor (D357): `nextCursor` continues the current
+  // The list is paged by cursor (D358): `nextCursor` continues the current
   // lens, null = nothing more. A lens switch or reload starts over, and the
   // request counter drops an answer that arrives for a list no longer shown.
   let nextCursor = null;

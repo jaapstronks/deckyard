@@ -1,5 +1,5 @@
 /**
- * Keyset pagination for a Kysely list query (D357).
+ * Keyset pagination for a Kysely list query (D358).
  *
  * Every paged list has one order, `(<time column> desc, id desc)`, with the
  * uuid `id` as the unique tiebreaker. A page continues strictly after the

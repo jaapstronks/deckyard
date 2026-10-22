@@ -77,7 +77,7 @@ export async function createNotification(scope, data) {
 
 /**
  * List one page of a user's notifications, newest first: the keyset order
- * `(created_at desc, id desc)` of the list-page contract (D357,
+ * `(created_at desc, id desc)` of the list-page contract (D358,
  * `server/storage/keyset.js`). Every filter is part of the query; nothing is
  * removed after the LIMIT, so a page is short only at the end of the list.
  *

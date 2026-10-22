@@ -4,7 +4,7 @@
  * Authenticated endpoints:
  *   GET  /api/notifications?limit=20&cursor=…&filter=all|unread|mentions|archived
  *                                                         - One page of notifications
- *                                                           (list-page contract, D357)
+ *                                                           (list-page contract, D358)
  *   GET  /api/notifications/unread-count                  - Get unread count
  *   POST /api/notifications/mark-read                     - Mark as read
  *   POST /api/notifications/archive                       - Archive one item or all
@@ -176,7 +176,7 @@ async function handleNotificationArchive({
 // GET /api/notifications - One page of notifications, newest first. The
 // filter is part of the page's identity: a cursor made under another filter is
 // refused (400 `invalid`, `details.field = 'cursor'`), as are `offset` and an
-// out-of-range `limit` (D357, server/services/list-page.js).
+// out-of-range `limit` (D358, server/services/list-page.js).
 async function handleNotificationList({ storageScope, res, url, authedUser }) {
   const userEmail = authedUser.email;
 

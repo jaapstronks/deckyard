@@ -159,7 +159,7 @@ that one has no id beside it yet.
   `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
   makes `grep -r crossOrganization` a complete census of every unscoped path.
 - **A list read.** A list that grows per organization is read one page at a
-  time through **one contract** (D357, B819). In: `{ limit, cursor }` as
+  time through **one contract** (D358, B819). In: `{ limit, cursor }` as
   query parameters (internal API and v1) or tool arguments (MCP). Out:
   `{ <collection>: [...], nextCursor }`, where `nextCursor: null` is the end;
   no `total`, `hasMore`, `offset` or `pagination` object. A screen that shows
