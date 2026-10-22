@@ -4,6 +4,22 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.85.0](https://github.com/jaapstronks/deckyard/compare/v1.84.0...v1.85.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* the deck list is one SQL query, paged by keyset (B820) ([#1819](https://github.com/jaapstronks/deckyard/issues/1819))
+
+### Added
+
+* the deck list is one SQL query, paged by keyset (B820) ([#1819](https://github.com/jaapstronks/deckyard/issues/1819)) ([3ede840](https://github.com/jaapstronks/deckyard/commit/3ede840cb8f48e5c46dde3abc96b6c50a4a026c0))
+
+
+### Changed
+
+* release 1.85.0 as a beta minor ([5de949a](https://github.com/jaapstronks/deckyard/commit/5de949a8efc0ebe8cfd6eb2d2283da022796f6e4))
+
 ## [1.84.0](https://github.com/jaapstronks/deckyard/compare/v1.83.5...v1.84.0) (2026-10-22)
 
 
