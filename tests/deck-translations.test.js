@@ -315,3 +315,43 @@ test('an enum, image or number in a translation is ignored on import', () => {
   });
   assert.deepEqual(out, { title: 'Why', body: '', background: 'lime' });
 });
+
+test('an unknown-type placeholder keeps each language version its own text (B833)', () => {
+  const parts = deckToPresentationParts(
+    {
+      lang: 'en-GB',
+      translations: { nl: { title: 'Waarom' } },
+      slides: [
+        {
+          type: 'acme-title-slide',
+          content: {
+            title: 'Ethical dilemmas',
+            subtitle: 'Interactive session',
+          },
+          notes: 'Speaker note',
+          translations: {
+            nl: {
+              title: "Ethische dilemma's",
+              subtitle: 'Interactieve sessie',
+              notes: 'Sprekernotitie',
+            },
+          },
+        },
+      ],
+    },
+    { lang: 'en-GB', slideTypes: SLIDE_TYPES },
+  );
+  const [base] = parts.slides;
+  const [nl] = parts.translations.nl.slides;
+  assert.equal(base.type, 'content-slide');
+  assert.equal(nl.type, 'content-slide');
+  assert.equal(nl.id, base.id);
+  assert.match(base.content.body, /Interactive session/);
+  assert.equal(nl.content.title, "Ethische dilemma's");
+  assert.match(nl.content.body, /Interactieve sessie/);
+  assert.doesNotMatch(nl.content.body, /Interactive session/);
+  // The explanation names the type in every version, as the base does.
+  assert.match(nl.content.body, /acme-title-slide/);
+  assert.equal(nl.content.background, base.content.background);
+  assert.equal(nl.notes, 'Sprekernotitie');
+});
