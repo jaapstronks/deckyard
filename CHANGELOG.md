@@ -4,6 +4,31 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.87.0](https://github.com/jaapstronks/deckyard/compare/v1.86.0...v1.87.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* comment lists are read a page at a time (B824)
+
+### Added
+
+* a PowerPoint file is the source of editable slides (B829) ([#1828](https://github.com/jaapstronks/deckyard/issues/1828)) ([287a1fe](https://github.com/jaapstronks/deckyard/commit/287a1fea12258f4ae4352fb0e83e254616eaa0a7))
+* comment lists are read a page at a time (B824) ([0a0b402](https://github.com/jaapstronks/deckyard/commit/0a0b402d4512b95ca3aa3e6bd0c44a6f6fe9d6a4))
+
+
+### Fixed
+
+* a list in an unknown slide type keeps its translation (B836) ([#1830](https://github.com/jaapstronks/deckyard/issues/1830)) ([b4c817b](https://github.com/jaapstronks/deckyard/commit/b4c817b88217e01771760e3a553154324e802673))
+* an activity page is full and only holds events you may see (B823) ([#1827](https://github.com/jaapstronks/deckyard/issues/1827)) ([161dcfd](https://github.com/jaapstronks/deckyard/commit/161dcfd01872cad3f16b67646eb3e5fc40861908))
+* the tag count on Presentations leaves trashed decks out (B835) ([#1824](https://github.com/jaapstronks/deckyard/issues/1824)) ([e37feda](https://github.com/jaapstronks/deckyard/commit/e37feda6f3814b494b65324437d71104fd95b19b))
+* the unknown-type placeholder keeps each language's text (B833) ([#1825](https://github.com/jaapstronks/deckyard/issues/1825)) ([9dafcf6](https://github.com/jaapstronks/deckyard/commit/9dafcf67fc26667988ccc8387c78c90d9fcd2efd))
+
+
+### Changed
+
+* release 1.87.0 as a beta minor ([ff04101](https://github.com/jaapstronks/deckyard/commit/ff041013cfd2dd012f13b22cf0f9b7b4cabd5426))
+
 ## [1.86.0](https://github.com/jaapstronks/deckyard/compare/v1.85.0...v1.86.0) (2026-10-22)
 
 
