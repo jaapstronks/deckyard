@@ -10,6 +10,8 @@ import { getOrgId } from '../utils/context.js';
 import { norm, nowIso } from '../utils/normalize.js';
 import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
+import { keysetPage, keysetRows } from './keyset.js';
+import { deckReadableExpression } from './presentations/index.js';
 import {
   resolveDisplayNames,
   toStoredActorIdentity,
@@ -104,33 +106,68 @@ export async function createActivityEvent(scope, data) {
 }
 
 /**
- * List activity events for an organization.
- * Supports pagination and filtering.
+ * The activity events a reader may see, newest first, as one keyset page or
+ * (without `limit`) the whole list (B823, D358).
+ *
+ * Who sees what is decided in the query: an event on a deck is listed only
+ * when the reader may open that deck by id (`deckReadableExpression` in
+ * ./presentations/deck-list.js), an event on no deck is listed for every
+ * reader of the organization. Filtering after the `LIMIT` would make a page
+ * shorter than asked while there is more, which is what the feed did before.
+ * The order is `(created_at desc, id desc)`.
+ *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
- * @param {Object} [opts] - Pagination and filter options
+ * @param {Object} filter
+ * @param {{userId?: string|null, email?: string, unrestricted?: boolean}} filter.reader
+ *   The reader's identity (`actorIdentity()`), its `userId` already resolved.
+ *   Required: there is no list of events without a reader.
+ * @param {string} [filter.presentationId] - Only events on this deck.
+ * @param {string} [filter.eventType] - Only this event type.
+ * @param {string[]} [filter.eventTypes] - Only these event types.
+ * @param {string} [filter.excludeActorEmail] - Leave out this actor's events.
+ * @param {string} [filter.since] - ISO time; events from then on.
+ * @param {string} [filter.until] - ISO time or date; events up to then (a
+ *   date includes the whole day).
+ * @param {Object} [page]
+ * @param {number} [page.limit] - Rows per page; the whole list when absent.
+ * @param {{value: string, id: string}|null} [page.after] - Position of the
+ *   last row seen.
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function listActivityEvents(scope, opts = {}) {
-  return withDbGuard({ events: [], total: 0 }, async (db) => {
+export async function listActivityEvents(
+  scope,
+  filter = {},
+  { limit, after = null } = {},
+) {
+  toStorageContext(scope, 'listActivityEvents');
+  const { reader } = filter;
+  if (!reader || typeof reader !== 'object') {
+    throw new TypeError('listActivityEvents() requires a reader');
+  }
+  return withDbGuard({ items: [], next: null }, async (db) => {
     const orgId = getOrgId(scope);
 
     let query = db
       .selectFrom('activity_events')
       .selectAll()
-      .where('organization_id', '=', orgId);
+      .where('organization_id', '=', orgId)
+      .where((eb) => {
+        const onNoDeck = eb('activity_events.presentation_id', 'is', null);
+        const readable = deckReadableExpression(scope, eb, {
+          reader,
+          deckRef: 'activity_events.presentation_id',
+        });
+        return readable ? eb.or([onNoDeck, readable]) : onNoDeck;
+      });
 
-    // Filter by presentation
-    if (opts?.presentationId) {
-      query = query.where('presentation_id', '=', opts.presentationId);
+    if (filter.presentationId) {
+      query = query.where('presentation_id', '=', filter.presentationId);
     }
-
-    // Filter by event type
-    if (opts?.eventType) {
-      query = query.where('event_type', '=', opts.eventType);
+    if (filter.eventType) {
+      query = query.where('event_type', '=', filter.eventType);
     }
-
-    // Filter by event types (array)
-    if (Array.isArray(opts?.eventTypes) && opts.eventTypes.length > 0) {
-      query = query.where('event_type', 'in', opts.eventTypes);
+    if (Array.isArray(filter.eventTypes) && filter.eventTypes.length > 0) {
+      query = query.where('event_type', 'in', filter.eventTypes);
     }
 
     // Exclude events by actor (for "others' activity"). There is no positive
@@ -138,50 +175,44 @@ export async function listActivityEvents(scope, opts = {}) {
     // response carries any more (D22) and no client ever sent it.
     // `excludeActorEmail` is different — the caller passes their *own* address,
     // which they plainly have.
-    if (opts?.excludeActorEmail) {
+    if (filter.excludeActorEmail) {
       query = query.where(
         'actor_email',
         '!=',
-        normalizeEmail(opts.excludeActorEmail),
+        normalizeEmail(filter.excludeActorEmail),
       );
     }
 
-    // Filter by date range
-    if (opts?.since) {
-      query = query.where('created_at', '>=', opts.since);
+    if (filter.since) {
+      query = query.where('created_at', '>=', filter.since);
     }
-
-    if (opts?.until) {
-      // If until is a date-only string (YYYY-MM-DD), include the entire day
-      let untilValue = opts.until;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(opts.until)) {
-        untilValue = `${opts.until}T23:59:59.999Z`;
-      }
+    if (filter.until) {
+      // A date-only value (YYYY-MM-DD) includes the entire day.
+      const untilValue = /^\d{4}-\d{2}-\d{2}$/.test(filter.until)
+        ? `${filter.until}T23:59:59.999Z`
+        : filter.until;
       query = query.where('created_at', '<=', untilValue);
     }
 
-    // Count total before pagination
-    const countQuery = query
-      .clearSelect()
-      .select((eb) => eb.fn.count('id').as('count'));
-    const countResult = await countQuery.executeTakeFirst();
-    const total = Number(countResult?.count) || 0;
-
-    // Apply pagination
-    const limit = Math.min(opts?.limit || 50, 100);
-    const offset = opts?.offset || 0;
-
-    query = query.orderBy('created_at', 'desc').limit(limit).offset(offset);
-
-    const rows = await query.execute();
+    let rows;
+    let next = null;
+    if (limit === undefined) {
+      rows = await query
+        .orderBy('created_at', 'desc')
+        .orderBy('id', 'desc')
+        .execute();
+    } else {
+      ({ rows, next } = keysetRows(
+        await keysetPage(query, {
+          column: 'created_at',
+          after,
+          limit,
+        }).execute(),
+        limit,
+      ));
+    }
     const lookup = await actorDisplayNames(rows);
-
-    return {
-      events: rows.map((row) => rowToEvent(row, lookup)),
-      total,
-      limit,
-      offset,
-    };
+    return { items: rows.map((row) => rowToEvent(row, lookup)), next };
   });
 }
 

@@ -130,6 +130,44 @@ function termExpression(eb, term, reader, orgId) {
 }
 
 /**
+ * "The deck `deckRef` names is one the reader may open": the by-id read right
+ * (`canReadPresentation`) as a correlated expression, for a list of rows that
+ * point at a deck (the activity feed, B823). It is the `all` terms over the
+ * deck in the organization, without the trash filter: opening a trashed deck
+ * by id is a read like any other, so its rows stay readable. A reader with no
+ * identity reads no deck: `null`, so the caller leaves the term out instead
+ * of writing a constant false.
+ *
+ * tests/pg/activity-list-page.pgtest.js holds it equal to
+ * `loadPresentationForActor` for every reader and deck kind.
+ *
+ * @param {import('../scope.js').StorageScope} scope - The organization the
+ *   deck must be in.
+ * @param {Object} eb - Expression builder of the outer query
+ * @param {Object} options
+ * @param {{userId?: string|null, email?: string, unrestricted?: boolean}} options.reader
+ * @param {string} options.deckRef - Column of the outer query holding the
+ *   deck id (`activity_events.presentation_id`).
+ * @returns {Object|null} An `EXISTS` expression, or null for no deck at all.
+ */
+export function deckReadableExpression(scope, eb, { reader, deckRef }) {
+  const orgId = getOrgId(toStorageContext(scope, 'deckReadableExpression'));
+  const terms = deckListTerms(reader, 'all');
+  if (terms && terms.length === 0) return null;
+  let deck = eb
+    .selectFrom('presentations')
+    .select('presentations.id')
+    .whereRef('presentations.id', '=', deckRef)
+    .where('presentations.organization_id', '=', orgId);
+  if (terms) {
+    deck = deck.where((inner) =>
+      inner.or(terms.map((term) => termExpression(inner, term, reader, orgId))),
+    );
+  }
+  return eb.exists(deck);
+}
+
+/**
  * Decks carrying at least one of `names`, compared as the tag identity is:
  * `lower(name)` within the organization.
  * @param {Object} eb - Expression builder

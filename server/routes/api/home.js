@@ -5,8 +5,8 @@
  * currently fetches asynchronously after mount:
  *
  *   - `popular`       — popular presentations (same as `/api/presentations/popular`)
- *   - `activity`      — the "from others" feed ({ events, total, limit, offset },
- *                       same shape + access filtering as `/api/activity`)
+ *   - `activity`      — the "from others" feed ({ events, nextCursor }, same
+ *                       page, filters and access as `/api/activity`)
  *   - `buildingBlocks`— slide collections (personal + organization) and recent organization
  *                       library slides for the shelf
  *   - `usage`         — the current user's slide-library usage set (powers the
@@ -28,9 +28,8 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { parsePaginationParams } from '../../utils/request-validators.js';
 import { getPopularPresentations } from './presentations/popular.js';
-import { getEnrichedActivity } from './activity.js';
+import { getEnrichedActivity, parseActivityQuery } from './activity.js';
 import {
   getLibraryItemsByIds,
   listLibraryShelf,
@@ -51,47 +50,19 @@ const HOME_BLOCK_COLLECTIONS = 4;
 const HOME_BLOCK_SLIDES = 6;
 
 /**
- * Build the activity filter opts from the request, mirroring `/api/activity`.
- * Defaults match the Home rail: at most 20 recent events, excluding the user's
- * own (`excludeSelf=false` opts out). The full storage filter surface
- * (since / until / eventTypes[]) is threaded through so a caller can narrow the
- * feed without a second endpoint. There is no actor filter: the only one that
- * ever existed keyed on an address the response no longer carries (D22), and no
- * client ever sent it.
+ * The Home rail's activity page: the `/api/activity` query with Home's
+ * defaults, at most 20 recent events and the reader's own left out
+ * (`excludeSelf=false` opts out). A bad `limit` or `cursor` is a 400 for the
+ * whole aggregation, as it is on `/api/activity`.
  *
  * @param {URLSearchParams} searchParams
- * @param {string} email - current user's email (for excludeSelf)
- * @returns {object} listActivityEvents opts
+ * @returns {ReturnType<typeof parseActivityQuery>}
  */
-export function buildActivityOpts(searchParams, email) {
-  const { limit, offset } = parsePaginationParams(searchParams, {
+export function homeActivityQuery(searchParams) {
+  return parseActivityQuery(searchParams, {
+    excludeSelfByDefault: true,
     defaultLimit: 20,
-    maxLimit: 100,
   });
-
-  const opts = { limit, offset };
-
-  const eventType = searchParams.get('eventType');
-  if (eventType) opts.eventType = eventType;
-
-  const eventTypes = searchParams.getAll('eventTypes[]');
-  if (eventTypes.length > 0) opts.eventTypes = eventTypes;
-
-  const since = searchParams.get('since');
-  if (since) opts.since = since;
-
-  const until = searchParams.get('until');
-  if (until) opts.until = until;
-
-  const presentationId = searchParams.get('presentationId');
-  if (presentationId) opts.presentationId = presentationId;
-
-  // Home wants "what others did", so exclude self by default; opt out explicitly.
-  if (searchParams.get('excludeSelf') !== 'false' && email) {
-    opts.excludeActorEmail = email;
-  }
-
-  return opts;
 }
 
 /**
@@ -103,7 +74,7 @@ async function handleHomeGet({ repoRoot, storageScope, res, url, authedUser }) {
   const email = normalizeEmail(authedUser?.email);
   if (!email) return unauthorized(res);
 
-  const activityOpts = buildActivityOpts(url.searchParams, email);
+  const activityQuery = homeActivityQuery(url.searchParams);
 
   // Fire every section's storage read in parallel — the whole point of the
   // aggregation. Each piece degrades to an empty result so one failing section
@@ -121,8 +92,8 @@ async function handleHomeGet({ repoRoot, storageScope, res, url, authedUser }) {
       user: authedUser,
       organizationId: storageScope?.organizationId,
     }).catch(() => []),
-    getEnrichedActivity({ storageScope, authedUser, opts: activityOpts }).catch(
-      () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 }),
+    getEnrichedActivity({ storageScope, authedUser, ...activityQuery }).catch(
+      () => ({ events: [], nextCursor: null }),
     ),
     listPersonalCollections(storageScope, email, {
       limit: HOME_BLOCK_COLLECTIONS,
