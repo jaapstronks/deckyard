@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.84.0](https://github.com/jaapstronks/deckyard/compare/v1.83.5...v1.84.0) (2026-10-22)
+
+
+### Added
+
+* the notification inbox loads past its first twenty, on one list-page contract (B819) ([#1814](https://github.com/jaapstronks/deckyard/issues/1814)) ([2347847](https://github.com/jaapstronks/deckyard/commit/2347847cc70de5d0d6b66ee56db3aa6502fb6ee7))
+
+
+### Fixed
+
+* a theme naming a title type this instance lacks no longer breaks deck creation (B832) ([#1815](https://github.com/jaapstronks/deckyard/issues/1815)) ([a4f7a3d](https://github.com/jaapstronks/deckyard/commit/a4f7a3d07088481c7b42ed2931133aefde0946fd))
+
 ## [1.83.5](https://github.com/jaapstronks/deckyard/compare/v1.83.4...v1.83.5) (2026-10-22)
 
 
