@@ -361,6 +361,7 @@ export function createHomeView({
       const agg = await fetchHomeAggregate();
       let collections;
       let organizationResp;
+      let collectionSlides = [];
       let usageResp;
       if (agg) {
         collections = agg.buildingBlocks?.collections || {
@@ -370,14 +371,19 @@ export function createHomeView({
         organizationResp = {
           items: agg.buildingBlocks?.organizationSlides || [],
         };
+        collectionSlides = agg.buildingBlocks?.collectionSlides || [];
         usageResp = agg.usage || { items: [] };
       } else {
+        // The row shows a few blocks, so a first page of each is the whole
+        // answer (B822); the aggregate reads the same.
         const collectionsApi = createCollectionsApi({ api });
         [collections, organizationResp, usageResp] = await Promise.all([
           collectionsApi
-            .listAll()
+            .listFirstPages()
             .catch(() => ({ personal: [], organization: [] })),
-          api('/api/slide-library/organization').catch(() => ({ items: [] })),
+          api('/api/slide-library/organization?limit=6').catch(() => ({
+            items: [],
+          })),
           api('/api/slide-library/usage').catch(() => ({ items: [] })),
         ]);
       }
@@ -400,19 +406,20 @@ export function createHomeView({
         ...(collections?.organization || []),
         ...(collections?.personal || []),
       ];
+      // The server's first page of the team shelf: untrashed, newest first.
       const organizationSlides = (
         Array.isArray(organizationResp?.items) ? organizationResp.items : []
-      )
-        .filter((it) => it?.id && !it.isTrashed && !it.trashedAt)
-        .sort((a, b) => blockTimestamp(b) - blockTimestamp(a));
+      ).filter((it) => it?.id);
 
       // Each card previews its slide exactly as the library does (B616); a
-      // collection shows its first slide when that is a team slide.
+      // collection shows its first slide, resolved by the server.
       const preview = {
         resolveTheme: createLibraryThemeResolver(),
         lang: readLangMode(),
       };
-      const slideById = new Map(organizationSlides.map((it) => [it.id, it]));
+      const slideById = new Map(
+        [...collectionSlides, ...organizationSlides].map((it) => [it.id, it]),
+      );
       const firstSlideOf = (col) =>
         slideById.get(Array.isArray(col.slideIds) ? col.slideIds[0] : null);
 
@@ -486,13 +493,6 @@ function cleanSnippet(preview) {
     .trim();
   if (!text) return '';
   return text.length >= 100 ? `${text}…` : text;
-}
-
-/** Most-recent-first sort key for a library item. */
-function blockTimestamp(item) {
-  const raw = item?.updatedAt || item?.createdAt || 0;
-  const time = new Date(raw).getTime();
-  return Number.isNaN(time) ? 0 : time;
 }
 
 /**

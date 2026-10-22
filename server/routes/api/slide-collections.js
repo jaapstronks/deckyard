@@ -17,12 +17,10 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import {
-  listPersonalCollections,
   getPersonalCollection,
   createPersonalCollection,
   updatePersonalCollection,
   deletePersonalCollection,
-  listOrganizationCollections,
   getOrganizationCollection,
   createOrganizationCollection,
   updateOrganizationCollection,
@@ -33,6 +31,11 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { sharingEnabled } from '../../config/sandbox.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
 import { normalizeEmail } from '../../../shared/email.js';
+import { getLibraryItemsByIds } from '../../storage/slide-library.js';
+import {
+  libraryListInput,
+  listCollectionPage,
+} from '../../services/library-lists.js';
 
 /**
  * Organization-shelf collections may only be mutated by an admin or the creator.
@@ -73,15 +76,56 @@ function actorEmail(authedUser) {
   return normalizeEmail(authedUser?.email);
 }
 
-// GET /api/slide-collections/personal
-async function handlePersonalList({ storageScope, res, authedUser }) {
-  const out = await listPersonalCollections(
+// GET /api/slide-collections/{personal|organization} - One page of a shelf's
+// collections on the list-page contract (D358, B822): `{ items, nextCursor }`,
+// each stamped with the verdict of the one mutate guard (D170), so the client
+// derives nothing. The personal shelf holds only the caller's own.
+function shelfList(shelf) {
+  return async function handleShelfList({
     storageScope,
-    actorEmail(authedUser),
-  );
-  for (const item of out.items) item.canEdit = true;
-  serveJson(res, 200, out);
-  return true;
+    res,
+    url,
+    authedUser,
+  }) {
+    const { items, nextCursor } = await listCollectionPage(
+      storageScope,
+      { shelf, readerEmail: actorEmail(authedUser) },
+      libraryListInput(url.searchParams),
+    );
+    const mayMutate =
+      shelf === 'personal' ? () => true : organizationMutateGuard(authedUser);
+    serveJson(res, 200, {
+      items: items.map((item) => ({ ...item, canEdit: mayMutate(item) })),
+      nextCursor,
+    });
+    return true;
+  };
+}
+
+// GET /api/slide-collections/{personal|organization}/:id/slides - The library
+// items of one collection, in its order: what the reader may see of them
+// (organization-shelf items and their own personal ones), trashed ones with
+// their `trashedAt`. Bounded by the collection, so not a list page.
+function shelfMembers(shelf) {
+  return async function handleShelfMembers(
+    { storageScope, res, authedUser },
+    id,
+  ) {
+    const email = actorEmail(authedUser);
+    const collection =
+      shelf === 'personal'
+        ? await getPersonalCollection(storageScope, email, id)
+        : await getOrganizationCollection(storageScope, id, {
+            userEmail: email,
+          });
+    if (!collection) return notFound(res);
+    serveJson(res, 200, {
+      items: await getLibraryItemsByIds(storageScope, collection.slideIds, {
+        userEmail: email,
+      }),
+    });
+    return true;
+  };
 }
 
 // POST /api/slide-collections/personal
@@ -136,18 +180,6 @@ async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
   );
   if (!r.ok) return notFound(res);
   serveJson(res, 200, { ok: true });
-  return true;
-}
-
-// GET /api/slide-collections/organization
-async function handleOrganizationList({ storageScope, res, authedUser }) {
-  const out = await listOrganizationCollections(storageScope, {
-    userEmail: actorEmail(authedUser),
-  });
-  // The verdict of the one mutate guard, so the client derives nothing (D170).
-  const mayMutate = organizationMutateGuard(authedUser);
-  for (const item of out.items) item.canEdit = mayMutate(item);
-  serveJson(res, 200, out);
   return true;
 }
 
@@ -220,7 +252,7 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: '/api/slide-collections/personal',
-    handler: handlePersonalList,
+    handler: shelfList('personal'),
   },
   {
     method: 'POST',
@@ -256,8 +288,19 @@ export const ROUTES = [
   },
   {
     method: 'GET',
+    pattern: /^\/api\/slide-collections\/personal\/([^/]+)\/slides$/,
+    captures: ['uuid'],
+    handler: shelfMembers('personal'),
+  },
+  {
+    pattern: /^\/api\/slide-collections\/personal\/([^/]+)\/slides$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
     pattern: '/api/slide-collections/organization',
-    handler: handleOrganizationList,
+    handler: shelfList('organization'),
   },
   {
     method: 'POST',
@@ -290,6 +333,17 @@ export const ROUTES = [
     pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/,
     captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/slide-collections\/organization\/([^/]+)\/slides$/,
+    captures: ['uuid'],
+    handler: shelfMembers('organization'),
+  },
+  {
+    pattern: /^\/api\/slide-collections\/organization\/([^/]+)\/slides$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
   },
 ];
 

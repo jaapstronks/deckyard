@@ -208,13 +208,28 @@ that one has no id beside it yet.
     and `tests/pg/trash-list-page.pgtest.js` hold each pair equal. Without
     `limit` the deck query answers the whole list, which search (a result
     set in relevance order) and the comment service's deck set (B824) still
-    read. The other lists follow one by one (B822–B825); until a list has
-    moved, it is read whole (`listPresentationVersions`,
-    `listOrganizationLibrary`/`listPersonalLibrary`, `getPublishedIndex`,
-    `listImageLibrary`) and the
-    v1 routes slice it in memory over `parsePaginationParams`, which goes
-    once the last list has moved. Those whole reads carry no row cap on
-    purpose: an accidental `.limit(100)` once silently dropped the
+    read.
+  - The libraries (B822), all through `server/services/library-lists.js`:
+    the slide-library shelves and their trash (`listLibraryShelf` in
+    `server/storage/slide-library.js`: `GET /api/slide-library/{personal,organization}`
+    with `view`, `theme`, `type`, `tag` (every one), `lang` and `q` in the
+    query, ordered `(created_at desc, id desc)` and in the trash
+    `(trashed_at desc, id desc)`; `GET /api/v1/slide-library`, untrashed),
+    the collection shelves (`GET /api/slide-collections/{personal,organization}`)
+    and the image library (`listImageLibrary`: `GET /api/image-library` with
+    `section`, `tag` and `q`; `GET /api/v1/image-library` with `search` and
+    `category`). Their counts are their own queries: the shelf facets
+    (`GET …/facets`: total, per slide type, per tag) and the image tags
+    (`GET /api/image-library/tags`, `GET /api/v1/image-library/categories`).
+    A collection's members come from `GET …/:id/slides`, bounded by the
+    collection. `tests/pg/library-list-page.pgtest.js` carries the six
+    checks for each. The backup (bulk export) reads them whole, without
+    `limit`.
+  - The other lists follow one by one (B823–B825); until a list has moved,
+    it is read whole (`listPresentationVersions`, `getPublishedIndex`) and
+    the routes that page it slice in memory over `parsePaginationParams`,
+    which goes once the last list has moved. Those whole reads carry no row
+    cap on purpose: an accidental `.limit(100)` once silently dropped the
     tail for any org past 100 items (B79, B85).
   - Outside the contract: typeahead and top-N reads (one bounded query, no
     next page), lists bounded by nature (collaborators, share links, api

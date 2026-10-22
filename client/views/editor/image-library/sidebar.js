@@ -72,48 +72,13 @@ const SECTION_CONFIG = {
 };
 
 /**
- * Get tag frequency counts from items
- * @param {Array} items - Image library items
- * @returns {Map<string, number>} Tag to count map
- */
-function getTagFrequency(items) {
-  const freq = new Map();
-  for (const item of items) {
-    const tags = Array.isArray(item?.tags) ? item.tags : [];
-    for (const tag of tags) {
-      const t0 = String(tag || '')
-        .trim()
-        .toLowerCase();
-      if (t0) {
-        freq.set(t0, (freq.get(t0) || 0) + 1);
-      }
-    }
-  }
-  return freq;
-}
-
-/**
- * Get top N tags sorted by frequency
- * @param {Array} items - Image library items
- * @param {number} limit - Maximum tags to return
- * @returns {Array<{tag: string, count: number}>} Top tags with counts
- */
-function getTopTags(items, limit = 10) {
-  const freq = getTagFrequency(items);
-  return Array.from(freq.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([tag, count]) => ({ tag, count }));
-}
-
-/**
  * Creates the media library sidebar component
  * @param {Object} options - Component options
  * @returns {Object} Sidebar component API
  */
 export function createMediaLibrarySidebar({
   user,
-  items,
+  tags = () => [],
   getActiveSection,
   setActiveSection,
   getActiveTag,
@@ -129,7 +94,6 @@ export function createMediaLibrarySidebar({
 
     const activeSection = getActiveSection();
     const activeTag = getActiveTag();
-    const currentItems = items();
     const userEmail = user?.email || '';
 
     // Create nav item helper
@@ -242,8 +206,11 @@ export function createMediaLibrarySidebar({
       sidebar.append(sourceDivider, sourceNav);
     }
 
-    // Popular tags section
-    const topTags = getTopTags(currentItems, 8);
+    // Popular tags section: the library's most used tags, counted by the
+    // server over every image (B822).
+    const topTags = tags()
+      .slice(0, 8)
+      .map((row) => ({ tag: row.name, count: row.count }));
     if (topTags.length > 0) {
       const tagsDivider = h('div', { class: 'media-lib-nav-divider' });
       const tagsHeader = h('div', {

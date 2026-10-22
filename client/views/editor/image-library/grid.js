@@ -1,6 +1,5 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { matchesSearch, getAllTags } from './utils.js';
 import { h } from '../../../lib/dom/index.js';
 
 /**
@@ -10,6 +9,9 @@ import { h } from '../../../lib/dom/index.js';
  */
 export function createImageLibraryGrid({
   items,
+  tags = () => [],
+  pagerEl = null,
+  onSearch = null,
   onSelectItem,
   getActiveTag,
   setActiveTag,
@@ -39,7 +41,7 @@ export function createImageLibraryGrid({
 
   const renderTagFilters = () => {
     filtersRow.replaceChildren();
-    const allTags = getAllTags(items());
+    const allTags = tags();
     const activeTag = getActiveTag();
 
     const mkChip = (label, tagValue) => {
@@ -65,25 +67,27 @@ export function createImageLibraryGrid({
     );
   };
 
+  // The server filters, searches and pages (B822): the grid shows the loaded
+  // pages as they are, with "Load more" after them.
   const renderGrid = () => {
     grid.replaceChildren();
     const q = qInput.value || '';
-    const activeTag = getActiveTag();
-    const filtered = items().filter((it) => matchesSearch(it, q, activeTag));
+    const list = items();
 
-    if (!filtered.length) {
+    if (!list.length) {
       grid.append(
         h('div', {
           class: 'empty-note',
-          text: q.trim()
-            ? t('imageLibrary.noResults', 'No results.')
-            : t('imageLibrary.empty', 'No items in the library yet.'),
+          text:
+            q.trim() || getActiveTag()
+              ? t('imageLibrary.noResults', 'No results.')
+              : t('imageLibrary.empty', 'No items in the library yet.'),
         }),
       );
       return;
     }
 
-    for (const it of filtered) {
+    for (const it of list) {
       const card = h('div', { class: 'image-lib-card' });
 
       const btn = h('button', {
@@ -153,9 +157,15 @@ export function createImageLibraryGrid({
       if (starBtn) card.append(starBtn);
       grid.append(card);
     }
+    if (pagerEl) grid.append(pagerEl);
   };
 
-  qInput.addEventListener('input', () => renderGrid());
+  // Wait for a pause in typing, then ask the server.
+  let searchTimer = null;
+  qInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => onSearch?.(qInput.value || ''), 250);
+  });
 
   // Arrow down from search moves to first grid item
   qInput.addEventListener('keydown', (e) => {

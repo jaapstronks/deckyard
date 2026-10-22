@@ -25,6 +25,7 @@ import { readLangMode } from '../../../../lib/format/i18n.js';
 import { createCollectionsApi } from '../../collections/index.js';
 import { h } from '../../../../lib/dom/index.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
+import { createListPager } from '../../../../lib/dom/list-pager.js';
 import { nav } from '../../../../lib/state/router.js';
 import { icon } from '../../../../lib/dom/icons.js';
 
@@ -231,35 +232,25 @@ export function createLibraryCompose({
   // ===== Collections source =====
   const collectionsApi = createCollectionsApi({ api });
   let collectionsLoaded = false;
-  let slideIndexCache = null; // id -> library item (skips trashed)
   // The collection the current compose started from, if any. Forwarded to the
   // server so it records collection usage (clears the Home "new to you" badge).
   let activeCollectionId = null;
-
-  // Resolve library items once so a collection's ids can become real slides.
-  const ensureSlideIndex = async () => {
-    if (slideIndexCache) return slideIndexCache;
-    const index = new Map();
-    for (const shelf of ['personal', 'organization']) {
-      try {
-        const r = await api(`/api/slide-library/${shelf}`);
-        for (const it of Array.isArray(r?.items) ? r.items : []) {
-          const trashed = !!(it?.isTrashed || it?.trashedAt);
-          if (it?.id && !trashed && !index.has(it.id)) index.set(it.id, it);
-        }
-      } catch {
-        // ignore; unresolved members are skipped when seeding
-      }
-    }
-    slideIndexCache = index;
-    return index;
-  };
+  // The collections loaded so far, read page by page (D358, B822).
+  let loadedCollections = [];
+  const collectionsPager = createListPager({
+    fetchPage: (_params, cursor) => collectionsApi.listPage(cursor),
+    onPage: (items, { first }) => {
+      loadedCollections = first ? items : [...loadedCollections, ...items];
+      renderCollectionsChooser(loadedCollections);
+    },
+  });
 
   // Pre-seed the compose tray with a collection's slides, in its stored order.
   const seedCollection = async (collection) => {
-    const index = await ensureSlideIndex();
-    const ids = Array.isArray(collection?.slideIds) ? collection.slideIds : [];
-    const resolved = ids.map((id) => index.get(id)).filter(Boolean);
+    // The collection's own slides in its order, not the whole library (B822);
+    // a trashed one is left out of the tray.
+    const slides = await collectionsApi.listSlides(collection).catch(() => []);
+    const resolved = slides.filter((it) => !(it?.isTrashed || it?.trashedAt));
     activeCollectionId = collection?.id || null;
     selectedById = new Map(resolved.map((it) => [it.id, it]));
     selectedOrder = resolved.map((it) => it.id);
@@ -287,12 +278,8 @@ export function createLibraryCompose({
     return resolved;
   };
 
-  const renderCollectionsChooser = (collections) => {
+  const renderCollectionsChooser = (all) => {
     collectionsMount.replaceChildren();
-    const all = [
-      ...(collections?.personal || []),
-      ...(collections?.organization || []),
-    ];
     if (!all.length) {
       collectionsMount.append(
         h('div', {
@@ -345,7 +332,7 @@ export function createLibraryCompose({
       card.append(meta);
       grid.append(card);
     }
-    collectionsMount.append(grid);
+    collectionsMount.append(grid, collectionsPager.el);
   };
 
   const ensureCollectionsChooser = async () => {
@@ -356,8 +343,7 @@ export function createLibraryCompose({
       h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
     );
     try {
-      const collections = await collectionsApi.listAll();
-      renderCollectionsChooser(collections);
+      await collectionsPager.load({});
     } catch {
       const loadError = createInlineError({ live: 'polite' });
       collectionsMount.replaceChildren();

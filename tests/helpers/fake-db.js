@@ -816,16 +816,16 @@ export function createFakeDb(seed = {}) {
     // The plain columns of a row; a grouped aggregate read projects its group
     // key with this before adding the aggregates.
     const projectColumns = (context) => {
+      const out = {};
       if (state.selectAll || !state.projection) {
-        const out = {};
         for (const [key, value] of Object.entries(context)) {
           if (key === '__source' || key.includes('.')) continue;
           out[key] = detach(value);
         }
-        return out;
       }
-      const out = {};
-      for (const item of state.projection) {
+      // Explicit selections ride along with `selectAll()`, as in SQL (the
+      // keyset sort value next to every column).
+      for (const item of state.projection || []) {
         const value = readColumn(context, item.column);
         out[item.alias] = detach(item.read ? item.read(value) : value);
       }

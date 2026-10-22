@@ -244,6 +244,7 @@ export const APP_COMPONENT_LAYER = {
     '10-modals-base.css',
     '11-modals-loading.css',
     '12-column-tabs.css',
+    '13-list-pager.css',
     '106-shortcuts-overlay.css',
   ],
 };

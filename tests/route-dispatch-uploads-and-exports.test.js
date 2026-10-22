@@ -161,7 +161,19 @@ test('media: module prefix guard falls through, presign auth 401s after the meth
 test('slide-library: routes resolve to their named handlers in order', () => {
   named(SL_ROUTES, 'GET', '/api/slide-library/usage', 'handleUsageList');
   named(SL_ROUTES, 'POST', '/api/slide-library/usage', 'handleUsageRecord');
-  named(SL_ROUTES, 'GET', '/api/slide-library/personal', 'handlePersonalList');
+  named(SL_ROUTES, 'GET', '/api/slide-library/personal', 'handleShelfList');
+  named(
+    SL_ROUTES,
+    'GET',
+    '/api/slide-library/personal/facets',
+    'handleShelfFacets',
+  );
+  named(
+    SL_ROUTES,
+    'GET',
+    '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1',
+    'handleShelfItem',
+  );
   named(
     SL_ROUTES,
     'POST',
@@ -180,11 +192,18 @@ test('slide-library: routes resolve to their named handlers in order', () => {
     '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1',
     'handlePersonalDelete',
   );
+  named(SL_ROUTES, 'GET', '/api/slide-library/organization', 'handleShelfList');
   named(
     SL_ROUTES,
     'GET',
-    '/api/slide-library/organization',
-    'handleOrganizationList',
+    '/api/slide-library/organization/facets',
+    'handleShelfFacets',
+  );
+  named(
+    SL_ROUTES,
+    'GET',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1',
+    'handleShelfItem',
   );
   named(
     SL_ROUTES,
@@ -237,16 +256,18 @@ test('slide-library: a wrong method 405s with the pinned Allow list', async () =
     ['DELETE', '/api/slide-library/usage', 'GET, POST'],
     ['DELETE', '/api/slide-library/personal', 'GET, POST'],
     [
-      'GET',
+      'POST',
       '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1',
-      'PATCH, DELETE',
+      'GET, PATCH, DELETE',
     ],
+    ['POST', '/api/slide-library/personal/facets', 'GET'],
     ['DELETE', '/api/slide-library/organization', 'GET, POST'],
     [
-      'GET',
+      'POST',
       '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1',
-      'PATCH, DELETE',
+      'GET, PATCH, DELETE',
     ],
+    ['POST', '/api/slide-library/organization/facets', 'GET'],
     [
       'POST',
       '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1/tags',

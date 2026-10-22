@@ -321,8 +321,8 @@ test('a publish id still resolves across organizations, because it is the token'
 test('the image library is per organization', async () => {
   const { listImageLibrary, getImageLibraryItem } =
     await import('../server/storage/image-library.js');
-  const alpha = await listImageLibrary({ organizationId: ORG_A });
-  const beta = await listImageLibrary({ organizationId: ORG_B });
+  const { items: alpha } = await listImageLibrary({ organizationId: ORG_A });
+  const { items: beta } = await listImageLibrary({ organizationId: ORG_B });
   assert.deepEqual(
     alpha.map((i) => i.id),
     ['img-alpha'],

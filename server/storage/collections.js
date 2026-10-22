@@ -20,6 +20,7 @@
  */
 
 import { crossOrganizationScope, toStorageContext } from './scope.js';
+import { keysetPage, keysetRows } from './keyset.js';
 
 import { getDb, transaction } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
@@ -180,35 +181,67 @@ async function replaceMembership(orgId, collectionId, slideIds) {
 // ============================================================
 
 /**
- * @param {object} ctx - Storage context
- * @param {object} [opts]
- * @param {string} [opts.shelf] - 'personal' or 'organization'
- * @param {string} [opts.ownerEmail] - filter to an owner (personal)
+ * The query of one collection shelf before its order and page; null when a
+ * personal shelf names no owner (it is empty, never every personal
+ * collection of the organization).
+ * @param {import('kysely').Kysely<any>} db
+ * @param {string} orgId
+ * @param {{shelf: 'personal'|'organization', ownerEmail?: string}} filter
  */
-async function listSlideCollections(ctx, opts = {}) {
-  const db = getDb();
-  const orgId = getOrgId(ctx);
-
-  let query = db
+function collectionListQuery(db, orgId, filter) {
+  const owner = normalizeEmail(filter.ownerEmail);
+  if (filter.shelf === 'personal' && !owner) return null;
+  let qb = db
     .selectFrom('slide_collections')
     .selectAll()
-    .where('organization_id', '=', orgId);
+    .where('organization_id', '=', orgId)
+    .where('shelf', '=', filter.shelf);
+  if (filter.shelf === 'personal') qb = qb.where('owner_email', '=', owner);
+  return qb;
+}
 
-  if (opts?.shelf) query = query.where('shelf', '=', opts.shelf);
-  if (opts?.ownerEmail)
-    query = query.where('owner_email', '=', normalizeEmail(opts.ownerEmail));
+/**
+ * The collections of one shelf, as one keyset page `(created_at desc, id
+ * desc)` or (without `limit`) the whole shelf (B822, D358). A personal shelf
+ * without an owner names nobody and is empty.
+ *
+ * @param {object} ctx - Storage context
+ * @param {object} filter
+ * @param {'personal'|'organization'} filter.shelf
+ * @param {string} [filter.ownerEmail] - The owner (personal)
+ * @param {{limit?: number, after?: {value: string, id: string}|null}} [page]
+ * @returns {Promise<{items: object[], next: {value: string, id: string}|null}>}
+ */
+async function listSlideCollections(ctx, filter, { limit, after = null } = {}) {
+  const db = getDb();
+  const qb = collectionListQuery(db, getOrgId(ctx), filter);
+  if (!qb) return { items: [], next: null };
 
-  query = query.orderBy('created_at', 'desc');
-  const rows = await query.execute();
+  let rows;
+  let next = null;
+  if (limit === undefined) {
+    rows = await qb
+      .orderBy('created_at', 'desc')
+      .orderBy('id', 'desc')
+      .execute();
+  } else {
+    ({ rows, next } = keysetRows(
+      await keysetPage(qb, { column: 'created_at', after, limit }).execute(),
+      limit,
+    ));
+  }
 
   const membership = await loadMembership(
     db,
     rows.map((r) => r.id),
   );
   const lookup = await collectionDisplayNames(rows);
-  return rows.map((row) =>
-    mapSlideCollectionRow(row, membership.get(row.id) || [], lookup),
-  );
+  return {
+    items: rows.map((row) =>
+      mapSlideCollectionRow(row, membership.get(row.id) || [], lookup),
+    ),
+    next,
+  };
 }
 
 async function getSlideCollection(id, ctx) {
@@ -369,15 +402,23 @@ function isOwnedBy(item, userEmail) {
   return !!owner && item.ownerEmail === owner;
 }
 
-export async function listPersonalCollections(scope, userEmail) {
+/**
+ * The personal collections of `userEmail`, as one page or (without `limit`)
+ * all of them, newest first.
+ * @param {object} scope
+ * @param {string} userEmail
+ * @param {{limit?: number, after?: {value: string, id: string}|null}} [page]
+ * @returns {Promise<{items: object[], next: {value: string, id: string}|null}>}
+ */
+export async function listPersonalCollections(scope, userEmail, page = {}) {
   const ctx = toStorageContext(scope, 'listPersonalCollections', {
     userEmail,
   });
-  const items = await listSlideCollections(ctx, {
-    shelf: 'personal',
-    ownerEmail: normalizeEmail(userEmail),
-  });
-  return { items };
+  return listSlideCollections(
+    ctx,
+    { shelf: 'personal', ownerEmail: userEmail },
+    page,
+  );
 }
 
 export async function getPersonalCollection(scope, userEmail, id) {
@@ -461,15 +502,23 @@ export async function deletePersonalCollection(scope, userEmail, id) {
 // Organization-shelf collections
 // ============================================================
 
+/**
+ * The organization shelf's collections, as one page or (without `limit`) all
+ * of them, newest first.
+ * @param {object} scope
+ * @param {{userEmail?: string}} [opts]
+ * @param {{limit?: number, after?: {value: string, id: string}|null}} [page]
+ * @returns {Promise<{items: object[], next: {value: string, id: string}|null}>}
+ */
 export async function listOrganizationCollections(
   scope,
   { userEmail = '' } = {},
+  page = {},
 ) {
   const ctx = toStorageContext(scope, 'listOrganizationCollections', {
     userEmail,
   });
-  const items = await listSlideCollections(ctx, { shelf: 'organization' });
-  return { items };
+  return listSlideCollections(ctx, { shelf: 'organization' }, page);
 }
 
 export async function getOrganizationCollection(
@@ -565,3 +614,7 @@ async function collectionDisplayNames(rows) {
     ]),
   );
 }
+
+// White-box seam: tests/pg/library-list-page.pgtest.js EXPLAINs the exact
+// query a page runs. The `__` prefix marks it internal.
+export const __collectionList = { collectionListQuery };

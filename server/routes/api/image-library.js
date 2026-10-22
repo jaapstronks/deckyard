@@ -2,7 +2,7 @@ import {
   createImageLibraryItem,
   deleteImageLibraryItem,
   getImageLibraryItem,
-  listImageLibrary,
+  listImageLibraryTags,
   updateImageLibraryItem,
   isImageFavorite,
   stampFavorites,
@@ -26,6 +26,11 @@ import { generateImageAltTexts } from '../../utils/llm/alt-text.js';
 import { listSandboxMedia } from '../../sandbox/media.js';
 import { getDataUrl } from '../../utils/request-validators.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
+import { normalizeEmail } from '../../../shared/email.js';
+import {
+  libraryListInput,
+  listImagePage,
+} from '../../services/library-lists.js';
 
 /**
  * Stamp the caller's own star on an item the route hands back (D176: every
@@ -46,18 +51,52 @@ async function withFavorite(storageScope, authedUser, item) {
   return { ...item, favorite };
 }
 
-// GET /api/image-library - Shared image library (shared across users).
-async function handleListImageLibrary({ storageScope, res, authedUser }) {
-  const items = await listImageLibrary(storageScope);
-  // Sandbox: uploads are off, so seed a curated set of sample images and
-  // logos a guest can actually place on a slide.
-  if (getFeatureFlags().sandboxMode) items.unshift(...listSandboxMedia());
+/**
+ * The sandbox's sample images that lead the first page: uploads are off
+ * there, so a guest gets a curated set to place on a slide. They are not
+ * library rows and never page; they lead the unfiltered first page, and the
+ * logos lead the Logos section.
+ * @param {Object} input - The list input.
+ * @returns {Object[]}
+ */
+function sandboxLead(input) {
+  if (!getFeatureFlags().sandboxMode) return [];
+  if (input.cursor || input.q || input.tag) return [];
+  const section = input.section || 'all';
+  const media = listSandboxMedia();
+  if (section === 'all') return media;
+  if (section === 'logos')
+    return media.filter((it) => it.tags.includes('logo'));
+  return [];
+}
+
+// GET /api/image-library - One page of the organization's image library on the
+// list-page contract (D358, B822): `{ items, nextCursor }`, narrowed by
+// `section`, `tag` and `q` in the query (server/services/library-lists.js).
+async function handleListImageLibrary({ storageScope, res, url, authedUser }) {
+  const input = libraryListInput(url.searchParams);
+  const { items, nextCursor } = await listImagePage(
+    storageScope,
+    { readerEmail: authedUser?.email || null },
+    input,
+  );
   // One star per item, spelled `favorite` (D176). The caller's own flag,
   // derived in the facade — the same stamper the bulk export uses, so the
   // two surfaces cannot disagree about whose star an item carries.
   serveJson(res, 200, {
-    items: await stampFavorites(storageScope, items, authedUser?.email),
+    items: [
+      ...sandboxLead(input),
+      ...(await stampFavorites(storageScope, items, authedUser?.email)),
+    ],
+    nextCursor,
   });
+  return true;
+}
+
+// GET /api/image-library/tags - Every tag of the library with its image count,
+// most used first: the picker's tag list, as its own query (B822).
+async function handleListImageTags({ storageScope, res }) {
+  serveJson(res, 200, { tags: await listImageLibraryTags(storageScope) });
   return true;
 }
 
@@ -76,10 +115,11 @@ async function handleCreateImageLibraryItem({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  // Capture who uploaded this image
+  // Capture who uploaded this image, normalized as every stored address is,
+  // so "Your media" (`section=mine`) compares like with like.
   const created = await createImageLibraryItem(storageScope, {
     ...body,
-    uploadedBy: authedUser.email || null,
+    uploadedBy: normalizeEmail(authedUser.email),
   });
   // A fresh image is nobody's favorite yet, but it still answers in the one
   // shape every item-returning route uses (D176).
@@ -281,6 +321,15 @@ export const ROUTES = [
   {
     pattern: '/api/image-library',
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/image-library/tags',
+    handler: handleListImageTags,
+  },
+  {
+    pattern: '/api/image-library/tags',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
   },
   {
     method: 'POST',
