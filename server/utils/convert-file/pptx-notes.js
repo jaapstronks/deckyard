@@ -94,7 +94,7 @@ async function slidePartsInDeckOrder(zip) {
  * @param {string} part - e.g. `ppt/slides/slide1.xml`
  * @returns {Promise<Array<{ id: string, type: string, target: string }>>}
  */
-async function readRels(zip, part) {
+export async function readRels(zip, part) {
   const dir = part.slice(0, part.lastIndexOf('/') + 1);
   const name = part.slice(dir.length);
   const xml = await zip.file(`${dir}_rels/${name}.rels`)?.async('string');

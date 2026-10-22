@@ -50,7 +50,18 @@ export {
 } from './geometry-detector.js';
 export { detectStruct } from './struct-detector.js';
 export { blockText, pageText } from './page-text.js';
-export { boxArea, lineBox, liesWithin, overlapArea } from './boxes.js';
+export {
+  boxArea,
+  lineBox,
+  liesWithin,
+  overlapArea,
+  unionBoxes,
+} from './boxes.js';
+export {
+  BACKGROUND_MIN_COVERAGE,
+  MIN_IMAGE_PIXELS,
+  PAGE_WHITE,
+} from './images.js';
 export {
   documentFigures,
   furnitureKey,
@@ -175,7 +186,9 @@ const BODY_ROLES = new Set([
  *
  * @typedef {object} DroppedLine
  * @property {string} text
- * @property {'artifact' | 'off-page' | 'footnote' | 'reference'} reason
+ * @property {'artifact' | 'off-page' | 'footnote' | 'reference' | 'unsupported-image'} reason -
+ *   `unsupported-image` only from the PowerPoint source (`pptx-extract`): a
+ *   picture in a format that does not become a PNG, `text` its description
  * @property {number} x
  * @property {number} y
  * @property {number} size

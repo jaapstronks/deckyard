@@ -16,6 +16,7 @@ interpreted, summarised or rewritten.
 | Layer           | Module                                                                      |
 | --------------- | --------------------------------------------------------------------------- |
 | Reading the PDF | `server/utils/pdf-extract/` (`extractPdfPages`), pdf.js in Node, no browser |
+| Reading a PPTX  | `server/utils/pptx-extract/` (`extractPptxPages`), the same page model      |
 | Mapping a page  | `server/services/deck-slides-import.js` (`planPage`, `chooseSlide`)         |
 | Fallback pixels | `server/render/pdf-to-images.js` (`pdfToImages({ pages })`), only for those |
 | HTTP and SSE    | `server/routes/api/presentations/import-slides.js`                          |
@@ -62,6 +63,25 @@ heading without guessing. An **untagged** PDF (Keynote, as far as measured)
 is read by geometry: the largest top line is the heading, bullet glyphs and
 `1.`/`1)` make list items. The mapper below knows only the model, so an
 untagged deck is weaker input to the same path, not a second path.
+
+A PowerPoint file is a **second source of the same model**:
+`server/utils/pptx-extract/` (`extractPptxPages`) reads the package without
+a browser and gives each visible slide the fields above, plus the speaker
+notes beside the pages. PresentationML states what the PDF route rebuilds:
+the heading is the title placeholder (a deck without placeholders, such as a
+pptxgenjs one, gets it by size and position, the rule of the untagged PDF);
+a paragraph with a bullet in force is a list item, whether the slide, its
+layout or its master sets the bullet; a table is a table block; a picture
+is converted to PNG (SVG, EMF and WMF are dropped as `unsupported-image`); a
+chart or diagram frame is a drawing whatever it holds; the background is the
+slide's, its layout's or its master's. Size, colour, insets and frames are
+inherited the same way, colours resolved through the theme and its colour
+map. Footer, slide-number and date placeholders and the text a layout or
+master paints are `artifact`. Hidden slides are left out, as a PDF export
+leaves them out, so page `n` of both sources is the same slide. A
+paragraph is whole, so its text needs no joining; its box is an estimate
+(PowerPoint does not store where it wraps). The route still reads the PDF;
+the PowerPoint file as structure source is open work (B829).
 
 ## Page → slide
 

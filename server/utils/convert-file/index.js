@@ -28,7 +28,12 @@ import { createLogger } from '../logger.js';
 
 const log = createLogger('convert-file');
 
-export { readPptxSlideNotes } from './pptx-notes.js';
+export {
+  readPptxSlideNotes,
+  readRels,
+  readSlideNotesFromZip,
+} from './pptx-notes.js';
+export { decodeXmlEntities } from './pptx-text.js';
 
 // Re-export constants
 export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
