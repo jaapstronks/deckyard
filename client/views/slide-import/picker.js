@@ -71,10 +71,11 @@ export function createDeckFilesPicker({
     dropzoneHint,
   ]);
 
-  // One row per chosen file, with what it is used for.
+  // One row per chosen file, with what it is used for. As editable slides the
+  // PDF gives the slides only alone; beside a PowerPoint file it gives images.
   const ROLE_LABELS = {
     pdf: () =>
-      use === 'slides'
+      use === 'slides' && !selected.pptx
         ? t('editor.importSlides.role.pdfSlides', 'Slides')
         : t('editor.importSlides.role.pdf', 'Images'),
     pptx: () =>
