@@ -3,6 +3,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { createImageLibraryGrid } from './grid.js';
+import { createListPager } from '../../../lib/dom/list-pager.js';
 import { createImageLibraryDetail } from './detail.js';
 import { createImageLibraryUpload, chooseImageFile } from './upload.js';
 import { openImageBatch, chooseImageFiles } from './batch.js';
@@ -22,45 +23,30 @@ import {
 // LocalStorage key for persisting last-used section
 const STORAGE_KEY_SECTION = 'deckyard.mediaLibrary.lastSection';
 
+/** Images per page in the library grid. */
+const IMAGE_PAGE_SIZE = 40;
+
+/** "Recent" is the newest images, one page of them. */
+const RECENT_COUNT = 20;
+
 /**
- * Filter items based on the active section
- * @param {Array} items - All items
- * @param {string} section - Active section
- * @param {string} userEmail - Current user's email
- * @returns {Array} Filtered items
+ * The server filter a library section reads (B822): the list is filtered and
+ * paged in SQL, never here. "Recent" is the first page of everything.
+ * @param {string} section
+ * @returns {string}
  */
-function filterBySection(items, section, userEmail) {
+function serverSection(section) {
   switch (section) {
-    case SECTIONS.RECENT:
-      // Show last 20 items sorted by creation date (already sorted desc from API)
-      return items.slice(0, 20);
-
     case SECTIONS.YOUR_MEDIA:
-      // Filter to items uploaded by the current user
-      if (!userEmail) return [];
-      return items.filter((it) => it?.uploadedBy === userEmail);
-
-    case SECTIONS.LOGOS:
-      // Filter to items with "logo" tag
-      return items.filter((it) => {
-        const tags = Array.isArray(it?.tags) ? it.tags : [];
-        return tags.some((tag) => String(tag).toLowerCase().includes('logo'));
-      });
-
-    case SECTIONS.ICONS:
-      // Filter to items with "icon" tag
-      return items.filter((it) => {
-        const tags = Array.isArray(it?.tags) ? it.tags : [];
-        return tags.some((tag) => String(tag).toLowerCase().includes('icon'));
-      });
-
+      return 'mine';
     case SECTIONS.FAVORITES:
-      // Filter to favorited items (requires favorites data)
-      return items.filter((it) => it?.favorite);
-
-    case SECTIONS.ALL:
+      return 'favorites';
+    case SECTIONS.LOGOS:
+      return 'logos';
+    case SECTIONS.ICONS:
+      return 'icons';
     default:
-      return items;
+      return 'all';
   }
 }
 
@@ -200,20 +186,62 @@ function openLibraryModal({
     }),
   );
 
-  // Get filtered items based on current section and tag
-  const getFilteredItems = () => {
-    let filtered = filterBySection(items, activeSection, user?.email);
-    // Apply tag filter if set
-    if (activeTag) {
-      filtered = filtered.filter((it) => {
-        const tags = Array.isArray(it?.tags) ? it.tags : [];
-        return tags.some(
-          (tag) => String(tag).toLowerCase() === activeTag.toLowerCase(),
-        );
-      });
+  // The tags of the whole library with their counts (`GET /api/image-library/
+  // tags`): the sidebar's tag list and the tag inputs' suggestions.
+  let tagFacet = [];
+  const tagNames = () => tagFacet.map((tag) => tag.name);
+  const loadTags = async () => {
+    try {
+      const resp = await api('/api/image-library/tags');
+      tagFacet = Array.isArray(resp?.tags) ? resp.tags : [];
+    } catch {
+      tagFacet = [];
     }
-    return filtered;
+    sidebarComponent?.render();
   };
+
+  // The list is read page by page under the section, tag and search (D358,
+  // B822); "Load more" reads the next page.
+  let searchQuery = '';
+  const listQuery = (cursor) => {
+    const qs = new URLSearchParams();
+    const recent = activeSection === SECTIONS.RECENT;
+    qs.set('limit', String(recent ? RECENT_COUNT : IMAGE_PAGE_SIZE));
+    const section = serverSection(activeSection);
+    if (section !== 'all') qs.set('section', section);
+    if (activeTag) qs.set('tag', activeTag);
+    if (searchQuery.trim()) qs.set('q', searchQuery.trim());
+    if (cursor) qs.set('cursor', cursor);
+    return `?${qs}`;
+  };
+  const pager = createListPager({
+    fetchPage: async (_params, cursor) => {
+      const resp = await api(`/api/image-library${listQuery(cursor)}`);
+      return {
+        items: Array.isArray(resp?.items) ? resp.items : [],
+        // "Recent" is one page by definition.
+        nextCursor:
+          activeSection === SECTIONS.RECENT ? null : resp?.nextCursor || null,
+      };
+    },
+    onPage: (page, { first }) => {
+      items = first ? page : [...items, ...page];
+      updateSectionHeader();
+      gridComponent.renderGrid();
+    },
+  });
+  const reloadList = async () => {
+    try {
+      await pager.load({});
+    } catch (e) {
+      items = [];
+      setStatus(String(e?.message || e));
+      updateSectionHeader();
+      gridComponent.renderGrid();
+    }
+  };
+  // After a create, change or delete: read the list and the tags again.
+  const refreshAll = () => Promise.all([reloadList(), loadTags()]);
 
   // Grid component
   let gridComponent;
@@ -239,7 +267,11 @@ function openLibraryModal({
       items = items.map((it) =>
         it?.id === item.id ? { ...it, favorite: resp.favorite } : it,
       );
-      sidebarComponent?.render();
+      // An image this person just unstarred leaves their Favorites.
+      if (activeSection === SECTIONS.FAVORITES && !resp.favorite) {
+        items = items.filter((it) => it?.id !== item.id);
+        updateSectionHeader();
+      }
       gridComponent.renderGrid();
     } catch (e) {
       setStatus(String(e?.message || e));
@@ -247,12 +279,19 @@ function openLibraryModal({
   };
 
   gridComponent = createImageLibraryGrid({
-    items: getFilteredItems,
+    items: () => items,
+    tags: tagNames,
+    pagerEl: pager.el,
+    onSearch: (q) => {
+      searchQuery = q;
+      reloadList();
+    },
     onSelectItem: (it) => detailComponent.show(it),
     getActiveTag: () => activeTag,
     setActiveTag: (tag) => {
       activeTag = tag;
       sidebarComponent?.render();
+      reloadList();
     },
     // Hide the tag chips row since tags are in sidebar now
     hideTagFilters: true,
@@ -265,19 +304,21 @@ function openLibraryModal({
     api,
     user,
     items: () => items,
+    allTags: tagNames,
     canAiAlt,
     context,
     onPick,
     onClose: close,
     onItemUpdated: (updated) => {
       items = items.map((x) => (x?.id === updated?.id ? updated : x));
-      sidebarComponent?.render();
       gridComponent.renderGrid();
+      loadTags();
     },
     onItemDeleted: (id) => {
       items = items.filter((x) => x?.id !== id);
-      sidebarComponent?.render();
+      updateSectionHeader();
       gridComponent.renderGrid();
+      loadTags();
     },
     onToggleFavorite: user ? handleToggleFavorite : null,
     allowCaptionCredit,
@@ -298,17 +339,13 @@ function openLibraryModal({
   const uploadComponent = createImageLibraryUpload({
     api,
     user,
-    items: () => items,
+    allTags: tagNames,
     canAiAlt,
     context,
     uploadsEnabled,
     onPick,
     onClose: close,
-    onItemCreated: (created) => {
-      items = [created, ...items];
-      sidebarComponent?.render();
-      gridComponent.renderGrid();
-    },
+    onItemCreated: () => refreshAll(),
     onShowDetail: (it) => detailComponent.show(it),
     allowCaptionCredit,
     creditCb,
@@ -320,11 +357,7 @@ function openLibraryModal({
             api,
             root,
             files,
-            onItemsCreated: (created) => {
-              items = [created, ...items];
-              sidebarComponent?.render();
-              gridComponent.renderGrid();
-            },
+            onItemsCreated: () => refreshAll(),
           })
       : null,
   });
@@ -337,9 +370,6 @@ function openLibraryModal({
 
   // Handler when stock media item is selected (downloaded to library)
   const handleStockMediaSelect = (libraryItem) => {
-    items = [libraryItem, ...items];
-    sidebarComponent?.render();
-    gridComponent.renderGrid();
     if (onPick) {
       onPick(libraryItem);
     }
@@ -361,7 +391,6 @@ function openLibraryModal({
 
   const updateSectionHeader = () => {
     const info = getSectionInfo(activeSection);
-    const filtered = getFilteredItems();
     sectionTitle.textContent = '';
     if (activeTag) {
       sectionTitle.textContent = `#${activeTag}`;
@@ -371,7 +400,8 @@ function openLibraryModal({
         ` ${info.label}`,
       );
     }
-    sectionCount.textContent = `(${filtered.length})`;
+    // What is loaded; a "+" while the server has more pages.
+    sectionCount.textContent = `(${items.length}${pager.hasMore() ? '+' : ''})`;
   };
 
   sectionHeader.append(sectionTitle, sectionCount);
@@ -402,11 +432,7 @@ function openLibraryModal({
                 api,
                 root,
                 files,
-                onItemsCreated: (created) => {
-                  items = [created, ...items];
-                  sidebarComponent?.render();
-                  gridComponent.renderGrid();
-                },
+                onItemsCreated: () => refreshAll(),
               }),
             ),
         })
@@ -452,8 +478,8 @@ function openLibraryModal({
     libraryView.hidden = false;
     externalView.hidden = true;
     updateSectionHeader();
-    gridComponent.renderGrid();
     setStatus('');
+    reloadList();
 
     // Persist section to localStorage
     try {
@@ -466,14 +492,14 @@ function openLibraryModal({
   // Create sidebar component
   sidebarComponent = createMediaLibrarySidebar({
     user,
-    items: () => items,
+    tags: () => tagFacet,
     getActiveSection: () => activeSection,
     setActiveSection: handleSectionChange,
     getActiveTag: () => activeTag,
     setActiveTag: (tag) => {
       activeTag = tag;
       updateSectionHeader();
-      gridComponent.renderGrid();
+      reloadList();
     },
     hasUnsplash: false, // Updated after fetching status
     hasGiphy: false,
@@ -527,12 +553,11 @@ function openLibraryModal({
     setBusy(true);
     setStatus(t('imageLibrary.loading', 'Loading library…'));
     try {
-      const [libraryResp, statusResp] = await Promise.all([
-        api('/api/image-library'),
+      const [, , statusResp] = await Promise.all([
+        pager.load({}),
+        loadTags(),
         fetchStockMediaStatus(),
       ]);
-
-      items = Array.isArray(libraryResp?.items) ? libraryResp.items : [];
       stockMediaStatus = statusResp;
 
       // Check stock media availability
@@ -560,14 +585,15 @@ function openLibraryModal({
       // Update sidebar with stock media availability
       sidebarComponent = createMediaLibrarySidebar({
         user,
-        items: () => items,
+        tags: () => tagFacet,
         getActiveSection: () => activeSection,
         setActiveSection: handleSectionChange,
         getActiveTag: () => activeTag,
         setActiveTag: (tag) => {
+          if (tag === activeTag) return;
           activeTag = tag;
           updateSectionHeader();
-          gridComponent.renderGrid();
+          reloadList();
           sidebarComponent.render();
         },
         hasUnsplash,
@@ -584,13 +610,7 @@ function openLibraryModal({
       sidebarComponent.render();
       renderMobileNav();
       updateSectionHeader();
-      setStatus(
-        t(
-          'imageLibrary.count',
-          { one: '1 item', many: '{count} items' },
-          { count: items.length },
-        ),
-      );
+      setStatus('');
       gridComponent.renderGrid();
 
       // If detail was open before reload, restore it

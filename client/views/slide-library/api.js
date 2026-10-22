@@ -52,40 +52,96 @@ function copyPayload(item, themeIdNorm) {
 }
 
 /**
+ * The query string of a shelf page or its facets: every filter that is set,
+ * one `tag` per tag name, and the page (`limit`, `cursor`).
+ * @param {Object} params
+ * @returns {string}
+ */
+export function libraryListQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const key of ['view', 'theme', 'type', 'lang', 'q', 'limit', 'cursor']) {
+    const value = params[key];
+    if (value !== undefined && value !== null && value !== '') {
+      qs.set(key, String(value));
+    }
+  }
+  for (const tag of params.tags || []) qs.append('tag', tag);
+  const text = qs.toString();
+  return text ? `?${text}` : '';
+}
+
+/**
  * Create API operations for the slide library
  * @param {object} options
  * @param {Function} options.api - API client function
  * @param {object} options.state - State management object from createSlideLibraryState
  * @param {string} options.themeIdNorm - Normalized theme ID
+ * @param {(shelf: string) => void} [options.onShelfChanged] - Called after a
+ *   write added items to a shelf, so the list on screen can be read again.
  * @returns {object} API operations
  */
-export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
+export function createSlideLibraryApi({
+  api,
+  state,
+  themeIdNorm = '',
+  onShelfChanged = null,
+}) {
   if (!api) throw new Error('Missing api');
 
-  // One fetch per shelf at a time. A second caller awaits the fetch already
-  // under way instead of returning at once: the permalink opened a slide in a
-  // shelf that the first render was still loading, found it empty and gave up
-  // without a word (B285).
-  const inFlight = new Map();
+  const shelfPath = (shelf) =>
+    `/api/slide-library/${shelf === 'organization' ? 'organization' : 'personal'}`;
 
-  const fetchShelf = (shelf) => {
-    const s = shelf === 'organization' ? 'organization' : 'personal';
-    if (inFlight.has(s)) return inFlight.get(s);
-    state.setLoading(s, true);
-    const run = (async () => {
-      try {
-        const qs = themeIdNorm
-          ? `?theme=${encodeURIComponent(themeIdNorm)}`
-          : '';
-        const r = await api(`/api/slide-library/${s}${qs}`);
-        state.setCache(s, Array.isArray(r?.items) ? r.items : []);
-      } finally {
-        state.setLoading(s, false);
-        inFlight.delete(s);
-      }
-    })();
-    inFlight.set(s, run);
-    return run;
+  /**
+   * One page of a shelf under the given filters (D358, B822): the server
+   * filters, searches and pages.
+   * @param {Object} params - `shelf`, `view`, `type`, `tags`, `lang`, `q`, `limit`.
+   * @param {string|null} cursor
+   * @returns {Promise<{items: object[], nextCursor: string|null}>}
+   */
+  const fetchPage = async (params, cursor) => {
+    const { shelf, ...filters } = params;
+    const r = await api(
+      `${shelfPath(shelf)}${libraryListQuery({
+        ...filters,
+        theme: themeIdNorm,
+        cursor,
+      })}`,
+    );
+    return {
+      items: Array.isArray(r?.items) ? r.items : [],
+      nextCursor: r?.nextCursor || null,
+    };
+  };
+
+  /**
+   * The filter chips of a shelf: the shelf's total and the counts per type
+   * and tag, own query.
+   * @param {string} shelf
+   * @param {{lang?: string}} [params]
+   * @returns {Promise<{total: number, types: Array<{slideType: string, count: number}>, tags: Array<{name: string, count: number}>}>}
+   */
+  const fetchFacets = async (shelf, { lang } = {}) => {
+    const r = await api(
+      `${shelfPath(shelf)}/facets${libraryListQuery({ theme: themeIdNorm, lang })}`,
+    );
+    return {
+      total: Number(r?.total) || 0,
+      types: Array.isArray(r?.types) ? r.types : [],
+      tags: Array.isArray(r?.tags) ? r.tags : [],
+    };
+  };
+
+  /**
+   * One item by id (the permalink), or null when it is not on the shelf.
+   * @param {string} shelf
+   * @param {string} id
+   */
+  const fetchItem = async (shelf, id) => {
+    try {
+      return await api(`${shelfPath(shelf)}/${encodeURIComponent(id)}`);
+    } catch {
+      return null;
+    }
   };
 
   const toggleFavorite = async (shelf, item, { rerender } = {}) => {
@@ -273,7 +329,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     const r = await copyItemTo('organization', item);
     if (!r.ok) return toast.error(r.error);
     toast.success(t('slideLibrary.addedToTeam', 'Added to team library.'));
-    await fetchShelf('organization');
+    onShelfChanged?.('organization');
   };
 
   /**
@@ -309,14 +365,16 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
           },
         ),
       );
-      await fetchShelf('organization');
+      onShelfChanged?.('organization');
     }
     rerender?.();
     return successCount;
   };
 
   return {
-    fetchShelf,
+    fetchPage,
+    fetchFacets,
+    fetchItem,
     toggleFavorite,
     setTrashed,
     pushToTeam,

@@ -14,11 +14,7 @@ import { confirmModal } from '../../lib/dom/modal.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { icon } from '../../lib/dom/icons.js';
 import { h, installDismissOnOutside } from '../../lib/dom/index.js';
-import {
-  sortByPinnedThenName,
-  sortByTrashedThenName,
-  filterItems,
-} from './search.js';
+import { createListPager } from '../../lib/dom/list-pager.js';
 
 import { createSlideLibraryState } from './state.js';
 import { createLibraryThemeResolver, renderLibraryThumb } from './thumb.js';
@@ -75,8 +71,54 @@ export function createSlideLibraryPicker({
     themeId: themeIdNorm,
   });
 
+  // Read the list on screen again after a write added items to its shelf
+  // (a copy to the team shelf). Set once the picker has rendered.
+  let reloadList = null;
+
   // Initialize API operations
-  const apiOps = createSlideLibraryApi({ api, state, themeIdNorm });
+  const apiOps = createSlideLibraryApi({
+    api,
+    state,
+    themeIdNorm,
+    onShelfChanged: (shelf) => {
+      if (shelf === state.getShelf()) reloadList?.();
+    },
+  });
+
+  /** Slides per page in the picker grid. */
+  const PAGE_SIZE = 30;
+
+  // The list is read page by page (D358, B822): the filters are query
+  // parameters, "Load more" reads the next page under the same filters.
+  // `paintList` is set by renderSlideLibraryPicker to repaint from the
+  // loaded pages.
+  let paintList = null;
+  let reloadGeneration = 0;
+  const pager = createListPager({
+    fetchPage: (params, cursor) =>
+      apiOps.fetchPage({ ...params, limit: PAGE_SIZE }, cursor),
+    onPage: (items, { first }) => {
+      const shelf = state.getShelf();
+      state.setCache(
+        shelf,
+        first ? items : [...state.getCache(shelf), ...items],
+      );
+      paintList?.();
+    },
+  });
+
+  /** The filters the list on screen is read under. */
+  const listParams = () => {
+    const trash = state.getView() === 'trash';
+    return {
+      shelf: state.getShelf(),
+      view: trash ? 'trash' : undefined,
+      type: trash ? undefined : state.getTypeFilter() || undefined,
+      tags: trash ? undefined : state.getTagFilter(),
+      lang: trash ? undefined : controls.languageParam(),
+      q: state.getQuery().trim() || undefined,
+    };
+  };
 
   // Initialize modals
   const modals = createSlideLibraryModals({
@@ -93,7 +135,6 @@ export function createSlideLibraryPicker({
   // Initialize controls
   const controls = createSlideLibraryControls({
     state,
-    apiOps,
     SLIDE_TYPES,
     showLanguageSwitch,
   });
@@ -120,27 +161,31 @@ export function createSlideLibraryPicker({
   /**
    * Say why the list is empty, naming the narrowest cause: an empty shelf, a
    * language with no slides on it, or filters nothing matches. A shelf with
-   * slides is never called empty because a filter hid them (B617).
+   * slides is never called empty because a filter hid them (B617). The counts
+   * are the shelf's facets, not the loaded pages.
    *
    * @param {object} p
    * @param {string} p.shelf
    * @param {string} p.activeView
    * @param {string} p.activeLang
-   * @param {Array<object>} p.onShelf - the shelf's items for the active view
-   * @param {Array<object>} p.inView - those left by the language switch
    * @returns {string}
    */
-  const emptyNote = ({ shelf, activeView, activeLang, onShelf, inView }) => {
+  const emptyNote = ({ shelf, activeView, activeLang }) => {
     if (activeView === 'trash')
       return t('slideLibrary.empty.trash', 'Trash is empty.');
-    if (!onShelf.length)
+    const facets = state.getFacets(shelf);
+    const inLanguage = (facets?.types || []).reduce(
+      (sum, row) => sum + row.count,
+      0,
+    );
+    if (!facets?.total)
       return shelf === 'organization'
         ? t('slideLibrary.empty.team', 'No slides in the team library yet.')
         : t(
             'slideLibrary.empty.personal',
             'No slides in your personal library yet.',
           );
-    if (!inView.length)
+    if (controls.languageParam() && !inLanguage)
       return t(
         'slideLibrary.empty.lang',
         'No slides in this language yet ({language}).',
@@ -159,57 +204,26 @@ export function createSlideLibraryPicker({
     shelf,
     { afterSlideId, onPicked, rerender } = {},
   ) => {
-    const items = state.getCache(shelf);
     const activeView = state.getView();
-    const activeLang = state.getLang();
-    const activeTypeFilter = state.getTypeFilter();
-    const activeTagFilter = state.getTagFilter();
-    const q = state.getQuery();
-
-    const onShelf = items.filter((it) => {
+    // The server filtered and ordered the pages; the only thing left out here
+    // is an item this picker itself just moved in or out of the trash.
+    const items = state.getCache(shelf).filter((it) => {
       const isTrashed = !!(it?.isTrashed || it?.trashedAt);
       return activeView === 'trash' ? isTrashed : !isTrashed;
     });
 
-    // Narrow to the active language when the picker has a language switch.
-    const inView =
-      activeView === 'trash' ? onShelf : controls.inLanguageScope(onShelf);
-
-    // Filter by tags first (if any are selected)
-    let tagFiltered = inView;
-    if (activeView !== 'trash' && activeTagFilter.length > 0) {
-      tagFiltered = inView.filter((it) => {
-        const itemTagNames = Array.isArray(it?.tags)
-          ? it.tags.map((t) => t.name.toLowerCase())
-          : [];
-        return activeTagFilter.every((filterTag) =>
-          itemTagNames.includes(filterTag.toLowerCase()),
-        );
-      });
-    }
-
-    // Apply sorting first, then filtering (with type filter and search)
-    const sorted =
-      activeView === 'trash'
-        ? sortByTrashedThenName(tagFiltered)
-        : sortByPinnedThenName(tagFiltered);
-    const filtered = filterItems(sorted, q, {
-      labelForType: controls.typeLabel,
-      typeFilter: activeView !== 'trash' ? activeTypeFilter : '',
-    });
-
-    if (!filtered.length) {
+    if (!items.length) {
       mount.append(
         h('div', {
           class: 'empty-note',
-          text: emptyNote({ shelf, activeView, activeLang, onShelf, inView }),
+          text: emptyNote({ shelf, activeView, activeLang: state.getLang() }),
         }),
       );
       return;
     }
 
     const grid = h('div', { class: 'ps-lib-grid' });
-    for (const it of filtered) {
+    for (const it of items) {
       const card = await renderCard(it, shelf, {
         afterSlideId,
         onPicked,
@@ -675,50 +689,76 @@ export function createSlideLibraryPicker({
     const filtersRow = h('div', { class: 'ps-lib-filters-row' });
     const listContainer = h('div', { class: 'ps-lib-list-container' });
 
-    // Full rerender
+    // Full rerender: another shelf or view, so the filters start over and
+    // the list is read again.
     const rerender = () => {
       state.resetFilters();
       renderSlideLibraryPicker(mount, { afterSlideId, onPicked });
     };
 
-    // The type and tag filters count what the list shows, so they follow every
-    // list rerender (a language switch changes the counts, a filter click its
+    // The type and tag filters show the shelf's facets, so they follow every
+    // list read (a language switch changes the counts, a filter click its
     // active state). Hidden while there is nothing to filter.
     const renderFilters = () => {
       filtersRow.replaceChildren();
       if (state.getView() !== 'trash')
         controls.renderTypeFilters(filtersRow, state.getShelf(), {
-          rerenderList,
+          rerenderList: reload,
         });
       filtersRow.hidden = filtersRow.children.length === 0;
     };
 
-    // List-only rerender (plus the filters that count it)
-    const rerenderList = async () => {
+    // Repaint the list from the loaded pages, with "Load more" under it. A
+    // card action (a star, the trash) repaints; it does not read again.
+    const paint = async () => {
       renderFilters();
-      listContainer.replaceChildren();
       const shelf = state.getShelf();
       if (state.isLoading(shelf)) {
-        listContainer.append(
+        listContainer.replaceChildren(
           h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
         );
         return;
       }
-      await renderList(listContainer, shelf, {
+      const next = h('div');
+      await renderList(next, shelf, {
         afterSlideId,
         onPicked,
-        rerender,
+        rerender: paint,
       });
+      listContainer.replaceChildren(...next.childNodes, pager.el);
     };
+
+    // Read the list again under the current filters: the facets and the
+    // first page (B822). A read that a newer one overtook leaves the screen
+    // to the newer one.
+    const reload = async () => {
+      const mine = ++reloadGeneration;
+      const shelf = state.getShelf();
+      state.setLoading(shelf, true);
+      await paint();
+      try {
+        const [facets] = await Promise.all([
+          apiOps.fetchFacets(shelf, { lang: controls.languageParam() }),
+          pager.load(listParams()),
+        ]);
+        if (mine === reloadGeneration) state.setFacets(shelf, facets);
+      } catch {
+        if (mine === reloadGeneration) state.setCache(shelf, []);
+      }
+      if (mine !== reloadGeneration) return;
+      state.setLoading(shelf, false);
+      await paint();
+    };
+    paintList = paint;
+    reloadList = reload;
 
     // Header controls
     controls.renderShelfControls(headerRow, rerender);
     // Trash is a management view; hide it when composing a new deck.
     if (!compose) controls.renderViewControls(headerRow, rerender);
-    controls.renderLangControls(headerRow, { rerenderList });
-    controls.renderSearch(headerRow, { rerenderList });
+    controls.renderLangControls(headerRow, { rerenderList: reload });
+    controls.renderSearch(headerRow, { rerenderList: reload });
 
-    const shelf = state.getShelf();
     header.append(headerRow, filtersRow);
     renderFilters();
 
@@ -738,29 +778,13 @@ export function createSlideLibraryPicker({
       updateSelectionBar();
     }
 
-    // Load data if needed
-    if (!state.getCache(shelf).length && !state.isLoading(shelf)) {
-      try {
-        await apiOps.fetchShelf(shelf);
-      } catch {
-        // ignore
-      }
-    }
-
-    if (state.isLoading(shelf)) {
-      listContainer.append(
-        h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
-      );
-      return;
-    }
-
-    await rerenderList();
+    await reload();
   };
 
   /**
-   * Open one slide's lightbox by id (the permalink). Waits for the shelf if it
-   * is still loading. Answers whether the slide was found, so the host can say
-   * so instead of showing the library as if nothing was asked.
+   * Open one slide's lightbox by id (the permalink). Answers whether the slide
+   * was found, so the host can say so instead of showing the library as if
+   * nothing was asked.
    * @param {'organization'|'personal'} shelf
    * @param {string} slideId
    * @returns {Promise<boolean>}
@@ -768,17 +792,8 @@ export function createSlideLibraryPicker({
   const openSlideById = async (shelf, slideId) => {
     const s = shelf === 'organization' ? 'organization' : 'personal';
     state.setShelf(s);
-
-    if (!state.getCache(s).length) {
-      try {
-        await apiOps.fetchShelf(s);
-      } catch {
-        return false;
-      }
-    }
-
-    const item = state.getCache(s).find((it) => it.id === slideId);
-    if (!item) return false;
+    const item = await apiOps.fetchItem(s, slideId);
+    if (!item?.id) return false;
     await modals.openLightbox(item);
     return true;
   };

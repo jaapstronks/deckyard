@@ -3,7 +3,6 @@ import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import {
-  getAllTags,
   installTagsAutocomplete,
   createAltLangInputs,
   createAltBlock,
@@ -29,6 +28,7 @@ export function createImageLibraryDetail({
   api,
   user,
   items,
+  allTags = () => [],
   canAiAlt,
   context,
   onPick,
@@ -191,7 +191,7 @@ export function createImageLibraryDetail({
     const tagsDatalistId = `image-lib-tags-detail-${Math.random().toString(16).slice(2)}`;
     inTags.setAttribute('list', tagsDatalistId);
     const tagsDatalist = h('datalist', { id: tagsDatalistId });
-    installTagsAutocomplete(inTags, tagsDatalist, () => getAllTags(items()));
+    installTagsAutocomplete(inTags, tagsDatalist, allTags);
 
     const inPhotographer = h('input', {
       class: 'form-input',

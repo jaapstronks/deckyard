@@ -258,7 +258,7 @@ test('GET /slide-library lists team items of the own organization only', async (
   assert.equal(await handleSlideLibrary(ctx), true);
 
   assert.equal(ctx.res.statusCode, 200);
-  const { items, pagination } = ctx.res.body;
+  const { items, nextCursor, pagination } = ctx.res.body;
   assert.deepEqual(
     items.map((it) => it.id),
     [TEAM_ITEM_ID],
@@ -278,12 +278,10 @@ test('GET /slide-library lists team items of the own organization only', async (
     false,
     'other organizations stay out',
   );
-  assert.deepEqual(pagination, {
-    total: 1,
-    limit: 50,
-    offset: 0,
-    hasMore: false,
-  });
+  // The list-page contract (D358, B822): the trash is left out in the query,
+  // and the page answers a cursor instead of a total.
+  assert.equal(nextCursor, null);
+  assert.equal(pagination, undefined);
 
   const item = items[0];
   assert.equal(item.name, 'Team intro');
@@ -329,26 +327,50 @@ test('GET /slide-library refuses the retired `?themeId=` with the name to use', 
   assert.equal(ctx.res.body.details.use, 'theme');
 });
 
-test('GET /slide-library survives a non-numeric ?limit (B143)', async () => {
-  // The v1 copy of parsePaginationParams clamped without a NaN guard, so
-  // `?limit=abc` produced `slice(NaN, NaN)` — an empty page with
-  // `pagination.limit: null` in the envelope. The shared parser defaults.
+test('GET /slide-library refuses a non-numeric limit and any offset (B143, D358)', async () => {
+  // B143: the v1 copy of parsePaginationParams once turned `?limit=abc` into
+  // an empty page. The list-page contract neither clamps nor guesses: a
+  // limit that is not a whole number from 1 to 100 is a 400 naming it, and
+  // `offset` is refused with the name to use.
   await installDb();
-  const ctx = makeCtx('GET', '/api/v1/slide-library?limit=abc&offset=nope');
-  assert.equal(await handleSlideLibrary(ctx), true);
+  for (const [query, field] of [
+    ['?limit=abc', 'limit'],
+    ['?limit=0', 'limit'],
+    ['?limit=101', 'limit'],
+    ['?offset=1', 'offset'],
+    ['?cursor=broken', 'cursor'],
+  ]) {
+    const ctx = makeCtx('GET', `/api/v1/slide-library${query}`);
+    assert.equal(await handleSlideLibrary(ctx), true);
+    assert.equal(ctx.res.statusCode, 400, query);
+    assert.equal(ctx.res.body.details.field, field, query);
+  }
+});
 
-  assert.equal(ctx.res.statusCode, 200);
-  assert.deepEqual(
-    ctx.res.body.items.map((it) => it.id),
-    [TEAM_ITEM_ID],
-    'garbage pagination must not swallow the page',
+test('GET /slide-library pages by cursor', async () => {
+  const db = await installDb();
+  db.__tables.slide_library.push(
+    libraryRow({
+      id: 'e0000006-0000-4000-8000-000000000006',
+      organization_id: ORG,
+      shelf: 'organization',
+      name: 'Second team item',
+    }),
   );
-  assert.deepEqual(ctx.res.body.pagination, {
-    total: 1,
-    limit: 50,
-    offset: 0,
-    hasMore: false,
-  });
+  const first = makeCtx('GET', '/api/v1/slide-library?limit=1');
+  await handleSlideLibrary(first);
+  assert.equal(first.res.statusCode, 200);
+  assert.equal(first.res.body.items.length, 1);
+  assert.ok(first.res.body.nextCursor);
+
+  const second = makeCtx(
+    'GET',
+    `/api/v1/slide-library?limit=1&cursor=${encodeURIComponent(first.res.body.nextCursor)}`,
+  );
+  await handleSlideLibrary(second);
+  assert.equal(second.res.body.items.length, 1);
+  assert.equal(second.res.body.nextCursor, null);
+  assert.notEqual(second.res.body.items[0].id, first.res.body.items[0].id);
 });
 
 test('GET /slide-library without the read permission is refused with 403', async () => {

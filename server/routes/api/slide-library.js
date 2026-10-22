@@ -2,6 +2,7 @@ import {
   badRequest,
   jsonError,
   methodNotAllowed,
+  notFound,
   requireJsonBody,
   serveJson,
   storageError,
@@ -13,8 +14,7 @@ import {
   createOrganizationLibraryItem,
   deletePersonalLibraryItem,
   deleteOrganizationLibraryItem,
-  listPersonalLibrary,
-  listOrganizationLibrary,
+  getLibraryShelfItem,
   updatePersonalLibraryItem,
   updateOrganizationLibraryItem,
   libraryPatchViolation,
@@ -41,12 +41,12 @@ import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js'
 import { isLibrarySlideType } from '../../../shared/slide-types/policy.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
 import { normalizeEmail } from '../../../shared/email.js';
+import {
+  libraryListInput,
+  listLibraryFacets,
+  listLibraryPage,
+} from '../../services/library-lists.js';
 const log = createLogger('slide-library');
-
-function cleanThemeId(v) {
-  const s = typeof v === 'string' ? v.trim() : '';
-  return s.slice(0, 80);
-}
 
 /**
  * Answer a failed slide-library mutation in the canonical envelope. The reason
@@ -178,25 +178,110 @@ async function handleUsageRecord({ storageScope, req, res, authedUser }) {
   return true;
 }
 
-// GET /api/slide-library/personal - List the personal library
-async function handlePersonalList({ storageScope, res, url, authedUser }) {
-  const email = actorEmail(authedUser);
-  const themeId = cleanThemeId(url.searchParams.get('theme') || '');
-  const out = await listPersonalLibrary(storageScope, email, { themeId });
-  // The personal list holds only the caller's own items.
-  for (const item of out.items) item.canEdit = true;
-  // Attach tags to each item
-  if (Array.isArray(out?.items) && out.items.length > 0) {
-    const ids = out.items.map((it) => it.id);
-    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, {
-      userEmail: email,
+/**
+ * Stamp a page of library items with what the reader may do and the tags
+ * they carry: `canEdit` (D170) and `tags`, one batched read.
+ *
+ * @param {object} storageScope
+ * @param {object[]} items
+ * @param {object} opts
+ * @param {(item: object) => boolean} opts.canEdit
+ * @param {string} opts.email - The reader.
+ * @returns {Promise<object[]>}
+ */
+async function stampLibraryItems(storageScope, items, { canEdit, email }) {
+  const tagsMap = items.length
+    ? await getTagsForSlideLibraryItems(
+        storageScope,
+        items.map((it) => it.id),
+        { userEmail: email },
+      )
+    : new Map();
+  return items.map((item) => ({
+    ...item,
+    canEdit: canEdit(item),
+    tags: tagsMap.get(item.id) || [],
+  }));
+}
+
+/**
+ * The reader's verdict on an item of a shelf: the personal shelf holds only
+ * the caller's own items; the organization shelf follows the one guard.
+ * @param {'personal'|'organization'} shelf
+ * @param {object|null} authedUser
+ * @returns {(item: object) => boolean}
+ */
+function canEditOn(shelf, authedUser) {
+  return shelf === 'personal'
+    ? () => true
+    : (item) => canEditOrganizationItem(authedUser, item);
+}
+
+// GET /api/slide-library/{personal|organization} - One page of a shelf, or of
+// its trash (`view=trash`), on the list-page contract (D358, B822):
+// `{ items, nextCursor }`. Filters (`theme`, `type`, `tag`, `lang`, `q`) are
+// applied in the query; see server/services/library-lists.js.
+function shelfList(shelf) {
+  return async function handleShelfList({
+    storageScope,
+    res,
+    url,
+    authedUser,
+  }) {
+    const email = actorEmail(authedUser);
+    const { items, nextCursor } = await listLibraryPage(
+      storageScope,
+      { shelf, readerEmail: email },
+      libraryListInput(url.searchParams),
+    );
+    serveJson(res, 200, {
+      items: await stampLibraryItems(storageScope, items, {
+        canEdit: canEditOn(shelf, authedUser),
+        email,
+      }),
+      nextCursor,
     });
-    for (const item of out.items) {
-      item.tags = tagsMap.get(item.id) || [];
-    }
-  }
-  serveJson(res, 200, out);
-  return true;
+    return true;
+  };
+}
+
+// GET /api/slide-library/{personal|organization}/facets - Counts per slide
+// type and per tag over the shelf (the picker's filter chips), own query.
+function shelfFacets(shelf) {
+  return async function handleShelfFacets({
+    storageScope,
+    res,
+    url,
+    authedUser,
+  }) {
+    const facets = await listLibraryFacets(
+      storageScope,
+      { shelf, readerEmail: actorEmail(authedUser) },
+      libraryListInput(url.searchParams),
+    );
+    serveJson(res, 200, facets);
+    return true;
+  };
+}
+
+// GET /api/slide-library/{personal|organization}/:id - One item as its reader
+// may see it (the permalink). Someone else's personal item is a 404.
+function shelfItem(shelf) {
+  return async function handleShelfItem({ storageScope, res, authedUser }, id) {
+    const email = actorEmail(authedUser);
+    const item = await getLibraryShelfItem(
+      storageScope,
+      { id, shelf },
+      { userEmail: email },
+    );
+    if (!item) return notFound(res);
+    const [stamped] = await stampLibraryItems(storageScope, [item], {
+      canEdit: canEditOn(shelf, authedUser),
+      email,
+    });
+    serveJson(res, 200, stamped);
+    return true;
+  };
 }
 
 // POST /api/slide-library/personal - Save a slide to the personal library
@@ -256,31 +341,6 @@ async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
   // reason now decides, so a pool that is down answers 503.
   if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, { ok: true });
-  return true;
-}
-
-// GET /api/slide-library/organization - List the organization-wide library
-async function handleOrganizationList({ storageScope, res, url, authedUser }) {
-  const email = actorEmail(authedUser);
-  const themeId = cleanThemeId(url.searchParams.get('theme') || '');
-  const out = await listOrganizationLibrary(storageScope, {
-    themeId,
-    userEmail: email,
-  });
-  for (const item of out.items) {
-    item.canEdit = canEditOrganizationItem(authedUser, item);
-  }
-  // Attach tags to each item
-  if (Array.isArray(out?.items) && out.items.length > 0) {
-    const ids = out.items.map((it) => it.id);
-    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, {
-      userEmail: email,
-    });
-    for (const item of out.items) {
-      item.tags = tagsMap.get(item.id) || [];
-    }
-  }
-  serveJson(res, 200, out);
   return true;
 }
 
@@ -474,8 +534,17 @@ export const ROUTES = [
   },
   {
     method: 'GET',
+    pattern: '/api/slide-library/personal/facets',
+    handler: shelfFacets('personal'),
+  },
+  {
+    pattern: '/api/slide-library/personal/facets',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
     pattern: '/api/slide-library/personal',
-    handler: handlePersonalList,
+    handler: shelfList('personal'),
   },
   {
     method: 'POST',
@@ -485,6 +554,12 @@ export const ROUTES = [
   {
     pattern: '/api/slide-library/personal',
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: shelfItem('personal'),
   },
   {
     method: 'PATCH',
@@ -501,12 +576,21 @@ export const ROUTES = [
   {
     pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
     captures: ['uuid'],
-    handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']),
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/slide-library/organization/facets',
+    handler: shelfFacets('organization'),
+  },
+  {
+    pattern: '/api/slide-library/organization/facets',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
   },
   {
     method: 'GET',
     pattern: '/api/slide-library/organization',
-    handler: handleOrganizationList,
+    handler: shelfList('organization'),
   },
   {
     method: 'POST',
@@ -516,6 +600,12 @@ export const ROUTES = [
   {
     pattern: '/api/slide-library/organization',
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: shelfItem('organization'),
   },
   {
     method: 'PATCH',
@@ -532,7 +622,7 @@ export const ROUTES = [
   {
     pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
     captures: ['uuid'],
-    handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']),
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']),
   },
   {
     method: 'GET',

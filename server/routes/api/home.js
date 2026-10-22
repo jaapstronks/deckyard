@@ -31,13 +31,24 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { getPopularPresentations } from './presentations/popular.js';
 import { getEnrichedActivity } from './activity.js';
-import { listOrganizationLibrary } from '../../storage/slide-library.js';
+import {
+  getLibraryItemsByIds,
+  listLibraryShelf,
+} from '../../storage/slide-library.js';
 import { listSlideLibraryUsage } from '../../storage/slide-library-usage.js';
 import {
   listPersonalCollections,
   listOrganizationCollections,
 } from '../../storage/collections.js';
 import { normalizeEmail } from '../../../shared/email.js';
+
+/**
+ * How much of each shelf the building-blocks row reads: it shows at most four
+ * collections and six slides (client/views/list/views/home-view.js), so a
+ * first page of each is the whole answer (D358, B822).
+ */
+const HOME_BLOCK_COLLECTIONS = 4;
+const HOME_BLOCK_SLIDES = 6;
 
 /**
  * Build the activity filter opts from the request, mirroring `/api/activity`.
@@ -113,17 +124,32 @@ async function handleHomeGet({ repoRoot, storageScope, res, url, authedUser }) {
     getEnrichedActivity({ storageScope, authedUser, opts: activityOpts }).catch(
       () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 }),
     ),
-    listPersonalCollections(storageScope, email).catch(() => ({ items: [] })),
-    listOrganizationCollections(storageScope, { userEmail: email }).catch(
-      () => ({ items: [] }),
-    ),
-    listOrganizationLibrary(storageScope, { userEmail: email }).catch(() => ({
-      items: [],
-    })),
+    listPersonalCollections(storageScope, email, {
+      limit: HOME_BLOCK_COLLECTIONS,
+    }).catch(() => ({ items: [] })),
+    listOrganizationCollections(
+      storageScope,
+      { userEmail: email },
+      { limit: HOME_BLOCK_COLLECTIONS },
+    ).catch(() => ({ items: [] })),
+    listLibraryShelf(
+      storageScope,
+      { shelf: 'organization', readerEmail: email },
+      { limit: HOME_BLOCK_SLIDES },
+    ).catch(() => ({ items: [] })),
     listSlideLibraryUsage(storageScope, email).catch(() => ({ items: [] })),
   ]);
 
   const asItems = (r) => (Array.isArray(r?.items) ? r.items : []);
+
+  // A collection card previews its first slide; resolve those few directly
+  // instead of hoping they are among the newest slides.
+  const firstIds = [...asItems(personalCols), ...asItems(organizationCols)]
+    .map((col) => (Array.isArray(col.slideIds) ? col.slideIds[0] : null))
+    .filter(Boolean);
+  const collectionSlides = await getLibraryItemsByIds(storageScope, firstIds, {
+    userEmail: email,
+  }).catch(() => []);
 
   serveJson(res, 200, {
     ok: true,
@@ -135,6 +161,7 @@ async function handleHomeGet({ repoRoot, storageScope, res, url, authedUser }) {
         organization: asItems(organizationCols),
       },
       organizationSlides: asItems(organizationLib),
+      collectionSlides: collectionSlides.filter((item) => !item.trashedAt),
     },
     usage: { items: asItems(usage) },
   });

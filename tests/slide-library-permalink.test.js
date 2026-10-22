@@ -11,9 +11,10 @@
  * at once, and `openSlideById()` searched an empty shelf and gave up without a
  * word.
  *
- * These pin the cause (a second fetch of a shelf waits for the first) and the
- * three addresses: the library's, a slide's, and which one each tab and each
- * close writes.
+ * The shelf is read page by page now (B822), so the permalink no longer
+ * searches it: it reads the slide at its own address. These pin that, the
+ * query a shelf page sends, and the three addresses: the library's, a
+ * slide's, and which one each tab and each close writes.
  *
  * Run with: node --test tests/slide-library-permalink.test.js
  */
@@ -119,55 +120,69 @@ test('each list tab names its address; search keeps the current one', () => {
   assert.equal(addressForView('search', library), null);
 });
 
-// ------------------------------------------------- the cause: the race
+// --------------------------------------- the cause, gone: no shelf to wait on
 
-test('a second fetch of a loading shelf waits for the first (the B285 cause)', async () => {
-  let calls = 0;
-  let release;
-  const api = () => {
-    calls++;
-    return new Promise((resolve) => {
-      release = () => resolve({ items: [{ id: 's1' }] });
-    });
+test('the permalink reads the slide at its own address, not out of a loading shelf (B285, B822)', async () => {
+  // B285's cause was a race: the permalink searched a shelf whose first fetch
+  // was still under way. The shelf is read page by page now (D358), so it is
+  // never the whole shelf to search; the permalink asks for the one slide.
+  const calls = [];
+  const api = async (path) => {
+    calls.push(path);
+    if (path === '/api/slide-library/organization/s1') return { id: 's1' };
+    throw Object.assign(new Error('Not found'), { status: 404 });
   };
   const state = createSlideLibraryState({ initialShelf: 'organization' });
   const ops = createSlideLibraryApi({ api, state });
 
-  // The first render starts the fetch; the permalink asks while it runs.
-  const first = ops.fetchShelf('organization');
-  let secondDone = false;
-  const second = ops.fetchShelf('organization').then(() => (secondDone = true));
-
-  await Promise.resolve();
-  assert.equal(secondDone, false, 'the second caller does not return early');
-  assert.equal(calls, 1, 'one request, shared');
-
-  release();
-  await Promise.all([first, second]);
-  assert.deepEqual(
-    state.getCache('organization').map((it) => it.id),
-    ['s1'],
-    'the permalink finds the slide once it resolves',
+  assert.deepEqual(await ops.fetchItem('organization', 's1'), { id: 's1' });
+  assert.equal(
+    await ops.fetchItem('personal', 's1'),
+    null,
+    'a slide that is not on that shelf answers null, so the host can say so',
   );
-  assert.equal(state.isLoading('organization'), false);
-
-  const later = ops.fetchShelf('organization');
-  assert.equal(calls, 2, 'a later fetch is a new request');
-  release();
-  await later;
+  assert.deepEqual(calls, [
+    '/api/slide-library/organization/s1',
+    '/api/slide-library/personal/s1',
+  ]);
 });
 
-test('a failed fetch frees the shelf for the next attempt', async () => {
-  let calls = 0;
-  const api = async () => {
-    calls++;
-    if (calls === 1) throw new Error('offline');
-    return { items: [] };
+test('a shelf page carries its filters as query parameters and leaves out what is empty', async () => {
+  const calls = [];
+  const api = async (path) => {
+    calls.push(path);
+    return { items: [{ id: 's1' }], nextCursor: 'next' };
   };
   const state = createSlideLibraryState({});
-  const ops = createSlideLibraryApi({ api, state });
-  await assert.rejects(ops.fetchShelf('personal'), /offline/);
-  assert.equal(state.isLoading('personal'), false);
-  await ops.fetchShelf('personal');
-  assert.equal(calls, 2);
+  const ops = createSlideLibraryApi({ api, state, themeIdNorm: 'midnight' });
+
+  const page = await ops.fetchPage(
+    {
+      shelf: 'organization',
+      view: undefined,
+      type: 'quote-slide',
+      tags: ['intro', 'q3'],
+      lang: 'nl',
+      q: 'growth',
+      limit: 30,
+    },
+    'c1',
+  );
+  assert.deepEqual(page, { items: [{ id: 's1' }], nextCursor: 'next' });
+  const url = new URL(calls[0], 'http://localhost');
+  assert.equal(url.pathname, '/api/slide-library/organization');
+  assert.equal(url.searchParams.get('type'), 'quote-slide');
+  assert.deepEqual(url.searchParams.getAll('tag'), ['intro', 'q3']);
+  assert.equal(url.searchParams.get('lang'), 'nl');
+  assert.equal(url.searchParams.get('q'), 'growth');
+  assert.equal(url.searchParams.get('theme'), 'midnight');
+  assert.equal(url.searchParams.get('limit'), '30');
+  assert.equal(url.searchParams.get('cursor'), 'c1');
+  assert.equal(url.searchParams.has('view'), false);
+
+  await ops.fetchPage({ shelf: 'personal', view: 'trash' }, null);
+  const trash = new URL(calls[1], 'http://localhost');
+  assert.equal(trash.pathname, '/api/slide-library/personal');
+  assert.equal(trash.searchParams.get('view'), 'trash');
+  assert.equal(trash.searchParams.has('cursor'), false);
 });

@@ -1,0 +1,19 @@
+/* List pager (`lib/dom/list-pager.js`, D358): the "Load more" row under a
+   list read page by page - the deck grid, the slide and image libraries, the
+   collections. Hidden while there is no next page. */
+.list-pager {
+  display: flex;
+  justify-content: center;
+  padding: var(--ps-space-2) 0 var(--ps-space-6);
+}
+
+.list-pager[hidden] {
+  display: none;
+}
+
+/* Narrow screens: the button spans the column, so its label never wraps. */
+@media (max-width: 640px) {
+  .list-pager .list-pager-more {
+    width: 100%;
+  }
+}

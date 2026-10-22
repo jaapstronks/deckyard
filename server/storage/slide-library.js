@@ -15,6 +15,9 @@
  */
 
 import { crossOrganizationScope, toStorageContext } from './scope.js';
+import { keysetPage, keysetRows } from './keyset.js';
+import { DEFAULT_DECK_LANG } from '../../shared/i18n-utils.js';
+import { escapeLikePattern } from './utils/index.js';
 
 import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
@@ -30,6 +33,7 @@ import { normalizeEmail } from '../../shared/email.js';
 import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
 import { mergeLibraryI18n } from '../../shared/slide-library/merge-content.js';
 import { AppError, revisionConflict } from '../utils/errors.js';
+import { isUuid } from '../utils/uuid.js';
 import { replaceTagLinks } from './tags.js';
 import {
   normalizeLang,
@@ -147,45 +151,237 @@ async function mapRowsFor(rows, ctx) {
 // Storage queries (organization-scoped)
 // ============================================================
 
-/**
- * @param {object} ctx - Storage context
- * @param {object} [opts]
- * @param {string} [opts.shelf] - 'personal' or 'organization'
- * @param {string} [opts.ownerEmail] - Filter by owner
- * @param {string} [opts.themeId] - Filter by theme
- */
-async function listSlideLibraryRows(ctx, opts = {}) {
-  const db = getDb();
-  const orgId = getOrgId(ctx);
+// ============================================================
+// The shelves as lists (B822, D358)
+// ============================================================
+//
+// A shelf used to answer every item of the organization's shelf, trashed or
+// not, and the picker filtered, searched and counted in the browser; v1 kept
+// the untrashed ones after the read and sliced. A predicate applied after the
+// cut makes a page untrue, so every predicate is SQL here and the page is a
+// keyset page (`./keyset.js`):
+//
+//   - the shelf (`personal` needs its owner's address; without one it is
+//     empty, never every personal item of the organization);
+//   - `trashed`: the trash, ordered `(trashed_at desc, id desc)`, or the
+//     shelf itself, ordered `(created_at desc, id desc)`;
+//   - `themeId`, `slideType`: equality;
+//   - `tags`: the item carries **every** named tag, compared on `lower(name)`
+//     as the tag identity is (migration 018, ./tags.js);
+//   - `lang`: the item has a version in that language, or is written in it
+//     (`i18n.dominant`, else the default deck language) — the rule of
+//     `hasContentForLang` (client/views/slide-library/search.js);
+//   - `q`: a case-insensitive substring of the name, the description, the
+//     slide type, a tag name or any string in the content.
+//
+// The facets (counts per slide type and per tag) are their own query over the
+// same shelf, so a count never depends on which page the reader holds.
 
-  let query = db
+/**
+ * @typedef {Object} LibraryListFilter
+ * @property {'personal'|'organization'} shelf
+ * @property {string} [ownerEmail] - The owner; required on `personal`.
+ * @property {boolean|null} [trashed=false] - The shelf's trash instead of the
+ *   shelf; `null` = both (the backup, which never pages).
+ * @property {string} [themeId]
+ * @property {string} [slideType]
+ * @property {string[]} [tags] - Every one of these tag names.
+ * @property {string} [lang] - A deck language the item has content in.
+ * @property {string} [q] - Search text.
+ */
+
+/** The sort column of a shelf or its trash. */
+function librarySortColumn({ trashed = false } = {}) {
+  return trashed ? 'trashed_at' : 'created_at';
+}
+
+/**
+ * Whether the filter can match anything at all: a personal shelf without an
+ * owner names nobody.
+ * @param {LibraryListFilter} filter
+ * @returns {boolean}
+ */
+function libraryListPossible(filter) {
+  return filter.shelf !== 'personal' || !!normalizeEmail(filter.ownerEmail);
+}
+
+/**
+ * The item carries a tag with this name in its organization.
+ * @param {Object} eb
+ * @param {string} orgId
+ * @param {(tag: Object) => Object} match - Condition on `t.name`.
+ */
+function taggedWhere(eb, orgId, match) {
+  return eb.exists(
+    eb
+      .selectFrom('slide_library_tags as slt')
+      .innerJoin('tags as t', 't.id', 'slt.tag_id')
+      .select(eb.lit(1).as('one'))
+      .whereRef('slt.slide_library_id', '=', 'slide_library.id')
+      .where('t.organization_id', '=', orgId)
+      .where(match),
+  );
+}
+
+/**
+ * The shelf query before its order and page: scope, shelf and every filter.
+ *
+ * @param {Object} db
+ * @param {string} orgId
+ * @param {LibraryListFilter} filter
+ */
+function libraryListQuery(db, orgId, filter) {
+  const {
+    shelf,
+    ownerEmail,
+    trashed = false,
+    themeId,
+    slideType,
+    tags,
+    lang,
+    q,
+  } = filter;
+  let qb = db
     .selectFrom('slide_library')
     .selectAll()
-    .where('organization_id', '=', orgId);
-
-  // Don't filter out trashed items - client handles trash view filtering
-
-  if (opts?.shelf) {
-    query = query.where('shelf', '=', opts.shelf);
+    .where('slide_library.organization_id', '=', orgId)
+    .where('slide_library.shelf', '=', shelf);
+  if (trashed !== null) {
+    qb = qb.where('slide_library.trashed_at', trashed ? 'is not' : 'is', null);
   }
-  if (opts?.ownerEmail) {
-    query = query.where('owner_email', '=', normalizeEmail(opts.ownerEmail));
+  if (shelf === 'personal') {
+    qb = qb.where(
+      'slide_library.owner_email',
+      '=',
+      normalizeEmail(ownerEmail) || '',
+    );
   }
-  if (opts?.themeId) {
-    query = query.where('theme_id', '=', opts.themeId);
+  if (themeId) qb = qb.where('slide_library.theme_id', '=', themeId);
+  if (slideType) qb = qb.where('slide_library.slide_type', '=', slideType);
+  for (const name of tags || []) {
+    qb = qb.where((eb) =>
+      taggedWhere(eb, orgId, (inner) =>
+        inner(
+          inner.fn('lower', ['t.name']),
+          '=',
+          inner.fn('lower', [inner.val(name)]),
+        ),
+      ),
+    );
   }
+  if (lang) {
+    qb = qb.where(
+      sql`(
+        jsonb_typeof(slide_library.i18n #> ARRAY['versions', ${lang}::text, 'content']) = 'object'
+        OR COALESCE(NULLIF(slide_library.i18n ->> 'dominant', ''), ${DEFAULT_DECK_LANG}) = ${lang}::text
+      )`,
+    );
+  }
+  const text = typeof q === 'string' ? q.trim() : '';
+  if (text) {
+    const pattern = `%${escapeLikePattern(text)}%`;
+    qb = qb.where((eb) =>
+      eb.or([
+        eb('slide_library.name', 'ilike', pattern),
+        eb('slide_library.description', 'ilike', pattern),
+        eb('slide_library.slide_type', 'ilike', pattern),
+        taggedWhere(eb, orgId, (inner) => inner('t.name', 'ilike', pattern)),
+        sql`EXISTS (
+          SELECT 1 FROM jsonb_path_query(COALESCE(slide_library.content, '{}'::jsonb), 'strict $.**') AS v
+          WHERE jsonb_typeof(v) = 'string' AND (v #>> '{}') ILIKE ${pattern}
+        )`,
+      ]),
+    );
+  }
+  return qb;
+}
 
-  query = query.orderBy('created_at', 'desc');
-  // Returns the full organization-scoped set. B79 inherited applyPagination()'s
-  // default 100-row cap as a literal .limit(100), which silently dropped the
-  // tail for orgs with >100 items; B85 removed it. Every consumer treats this as
-  // the complete list (the public-api route paginates over it in-memory,
-  // bulk-export backs it up) — DB-level pagination is a future deliberate
-  // feature, not an accidental cap. See docs/reference/storage-layer.md
-  // § List reads.
-  const rows = await query.execute();
+/**
+ * Counts per slide type and per tag over the untrashed items of a shelf, in
+ * the language scope when one is named (the picker's filter chips), and the
+ * shelf's `total` without the language scope (so an empty list can say
+ * whether the shelf or the language is empty). Type, tag and search filters
+ * are not applied: the chips count the shelf the reader narrows, not the
+ * narrowed list.
+ *
+ * @param {Object} db
+ * @param {string} orgId
+ * @param {Pick<LibraryListFilter, 'shelf'|'ownerEmail'|'themeId'|'lang'>} filter
+ * @returns {Promise<{total: number, types: Array<{slideType: string, count: number}>, tags: Array<{name: string, count: number}>}>}
+ */
+async function libraryFacetCounts(db, orgId, filter) {
+  const base = libraryListQuery(db, orgId, {
+    shelf: filter.shelf,
+    ownerEmail: filter.ownerEmail,
+    themeId: filter.themeId,
+    lang: filter.lang,
+  }).clearSelect();
+  const shelfOnly = libraryListQuery(db, orgId, {
+    shelf: filter.shelf,
+    ownerEmail: filter.ownerEmail,
+    themeId: filter.themeId,
+  }).clearSelect();
+  const [totalRow, typeRows, tagRows] = await Promise.all([
+    shelfOnly.select((eb) => eb.fn.countAll().as('count')).executeTakeFirst(),
+    base
+      .select(['slide_library.slide_type as slideType'])
+      .select((eb) => eb.fn.countAll().as('count'))
+      .groupBy('slide_library.slide_type')
+      .execute(),
+    base
+      .innerJoin(
+        'slide_library_tags as slt',
+        'slt.slide_library_id',
+        'slide_library.id',
+      )
+      .innerJoin('tags as t', 't.id', 'slt.tag_id')
+      .where('t.organization_id', '=', orgId)
+      .select(['t.name as name'])
+      .select((eb) => eb.fn.countAll().as('count'))
+      .groupBy('t.name')
+      .execute(),
+  ]);
+  const byCount = (a, b) =>
+    b.count - a.count || String(a.key).localeCompare(String(b.key));
+  return {
+    total: Number(totalRow?.count ?? 0),
+    types: typeRows
+      .map((row) => ({ key: row.slideType, count: Number(row.count) }))
+      .filter((row) => row.key)
+      .sort(byCount)
+      .map(({ key, count }) => ({ slideType: key, count })),
+    tags: tagRows
+      .map((row) => ({ key: row.name, count: Number(row.count) }))
+      .sort(byCount)
+      .map(({ key, count }) => ({ name: key, count })),
+  };
+}
 
-  return mapRowsFor(rows, ctx);
+/**
+ * The rows of one shelf (or its trash) under a filter, as one keyset page or
+ * (without `limit`) the whole list. The predicate is SQL
+ * (§ The shelves as lists above); nothing is removed after the read.
+ *
+ * @param {object} ctx - Storage context
+ * @param {LibraryListFilter} filter
+ * @param {{limit?: number, after?: {value: string, id: string}|null}} [page]
+ * @returns {Promise<{items: object[], next: {value: string, id: string}|null}>}
+ */
+async function listSlideLibraryRows(ctx, filter, { limit, after = null } = {}) {
+  if (!libraryListPossible(filter)) return { items: [], next: null };
+  const qb = libraryListQuery(getDb(), getOrgId(ctx), filter);
+  const column = librarySortColumn(filter);
+  let rows;
+  let next = null;
+  if (limit === undefined) {
+    rows = await qb.orderBy(column, 'desc').orderBy('id', 'desc').execute();
+  } else {
+    ({ rows, next } = keysetRows(
+      await keysetPage(qb, { column, after, limit }).execute(),
+      limit,
+    ));
+  }
+  return { items: await mapRowsFor(rows, ctx), next };
 }
 
 async function getSlideLibraryRow(id, ctx) {
@@ -509,18 +705,19 @@ async function deleteLibraryItem(ctx, target) {
 
 // Personal library functions
 
-export async function listPersonalLibrary(
-  scope,
-  userEmail,
-  { themeId = '' } = {},
-) {
+/**
+ * Every item on `userEmail`'s personal shelf, trashed ones included, newest
+ * first: the backup's read (bulk export). Lists a reader pages through go
+ * through {@link listLibraryShelf}.
+ */
+export async function listPersonalLibrary(scope, userEmail) {
   const ctx = toStorageContext(scope, 'listPersonalLibrary', {
     userEmail,
   });
-  const items = await listSlideLibraryRows(ctx, {
+  const { items } = await listSlideLibraryRows(ctx, {
     shelf: 'personal',
     ownerEmail: userEmail,
-    themeId,
+    trashed: null,
   });
   return { items };
 }
@@ -590,18 +787,132 @@ export async function deletePersonalLibraryItem(scope, userEmail, id) {
 
 // Organization-shelf library functions
 
-export async function listOrganizationLibrary(
-  scope,
-  { themeId = '', userEmail = '' } = {},
-) {
+/**
+ * Every item on the organization shelf, trashed ones included, newest first:
+ * the backup's read (bulk export).
+ */
+export async function listOrganizationLibrary(scope, { userEmail = '' } = {}) {
   const ctx = toStorageContext(scope, 'listOrganizationLibrary', {
     userEmail,
   });
-  const items = await listSlideLibraryRows(ctx, {
+  const { items } = await listSlideLibraryRows(ctx, {
     shelf: 'organization',
-    themeId,
+    trashed: null,
   });
   return { items };
+}
+
+/**
+ * The filter a shelf is read under, from the reader's point of view: on the
+ * personal shelf the reader is the owner (only their own items).
+ * @param {LibraryListFilter & {readerEmail?: string|null}} filter
+ * @returns {LibraryListFilter}
+ */
+function readerFilter({ readerEmail, ...filter }) {
+  return {
+    ...filter,
+    ownerEmail: filter.shelf === 'personal' ? readerEmail : undefined,
+  };
+}
+
+/**
+ * One page of a shelf (or its trash) as a reader sees it (B822, D358): the
+ * filter is applied in the query, the order is `(created_at desc, id desc)`
+ * on the shelf and `(trashed_at desc, id desc)` in the trash. Without
+ * `limit` the whole filtered list. Each item carries the reader's own
+ * `favorite`.
+ *
+ * @param {object} scope
+ * @param {LibraryListFilter & {readerEmail?: string|null}} filter - `readerEmail`
+ *   is who reads; on `personal` also whose shelf it is.
+ * @param {{limit?: number, after?: {value: string, id: string}|null}} [page]
+ * @returns {Promise<{items: object[], next: {value: string, id: string}|null}>}
+ */
+export async function listLibraryShelf(scope, filter, page = {}) {
+  const ctx = toStorageContext(scope, 'listLibraryShelf', {
+    userEmail: filter?.readerEmail,
+  });
+  return listSlideLibraryRows(
+    ctx,
+    { trashed: false, ...readerFilter(filter) },
+    page,
+  );
+}
+
+/**
+ * Counts per slide type and per tag over a shelf's untrashed items, in the
+ * language scope when one is named: the picker's filter chips, as their own
+ * query (B822).
+ *
+ * @param {object} scope
+ * @param {Pick<LibraryListFilter, 'shelf'|'themeId'|'lang'> & {readerEmail?: string|null}} filter
+ * @returns {Promise<{total: number, types: Array<{slideType: string, count: number}>, tags: Array<{name: string, count: number}>}>}
+ */
+export async function getLibraryShelfFacets(scope, filter) {
+  const ctx = toStorageContext(scope, 'getLibraryShelfFacets', {
+    userEmail: filter?.readerEmail,
+  });
+  const shelfFilter = readerFilter(filter);
+  if (!libraryListPossible(shelfFilter)) {
+    return { total: 0, types: [], tags: [] };
+  }
+  return libraryFacetCounts(getDb(), getOrgId(ctx), shelfFilter);
+}
+
+/**
+ * The library items with these ids that the reader may see, in the order the
+ * ids are given: organization-shelf items, and personal items only when they
+ * are the reader's own. Trashed items come back with their `trashedAt`; an id
+ * the reader may not see, or that does not exist, is left out. This resolves
+ * a collection's members (`GET /api/slide-collections/:shelf/:id/slides`), a
+ * list bounded by the collection, not a list page.
+ *
+ * @param {object} scope
+ * @param {string[]} ids
+ * @param {{userEmail?: string}} [opts] - The reader.
+ * @returns {Promise<object[]>}
+ */
+export async function getLibraryItemsByIds(scope, ids, { userEmail } = {}) {
+  const ctx = toStorageContext(scope, 'getLibraryItemsByIds', { userEmail });
+  const wanted = [...new Set((ids || []).filter(isUuid))];
+  if (wanted.length === 0) return [];
+  const owner = normalizeEmail(userEmail);
+  const rows = await getDb()
+    .selectFrom('slide_library')
+    .selectAll()
+    .where('organization_id', '=', getOrgId(ctx))
+    .where('id', 'in', wanted)
+    .where((eb) =>
+      owner
+        ? eb.or([
+            eb('shelf', '=', 'organization'),
+            eb.and([
+              eb('shelf', '=', 'personal'),
+              eb('owner_email', '=', owner),
+            ]),
+          ])
+        : eb('shelf', '=', 'organization'),
+    )
+    .execute();
+  const byId = new Map(
+    (await mapRowsFor(rows, ctx)).map((item) => [item.id, item]),
+  );
+  return wanted.map((id) => byId.get(id)).filter(Boolean);
+}
+
+/**
+ * One item of a shelf as its reader may see it: someone else's personal item,
+ * or an item on the other shelf, is null. Trashed items are returned with
+ * their `trashedAt`.
+ *
+ * @param {object} scope
+ * @param {{id: string, shelf: 'personal'|'organization'}} target
+ * @param {{userEmail?: string}} [opts] - The reader; the owner on `personal`.
+ * @returns {Promise<object|null>}
+ */
+export async function getLibraryShelfItem(scope, target, { userEmail } = {}) {
+  const ctx = toStorageContext(scope, 'getLibraryShelfItem', { userEmail });
+  return readItem(ctx, { ...target, ownerEmail: userEmail });
 }
 
 export async function getOrganizationLibraryItem(
@@ -911,3 +1222,7 @@ export async function upsertSandboxLibrarySeed(
       }
     });
 }
+
+// White-box seam: tests/pg/library-list-page.pgtest.js EXPLAINs the exact
+// query a page runs. The `__` prefix marks it internal.
+export const __libraryList = { libraryListQuery };

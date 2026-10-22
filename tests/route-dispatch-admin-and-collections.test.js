@@ -96,11 +96,12 @@ function named(routes, method, path, handlerName) {
 // ─── slide-collections (module prefix + auth guard; Form B per path group) ───
 
 test('slide-collections: routes resolve to their named handlers in order', () => {
+  named(SC_ROUTES, 'GET', '/api/slide-collections/personal', 'handleShelfList');
   named(
     SC_ROUTES,
     'GET',
-    '/api/slide-collections/personal',
-    'handlePersonalList',
+    '/api/slide-collections/personal/00000000-0000-4000-8000-0000000000ab/slides',
+    'handleShelfMembers',
   );
   named(
     SC_ROUTES,
@@ -130,7 +131,13 @@ test('slide-collections: routes resolve to their named handlers in order', () =>
     SC_ROUTES,
     'GET',
     '/api/slide-collections/organization',
-    'handleOrganizationList',
+    'handleShelfList',
+  );
+  named(
+    SC_ROUTES,
+    'GET',
+    '/api/slide-collections/organization/00000000-0000-4000-8000-0000000000ab/slides',
+    'handleShelfMembers',
   );
   named(
     SC_ROUTES,
@@ -171,6 +178,11 @@ test('slide-collections: a wrong method 405s with the pinned Allow list', async 
       'POST',
       '/api/slide-collections/organization/00000000-0000-4000-8000-0000000000ab',
       'GET, PATCH, DELETE',
+    ],
+    [
+      'POST',
+      '/api/slide-collections/personal/00000000-0000-4000-8000-0000000000ab/slides',
+      'GET',
     ],
   ]) {
     const { ctx: c, res } = ctx(method, path);

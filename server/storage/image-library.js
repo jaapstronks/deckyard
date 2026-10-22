@@ -14,6 +14,9 @@
 import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { resolveScope, toStorageContext } from './scope.js';
+import { keysetPage, keysetRows } from './keyset.js';
+import { escapeLikePattern } from './utils/index.js';
+import { normalizeEmail } from '../../shared/email.js';
 
 /** @returns {string} current ISO timestamp */
 function now() {
@@ -55,24 +58,139 @@ function mapImageRow(row) {
 // Image queries (organization-scoped)
 // ============================================================
 
-async function listImages(ctx) {
-  const db = getDb();
-  const orgId = getOrgId(ctx);
+/**
+ * The sections an image list narrows to (the picker's sidebar): every image,
+ * the reader's uploads, the reader's stars, and the images tagged as logo or
+ * icon (a tag containing the word, as the picker always matched them).
+ */
+export const IMAGE_LIST_SECTIONS = Object.freeze([
+  'all',
+  'mine',
+  'favorites',
+  'logos',
+  'icons',
+]);
 
-  const rows = await db
+/** The tag substring of a tag-word section. */
+const SECTION_TAG_WORD = Object.freeze({ logos: 'logo', icons: 'icon' });
+
+/**
+ * @typedef {Object} ImageListFilter
+ * @property {string} [section='all'] - One of {@link IMAGE_LIST_SECTIONS}.
+ * @property {string|null} [viewerEmail] - The reader; `mine` and `favorites`
+ *   are empty without one.
+ * @property {string} [tag] - Only images carrying this tag (case-insensitive).
+ * @property {string} [q] - A case-insensitive substring of the title,
+ *   description, photographer, URL, a tag or an alt text.
+ */
+
+/**
+ * The image list query before its order and page: the organization and every
+ * filter, in SQL (B822, D358). `null` when the filter can match nothing.
+ *
+ * @param {Object} db
+ * @param {string} orgId
+ * @param {ImageListFilter} [filter]
+ */
+function imageListQuery(db, orgId, filter = {}) {
+  const { section = 'all', viewerEmail = null, tag, q } = filter;
+  if ((section === 'mine' || section === 'favorites') && !viewerEmail) {
+    return null;
+  }
+  let qb = db
     .selectFrom('image_library')
     .selectAll()
-    .where('organization_id', '=', orgId)
-    .orderBy('created_at', 'desc')
-    // Full organization-scoped set. B79 inherited applyPagination()'s default
-    // 100-row cap as a literal .limit(100), silently dropping the tail for orgs
-    // with >100 images; B85 removed it. The public-api resources route paginates
-    // over it in-memory and bulk-export backs it up, so a hard cap corrupted
-    // totals and dropped data. DB-level pagination is a future deliberate
-    // feature. See docs/reference/storage-layer.md § List reads.
-    .execute();
+    .where('image_library.organization_id', '=', orgId);
+  if (section === 'mine') {
+    qb = qb.where(
+      'image_library.uploaded_by',
+      '=',
+      normalizeEmail(viewerEmail),
+    );
+  }
+  if (section === 'favorites') {
+    qb = qb.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('image_library_favorites as f')
+          .select(eb.lit(1).as('one'))
+          .whereRef('f.image_id', '=', 'image_library.id')
+          .where('f.organization_id', '=', orgId)
+          .where('f.user_email', '=', viewerEmail),
+      ),
+    );
+  }
+  const word = SECTION_TAG_WORD[section];
+  if (word) {
+    qb = qb.where(
+      sql`EXISTS (SELECT 1 FROM unnest(image_library.tags) AS t(name) WHERE t.name ILIKE ${`%${word}%`})`,
+    );
+  }
+  if (tag) {
+    qb = qb.where(
+      sql`EXISTS (SELECT 1 FROM unnest(image_library.tags) AS t(name) WHERE lower(t.name) = lower(${tag}))`,
+    );
+  }
+  const text = typeof q === 'string' ? q.trim() : '';
+  if (text) {
+    const pattern = `%${escapeLikePattern(text)}%`;
+    qb = qb.where((eb) =>
+      eb.or([
+        eb('image_library.title', 'ilike', pattern),
+        eb('image_library.description', 'ilike', pattern),
+        eb('image_library.photographer', 'ilike', pattern),
+        eb('image_library.url', 'ilike', pattern),
+        sql`EXISTS (SELECT 1 FROM unnest(image_library.tags) AS t(name) WHERE t.name ILIKE ${pattern})`,
+        sql`EXISTS (SELECT 1 FROM jsonb_each_text(COALESCE(image_library.alts, '{}'::jsonb)) AS a WHERE a.value ILIKE ${pattern})`,
+      ]),
+    );
+  }
+  return qb;
+}
 
-  return rows.map(mapImageRow);
+/**
+ * The images of the organization under a filter, as one keyset page
+ * `(created_at desc, id desc)` or (without `limit`) the whole list.
+ *
+ * @param {Object} ctx - Storage context
+ * @param {ImageListFilter} [filter]
+ * @param {{limit?: number, after?: {value: string, id: string}|null}} [page]
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
+ */
+async function listImages(ctx, filter = {}, { limit, after = null } = {}) {
+  const qb = imageListQuery(getDb(), getOrgId(ctx), filter);
+  if (!qb) return { items: [], next: null };
+  if (limit === undefined) {
+    const rows = await qb
+      .orderBy('created_at', 'desc')
+      .orderBy('id', 'desc')
+      .execute();
+    return { items: rows.map(mapImageRow), next: null };
+  }
+  const { rows, next } = keysetRows(
+    await keysetPage(qb, { column: 'created_at', after, limit }).execute(),
+    limit,
+  );
+  return { items: rows.map(mapImageRow), next };
+}
+
+/**
+ * Every tag in the organization's image library, with how many images carry
+ * it, most used first: the categories facet, as its own query (B822).
+ *
+ * @param {Object} ctx - Storage context
+ * @returns {Promise<Array<{name: string, count: number}>>}
+ */
+async function imageTagCounts(ctx) {
+  const rows = await sql`
+    SELECT t.name AS name, count(*)::int AS count
+    FROM image_library, unnest(image_library.tags) AS t(name)
+    WHERE image_library.organization_id = ${getOrgId(ctx)}
+      AND btrim(t.name) <> ''
+    GROUP BY t.name
+    ORDER BY count(*) DESC, t.name ASC
+  `.execute(getDb());
+  return rows.rows.map((row) => ({ name: row.name, count: Number(row.count) }));
 }
 
 async function getImage(id, ctx) {
@@ -236,13 +354,29 @@ async function removeFavorite(imageId, userEmail, ctx) {
 // ============================================================
 
 /**
- * List the image library of the scope's organization.
+ * The image library of the scope's organization under a filter, as one keyset
+ * page or (without `limit`) the whole list, newest first (B822, D358). The
+ * bulk export reads the whole unfiltered list.
+ *
  * @param {import('./scope.js').StorageScope} scope
- * @returns {Promise<Array<Object>>}
+ * @param {ImageListFilter} [filter]
+ * @param {{limit?: number, after?: {value: string, id: string}|null}} [page]
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function listImageLibrary(scope) {
+export async function listImageLibrary(scope, filter = {}, page = {}) {
   const ctx = toStorageContext(scope, 'listImageLibrary');
-  return listImages(ctx);
+  return listImages(ctx, filter, page);
+}
+
+/**
+ * Every tag of the organization's image library with its image count, most
+ * used first (the categories facet).
+ * @param {import('./scope.js').StorageScope} scope
+ * @returns {Promise<Array<{name: string, count: number}>>}
+ */
+export async function listImageLibraryTags(scope) {
+  const ctx = toStorageContext(scope, 'listImageLibraryTags');
+  return imageTagCounts(ctx);
 }
 
 /**
@@ -355,3 +489,7 @@ export async function toggleImageFavorite(scope, imageId, userEmail) {
   await addFavorite(imageId, userEmail, ctx);
   return true;
 }
+
+// White-box seam: tests/pg/library-list-page.pgtest.js EXPLAINs the exact
+// query a page runs. The `__` prefix marks it internal.
+export const __imageList = { imageListQuery };

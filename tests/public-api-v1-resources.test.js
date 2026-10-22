@@ -1,7 +1,8 @@
 /**
  * Contract tests for the public API v1 resources module (B40 PR 5+):
  * GET /api/v1/themes, /api/v1/slide-types
- * and /api/v1/image-library.
+ * and /api/v1/image-library (its shape and paging; the search and category
+ * filters are SQL and pinned in tests/pg/library-list-page.pgtest.js).
  *
  * The surface these pin, per docs/openapi.yaml: status codes, the documented
  * response shapes, org-scoping (a key only sees its own organization's custom
@@ -32,6 +33,10 @@ delete process.env.SANDBOX_MODE;
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 const KEY_OWNER = 'owner@example.com';
+// Image ids are uuids: a cursor carries the last id seen (D358).
+const IMG_SEA = 'a0000000-0000-4000-8000-000000000001';
+const IMG_CITY = 'a0000000-0000-4000-8000-000000000002';
+const IMG_FOREIGN = 'a0000000-0000-4000-8000-000000000003';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -79,19 +84,19 @@ async function installDb() {
     ],
     image_library: [
       imageRow({
-        id: 'img-sea',
+        id: IMG_SEA,
         organization_id: ORG,
         title: 'Sea',
         tags: ['nature', 'water'],
       }),
       imageRow({
-        id: 'img-city',
+        id: IMG_CITY,
         organization_id: ORG,
         title: 'City lights',
         tags: ['urban'],
       }),
       imageRow({
-        id: 'img-foreign',
+        id: IMG_FOREIGN,
         organization_id: OTHER_ORG,
         title: 'Foreign',
         tags: ['nature'],
@@ -319,84 +324,54 @@ test('the catalogue has no per-type schema route (B504)', async () => {
 // GET /api/v1/image-library
 // ---------------------------------------------------------------------------
 
-test('GET /image-library lists the own organization images with categories', async () => {
+test('GET /image-library lists one page of the own organization images', async () => {
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/image-library');
   assert.equal(await handleResources(ctx), true);
 
   assert.equal(ctx.res.statusCode, 200);
-  const { images, categories, pagination } = ctx.res.body;
-  assert.deepEqual(images.map((i) => i.id).sort(), ['img-city', 'img-sea']);
+  const { images, nextCursor, categories, pagination } = ctx.res.body;
+  assert.deepEqual(images.map((i) => i.id).sort(), [IMG_SEA, IMG_CITY].sort());
   assert.ok(
-    !images.some((i) => i.id === 'img-foreign'),
+    !images.some((i) => i.id === IMG_FOREIGN),
     'the other organization library stays invisible',
   );
-  // Categories are the distinct tags in use — of the own organization only.
-  assert.deepEqual(categories, ['nature', 'urban', 'water']);
-  assert.deepEqual(pagination, {
-    total: 2,
-    limit: 50,
-    offset: 0,
-    hasMore: false,
-  });
+  // The list-page contract (D358, B822): no total, no pagination object, and
+  // the categories are their own endpoint.
+  assert.equal(nextCursor, null);
+  assert.equal(pagination, undefined);
+  assert.equal(categories, undefined);
 });
 
-test('GET /image-library?search= matches title, description and tags', async () => {
-  await installDb();
-
-  const byTitle = makeCtx('GET', '/api/v1/image-library?search=city');
-  await handleResources(byTitle);
-  assert.deepEqual(
-    byTitle.res.body.images.map((i) => i.id),
-    ['img-city'],
-  );
-
-  const byTag = makeCtx('GET', '/api/v1/image-library?search=water');
-  await handleResources(byTag);
-  assert.deepEqual(
-    byTag.res.body.images.map((i) => i.id),
-    ['img-sea'],
-  );
-
-  const noHit = makeCtx(
-    'GET',
-    '/api/v1/image-library?search=nothing-matches-this',
-  );
-  await handleResources(noHit);
-  assert.deepEqual(noHit.res.body.images, []);
-  assert.equal(noHit.res.body.pagination.total, 0);
-});
-
-test('GET /image-library?category= filters on a tag', async () => {
-  await installDb();
-  const ctx = makeCtx('GET', '/api/v1/image-library?category=nature');
-  await handleResources(ctx);
-
-  assert.equal(ctx.res.statusCode, 200);
-  assert.deepEqual(
-    ctx.res.body.images.map((i) => i.id),
-    ['img-sea'],
-  );
-});
-
-test('GET /image-library paginates with limit and offset', async () => {
+test('GET /image-library pages by cursor and refuses offset', async () => {
   await installDb();
   const first = makeCtx('GET', '/api/v1/image-library?limit=1');
   await handleResources(first);
+  assert.equal(first.res.statusCode, 200);
   assert.equal(first.res.body.images.length, 1);
-  assert.deepEqual(first.res.body.pagination, {
-    total: 2,
-    limit: 1,
-    offset: 0,
-    hasMore: true,
-  });
+  assert.ok(first.res.body.nextCursor, 'a next page');
 
-  const second = makeCtx('GET', '/api/v1/image-library?limit=1&offset=1');
+  const second = makeCtx(
+    'GET',
+    `/api/v1/image-library?limit=1&cursor=${encodeURIComponent(first.res.body.nextCursor)}`,
+  );
   await handleResources(second);
   assert.equal(second.res.body.images.length, 1);
-  assert.equal(second.res.body.pagination.hasMore, false);
+  assert.equal(second.res.body.nextCursor, null);
   assert.notEqual(second.res.body.images[0].id, first.res.body.images[0].id);
+
+  const offset = makeCtx('GET', '/api/v1/image-library?limit=1&offset=1');
+  await handleResources(offset);
+  assert.equal(offset.res.statusCode, 400);
+
+  const wild = makeCtx('GET', '/api/v1/image-library?limit=500');
+  await handleResources(wild);
+  assert.equal(wild.res.statusCode, 400, 'a limit is refused, not clamped');
 });
+
+// `search`, `category` and GET /image-library/categories are SQL (unnest over
+// the tag array); the database double cannot run them, so they are pinned
+// against real PostgreSQL in tests/pg/library-list-page.pgtest.js.
 
 test('GET /image-library without the read permission is refused with 403', async () => {
   await installDb();
