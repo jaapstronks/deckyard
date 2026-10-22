@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.86.0](https://github.com/jaapstronks/deckyard/compare/v1.85.0...v1.86.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* slide library, collections and image library on the list-page contract (B822) ([#1823](https://github.com/jaapstronks/deckyard/issues/1823))
+
+### Added
+
+* Home, shared-with-me and the trash page on the list-page contract (B821) ([#1821](https://github.com/jaapstronks/deckyard/issues/1821)) ([9fb4880](https://github.com/jaapstronks/deckyard/commit/9fb4880d82f2df5fcc737dfdbc8706644542fcab))
+* slide library, collections and image library on the list-page contract (B822) ([#1823](https://github.com/jaapstronks/deckyard/issues/1823)) ([f4d938f](https://github.com/jaapstronks/deckyard/commit/f4d938f4f30fc5f4f48f198d3063e603a9f10303))
+
+
+### Changed
+
+* release 1.86.0 as a beta minor ([cf0708d](https://github.com/jaapstronks/deckyard/commit/cf0708d7944360a0b2344a363991641422b71581))
+
 ## [1.85.0](https://github.com/jaapstronks/deckyard/compare/v1.84.0...v1.85.0) (2026-10-22)
 
 
