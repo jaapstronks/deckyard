@@ -1229,9 +1229,11 @@ export async function buildDeckSlides({
       .filter((d) => d.reason !== 'reference')
       .map((d) => d.text);
     // A picture the PowerPoint file holds in a format that does not become a
-    // PNG is missing from the slide: the report names it (B829).
+    // PNG is missing from the slide: the report names it (B829). A page shown
+    // as its rendering from the PDF still has it.
+    const showsRendering = Boolean(plan.reason) && pagePixels;
     for (const d of page.dropped) {
-      if (d.reason === 'unsupported-image') {
+      if (d.reason === 'unsupported-image' && !showsRendering) {
         errors.push({ page: page.page, code: 'unsupported-image' });
       }
     }

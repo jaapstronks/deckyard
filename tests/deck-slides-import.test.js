@@ -745,6 +745,52 @@ test('a picture the PowerPoint file holds as EMF is named in the report', async 
   );
 });
 
+test('an EMF picture on a page shown as its rendering from the PDF is not reported missing', async () => {
+  const zip = await JSZip.loadAsync(keynotePptx);
+  // Page 5, the chart page, falls back to its rendering with both files.
+  const part = 'ppt/slides/slide5.xml';
+  const pic =
+    '<p:pic><p:nvPicPr><p:cNvPr id="300" name="Logo" descr="Company logo"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>' +
+    '<p:blipFill><a:blip r:embed="rIdEmf"/></p:blipFill>' +
+    '<p:spPr><a:xfrm><a:off x="100000" y="100000"/><a:ext cx="1000000" cy="1000000"/></a:xfrm></p:spPr></p:pic>';
+  zip.file(
+    part,
+    (await zip.file(part).async('string')).replace(
+      '</p:spTree>',
+      `${pic}</p:spTree>`,
+    ),
+  );
+  const rels = 'ppt/slides/_rels/slide5.xml.rels';
+  zip.file(
+    rels,
+    (await zip.file(rels).async('string')).replace(
+      '</Relationships>',
+      '<Relationship Id="rIdEmf" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/logo.emf"/></Relationships>',
+    ),
+  );
+  zip.file('ppt/media/logo.emf', Buffer.from('not really a metafile'));
+  const pptxBytes = await zip.generateAsync({ type: 'nodebuffer' });
+  const { pages } = await extractPptxPages(pptxBytes);
+  assert.ok(
+    pages[4].dropped.some((d) => d.reason === 'unsupported-image'),
+    'the fixture drops the EMF picture',
+  );
+
+  const { render } = stubRenderer();
+  const both = await pptxImport({ pdfBytes: keynotePdf, pptxBytes }, render);
+  assert.deepEqual(
+    both.report.errors.filter((e) => e.code === 'unsupported-image'),
+    [],
+  );
+  const alone = await pptxImport({ pdfBytes: null, pptxBytes }, () =>
+    assert.fail('nothing is rendered'),
+  );
+  assert.deepEqual(
+    alone.report.errors.filter((e) => e.code === 'unsupported-image'),
+    [{ page: 5, code: 'unsupported-image' }],
+  );
+});
+
 test('neither file, or an unreadable one, is refused, and an abort stops the reading', async () => {
   const base = {
     theme: null,
