@@ -240,6 +240,29 @@ export async function replaceTagLinks(scope, { linkTable, rowId, tagNames }) {
 }
 
 /**
+ * The tags with how many decks carry each, the base of `listTags` and
+ * `searchTags`. A trashed deck does not count: the Presentations list leaves
+ * it out of its tag filter (B821), so counting it would promise decks the
+ * filter then does not show (B835).
+ * @param {import('kysely').Kysely<any>} db
+ */
+function selectTagCounts(db) {
+  return db
+    .selectFrom('tags')
+    .leftJoin('presentation_tags', 'tags.id', 'presentation_tags.tag_id')
+    .leftJoin('presentations', (join) =>
+      join
+        .onRef('presentations.id', '=', 'presentation_tags.presentation_id')
+        .on('presentations.trashed_at', 'is', null),
+    )
+    .select([
+      'tags.id',
+      'tags.name',
+      db.fn.count('presentations.id').as('count'),
+    ]);
+}
+
+/**
  * List all tags of the scope's organization.
  * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<Array<{id: string, name: string, count: number}>>}
@@ -249,14 +272,7 @@ export async function listTags(scope) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 
-  const rows = await db
-    .selectFrom('tags')
-    .leftJoin('presentation_tags', 'tags.id', 'presentation_tags.tag_id')
-    .select([
-      'tags.id',
-      'tags.name',
-      db.fn.count('presentation_tags.presentation_id').as('count'),
-    ])
+  const rows = await selectTagCounts(db)
     .where('tags.organization_id', '=', orgId)
     .groupBy(['tags.id', 'tags.name'])
     .orderBy('tags.name', 'asc')
@@ -447,14 +463,7 @@ export async function searchTags(scope, prefix, limit = 10) {
   }
   const pattern = `${escapeLikePattern(searchTerm)}%`;
 
-  const rows = await db
-    .selectFrom('tags')
-    .leftJoin('presentation_tags', 'tags.id', 'presentation_tags.tag_id')
-    .select([
-      'tags.id',
-      'tags.name',
-      db.fn.count('presentation_tags.presentation_id').as('count'),
-    ])
+  const rows = await selectTagCounts(db)
     .where('tags.organization_id', '=', orgId)
     .where(
       db.fn('lower', ['tags.name']),

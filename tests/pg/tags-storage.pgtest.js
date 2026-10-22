@@ -137,6 +137,30 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
     assert.strictEqual(byName.Marketing, 1);
   });
 
+  it('leaves a trashed deck out of the usage count (B835)', async () => {
+    // The Presentations list filters on tags in SQL and leaves trashed decks
+    // out (B821); the count beside each tag follows the same rule, or a tag
+    // promises decks the filter then does not show.
+    const kept = await seedPresentation(db, { title: 'Kept' });
+    const trashed = await seedPresentation(db, { title: 'Trashed' });
+    await setTagsForPresentation(storageScope, kept, ['Archive']);
+    await setTagsForPresentation(storageScope, trashed, ['Archive']);
+    await db
+      .updateTable('presentations')
+      .set({ trashed_at: new Date().toISOString() })
+      .where('id', '=', trashed)
+      .execute();
+
+    const listed = (await listTags(storageScope)).find(
+      (t) => t.name === 'Archive',
+    );
+    assert.strictEqual(listed.count, 1);
+    const found = (await searchTags(storageScope, 'arch')).find(
+      (t) => t.name === 'Archive',
+    );
+    assert.strictEqual(found.count, 1);
+  });
+
   it('replaces (not merges) tags on a subsequent set', async () => {
     await setTagsForPresentation(storageScope, p1, ['Q3']);
     const got = await getTagsForPresentation(storageScope, p1);
