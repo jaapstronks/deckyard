@@ -4,6 +4,16 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.83.5](https://github.com/jaapstronks/deckyard/compare/v1.83.4...v1.83.5) (2026-10-22)
+
+
+### Fixed
+
+* a chart beside text is cut out of its page, and a repeated logo is left out (B831) ([#1812](https://github.com/jaapstronks/deckyard/issues/1812)) ([ddaf3c0](https://github.com/jaapstronks/deckyard/commit/ddaf3c08cb8c9a65a989f23585078d4842003a7c))
+* a page with a picture has no second home without it, and the report carries error codes (B826) ([#1808](https://github.com/jaapstronks/deckyard/issues/1808)) ([2fb7f5d](https://github.com/jaapstronks/deckyard/commit/2fb7f5d1674b2e7e1cd6c3cf6f57dbc538487276))
+* an imported slide follows the layout and background of its page (B830) ([#1811](https://github.com/jaapstronks/deckyard/issues/1811)) ([d6a2cae](https://github.com/jaapstronks/deckyard/commit/d6a2caee55ffd6c83e9e4fdd32572269da1deaa9))
+* derived background keys are machine values, not translatable text (B818) ([#1806](https://github.com/jaapstronks/deckyard/issues/1806)) ([1ea5732](https://github.com/jaapstronks/deckyard/commit/1ea57320aa45515ff104f85531509a13cd655f3b))
+
 ## [1.83.4](https://github.com/jaapstronks/deckyard/compare/v1.83.3...v1.83.4) (2026-10-21)
 
 
