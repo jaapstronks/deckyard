@@ -66,6 +66,8 @@ The common signature is not universal. `loadPresentationForActor()` takes a deck
 
 A list that grows per organization answers one page at a time through `server/services/list-page.js` (D358): adapters pass their query parameters or tool arguments to `parseListPage()`, which refuses an out-of-range `limit`, any `offset` and a foreign cursor as a 400 `invalid` naming `details.field`, and shape the answer with `listPageResult()` as `{ <collection>, nextCursor }`. Storage receives only the decoded position. The contract, the keyset query and which lists use it are described in [storage-layer.md](storage-layer.md) § A list read.
 
+The notification list accepts only `filter=all|unread|mentions|archived`; an absent filter means `all`. A supplied empty or unknown filter returns 400 `invalid` with `details.field = "filter"`. The retired `unread` parameter is refused with `details = { field: "unread", use: "filter=unread" }`. Cursor positions are checked for calendar, clock and numeric-offset bounds before querying, preserving their original microsecond text.
+
 Export preparation has explicit entry points in `server/services/exports.js`:
 
 - `prepareExportContext()` authorizes a requested deck export and counts it before the format builder runs.
@@ -73,7 +75,6 @@ Export preparation has explicit entry points in `server/services/exports.js`:
 - `authorizeExportResult()` checks the finished artifact against the downloader and current deck rights; a built author artifact cannot be served after demotion.
 - `buildExportContext()` describes an already-authorized deck, including MCP download-link preparation; it neither authorizes nor counts a request.
 - `prepareThemeTemplate()` resolves a scoped theme and builds its template without requiring a presentation.
-  The notification list accepts only `filter=all|unread|mentions|archived`; an absent filter means `all`. A supplied empty or unknown filter returns 400 `invalid` with `details.field = "filter"`. The retired `unread` parameter is refused with `details = { field: "unread", use: "filter=unread" }`. Cursor positions are checked for calendar, clock and numeric-offset bounds before querying, preserving their original microsecond text.
 
 ## Enforcement
 

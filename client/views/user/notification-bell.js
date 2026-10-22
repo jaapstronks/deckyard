@@ -212,7 +212,9 @@ export function createNotificationBell({ api }) {
       return;
     }
 
-    if (notifications.length === 0) {
+    // An empty page is only the end of the list when there is no next one:
+    // archiving the rows shown can empty the view while more wait behind it.
+    if (notifications.length === 0 && !nextCursor) {
       listContainer.append(
         h('div', {
           class: 'notification-bell-item is-empty',
@@ -502,6 +504,9 @@ export function createNotificationBell({ api }) {
         notifications = notifications.filter((n) => n.id !== notif.id);
       }
       renderNotifications();
+      // The last row shown is gone but the lens goes on: fetch what follows
+      // instead of leaving a lone Load more where the list was.
+      if (notifications.length === 0 && nextCursor) loadMore();
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('[notification-bell] archive error:', e);
