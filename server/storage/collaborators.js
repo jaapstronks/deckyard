@@ -9,13 +9,11 @@
  * stamps are not an authorization source.
  */
 
-import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { norm, nowIso } from '../utils/normalize.js';
 import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
 import { isValidPermission } from '../../shared/constants/permissions.js';
-import { resolveDisplayNames, toDisplayIdentity } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import {
   getCachedPermission,
@@ -303,99 +301,6 @@ export async function listCollaborators(scope, presentationId) {
       .execute();
 
     return rows.map(formatCollaborator);
-  });
-}
-
-/**
- * List presentations shared with a user.
- * For the "Shared with me" view.
- *
- * The one collaborator query that keeps a context, and the only one that may:
- * it is scoped by user rather than by presentation, so there is no deck to
- * derive an organization from. The organization filter here means "decks in the
- * organization I am acting in" — a listing decision, not an authorization one. A
- * cross-organization collaborator still reaches such a deck through every
- * presentation-scoped endpoint; it just does not show up in this list. Widening
- * that is a product question about what "shared with me" means across
- * organizations, tracked with the identity epic rather than decided here.
- *
- * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
- * @param {string} userEmail - The user's email
- * @returns {Promise<Array>} - List of presentations with permission info
- */
-export async function listPresentationsSharedWithUser(scope, userEmail) {
-  toStorageContext(scope, 'listPresentationsSharedWithUser');
-  const email = normalizeEmail(userEmail);
-  if (!email) return [];
-
-  return withDbGuard([], async (db) => {
-    const orgId = getOrgId(scope);
-
-    const rows = await db
-      .selectFrom('presentation_collaborators as c')
-      .innerJoin('presentations as p', 'p.id', 'c.presentation_id')
-      .select([
-        'p.id',
-        'p.title',
-        'p.theme',
-        'p.visibility',
-        'p.owner_user_id',
-        'p.owner_email',
-        'p.created_by_user_id',
-        'p.created_by',
-        'p.updated_by_user_id',
-        'p.updated_by',
-        'p.created_at',
-        'p.modified_at',
-        'c.permission',
-        'c.invited_by',
-        'c.invited_at',
-      ])
-      .where('c.user_email', '=', email)
-      .where('c.organization_id', '=', orgId)
-      .where('c.revoked_at', 'is', null)
-      .where('p.trashed_at', 'is', null) // Exclude trashed presentations
-      .orderBy('c.invited_at', 'desc')
-      .execute();
-
-    // One batched name lookup for the whole list, as in listPresentationRows.
-    const lookup = await resolveDisplayNames(
-      scope,
-      rows.flatMap((row) => [
-        { id: row.updated_by_user_id, email: row.updated_by },
-        { id: row.created_by_user_id, email: row.created_by },
-      ]),
-    );
-
-    return rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      theme: row.theme,
-      visibility: row.visibility,
-      ownerId: row.owner_user_id || null,
-      ownerEmail: row.owner_email,
-      // Creator and last writer as display pairs (D22), the same shape the
-      // deck list in storage/presentations/index.js hands the same card
-      // component. The owner keeps its address: this reader can open the deck.
-      createdBy: toDisplayIdentity(
-        row.created_by_user_id,
-        row.created_by,
-        lookup,
-      ),
-      updatedBy: toDisplayIdentity(
-        row.updated_by_user_id,
-        row.updated_by,
-        lookup,
-      ),
-      // The timestamps under the names every presentation projection in
-      // storage uses (B448); the deck list reads `modified` for its card.
-      created: row.created_at,
-      modified: row.modified_at,
-      // Collaboration-specific fields
-      permission: row.permission,
-      sharedBy: row.invited_by,
-      sharedAt: row.invited_at,
-    }));
   });
 }
 

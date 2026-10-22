@@ -192,9 +192,16 @@ that one has no id beside it yet.
     a page is short only at the end of the list. Stamping rows after the
     read (`canEdit`, display names) is fine, it removes nothing.
   - On the contract now: the notification inbox (`listNotifications`,
-    `GET /api/notifications`). The other lists follow one by one
-    (B820–B825); until a list has moved, it is read whole
-    (`listPresentations`, `listTrashedPresentations`,
+    `GET /api/notifications`) and the deck list (`listDecks` in
+    `server/storage/presentations/deck-list.js`, `GET /api/v1/presentations`
+    and MCP `list_presentations`, B820). The deck list's predicate (who sees
+    which deck per `ownership`) is SQL, the same rule as the per-deck
+    `belongsInCollection`; `tests/pg/deck-list-page.pgtest.js` holds the two
+    equal. Without `limit` the same query answers the whole list, which the
+    internal Home, shared-with-me and search still read until they move onto
+    the contract (B821). The other
+    lists follow one by one (B821–B825); until a list has moved, it is read
+    whole (`listTrashedPresentations`,
     `listPresentationVersions`,
     `listOrganizationLibrary`/`listPersonalLibrary`, `getPublishedIndex`,
     `listImageLibrary`) and the

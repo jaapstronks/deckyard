@@ -27,7 +27,7 @@ import {
   deletePresentation,
   duplicatePresentation,
   DECK_LIST_OWNERSHIPS,
-  listPresentationsForActor,
+  listPresentationPage,
   publicDeckTimestamps,
   mayOnPresentation,
 } from '../services/presentations.js';
@@ -339,13 +339,19 @@ export function registerTools(
 
   server.tool(
     'list_presentations',
-    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each, newest first. Use `ownership` to choose which decks: "owned" (default; decks you own or made), "collection" (yours plus every organization-visible deck, as on Home), "shared" (decks shared with you as a collaborator), or "all" (every deck you can open).',
+    'List presentations you can access, one page at a time, most recently changed first. Returns id, title, theme and timestamps for each, and `nextCursor`: pass it back as `cursor` (with the same `ownership`) for the next page; `null` means there are no more. Use `ownership` to choose which decks: "owned" (default; decks you own or made), "collection" (yours plus every organization-visible deck, as on Home), "shared" (decks shared with you as a collaborator), or "all" (every deck you can open).',
     {
       type: 'object',
       properties: {
         limit: {
           type: 'number',
-          description: 'Max results, a whole number from 1 (default: 50)',
+          description:
+            'Results per page, a whole number from 1 to 100 (default: 50)',
+        },
+        cursor: {
+          type: 'string',
+          description:
+            'The `nextCursor` of the previous page, to continue the list. Omit for the first page.',
         },
         ownership: {
           type: 'string',
@@ -355,12 +361,19 @@ export function registerTools(
         },
       },
     },
-    async ({ limit = 50, ownership = 'owned' } = {}, context) => {
+    async (args = {}, context) => {
       const owner = getOwner(context);
-      const { presentations, total } = await listPresentationsForActor(
+      const ownership = args.ownership ?? 'owned';
+      const { presentations, nextCursor } = await listPresentationPage(
         storageScopeOf(context),
         { actor: actorOf(context) },
-        { ownership, limit },
+        {
+          ownership,
+          limit: args.limit,
+          cursor: args.cursor,
+          // Refused with `use: 'cursor'`, not ignored (D358).
+          ...(Object.hasOwn(args, 'offset') ? { offset: args.offset } : {}),
+        },
       );
 
       const items = presentations.map((p) => {
@@ -388,7 +401,7 @@ export function registerTools(
 
       return {
         presentations: items,
-        total,
+        nextCursor,
         ownerFilter: owner || null,
         ownership,
       };

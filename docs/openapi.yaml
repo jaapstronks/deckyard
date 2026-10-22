@@ -265,23 +265,34 @@ paths:
       tags:
         - Presentations
       summary: List presentations
-      description: Returns a paginated list of presentations accessible to the API key owner.
+      description: >-
+        Returns one page of the presentations the API key owner sees: their
+        own, the ones they made and every organization-visible one, most
+        recently changed first (`modified desc`, then `id desc`). Pass
+        `nextCursor` back as `cursor`, with the same `viewOnly`, for the next
+        page; `nextCursor: null` is the end of the list. Every page but the
+        last is full. There is no total and no `offset`: a request naming
+        `offset` is refused with 400 `invalid` and
+        `details: { field: offset, use: cursor }`.
       parameters:
         - name: limit
           in: query
-          description: Maximum number of presentations to return (1-100)
+          description: >-
+            Presentations per page, 1 to 100. A value outside that range is
+            refused with 400 `invalid` and `details.field: limit`, not clamped.
           schema:
             type: integer
             minimum: 1
             maximum: 100
             default: 50
-        - name: offset
+        - name: cursor
           in: query
-          description: Number of presentations to skip
+          description: >-
+            The `nextCursor` of the previous page. A cursor that does not
+            decode, or that was made with another `viewOnly`, is refused with
+            400 `invalid` and `details.field: cursor`.
           schema:
-            type: integer
-            minimum: 0
-            default: 0
+            type: string
         - name: viewOnly
           in: query
           description: >-
@@ -298,13 +309,20 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [presentations, nextCursor]
                 properties:
                   presentations:
                     type: array
                     items:
                       $ref: '#/components/schemas/PresentationSummary'
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: >-
+                      Opaque position after the last presentation of this
+                      page; `null` when there are no more.
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

@@ -42,6 +42,7 @@ import { validatePresentationSize } from '../../utils/presentation-limits.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { countInstanceHealth, slideTypeEntries } from '../instance-health.js';
 import { invalidatePresentationCache } from './cache.js';
+import { __deckList } from './deck-list.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
@@ -111,16 +112,6 @@ function mergeTranslationSources(
     else delete versions[lang].translationSources;
   }
   return { ...clientI18n, versions };
-}
-
-/**
- * List the presentations of the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
- * @returns {Promise<Array>}
- */
-export async function listPresentations(scope) {
-  const ctx = toStorageContext(scope, 'listPresentations');
-  return listPresentationRows(ctx);
 }
 
 /**
@@ -802,98 +793,6 @@ export function mapPresentationRow(row, lookup = NO_DISPLAY_NAMES) {
 }
 
 /**
- * List all presentations accessible by the context.
- * @param {object} ctx - Storage context
- */
-async function listPresentationRows(ctx) {
-  const db = getDb();
-  const orgId = getOrgId(ctx);
-
-  const rows = await db
-    .selectFrom('presentations')
-    .select([
-      'id',
-      'title',
-      'modified_at as modified',
-      'created_at as created',
-      'theme',
-      'lang',
-      // The owner keeps both fields (key + an address the reader may have);
-      // the creator is a display pair below. See storage/display-identity.js.
-      'owner_user_id as ownerId',
-      'owner_email as ownerEmail',
-      'created_by_user_id as createdById',
-      'created_by as createdBy',
-      'updated_by_user_id as updatedById',
-      'updated_by as updatedBy',
-      'visibility',
-      'is_view_only as isViewOnly',
-      'revision',
-      'i18n',
-      'slides',
-    ])
-    .where('organization_id', '=', orgId)
-    .where('trashed_at', 'is', null)
-    .orderBy('modified_at', 'desc')
-    // Full organization-scoped set. B79 inherited applyPagination()'s default
-    // 100-row cap as a literal .limit(100), silently dropping the tail for orgs
-    // with >100 decks; B85 removed it. Consumers treat this as the complete list
-    // (listPresentationsForActor filters, searches and pages it in memory for
-    // every contract; bulk-export backs it up), so a hard cap corrupted their
-    // totals and dropped data. DB-level pagination is a future deliberate
-    // feature, not this cap.
-    // See docs/reference/storage-layer.md § List reads.
-    .execute();
-
-  // One batched name lookup for the whole page rather than one per card:
-  // a 200-deck organization would otherwise issue 200 identical queries.
-  const displayNames = await resolveDisplayNames(
-    ctx,
-    rows.flatMap((row) => [
-      { id: row.updatedById, email: row.updatedBy },
-      { id: row.createdById, email: row.createdBy },
-    ]),
-  );
-
-  return rows.map((row) => {
-    const slides = Array.isArray(row.slides) ? row.slides : [];
-    const firstSlide = slides[0] || null;
-    const i18n = row.i18n && typeof row.i18n === 'object' ? row.i18n : null;
-    const dominant = i18n?.dominant || null;
-
-    return {
-      id: row.id,
-      title: row.title,
-      modified: row.modified,
-      created: row.created,
-      theme: row.theme,
-      lang: row.lang,
-      ownerId: row.ownerId || null,
-      ownerEmail: row.ownerEmail,
-      createdBy: toDisplayIdentity(
-        row.createdById,
-        row.createdBy,
-        displayNames,
-      ),
-      updatedBy: toDisplayIdentity(
-        row.updatedById,
-        row.updatedBy,
-        displayNames,
-      ),
-      visibility: row.visibility,
-      isViewOnly: !!row.isViewOnly,
-      revision: row.revision,
-      // Which languages the deck has, as the open list it is. The summary used
-      // to carry `hasNl`/`hasEnGb`/`otherLang` beside the dominant language —
-      // three fields that could not describe a German version, and that no
-      // reader ever asked for (D72).
-      i18n: i18n ? { dominant, langs: existingVersionLangs({ i18n }) } : null,
-      hasSlides: !!firstSlide,
-    };
-  });
-}
-
-/**
  * Fetch one presentation.
  *
  * The organization filter is skipped only when the context declares
@@ -1308,8 +1207,8 @@ async function listTrashedPresentationRows(ctx) {
     .where('trashed_at', 'is not', null)
     .orderBy('trashed_at', 'desc')
     // Full organization-scoped trash set; B85 removed the inherited 100-row cap
-    // (see listPresentationRows above and docs/reference/storage-layer.md
-    // § List reads).
+    // (see listPresentationRows in ./deck-list.js and
+    // docs/reference/storage-layer.md § List reads).
     .execute();
 
   const displayNames = await resolveDisplayNames(
@@ -1353,7 +1252,7 @@ async function listTrashedPresentationRows(ctx) {
       ),
       visibility: row.visibility,
       revision: row.revision,
-      // Same i18n summary shape as `listPresentationRows` (see there).
+      // Same i18n summary shape as `listPresentationRows` (./deck-list.js).
       i18n: i18n ? { dominant, langs: existingVersionLangs({ i18n }) } : null,
       hasSlides: !!firstSlide,
     };
@@ -1595,9 +1494,10 @@ async function listPresentationVersionRows(presentationId, ctx) {
     .where('organization_id', '=', orgId)
     .orderBy('created_at', 'desc')
     // Full version history for the deck; B85 removed the inherited 100-row cap
-    // (see listPresentationRows above and docs/reference/storage-layer.md
-    // § List reads). bulk-export walks this per deck, so a cap truncated the
-    // backup of any deck with >100 saved versions.
+    // (see listPresentationRows in ./deck-list.js and
+    // docs/reference/storage-layer.md § List reads). bulk-export walks this
+    // per deck, so a cap truncated the backup of any deck with >100 saved
+    // versions.
     .execute();
 
   const displayNames = await resolveDisplayNames(
@@ -1738,10 +1638,12 @@ async function prunePresentationVersionRows(presentationId, ctx, opts = {}) {
 // production code calls the exported facade.
 export const __store = {
   getPresentationRow,
-  listPresentationRows,
+  listPresentationRows: __deckList.listPresentationRows,
   createPresentationRow,
   updatePresentationRow,
 };
+
+export { listDecks, listPresentations } from './deck-list.js';
 
 export { getYDocState, setYDocState } from './ydocs.js';
 
