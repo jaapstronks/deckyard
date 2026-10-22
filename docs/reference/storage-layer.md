@@ -198,7 +198,8 @@ that one has no id beside it yet.
     which deck per `ownership`) is SQL, the same rule as the per-deck
     `belongsInCollection`; `tests/pg/deck-list-page.pgtest.js` holds the two
     equal. Without `limit` the same query answers the whole list, which the
-    internal Home, shared-with-me and search still read until B821. The other
+    internal Home, shared-with-me and search still read until they move onto
+    the contract (B821). The other
     lists follow one by one (B821–B825); until a list has moved, it is read
     whole (`listTrashedPresentations`,
     `listPresentationVersions`,
