@@ -813,8 +813,9 @@ export function createFakeDb(seed = {}) {
     const detach = (value) =>
       value && typeof value === 'object' ? structuredClone(value) : value;
 
-    const project = (context) => {
-      if (state.aggregates.length) return null;
+    // The plain columns of a row; a grouped aggregate read projects its group
+    // key with this before adding the aggregates.
+    const projectColumns = (context) => {
       if (state.selectAll || !state.projection) {
         const out = {};
         for (const [key, value] of Object.entries(context)) {
@@ -830,6 +831,8 @@ export function createFakeDb(seed = {}) {
       }
       return out;
     };
+    const project = (context) =>
+      state.aggregates.length ? null : projectColumns(context);
 
     const builder = {
       innerJoin(joinTable, left, right) {
@@ -987,7 +990,7 @@ export function createFakeDb(seed = {}) {
             else groups.set(key, [row]);
           }
           return [...groups.values()].map((rows) => {
-            const out = project(rows[0]);
+            const out = projectColumns(rows[0]);
             for (const aggregate of state.aggregates) {
               out[aggregate.alias] = aggregate.compute(rows);
             }

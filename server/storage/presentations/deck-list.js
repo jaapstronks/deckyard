@@ -28,6 +28,11 @@
  * `collection` and `all`. The organization filter and `trashed_at IS NULL`
  * apply to every list.
  *
+ * Two narrowing filters ride on any ownership, also in the query (B821):
+ * `visibility` (the Workspace chip on Home) and `tags`, which keeps a deck
+ * carrying at least one of the named tags, compared on `lower(name)` as the
+ * tag identity is (migration 018, server/storage/tags.js).
+ *
  * `belongsInCollection` (server/utils/presentation-authz/presentations.js)
  * stays the answer for one deck; this is the same rule for a list. Two
  * spellings of one rule need a gate: tests/pg/deck-list-page.pgtest.js holds
@@ -125,8 +130,31 @@ function termExpression(eb, term, reader, orgId) {
 }
 
 /**
- * The list query before its order and page: scope, trash, the reader's terms
- * and `viewOnly`.
+ * Decks carrying at least one of `names`, compared as the tag identity is:
+ * `lower(name)` within the organization.
+ * @param {Object} eb - Expression builder
+ * @param {string[]} names
+ * @param {string} orgId
+ */
+function taggedExpression(eb, names, orgId) {
+  return eb.exists(
+    eb
+      .selectFrom('presentation_tags as pt')
+      .innerJoin('tags as t', 't.id', 'pt.tag_id')
+      .select('pt.presentation_id')
+      .whereRef('pt.presentation_id', '=', 'presentations.id')
+      .where('t.organization_id', '=', orgId)
+      .where(
+        eb.fn('lower', ['t.name']),
+        'in',
+        names.map((name) => eb.fn('lower', [eb.val(name)])),
+      ),
+  );
+}
+
+/**
+ * The list query before its order and page: scope, trash, the reader's terms,
+ * `viewOnly`, `visibility` and `tags`.
  *
  * @param {Object} db
  * @param {string} orgId
@@ -134,8 +162,14 @@ function termExpression(eb, term, reader, orgId) {
  * @param {Object} filter.reader
  * @param {string[]|null} filter.terms - {@link deckListTerms}; not empty.
  * @param {boolean} [filter.viewOnly]
+ * @param {'private'|'organization'} [filter.visibility]
+ * @param {string[]} [filter.tags] - Tag names; a deck needs one of them.
  */
-function deckListQuery(db, orgId, { reader, terms, viewOnly }) {
+function deckListQuery(
+  db,
+  orgId,
+  { reader, terms, viewOnly, visibility, tags },
+) {
   let qb = db
     .selectFrom('presentations')
     .select([...DECK_LIST_COLUMNS])
@@ -148,6 +182,12 @@ function deckListQuery(db, orgId, { reader, terms, viewOnly }) {
   }
   if (viewOnly !== undefined) {
     qb = qb.where('presentations.is_view_only', '=', viewOnly);
+  }
+  if (visibility !== undefined) {
+    qb = qb.where('presentations.visibility', '=', visibility);
+  }
+  if (tags?.length) {
+    qb = qb.where((eb) => taggedExpression(eb, tags, orgId));
   }
   return qb;
 }
@@ -273,6 +313,9 @@ export async function listPresentations(scope) {
  *   its `userId` already resolved.
  * @param {'collection'|'owned'|'shared'|'all'} filter.ownership
  * @param {boolean} [filter.viewOnly] - Only view-only decks or only others.
+ * @param {'private'|'organization'} [filter.visibility] - Only decks with
+ *   this visibility.
+ * @param {string[]} [filter.tags] - Only decks carrying one of these tags.
  * @param {Object} [page]
  * @param {number} [page.limit] - Rows per page; the whole list when absent.
  * @param {{value: string, id: string}|null} [page.after] - Position of the
@@ -281,7 +324,7 @@ export async function listPresentations(scope) {
  */
 export async function listDecks(
   scope,
-  { reader, ownership, viewOnly },
+  { reader, ownership, viewOnly, visibility, tags },
   { limit, after = null } = {},
 ) {
   const ctx = toStorageContext(scope, 'listDecks');
@@ -290,7 +333,13 @@ export async function listDecks(
 
   const db = getDb();
   const orgId = getOrgId(ctx);
-  const qb = deckListQuery(db, orgId, { reader, terms, viewOnly });
+  const qb = deckListQuery(db, orgId, {
+    reader,
+    terms,
+    viewOnly,
+    visibility,
+    tags,
+  });
 
   let rows;
   let next = null;

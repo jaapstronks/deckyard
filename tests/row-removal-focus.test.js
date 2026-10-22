@@ -249,7 +249,10 @@ async function trashWith(ids) {
     await import('../client/views/list/views/trash-view.js');
   let trash = ids.map((id) => ({ id, title: `Deck ${id}`, hasSlides: false }));
   const api = async (url) => {
-    if (url === '/api/presentations/trash') return trash;
+    // One page holds the whole stub trash (the list-page contract, B821).
+    if (url.startsWith('/api/presentations/trash?')) {
+      return { presentations: trash, nextCursor: null };
+    }
     const restored = url.match(/^\/api\/presentations\/([^/]+)\/restore$/);
     if (restored) trash = trash.filter((p) => p.id !== restored[1]);
     return {};

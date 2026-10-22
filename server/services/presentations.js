@@ -50,6 +50,7 @@
 import {
   getPresentation,
   listDecks,
+  listTrashedDecks,
   createPresentation as storeNewPresentation,
   duplicatePresentation as storeDuplicate,
   deletePresentation as storeTrash,
@@ -268,15 +269,49 @@ function invalidListInput(field, message) {
   return new AppError(message, 400, { field }, 'invalid');
 }
 
+/** The visibilities a deck list can narrow to (`presentations.visibility`). */
+const DECK_LIST_VISIBILITIES = Object.freeze(['private', 'organization']);
+
+/** The most tags one list may filter on. */
+const DECK_LIST_MAX_TAGS = 20;
+
+/**
+ * Refuse a tag filter that is not a short list of tag names. Empty means no
+ * filter; names are compared as the tag identity is, in SQL.
+ * @param {*} tags
+ * @returns {string[]|undefined}
+ */
+function parseTagFilter(tags) {
+  if (tags === undefined) return undefined;
+  const valid =
+    Array.isArray(tags) &&
+    tags.length <= DECK_LIST_MAX_TAGS &&
+    tags.every((tag) => typeof tag === 'string' && tag.trim() !== '');
+  if (!valid) {
+    throw invalidListInput(
+      'tags',
+      `Invalid tags (up to ${DECK_LIST_MAX_TAGS} tag names)`,
+    );
+  }
+  return tags.length ? [...new Set(tags.map((tag) => tag.trim()))] : undefined;
+}
+
 /**
  * Refuse a list input outside the vocabulary before any deck is read. An
  * unknown value is never read as "no filter" (les 3).
  *
  * @param {Object} input
- * @returns {{ ownership: string, viewOnly?: boolean, query: string|null, deep: boolean }}
+ * @returns {{ ownership: string, viewOnly?: boolean, visibility?: string, tags?: string[], query: string|null, deep: boolean }}
  */
 function parseListInput(input) {
-  const { ownership = 'collection', viewOnly, q, deep } = input ?? {};
+  const {
+    ownership = 'collection',
+    viewOnly,
+    visibility,
+    tags,
+    q,
+    deep,
+  } = input ?? {};
   if (!DECK_LIST_OWNERSHIPS.includes(ownership)) {
     throw invalidListInput(
       'ownership',
@@ -285,6 +320,15 @@ function parseListInput(input) {
   }
   if (viewOnly !== undefined && typeof viewOnly !== 'boolean') {
     throw invalidListInput('viewOnly', 'Invalid viewOnly (true|false)');
+  }
+  if (
+    visibility !== undefined &&
+    !DECK_LIST_VISIBILITIES.includes(visibility)
+  ) {
+    throw invalidListInput(
+      'visibility',
+      `Invalid visibility (${DECK_LIST_VISIBILITIES.join('|')})`,
+    );
   }
   if (deep !== undefined && typeof deep !== 'boolean') {
     throw invalidListInput('deep', 'Invalid deep (true|false)');
@@ -299,7 +343,14 @@ function parseListInput(input) {
       );
     }
   }
-  return { ownership, viewOnly, query, deep: deep === true };
+  return {
+    ownership,
+    viewOnly,
+    visibility,
+    tags: parseTagFilter(tags),
+    query,
+    deep: deep === true,
+  };
 }
 
 /**
@@ -349,10 +400,9 @@ async function searchMatch(scope, pres, query, deep) {
  * `belongsInCollection` (presentation-authz) for one deck; the filters have
  * one vocabulary, and a value outside it is refused.
  *
- * This is the unpaged form, for the internal lists that still show every deck
- * at once (Home, shared-with-me, search; B821 moves them onto the list-page
- * contract) and for the comment service's deck set (B824). A page of decks is
- * {@link listPresentationPage}.
+ * This is the unpaged form, for search (a result set in relevance order, not
+ * a list page) and for the comment service's deck set (B824). A page of decks
+ * is {@link listPresentationPage}.
  *
  * The rows come back as storage projects them; each contract keeps its own
  * projection.
@@ -377,11 +427,14 @@ export async function listPresentationsForActor(
   { actor } = {},
   input = {},
 ) {
-  const { ownership, viewOnly, query, deep } = parseListInput(input);
+  const { ownership, viewOnly, visibility, tags, query, deep } =
+    parseListInput(input);
   const { items: decks } = await listDecks(scope, {
     reader: await listReader(actor),
     ownership,
     viewOnly,
+    visibility,
+    tags,
   });
   if (!query) return { presentations: decks };
 
@@ -402,35 +455,76 @@ export async function listPresentationsForActor(
 }
 
 /**
- * One page of the decks an actor sees, on the list-page contract (D358, B820):
- * `GET /api/v1/presentations` and MCP `list_presentations`. The predicate is
- * the one {@link listPresentationsForActor} uses, applied in the query, so
- * every page but the last is full; the order is `(modified desc, id desc)`.
+ * One page of the decks an actor sees, on the list-page contract (D358):
+ * `GET /api/v1/presentations` and MCP `list_presentations` (B820), and the
+ * internal Home grid and shared-with-me (B821). The predicate is the one
+ * {@link listPresentationsForActor} uses, applied in the query, so every page
+ * but the last is full; the order is `(modified desc, id desc)`.
  *
  * @param {StorageScope} scope - The caller's storage scope.
  * @param {{ actor: Actor }} identity
  * @param {Object} [input]
  * @param {'collection'|'owned'|'shared'|'all'} [input.ownership='collection']
  * @param {boolean} [input.viewOnly]
+ * @param {'private'|'organization'} [input.visibility] - Only decks with this
+ *   visibility (Home's Workspace chip).
+ * @param {string[]} [input.tags] - Only decks carrying one of these tag names.
  * @param {number|string} [input.limit] - 1..100, default 50.
  * @param {string} [input.cursor] - `nextCursor` of the previous page, made
- *   under the same `ownership` and `viewOnly`.
+ *   under the same filters.
  * @returns {Promise<{ presentations: Object[], nextCursor: string|null }>}
- * @throws {AppError} 400 `invalid` naming `ownership`, `viewOnly`, `limit`,
- *   `cursor` or a refused `offset` (`details.use: 'cursor'`).
+ * @throws {AppError} 400 `invalid` naming `ownership`, `viewOnly`,
+ *   `visibility`, `tags`, `limit`, `cursor` or a refused `offset`
+ *   (`details.use: 'cursor'`).
  */
 export async function listPresentationPage(scope, { actor } = {}, input = {}) {
-  const { ownership, viewOnly } = parseListInput({
+  const { ownership, viewOnly, visibility, tags } = parseListInput({
     ownership: input?.ownership,
     viewOnly: input?.viewOnly,
+    visibility: input?.visibility,
+    tags: input?.tags,
   });
   const page = parseListPage(input, {
     sortKey: 'modified_desc',
-    filters: { ownership, viewOnly },
+    filters: {
+      ownership,
+      viewOnly,
+      visibility,
+      tags: tags && [...tags].sort(),
+    },
   });
   const result = await listDecks(
     scope,
-    { reader: await listReader(actor), ownership, viewOnly },
+    { reader: await listReader(actor), ownership, viewOnly, visibility, tags },
+    { limit: page.limit, after: page.after },
+  );
+  return listPageResult('presentations', result, page);
+}
+
+/**
+ * One page of the trash an actor may restore from, on the list-page contract
+ * (D358, B821): `GET /api/presentations/trash`. The predicate is
+ * `canRestorePresentation` applied in the query (`listTrashedDecks`,
+ * server/storage/presentations/trash-list.js); the order is
+ * `(trashed desc, id desc)`.
+ *
+ * The actor is read as the restore check reads it, without resolving an
+ * address to a user id: the list shows what restoring would allow.
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: Actor }} identity
+ * @param {Object} [input]
+ * @param {number|string} [input.limit] - 1..100, default 50.
+ * @param {string} [input.cursor] - `nextCursor` of the previous page.
+ * @returns {Promise<{ presentations: Object[], nextCursor: string|null }>}
+ * @throws {AppError} 400 `invalid` naming `limit`, `cursor` or a refused
+ *   `offset`.
+ */
+export async function listTrashPage(scope, { actor } = {}, input = {}) {
+  const page = parseListPage(input, { sortKey: 'trashed_desc' });
+  const result = await listTrashedDecks(
+    scope,
+    { reader: { ...actorIdentity(actor), isAdmin: actor?.isAdmin === true } },
     { limit: page.limit, after: page.after },
   );
   return listPageResult('presentations', result, page);

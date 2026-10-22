@@ -2,16 +2,17 @@
  * Trash API routes for soft-deleted presentations.
  */
 
-import { listTrashedPresentations } from '../../../storage/presentations/index.js';
 import { permanentlyDeletePresentation } from '../../../services/permanent-delete.js';
-import { restorePresentation } from '../../../services/presentations.js';
+import {
+  listTrashPage,
+  restorePresentation,
+} from '../../../services/presentations.js';
 import {
   methodNotAllowed,
   serveJson,
   storageError,
 } from '../../../utils/http.js';
 import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
-import { canRestorePresentation } from '../../../utils/presentation-authz/index.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 /**
@@ -25,30 +26,41 @@ const PERMANENT_DELETE_FAILURE_MESSAGES = {
 };
 
 /**
- * GET /api/presentations/trash - List trashed presentations
+ * GET /api/presentations/trash - One page of the trashed decks the session
+ * user may restore, on the list-page contract (D358, B821):
+ * `{ presentations, nextCursor }`, most recently trashed first.
  */
 export async function handlePresentationsTrashList({
   repoRoot,
   storageScope,
   req,
   res,
+  url,
   authedUser,
 }) {
   if (req.method !== 'GET') {
     return methodNotAllowed(res, ['GET']);
   }
 
-  const items = await listTrashedPresentations(storageScope);
-
-  const filtered = items.filter((pres) =>
-    canRestorePresentation({ user: authedUser, pres }),
+  const params = url.searchParams;
+  const { presentations, nextCursor } = await listTrashPage(
+    storageScope,
+    { actor: authedUser },
+    {
+      limit: params.get('limit') ?? undefined,
+      cursor: params.get('cursor') ?? undefined,
+      ...(params.has('offset') ? { offset: params.get('offset') } : {}),
+    },
   );
 
-  serveJson(
-    res,
-    200,
-    await withDeckCardFields(repoRoot, filtered, storageScope),
-  );
+  serveJson(res, 200, {
+    presentations: await withDeckCardFields(
+      repoRoot,
+      presentations,
+      storageScope,
+    ),
+    nextCursor,
+  });
   return true;
 }
 

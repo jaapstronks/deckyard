@@ -1,4 +1,4 @@
-import { listPresentationsForActor } from '../../../services/presentations.js';
+import { listPresentationPage } from '../../../services/presentations.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
 import { serveJson } from '../../../utils/http.js';
 import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
@@ -8,43 +8,49 @@ import {
 } from '../../../storage/presentations/index.js';
 
 /**
- * GET /api/presentations — the session user's collection (Home), with this
- * route's own enrichment. Who sees what is decided in
- * `listPresentationsForActor` (B607).
+ * The deck-list input as the internal API spells it in query parameters:
+ * `ownership`, `visibility`, one `tag` per tag name, and the page (`limit`,
+ * `cursor`; `offset` is passed on to be refused, D358). The service checks
+ * every value.
+ *
+ * @param {URLSearchParams} params
+ * @returns {Object}
  */
-export async function handlePresentationsList({
-  repoRoot,
-  storageScope,
-  res,
-  authedUser,
-} = {}) {
-  const { presentations: filtered } = await listPresentationsForActor(
-    storageScope,
-    { actor: authedUser },
-  );
+export function deckListInput(params) {
+  return {
+    ownership: params.get('ownership') ?? undefined,
+    visibility: params.get('visibility') ?? undefined,
+    tags: params.has('tag') ? params.getAll('tag') : undefined,
+    limit: params.get('limit') ?? undefined,
+    cursor: params.get('cursor') ?? undefined,
+    ...(params.has('offset') ? { offset: params.get('offset') } : {}),
+  };
+}
 
-  // Fetch tags for all presentations in the list
-  const presentationIds = filtered.map((p) => p.id);
-  const tagsMap = await getTagsForPresentations(storageScope, presentationIds);
-
-  // Fetch published status and collaborator counts. The organization rides
-  // along on the request's storage scope, so these stay in the session's
-  // organization instead of resolving against the instance default.
-  const publishedSet = await getPublishedPresentationIds(
-    storageScope,
-    presentationIds,
-  );
-  const collaboratorCounts = await getCollaboratorCounts(
-    storageScope,
-    presentationIds,
-  );
-
-  // Attach tags, isPublished and collaboratorCount here — they are this route's
-  // own enrichment; the fields every deck-card producer owes the grid come from
-  // the shared mapper.
-  const withMetadata = await withDeckCardFields(
+/**
+ * The deck grid's cards for a page of listed decks: tags, published state and
+ * collaborator count (this API's own enrichment), plus the fields every
+ * deck-card producer owes the grid. Shared by Home, shared-with-me and search,
+ * so a card looks the same whichever list it came from.
+ *
+ * @param {string} repoRoot
+ * @param {import('../../../storage/scope.js').StorageScope} storageScope
+ * @param {Object[]} presentations - Decks as `listDecks` projects them.
+ * @returns {Promise<Object[]>}
+ */
+export async function toDeckGridCards(repoRoot, storageScope, presentations) {
+  const ids = presentations.map((p) => p.id);
+  // The organization rides along on the request's storage scope, so these
+  // stay in the session's organization instead of resolving against the
+  // instance default.
+  const [tagsMap, publishedSet, collaboratorCounts] = await Promise.all([
+    getTagsForPresentations(storageScope, ids),
+    getPublishedPresentationIds(storageScope, ids),
+    getCollaboratorCounts(storageScope, ids),
+  ]);
+  return withDeckCardFields(
     repoRoot,
-    filtered.map((p) => ({
+    presentations.map((p) => ({
       ...p,
       tags: tagsMap.get(p.id) || [],
       isPublished: publishedSet.has(p.id),
@@ -52,7 +58,29 @@ export async function handlePresentationsList({
     })),
     storageScope,
   );
+}
 
-  serveJson(res, 200, withMetadata);
+/**
+ * GET /api/presentations — one page of the session user's decks (Home), on
+ * the list-page contract (D358, B821): `{ presentations, nextCursor }`. Who
+ * sees what, the filters and the page are `listPresentationPage`'s.
+ */
+export async function handlePresentationsList({
+  repoRoot,
+  storageScope,
+  res,
+  url,
+  authedUser,
+} = {}) {
+  const { presentations, nextCursor } = await listPresentationPage(
+    storageScope,
+    { actor: authedUser },
+    deckListInput(url.searchParams),
+  );
+
+  serveJson(res, 200, {
+    presentations: await toDeckGridCards(repoRoot, storageScope, presentations),
+    nextCursor,
+  });
   return true;
 }

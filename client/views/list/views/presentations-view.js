@@ -1,44 +1,47 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { createTagFilter, filterPresentationsByTags } from '../tag-filter.js';
+import { createTagFilter } from '../tag-filter.js';
+import { createDeckPager } from '../deck-pager.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createNoPresentationsEmptyState } from '../../../lib/dom/empty-state.js';
 import { storage } from '../../../lib/storage.js';
 import { h } from '../../../lib/dom/index.js';
 
 /**
+ * The ownership chips and the list filter each one asks the server for. The
+ * chips are filters on the server's deck list, not predicates over loaded
+ * cards: the list is paged (D358, B821), so a client-side filter, count or
+ * sort would only describe the pages loaded so far.
+ */
+const OWNERSHIP_FILTERS = Object.freeze({
+  all: { ownership: 'all' },
+  mine: { ownership: 'owned' },
+  organization: { ownership: 'all', visibility: 'organization' },
+  shared: { ownership: 'shared' },
+});
+
+/**
  * Unified "Presentations" view — one filterable surface that replaces the
  * separate Recent / Workspace / My presentations / Shared with me tabs.
  *
- * Ownership chips (All · Mine · Workspace · Shared) pick the source; a tag
- * filter and a sort control refine it. Everything the user can see arrives in
- * one `allByDate` array, so each chip is just a predicate over that list — no
- * extra fetches, no per-view state to keep in sync.
+ * Ownership chips (All · Mine · Workspace · Shared) pick the source and a tag
+ * filter narrows it; both go to the server, which answers the decks newest
+ * change first, one page at a time, with "Load more" below the grid.
  *
  * @param {object} opts
  * @param {Function} opts.api - API client function
  * @param {Function} opts.renderCard - Card renderer function
- * @param {Array} opts.allByDate - All visible presentations, newest first
  * @param {Function} [opts.onCreate] - Open the creation view (for the empty state)
- * @returns {object} - { el, list, tagFilter, refresh, addPresentation }
+ * @returns {object} - { el, list, tagFilter, load, refresh, addPresentation }
  */
-export function createPresentationsView({
-  api,
-  renderCard,
-  allByDate,
-  onCreate,
-}) {
+export function createPresentationsView({ api, renderCard, onCreate }) {
   const OWNERSHIP_KEY = 'ps:presentations-ownership';
-  const SORT_KEY = 'ps:presentations-sort';
-  const OWNERSHIPS = ['all', 'mine', 'organization', 'shared'];
-  const SORTS = ['recent', 'title'];
+  const OWNERSHIPS = Object.keys(OWNERSHIP_FILTERS);
 
-  let all = [...allByDate];
   let selectedTags = [];
   let ownership = OWNERSHIPS.includes(storage.get(OWNERSHIP_KEY, ''))
     ? storage.get(OWNERSHIP_KEY, '')
     : 'all';
-  let sort = SORTS.includes(storage.get(SORT_KEY, ''))
-    ? storage.get(SORT_KEY, '')
-    : 'recent';
+  let loaded = false;
 
   const view = h('div', {
     class: 'sidebar-view',
@@ -49,6 +52,7 @@ export function createPresentationsView({
     text: t('list.presentations.title', 'Presentations'),
   });
   const list = h('div', { class: 'list presentation-grid' });
+  const status = h('div', { class: 'presentation-grid-status' });
 
   // Ownership chips — the primary source filter (and the replacement for the
   // old Recent/Workspace/Shared tabs), so they stay visible on every viewport.
@@ -70,40 +74,21 @@ export function createPresentationsView({
       'aria-selected': String(key === ownership),
       onclick: () => setOwnership(key),
     });
+    btn.append(
+      h('span', {
+        class: 'ownership-filter-label',
+        text: ownershipLabel(key),
+      }),
+    );
     ownershipButtons.set(key, btn);
     ownershipFilter.append(btn);
   }
-
-  // Sort control.
-  const sortSelect = h(
-    'select',
-    {
-      class: 'form-input sort-select',
-      'aria-label': t('list.presentations.sortLabel', 'Sort presentations'),
-      onchange: (e) => {
-        sort = SORTS.includes(e.target.value) ? e.target.value : 'recent';
-        storage.set(SORT_KEY, sort);
-        renderList();
-      },
-    },
-    [
-      h('option', {
-        value: 'recent',
-        text: t('list.presentations.sort.recent', 'Last updated'),
-      }),
-      h('option', {
-        value: 'title',
-        text: t('list.presentations.sort.title', 'Title A–Z'),
-      }),
-    ],
-  );
-  sortSelect.value = sort;
 
   const tagFilter = createTagFilter({
     api,
     onFilterChange: (tags) => {
       selectedTags = tags;
-      renderList();
+      reload();
     },
   });
 
@@ -112,34 +97,23 @@ export function createPresentationsView({
     { class: 'view-header-with-filter is-presentations' },
     [
       title,
-      h('div', { class: 'view-filters' }, [
-        ownershipFilter,
-        sortSelect,
-        tagFilter.el,
-      ]),
+      h('div', { class: 'view-filters' }, [ownershipFilter, tagFilter.el]),
     ],
   );
 
-  const ownershipLabel = (key) =>
-    ({
-      all: t('list.presentations.ownership.all', 'All'),
-      mine: t('list.presentations.ownership.mine', 'Mine'),
-      organization: t('list.presentations.ownership.organization', 'Workspace'),
-      shared: t('list.presentations.ownership.shared', 'Shared'),
-    })[key] || key;
-
-  const inOwnership = (p, key) => {
-    switch (key) {
-      case 'mine':
-        return !p.isSharedWithMe;
-      case 'organization':
-        return p.visibility === 'organization';
-      case 'shared':
-        return !!p.isSharedWithMe;
-      default:
-        return true;
-    }
-  };
+  function ownershipLabel(key) {
+    return (
+      {
+        all: t('list.presentations.ownership.all', 'All'),
+        mine: t('list.presentations.ownership.mine', 'Mine'),
+        organization: t(
+          'list.presentations.ownership.organization',
+          'Workspace',
+        ),
+        shared: t('list.presentations.ownership.shared', 'Shared'),
+      }[key] || key
+    );
+  }
 
   const cardOpts = (p) => ({
     isOrganization: p.visibility === 'organization',
@@ -148,96 +122,90 @@ export function createPresentationsView({
     permission: p.permission,
   });
 
-  const sortList = (arr) => {
-    if (sort === 'title') {
-      return [...arr].sort((a, b) =>
-        String(a.title || '').localeCompare(String(b.title || ''), undefined, {
-          sensitivity: 'base',
-        }),
-      );
+  const pager = createDeckPager({
+    api,
+    path: '/api/presentations',
+    onPage: (decks, { first }) => {
+      if (first) {
+        list.replaceChildren();
+        status.replaceChildren();
+        if (decks.length === 0) status.append(emptyState());
+      }
+      for (const p of decks) list.append(renderCard(p, cardOpts(p)));
+    },
+  });
+
+  function emptyState() {
+    if (selectedTags.length > 0 || ownership !== 'all') {
+      return h('div', {
+        class: 'empty-note',
+        text: t(
+          'list.presentations.noMatch',
+          'No presentations match the selected filters.',
+        ),
+      });
     }
-    return arr; // `all` is already newest-first
-  };
+    if (typeof onCreate === 'function') {
+      return createNoPresentationsEmptyState({ onCreate });
+    }
+    return h('div', {
+      class: 'empty-note',
+      text: t('list.presentations.empty', 'No presentations yet.'),
+    });
+  }
+
+  function syncChips() {
+    for (const [key, btn] of ownershipButtons) {
+      btn.classList.toggle('is-active', key === ownership);
+      btn.setAttribute('aria-selected', String(key === ownership));
+    }
+  }
 
   function setOwnership(key) {
     if (!OWNERSHIPS.includes(key) || key === ownership) return;
     ownership = key;
     storage.set(OWNERSHIP_KEY, ownership);
-    renderList();
+    reload();
   }
 
-  function renderList() {
-    // Chip counts reflect the current tag filter, so "Workspace 3" means three
-    // workspace decks match what's actually shown.
-    const tagFiltered = filterPresentationsByTags(all, selectedTags);
-    for (const key of OWNERSHIPS) {
-      const count = tagFiltered.filter((p) => inOwnership(p, key)).length;
-      const btn = ownershipButtons.get(key);
-      btn.replaceChildren();
-      btn.append(
-        h('span', {
-          class: 'ownership-filter-label',
-          text: ownershipLabel(key),
-        }),
-        h('span', { class: 'ownership-filter-count', text: String(count) }),
+  /** Read the first page under the current chip and tags. */
+  async function reload() {
+    loaded = true;
+    syncChips();
+    try {
+      await pager.load({
+        ...OWNERSHIP_FILTERS[ownership],
+        tags: selectedTags,
+      });
+    } catch {
+      list.replaceChildren();
+      status.replaceChildren();
+      const loadError = createInlineError({ live: 'polite' });
+      status.append(loadError.el);
+      loadError.show(
+        t('list.presentations.loadError', 'Failed to load presentations.'),
+        { focus: false },
       );
-      btn.classList.toggle('is-active', key === ownership);
-      btn.setAttribute('aria-selected', String(key === ownership));
-    }
-
-    const filtered = sortList(
-      tagFiltered.filter((p) => inOwnership(p, ownership)),
-    );
-
-    list.replaceChildren();
-    if (filtered.length === 0) {
-      if (selectedTags.length > 0 || ownership !== 'all') {
-        list.append(
-          h('div', {
-            class: 'empty-note',
-            text: t(
-              'list.presentations.noMatch',
-              'No presentations match the selected filters.',
-            ),
-          }),
-        );
-      } else if (typeof onCreate === 'function') {
-        list.append(createNoPresentationsEmptyState({ onCreate }));
-      } else {
-        list.append(
-          h('div', {
-            class: 'empty-note',
-            text: t('list.presentations.empty', 'No presentations yet.'),
-          }),
-        );
-      }
-      return;
-    }
-    for (const p of filtered) {
-      list.append(renderCard(p, cardOpts(p)));
     }
   }
 
-  view.append(header, list);
-  renderList();
+  view.append(header, list, status, pager.el);
+  syncChips();
 
   return {
     el: view,
     list,
     tagFilter,
+    /** Load the first page when the view is first shown. */
+    load: () => (loaded ? Promise.resolve() : reload()),
     refresh: () => {
       tagFilter.refresh();
-      renderList();
+      return reload();
     },
     /**
-     * Insert a freshly created/duplicated deck at the top and re-render so
-     * counts and filters stay correct.
-     * @param {object} p - list item
+     * A deck was just created or duplicated: read the list again, so it shows
+     * at the top under the filters that keep it.
      */
-    addPresentation: (p) => {
-      if (!p?.id) return;
-      all = [p, ...all.filter((x) => x.id !== p.id)];
-      renderList();
-    },
+    addPresentation: () => reload(),
   };
 }

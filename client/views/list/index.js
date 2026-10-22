@@ -38,7 +38,8 @@ import {
 } from './bulk-action-bar.js';
 import { storage } from '../../lib/storage.js';
 import { createTopbar } from './topbar.js';
-import { loadPresentationList } from './data.js';
+import { fetchDeckPage } from './data.js';
+import { HOME_RECENT_COUNT } from './views/home-view.js';
 import {
   LOCAL_STORAGE_KEY_VIEW,
   addressForView,
@@ -141,8 +142,13 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
   // LOAD PRESENTATIONS
   // ============================================================
 
-  const { workspace, priv, sharedPresentations, allByDate } =
-    await loadPresentationList(api);
+  // Home shows the newest few decks the person can open; the Presentations
+  // view reads the full list itself, page by page (D358, B821).
+  const { decks: recentDecks } = await fetchDeckPage(
+    api,
+    '/api/presentations',
+    { ownership: 'all', limit: HOME_RECENT_COUNT },
+  ).catch(() => ({ decks: [] }));
 
   // ============================================================
   // SELECTION STATE
@@ -205,7 +211,7 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
     api,
     renderCard,
     setView,
-    allByDate,
+    recentDecks,
     themePicker,
     unreadCount,
     user,
@@ -220,7 +226,6 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
   const presentationsViewObj = createPresentationsView({
     api,
     renderCard,
-    allByDate,
     onCreate: () => openNewPresentationModalWrapper(),
   });
 
@@ -237,8 +242,8 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
   // Search view
   let previousView = currentView;
   const searchViewObj = createSearchView({
+    api,
     renderCard,
-    allPresentations: [...workspace, ...priv, ...sharedPresentations],
     onClearSearch: () => {
       searchInput.value = '';
       setView(previousView);
@@ -321,14 +326,19 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
     if (viewKey === 'trash') trashViewObj.load();
     if (viewKey === 'slideLibrary') slideLibraryViewObj.load();
 
-    // Load tag filters for views that have them
-    if (viewKey === 'presentations') presentationsViewObj.tagFilter?.load();
+    if (viewKey === 'presentations') {
+      presentationsViewObj.load();
+      // Load tag filters for views that have them
+      presentationsViewObj.tagFilter?.load();
+    }
   }
 
   // ============================================================
   // SEARCH
   // ============================================================
 
+  // Each search is a server round trip (B821), so wait for a pause in typing.
+  const SEARCH_DEBOUNCE_MS = 250;
   let searchDebounce = null;
 
   function handleSearch(query) {
@@ -342,7 +352,7 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
       } else if (currentView === 'search') {
         setView(previousView);
       }
-    }, 150);
+    }, SEARCH_DEBOUNCE_MS);
   }
 
   // ============================================================
@@ -353,7 +363,6 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
     const created = toListItem(createdFull);
     if (!created?.id) return;
 
-    priv.unshift(created);
     presentationsViewObj.addPresentation(created);
     setView('presentations');
   };

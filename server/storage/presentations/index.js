@@ -44,7 +44,6 @@ import { countInstanceHealth, slideTypeEntries } from '../instance-health.js';
 import { invalidatePresentationCache } from './cache.js';
 import { __deckList } from './deck-list.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
-import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
@@ -440,15 +439,6 @@ export async function deletePresentation(scope, id, opts) {
 }
 
 /**
- * List trashed presentations of the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
- */
-export async function listTrashedPresentations(scope) {
-  const ctx = toStorageContext(scope, 'listTrashedPresentations');
-  return listTrashedPresentationRows(ctx);
-}
-
-/**
  * Restore a presentation out of the trash.
  * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
@@ -533,41 +523,6 @@ export async function duplicatePresentation(scope, id, opts) {
   // quota — refuse (typed 4xx) once they are at the cap. No-op outside sandbox.
   await assertSandboxQuotaForCreate(ctx, opts?.actorEmail);
   return duplicatePresentationRow(id, ctx);
-}
-
-/**
- * Batch-fetch first slides for multiple presentations.
- * Returns a Map of presentationId -> firstSlide object.
- * This avoids N+1 queries when loading shared presentations.
- * @param {import('../scope.js').StorageScope} scope
- * @param {string[]} ids - Array of presentation IDs
- * @returns {Promise<Map<string, Object>>} Map of id -> firstSlide
- */
-export async function getFirstSlidesForIds(scope, ids) {
-  if (!Array.isArray(ids) || ids.length === 0) {
-    return new Map();
-  }
-
-  const ctx = toStorageContext(scope, 'getFirstSlidesForIds');
-  // Fetch each presentation and extract its first slide. (There is no batch
-  // store query for this; the per-id reads below are the whole implementation.)
-  const results = await Promise.all(
-    ids.map(async (id) => {
-      try {
-        const pres = await getPresentationRow(id, ctx);
-        const first = pres?.slides?.[0];
-        return [
-          id,
-          first
-            ? { id: first.id, type: first.type, content: first.content || {} }
-            : null,
-        ];
-      } catch {
-        return [id, null];
-      }
-    }),
-  );
-  return new Map(results);
 }
 
 // ============================================================
@@ -1174,92 +1129,6 @@ async function deletePresentationRow(id, ctx) {
 }
 
 /**
- * List all trashed presentations.
- * @param {object} ctx - Storage context
- */
-async function listTrashedPresentationRows(ctx) {
-  const db = getDb();
-  const orgId = getOrgId(ctx);
-
-  const rows = await db
-    .selectFrom('presentations')
-    .select([
-      'id',
-      'title',
-      'modified_at as modified',
-      'created_at as created',
-      'trashed_at as trashedAt',
-      'trashed_by as trashedBy',
-      'trashed_by_user_id as trashedById',
-      'theme',
-      'owner_user_id as ownerId',
-      'owner_email as ownerEmail',
-      'created_by_user_id as createdById',
-      'created_by as createdBy',
-      'updated_by_user_id as updatedById',
-      'updated_by as updatedBy',
-      'visibility',
-      'revision',
-      'i18n',
-      'slides',
-    ])
-    .where('organization_id', '=', orgId)
-    .where('trashed_at', 'is not', null)
-    .orderBy('trashed_at', 'desc')
-    // Full organization-scoped trash set; B85 removed the inherited 100-row cap
-    // (see listPresentationRows in ./deck-list.js and
-    // docs/reference/storage-layer.md § List reads).
-    .execute();
-
-  const displayNames = await resolveDisplayNames(
-    ctx,
-    rows.flatMap((row) => [
-      { id: row.updatedById, email: row.updatedBy },
-      { id: row.createdById, email: row.createdBy },
-      { id: row.trashedById, email: row.trashedBy },
-    ]),
-  );
-
-  return rows.map((row) => {
-    const slides = Array.isArray(row.slides) ? row.slides : [];
-    const firstSlide = slides[0] || null;
-    const i18n = row.i18n && typeof row.i18n === 'object' ? row.i18n : null;
-    const dominant = i18n?.dominant || null;
-
-    return {
-      id: row.id,
-      title: row.title,
-      modified: row.modified,
-      created: row.created,
-      trashedAt: row.trashedAt,
-      trashedBy: toDisplayIdentity(
-        row.trashedById,
-        row.trashedBy,
-        displayNames,
-      ),
-      theme: row.theme,
-      ownerId: row.ownerId || null,
-      ownerEmail: row.ownerEmail,
-      createdBy: toDisplayIdentity(
-        row.createdById,
-        row.createdBy,
-        displayNames,
-      ),
-      updatedBy: toDisplayIdentity(
-        row.updatedById,
-        row.updatedBy,
-        displayNames,
-      ),
-      visibility: row.visibility,
-      revision: row.revision,
-      // Same i18n summary shape as `listPresentationRows` (./deck-list.js).
-      i18n: i18n ? { dominant, langs: existingVersionLangs({ i18n }) } : null,
-      hasSlides: !!firstSlide,
-    };
-  });
-}
-
-/**
  * Restore a presentation from trash.
  * @param {string} id - Presentation ID
  * @param {object} ctx - Storage context
@@ -1644,6 +1513,8 @@ export const __store = {
 };
 
 export { listDecks, listPresentations } from './deck-list.js';
+
+export { listTrashedDecks } from './trash-list.js';
 
 export { getYDocState, setYDocState } from './ydocs.js';
 

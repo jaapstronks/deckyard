@@ -234,7 +234,11 @@ async function seed() {
       deckRow({ id: DECK.owned }),
       // No slides: the "shared with me" grid reduces the thumbnail to a
       // presence boolean, and this deck is the one that must report `false`.
-      deckRow({ id: DECK.second, slides: [] }),
+      deckRow({
+        id: DECK.second,
+        slides: [],
+        modified_at: '2026-02-02T00:00:00.000Z',
+      }),
       deckRow({ id: DECK.organization, visibility: 'organization' }),
       deckRow({ id: DECK.trashed, trashed_at: '2026-03-01T00:00:00.000Z' }),
       deckRow({
@@ -408,7 +412,7 @@ const actor = (key) => (key ? ACTORS[key] : null);
 // GET /api/presentations/shared-with-me
 // ---------------------------------------------------------------------------
 
-test('shared-with-me lists the decks shared with the caller, newest invite first', async () => {
+test('shared-with-me lists the decks shared with the caller, newest change first', async () => {
   await seed();
   const res = await call('GET', '/api/presentations/shared-with-me', {
     as: ACTORS.viewer,
@@ -425,6 +429,7 @@ test('shared-with-me lists the decks shared with the caller, newest invite first
     'each deck carries the permission of the invite, and slide presence as a boolean',
   );
   assert.equal(res.body.presentations[1].sharedBy, ACTORS.owner.email);
+  assert.equal(res.body.nextCursor, null, 'one page holds both');
 });
 
 test('shared-with-me hands back no slide content, only whether there are slides', async () => {

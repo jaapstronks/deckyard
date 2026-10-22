@@ -1,62 +1,59 @@
 /**
- * Presentation-list data loading + normalization.
- *
- * Fetches the owner's decks and the shared-with-me decks in parallel (with
- * graceful fallbacks), splits them into workspace / private buckets, drops
- * shared duplicates already present in the main list, and produces a single
- * date-sorted view.
+ * Deck-list transport for the list views, on the list-page contract (D358,
+ * B821): every request is one page, `{ presentations, nextCursor }`, and the
+ * server decides which decks a filter keeps. The views never filter, count or
+ * sort decks on their own: they would only see the pages loaded so far.
  */
 
 /**
- * @param {(path: string) => Promise<any>} api
- * @returns {Promise<{
- *   workspace: object[], priv: object[],
- *   sharedPresentations: object[], allByDate: object[],
- * }>}
+ * The query string of a deck-list request. `tags` becomes one `tag` per name;
+ * an empty or missing value is left out.
+ *
+ * @param {Object} [params]
+ * @param {string} [params.ownership] - `collection` | `owned` | `shared` | `all`
+ * @param {string} [params.visibility] - `private` | `organization`
+ * @param {string[]} [params.tags] - Keep decks carrying one of these tags.
+ * @param {number} [params.limit]
+ * @param {string|null} [params.cursor] - `nextCursor` of the previous page.
+ * @returns {string} `?…`, or '' without parameters.
  */
-export async function loadPresentationList(api) {
-  // Fetch main list and shared presentations in parallel with graceful fallbacks
-  const [list, sharedResp] = await Promise.all([
-    api('/api/presentations').catch(() => []),
-    api('/api/presentations/shared-with-me').catch(() => ({
-      presentations: [],
-    })),
-  ]);
+function deckListQuery({ ownership, visibility, tags, limit, cursor } = {}) {
+  const params = new URLSearchParams();
+  if (ownership) params.set('ownership', ownership);
+  if (visibility) params.set('visibility', visibility);
+  for (const tag of tags || []) params.append('tag', tag);
+  if (limit) params.set('limit', String(limit));
+  if (cursor) params.set('cursor', cursor);
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
 
-  const workspace = [];
-  const priv = [];
+/**
+ * A listed deck as the grid reads it. A deck the reader holds through a
+ * collaborator row carries the grant (`permission`, `sharedBy`); the card
+ * marks it as shared with them.
+ *
+ * @param {Object} deck - A deck as the list endpoints answer it.
+ * @returns {Object}
+ */
+export function toGridDeck(deck) {
+  return { ...deck, isSharedWithMe: Boolean(deck?.permission) };
+}
 
-  // Track IDs from main list to avoid duplicates with shared
-  const mainListIds = new Set();
-
-  for (const p of Array.isArray(list) ? list : []) {
-    mainListIds.add(p.id);
-    if (p?.visibility === 'organization') {
-      workspace.push(p);
-    } else {
-      priv.push(p);
-    }
-  }
-
-  // Process shared presentations (mark them and exclude duplicates)
-  const sharedPresentations = (sharedResp?.presentations || [])
-    .filter((p) => !mainListIds.has(p.id))
-    .map((p) => ({
-      ...p,
-      isSharedWithMe: true,
-    }));
-
-  const getTimestamp = (p) => {
-    // For shared presentations, use sharedAt as the primary date
-    const dateStr = p.sharedAt || p.modified || p.created;
-    if (!dateStr) return 0;
-    const time = new Date(dateStr).getTime();
-    return Number.isNaN(time) ? 0 : time;
+/**
+ * Fetch one page of a deck list.
+ *
+ * @param {(path: string) => Promise<any>} api
+ * @param {string} path - `/api/presentations`, `…/shared-with-me` or `…/trash`.
+ * @param {Object} [params] - See {@link deckListQuery}.
+ * @returns {Promise<{ decks: Object[], nextCursor: string|null }>}
+ */
+export async function fetchDeckPage(api, path, params = {}) {
+  const resp = await api(`${path}${deckListQuery(params)}`);
+  return {
+    decks: (Array.isArray(resp?.presentations) ? resp.presentations : []).map(
+      toGridDeck,
+    ),
+    nextCursor: resp?.nextCursor || null,
   };
-
-  const allByDate = [...workspace, ...priv, ...sharedPresentations].sort(
-    (a, b) => getTimestamp(b) - getTimestamp(a),
-  );
-
-  return { workspace, priv, sharedPresentations, allByDate };
 }

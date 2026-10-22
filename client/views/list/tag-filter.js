@@ -2,21 +2,6 @@ import { h, installDismissOnOutside } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 
 /**
- * Filter presentations by selected tags (case-insensitive). A deck's tags
- * are `{id, name}` objects (B402). Empty selection passes through.
- * @param {Array} presentations
- * @param {string[]} selectedTags
- * @returns {Array}
- */
-export function filterPresentationsByTags(presentations, selectedTags) {
-  if (!selectedTags || selectedTags.length === 0) return presentations;
-  return (presentations || []).filter((p) => {
-    const pTags = (p.tags || []).map((tag) => tag.name.toLowerCase());
-    return selectedTags.some((tag) => pTags.includes(tag.toLowerCase()));
-  });
-}
-
-/**
  * Create a tag filter component for filtering presentations by tags.
  *
  * @param {object} opts
