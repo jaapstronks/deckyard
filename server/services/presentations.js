@@ -354,14 +354,16 @@ function parseListInput(input) {
 }
 
 /**
- * The reader a deck list filters on. The list predicate keys on `users.id`
- * (D22); MCP's actor carries only its address, so resolve it once for the
- * whole list, as the by-id deciders do per deck.
+ * The reader a deck list filters on, and every list that asks "may this
+ * reader open the deck the row points at" in SQL (the activity feed, B823).
+ * The list predicate keys on `users.id` (D22); MCP's actor carries only its
+ * address, so resolve it once for the whole list, as the by-id deciders do
+ * per deck.
  *
  * @param {Actor} [actor]
  * @returns {Promise<import('../../shared/identity-match.js').ActorIdentity>}
  */
-async function listReader(actor) {
+export async function listReader(actor) {
   const reader = actorIdentity(actor);
   if (!reader.userId && reader.email && !reader.unrestricted) {
     reader.userId = (await resolveActorUserId(actor)) || null;

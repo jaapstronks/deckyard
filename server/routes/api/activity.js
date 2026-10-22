@@ -1,6 +1,9 @@
 /**
  * Route handlers for activity feed.
  * Provides endpoints for listing events and tracking read status.
+ *
+ *   GET /api/activity?limit=20&cursor=…&excludeSelf=true - One page of the
+ *     feed on the list-page contract (D358): `{ events, nextCursor }`.
  */
 
 import {
@@ -10,7 +13,6 @@ import {
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
-import { parsePaginationParams } from '../../utils/request-validators.js';
 import {
   listActivityEvents,
   getUnreadEventCountsByPresentation,
@@ -18,31 +20,20 @@ import {
 } from '../../storage/activity-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
-import { loadPresentationForActor } from '../../services/presentations.js';
+import {
+  listReader,
+  loadPresentationForActor,
+} from '../../services/presentations.js';
+import { listPageResult, parseListPage } from '../../services/list-page.js';
 
 // GET /api/activity - List activity events
 async function handleActivityList({ storageScope, res, url, authedUser }) {
-  const email = String(authedUser?.email || '').trim();
-
-  // Parse query params
-  const { limit, offset } = parsePaginationParams(url.searchParams);
-  const presentationId = url.searchParams.get('presentationId') || null;
-  const eventType = url.searchParams.get('eventType') || null;
-  const excludeSelf = url.searchParams.get('excludeSelf') === 'true';
-
-  const opts = {
-    limit,
-    offset,
-    presentationId,
-    eventType,
-  };
-
-  // Optionally exclude the user's own events
-  if (excludeSelf) {
-    opts.excludeActorEmail = email;
-  }
-
-  const payload = await getEnrichedActivity({ storageScope, authedUser, opts });
+  const query = parseActivityQuery(url.searchParams);
+  const payload = await getEnrichedActivity({
+    storageScope,
+    authedUser,
+    ...query,
+  });
 
   serveJson(res, 200, {
     ok: true,
@@ -142,32 +133,82 @@ export const handleActivity = withErrorHandler('activity', (ctx) => {
 });
 
 /**
- * List activity events and enrich them with readable presentation info,
- * dropping events on presentations the user cannot access. Shared by the
- * standalone `/api/activity` route and the `/api/home` aggregation so both
- * apply the same access filtering and event shape.
+ * Read the feed's filters and page from a query string: one parse for
+ * `/api/activity` and the `/api/home` rail, so both refuse the same inputs.
+ * The filters are the cursor's fingerprint (server/services/list-page.js): a
+ * cursor is only valid with the filters it was made under.
+ *
+ * @param {URLSearchParams} searchParams - `limit`, `cursor`, `presentationId`,
+ *   `eventType`, `eventTypes[]`, `since`, `until`, `excludeSelf`.
+ * @param {Object} [options]
+ * @param {boolean} [options.excludeSelfByDefault=false] - Whether the reader's
+ *   own events are left out when `excludeSelf` is absent (Home: yes).
+ * @param {number} [options.defaultLimit] - Page size when none is named.
+ * @returns {{filters: Object, page: import('../../services/list-page.js').ListPage}}
+ * @throws {import('../../utils/errors.js').AppError} 400 `invalid` naming
+ *   `limit`, `cursor` or a refused `offset`.
+ */
+export function parseActivityQuery(
+  searchParams,
+  { excludeSelfByDefault = false, defaultLimit } = {},
+) {
+  const excludeSelf = searchParams.has('excludeSelf')
+    ? searchParams.get('excludeSelf') === 'true'
+    : excludeSelfByDefault;
+  const eventTypes = searchParams.getAll('eventTypes[]').filter(Boolean);
+  const filters = {
+    presentationId: searchParams.get('presentationId') || null,
+    eventType: searchParams.get('eventType') || null,
+    eventTypes: eventTypes.length ? [...eventTypes].sort() : null,
+    since: searchParams.get('since') || null,
+    until: searchParams.get('until') || null,
+    excludeSelf,
+  };
+  const page = parseListPage(searchParams, {
+    sortKey: 'created_desc',
+    filters,
+    ...(defaultLimit ? { defaultLimit } : {}),
+  });
+  return { filters, page };
+}
+
+/**
+ * One page of the activity feed, enriched with the readable deck each event
+ * is on. Which events the reader may see is decided in the query
+ * (`listActivityEvents`), so every page but the last is full (B823). Shared by
+ * `/api/activity` and the `/api/home` aggregation.
  *
  * @param {object} args
  * @param {import('../../storage/scope.js').StorageScope} args.storageScope - The request's storage scope
- * @param {object} args.authedUser
- * @param {object} args.opts - listActivityEvents filters (limit, offset,
- *   presentationId, eventType, eventTypes[], excludeActorEmail, since, until)
- * @returns {Promise<{events: object[], total: number, limit: number, offset: number}>}
+ * @param {object} args.authedUser - The reader.
+ * @param {object} args.filters - From {@link parseActivityQuery}.
+ * @param {import('../../services/list-page.js').ListPage} args.page
+ * @returns {Promise<{events: object[], nextCursor: string|null}>}
  */
-export async function getEnrichedActivity({ storageScope, authedUser, opts }) {
-  const result = await listActivityEvents(storageScope, opts);
-  const events = await enrichEventsWithPresentations(
-    result.events,
+export async function getEnrichedActivity({
+  storageScope,
+  authedUser,
+  filters,
+  page,
+}) {
+  const { excludeSelf, ...narrowing } = filters;
+  const result = await listActivityEvents(
     storageScope,
-    authedUser,
+    {
+      ...narrowing,
+      reader: await listReader(authedUser),
+      excludeActorEmail: excludeSelf ? authedUser?.email : undefined,
+    },
+    { limit: page.limit, after: page.after },
   );
+  const { events, nextCursor } = listPageResult('events', result, page);
   return {
-    events,
-    // Note: total may be higher than accessible events; this is acceptable
-    // as the client handles pagination gracefully.
-    total: result.total,
-    limit: result.limit,
-    offset: result.offset,
+    events: await enrichEventsWithPresentations(
+      events,
+      storageScope,
+      authedUser,
+    ),
+    nextCursor,
   };
 }
 
@@ -189,9 +230,14 @@ async function getReadablePresentation(pid, storageScope, authedUser) {
 }
 
 /**
- * Enrich events with presentation information and filter by access.
- * Fetches presentation titles for events that reference presentations,
- * and filters out events for presentations the user cannot access.
+ * Enrich events with presentation information. Fetches the deck of each event
+ * that references one, for its title and the rail's slide preview.
+ *
+ * The query already decided which events the reader may see; the by-id load
+ * here asks the same question again and drops an event whose deck it refuses.
+ * That only happens when the deck changed between the two reads (unshared,
+ * moved, deleted), and then dropping is the safe side; it is not the filter,
+ * tests/pg/activity-list-page.pgtest.js holds both answers equal.
  */
 async function enrichEventsWithPresentations(events, storageScope, authedUser) {
   // Collect unique presentation IDs

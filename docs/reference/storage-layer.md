@@ -225,7 +225,18 @@ that one has no id beside it yet.
     collection. `tests/pg/library-list-page.pgtest.js` carries the six
     checks for each. The backup (bulk export) reads them whole, without
     `limit`.
-  - The other lists follow one by one (B823–B825); until a list has moved,
+  - The activity feed (B823): `listActivityEvents` in
+    `server/storage/activity-events.js`, behind `GET /api/activity` and the
+    Home rail in `GET /api/home` (one parse, `parseActivityQuery`), ordered
+    `(created_at desc, id desc)`. Which events a reader sees is in the query:
+    an event on no deck for every reader of the organization, an event on a
+    deck only when the reader may open that deck by id
+    (`deckReadableExpression` in `deck-list.js`: the `all` terms over the deck
+    in this organization, without the trash filter, because a trashed deck
+    still opens by id). `tests/pg/activity-list-page.pgtest.js` holds it equal
+    to `loadPresentationForActor`. The unread badge
+    (`GET /api/activity/unread-count`) stays its own count.
+  - The other lists follow one by one (B824, B825); until a list has moved,
     it is read whole (`listPresentationVersions`, `getPublishedIndex`) and
     the routes that page it slice in memory over `parsePaginationParams`,
     which goes once the last list has moved. Those whole reads carry no row

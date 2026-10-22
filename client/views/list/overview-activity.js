@@ -309,8 +309,8 @@ export function createActivityFeed({ api, onUnreadCountChange }) {
   el.append(header, feed);
 
   let events = [];
-  let offset = 0;
-  let total = 0;
+  // Where the next page starts; null once the feed has ended (D358).
+  let nextCursor = null;
   let loading = false;
   const limit = 20;
 
@@ -322,12 +322,9 @@ export function createActivityFeed({ api, onUnreadCountChange }) {
     loading = true;
 
     try {
-      const result = await api(
-        `/api/activity?limit=${limit}&offset=0&excludeSelf=true`,
-      );
+      const result = await api(`/api/activity?limit=${limit}&excludeSelf=true`);
       events = result.events || [];
-      offset = events.length;
-      total = result.total || 0;
+      nextCursor = result.nextCursor || null;
 
       renderEvents();
     } catch (err) {
@@ -349,17 +346,17 @@ export function createActivityFeed({ api, onUnreadCountChange }) {
    * Load more events.
    */
   async function loadMore() {
-    if (loading || offset >= total) return;
+    if (loading || !nextCursor) return;
     loading = true;
     loadMoreBtn.disabled = true;
 
     try {
+      const cursor = encodeURIComponent(nextCursor);
       const result = await api(
-        `/api/activity?limit=${limit}&offset=${offset}&excludeSelf=true`,
+        `/api/activity?limit=${limit}&excludeSelf=true&cursor=${cursor}`,
       );
-      const newEvents = result.events || [];
-      events = events.concat(newEvents);
-      offset += newEvents.length;
+      events = events.concat(result.events || []);
+      nextCursor = result.nextCursor || null;
 
       renderEvents();
     } catch (err) {
@@ -387,7 +384,7 @@ export function createActivityFeed({ api, onUnreadCountChange }) {
     }
 
     // Show load more if there are more events
-    if (offset < total) {
+    if (nextCursor) {
       feed.append(loadMoreBtn);
     }
   }
@@ -435,7 +432,7 @@ export function createActivityFeed({ api, onUnreadCountChange }) {
      * Refresh the feed.
      */
     refresh() {
-      offset = 0;
+      nextCursor = null;
       events = [];
       load();
     },

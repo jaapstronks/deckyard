@@ -327,7 +327,8 @@ test('the new owner is notified, and the deck records the transfer', async () =>
     'the link is relative, as every in-app notification link is; the request host never reaches it',
   );
 
-  const { events } = await listActivityEvents(testScope(), {
+  const { items: events } = await listActivityEvents(testScope(), {
+    reader: { unrestricted: true },
     presentationId: pres.id,
     eventType: 'presentation.ownership_transferred',
   });
@@ -536,7 +537,8 @@ test('a refusal names who may transfer, and leaves no trail', async () => {
   assert.equal(res.statusCode, 403);
   assert.equal(jsonBody(res).error, 'forbidden');
   assert.match(String(jsonBody(res).message), /owner can transfer/);
-  const { events } = await listActivityEvents(testScope(), {
+  const { items: events } = await listActivityEvents(testScope(), {
+    reader: { unrestricted: true },
     presentationId: pres.id,
     eventType: 'presentation.ownership_transferred',
   });
