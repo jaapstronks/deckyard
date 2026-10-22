@@ -529,13 +529,10 @@ export function deckToPresentationParts(
   rewriteSlideJumpIds(slidesRaw, slides, slideTypes);
   const baseLang = normalizeLang(lang) || normalizeLang(deck.lang) || null;
   const translations = baseLang
-    ? deckTranslations(
-        deck,
-        slidesRaw,
-        slides,
-        baseLang,
-        (type) => importedSlideType(type, slideTypes, carriedSlideTypes).def,
-      )
+    ? deckTranslations(deck, slidesRaw, slides, baseLang, {
+        slideTypes,
+        carriedSlideTypes,
+      })
     : {};
   return {
     title,
@@ -592,10 +589,17 @@ function rewriteSlideJumpIds(slidesRaw, slides, slideTypes) {
  * A tag that does not normalize to a deck language, or that names the base
  * language, is skipped here; the import routes refuse such a deck before it
  * gets this far (`deckImportLang`). A slide that imported as the unknown-type
- * placeholder has no type to read its translation against, so every version
- * keeps the base placeholder.
+ * placeholder has no type to read its translation against: every version gets
+ * its own placeholder, built from the stored content with that language's
+ * text read by the value rule (B833), so no text in the bundle is lost.
  */
-function deckTranslations(deck, slidesRaw, slides, baseLang, resolveType) {
+function deckTranslations(
+  deck,
+  slidesRaw,
+  slides,
+  baseLang,
+  { slideTypes, carriedSlideTypes },
+) {
   const langs = new Map(); // normalized lang -> raw tags that spell it
   for (const tag of deckTranslationTags(deck)) {
     const l = normalizeLang(tag);
@@ -616,7 +620,12 @@ function deckTranslations(deck, slidesRaw, slides, baseLang, resolveType) {
       title: typeof titleTr?.title === 'string' ? titleTr.title : '',
       slides: slides.map((slide, i) => {
         const raw = slidesRaw[i];
-        const def = resolveType(typeof raw?.type === 'string' ? raw.type : '');
+        const type = typeof raw?.type === 'string' ? raw.type : '';
+        const { def, name } = importedSlideType(
+          type,
+          slideTypes,
+          carriedSlideTypes,
+        );
         const { notes, ...contentTr } = pick(raw?.translations, tags) || {};
         return {
           ...slide,
@@ -626,7 +635,15 @@ function deckTranslations(deck, slidesRaw, slides, baseLang, resolveType) {
                 slide.content,
                 contentTr,
               )
-            : structuredClone(slide.content),
+            : placeholderContent(
+                name,
+                applyContentTranslation(
+                  textFieldSpecForDef(undefined),
+                  raw?.content,
+                  contentTr,
+                ),
+                carriedSlideTypes.get(type) === null,
+              ),
           notes: typeof notes === 'string' ? notes : '',
         };
       }),
@@ -657,15 +674,15 @@ function normalizeDeckSlide(
     // replaces it, and carries the original content across as text. Import is
     // the one surface that persists rather than renders, so dropping the
     // content here would lose it for good.
-    const { title, body } = unresolvedSlideAsMarkdown(
-      { type: localName, content: raw?.content },
-      { definitionInBundle: carriedSlideTypes.get(type) === null },
-    );
     return withSlideKeys(
       {
         id: cryptoUuid(),
         type: 'content-slide',
-        content: { title, body, background: 'mist' },
+        content: placeholderContent(
+          localName,
+          raw?.content,
+          carriedSlideTypes.get(type) === null,
+        ),
       },
       raw,
     );
@@ -781,6 +798,24 @@ function normalizeDeckSlide(
     { id: slide.id, type: localName, content: slide.content },
     raw,
   );
+}
+
+/**
+ * The `content-slide` content an unknown type imports as: its heading, the
+ * explanation and the stored content as text. One builder for the base slide
+ * and every language version, so they differ only in the content they show.
+ *
+ * @param {string} type - the type's local name
+ * @param {Object|undefined} content - the stored content, in one language
+ * @param {boolean} definitionInBundle - the bundle carries the definition
+ * @returns {{title: string, body: string, background: string}}
+ */
+function placeholderContent(type, content, definitionInBundle) {
+  const { title, body } = unresolvedSlideAsMarkdown(
+    { type, content },
+    { definitionInBundle },
+  );
+  return { title, body, background: 'mist' };
 }
 
 /**
