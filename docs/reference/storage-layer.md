@@ -158,28 +158,82 @@ that one has no id beside it yet.
   codes are authorized by the _token_, not the org. These go through
   `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
   makes `grep -r crossOrganization` a complete census of every unscoped path.
-- **A list read.** The list facades (`listPresentations`,
-  `listTrashedPresentations`, `listPresentationVersions`,
-  `listOrganizationLibrary`/`listPersonalLibrary`, `getPublishedIndex`,
-  `listImageLibrary`) return the **full organization-scoped set**, ordered but
-  unpaginated. Pagination is the caller's concern: the public-api v1 routes
-  slice `{limit, offset}` over the full list in-memory and report a truthful
-  `total`, and bulk-export/search/MCP consume the whole set. There is
-  deliberately no row cap. When the adapter class went, its facades inherited
-  `applyPagination()`'s old default 100 as a literal `.limit(100)` (B79), which
-  silently dropped the tail for any org past 100 items: it corrupted API totals,
-  truncated backups and — sharpest — made the organization-shelf trash/delete
-  authz guard resolve through the capped list and return a false `not_found` for
-  an item outside the newest page. The cap is gone and the guard resolves its
-  target directly by id (B85). Pushing `limit`/`offset` into SQL is a future
-  deliberate feature, not an accidental default; when it lands it is one
-  canonical shape across all six facades, not a per-site parameter.
-  **Decided 2026-08-19 (parked with a trigger):** DB-level pagination is
-  built when either a list read on a production instance returns more than
-  ~1 000 rows for one organization, or the single-service-layer work (A7.4)
-  starts — whichever comes first — and then as a keyset cursor inside that
-  service layer, never as a per-endpoint parameter. Until then the twelve
-  in-memory slicers over `parsePaginationParams` are the intended shape.
+- **A list read.** A list that grows per organization is read one page at a
+  time through **one contract** (D358, B819). In: `{ limit, cursor }` as
+  query parameters (internal API and v1) or tool arguments (MCP). Out:
+  `{ <collection>: [...], nextCursor }`, where `nextCursor: null` is the end;
+  no `total`, `hasMore`, `offset` or `pagination` object. A screen that shows
+  a count asks a separate count function. The order is fixed per list,
+  `(<time column> desc, id desc)`, with the uuid `id` as the unique
+  tiebreaker; there is no sort parameter.
+  - `server/services/list-page.js` owns the transport: `parseListPage()`
+    checks `limit` (1..100, a surface default at or below 50; out of range
+    is a 400 `invalid` with `details.field = 'limit'`, never clamped),
+    refuses `offset` (`details = { field: 'offset', use: 'cursor' }`) and
+    decodes the opaque cursor, refusing one that is unreadable, from another
+    list or made under other filters (`details.field = 'cursor'`). The
+    cursor carries the order's name, a fingerprint of the normalized filters
+    and the position; filters are sent again with every page. It grants
+    nothing: every page applies the caller's scope again, so a cursor from
+    org A used in org B yields only B's rows, and it is not signed.
+    `listPageResult()` builds the output.
+  - `server/storage/keyset.js` owns the query: `keysetPage()` adds
+    `WHERE (<column>, id) < (:value::timestamptz, :id)`, the order and
+    `LIMIT limit + 1`; `keysetRows()` splits off the extra row into the next
+    position. The sort value leaves SQL as `<column>::text` and returns as
+    `::timestamptz`, never through a JS `Date`: PostgreSQL keeps
+    microseconds, a `Date` milliseconds, and rows inside one millisecond
+    would be skipped or repeated. The column is NOT NULL, and the list's
+    index is its scope columns followed by `(<column> DESC, id DESC)`.
+  - A facade takes `{ limit, after }` (the decoded position, never the
+    cursor string: storage does not know the transport) and returns
+    `{ items, next }`. **Every predicate that decides whether a row belongs in
+    the list is part of the query**; nothing is filtered after the LIMIT, so
+    a page is short only at the end of the list. Stamping rows after the
+    read (`canEdit`, display names) is fine, it removes nothing.
+  - On the contract now: the notification inbox (`listNotifications`,
+    `GET /api/notifications`), the deck list (`listDecks` in
+    `server/storage/presentations/deck-list.js`: `GET /api/v1/presentations`
+    and MCP `list_presentations` since B820, and the internal Home grid
+    `GET /api/presentations` and `GET /api/presentations/shared-with-me`
+    since B821) and the trash (`listTrashedDecks` in
+    `server/storage/presentations/trash-list.js`,
+    `GET /api/presentations/trash`, B821). The deck list's predicate (who
+    sees which deck per `ownership`) is SQL, the same rule as the per-deck
+    `belongsInCollection`; Home's two narrowing filters, `visibility` and
+    `tags` (a deck carrying one of the named tags, compared on
+    `lower(name)`), are in the same query. The trash's predicate is the
+    per-deck `canRestorePresentation` in SQL (owner, maker or trasher by id;
+    an admin or the auth-off operator sees all). `tests/pg/deck-list-page.pgtest.js`
+    and `tests/pg/trash-list-page.pgtest.js` hold each pair equal. Without
+    `limit` the deck query answers the whole list, which search (a result
+    set in relevance order) and the comment service's deck set (B824) still
+    read.
+  - The libraries (B822), all through `server/services/library-lists.js`:
+    the slide-library shelves and their trash (`listLibraryShelf` in
+    `server/storage/slide-library.js`: `GET /api/slide-library/{personal,organization}`
+    with `view`, `theme`, `type`, `tag` (every one), `lang` and `q` in the
+    query, ordered `(created_at desc, id desc)` and in the trash
+    `(trashed_at desc, id desc)`; `GET /api/v1/slide-library`, untrashed),
+    the collection shelves (`GET /api/slide-collections/{personal,organization}`)
+    and the image library (`listImageLibrary`: `GET /api/image-library` with
+    `section`, `tag` and `q`; `GET /api/v1/image-library` with `search` and
+    `category`). Their counts are their own queries: the shelf facets
+    (`GET …/facets`: total, per slide type, per tag) and the image tags
+    (`GET /api/image-library/tags`, `GET /api/v1/image-library/categories`).
+    A collection's members come from `GET …/:id/slides`, bounded by the
+    collection. `tests/pg/library-list-page.pgtest.js` carries the six
+    checks for each. The backup (bulk export) reads them whole, without
+    `limit`.
+  - The other lists follow one by one (B823–B825); until a list has moved,
+    it is read whole (`listPresentationVersions`, `getPublishedIndex`) and
+    the routes that page it slice in memory over `parsePaginationParams`,
+    which goes once the last list has moved. Those whole reads carry no row
+    cap on purpose: an accidental `.limit(100)` once silently dropped the
+    tail for any org past 100 items (B79, B85).
+  - Outside the contract: typeahead and top-N reads (one bounded query, no
+    next page), lists bounded by nature (collaborators, share links, api
+    keys, themes, versions, …) and search results in relevance order.
 - **Storage boot.** `initializeStorage()` (server/db/lifecycle.js) opens
   the shared Kysely pool via `initializeDatabase()`; it is idempotent, and
   `getDb()` throws `"Database not initialized"` before it has run.

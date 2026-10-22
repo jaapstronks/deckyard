@@ -48,55 +48,6 @@ export async function getRecommendedImageFit(url) {
 }
 
 /**
- * Check if an item matches a search query
- * @param {Object} item - Image library item
- * @param {string} query - Search query
- * @param {string} activeTag - Active tag filter
- * @returns {boolean} Whether the item matches
- */
-export function matchesSearch(item, query, activeTag) {
-  const q = String(query || '')
-    .trim()
-    .toLowerCase();
-  const tags = Array.isArray(item?.tags) ? item.tags : [];
-  const alts = item?.alts && typeof item.alts === 'object' ? item.alts : {};
-
-  if (activeTag && !tags.includes(activeTag)) {
-    return false;
-  }
-
-  if (!q) return true;
-
-  const hay = [
-    item?.description,
-    item?.photographer,
-    item?.url,
-    ...tags,
-    ...Object.values(alts || {}),
-  ]
-    .map((x) => String(x || '').toLowerCase())
-    .join(' | ');
-
-  return hay.includes(q);
-}
-
-/**
- * Get all unique tags from items
- * @param {Array} items - Image library items
- * @returns {Array<string>} Sorted unique tags
- */
-export function getAllTags(items) {
-  const set = new Set();
-  for (const it of items) {
-    for (const tg of Array.isArray(it?.tags) ? it.tags : []) {
-      const t0 = String(tg || '').trim();
-      if (t0) set.add(t0);
-    }
-  }
-  return Array.from(set).sort((a, b) => a.localeCompare(b));
-}
-
-/**
  * Install autocomplete for tags input
  * @param {HTMLInputElement} inputEl - Input element
  * @param {HTMLDataListElement} datalistEl - Datalist element

@@ -26,6 +26,9 @@ import {
   apiKeyPermissionsSummary,
 } from '../activity-api-key.js';
 
+/** How many recent decks Home shows. */
+export const HOME_RECENT_COUNT = 4;
+
 /**
  * Create the home view with recent presentations and activity preview
  *
@@ -33,7 +36,9 @@ import {
  * @param {Function} opts.api - API client
  * @param {Function} opts.renderCard - Card renderer function
  * @param {Function} opts.setView - View switcher function
- * @param {Array} opts.allByDate - All presentations sorted by date
+ * @param {Array} opts.recentDecks - The newest few decks the person can open,
+ *   newest change first: the first page of the deck list, not the whole of it
+ *   (D358, B821).
  * @param {object} opts.themePicker - Theme picker component
  * @param {number} opts.unreadCount - Initial unread count
  * @param {object} [opts.user] - Current user (for the greeting header)
@@ -48,7 +53,7 @@ export function createHomeView({
   api,
   renderCard,
   setView,
-  allByDate,
+  recentDecks,
   themePicker,
   unreadCount,
   user,
@@ -62,7 +67,7 @@ export function createHomeView({
   // null for existing or dismissed users; persists progress so it survives the
   // jump from empty Home to populated Home.
   const onboardingChecklist = createOnboardingChecklist({
-    allByDate,
+    hasDeck: recentDecks.length > 0,
     onCreate,
     api,
   });
@@ -109,7 +114,7 @@ export function createHomeView({
   // First run: a brand-new user with nothing yet. Foreground one clear create
   // CTA instead of a wall of empty Recent/Popular/Activity sections, which read
   // as "broken" rather than "new".
-  const isFirstRun = allByDate.length === 0;
+  const isFirstRun = recentDecks.length === 0;
   if (isFirstRun && typeof onCreate === 'function') {
     if (isSandbox) {
       // Sandbox has no theme quick-picker (the create modal already asks for a
@@ -166,10 +171,12 @@ export function createHomeView({
     buildSectionHeader({
       icon: 'clock',
       title: t('list.home.recent', 'Recent'),
-      count: allByDate.length,
+      // A strip of the newest few, not the whole list: the list is paged, so
+      // there is no total to show here.
+      badge: '',
       onViewAll: () => setView('presentations'),
     }),
-    allByDate.length
+    recentDecks.length
       ? homeRecentList
       : h('div', {
           class: 'help',
@@ -177,7 +184,7 @@ export function createHomeView({
         }),
   );
 
-  for (const p of allByDate.slice(0, 4)) {
+  for (const p of recentDecks.slice(0, HOME_RECENT_COUNT)) {
     homeRecentList.append(
       renderCard(p, {
         isOrganization: p.visibility === 'organization',
@@ -239,7 +246,7 @@ export function createHomeView({
 
   // Greeting header — a real page anchor at the top of the column, replacing
   // the old orphan "Welcome" heading that labelled nothing.
-  const homeHeader = buildHomeHeader({ user, count: allByDate.length });
+  const homeHeader = buildHomeHeader({ user });
 
   // Assemble home view as two columns under a full-width greeting header. The
   // main column carries the returning user's top job — resume recent work —
@@ -354,6 +361,7 @@ export function createHomeView({
       const agg = await fetchHomeAggregate();
       let collections;
       let organizationResp;
+      let collectionSlides = [];
       let usageResp;
       if (agg) {
         collections = agg.buildingBlocks?.collections || {
@@ -363,14 +371,19 @@ export function createHomeView({
         organizationResp = {
           items: agg.buildingBlocks?.organizationSlides || [],
         };
+        collectionSlides = agg.buildingBlocks?.collectionSlides || [];
         usageResp = agg.usage || { items: [] };
       } else {
+        // The row shows a few blocks, so a first page of each is the whole
+        // answer (B822); the aggregate reads the same.
         const collectionsApi = createCollectionsApi({ api });
         [collections, organizationResp, usageResp] = await Promise.all([
           collectionsApi
-            .listAll()
+            .listFirstPages()
             .catch(() => ({ personal: [], organization: [] })),
-          api('/api/slide-library/organization').catch(() => ({ items: [] })),
+          api('/api/slide-library/organization?limit=6').catch(() => ({
+            items: [],
+          })),
           api('/api/slide-library/usage').catch(() => ({ items: [] })),
         ]);
       }
@@ -393,19 +406,20 @@ export function createHomeView({
         ...(collections?.organization || []),
         ...(collections?.personal || []),
       ];
+      // The server's first page of the team shelf: untrashed, newest first.
       const organizationSlides = (
         Array.isArray(organizationResp?.items) ? organizationResp.items : []
-      )
-        .filter((it) => it?.id && !it.isTrashed && !it.trashedAt)
-        .sort((a, b) => blockTimestamp(b) - blockTimestamp(a));
+      ).filter((it) => it?.id);
 
       // Each card previews its slide exactly as the library does (B616); a
-      // collection shows its first slide when that is a team slide.
+      // collection shows its first slide, resolved by the server.
       const preview = {
         resolveTheme: createLibraryThemeResolver(),
         lang: readLangMode(),
       };
-      const slideById = new Map(organizationSlides.map((it) => [it.id, it]));
+      const slideById = new Map(
+        [...collectionSlides, ...organizationSlides].map((it) => [it.id, it]),
+      );
       const firstSlideOf = (col) =>
         slideById.get(Array.isArray(col.slideIds) ? col.slideIds[0] : null);
 
@@ -479,13 +493,6 @@ function cleanSnippet(preview) {
     .trim();
   if (!text) return '';
   return text.length >= 100 ? `${text}…` : text;
-}
-
-/** Most-recent-first sort key for a library item. */
-function blockTimestamp(item) {
-  const raw = item?.updatedAt || item?.createdAt || 0;
-  const time = new Date(raw).getTime();
-  return Number.isNaN(time) ? 0 : time;
 }
 
 /**
@@ -654,15 +661,14 @@ function renderBlockHead(kicker, isNew) {
 
 /**
  * Build the home greeting header: "Welcome back, {firstName}" plus a subtitle
- * with today's date and the deck count. Falls back to a name-less greeting for
+ * with today's date. Falls back to a name-less greeting for
  * guests or when the user record has no name/email.
  *
  * @param {object} opts
  * @param {object} [opts.user] - Current user
- * @param {number} opts.count - Total presentation count
  * @returns {HTMLElement}
  */
-function buildHomeHeader({ user, count }) {
+function buildHomeHeader({ user }) {
   const rawName = user?.name || displayNameFromEmail(user?.email || '') || '';
   const firstName = rawName.trim().split(/\s+/)[0] || '';
 
@@ -683,16 +689,11 @@ function buildHomeHeader({ user, count }) {
     dateLabel = '';
   }
 
-  const countLabel = t(
-    'list.home.greetingCount',
-    { one: '1 presentation', many: '{count} presentations' },
-    { count },
-  );
-  const subtitleText = dateLabel ? `${dateLabel} · ${countLabel}` : countLabel;
-
   return h('header', { class: 'home-header' }, [
     h('h1', { class: 'home-header-title', text: greeting }),
-    h('p', { class: 'home-header-subtitle', text: subtitleText }),
+    dateLabel
+      ? h('p', { class: 'home-header-subtitle', text: dateLabel })
+      : null,
   ]);
 }
 

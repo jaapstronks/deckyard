@@ -384,25 +384,6 @@
   outline-offset: -2px;
 }
 
-/* Count pill inside each chip. */
-.ownership-filter-count {
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: hsl(var(--app-text-tertiary));
-}
-
-.ownership-filter-btn.is-active .ownership-filter-count {
-  color: hsl(var(--app-accent-text));
-}
-
-/* Compact sort control next to the chips. */
-.sort-select {
-  width: auto;
-  padding: var(--ps-space-1) var(--ps-space-2);
-  font-size: var(--ps-text-sm);
-}
-
 /* The Presentations header carries more controls than a single tag filter, so
    let it wrap instead of overflowing, and let the filter row scroll on very
    narrow screens rather than squashing the chips. */

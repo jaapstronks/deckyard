@@ -1,54 +1,22 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
 import { h } from '../../../lib/dom/index.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { toGridDeck } from '../data.js';
 
-/**
- * Normalize string for search (lowercase, remove accents)
- */
-function normalizeForSearch(str) {
-  if (!str) return '';
-  return str
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-/**
- * Check if a listed deck matches the search query. The owner is matched by
- * `ownerEmail`: the list projection carries no owner display name (that
- * arrives with identity decoupling).
- *
- * @param {object} presentation - a deck as the list endpoint projects it
- * @param {string} query - the raw query as typed
- * @returns {boolean}
- */
-export function matchesQuery(presentation, query) {
-  const normalizedQuery = normalizeForSearch(query);
-  if (!normalizedQuery) return false;
-  return [
-    presentation.title,
-    presentation.description,
-    presentation.ownerEmail,
-    presentation.theme,
-    // Who shared it with you (shared decks only)
-    presentation.sharedBy,
-  ].some((field) => normalizeForSearch(field).includes(normalizedQuery));
-}
+/** The shortest query the server searches for. */
+const MIN_QUERY_LENGTH = 2;
 
 /**
  * Create the search results view
  *
  * @param {object} opts
+ * @param {Function} opts.api - API client
  * @param {Function} opts.renderCard - Card renderer function
- * @param {Array} opts.allPresentations - All presentations to search through
  * @param {Function} opts.onClearSearch - Callback when search is cleared
  * @returns {object} - { el, search, clear, getQuery }
  */
-export function createSearchView({
-  renderCard,
-  allPresentations,
-  onClearSearch,
-}) {
+export function createSearchView({ api, renderCard, onClearSearch }) {
   const searchView = h('div', { class: 'sidebar-view', 'data-view': 'search' });
 
   // Header with search info
@@ -69,20 +37,28 @@ export function createSearchView({
   searchView.append(headerRow, searchList, statusSlot);
 
   let currentQuery = '';
+  let generation = 0;
+
+  /** Show one status line in place of results. */
+  function showStatus(node) {
+    searchList.replaceChildren();
+    statusSlot.replaceChildren(node);
+  }
 
   /**
-   * Perform search and update the view
+   * Search every deck the person can open, on the server: the deck list is
+   * paged (D358, B821), so the client no longer holds all of it to filter.
+   * The server matches title, description and owner address (and, with
+   * deep search, slide text); a response overtaken by a newer query is
+   * dropped.
    */
-  function search(query) {
+  async function search(query) {
     currentQuery = query?.trim() || '';
-
-    // Clear previous results
-    searchList.replaceChildren();
-    statusSlot.replaceChildren();
+    const mine = ++generation;
 
     if (!currentQuery) {
       searchTitle.textContent = t('list.search.title', 'Search');
-      statusSlot.append(
+      showStatus(
         h('div', {
           class: 'empty-note',
           text: t(
@@ -94,18 +70,41 @@ export function createSearchView({
       return;
     }
 
-    // Filter presentations
-    const results = allPresentations.filter((p) =>
-      matchesQuery(p, currentQuery),
-    );
-
-    // Update title with count
     searchTitle.textContent = t('list.search.resultsTitle', 'Search results', {
       query: currentQuery,
     });
 
+    if (currentQuery.length < MIN_QUERY_LENGTH) {
+      showStatus(
+        h('div', {
+          class: 'empty-note',
+          text: t(
+            'list.search.tooShort',
+            'Type at least two characters to search.',
+          ),
+        }),
+      );
+      return;
+    }
+
+    let results;
+    try {
+      const params = new URLSearchParams({ q: currentQuery, ownership: 'all' });
+      const resp = await api(`/api/presentations/search?${params}`);
+      results = (resp?.results || []).map(toGridDeck);
+    } catch {
+      if (mine !== generation) return;
+      const loadError = createInlineError({ live: 'polite' });
+      showStatus(loadError.el);
+      loadError.show(t('list.search.loadError', 'Search failed.'), {
+        focus: false,
+      });
+      return;
+    }
+    if (mine !== generation) return;
+
     if (results.length === 0) {
-      statusSlot.append(
+      showStatus(
         createEmptyState({
           icon: 'search',
           title: t(
@@ -119,31 +118,28 @@ export function createSearchView({
           ),
         }),
       );
-    } else {
-      // Show count
-      const countText = t(
-        'list.search.resultCount',
-        { one: '1 presentation found', many: '{count} presentations found' },
-        { count: results.length },
-      );
-
-      statusSlot.append(
-        h('div', { class: 'search-result-count', text: countText }),
-      );
-
-      // Render results
-      for (const p of results) {
-        searchList.append(
-          renderCard(p, {
-            isOrganization: p.visibility === 'organization',
-            isSharedWithMe: p.isSharedWithMe,
-            sharedBy: p.sharedBy,
-            permission: p.permission,
-            highlightQuery: currentQuery,
-          }),
-        );
-      }
+      return;
     }
+
+    const countText = t(
+      'list.search.resultCount',
+      { one: '1 presentation found', many: '{count} presentations found' },
+      { count: results.length },
+    );
+    statusSlot.replaceChildren(
+      h('div', { class: 'search-result-count', text: countText }),
+    );
+    searchList.replaceChildren(
+      ...results.map((p) =>
+        renderCard(p, {
+          isOrganization: p.visibility === 'organization',
+          isSharedWithMe: p.isSharedWithMe,
+          sharedBy: p.sharedBy,
+          permission: p.permission,
+          highlightQuery: currentQuery,
+        }),
+      ),
+    );
   }
 
   /**
@@ -151,6 +147,7 @@ export function createSearchView({
    */
   function clear() {
     currentQuery = '';
+    generation++;
     searchList.replaceChildren();
     statusSlot.replaceChildren();
   }

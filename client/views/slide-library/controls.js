@@ -4,24 +4,23 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { cleanStr } from '../../../shared/string-utils.js';
 import { h } from '../../lib/dom/index.js';
 import { getSupportedLangs } from '../../lib/format/i18n.js';
 import { getLangShortLabel } from '../../lib/dom/lang-selector.js';
-import { hasContentForLang } from './search.js';
+
+/** How long the search waits after the last keystroke before it asks. */
+const SEARCH_DEBOUNCE_MS = 250;
 
 /**
  * Create UI control renderers for the slide library
  * @param {object} options
  * @param {object} options.state - State management object
- * @param {object} options.apiOps - API operations object
  * @param {Function} options.SLIDE_TYPES - Slide types definition
  * @param {boolean} options.showLanguageSwitch - Whether to show language switch
  * @returns {object} Control render functions
  */
 export function createSlideLibraryControls({
   state,
-  apiOps,
   SLIDE_TYPES = null,
   showLanguageSwitch = false,
 }) {
@@ -31,19 +30,15 @@ export function createSlideLibraryControls({
   };
 
   /**
-   * The items the language switch leaves in view: every item when the picker
-   * has no switch, else those with content in the active language. The one
-   * place that scope is decided, so the list and the filter counts above it
-   * cannot disagree on which items there are (B617).
+   * The language the list is narrowed to: the active one when the picker has
+   * a language switch, else none. The one place that scope is decided, so the
+   * list and the filter counts above it ask the server the same question
+   * (B617, B822).
    *
-   * @param {Array<object>} items
-   * @returns {Array<object>}
+   * @returns {string|undefined}
    */
-  const inLanguageScope = (items) => {
-    if (!showLanguageSwitch) return items;
-    const lang = state.getLang();
-    return items.filter((it) => hasContentForLang(it, lang));
-  };
+  const languageParam = () =>
+    showLanguageSwitch ? state.getLang() : undefined;
 
   const renderShelfControls = (mount, rerender) => {
     const seg = h('div', { class: 'sb-segmented is-toggle ps-lib-shelf' });
@@ -52,9 +47,8 @@ export function createSlideLibraryControls({
         class: `sb-segmented-btn ${state.getShelf() === shelf ? 'is-active' : ''}`,
         type: 'button',
         text: t(labelKey, fallback),
-        onclick: async () => {
+        onclick: () => {
           state.setShelf(shelf);
-          await apiOps.fetchShelf(shelf);
           rerender?.();
         },
       });
@@ -119,57 +113,33 @@ export function createSlideLibraryControls({
       value: state.getQuery(),
       'aria-label': t('slideLibrary.search.aria', 'Search slide library'),
     });
+    // The server searches (B822); wait for a pause in typing, then read the
+    // list again. Only the list, not the entire UI, so the input keeps focus.
+    let timer = null;
     input.addEventListener('input', () => {
       state.setQuery(input.value);
-      // Only re-render the list, not the entire UI (to keep focus)
-      rerenderList?.();
+      clearTimeout(timer);
+      timer = setTimeout(() => rerenderList?.(), SEARCH_DEBOUNCE_MS);
     });
     mount.append(input);
   };
 
   const renderTypeFilters = (mount, shelf, { rerenderList } = {}) => {
-    const items = state.getCache(shelf);
+    const facets = state.getFacets(shelf);
     const activeTypeFilter = state.getTypeFilter();
     const activeTagFilter = state.getTagFilter();
 
-    // Count what the list can show: live items in the active language.
-    const activeItems = inLanguageScope(
-      items.filter((it) => !(it?.isTrashed || it?.trashedAt)),
+    // The counts are the server's (`GET …/facets`): live items in the active
+    // language, over the whole shelf, not only the loaded pages.
+    const typeCounts = new Map(
+      (facets?.types || []).map((row) => [row.slideType, row.count]),
     );
-
-    // Count items per type
-    const typeCounts = new Map();
-    for (const it of activeItems) {
-      const type = cleanStr(it?.slideType);
-      if (type) {
-        typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
-      }
-    }
-
-    // Count items per tag
-    const tagCounts = new Map();
-    for (const item of activeItems) {
-      const itemTags = Array.isArray(item?.tags) ? item.tags : [];
-      for (const tag of itemTags) {
-        tagCounts.set(tag.name, (tagCounts.get(tag.name) || 0) + 1);
-      }
-    }
-
-    // Sort types by count (most common first), then alphabetically
-    const sortedTypes = [...typeCounts.entries()]
-      .sort((a, b) => {
-        if (b[1] !== a[1]) return b[1] - a[1];
-        return a[0].localeCompare(b[0]);
-      })
-      .map(([type]) => type);
-
-    // Sort tags by count (most common first), then alphabetically
-    const sortedTags = [...tagCounts.entries()]
-      .sort((a, b) => {
-        if (b[1] !== a[1]) return b[1] - a[1];
-        return a[0].localeCompare(b[0]);
-      })
-      .map(([name]) => name);
+    const tagCounts = new Map(
+      (facets?.tags || []).map((row) => [row.name, row.count]),
+    );
+    const sortedTypes = [...typeCounts.keys()];
+    const sortedTags = [...tagCounts.keys()];
+    const total = [...typeCounts.values()].reduce((sum, n) => sum + n, 0);
 
     // Don't show filters if nothing to filter
     if (sortedTypes.length <= 1 && sortedTags.length === 0) return;
@@ -190,7 +160,7 @@ export function createSlideLibraryControls({
         h('span', { text: t('slideLibrary.filter.all', 'All') }),
         h('span', {
           class: 'ps-lib-type-filter-count',
-          text: String(activeItems.length),
+          text: String(total),
         }),
       );
       filters.append(allBtn);
@@ -252,7 +222,7 @@ export function createSlideLibraryControls({
 
   return {
     typeLabel,
-    inLanguageScope,
+    languageParam,
     renderShelfControls,
     renderViewControls,
     renderLangControls,

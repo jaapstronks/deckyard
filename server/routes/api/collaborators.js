@@ -9,12 +9,12 @@
  *   GET    /api/presentations/shared-with-me          - List presentations shared with current user
  */
 
-import { getFirstSlidesForIds } from '../../storage/presentations/index.js';
 import {
   removeCollaborator,
   updateCollaboratorPermission,
 } from '../../storage/collaborators.js';
-import { listPresentationsForActor } from '../../services/presentations.js';
+import { listPresentationPage } from '../../services/presentations.js';
+import { deckListInput, toDeckGridCards } from './presentations/list.js';
 import {
   inviteCollaborators,
   listCollaboratorsForActor,
@@ -33,7 +33,6 @@ import {
   ENTITY_TYPES,
 } from '../../storage/activity-events.js';
 import { createLogger } from '../../utils/logger.js';
-import { withDeckCardFields } from '../../utils/deck-card-fields.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { isCollabEnabled } from '../../config/features.js';
 import { validatePermission } from '../../utils/request-validators.js';
@@ -92,34 +91,31 @@ const INVALID_FIELD_MESSAGES = {
   email: 'Invalid email address',
 };
 
-// GET /api/presentations/shared-with-me - List presentations shared with current user
-async function handleSharedWithMe({ repoRoot, storageScope, res, authedUser }) {
+// GET /api/presentations/shared-with-me - One page of the decks shared with the
+// current user, on the list-page contract (D358, B821)
+async function handleSharedWithMe({
+  repoRoot,
+  storageScope,
+  res,
+  url,
+  authedUser,
+}) {
   if (!authedUser?.email) {
     return unauthorized(res);
   }
 
-  const { presentations } = await listPresentationsForActor(
+  // This list is `shared` by its path; the other filters and the page are
+  // read as on Home.
+  const { presentations, nextCursor } = await listPresentationPage(
     storageScope,
     { actor: authedUser },
-    { ownership: 'shared' },
+    { ...deckListInput(url.searchParams), ownership: 'shared' },
   );
 
-  // Batch-fetch first slides for all presentations (avoids N+1 queries).
-  // The grid only needs the presence signal — the thumbnail is a
-  // server-rasterized PNG — so this collapses to a boolean.
-  const ids = presentations.map((p) => p.id);
-  const firstSlidesMap = await getFirstSlidesForIds(storageScope, ids);
-
-  const presentationsWithSlides = await withDeckCardFields(
-    repoRoot,
-    presentations.map((p) => ({
-      ...p,
-      hasSlides: !!firstSlidesMap.get(p.id),
-    })),
-    storageScope,
-  );
-
-  serveJson(res, 200, { presentations: presentationsWithSlides });
+  serveJson(res, 200, {
+    presentations: await toDeckGridCards(repoRoot, storageScope, presentations),
+    nextCursor,
+  });
   return true;
 }
 

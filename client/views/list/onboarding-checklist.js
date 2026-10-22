@@ -43,14 +43,13 @@ function writeState(state) {
  * (existing user, dismissed, or every step already done).
  *
  * @param {object} opts
- * @param {Array} opts.allByDate - All presentations (used to derive "has a deck")
+ * @param {boolean} opts.hasDeck - Whether the person can open any deck yet
  * @param {Function} opts.onCreate - Open the new-presentation modal
  * @param {Function} [opts.api] - API client, used to auto-detect a connected
  *   AI agent (an API key that has actually been used).
  * @returns {HTMLElement|null}
  */
-export function createOnboardingChecklist({ allByDate, onCreate, api }) {
-  const hasDeck = Array.isArray(allByDate) && allByDate.length > 0;
+export function createOnboardingChecklist({ hasDeck, onCreate, api }) {
   const isSandbox = !!getFeatures()?.sandboxMode;
   // Connecting an agent needs the public API cluster; without it the step is
   // absent, in the sandbox too (D260).

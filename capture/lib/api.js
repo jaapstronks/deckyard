@@ -141,15 +141,21 @@ export async function setDisplayName(api, name) {
  * @returns {Promise<number>} number removed
  */
 export async function deleteDecksByPrefix(api, prefix) {
-  let list;
+  // The deck list is paged (D358, B821): read every page of the caller's own
+  // decks before deleting, so a cursor never points at a removed row.
+  const items = [];
+  let cursor = null;
   try {
-    list = await api.get('/api/presentations');
+    do {
+      const query = new URLSearchParams({ ownership: 'owned', limit: '100' });
+      if (cursor) query.set('cursor', cursor);
+      const page = await api.get(`/api/presentations?${query}`);
+      items.push(...(page?.presentations || []));
+      cursor = page?.nextCursor || null;
+    } while (cursor);
   } catch {
     return 0;
   }
-  const items = Array.isArray(list)
-    ? list
-    : list?.items || list?.presentations || [];
   const doomed = items.filter((p) => String(p?.title || '').startsWith(prefix));
   let removed = 0;
   for (const p of doomed) {

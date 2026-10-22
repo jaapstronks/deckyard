@@ -116,9 +116,12 @@ test('the collection route ships thumbBg', async () => {
     repoRoot,
     storageScope: testScope(),
     res,
+    url: new URL('http://decks.test/api/presentations'),
     authedUser: sessionFor(OWNER),
   });
-  const item = res.json().find((p) => p.title === 'Collection deck');
+  const item = res
+    .json()
+    .presentations.find((p) => p.title === 'Collection deck');
   assert.ok(item, 'deck is listed');
   assert.match(item.thumbBg || '', /^#[0-9a-f]{3,6}$/i);
 });
@@ -140,6 +143,7 @@ test('shared-with-me ships thumbBg', async () => {
     repoRoot,
     storageScope: testScope(sessionFor(PARTNER)),
     res,
+    url: new URL('http://decks.test/api/presentations/shared-with-me'),
     authedUser: sessionFor(PARTNER),
   });
   const item = res.json().presentations.find((p) => p.title === 'Shared deck');
@@ -160,9 +164,10 @@ test('the trash route ships thumbBg', async () => {
     storageScope: testScope(),
     req: { method: 'GET' },
     res,
+    url: new URL('http://decks.test/api/presentations/trash'),
     authedUser: sessionFor(OWNER),
   });
-  const item = res.json().find((p) => p.title === 'Trashed deck');
+  const item = res.json().presentations.find((p) => p.title === 'Trashed deck');
   assert.ok(item, 'deck is in the trash');
   assert.match(item.thumbBg || '', /^#[0-9a-f]{3,6}$/i);
 });
@@ -208,13 +213,16 @@ test('every list-producing route goes through the shared mapper', () => {
     'server/routes/api/presentations/popular.js',
     'server/routes/api/presentations/trash.js',
     'server/routes/api/presentations/duplicate.js',
+    // Shared-with-me and search build the deck grid's cards through list.js
+    // (`toDeckGridCards`), which is the mapper's caller.
     'server/routes/api/collaborators.js',
+    'server/routes/api/presentations/search.js',
   ];
   for (const relative of producers) {
     const source = fs.readFileSync(path.join(repoRoot, relative), 'utf8');
     assert.match(
       source,
-      /withDeckCardFields\(/,
+      /withDeckCardFields\(|toDeckGridCards\(/,
       `${relative} must build its deck cards through the shared mapper`,
     );
     assert.doesNotMatch(

@@ -18,17 +18,14 @@ import {
   apiSuccess,
   apiCreated,
 } from './middleware.js';
-import {
-  parsePaginationParams,
-  parseQueryFlag,
-} from '../../../utils/request-validators.js';
+import { parseQueryFlag } from '../../../utils/request-validators.js';
 import { savePresentation } from '../../../services/save-presentation.js';
 import { normalizeEmail } from '../../../../shared/email.js';
 import {
   createPresentation,
   deletePresentation,
   duplicatePresentation,
-  listPresentationsForActor,
+  listPresentationPage,
   mayOnPresentation,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
@@ -112,46 +109,46 @@ function sanitizeForList(pres, tags = [], requesterEmail = null) {
 // ============================================================
 
 /**
- * GET /api/v1/presentations - List presentations.
+ * GET /api/v1/presentations - List presentations, one page at a time on the
+ * list-page contract (D358, B820).
  *
  * Query parameters:
- * - limit: max results per page (default 50, max 100)
- * - offset: pagination offset (default 0)
+ * - limit: results per page, 1..100 (default 50); outside that range is 400
+ *   `invalid` (`details.field: 'limit'`), never clamped
+ * - cursor: `nextCursor` of the previous page; send the same `viewOnly` again
  * - viewOnly: 'true' only view-only presentations, 'false' only the others;
  *   any other value is 400 `invalid` (`details.field: 'viewOnly'`)
+ * - offset: refused (`details: { field: 'offset', use: 'cursor' }`)
+ *
+ * Answers `{ presentations, nextCursor }`; `nextCursor: null` is the end.
  */
 async function handleList(ctx) {
   const { storageScope, apiKey, authedUser, url } = ctx;
 
   if (!requirePermission(ctx, 'read')) return true;
 
-  // The page size keeps its documented clamp (default 50, max 100); who sees
-  // what and the viewOnly filter are the service's (B607).
-  const { limit, offset } = parsePaginationParams(url.searchParams);
-  const { presentations: paginated, total } = await listPresentationsForActor(
+  // Who sees what, the page and its refusals are the service's (B607, B820).
+  const params = url.searchParams;
+  const { presentations: page, nextCursor } = await listPresentationPage(
     storageScope,
     { actor: authedUser },
-    { viewOnly: parseQueryFlag(url.searchParams, 'viewOnly'), limit, offset },
+    {
+      viewOnly: parseQueryFlag(params, 'viewOnly'),
+      limit: params.get('limit') ?? undefined,
+      cursor: params.get('cursor') ?? undefined,
+      ...(params.has('offset') ? { offset: params.get('offset') } : {}),
+    },
   );
 
-  // Fetch tags for all presentations
-  const presentationIds = paginated.map((p) => p.id);
-  const tagsMap = await getTagsForPresentations(storageScope, presentationIds);
-
-  // Build response
-  const presentations = paginated.map((p) =>
+  const tagsMap = await getTagsForPresentations(
+    storageScope,
+    page.map((p) => p.id),
+  );
+  const presentations = page.map((p) =>
     sanitizeForList(p, tagsMap.get(p.id) || [], apiKey.ownerEmail),
   );
 
-  await apiSuccess(ctx, {
-    presentations,
-    pagination: {
-      total,
-      limit,
-      offset,
-      hasMore: offset + limit < total,
-    },
-  });
+  await apiSuccess(ctx, { presentations, nextCursor });
   return true;
 }
 

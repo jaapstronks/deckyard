@@ -22,10 +22,6 @@ file looks forward.
   with the guardrails pinned by tests. The stance and its rules are described
   in [`docs/reference/versioning.md`](docs/reference/versioning.md).
 
-## Next — planned features
-
-- **Portable `.deck` roundtrip proof** — verify a real fork-to-clean-instance import with notes, languages, theme assets and a custom slide type before declaring portability complete.
-
 ## Later — directional
 
 - **Live-session robustness** — survive presenter refresh, companion

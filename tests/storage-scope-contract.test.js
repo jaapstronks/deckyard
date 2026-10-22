@@ -234,7 +234,7 @@ test('every facade entry point refuses a bare repoRoot', async () => {
     ['createPresentation', (fn) => fn('/srv', { title: 'x' })],
     ['updatePresentation', (fn) => fn('/srv', 'deck-1', { title: 'x' })],
     ['deletePresentation', (fn) => fn('/srv', 'deck-1')],
-    ['listTrashedPresentations', (fn) => fn('/srv')],
+    ['listTrashedDecks', (fn) => fn('/srv', { reader: {} })],
     ['restorePresentation', (fn) => fn('/srv', 'deck-1')],
     ['deletePresentationRecord', (fn) => fn('/srv', 'deck-1')],
     [
@@ -242,7 +242,6 @@ test('every facade entry point refuses a bare repoRoot', async () => {
       (fn) => fn('/srv', '2026-01-01T00:00:00.000Z'),
     ],
     ['duplicatePresentation', (fn) => fn('/srv', 'deck-1')],
-    ['getFirstSlidesForIds', (fn) => fn('/srv', ['deck-1'])],
     ['listPresentationVersions', (fn) => fn('/srv', 'deck-1')],
     ['getPresentationVersion', (fn) => fn('/srv', 'deck-1', 'v1')],
     ['createPresentationVersion', (fn) => fn('/srv', 'deck-1', {})],

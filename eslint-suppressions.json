@@ -215,6 +215,11 @@
       "count": 1
     }
   },
+  "client/views/editor/deck-settings/toggles.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/views/editor/editor-cleanup.js": {
     "no-restricted-syntax": {
       "count": 1
@@ -352,11 +357,6 @@
     }
   },
   "client/views/editor/modals/save-to-library-modal.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/views/editor/deck-settings/toggles.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -521,11 +521,6 @@
       "count": 1
     }
   },
-  "client/views/list/collections/collections-bar.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/list/index.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -537,11 +532,6 @@
     }
   },
   "client/views/list/modals/creation-view/index.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/views/list/modals/creation-view/library-compose.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -749,7 +739,7 @@
   },
   "client/views/slide-library/picker.js": {
     "no-restricted-syntax": {
-      "count": 2
+      "count": 1
     }
   },
   "client/views/user/notification-bell.js": {

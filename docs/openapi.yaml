@@ -265,23 +265,34 @@ paths:
       tags:
         - Presentations
       summary: List presentations
-      description: Returns a paginated list of presentations accessible to the API key owner.
+      description: >-
+        Returns one page of the presentations the API key owner sees: their
+        own, the ones they made and every organization-visible one, most
+        recently changed first (`modified desc`, then `id desc`). Pass
+        `nextCursor` back as `cursor`, with the same `viewOnly`, for the next
+        page; `nextCursor: null` is the end of the list. Every page but the
+        last is full. There is no total and no `offset`: a request naming
+        `offset` is refused with 400 `invalid` and
+        `details: { field: offset, use: cursor }`.
       parameters:
         - name: limit
           in: query
-          description: Maximum number of presentations to return (1-100)
+          description: >-
+            Presentations per page, 1 to 100. A value outside that range is
+            refused with 400 `invalid` and `details.field: limit`, not clamped.
           schema:
             type: integer
             minimum: 1
             maximum: 100
             default: 50
-        - name: offset
+        - name: cursor
           in: query
-          description: Number of presentations to skip
+          description: >-
+            The `nextCursor` of the previous page. A cursor that does not
+            decode, or that was made with another `viewOnly`, is refused with
+            400 `invalid` and `details.field: cursor`.
           schema:
-            type: integer
-            minimum: 0
-            default: 0
+            type: string
         - name: viewOnly
           in: query
           description: >-
@@ -298,13 +309,20 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [presentations, nextCursor]
                 properties:
                   presentations:
                     type: array
                     items:
                       $ref: '#/components/schemas/PresentationSummary'
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: >-
+                      Opaque position after the last presentation of this
+                      page; `null` when there are no more.
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1292,9 +1310,15 @@ paths:
         - Slide Library
       summary: List library items
       description: >-
-        Returns team slide library items. The theme filter is named `theme`,
-        as on every other v1 surface; the retired `themeId` is refused with a
-        400 whose `details` name the parameter to use instead.
+        Returns one page of the team slide library, newest first
+        (`created desc`, then `id desc`); trashed items are never listed.
+        Pass `nextCursor` back as `cursor`, with the same `theme`, for the
+        next page; `nextCursor: null` is the end of the list. Every page but
+        the last is full. There is no total and no `offset`: a request naming
+        `offset` is refused with 400 `invalid` and
+        `details: { field: offset, use: cursor }`. The theme filter is named
+        `theme`, as on every other v1 surface; the retired `themeId` is
+        refused with a 400 whose `details` name the parameter to use instead.
       parameters:
         - name: theme
           in: query
@@ -1303,17 +1327,22 @@ paths:
             type: string
         - name: limit
           in: query
+          description: >-
+            Items per page, 1 to 100. A value outside that range is
+            refused with 400 `invalid` and `details.field: limit`, not clamped.
           schema:
             type: integer
             minimum: 1
             maximum: 100
             default: 50
-        - name: offset
+        - name: cursor
           in: query
+          description: >-
+            The `nextCursor` of the previous page. A cursor that does not
+            decode, or that was made with another `theme`, is refused with
+            400 `invalid` and `details.field: cursor`.
           schema:
-            type: integer
-            minimum: 0
-            default: 0
+            type: string
       responses:
         '200':
           description: Library items
@@ -1321,13 +1350,20 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [items, nextCursor]
                 properties:
                   items:
                     type: array
                     items:
                       $ref: '#/components/schemas/SlideLibraryItem'
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: >-
+                      Opaque position after the last item of this page;
+                      `null` when there are no more.
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1874,36 +1910,47 @@ paths:
       tags:
         - Resources
       summary: Search image library
-      description: |
-        Search and browse the images in the API key's organization.
-
-        The library has no separate category column; images are grouped by their
-        tags, so `category` filters on tags and `categories` lists the distinct
-        tags in use.
+      description: >-
+        Returns one page of the images in the API key's organization, newest
+        first (`created desc`, then `id desc`). Pass `nextCursor` back as
+        `cursor`, with the same `search` and `category`, for the next page;
+        `nextCursor: null` is the end of the list. Every page but the last is
+        full. There is no total and no `offset`: a request naming `offset` is
+        refused with 400 `invalid` and `details: { field: offset, use: cursor }`.
+        The library has no separate category column; images are grouped by
+        their tags, so `category` filters on a tag and
+        `GET /image-library/categories` lists the tags in use.
       parameters:
         - name: search
           in: query
-          description: Matches title, description, photographer and tags
+          description: >-
+            Case-insensitive; matches the title, description, photographer,
+            URL, tags and alt texts.
           schema:
             type: string
         - name: category
           in: query
-          description: Filter by tag
+          description: Only images carrying this tag (case-insensitive).
           schema:
             type: string
         - name: limit
           in: query
+          description: >-
+            Images per page, 1 to 100. A value outside that range is
+            refused with 400 `invalid` and `details.field: limit`, not clamped.
           schema:
             type: integer
             minimum: 1
             maximum: 100
             default: 50
-        - name: offset
+        - name: cursor
           in: query
+          description: >-
+            The `nextCursor` of the previous page. A cursor that does not
+            decode, or that was made with another `search` or `category`, is refused with
+            400 `invalid` and `details.field: cursor`.
           schema:
-            type: integer
-            minimum: 0
-            default: 0
+            type: string
       responses:
         '200':
           description: Image search results
@@ -1911,6 +1958,7 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [images, nextCursor]
                 properties:
                   images:
                     type: array
@@ -1934,13 +1982,43 @@ paths:
                         alts:
                           type: object
                           description: Per-language alt texts
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: >-
+                      Opaque position after the last image of this page;
+                      `null` when there are no more.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /image-library/categories:
+    get:
+      operationId: listImageLibraryCategories
+      tags:
+        - Resources
+      summary: List image categories
+      description: >-
+        Every tag in use in the API key's organization's image library,
+        alphabetically: the values `category` filters on.
+      responses:
+        '200':
+          description: The tags in use
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [categories]
+                properties:
                   categories:
                     type: array
-                    description: The distinct tags in use across the library
                     items:
                       type: string
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2628,18 +2706,6 @@ components:
             describes them per slide type.
           items:
             type: object
-
-    Pagination:
-      type: object
-      properties:
-        total:
-          type: integer
-        limit:
-          type: integer
-        offset:
-          type: integer
-        hasMore:
-          type: boolean
 
     TextStyleRefusal:
       type: object

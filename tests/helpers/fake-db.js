@@ -10,8 +10,9 @@
  * It implements the query shapes the storage layer actually uses, not Kysely
  * as a whole:
  *   selectFrom / select / selectAll / distinctOn / innerJoin / leftJoin /
- *   where / groupBy / orderBy / limit / offset / clearSelect / execute /
- *   executeTakeFirst,
+ *   where / whereRef / groupBy / orderBy / limit / offset / clearSelect /
+ *   execute / executeTakeFirst, a correlated `eb.exists(eb.selectFrom(…))`
+ *   and the keyset row-value comparison of server/storage/keyset.js,
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
  *   updateTable / set / returning / returningAll, deleteFrom / returning,
  *   and `db.fn.count()`.
@@ -490,11 +491,24 @@ function compare(left, op, right) {
   }
 }
 
-/** Build the expression-builder callbacks accept (`eb`, `eb.or`, `eb.and`, `eb.fn`). */
-function makeExpressionBuilder() {
+/**
+ * Build the expression-builder callbacks accept (`eb`, `eb.or`, `eb.and`,
+ * `eb.fn`), plus the two shapes the deck list uses (B820): a correlated
+ * `eb.exists(eb.selectFrom(…).whereRef(…))` and the keyset comparison
+ * `eb(eb.refTuple(col, 'id'), '<', eb.tuple(sql`…::timestamptz`, id))` that
+ * `server/storage/keyset.js` writes.
+ *
+ * @param {Function} [selectFrom] - The double's own select builder, for
+ *   subqueries.
+ */
+function makeExpressionBuilder(selectFrom) {
   const eb = (column, op, value) => ({ kind: 'cmp', column, op, value });
   eb.or = (predicates) => ({ kind: 'or', predicates });
   eb.and = (predicates) => ({ kind: 'and', predicates });
+  eb.refTuple = (...columns) => ({ kind: 'reftuple', columns });
+  eb.tuple = (...values) => ({ kind: 'tuple', values });
+  eb.exists = (builder) => ({ kind: 'exists', builder });
+  if (selectFrom) eb.selectFrom = selectFrom;
   eb.fn = {
     count: (column) =>
       makeAggregate(
@@ -524,6 +538,9 @@ function makeAggregate(compute) {
  * @returns {boolean}
  */
 function matches(row, predicate) {
+  if (predicate.kind === 'cmp' && predicate.column?.kind === 'reftuple') {
+    return compareTuple(row, predicate);
+  }
   if (predicate.kind === 'cmp') {
     return compare(
       readColumn(row, predicate.column),
@@ -537,7 +554,109 @@ function matches(row, predicate) {
   if (predicate.kind === 'and') {
     return predicate.predicates.every((p) => matches(row, p));
   }
+  if (predicate.kind === 'ref') {
+    return compare(
+      readColumn(row, predicate.left),
+      predicate.op,
+      readColumn(row, predicate.right),
+    );
+  }
+  if (predicate.kind === 'exists') {
+    return predicate.builder.__existsFor(row);
+  }
   throw new Error(`fake-db: unsupported predicate "${predicate.kind}"`);
+}
+
+/**
+ * The bound value of a `sql`${value}::timestamptz`` cast, or null when the
+ * expression is not that shape.
+ * @param {*} value
+ * @returns {{value: *}|null}
+ */
+function timestamptzCast(value) {
+  if (!isRawExpression(value)) return null;
+  const node = value.toOperationNode();
+  const fragments = Array.isArray(node?.sqlFragments) ? node.sqlFragments : [];
+  const [param] = node.parameters || [];
+  if (
+    fragments.join('').trim() !== '::timestamptz' ||
+    (node.parameters || []).length !== 1 ||
+    param?.kind !== 'ValueNode'
+  ) {
+    throw new Error(
+      `fake-db: unsupported sql expression in a tuple: ${fragments.join('?')}`,
+    );
+  }
+  return { value: param.value };
+}
+
+/** A timestamp as an ISO string, so stored strings and Dates compare alike. */
+const isoInstant = (value) =>
+  value === null || value === undefined ? value : new Date(value).toISOString();
+
+/**
+ * Row-value comparison `(a, b) < (x, y)`, lexicographic as in PostgreSQL.
+ * Only `<` and `>` are modelled: the keyset continuation is the one user. A
+ * NULL on either side makes the comparison unknown, which filters the row.
+ * Timestamps compare at millisecond precision here; microseconds are the
+ * PostgreSQL suite's to vouch for.
+ *
+ * @param {Object} row - Row context
+ * @param {Object} predicate - `cmp` node whose column is a `reftuple`
+ * @returns {boolean}
+ */
+function compareTuple(row, predicate) {
+  const { columns } = predicate.column;
+  const values = predicate.value?.values;
+  if (
+    predicate.value?.kind !== 'tuple' ||
+    values.length !== columns.length ||
+    (predicate.op !== '<' && predicate.op !== '>')
+  ) {
+    throw new Error('fake-db: unsupported row-value comparison');
+  }
+  for (const [i, column] of columns.entries()) {
+    const cast = timestamptzCast(values[i]);
+    const left = cast
+      ? isoInstant(readColumn(row, column))
+      : readColumn(row, column);
+    const right = cast ? isoInstant(cast.value) : values[i];
+    if (left === null || left === undefined || right === null) return false;
+    if (left === right) continue;
+    return predicate.op === '<' ? left < right : left > right;
+  }
+  return false;
+}
+
+/**
+ * A raw select entry: `sql`${sql.ref(column)}::text`.as(alias)`, the sort
+ * value `server/storage/keyset.js` reads next to each row. Anything else
+ * throws rather than being projected as a stringified builder.
+ *
+ * @param {*} entry - Aliased raw expression handed to `select`
+ * @returns {{column: string, alias: string, read: (value: *) => *}}
+ */
+function compileRawSelect(entry) {
+  const node = entry.toOperationNode();
+  const raw = node?.kind === 'AliasNode' ? node.node : null;
+  const alias = node?.alias?.name;
+  const inner = raw?.parameters?.[0]?.parameters?.[0];
+  const column =
+    inner?.kind === 'ReferenceNode' ? inner.column?.column?.name : null;
+  if (
+    !alias ||
+    !column ||
+    raw.kind !== 'RawNode' ||
+    raw.sqlFragments.join('').trim() !== '::text'
+  ) {
+    throw new Error('fake-db: unsupported raw select expression');
+  }
+  return {
+    column,
+    alias,
+    read: (value) =>
+      value === null || value === undefined ? value : isoInstant(value),
+  };
 }
 
 /**
@@ -633,7 +752,9 @@ export function createFakeDb(seed = {}) {
       selectAll: false,
     };
 
-    const contexts = () => {
+    // `outer` is the enclosing row of a correlated subquery (`eb.exists`):
+    // its qualified columns are visible to this query's predicates.
+    const contexts = (outer = null) => {
       let list = rowsOf(table).map((row) => ({
         __source: { [alias]: row },
         ...mergeIntoContext({}, alias, row),
@@ -660,9 +781,12 @@ export function createFakeDb(seed = {}) {
         list = joined;
       }
 
-      list = list.filter((context) =>
-        state.predicates.every((predicate) => matches(context, predicate)),
-      );
+      list = list.filter((context) => {
+        const scoped = outer ? { ...outer, ...context } : context;
+        return state.predicates.every((predicate) =>
+          matches(scoped, predicate),
+        );
+      });
 
       for (const { column, direction } of [...state.orderBy].reverse()) {
         const read = isRawExpression(column)
@@ -689,22 +813,26 @@ export function createFakeDb(seed = {}) {
     const detach = (value) =>
       value && typeof value === 'object' ? structuredClone(value) : value;
 
-    const project = (context) => {
-      if (state.aggregates.length) return null;
+    // The plain columns of a row; a grouped aggregate read projects its group
+    // key with this before adding the aggregates.
+    const projectColumns = (context) => {
+      const out = {};
       if (state.selectAll || !state.projection) {
-        const out = {};
         for (const [key, value] of Object.entries(context)) {
           if (key === '__source' || key.includes('.')) continue;
           out[key] = detach(value);
         }
-        return out;
       }
-      const out = {};
-      for (const item of state.projection) {
-        out[item.alias] = detach(readColumn(context, item.column));
+      // Explicit selections ride along with `selectAll()`, as in SQL (the
+      // keyset sort value next to every column).
+      for (const item of state.projection || []) {
+        const value = readColumn(context, item.column);
+        out[item.alias] = detach(item.read ? item.read(value) : value);
       }
       return out;
     };
+    const project = (context) =>
+      state.aggregates.length ? null : projectColumns(context);
 
     const builder = {
       innerJoin(joinTable, left, right) {
@@ -749,6 +877,10 @@ export function createFakeDb(seed = {}) {
         for (const entry of list) {
           if (entry && typeof entry === 'object' && entry.__aggregate) {
             state.aggregates.push(entry);
+            continue;
+          }
+          if (isRawExpression(entry)) {
+            state.projection.push(compileRawSelect(entry));
             continue;
           }
           const [column, , alias] = String(entry).split(/\s+/);
@@ -799,7 +931,9 @@ export function createFakeDb(seed = {}) {
       },
       where(columnOrCallback, op, value) {
         if (typeof columnOrCallback === 'function') {
-          state.predicates.push(columnOrCallback(makeExpressionBuilder()));
+          state.predicates.push(
+            columnOrCallback(makeExpressionBuilder(selectBuilder)),
+          );
         } else {
           state.predicates.push({
             kind: 'cmp',
@@ -809,6 +943,15 @@ export function createFakeDb(seed = {}) {
           });
         }
         return builder;
+      },
+      /** Column-to-column comparison, the correlation of a subquery. */
+      whereRef(left, op, right) {
+        state.predicates.push({ kind: 'ref', left, op, right });
+        return builder;
+      },
+      /** Whether this (sub)query has a row for the enclosing row `outer`. */
+      __existsFor(outer) {
+        return contexts(outer).length > 0;
       },
       orderBy(column, direction = 'asc') {
         state.orderBy.push({ column, direction });
@@ -847,7 +990,7 @@ export function createFakeDb(seed = {}) {
             else groups.set(key, [row]);
           }
           return [...groups.values()].map((rows) => {
-            const out = project(rows[0]);
+            const out = projectColumns(rows[0]);
             for (const aggregate of state.aggregates) {
               out[aggregate.alias] = aggregate.compute(rows);
             }

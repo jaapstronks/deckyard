@@ -115,15 +115,21 @@ const PERMITTED_ADDRESSES = new Map([
     'the collaborator list is the invite surface: you addressed these people ' +
       'by hand, and removing one is done by address',
   ],
-  [
-    'server/storage/collaborators.js :: ownerEmail',
-    'the owner of a deck shared with you — a contact you may reach about it',
-  ],
   // ── a deck, library or collection you own ────────────────────────────────
   [
     'server/storage/presentations/index.js :: ownerEmail',
     'the deck owner, on a deck the reader can already open. The public API v1 ' +
       'redacts it for anyone but the owner (public-api/v1/presentations.js).',
+  ],
+  [
+    'server/storage/presentations/deck-list.js :: ownerEmail',
+    'the deck owner, on a deck the reader can already open. The public API v1 ' +
+      'redacts it for anyone but the owner (public-api/v1/presentations.js).',
+  ],
+  [
+    'server/storage/presentations/trash-list.js :: ownerEmail',
+    'the deck owner, on a trashed deck the reader may restore: they own, ' +
+      'made or trashed it, or administer the organization (B821).',
   ],
   [
     'server/routes/public-api/v1/presentations.js :: ownerEmail',
@@ -183,9 +189,9 @@ const PERMITTED_STAMPS = new Map([
       'itself — a contact both sides already have',
   ],
   [
-    'server/storage/collaborators.js :: sharedBy',
-    'who shared this deck with you; the deck list is searchable by it ' +
-      '(client/views/list/views/search-view.js)',
+    'server/storage/presentations/deck-list.js :: sharedBy',
+    'who shared this deck with you, shown on the deck card ' +
+      '(client/views/list/presentation-card.js)',
   ],
   [
     'server/storage/share-links/guests.js :: invitedBy',

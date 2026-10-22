@@ -287,7 +287,7 @@ export async function buildBulkExport(opts) {
       // stamper, not a second favorites query here.
       const images = await stampFavorites(
         storageScope,
-        await listImageLibrary(storageScope),
+        (await listImageLibrary(storageScope)).items,
         userEmail,
       );
       zip.file('image-library/index.json', JSON.stringify(images, null, 2));

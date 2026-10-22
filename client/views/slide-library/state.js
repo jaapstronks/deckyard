@@ -27,12 +27,19 @@ export function createSlideLibraryState({
   let activeLang = normalizeLang(initialLang) || DEFAULT_DECK_LANG;
   let q = String(initialQuery || '');
 
+  // The loaded pages of each shelf under the current filters (D358, B822):
+  // the server filters and pages, so this is what the list shows, not the
+  // whole shelf.
   /** @type {{ personal: any[], organization: any[] }} */
   const cache = { personal: [], organization: [] };
+  // The filter chips' counts per shelf (`GET …/facets`).
+  const facets = { personal: null, organization: null };
   const loading = new Set();
 
-  // Multi-select state
-  const selectedItems = new Set();
+  // Multi-select state: id → item, in the order they were checked. The item
+  // is kept, not only its id, because a filter change replaces the loaded
+  // pages and a selected slide may no longer be among them.
+  const selectedItems = new Map();
 
   return {
     // Getters
@@ -46,7 +53,9 @@ export function createSlideLibraryState({
       cache[shelf === 'organization' ? 'organization' : 'personal'] || [],
     isLoading: (shelf) =>
       loading.has(shelf === 'organization' ? 'organization' : 'personal'),
-    getSelectedIds: () => new Set(selectedItems),
+    getSelectedIds: () => new Set(selectedItems.keys()),
+    getFacets: (shelf) =>
+      facets[shelf === 'organization' ? 'organization' : 'personal'],
     getSelectedCount: () => selectedItems.size,
 
     // Setters
@@ -81,6 +90,10 @@ export function createSlideLibraryState({
       const s = shelf === 'organization' ? 'organization' : 'personal';
       cache[s] = Array.isArray(items) ? items : [];
     },
+    setFacets: (shelf, value) => {
+      facets[shelf === 'organization' ? 'organization' : 'personal'] =
+        value || null;
+    },
     setLoading: (shelf, isLoading) => {
       const s = shelf === 'organization' ? 'organization' : 'personal';
       if (isLoading) {
@@ -95,7 +108,7 @@ export function createSlideLibraryState({
       if (selectedItems.has(item.id)) {
         selectedItems.delete(item.id);
       } else {
-        selectedItems.add(item.id);
+        selectedItems.set(item.id, item);
       }
     },
     isSelected: (id) => selectedItems.has(id),
@@ -105,21 +118,11 @@ export function createSlideLibraryState({
     clearSelection: () => {
       selectedItems.clear();
     },
-    getSelectedItems: () => {
-      const shelf =
-        activeShelf === 'organization' ? 'organization' : 'personal';
-      const items = cache[shelf] || [];
-      return items.filter((it) => selectedItems.has(it.id));
-    },
-    // Selected items in the order they were checked (the Set preserves
+    getSelectedItems: () => [...selectedItems.values()],
+    // Selected items in the order they were checked (the Map preserves
     // insertion order). Used by the compose flow so the composed deck follows
     // the user's selection order rather than the library's sort order.
-    getSelectedItemsInOrder: () => {
-      const shelf =
-        activeShelf === 'organization' ? 'organization' : 'personal';
-      const byId = new Map((cache[shelf] || []).map((it) => [it.id, it]));
-      return [...selectedItems].map((id) => byId.get(id)).filter(Boolean);
-    },
+    getSelectedItemsInOrder: () => [...selectedItems.values()],
 
     // Cache operations
     patchInCache: (shelf, id, updater) => {

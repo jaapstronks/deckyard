@@ -52,15 +52,15 @@ Add to your Cursor MCP settings:
 
 ### Reading
 
-| Tool                   | Description                                                                                                      |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `get_slide_types`      | List the slide types you may use, resolved for your organization (see [below](#which-slide-types-an-agent-sees)) |
-| `list_presentations`   | Browse presentations you can access (`ownership`: owned/shared/collection/all; with edit URLs)                   |
-| `get_presentation`     | Get full deck data (all slides)                                                                                  |
-| `get_presentation_url` | Get edit and present URLs for sharing                                                                            |
-| `list_themes`          | List available themes with brand colors                                                                          |
-| `list_comments`        | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped |
-| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date (DB store only)                      |
+| Tool                   | Description                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_slide_types`      | List the slide types you may use, resolved for your organization (see [below](#which-slide-types-an-agent-sees))                                      |
+| `list_presentations`   | Browse presentations you can access (`ownership`: owned/shared/collection/all; with edit URLs), one page per call: pass `nextCursor` back as `cursor` |
+| `get_presentation`     | Get full deck data (all slides)                                                                                                                       |
+| `get_presentation_url` | Get edit and present URLs for sharing                                                                                                                 |
+| `list_themes`          | List available themes with brand colors                                                                                                               |
+| `list_comments`        | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped                                      |
+| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date (DB store only)                                                           |
 
 ### Creating
 

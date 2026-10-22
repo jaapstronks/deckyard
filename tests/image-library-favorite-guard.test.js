@@ -76,9 +76,17 @@ test('the picker reads the star off the item, not from a set beside it', async (
     false,
     'the picker keeps no local favourites set: the item carries the flag',
   );
+  // The Favorites section is the server's (B822): the list is read with
+  // `section=favorites`, filtered in SQL on the reader's stars, never cut
+  // from loaded pages here.
   assert.match(
     src,
-    /items\.filter\(\(it\) => it\?\.favorite\)/,
-    'the Favorites section filters on the item flag',
+    /case SECTIONS\.FAVORITES:\s*return 'favorites';/,
+    "the Favorites section asks the server for the reader's stars",
+  );
+  assert.equal(
+    /items\.filter\(\(it\) => it\?\.favorite\)/.test(src),
+    false,
+    'the picker does not cut Favorites out of the loaded pages',
   );
 });

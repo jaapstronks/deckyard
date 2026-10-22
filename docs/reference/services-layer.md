@@ -64,6 +64,10 @@ Services return domain values and use typed errors from `server/utils/errors.js`
 
 The common signature is not universal. `loadPresentationForActor()` takes a deck id and access options after the identity. `importJsonDeck()` takes an options object and returns `{ ok: false, message }` for a language refusal. `publishPresentation()` takes an options object containing an already-authorized presentation and request context; its callers establish access before invoking it. Follow each function's signature and preconditions rather than assuming that every exported helper performs authorization or returns the same result shape.
 
+A list that grows per organization answers one page at a time through `server/services/list-page.js` (D358): adapters pass their query parameters or tool arguments to `parseListPage()`, which refuses an out-of-range `limit`, any `offset` and a foreign cursor as a 400 `invalid` naming `details.field`, and shape the answer with `listPageResult()` as `{ <collection>, nextCursor }`. Storage receives only the decoded position. The contract, the keyset query and which lists use it are described in [storage-layer.md](storage-layer.md) § A list read.
+
+The notification list accepts only `filter=all|unread|mentions|archived`; an absent filter means `all`. A supplied empty or unknown filter returns 400 `invalid` with `details.field = "filter"`. The retired `unread` parameter is refused with `details = { field: "unread", use: "filter=unread" }`. Cursor positions are checked for calendar, clock and numeric-offset bounds before querying, preserving their original microsecond text.
+
 Export preparation has explicit entry points in `server/services/exports.js`:
 
 - `prepareExportContext()` authorizes a requested deck export and counts it before the format builder runs.

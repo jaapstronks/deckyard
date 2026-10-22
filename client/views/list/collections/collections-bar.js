@@ -12,6 +12,7 @@ import { h } from '../../../lib/dom/index.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createListPager } from '../../../lib/dom/list-pager.js';
 import { createCollectionsApi } from './api.js';
 import {
   openCollectionEditModal,
@@ -37,29 +38,22 @@ export function createCollectionsBar({ api, root }) {
   const listWrap = h('div', { class: 'collections-bar-list' });
   el.append(headerRow, listWrap);
 
+  // The collections loaded so far, per shelf (read page by page, B822).
   let collections = { personal: [], organization: [] };
-  // Lazily-built id -> library item index for the manage-members modal.
-  let slideIndex = null;
-
-  const buildSlideIndex = async () => {
-    if (slideIndex) return slideIndex;
-    slideIndex = new Map();
-    for (const shelf of ['personal', 'organization']) {
-      try {
-        const r = await api(`/api/slide-library/${shelf}`);
-        for (const it of Array.isArray(r?.items) ? r.items : []) {
-          if (it?.id && !slideIndex.has(it.id))
-            slideIndex.set(it.id, { ...it, _shelf: shelf });
-        }
-      } catch {
-        // Ignore; unresolved members degrade gracefully in the modal.
+  const pager = createListPager({
+    fetchPage: (_params, cursor) => collectionsApi.listPage(cursor),
+    onPage: (items, { first }) => {
+      if (first) collections = { personal: [], organization: [] };
+      for (const col of items) {
+        const shelf =
+          col.shelf === 'organization' ? 'organization' : 'personal';
+        collections[shelf].push(col);
       }
-    }
-    return slideIndex;
-  };
+      renderList();
+    },
+  });
 
   const afterChange = async () => {
-    slideIndex = null; // membership may have shifted; rebuild on next manage
     await refresh();
   };
 
@@ -94,7 +88,9 @@ export function createCollectionsBar({ api, root }) {
       type: 'button',
       title: t('slideLibrary.collections.manageTitle', 'Manage slides'),
       onclick: async () => {
-        const index = await buildSlideIndex();
+        // The collection's own slides, not the whole library (B822).
+        const slides = await collectionsApi.listSlides(col).catch(() => []);
+        const index = new Map(slides.map((it) => [it.id, it]));
         openManageMembersModal({
           root,
           collection: col,
@@ -230,6 +226,7 @@ export function createCollectionsBar({ api, root }) {
       return;
     }
     for (const col of all) listWrap.append(renderChip(col));
+    listWrap.append(pager.el);
   };
 
   const render = () => {
@@ -238,12 +235,13 @@ export function createCollectionsBar({ api, root }) {
   };
 
   async function refresh() {
+    renderHeader();
     try {
-      collections = await collectionsApi.listAll();
+      await pager.load({});
     } catch {
       collections = { personal: [], organization: [] };
+      renderList();
     }
-    render();
   }
 
   /**

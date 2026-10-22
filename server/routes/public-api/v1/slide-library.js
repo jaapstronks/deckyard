@@ -4,7 +4,6 @@
  */
 
 import {
-  listOrganizationLibrary,
   getOrganizationLibraryItem,
   getTagsForSlideLibraryItems,
   getTagsForSlideLibraryItem,
@@ -20,7 +19,7 @@ import {
   apiCreated,
   apiError,
 } from './middleware.js';
-import { parsePaginationParams } from '../../../utils/request-validators.js';
+import { listLibraryPage } from '../../../services/library-lists.js';
 import { getNonNegativeNumber } from '../../../utils/request-validators.js';
 
 /**
@@ -53,7 +52,18 @@ function sanitizeLibraryItem(item, tags = []) {
 // ============================================================
 
 /**
- * GET /api/v1/slide-library - List organization-library items.
+ * GET /api/v1/slide-library - List organization-library items, one page at a
+ * time on the list-page contract (D358, B822).
+ *
+ * Query parameters:
+ * - theme: only items of this theme
+ * - limit: results per page, 1..100 (default 50); outside that range is 400
+ *   `invalid` (`details.field: 'limit'`), never clamped
+ * - cursor: `nextCursor` of the previous page; send the same `theme` again
+ * - offset: refused (`details: { field: 'offset', use: 'cursor' }`)
+ *
+ * Answers `{ items, nextCursor }`; `nextCursor: null` is the end. Trashed
+ * items are never listed.
  */
 async function handleList(ctx) {
   const { storageScope, apiKey, url } = ctx;
@@ -68,23 +78,22 @@ async function handleList(ctx) {
     });
     return true;
   }
-  const theme = url.searchParams.get('theme') || '';
-  const { limit, offset } = parsePaginationParams(url.searchParams);
-
-  const { items: allItems } = await listOrganizationLibrary(storageScope, {
-    themeId: theme,
-    userEmail: apiKey.ownerEmail,
-  });
-
-  // Filter out trashed items
-  const items = (allItems || []).filter((it) => !it.trashedAt);
-
-  // Pagination
-  const total = items.length;
-  const paginated = items.slice(offset, offset + limit);
+  const params = url.searchParams;
+  // One page of the untrashed organization shelf on the list-page contract
+  // (D358, B822): the trash is left out in the query, not after the read.
+  const { items, nextCursor } = await listLibraryPage(
+    storageScope,
+    { shelf: 'organization', readerEmail: apiKey.ownerEmail },
+    {
+      theme: params.get('theme') ?? undefined,
+      limit: params.get('limit') ?? undefined,
+      cursor: params.get('cursor') ?? undefined,
+      ...(params.has('offset') ? { offset: params.get('offset') } : {}),
+    },
+  );
 
   // Fetch tags for items
-  const ids = paginated.map((it) => it.id);
+  const ids = items.map((it) => it.id);
   const tagsMap =
     ids.length > 0
       ? await getTagsForSlideLibraryItems(storageScope, ids, {
@@ -92,18 +101,9 @@ async function handleList(ctx) {
         })
       : new Map();
 
-  const sanitizedItems = paginated.map((it) =>
-    sanitizeLibraryItem(it, tagsMap.get(it.id) || []),
-  );
-
   await apiSuccess(ctx, {
-    items: sanitizedItems,
-    pagination: {
-      total,
-      limit,
-      offset,
-      hasMore: offset + limit < total,
-    },
+    items: items.map((it) => sanitizeLibraryItem(it, tagsMap.get(it.id) || [])),
+    nextCursor,
   });
   return true;
 }

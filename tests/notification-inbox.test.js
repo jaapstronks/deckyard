@@ -92,15 +92,16 @@ describe('archiveThreadNotifications (no-DB contract)', () => {
 });
 
 describe('list/count guards still hold with the new options', () => {
-  it('listNotifications returns [] without a user or DB, for every filter shape', async () => {
-    assert.deepStrictEqual(await listNotifications(ORG, '', {}), []);
+  it('listNotifications returns an empty last page without a user or DB, for every filter shape', async () => {
+    const EMPTY = { items: [], next: null };
+    assert.deepStrictEqual(await listNotifications(ORG, '', {}), EMPTY);
     assert.deepStrictEqual(
       await listNotifications(ORG, 'a@b.c', { archived: true }),
-      [],
+      EMPTY,
     );
     assert.deepStrictEqual(
       await listNotifications(ORG, 'a@b.c', { types: ['comment_mention'] }),
-      [],
+      EMPTY,
     );
   });
 

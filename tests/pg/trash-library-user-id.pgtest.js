@@ -8,7 +8,7 @@
  *
  *   - **soft-delete** stamps `trashed_by_user_id` (a known trasher writes their
  *     stable `users.id`, an external one writes NULL) and **restore** clears
- *     both halves; `listTrashedPresentations` names the trasher as a pair;
+ *     both halves; `listTrashedDecks` names the trasher as a pair;
  *   - **slide-library / collection create** stamp `created_by_user_id` and
  *     `updated_by_user_id` from the actor, NULL for an external actor;
  *   - the behaviour this PR is *for*: after the actor renames, the authz
@@ -41,7 +41,7 @@ import { testScope } from '../helpers/storage-scope.js';
 import {
   createPresentation,
   deletePresentation,
-  listTrashedPresentations,
+  listTrashedDecks,
   restorePresentation,
   getPresentation,
 } from '../../server/storage/presentations/index.js';
@@ -131,7 +131,9 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
 
     // The trash list names the trasher, it does not hand out their address:
     // a display pair whose id is the key (D22).
-    const [item] = await listTrashedPresentations(storageScope);
+    const {
+      items: [item],
+    } = await listTrashedDecks(storageScope, { reader: { isAdmin: true } });
     assert.equal(item.trashedBy?.id, ALICE_ID, 'the pair carries the id');
     assert.equal(item.trashedBy?.displayName, 'Alice');
   });
@@ -174,7 +176,9 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
       ownerEmail: ALICE,
     });
     await deletePresentation(storageScope, pres.id, { actorEmail: ALICE });
-    const [item] = await listTrashedPresentations(storageScope);
+    const {
+      items: [item],
+    } = await listTrashedDecks(storageScope, { reader: { isAdmin: true } });
 
     await renameAlice();
     const renamed = { id: ALICE_ID, email: ALICE_RENAMED };
