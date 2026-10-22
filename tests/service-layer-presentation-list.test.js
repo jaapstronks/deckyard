@@ -53,7 +53,7 @@ const { handleCollaborators } =
   await import('../server/routes/api/collaborators.js');
 const { handlePresentations: handleV1Presentations } =
   await import('../server/routes/public-api/v1/presentations.js');
-const { listPresentationsForActor } =
+const { listPresentationsForActor, listPresentationPage } =
   await import('../server/services/presentations.js');
 
 const actor = (email) => ({
@@ -273,17 +273,26 @@ test('service: one predicate, one ownership vocabulary, newest first', async () 
   assert.deepEqual(await list(OWNER, { viewOnly: false }), [OWN]);
 });
 
-test('service: paging counts before the page, search sorts title matches first', async () => {
+test('service: a page continues on its cursor, search sorts title matches first', async () => {
   await installDb();
   const scope = createStorageScope(OWNER, { repoRoot: process.cwd() });
 
-  const page = await listPresentationsForActor(
+  // B820: the page is cut in the query, on the list-page contract.
+  const first = await listPresentationPage(
     scope,
     { actor: OWNER },
-    { limit: 1, offset: 1 },
+    { limit: 1 },
   );
-  assert.deepEqual(ids(page.presentations), [ORG_DECK]);
-  assert.equal(page.total, 2);
+  assert.deepEqual(ids(first.presentations), [OWN]);
+  assert.equal(typeof first.nextCursor, 'string');
+  const second = await listPresentationPage(
+    scope,
+    { actor: OWNER },
+    { limit: 1, cursor: first.nextCursor },
+  );
+  assert.deepEqual(ids(second.presentations), [ORG_DECK]);
+  assert.equal(second.nextCursor, null);
+  assert.equal('total' in second, false, 'no count on a page');
 
   const shallow = await listPresentationsForActor(
     scope,
@@ -318,9 +327,6 @@ test('service: a value outside the vocabulary is 400 invalid naming the field', 
     [{ viewOnly: 'yes' }, 'viewOnly'],
     [{ q: 'x' }, 'q'],
     [{ q: 'roadmap', deep: 'yes' }, 'deep'],
-    [{ limit: 0 }, 'limit'],
-    [{ limit: 2.5 }, 'limit'],
-    [{ offset: -1 }, 'offset'],
   ]) {
     await assert.rejects(
       listPresentationsForActor(scope, { actor: OWNER }, input),
@@ -328,6 +334,35 @@ test('service: a value outside the vocabulary is 400 invalid naming the field', 
         err.statusCode === 400 &&
         err.code === 'invalid' &&
         err.details?.field === field,
+      JSON.stringify(input),
+    );
+  }
+
+  const { nextCursor: collectionCursor } = await listPresentationPage(
+    scope,
+    { actor: OWNER },
+    { ownership: 'collection', limit: 1 },
+  );
+  assert.ok(collectionCursor);
+  for (const [input, field] of [
+    [{ ownership: 'mine' }, 'ownership'],
+    [{ viewOnly: 'yes' }, 'viewOnly'],
+    [{ limit: 0 }, 'limit'],
+    [{ limit: 2.5 }, 'limit'],
+    [{ limit: 101 }, 'limit'],
+    [{ limit: 'ten' }, 'limit'],
+    [{ offset: 1 }, 'offset'],
+    [{ cursor: 'not-a-cursor' }, 'cursor'],
+    // A cursor is bound to the filters it was made under.
+    [{ ownership: 'owned', cursor: collectionCursor }, 'cursor'],
+  ]) {
+    await assert.rejects(
+      listPresentationPage(scope, { actor: OWNER }, input),
+      (err) =>
+        err.statusCode === 400 &&
+        err.code === 'invalid' &&
+        err.details?.field === field &&
+        (field !== 'offset' || err.details.use === 'cursor'),
       JSON.stringify(input),
     );
   }
@@ -399,7 +434,8 @@ test('v1 list: owner, collaborator and outsider; viewOnly refuses an unknown val
   const owner = await list(OWNER);
   assert.equal(owner.statusCode, 200);
   assert.deepEqual(ids(owner.json().presentations), [OWN, ORG_DECK]);
-  assert.equal(owner.json().pagination.total, 2);
+  assert.equal(owner.json().nextCursor, null);
+  assert.equal('pagination' in owner.json(), false);
   assert.deepEqual(ids((await list(COLLAB)).json().presentations), [ORG_DECK]);
   assert.deepEqual(ids((await list(OUTSIDER)).json().presentations), [
     ORG_DECK,
@@ -410,9 +446,29 @@ test('v1 list: owner, collaborator and outsider; viewOnly refuses an unknown val
   const editable = await list(OWNER, '?viewOnly=false');
   assert.deepEqual(ids(editable.json().presentations), [OWN]);
 
-  const paged = await list(OWNER, '?limit=1&offset=1');
-  assert.deepEqual(ids(paged.json().presentations), [ORG_DECK]);
-  assert.equal(paged.json().pagination.hasMore, false);
+  const paged = await list(OWNER, '?limit=1');
+  assert.deepEqual(ids(paged.json().presentations), [OWN]);
+  const rest = await list(
+    OWNER,
+    `?limit=1&cursor=${encodeURIComponent(paged.json().nextCursor)}`,
+  );
+  assert.deepEqual(ids(rest.json().presentations), [ORG_DECK]);
+  assert.equal(rest.json().nextCursor, null);
+
+  for (const [query, field] of [
+    ['?limit=1&offset=1', 'offset'],
+    ['?limit=500', 'limit'],
+    ['?cursor=broken', 'cursor'],
+    [
+      `?viewOnly=false&cursor=${encodeURIComponent(paged.json().nextCursor)}`,
+      'cursor',
+    ],
+  ]) {
+    const bounded = await list(OWNER, query);
+    assert.equal(bounded.statusCode, 400, query);
+    assert.equal(bounded.json().error, 'invalid', query);
+    assert.equal(bounded.json().details.field, field, query);
+  }
 
   // Read as "no filter" without a word before B607.
   const refused = await list(OWNER, '?viewOnly=yes');
@@ -458,8 +514,26 @@ test('MCP list_presentations: owner, collaborator and outsider; an unknown owner
     { ownership: 'all', limit: 1 },
     COLLAB_EMAIL,
   );
-  assert.equal(limited.presentations.length, 1);
-  assert.equal(limited.total, 2);
+  assert.deepEqual(ids(limited.presentations), [SHARED]);
+  assert.equal('total' in limited, false);
+  const next = await mcp(
+    'list_presentations',
+    { ownership: 'all', limit: 1, cursor: limited.nextCursor },
+    COLLAB_EMAIL,
+  );
+  assert.deepEqual(ids(next.presentations), [ORG_DECK]);
+  assert.equal(next.nextCursor, null);
+  await assert.rejects(
+    mcp('list_presentations', { offset: 1 }, OWNER_EMAIL),
+    (err) =>
+      err.code === 'invalid' &&
+      err.details?.field === 'offset' &&
+      err.details.use === 'cursor',
+  );
+  await assert.rejects(
+    mcp('list_presentations', { limit: 101 }, OWNER_EMAIL),
+    (err) => err.code === 'invalid' && err.details?.field === 'limit',
+  );
 
   // Read as "owned" without a word before B607.
   await assert.rejects(

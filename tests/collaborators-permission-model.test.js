@@ -31,8 +31,8 @@
  *
  * No production code changes with this file. One test-double gap did have to
  * close: `fake-db.js` did not understand table aliases, so the aliased join in
- * `listPresentationsSharedWithUser` ("shared with me") read a table that did
- * not exist and answered `[]` for every input — an empty list would have been
+ * the "shared with me" listing (then `listPresentationsSharedWithUser`) read a
+ * table that did not exist and answered `[]` for every input — an empty list would have been
  * indistinguishable from a working filter.
  *
  * Run with: node --test tests/collaborators-permission-model.test.js

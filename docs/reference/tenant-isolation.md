@@ -138,8 +138,8 @@ Four edge decisions taken with the rules:
    "second copy could only drift" hazard, and it drifted: the write path
    stamped the _inviter's session_ organization, so an invite sent from
    another organization produced an inert grant. The column is kept rather than
-   dropped because the per-user listing (`listPresentationsSharedWithUser`,
-   "shared with me") is scoped by person and has no deck to derive an
+   dropped because the per-user listing (the `shared` term of `listDecks` in
+   `server/storage/presentations/deck-list.js`, "shared with me") is scoped by person and has no deck to derive an
    organization from, and its index rests on the column. It cannot drift any
    more: `addCollaborator` reads the stamp off the presentation, migration 064
    re-stamped the history, and `tests/collaborator-cross-org-endpoints.test.js`
