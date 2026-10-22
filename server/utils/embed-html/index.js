@@ -8,7 +8,7 @@ import {
 } from './helpers.js';
 import { renderEmbedHtmlDocument } from './template.js';
 import { filterForPublished } from '../public-output.js';
-import { themeVarsCssText } from '../themes.js';
+import { themeVarsCssText } from '../theme-vars-css.js';
 import {
   sandboxWatermarkCss,
   sandboxWatermarkEnabled,

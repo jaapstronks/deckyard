@@ -22,7 +22,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { themeVarsCssText } from '../server/utils/themes.js';
+import { themeVarsCssText } from '../server/utils/theme-vars-css.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
 
 /** The declarations inside the first rule whose selector matches exactly. */

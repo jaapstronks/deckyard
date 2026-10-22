@@ -28,7 +28,7 @@
  * by `buildCssChain` — this module places the block, it does not fill it.
  */
 
-import { escapeHtml } from './html-utils.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { getDocDir } from './doc-lang.js';
 import { documentCspMeta } from './document-csp.js';
 
