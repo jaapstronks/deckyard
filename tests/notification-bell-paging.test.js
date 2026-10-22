@@ -13,6 +13,9 @@
  *      archiving the first 20 one by one fetches the 21st; only archiving
  *      that one too shows the empty state. A failed fetch at that point keeps
  *      Load more on screen instead of claiming the inbox is empty.
+ *   4. **Archive all wins over a page still under way.** A Load more answer
+ *      read before the mutation does not put archived rows or their cursor
+ *      back; a lens switch during the mutation reads its lens again.
  *
  * Run with: node --test tests/notification-bell-paging.test.js
  */
@@ -66,6 +69,8 @@ function createInbox(count) {
   }));
   const pageRequests = [];
   let failNextPage = false;
+  let holdNextPage = null;
+  let holdNextArchive = null;
 
   function inLens(row, filter) {
     if (filter === 'archived') return Boolean(row.archivedAt);
@@ -79,8 +84,17 @@ function createInbox(count) {
       return { unreadCount: 0 };
     }
     if (pathname === '/api/notifications/archive') {
-      const row = rows.find((n) => n.id === opts.body.notificationId);
-      row.archivedAt = new Date().toISOString();
+      if (holdNextArchive) {
+        const gate = holdNextArchive;
+        holdNextArchive = null;
+        await gate;
+      }
+      const now = new Date().toISOString();
+      if (opts.body.all) {
+        for (const row of rows) row.archivedAt ??= now;
+      } else {
+        rows.find((n) => n.id === opts.body.notificationId).archivedAt = now;
+      }
       return { ok: true };
     }
     assert.equal(pathname, '/api/notifications');
@@ -95,11 +109,25 @@ function createInbox(count) {
     const start = cursor ? rows.findIndex((n) => n.id === cursor) + 1 : 0;
     const rest = rows.slice(start).filter((n) => inLens(n, filter));
     const page = rest.slice(0, limit).map((n) => ({ ...n }));
-    return {
+    const resp = {
       notifications: page,
       nextCursor: rest.length > limit ? page.at(-1).id : null,
       unreadCount: 0,
     };
+    // A held page is read now and answered later, like a slow response.
+    if (holdNextPage) {
+      const gate = holdNextPage;
+      holdNextPage = null;
+      await gate;
+    }
+    return resp;
+  }
+
+  /** Hold the next request of a kind; the returned function releases it. */
+  function hold(set) {
+    let release;
+    set(new Promise((resolve) => (release = resolve)));
+    return () => release();
   }
 
   return {
@@ -108,6 +136,8 @@ function createInbox(count) {
     failNextPage: () => {
       failNextPage = true;
     },
+    holdNextPage: () => hold((gate) => (holdNextPage = gate)),
+    holdNextArchive: () => hold((gate) => (holdNextArchive = gate)),
     remaining: () => rows.filter((n) => !n.archivedAt).length,
   };
 }
@@ -129,6 +159,12 @@ function view(bell) {
     loadMore: Boolean(loadMore),
     empty: Boolean(bell.el.querySelector('.notification-bell-item.is-empty')),
   };
+}
+
+function archiveAllButton(bell) {
+  return [...bell.el.querySelectorAll('.notification-bell-mark-all')].find(
+    (btn) => btn.textContent === 'Archive all',
+  );
 }
 
 test.afterEach(() => {
@@ -239,5 +275,77 @@ test('a failed fetch after archiving the page keeps Load more, not the empty sta
   await settle();
   assert.deepEqual(view(bell).titles, ['Notification 20']);
   assert.equal(view(bell).loadMore, false);
+  bell.detach();
+});
+
+test('a Load more answer arriving after Archive all leaves the inbox empty', async () => {
+  const inbox = createInbox(45);
+  const bell = await openBell(inbox);
+  const release = inbox.holdNextPage();
+  bell.el.querySelector('.notification-bell-load-more').click();
+  await settle();
+  assert.equal(
+    bell.el.querySelector('.notification-bell-load-more').disabled,
+    true,
+  );
+
+  archiveAllButton(bell).click();
+  await settle();
+  assert.equal(view(bell).empty, true);
+  assert.equal(inbox.remaining(), 0);
+
+  release();
+  await settle();
+  const after = view(bell);
+  assert.deepEqual(after.titles, []);
+  assert.equal(after.empty, true);
+  assert.equal(after.loadMore, false);
+
+  // New reads still work: the archived lens shows the 45, from its start.
+  bell.el.querySelector('[data-filter="archived"]').click();
+  await settle();
+  assert.deepEqual(inbox.pageRequests.at(-1), {
+    filter: 'archived',
+    cursor: null,
+  });
+  assert.equal(view(bell).titles.length, 20);
+  assert.equal(view(bell).loadMore, true);
+  bell.el.querySelector('.notification-bell-load-more').click();
+  await settle();
+  assert.equal(view(bell).titles.length, 40);
+
+  // …and so does closing and reopening on the All lens.
+  bell.el.querySelector('[data-filter="all"]').click();
+  await settle();
+  bell.el.querySelector('.notification-bell-btn').click();
+  bell.el.querySelector('.notification-bell-btn').click();
+  await settle();
+  assert.equal(view(bell).empty, true);
+  assert.equal(view(bell).loadMore, false);
+  bell.detach();
+});
+
+test('a lens switch during Archive all reads that lens again afterwards', async () => {
+  const inbox = createInbox(45);
+  const bell = await openBell(inbox);
+  const release = inbox.holdNextArchive();
+  archiveAllButton(bell).click();
+  await settle();
+
+  // The archived lens is read before the mutation lands: still empty.
+  bell.el.querySelector('[data-filter="archived"]').click();
+  await settle();
+  assert.equal(view(bell).empty, true);
+  const reads = inbox.pageRequests.length;
+
+  release();
+  await settle();
+  assert.equal(inbox.pageRequests.length, reads + 1);
+  assert.deepEqual(inbox.pageRequests.at(-1), {
+    filter: 'archived',
+    cursor: null,
+  });
+  assert.equal(view(bell).titles.length, 20);
+  assert.equal(view(bell).loadMore, true);
   bell.detach();
 });

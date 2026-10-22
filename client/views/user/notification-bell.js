@@ -514,15 +514,27 @@ export function createNotificationBell({ api }) {
   }
 
   async function archiveAll() {
+    const request = listRequest;
     try {
       await api('/api/notifications/archive', {
         method: 'POST',
         body: { all: true },
       });
-      notifications = []; // Button only renders on the All lens
-      nextCursor = null; // …and that lens is now empty to its end
       unreadCount = 0;
       updateBadge();
+      if (request !== listRequest || filter !== 'all') {
+        // A lens switch or reload ran during the mutation; its read may
+        // predate it, so read the lens shown again.
+        loadNotifications();
+        return;
+      }
+      // Drop a page still under way: it was read before the mutation and
+      // would put archived rows, and their cursor, back.
+      listRequest++;
+      isLoading = false;
+      isLoadingMore = false;
+      notifications = []; // Button only renders on the All lens
+      nextCursor = null; // …and that lens is now empty to its end
       renderNotifications();
     } catch (e) {
       // eslint-disable-next-line no-console
