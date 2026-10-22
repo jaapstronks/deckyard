@@ -73,6 +73,7 @@ Export preparation has explicit entry points in `server/services/exports.js`:
 - `authorizeExportResult()` checks the finished artifact against the downloader and current deck rights; a built author artifact cannot be served after demotion.
 - `buildExportContext()` describes an already-authorized deck, including MCP download-link preparation; it neither authorizes nor counts a request.
 - `prepareThemeTemplate()` resolves a scoped theme and builds its template without requiring a presentation.
+  The notification list accepts only `filter=all|unread|mentions|archived`; an absent filter means `all`. A supplied empty or unknown filter returns 400 `invalid` with `details.field = "filter"`. The retired `unread` parameter is refused with `details = { field: "unread", use: "filter=unread" }`. Cursor positions are checked for calendar, clock and numeric-offset bounds before querying, preserving their original microsecond text.
 
 ## Enforcement
 

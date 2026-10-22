@@ -41,6 +41,10 @@ import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import { createMockRes } from '../helpers/http-mocks.js';
 import { handleNotifications } from '../../server/routes/api/notifications.js';
+import {
+  encodeCursor,
+  parseListPage,
+} from '../../server/services/list-page.js';
 import { keysetPage } from '../../server/storage/keyset.js';
 import {
   down as migrate095Down,
@@ -278,6 +282,56 @@ pgDescribe('notification list page (real PostgreSQL)', () => {
     assert.equal(refused.status, 400);
     assert.equal(refused.body.error, 'invalid');
     assert.equal(refused.body.details.field, 'cursor');
+  });
+
+  it('5: invalid calendar, time and offset cursors return 400 through the PostgreSQL route', async () => {
+    await seedInbox();
+    const page = parseListPage(
+      {},
+      { sortKey: 'created_desc', filters: { filter: 'all' } },
+    );
+    for (const value of [
+      '2026-02-30 12:00:00+00',
+      '2026-13-01 12:00:00+00',
+      '1900-02-29 12:00:00+00',
+      '2026-01-01 25:00:00+00',
+      '2026-01-01 12:60:00+00',
+      '2026-01-01 12:00:61+00',
+      '2026-01-01 12:00:00+16:00',
+      '2026-01-01 12:00:00+00:60',
+    ]) {
+      const cursor = encodeCursor(page, { value, id: crypto.randomUUID() });
+      const { status, body } = await get({ cursor });
+      assert.equal(status, 400, value);
+      assert.equal(body.error, 'invalid', value);
+      assert.equal(body.details.field, 'cursor', value);
+    }
+    // Accepted boundaries must also survive the actual timestamptz cast.
+    for (const value of [
+      '2000-02-29 23:59:59.999999+15:59',
+      '2024-02-29T00:00:00.000001Z',
+    ]) {
+      const cursor = encodeCursor(page, { value, id: crypto.randomUUID() });
+      assert.equal((await get({ cursor })).status, 200, value);
+    }
+  });
+
+  it('5: refuses unknown/empty filters and the retired unread parameter through the route', async () => {
+    for (const params of [
+      { filter: 'unknown' },
+      { filter: '' },
+      { unread: 'true' },
+      { filter: 'all', unread: '' },
+    ]) {
+      const { status, body } = await get(params);
+      assert.equal(status, 400);
+      assert.equal(body.error, 'invalid');
+      assert.equal(
+        body.details.field,
+        'unread' in params ? 'unread' : 'filter',
+      );
+      if ('unread' in params) assert.equal(body.details.use, 'filter=unread');
+    }
   });
 
   it('migration 095 backfills a NULL created_at and makes the column NOT NULL', async () => {

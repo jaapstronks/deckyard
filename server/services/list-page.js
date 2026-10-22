@@ -50,7 +50,34 @@ const CURSOR_VERSION = 1;
  * would reach `::timestamptz` and fail as a 500.
  */
 const SORT_VALUE_RE =
-  /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)$/;
+  /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(?:Z|[+-](\d{2})(?::?(\d{2}))?)$/;
+
+/**
+ * Check calendar, clock and PostgreSQL numeric-offset bounds without
+ * converting the sort value to a Date (which would lose microseconds).
+ * @param {string} value
+ * @returns {boolean}
+ */
+function validSortValue(value) {
+  const parts = SORT_VALUE_RE.exec(value);
+  if (!parts) return false;
+  const [year, month, day, hour, minute, second, offsetHour, offsetMinute] =
+    parts.slice(1).map((part) => Number(part ?? 0));
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return (
+    year >= 1 &&
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= days[month - 1] &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    offsetHour <= 15 &&
+    offsetMinute <= 59
+  );
+}
 
 /**
  * @typedef {Object} ListPosition
@@ -153,7 +180,7 @@ function parseCursor(raw, sortKey, fingerprint) {
     decoded?.v === CURSOR_VERSION &&
     key.length === 2 &&
     typeof key[0] === 'string' &&
-    SORT_VALUE_RE.test(key[0]) &&
+    validSortValue(key[0]) &&
     isUuid(key[1]);
   if (!readable) refuse('cursor', 'Invalid cursor');
   if (decoded.s !== sortKey) {

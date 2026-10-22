@@ -21,6 +21,7 @@ import {
 } from '../../storage/notifications.js';
 import { addClient, removeClient } from '../../services/notification-events.js';
 import { listPageResult, parseListPage } from '../../services/list-page.js';
+import { AppError } from '../../utils/errors.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   badRequest,
@@ -180,10 +181,23 @@ async function handleNotificationArchive({
 async function handleNotificationList({ storageScope, res, url, authedUser }) {
   const userEmail = authedUser.email;
 
-  // filter=all|unread|mentions|archived (legacy alias: unread=true)
-  const filter =
-    url.searchParams.get('filter') ||
-    (url.searchParams.get('unread') === 'true' ? 'unread' : 'all');
+  if (url.searchParams.has('unread')) {
+    throw new AppError(
+      'Unknown parameter "unread": use "filter=unread"',
+      400,
+      { field: 'unread', use: 'filter=unread' },
+      'invalid',
+    );
+  }
+  const filter = url.searchParams.get('filter') ?? 'all';
+  if (!['all', 'unread', 'mentions', 'archived'].includes(filter)) {
+    throw new AppError(
+      'Invalid filter: use all, unread, mentions or archived',
+      400,
+      { field: 'filter' },
+      'invalid',
+    );
+  }
 
   const page = parseListPage(url.searchParams, {
     sortKey: 'created_desc',

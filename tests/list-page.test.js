@@ -129,6 +129,42 @@ describe('parseListPage: cursor', () => {
     );
   });
 
+  it('refuses invalid calendar, clock and offset values', () => {
+    const page = parseListPage({}, NOTIFICATIONS);
+    for (const value of [
+      '2026-02-30 12:00:00+00',
+      '2026-13-01 12:00:00+00',
+      '2026-00-01 12:00:00+00',
+      '2026-01-00 12:00:00+00',
+      '2026-04-31 12:00:00+00',
+      '2026-02-29 12:00:00+00',
+      '1900-02-29 12:00:00+00',
+      '0000-01-01 00:00:00+00',
+      '2026-01-01 24:00:00+00',
+      '2026-01-01 12:60:00+00',
+      '2026-01-01 12:00:60+00',
+      '2026-01-01 12:00:00+16',
+      '2026-01-01 12:00:00-99:00',
+      '2026-01-01 12:00:00+01:60',
+    ]) {
+      const cursor = encodeCursor(page, { value, id: ID });
+      assertRefused(() => parseListPage({ cursor }, NOTIFICATIONS), 'cursor');
+    }
+  });
+
+  it('accepts valid leap days and boundary times without changing the text', () => {
+    const page = parseListPage({}, NOTIFICATIONS);
+    for (const value of [
+      '2000-02-29 23:59:59.999999+15:59',
+      '2024-02-29T00:00:00.000001Z',
+      '0001-01-01 00:00:00-15:59',
+      '9999-12-31 23:59:59.123456+0000',
+    ]) {
+      const cursor = encodeCursor(page, { value, id: ID });
+      assert.equal(parseListPage({ cursor }, NOTIFICATIONS).after.value, value);
+    }
+  });
+
   it('refuses a broken cursor', () => {
     const encode = (payload) =>
       Buffer.from(JSON.stringify(payload)).toString('base64url');
@@ -239,6 +275,9 @@ describe('GET /api/notifications refuses through the error envelope', () => {
     ['?limit=many', 'limit'],
     ['?offset=20', 'offset'],
     ['?cursor=broken', 'cursor'],
+    ['?filter=unknown', 'filter'],
+    ['?filter=', 'filter'],
+    ['?filter=Unread', 'filter'],
   ]) {
     it(`${search} → 400 invalid, details.field = ${field}`, async () => {
       const { status, body } = await get(search);
@@ -248,6 +287,29 @@ describe('GET /api/notifications refuses through the error envelope', () => {
       assert.equal(body.details.field, field);
     });
   }
+
+  it('refuses every supplied retired unread parameter with a use hint', async () => {
+    for (const search of [
+      '?unread=true',
+      '?unread=false',
+      '?unread=',
+      '?filter=all&unread=true',
+    ]) {
+      const { status, body } = await get(search);
+      assert.equal(status, 400);
+      assert.equal(body.error, 'invalid');
+      assert.deepEqual(body.details, { field: 'unread', use: 'filter=unread' });
+    }
+  });
+
+  it('defaults an absent filter to all and accepts the four explicit filters', async () => {
+    for (const filter of ['all', 'unread', 'mentions', 'archived']) {
+      const { status, body } = await get(`?filter=${filter}`);
+      assert.equal(status, 200);
+      assert.equal(body.filter, filter);
+    }
+    assert.equal((await get('')).body.filter, 'all');
+  });
 
   it('a cursor from the unread lens is refused on the all lens', async () => {
     const unread = parseListPage(query({}), {
