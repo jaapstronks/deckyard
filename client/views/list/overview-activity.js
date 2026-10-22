@@ -432,7 +432,7 @@ export function createActivityFeed({ api, onUnreadCountChange }) {
      * Refresh the feed.
      */
     refresh() {
-      offset = 0;
+      nextCursor = null;
       events = [];
       load();
     },
