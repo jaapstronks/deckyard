@@ -27,6 +27,7 @@ import { slideTypeSample } from '../shared/slide-types/authoring-companions.js';
 import {
   applyContentTranslation,
   contentTranslation,
+  textFieldSpecForContent,
   textFieldSpecForType,
 } from '../shared/slide-types/text-fields.js';
 import { validate } from './helpers/json-schema-validate.js';
@@ -354,4 +355,62 @@ test('an unknown-type placeholder keeps each language version its own text (B833
   assert.match(nl.content.body, /acme-title-slide/);
   assert.equal(nl.content.background, base.content.background);
   assert.equal(nl.notes, 'Sprekernotitie');
+});
+
+test('an unknown-type placeholder keeps the translated text of a list (B836)', () => {
+  const parts = deckToPresentationParts(
+    {
+      lang: 'en-GB',
+      translations: { nl: { title: 'Waarom' } },
+      slides: [
+        {
+          type: 'acme-poll-slide',
+          content: {
+            question: 'Agree?',
+            items: [
+              { label: 'Yes', color: 'lime' },
+              { label: 'No', rows: [{ text: 'Never' }] },
+            ],
+          },
+          translations: {
+            nl: {
+              question: 'Eens?',
+              items: [
+                { label: 'Ja' },
+                { label: 'Nee', rows: [{ text: 'Nooit' }] },
+              ],
+            },
+          },
+        },
+      ],
+    },
+    { lang: 'en-GB', slideTypes: SLIDE_TYPES },
+  );
+  const [base] = parts.slides;
+  const [nl] = parts.translations.nl.slides;
+  assert.equal(nl.type, 'content-slide');
+  assert.match(base.content.body, /Yes/);
+  assert.match(nl.content.body, /Eens\?/);
+  assert.match(nl.content.body, /\bJa\b/);
+  assert.match(nl.content.body, /Nooit/);
+  assert.doesNotMatch(nl.content.body, /\bYes\b|\bNever\b/);
+});
+
+test('an undeclared list is walked only for a type without a definition (B836)', () => {
+  const content = { title: 'Why', extra: [{ label: 'Yes' }] };
+  const tr = { title: 'Waarom', extra: [{ label: 'Ja' }] };
+  const unknown = applyContentTranslation(
+    textFieldSpecForContent(content, tr),
+    content,
+    tr,
+  );
+  assert.deepEqual(unknown.extra, [{ label: 'Ja' }]);
+  // A known type's spec comes from its fields: the remnant list stays as the
+  // base holds it.
+  const known = applyContentTranslation(
+    textFieldSpecForType('content-slide'),
+    content,
+    tr,
+  );
+  assert.deepEqual(known.extra, [{ label: 'Yes' }]);
 });
