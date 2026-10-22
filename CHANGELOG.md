@@ -4,6 +4,20 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.85.0](https://github.com/jaapstronks/deckyard/compare/v1.84.0...v1.85.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* the deck list is one SQL query, paged by keyset (B820) ([#1819](https://github.com/jaapstronks/deckyard/issues/1819))
+* `GET /api/v1/presentations` moves onto the list-page contract: `{ limit, cursor }` in, `{ presentations, nextCursor }` out, ordered `(modified_at desc, id desc)`. `offset` and `pagination` are gone; `offset` is refused with 400 and `use: 'cursor'`, and `limit` outside 1..100 is refused with 400 instead of clamped.
+* MCP `list_presentations` loses `total` and takes `cursor` / returns `nextCursor`.
+* Migration 096 backfills `presentations.modified_at` from `created_at`, makes it NOT NULL and replaces `idx_presentations_modified` with `idx_presentations_list_keyset` (`(organization_id, modified_at DESC, id DESC) WHERE trashed_at IS NULL`).
+
+### Added
+
+* the deck list is one SQL query, paged by keyset (B820) ([#1819](https://github.com/jaapstronks/deckyard/issues/1819)) ([3ede840](https://github.com/jaapstronks/deckyard/commit/3ede840cb8f48e5c46dde3abc96b6c50a4a026c0))
+
 ## [1.84.0](https://github.com/jaapstronks/deckyard/compare/v1.83.5...v1.84.0) (2026-10-22)
 
 
