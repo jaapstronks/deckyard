@@ -168,6 +168,53 @@ export function deckReadableExpression(scope, eb, { reader, deckRef }) {
 }
 
 /**
+ * "This deck is on the reader's list under `ownership`": the organization, the
+ * trash filter and the reader's terms, as one condition over the
+ * `presentations` table of the outer query. It is exactly what
+ * {@link listDecks} lists, for a query that reads rows on a deck and joins
+ * that deck in (the cross-deck recent comments, B824). `null` when the reader
+ * lists no deck at all, so the caller answers an empty page instead of
+ * writing a constant false.
+ *
+ * tests/pg/comment-list-page.pgtest.js holds the comments read through it
+ * equal to the comments on `listDecks` for every ownership.
+ *
+ * @param {import('../scope.js').StorageScope} scope - The organization the
+ *   deck must be in.
+ * @param {Object} eb - Expression builder of the outer query
+ * @param {Object} options
+ * @param {{userId?: string|null, email?: string, unrestricted?: boolean}} options.reader
+ * @param {'collection'|'owned'|'shared'|'all'} options.ownership
+ * @returns {Object|null}
+ */
+export function deckListedCondition(scope, eb, { reader, ownership }) {
+  const orgId = getOrgId(toStorageContext(scope, 'deckListedCondition'));
+  const terms = deckListTerms(reader, ownership);
+  if (terms && terms.length === 0) return null;
+  return listedCondition(eb, orgId, reader, terms);
+}
+
+/**
+ * The organization, trash and terms half of a deck list, over `presentations`.
+ * @param {Object} eb - Expression builder
+ * @param {string} orgId
+ * @param {Object} reader
+ * @param {string[]|null} terms - {@link deckListTerms}; not empty.
+ */
+function listedCondition(eb, orgId, reader, terms) {
+  const conditions = [
+    eb('presentations.organization_id', '=', orgId),
+    eb('presentations.trashed_at', 'is', null),
+  ];
+  if (terms) {
+    conditions.push(
+      eb.or(terms.map((term) => termExpression(eb, term, reader, orgId))),
+    );
+  }
+  return eb.and(conditions);
+}
+
+/**
  * Decks carrying at least one of `names`, compared as the tag identity is:
  * `lower(name)` within the organization.
  * @param {Object} eb - Expression builder
@@ -211,13 +258,7 @@ function deckListQuery(
   let qb = db
     .selectFrom('presentations')
     .select([...DECK_LIST_COLUMNS])
-    .where('presentations.organization_id', '=', orgId)
-    .where('presentations.trashed_at', 'is', null);
-  if (terms) {
-    qb = qb.where((eb) =>
-      eb.or(terms.map((term) => termExpression(eb, term, reader, orgId))),
-    );
-  }
+    .where((eb) => listedCondition(eb, orgId, reader, terms));
   if (viewOnly !== undefined) {
     qb = qb.where('presentations.is_view_only', '=', viewOnly);
   }

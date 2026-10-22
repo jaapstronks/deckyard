@@ -29,10 +29,12 @@ import { openSseStream, sseWrite } from '../../../utils/sse.js';
 /**
  * List comments for a presentation.
  * GET /api/presentations/:id/comments
- * Query params: slideId, status (open|resolved|dismissed|all), commentType
+ * Query params: slideId, status (open|resolved|dismissed|all), commentType,
+ * and the page: limit, cursor (D358). Answers `{ comments, nextCursor,
+ * openCount }`; `openCount` is the deck's own count, not the page's.
  *
- * The reading rule and the filters are `services/comments.js`; this adapter
- * parses the query and names who is asking.
+ * The reading rule, the filters and the page are `services/comments.js`; this
+ * adapter parses the query and names who is asking.
  */
 export async function handlePresentationCommentsList(
   { storageScope, req, res, url, authedUser } = {},
@@ -40,10 +42,11 @@ export async function handlePresentationCommentsList(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { comments } = await listComments(
+  const { comments, nextCursor } = await listComments(
     storageScope,
     { actor: authedUser },
     commentListInputFromQuery(id, url.searchParams),
+    url.searchParams,
   );
   const openCount = await getOpenCommentCount(storageScope, id);
 
@@ -53,7 +56,7 @@ export async function handlePresentationCommentsList(
   // comparing it against each comment's author address. Both addresses are
   // gone from the payload (D22): the storage layer answers the same question
   // per comment with `isAi`.
-  serveJson(res, 200, { ok: true, comments, openCount });
+  serveJson(res, 200, { ok: true, comments, nextCursor, openCount });
   return true;
 }
 

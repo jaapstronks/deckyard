@@ -22,6 +22,7 @@ import {
   collectUnreadThreadIds,
 } from './comments-read-state.js';
 import { h } from '../../lib/dom/index.js';
+import { createListPager } from '../../lib/dom/list-pager.js';
 
 /**
  * Creates a comments panel component.
@@ -123,6 +124,49 @@ export function createCommentsPanel({
   // Data loading
   // ========================================
 
+  /** The threads the attention filter leaves in view, of `threads`. */
+  function visibleOf(threads) {
+    if (filter.slideMissing) return [];
+    return filter.attention === 'waiting'
+      ? threads.filter((c) => threadWaitsFor(c, user?.id))
+      : threads;
+  }
+
+  // The list is read a page at a time (D358): the first page on every load,
+  // the next behind "Load more". The attention filter is the reader's own
+  // read-state and stays a view over the threads read so far.
+  const pager = createListPager({
+    fetchPage: async (opts, cursor) => {
+      const result = await commentsApi.listComments({ ...opts, cursor });
+      openCount = result.openCount || 0;
+      return { items: result.comments || [], nextCursor: result.nextCursor };
+    },
+    onPage: (threads, { first }) => {
+      const visibleThreads = visibleOf(threads);
+      // The re-render destroys any open reply inputs; release their
+      // autocomplete listeners with them.
+      if (first) {
+        comments = threads;
+        detachEphemeralMentions();
+        renderers.renderCommentList(listEl, visibleThreads);
+      } else {
+        comments = [...comments, ...threads];
+        listEl.querySelector('.empty-note')?.remove();
+        for (const thread of visibleThreads) {
+          listEl.insertBefore(renderers.renderCommentThread(thread), pager.el);
+        }
+      }
+      // "This slide" without a slide lists nothing, so there is nothing more.
+      if (!filter.slideMissing) listEl.append(pager.el);
+
+      if (isVisible) {
+        markAsSeen();
+        scheduleMarkThreadsRead(visibleThreads);
+      }
+      notifyBadge();
+    },
+  });
+
   async function loadComments() {
     try {
       filter.slideId =
@@ -138,24 +182,7 @@ export function createCommentsPanel({
       if (filter.status && filter.status !== 'all') opts.status = filter.status;
       if (filter.commentType) opts.commentType = filter.commentType;
 
-      const result = await commentsApi.listComments(opts);
-      comments = result.comments || [];
-      openCount = result.openCount || 0;
-      const visibleThreads = filter.slideMissing
-        ? []
-        : filter.attention === 'waiting'
-          ? comments.filter((c) => threadWaitsFor(c, user?.id))
-          : comments;
-      // The re-render destroys any open reply inputs; release their
-      // autocomplete listeners with them.
-      detachEphemeralMentions();
-      renderers.renderCommentList(listEl, visibleThreads);
-
-      if (isVisible) {
-        markAsSeen();
-        scheduleMarkThreadsRead(visibleThreads);
-      }
-      notifyBadge();
+      await pager.load(opts);
 
       // Fetch per-slide counts for indicators. Only notify when the map
       // actually changed: onSlideCommentCountsChange rebuilds the whole slide

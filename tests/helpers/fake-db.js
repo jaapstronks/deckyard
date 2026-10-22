@@ -472,6 +472,8 @@ function compare(left, op, right) {
       return right === null
         ? left !== null && left !== undefined
         : left !== right;
+    case 'is distinct from':
+      return (left ?? null) !== (right ?? null);
     case 'in':
       return Array.isArray(right) && right.includes(left);
     case 'not in':

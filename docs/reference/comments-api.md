@@ -80,7 +80,10 @@ Semantics:
 
 - **List** (`GET …/comments`) — filters `status` (`open|resolved|dismissed|all`),
   `slideId`, `since` (ISO 8601); replies come nested under their parent.
-  Needs read access to the deck.
+  One page at a time on the list-page contract (D358): `limit` (1..100,
+  default 50) and `cursor` in, `{ comments, nextCursor }` out, newest first.
+  A page counts top-level comments, each with all its replies; there is no
+  `total` and no `offset`. Needs read access to the deck.
 - **Create** (`POST …/comments`) — author is always the key owner. Needs
   _comment_ permission (owner/creator, organization member, or collaborator
   with comment rights or higher) — deliberately weaker than deck `write`.
@@ -111,6 +114,13 @@ slide-anchored `editUrl`, and a `since` filter):
 
 - `list_comments` — one deck, filters `status`/`slideId`/`since`.
 - `list_recent_comments` — cross-deck, filters `ownership`/`authorEmail`/`status`/`since`.
+  Which decks is decided in the query that reads the comments: a comment
+  is listed when its deck is on the actor's deck list under `ownership`
+  (B824).
+
+Both read one page per call (`limit`, `cursor`; `nextCursor` back, `null` at
+the end), the same contract as the app routes, v1 and the share-link guest's
+`GET /api/share/:token/comments`.
 
 Write (this release):
 

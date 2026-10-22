@@ -1712,7 +1712,7 @@ export function registerTools(
 
   server.tool(
     'list_comments',
-    'List comments on a single presentation (newest first) with nested replies. Use to read reviewer/AI feedback on one deck. Each comment carries current slide context (index, type, title, or deleted), the slide snapshot captured at create time (null for older comments), and an editUrl anchored to the slide. Access is scoped to decks you own or that are shared with you.',
+    'List comments on a single presentation, one page at a time (newest first), with nested replies. Use to read reviewer/AI feedback on one deck. Each comment carries current slide context (index, type, title, or deleted), the slide snapshot captured at create time (null for older comments), and an editUrl anchored to the slide. A page counts threads (or, with includeReplies, comments) and comes with `nextCursor`: pass it back as `cursor` with the same filters for the next page; `null` means there are no more. Access is scoped to decks you own or that are shared with you.',
     {
       type: 'object',
       properties: {
@@ -1736,23 +1736,37 @@ export function registerTools(
           description:
             'When true, return replies as separate top-level rows instead of nested under their parent (default: false)',
         },
+        limit: {
+          type: 'number',
+          description:
+            'Results per page, a whole number from 1 to 100 (default: 50)',
+        },
+        cursor: {
+          type: 'string',
+          description:
+            'The `nextCursor` of the previous page, to continue the list (send the same filters again). Omit for the first page.',
+        },
       },
       required: ['presentationId'],
     },
-    async (
-      {
+    async (args, context) => {
+      const {
         presentationId,
         status = 'all',
         slideId,
         since,
         includeReplies = false,
-      },
-      context,
-    ) => {
-      const { comments, presentation: pres } = await listComments(
+      } = args;
+      const {
+        comments,
+        nextCursor,
+        presentation: pres,
+      } = await listComments(
         storageScopeOf(context),
         { actor: actorOf(context) },
         { presentationId, status, slideId, since, includeReplies },
+        // `limit`, `cursor`, and a refused `offset` (D358).
+        args,
       );
 
       // Slide context reflects the deck as it is now; the stored
@@ -1771,7 +1785,7 @@ export function registerTools(
         presentationId,
         presentationTitle: pres.title,
         comments: enriched,
-        total: enriched.length,
+        nextCursor,
       };
     },
     { readOnly: true, permission: 'comments:read' },
@@ -1781,7 +1795,7 @@ export function registerTools(
 
   server.tool(
     'list_recent_comments',
-    'List the most recent comments across the presentations you can open (newest first; `ownership` narrows the decks), optionally filtered to one reviewer or a since-date. Answers "what are the latest comments on my decks?". Each row carries the deck title, current slide context, create-time slide snapshot and a slide-anchored edit URL so it reads standalone. Requires the DB storage backend (returns empty in file mode).',
+    'List the most recent comments across the presentations you can open, one page at a time (newest first; `ownership` narrows the decks), optionally filtered to one reviewer or a since-date. Answers "what are the latest comments on my decks?". Each row carries the deck title, current slide context, create-time slide snapshot and a slide-anchored edit URL so it reads standalone. The page comes with `nextCursor`: pass it back as `cursor` with the same filters for the next page; `null` means there are no more.',
     {
       type: 'object',
       properties: {
@@ -1807,25 +1821,25 @@ export function registerTools(
         },
         limit: {
           type: 'number',
-          description: 'Max comments to return (default: 50, max: 200)',
+          description:
+            'Results per page, a whole number from 1 to 100 (default: 50)',
+        },
+        cursor: {
+          type: 'string',
+          description:
+            'The `nextCursor` of the previous page, to continue the list (send the same filters again). Omit for the first page.',
         },
       },
     },
-    async (
-      {
-        ownership = 'all',
-        authorEmail,
-        status = 'all',
-        since,
-        limit = 50,
-      } = {},
-      context,
-    ) => {
+    async (args = {}, context) => {
+      const { ownership = 'all', authorEmail, status = 'all', since } = args;
       const owner = getOwner(context);
-      const { items: listed, total } = await listRecentComments(
+      const { items: listed, nextCursor } = await listRecentComments(
         storageScopeOf(context),
         { actor: actorOf(context) },
-        { ownership, authorEmail, status, since, limit },
+        { ownership, authorEmail, status, since },
+        // `limit`, `cursor`, and a refused `offset` (D358).
+        args,
       );
 
       const slideTypes = await sessionSlideTypes(context);
@@ -1856,7 +1870,7 @@ export function registerTools(
 
       return {
         comments: items,
-        total,
+        nextCursor,
         ownership,
         ownerFilter: owner || null,
       };

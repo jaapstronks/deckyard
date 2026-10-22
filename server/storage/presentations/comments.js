@@ -18,6 +18,8 @@ import {
   toDisplayIdentity,
   toStoredActorIdentity,
 } from '../display-identity.js';
+import { keysetPage, keysetRows } from '../keyset.js';
+import { deckListedCondition } from './deck-list.js';
 
 /**
  * What a batch of comment rows needs resolved before it can be mapped.
@@ -67,15 +69,35 @@ async function commentReadContext(rows, scope) {
 // ============================================================
 
 /**
- * List comments for a presentation.
- * Can filter by slideId or status.
+ * The comments on one deck, newest first, as one keyset page or (without
+ * `limit`) the whole list (B824, D358). The order is
+ * `(created_at desc, id desc)`.
+ *
+ * A page counts threads: without `includeReplies` it holds top-level comments,
+ * each with all its replies attached; with it, every comment is a row of its
+ * own and the page counts those.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} presentationId
+ * @param {Object} [opts] - Filters: `slideId`, `status`, `commentType`,
+ *   `suggestionCategory`, `since` (ISO, inclusive), `includeReplies`.
+ * @param {Object} [page]
+ * @param {number} [page.limit] - Rows per page; the whole list when absent.
+ * @param {{value: string, id: string}|null} [page.after] - Position of the
+ *   last row seen.
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function listComments(scope, presentationId, opts = {}) {
+export async function listComments(
+  scope,
+  presentationId,
+  opts = {},
+  { limit, after = null } = {},
+) {
   toStorageContext(scope, 'listComments');
   const pid = norm(presentationId);
-  if (!pid) return [];
+  if (!pid) return { items: [], next: null };
 
-  return withDbGuard([], async (db) => {
+  return withDbGuard({ items: [], next: null }, async (db) => {
     const orgId = getOrgId(scope);
 
     let query = db
@@ -120,7 +142,23 @@ export async function listComments(scope, presentationId, opts = {}) {
       query = query.where('parent_id', 'is', null);
     }
 
-    const rows = await query.orderBy('created_at', 'desc').execute();
+    let rows;
+    let next = null;
+    if (limit === undefined) {
+      rows = await query
+        .orderBy('created_at', 'desc')
+        .orderBy('id', 'desc')
+        .execute();
+    } else {
+      ({ rows, next } = keysetRows(
+        await keysetPage(query, {
+          column: 'created_at',
+          after,
+          limit,
+        }).execute(),
+        limit,
+      ));
+    }
 
     // Fetch the replies before mapping anything, so one name lookup covers the
     // whole page (threads and replies alike) instead of one per thread.
@@ -137,6 +175,7 @@ export async function listComments(scope, presentationId, opts = {}) {
               rows.map((r) => r.id),
             )
             .orderBy('created_at', 'asc')
+            .orderBy('id', 'asc')
             .execute()
         : [];
 
@@ -164,7 +203,7 @@ export async function listComments(scope, presentationId, opts = {}) {
       await annotateThreadReadState(db, comments, scope);
     }
 
-    return comments;
+    return { items: comments, next };
   });
 }
 
@@ -325,68 +364,115 @@ export async function markThreadsRead(scope, presentationId, commentIds) {
 }
 
 /**
- * List the most recent top-level comments on a given set of decks, newest
- * first. Powers cross-deck review queries ("latest comments on my decks",
- * optionally by one reviewer) that the per-deck listComments() can't answer.
+ * The most recent top-level comments across the decks a reader lists, newest
+ * first, as one keyset page (B824, D358). Powers cross-deck review queries
+ * ("latest comments on my decks", optionally by one reviewer) that the
+ * per-deck {@link listComments} can't answer.
  *
- * Which decks those are is not decided here: the comment service asks
- * `listPresentationsForActor` for the deck set under the caller's `ownership`
- * (B618), the one list every contract reads (B607, D317).
+ * Which decks those are is decided in the query: the deck a comment sits on
+ * must be on the reader's deck list under `ownership`
+ * (`deckListedCondition` in ./deck-list.js, the B820 predicate, B618). The
+ * list used to be read in full in JavaScript and sent back as an `IN (...)`
+ * of every deck id.
  *
  * @param {import('../scope.js').StorageScope} scope - The caller's org scope.
- * @param {Array<{ id: string, title?: string }>} decks - The decks to read
- *   across; each row is enriched with its deck's title.
- * @param {Object} [opts]
- * @param {string|null} [opts.authorEmail=null] - Filter to one comment author.
- * @param {'open'|'resolved'|'dismissed'|'all'} [opts.status='all']
- * @param {string|null} [opts.since=null] - Only comments created at/after this ISO timestamp.
- * @param {number} [opts.limit=50] - Max comments (clamped to 1..200).
- * @returns {Promise<{ comments: Array, total: number }>} Comments enriched with
- *   `presentationTitle`; `total` is the number returned.
+ * @param {Object} filter
+ * @param {{userId?: string|null, email?: string, unrestricted?: boolean}} filter.reader
+ *   The reader's identity (`listReader()`), its `userId` already resolved.
+ * @param {'collection'|'owned'|'shared'|'all'} filter.ownership
+ * @param {boolean} [filter.withoutOrganizationDecks=false] - Leave out
+ *   organization-visible decks: they carry no comments while sharing is off
+ *   (`presentationCommentsEnabled`).
+ * @param {string|null} [filter.authorEmail] - Only this author's comments.
+ * @param {'open'|'resolved'|'dismissed'|'all'} [filter.status='all']
+ * @param {string|null} [filter.since] - ISO time; comments from then on.
+ * @param {Object} page
+ * @param {number} page.limit - Rows per page.
+ * @param {{value: string, id: string}|null} [page.after] - Position of the
+ *   last row seen.
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
+ *   Comments enriched with `presentationTitle`.
  */
-export async function listRecentCommentsOnDecks(scope, decks, opts = {}) {
-  toStorageContext(scope, 'listRecentCommentsOnDecks');
-  const authorEmail = opts?.authorEmail
-    ? normalizeEmail(opts.authorEmail)
+export async function listRecentComments(
+  scope,
+  filter,
+  { limit, after = null },
+) {
+  toStorageContext(scope, 'listRecentComments');
+  const { reader, ownership } = filter || {};
+  if (!reader || typeof reader !== 'object') {
+    throw new TypeError('listRecentComments() requires a reader');
+  }
+  const authorEmail = filter.authorEmail
+    ? normalizeEmail(filter.authorEmail)
     : null;
-  const status = ['open', 'resolved', 'dismissed', 'all'].includes(opts?.status)
-    ? opts.status
-    : 'all';
-  const limit = Math.max(1, Math.min(200, Number(opts?.limit) || 50));
+  const status = filter.status || 'all';
 
-  const titleById = new Map(
-    (decks || []).map((d) => [d.id, d.title || 'Untitled']),
-  );
-  if (titleById.size === 0) return { comments: [], total: 0 };
-  const ids = [...titleById.keys()];
-
-  return withDbGuard({ comments: [], total: 0 }, async (db) => {
+  return withDbGuard({ items: [], next: null }, async (db) => {
     const orgId = getOrgId(scope);
+    let none = false;
 
     let query = db
       .selectFrom('presentation_comments')
-      .selectAll()
-      .where('presentation_id', 'in', ids)
-      .where('organization_id', '=', orgId)
-      .where('parent_id', 'is', null); // top-level comments only
+      .innerJoin(
+        'presentations',
+        'presentations.id',
+        'presentation_comments.presentation_id',
+      )
+      .selectAll('presentation_comments')
+      .select('presentations.title as presentation_title')
+      .where('presentation_comments.organization_id', '=', orgId)
+      .where('presentation_comments.parent_id', 'is', null) // top-level only
+      .where((eb) => {
+        const listed = deckListedCondition(scope, eb, { reader, ownership });
+        if (listed) return listed;
+        none = true;
+        return eb.lit(false);
+      });
+    if (none) return { items: [], next: null };
 
-    if (authorEmail) query = query.where('author_email', '=', authorEmail);
-    if (status !== 'all') query = query.where('status', '=', status);
-    if (opts?.since) query = query.where('created_at', '>=', opts.since);
+    if (filter.withoutOrganizationDecks) {
+      query = query.where(
+        'presentations.visibility',
+        'is distinct from',
+        'organization',
+      );
+    }
+    if (authorEmail) {
+      query = query.where(
+        'presentation_comments.author_email',
+        '=',
+        authorEmail,
+      );
+    }
+    if (status !== 'all') {
+      query = query.where('presentation_comments.status', '=', status);
+    }
+    if (filter.since) {
+      query = query.where(
+        'presentation_comments.created_at',
+        '>=',
+        filter.since,
+      );
+    }
 
-    const rows = await query
-      .orderBy('created_at', 'desc')
-      .limit(limit)
-      .execute();
+    const { rows, next } = keysetRows(
+      await keysetPage(query, {
+        column: 'presentation_comments.created_at',
+        idColumn: 'presentation_comments.id',
+        after,
+        limit,
+      }).execute(),
+      limit,
+    );
 
     const ctx = await commentReadContext(rows, scope);
-    const comments = rows.map((row) => {
+    const items = rows.map(({ presentation_title: title, ...row }) => {
       const comment = rowToComment(row, ctx);
-      comment.presentationTitle = titleById.get(comment.presentationId) || null;
+      comment.presentationTitle = title || 'Untitled';
       return comment;
     });
-
-    return { comments, total: comments.length };
+    return { items, next };
   });
 }
 

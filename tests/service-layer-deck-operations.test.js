@@ -363,7 +363,8 @@ test('v1 list: an unknown status or since is 400 invalid naming the field', asyn
 
   const ok = await v1(handleV1Comments, 'GET', `${path}?since=2026-08-02`);
   assert.equal(ok.statusCode, 200);
-  assert.equal(ok.json().total, 2);
+  assert.equal(ok.json().comments.length, 2);
+  assert.equal(ok.json().nextCursor, null);
   assert.equal(ok.json().since, '2026-08-02T00:00:00.000Z');
 
   for (const [query, field] of [

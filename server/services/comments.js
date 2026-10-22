@@ -47,7 +47,7 @@ import {
   getComment,
   getCommentAuthorEmail,
   listComments as storeListComments,
-  listRecentCommentsOnDecks,
+  listRecentComments as storeListRecentComments,
   createComment as storeComment,
   updateComment as storeCommentBody,
   deleteComment as storeDeleteComment,
@@ -86,9 +86,11 @@ import {
   recordCommentReopened,
 } from './activity-events.js';
 import {
-  listPresentationsForActor,
+  DECK_LIST_OWNERSHIPS,
+  listReader,
   loadPresentationForActor,
 } from './presentations.js';
+import { listPageResult, parseListPage } from './list-page.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,
@@ -531,11 +533,18 @@ function sinceOf(since) {
 }
 
 /**
- * List the comments on one deck, newest first, on every contract (B575).
+ * One page of the comments on one deck, newest first, on every contract (B575,
+ * B824).
  *
  * Whoever may read the deck reads its comments: an actor, or (the share-token
  * route only, D228) a share-link guest. The filters mean the same whoever asks;
  * a value outside a filter's vocabulary is refused instead of read as "all".
+ *
+ * The page is the list-page contract (D358, `./list-page.js`): `{ limit,
+ * cursor }` in, `{ comments, nextCursor }` out, order `(created_at desc, id
+ * desc)`. A page counts threads, each with all its replies; with
+ * `includeReplies` it counts comments. The filters and the deck are the
+ * cursor's fingerprint, so a cursor is only valid for the list it came from.
  *
  * @param {StorageScope} scope - The caller's storage scope.
  * @param {ServiceIdentity} identity - `{ actor }`, or `{ guest, shareLink }`.
@@ -546,7 +555,9 @@ function sinceOf(since) {
  * @param {*} [input.since] - Only comments created at/after this ISO date.
  * @param {string|null} [input.commentType] - `human` or `ai-suggestion`.
  * @param {boolean} [input.includeReplies=false] - Replies as rows of their own.
- * @returns {Promise<{ comments: Object[], presentation: Object, since: string|null }>}
+ * @param {URLSearchParams|Object} [pageInput] - `limit` and `cursor` (query
+ *   parameters or tool arguments); a refused `offset` too.
+ * @returns {Promise<{ comments: Object[], nextCursor: string|null, presentation: Object, since: string|null }>}
  *   `since` is the filter as applied, normalized to ISO.
  * @throws {import('../utils/errors.js').AppError}
  */
@@ -561,11 +572,21 @@ export async function listComments(
     commentType = null,
     includeReplies = false,
   },
+  pageInput = {},
 ) {
   refuseUnknownFilter('status', status, COMMENT_LIST_STATUSES);
   if (commentType !== null)
     refuseUnknownFilter('commentType', commentType, COMMENT_TYPES);
   const sinceIso = sinceOf(since);
+  const filters = {
+    presentationId,
+    status,
+    slideId: slideId || null,
+    since: sinceIso,
+    commentType,
+    includeReplies: includeReplies === true,
+  };
+  const page = parseListPage(pageInput, { sortKey: 'created_desc', filters });
 
   const presentation = await loadPresentationForActor(
     scope,
@@ -573,26 +594,39 @@ export async function listComments(
     presentationId,
     { access: 'readComments' },
   );
-  const comments = await storeListComments(scope, presentation.id, {
-    status: status === 'all' ? undefined : status,
-    slideId: slideId || undefined,
-    since: sinceIso || undefined,
-    commentType: commentType || undefined,
-    includeReplies: includeReplies === true,
-  });
-  return { comments, presentation, since: sinceIso };
+  const result = await storeListComments(
+    scope,
+    presentation.id,
+    {
+      status: status === 'all' ? undefined : status,
+      slideId: slideId || undefined,
+      since: sinceIso || undefined,
+      commentType: commentType || undefined,
+      includeReplies: filters.includeReplies,
+    },
+    { limit: page.limit, after: page.after },
+  );
+  return {
+    ...listPageResult('comments', result, page),
+    presentation,
+    since: sinceIso,
+  };
 }
 
 /**
- * The most recent top-level comments across the decks the actor sees, newest
- * first, each with the deck it sits on.
+ * One page of the most recent top-level comments across the decks the actor
+ * lists, newest first, each with the deck it sits on (B618, B824).
  *
  * Only MCP offers this today; it lives here so the reading rule (which decks,
  * which filters) is the comment service's, not a tool's. The deck set is the
- * actor's deck list under `ownership` ({@link listPresentationsForActor}, B618):
- * the same four values, matched on `users.id` and maker, as every deck list
- * (D317). It used to be a list of its own that matched `owned` on an e-mail
- * string and left organization-visible decks out of `all`.
+ * actor's deck list under `ownership`, the same four values, matched on
+ * `users.id` and maker, as every deck list (D317), and it is decided in the
+ * query that reads the comments (`listRecentComments` in storage): no deck
+ * list is read in JavaScript first. Decks that carry no comments
+ * (`presentationCommentsEnabled`) are left out the same way.
+ *
+ * The page is the list-page contract (D358): `{ limit, cursor }` in,
+ * `{ items, nextCursor }` out, order `(created_at desc, id desc)`.
  *
  * @param {StorageScope} scope - The caller's storage scope.
  * @param {{ actor: Actor }} identity
@@ -602,40 +636,42 @@ export async function listComments(
  * @param {string|null} [input.authorEmail] - Only this author's comments.
  * @param {string} [input.status='all'] - One of {@link COMMENT_LIST_STATUSES}.
  * @param {*} [input.since] - Only comments created at/after this ISO date.
- * @param {number} [input.limit=50] - At most this many (1..200).
- * @returns {Promise<{ items: Array<{ comment: Object, presentation: Object|null }>, total: number }>}
+ * @param {URLSearchParams|Object} [pageInput] - `limit` and `cursor`.
+ * @returns {Promise<{ items: Array<{ comment: Object, presentation: Object|null }>, nextCursor: string|null }>}
  * @throws {import('../utils/errors.js').AppError}
  */
 export async function listRecentComments(
   scope,
   identity,
-  {
-    ownership = 'all',
-    authorEmail = null,
-    status = 'all',
-    since = null,
-    limit = 50,
-  } = {},
+  { ownership = 'all', authorEmail = null, status = 'all', since = null } = {},
+  pageInput = {},
 ) {
+  refuseUnknownFilter('ownership', ownership, DECK_LIST_OWNERSHIPS);
   refuseUnknownFilter('status', status, COMMENT_LIST_STATUSES);
   const sinceIso = sinceOf(since);
-  const { presentations: listed } = await listPresentationsForActor(
-    scope,
-    identity,
-    { ownership },
-  );
-  const { comments, total } = await listRecentCommentsOnDecks(
-    scope,
-    listed.filter(presentationCommentsEnabled),
-    {
-      authorEmail: authorEmail || null,
-      status,
-      since: sinceIso,
-      limit,
-    },
-  );
+  const filters = {
+    ownership,
+    authorEmail: authorEmail || null,
+    status,
+    since: sinceIso,
+  };
+  const page = parseListPage(pageInput, { sortKey: 'created_desc', filters });
 
-  // Each deck once: the comments already come from decks the user can see.
+  const result = await storeListRecentComments(
+    scope,
+    {
+      ...filters,
+      reader: await listReader(identity?.actor),
+      // The one rule, asked of the kind of deck it can refuse.
+      withoutOrganizationDecks: !presentationCommentsEnabled({
+        visibility: 'organization',
+      }),
+    },
+    { limit: page.limit, after: page.after },
+  );
+  const { comments, nextCursor } = listPageResult('comments', result, page);
+
+  // Each deck once, for the slide context the contracts add.
   const decks = new Map();
   const items = [];
   for (const comment of comments) {
@@ -645,7 +681,7 @@ export async function listRecentComments(
     }
     items.push({ comment, presentation: decks.get(id) });
   }
-  return { items, total };
+  return { items, nextCursor };
 }
 
 /**

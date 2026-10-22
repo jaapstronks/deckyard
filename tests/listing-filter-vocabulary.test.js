@@ -76,13 +76,16 @@ const CHECKS = [
   },
   {
     file: 'server/storage/presentations/comments.js',
-    // Every use of "visibility" in this comments module was the ownership
-    // homonym; the real visibility concept lives elsewhere.
+    // "visibility" used to appear here only as the ownership homonym. Since
+    // B824 the real concept does too (the cross-deck list leaves
+    // organization-visible decks out while sharing is off), so the needle is
+    // adjacency-based like the others: the homonym as an option key or next
+    // to an ownership value.
     forbidden: [
       {
         label:
           'visibility as the owned/shared/all ownership filter (use ownership)',
-        re: /\bvisibility\b/,
+        re: /\b(opts|options|filter)\??\.visibility\b|\bvisibility\b[^\n]*['"](owned|shared|all)['"]|['"](owned|shared|all)['"][^\n]*\bvisibility\b/,
       },
     ],
     required: [/\bownership\b/],

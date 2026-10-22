@@ -269,7 +269,13 @@ test('GET /comments lists top-level comments with replies, context and editUrl',
   const body = ctx.res.body;
   assert.equal(body.presentationId, DECK_ID);
   assert.equal(body.presentationTitle, `Title of ${DECK_ID}`);
-  assert.equal(body.total, 2, 'replies do not count as top-level comments');
+  assert.equal(
+    body.comments.length,
+    2,
+    'replies do not count as top-level comments',
+  );
+  assert.equal(body.nextCursor, null, 'one page holds both');
+  assert.equal('total' in body, false, 'no total (D358)');
   assert.equal(body.since, null);
 
   const open = body.comments.find((c) => c.id === OPEN_COMMENT_ID);

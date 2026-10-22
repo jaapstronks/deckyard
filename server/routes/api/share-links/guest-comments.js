@@ -1,7 +1,7 @@
 /**
  * A share-link guest's own comment routes, under the share token (B179, D228).
  *
- * GET    /api/share/:token/comments            - List the deck's comments
+ * GET    /api/share/:token/comments            - One page of the deck's comments
  * POST   /api/share/:token/comments            - Comment, or reply
  * PUT    /api/share/:token/comments/:commentId - Edit one's own comment
  * DELETE /api/share/:token/comments/:commentId - Delete one's own comment
@@ -107,13 +107,14 @@ async function handleGuestCommentsList({ repoRoot, req, res, url }, token) {
   if (!commenter) return true;
   const { scope, identity, presentationId } = commenter;
 
-  const { comments } = await listComments(
+  const { comments, nextCursor } = await listComments(
     scope,
     identity,
     commentListInputFromQuery(presentationId, url.searchParams),
+    url.searchParams,
   );
   const openCount = await getOpenCommentCount(scope, presentationId);
-  serveJson(res, 200, { ok: true, comments, openCount });
+  serveJson(res, 200, { ok: true, comments, nextCursor, openCount });
   return true;
 }
 
