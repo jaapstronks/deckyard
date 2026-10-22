@@ -209,6 +209,7 @@
   "notifications.label.body": "{title}: {body}",
   "notifications.label.bodyUnread": "{title}: {body} (unread)",
   "notifications.label.unread": "{title} (unread)",
+  "notifications.loadMore": "Load more",
   "notifications.loading": "Loading…",
   "notifications.markAllRead": "Mark all read",
   "notifications.title": "Notifications",

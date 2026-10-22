@@ -185,6 +185,7 @@
   "notifications.filter.unread": "Ulæste",
   "notifications.label.bodyUnread": "{title}: {body} (ulæst)",
   "notifications.label.unread": "{title} (ulæst)",
+  "notifications.loadMore": "Indlæs mere",
   "notifications.loading": "Indlæser…",
   "notifications.markAllRead": "Markér alle som læst",
   "notifications.title": "Notifikationer",

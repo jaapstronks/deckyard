@@ -188,6 +188,7 @@
   "notifications.filter.unread": "Lukemattomat",
   "notifications.label.bodyUnread": "{title}: {body} (lukematon)",
   "notifications.label.unread": "{title} (lukematon)",
+  "notifications.loadMore": "Lataa lisää",
   "notifications.loading": "Ladataan…",
   "notifications.markAllRead": "Merkitse kaikki luetuiksi",
   "notifications.title": "Ilmoitukset",

@@ -10,6 +10,7 @@ import { getOrgId } from '../utils/context.js';
 import { nowIso } from '../utils/normalize.js';
 import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
+import { keysetPage, keysetRows } from './keyset.js';
 import {
   resolveDisplayNames,
   toStoredActorIdentity,
@@ -75,27 +76,34 @@ export async function createNotification(scope, data) {
 // ============================================================
 
 /**
- * List notifications for a user.
+ * List one page of a user's notifications, newest first: the keyset order
+ * `(created_at desc, id desc)` of the list-page contract (D357,
+ * `server/storage/keyset.js`). Every filter is part of the query; nothing is
+ * removed after the LIMIT, so a page is short only at the end of the list.
+ *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userEmail - User's email
  * @param {Object} options - List options
- * @param {number} [options.limit=20] - Maximum results
- * @param {number} [options.offset=0] - Offset for pagination
+ * @param {number} [options.limit=20] - Rows per page (1..100; the service
+ *   layer refuses anything else before it gets here)
+ * @param {{value: string, id: string}|null} [options.after] - Position of the
+ *   last row seen; null starts at the top
  * @param {boolean} [options.unreadOnly=false] - Only return unread
  * @param {boolean} [options.archived=false] - true: only archived items;
  *   false (default): only unarchived (the inbox)
  * @param {string[]} [options.types] - Only these notification types
- * @returns {Promise<Array>} - List of notifications
+ * @returns {Promise<{items: Array<Object>, next: {value: string, id: string}|null}>}
+ *   The page and the position the next page starts after (null at the end).
  */
 export async function listNotifications(scope, userEmail, options = {}) {
   toStorageContext(scope, 'listNotifications');
   const email = normalizeEmail(userEmail);
-  if (!email) return [];
+  const empty = { items: [], next: null };
+  if (!email) return empty;
 
-  return withDbGuard([], async (db) => {
+  return withDbGuard(empty, async (db) => {
     const orgId = getOrgId(scope);
-    const limit = Math.min(Math.max(1, options.limit || 20), 100);
-    const offset = Math.max(0, options.offset || 0);
+    const limit = options.limit ?? 20;
 
     let qb = db
       .selectFrom('user_notifications')
@@ -118,14 +126,17 @@ export async function listNotifications(scope, userEmail, options = {}) {
       qb = qb.where('notification_type', 'in', options.types);
     }
 
-    const rows = await qb
-      .orderBy('created_at', 'desc')
-      .limit(limit)
-      .offset(offset)
-      .execute();
+    const { rows, next } = keysetRows(
+      await keysetPage(qb, {
+        column: 'created_at',
+        after: options.after ?? null,
+        limit,
+      }).execute(),
+      limit,
+    );
 
     const lookup = await actorDisplayNames(rows);
-    return rows.map((row) => formatNotification(row, lookup));
+    return { items: rows.map((row) => formatNotification(row, lookup)), next };
   });
 }
 

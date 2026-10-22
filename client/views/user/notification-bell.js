@@ -47,6 +47,12 @@ export function createNotificationBell({ api }) {
   let notifications = [];
   let unreadCount = 0;
   let isLoading = false;
+  // The list is paged by cursor (D357): `nextCursor` continues the current
+  // lens, null = nothing more. A lens switch or reload starts over, and the
+  // request counter drops an answer that arrives for a list no longer shown.
+  let nextCursor = null;
+  let isLoadingMore = false;
+  let listRequest = 0;
   // Events-inbox lens: 'all' (default, unarchived), 'mentions', 'unread',
   // 'archived'. Archiving = "handled"; is_read stays "seen" (badge).
   let filter = 'all';
@@ -158,6 +164,16 @@ export function createNotificationBell({ api }) {
 
   // Notification list
   const listContainer = h('div', { class: 'notification-bell-list' });
+
+  const loadMoreBtn = h('button', {
+    class: 'notification-bell-load-more',
+    type: 'button',
+    text: t('notifications.loadMore', 'Load more'),
+    onclick: (e) => {
+      e.stopPropagation();
+      loadMore();
+    },
+  });
 
   dropdown.append(dropdownHeader, filterRow, listContainer);
   container.append(bellBtn, dropdown);
@@ -289,6 +305,14 @@ export function createNotificationBell({ api }) {
 
       listContainer.append(row);
     }
+
+    if (nextCursor) {
+      loadMoreBtn.disabled = isLoadingMore;
+      loadMoreBtn.textContent = isLoadingMore
+        ? t('notifications.loading', 'Loading…')
+        : t('notifications.loadMore', 'Load more');
+      listContainer.append(loadMoreBtn);
+    }
   }
 
   function formatTimeAgo(dateStr) {
@@ -335,30 +359,77 @@ export function createNotificationBell({ api }) {
     }
   }
 
+  /**
+   * Fetch one page of the current lens. The filter goes with every page: the
+   * server refuses a cursor made under another one.
+   * @param {string|null} cursor
+   */
+  function fetchPage(cursor) {
+    const params = new URLSearchParams({ limit: '20', filter });
+    if (cursor) params.set('cursor', cursor);
+    return api(`/api/notifications?${params}`);
+  }
+
+  /** @param {Array<Object>} page */
+  function prefetchActors(page) {
+    const actorIds = page.map((n) => n.actor?.id).filter(Boolean);
+    if (actorIds.length) {
+      prefetchProfiles(actorIds);
+    }
+  }
+
   async function loadNotifications() {
+    const request = ++listRequest;
     isLoading = true;
+    isLoadingMore = false;
+    nextCursor = null;
     renderNotifications();
 
     try {
-      const resp = await api(
-        `/api/notifications?limit=20&filter=${encodeURIComponent(filter)}`,
-      );
+      const resp = await fetchPage(null);
+      if (request !== listRequest) return;
       notifications = resp?.notifications || [];
+      nextCursor = resp?.nextCursor || null;
       unreadCount = resp?.unreadCount || 0;
       updateBadge();
-
-      // Prefetch profile images for all notification actors
-      const actorIds = notifications.map((n) => n.actor?.id).filter(Boolean);
-      if (actorIds.length) {
-        prefetchProfiles(actorIds);
-      }
+      prefetchActors(notifications);
     } catch (e) {
+      if (request !== listRequest) return;
       notifications = [];
       // eslint-disable-next-line no-console
       console.error('[notification-bell] load error:', e);
     } finally {
-      isLoading = false;
-      renderNotifications();
+      if (request === listRequest) {
+        isLoading = false;
+        renderNotifications();
+      }
+    }
+  }
+
+  async function loadMore() {
+    if (!nextCursor || isLoadingMore) return;
+    const request = listRequest;
+    isLoadingMore = true;
+    renderNotifications();
+
+    try {
+      const resp = await fetchPage(nextCursor);
+      if (request !== listRequest) return;
+      // A live update may already have put a row of this page on top (a
+      // coalesced bundle moves up); keep the one already shown.
+      const shown = new Set(notifications.map((n) => n.id));
+      const page = (resp?.notifications || []).filter((n) => !shown.has(n.id));
+      notifications = notifications.concat(page);
+      nextCursor = resp?.nextCursor || null;
+      prefetchActors(page);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[notification-bell] load more error:', e);
+    } finally {
+      if (request === listRequest) {
+        isLoadingMore = false;
+        renderNotifications();
+      }
     }
   }
 
@@ -444,6 +515,7 @@ export function createNotificationBell({ api }) {
         body: { all: true },
       });
       notifications = []; // Button only renders on the All lens
+      nextCursor = null; // …and that lens is now empty to its end
       unreadCount = 0;
       updateBadge();
       renderNotifications();

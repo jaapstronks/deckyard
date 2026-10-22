@@ -209,6 +209,7 @@
   "notifications.label.body": "{title}: {body}",
   "notifications.label.bodyUnread": "{title}: {body} (ongelezen)",
   "notifications.label.unread": "{title} (ongelezen)",
+  "notifications.loadMore": "Meer laden",
   "notifications.loading": "Laden…",
   "notifications.markAllRead": "Alles gelezen",
   "notifications.title": "Meldingen",

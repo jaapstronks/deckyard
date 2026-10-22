@@ -313,7 +313,7 @@ test('the new owner is notified, and the deck records the transfer', async () =>
     body: { newOwnerEmail: HEIR.email },
   });
 
-  const notes = await listNotifications(testScope(), HEIR.email);
+  const { items: notes } = await listNotifications(testScope(), HEIR.email);
   const received = notes.find(
     (n) =>
       n.notificationType === 'ownership_received' &&
@@ -519,7 +519,7 @@ test('a keepAsCollaborator that is not a boolean is a 400, not a guess', async (
   assert.equal(jsonBody(res).error, 'invalid');
   assert.equal(jsonBody(res).details?.field, 'keepAsCollaborator');
   await assertStillOwnedBy(pres.id, OWNER, 'nothing moved');
-  const notes = await listNotifications(testScope(), HEIR.email);
+  const { items: notes } = await listNotifications(testScope(), HEIR.email);
   assert.equal(
     notes.filter((n) => n.presentationId === pres.id).length,
     0,

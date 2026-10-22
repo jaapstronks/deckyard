@@ -187,6 +187,7 @@
   "notifications.filter.unread": "Uleste",
   "notifications.label.bodyUnread": "{title}: {body} (ulest)",
   "notifications.label.unread": "{title} (ulest)",
+  "notifications.loadMore": "Last inn mer",
   "notifications.loading": "Laster…",
   "notifications.markAllRead": "Merk alle som lest",
   "notifications.title": "Varsler",

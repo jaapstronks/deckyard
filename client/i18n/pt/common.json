@@ -188,6 +188,7 @@
   "notifications.filter.unread": "Não lidas",
   "notifications.label.bodyUnread": "{title}: {body} (por ler)",
   "notifications.label.unread": "{title} (por ler)",
+  "notifications.loadMore": "Carregar mais",
   "notifications.loading": "A carregar…",
   "notifications.markAllRead": "Marcar tudo como lido",
   "notifications.title": "Notificações",

@@ -188,6 +188,7 @@
   "notifications.filter.unread": "Nieprzeczytane",
   "notifications.label.bodyUnread": "{title}: {body} (nieprzeczytane)",
   "notifications.label.unread": "{title} (nieprzeczytane)",
+  "notifications.loadMore": "Wczytaj więcej",
   "notifications.loading": "Ładowanie…",
   "notifications.markAllRead": "Oznacz wszystkie jako przeczytane",
   "notifications.title": "Powiadomienia",
