@@ -226,7 +226,8 @@ test('opening a deck to the organization leaves the activity row', async () => {
   await patch(pres, { as: OWNER, body: { visibility: 'organization' } });
   await settle();
 
-  const { events } = await listActivityEvents(testScope(), {
+  const { items: events } = await listActivityEvents(testScope(), {
+    reader: { unrestricted: true },
     presentationId: pres.id,
     eventType: 'presentation.moved_to_organization',
   });
@@ -259,7 +260,8 @@ test('an organization admin takes a deck back to private, which clears view-only
   assert.equal(after.isViewOnly, false, 'a private deck is never view-only');
 
   await settle();
-  const { events } = await listActivityEvents(testScope(), {
+  const { items: events } = await listActivityEvents(testScope(), {
+    reader: { unrestricted: true },
     presentationId: pres.id,
     eventType: 'presentation.moved_to_organization',
   });

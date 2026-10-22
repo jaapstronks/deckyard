@@ -1512,7 +1512,11 @@ export const __store = {
   updatePresentationRow,
 };
 
-export { listDecks, listPresentations } from './deck-list.js';
+export {
+  deckReadableExpression,
+  listDecks,
+  listPresentations,
+} from './deck-list.js';
 
 export { listTrashedDecks } from './trash-list.js';
 
