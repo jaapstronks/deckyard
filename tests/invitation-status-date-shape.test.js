@@ -91,7 +91,9 @@ test.afterEach(() => {
 test('a fresh invitation is active when the driver returns the expiry as a Date', async () => {
   installDb(new Date(Date.now() + 7 * DAY_MS));
 
-  const [dana] = await listUsers(scope);
+  const {
+    items: [dana],
+  } = await listUsers(scope, { limit: 50 });
   assert.equal(dana.email, 'dana@example.com');
   assert.equal(dana.invitationStatus, 'active');
 });
@@ -99,7 +101,9 @@ test('a fresh invitation is active when the driver returns the expiry as a Date'
 test('a fresh invitation is active when the expiry is an ISO string', async () => {
   installDb(new Date(Date.now() + 7 * DAY_MS).toISOString());
 
-  const [dana] = await listUsers(scope);
+  const {
+    items: [dana],
+  } = await listUsers(scope, { limit: 50 });
   assert.equal(dana.invitationStatus, 'active');
 });
 
@@ -109,7 +113,9 @@ test('an expired invitation is expired in both shapes', async () => {
     new Date(Date.now() - DAY_MS).toISOString(),
   ]) {
     installDb(shape);
-    const [dana] = await listUsers(scope);
+    const {
+      items: [dana],
+    } = await listUsers(scope, { limit: 50 });
     assert.equal(
       dana.invitationStatus,
       'expired',

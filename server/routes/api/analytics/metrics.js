@@ -2,15 +2,13 @@
  * Presentation-specific analytics metrics endpoints.
  */
 
-import {
-  extractValidatedDateRange,
-  parsePaginationParams,
-} from '../../../utils/request-validators.js';
+import { extractValidatedDateRange } from '../../../utils/request-validators.js';
+import { listPageResult, parseListPage } from '../../../services/list-page.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { publicDeviceLabel } from '../../../analytics/helpers.js';
 import { badRequest, serveJson } from '../../../utils/http.js';
 import {
-  getViewSessionsForPresentation,
+  listViewSessions,
   getPresentationAnalyticsOverview,
   getDetailedSlideEngagement,
   getInteractionHeatmapData,
@@ -130,7 +128,10 @@ export async function handleJourney(ctx, presentationId) {
 }
 
 /**
- * GET /api/presentations/:id/analytics/sessions - Get viewer session list.
+ * GET /api/presentations/:id/analytics/sessions - One page of the viewer
+ * sessions in the date window (list-page contract, D358): `{ limit, cursor }`
+ * in, `{ sessions, nextCursor }` out, newest first. The window is the
+ * cursor's fingerprint. How many there are is the overview's `totalViews`.
  *
  * Readable by every reader of the deck, so two fields are narrowed here at the
  * response boundary, not in the storage mapper (internal callers —
@@ -155,26 +156,31 @@ export async function handleSessions(ctx, presentationId) {
   });
   if (!pres) return true;
 
-  const { limit, offset } = parsePaginationParams(url.searchParams);
   const dateRange = extractValidatedDateRange(url.searchParams, res, {
     sendError: (r, msg) => badRequest(r, msg),
   });
   if (!dateRange) return true;
+  const page = parseListPage(url.searchParams, {
+    sortKey: 'started_desc',
+    filters: { since: dateRange.since, until: dateRange.until },
+    defaultLimit: 20,
+  });
 
-  const result = await getViewSessionsForPresentation(
-    ctx.storageScope,
-    presentationId,
-    {
-      limit,
-      offset,
-      ...dateRange,
-    },
+  const result = await listViewSessions(ctx.storageScope, presentationId, {
+    limit: page.limit,
+    after: page.after,
+    ...dateRange,
+  });
+
+  const { sessions, nextCursor } = listPageResult('sessions', result, page);
+  return (
+    serveJson(res, 200, {
+      sessions: sessions.map(({ sessionToken, ...session }) => ({
+        ...session,
+        deviceId: publicDeviceLabel(session.deviceId, presentationId),
+      })),
+      nextCursor,
+    }),
+    true
   );
-
-  const sessions = result.sessions.map(({ sessionToken, ...session }) => ({
-    ...session,
-    deviceId: publicDeviceLabel(session.deviceId, presentationId),
-  }));
-
-  return (serveJson(res, 200, { ...result, sessions }), true);
 }

@@ -322,8 +322,8 @@ function resolveWriteValues(input, row = {}) {
  * Compile a `sql` CASE expression used as a sort key into a ranking function.
  *
  * Only `CASE <column> WHEN '<value>' THEN <n> … [ELSE <n>] END` is understood —
- * the shape `listOrganizationMembers` uses to sort owner → admin → member,
- * which plain `ORDER BY role DESC` cannot express. Anything else throws, so an
+ * a role rank (owner → admin → member), which plain `ORDER BY role DESC`
+ * cannot express. Anything else throws, so an
  * unmodelled ORDER BY fails the test rather than silently leaving rows in
  * insertion order and letting an ordering assertion pass by luck.
  *

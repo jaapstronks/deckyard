@@ -25,10 +25,10 @@ import { getDefaultOrganizationId } from '../../server/config/database.js';
 import {
   getDashboardSummary,
   getPresentationAnalyticsOverview,
-  getPresentationsWithAnalytics,
+  listDashboardPresentations,
   getTopPresentations,
   getViewerJourneyData,
-  getViewSessionsForPresentation,
+  listViewSessions,
   exportUserAnalyticsData,
   deleteUserAnalyticsData,
   eraseAnalyticsDataForDevice,
@@ -142,11 +142,11 @@ pgDescribe('analytics completion rate (real PostgreSQL)', () => {
     );
     assert.deepEqual(byTitle, { Half: 0.5, Full: 1 });
 
-    const { presentations } = await getPresentationsWithAnalytics(
+    const { items: presentations } = await listDashboardPresentations(
       { organizationId: getDefaultOrganizationId(), actorEmail: OWNER },
       OWNER,
       getDefaultOrganizationId(),
-      { period: '30d' },
+      { period: '30d', limit: 50 },
     );
     const listed = Object.fromEntries(
       presentations.map((p) => [p.title, p.completionRate]),
@@ -207,11 +207,11 @@ pgDescribe('analytics completion rate (real PostgreSQL)', () => {
       organizationId: getDefaultOrganizationId(),
       actorEmail: OWNER,
     };
-    const { presentations } = await getPresentationsWithAnalytics(
+    const { items: presentations } = await listDashboardPresentations(
       actorScope,
       OWNER,
       getDefaultOrganizationId(),
-      { period: '30d' },
+      { period: '30d', limit: 50 },
     );
     assert.equal(
       presentations.some((row) => row.id === foreign),
@@ -222,8 +222,8 @@ pgDescribe('analytics completion rate (real PostgreSQL)', () => {
       0,
     );
     assert.deepEqual(
-      await getViewSessionsForPresentation(actorScope, foreign),
-      { sessions: [], total: 0 },
+      await listViewSessions(actorScope, foreign, { limit: 50 }),
+      { items: [], next: null },
     );
     await assert.rejects(
       () => getDashboardSummary(actorScope, OWNER, otherOrg),

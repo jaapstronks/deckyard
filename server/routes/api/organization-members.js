@@ -15,6 +15,7 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import { listPageResult, parseListPage } from '../../services/list-page.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../../shared/email.js';
 import {
@@ -131,30 +132,29 @@ async function resolveMembersActor({ res, authedUser }, organizationId) {
   return { ok: true, user: authedUser, userId: dbUser.id, actorMembership };
 }
 
-// GET /api/organizations/:id/members - List members
+// GET /api/organizations/:id/members - One page of members (list-page
+// contract, D358): `{ members, nextCursor }`, newest member first. The count
+// is its own route, `/members/count`.
 async function handleMemberList({ res, url }, organizationId) {
-  const limit = parseInt(url.searchParams.get('limit') || '50', 10);
-  const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-
-  const members = await listOrganizationMembers(
+  const page = parseListPage(url.searchParams, { sortKey: 'created_desc' });
+  const result = await listOrganizationMembers(
     createStorageScope({ email: null }, { organizationId: organizationId }),
     organizationId,
-    {
-      limit,
-      offset,
-    },
+    { limit: page.limit, after: page.after },
   );
-  const total = await countOrganizationMembers(
+  serveJson(res, 200, listPageResult('members', result, page));
+  return true;
+}
+
+// GET /api/organizations/:id/members/count - How many members there are.
+async function handleMemberCount(ctx, organizationId) {
+  const actor = await resolveMembersActor(ctx, organizationId);
+  if (!actor.ok) return true;
+  const count = await countOrganizationMembers(
     createStorageScope({ email: null }, { organizationId: organizationId }),
     organizationId,
   );
-
-  serveJson(res, 200, {
-    members,
-    total,
-    limit,
-    offset,
-  });
+  serveJson(ctx.res, 200, { count });
   return true;
 }
 
@@ -501,6 +501,12 @@ async function handleMemberItem(ctx, organizationId, memberIdOrUserId) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
+  {
+    pattern: /^\/api\/organizations\/([^/]+)\/members\/count$/,
+    method: 'GET',
+    captures: ['uuid'],
+    handler: handleMemberCount,
+  },
   {
     pattern: /^\/api\/organizations\/([^/]+)\/members$/,
     captures: ['uuid'],

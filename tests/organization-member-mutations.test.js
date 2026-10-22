@@ -21,7 +21,9 @@
  *      the *strings* — alphabetically owner → member → admin, not the
  *      owner → admin → member its comment promised. Invisible while the list
  *      had one page and no actions; with paging it silently decides who lands
- *      on page two.
+ *      on page two. The list now has the one order every list page has,
+ *      newest membership first, read by cursor (B825, D358); the role order
+ *      is gone with it.
  *
  * Plus the organization-settings gate (briefing measurement 3): the admin keys
  * `adminsAreDesigners` and `rss` hung on the instance-wide `isAdmin`, so an
@@ -140,6 +142,7 @@ function seed({ people = PEOPLE, settings = {} } = {}) {
       role: p.role,
       is_designer: false,
       joined_at: p.joined,
+      created_at: p.joined,
     })),
   });
   __setTestDb(db);
@@ -434,60 +437,58 @@ test('a plain member cannot remove anyone else', async () => {
 // Order and paging — what the list hands the UI
 // ---------------------------------------------------------------------------
 
-test('members come back owner, then admins, then members', async () => {
+test('members come back newest membership first (B825, D358)', async () => {
   seed();
-  const members = await listOrganizationMembers({ organizationId: ORG }, ORG, {
-    limit: 10,
-  });
+  const { items, next } = await listOrganizationMembers(
+    { organizationId: ORG },
+    ORG,
+    { limit: 10 },
+  );
 
   assert.deepEqual(
-    members.map((m) => m.role),
-    ['owner', 'admin', 'member', 'member'],
-    'ORDER BY role DESC sorts the strings: owner → member → admin, which is not this',
+    items.map((m) => m.user.email),
+    ['ben@example.com', 'mia@example.com', 'adam@example.com', PEOPLE[0].email],
   );
-  assert.deepEqual(
-    members.filter((m) => m.role === 'member').map((m) => m.user.email),
-    ['mia@example.com', 'ben@example.com'],
-    'within a role, oldest membership first',
-  );
+  assert.equal(next, null, 'one page holds the whole organization');
 });
 
-test('the order survives paging, so page two is the tail and not a reshuffle', async () => {
+test('page two continues after page one, and the count is its own question', async () => {
   seed();
   const first = await listOrganizationMembers({ organizationId: ORG }, ORG, {
     limit: 2,
-    offset: 0,
   });
   const second = await listOrganizationMembers({ organizationId: ORG }, ORG, {
     limit: 2,
-    offset: 2,
+    after: first.next,
   });
 
   assert.deepEqual(
-    first.map((m) => m.role),
-    ['owner', 'admin'],
-  );
-  assert.deepEqual(
-    second.map((m) => m.role),
+    first.items.map((m) => m.role),
     ['member', 'member'],
   );
+  assert.deepEqual(
+    second.items.map((m) => m.role),
+    ['admin', 'owner'],
+  );
+  assert.equal(second.next, null);
   assert.equal(
     await countOrganizationMembers({ organizationId: ORG }, ORG),
     4,
-    'total counts the organization, not the page',
+    'the count is the organization, not the page',
   );
 });
 
-test('the route passes limit and offset through and reports the total', async () => {
-  seed();
+/**
+ * Drive the members routes as the plain member Mia.
+ * @param {string} path - Path below `/api/organizations/:org/members`.
+ */
+async function getAsMember(path) {
   const { req, res } = fakeExchange('GET');
   await handleOrganizationMembers({
     repoRoot: process.cwd(),
     req,
     res,
-    url: new URL(
-      `http://localhost/api/organizations/${ORG}/members?limit=2&offset=2`,
-    ),
+    url: new URL(`http://localhost/api/organizations/${ORG}/members${path}`),
     authedUser: {
       email: 'mia@example.com',
       isAdmin: false,
@@ -495,12 +496,34 @@ test('the route passes limit and offset through and reports the total', async ()
       organizationRole: 'member',
     },
   });
+  return { status: res.statusCode, body: res.body() };
+}
 
-  const body = res.body();
-  assert.equal(res.statusCode, 200);
-  assert.equal(body.members.length, 2);
-  assert.equal(body.total, 4);
-  assert.equal(body.offset, 2);
+test('the route reads by cursor, refuses offset, and counts on its own path', async () => {
+  seed();
+  const first = await getAsMember('?limit=3');
+  assert.equal(first.status, 200);
+  assert.equal(first.body.members.length, 3);
+  assert.equal(typeof first.body.nextCursor, 'string');
+  assert.equal(first.body.total, undefined, 'no total on a list page');
+
+  const rest = await getAsMember(
+    `?limit=3&cursor=${encodeURIComponent(first.body.nextCursor)}`,
+  );
+  assert.equal(rest.status, 200);
+  assert.deepEqual(
+    rest.body.members.map((m) => m.user.email),
+    [PEOPLE[0].email],
+  );
+  assert.equal(rest.body.nextCursor, null);
+
+  const offset = await getAsMember('?offset=2');
+  assert.equal(offset.status, 400);
+  assert.deepEqual(offset.body.details, { field: 'offset', use: 'cursor' });
+
+  const count = await getAsMember('/count');
+  assert.equal(count.status, 200);
+  assert.deepEqual(count.body, { count: 4 });
 });
 
 // ---------------------------------------------------------------------------

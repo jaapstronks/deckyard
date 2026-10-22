@@ -242,6 +242,32 @@ export function parseListPage(input, options) {
 }
 
 /**
+ * Read only the `limit` of a bounded query that has no next page: a typeahead
+ * or a top-N (tags/search, users/search). It goes through the same bounds as
+ * a list page, 1..100 and refused rather than clamped, so no surface keeps a
+ * maximum of its own.
+ *
+ * @param {URLSearchParams|Object|null|undefined} input
+ * @param {Object} [options]
+ * @param {number} [options.defaultLimit] - Size when none is named (1..50).
+ * @returns {number}
+ * @throws {AppError} 400 `invalid` with `details.field = 'limit'`.
+ */
+export function parseListLimit(input, options = {}) {
+  const { defaultLimit = LIST_PAGE_DEFAULT_LIMIT } = options;
+  if (
+    !Number.isInteger(defaultLimit) ||
+    defaultLimit < 1 ||
+    defaultLimit > LIST_PAGE_DEFAULT_LIMIT
+  ) {
+    throw new Error(
+      `parseListLimit: defaultLimit ${defaultLimit} out of range`,
+    );
+  }
+  return parseLimit(readInput(input, 'limit').value, defaultLimit);
+}
+
+/**
  * Encode the position after the last row of a page as an opaque cursor for
  * the same list and filters.
  *

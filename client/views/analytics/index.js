@@ -143,7 +143,7 @@ export async function renderAnalytics(root, presentationId) {
         topSourceTypes: [],
       };
       slideMetrics = { slides: [] };
-      sessions = { sessions: [], total: 0 };
+      sessions = { sessions: [], nextCursor: null };
     }
   }
 
@@ -224,17 +224,16 @@ export async function renderAnalytics(root, presentationId) {
     // Viewer list
     const viewerList = createViewerList({
       sessions: sessions?.sessions || [],
-      total: sessions?.total || 0,
-      onLoadMore: async (offset) => {
+      nextCursor: sessions?.nextCursor || null,
+      onLoadMore: (cursor) => {
         const params = new URLSearchParams();
         if (dateRange.since) params.set('since', dateRange.since);
         if (dateRange.until) params.set('until', dateRange.until);
         params.set('limit', '20');
-        params.set('offset', String(offset));
-        const more = await api(
+        params.set('cursor', cursor);
+        return api(
           `/api/presentations/${presentationId}/analytics/sessions?${params}`,
         );
-        return more?.sessions || [];
       },
       onGenerateReport: () => openReportModal(),
     });
@@ -253,7 +252,10 @@ export async function renderAnalytics(root, presentationId) {
     shell._overviewPanel?.update(overview);
     shell._timeline?.update(overview?.viewsByDay || []);
     shell._heatmap?.update(slideMetrics?.slides || []);
-    shell._viewerList?.update(sessions?.sessions || [], sessions?.total || 0);
+    shell._viewerList?.update(
+      sessions?.sessions || [],
+      sessions?.nextCursor || null,
+    );
   }
 
   function openReportModal() {

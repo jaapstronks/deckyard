@@ -26,7 +26,7 @@ import {
   storageError,
   withErrorHandler,
 } from '../../utils/http.js';
-import { parsePaginationParams } from '../../utils/request-validators.js';
+import { parseListLimit } from '../../services/list-page.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { sharingEnabled } from '../../config/sandbox.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
@@ -42,10 +42,7 @@ async function handleTagList({ storageScope, res }) {
 // GET /api/tags/search?q=prefix - Search tags by prefix (for autocomplete)
 async function handleTagSearch({ storageScope, res, url }) {
   const query = url.searchParams.get('q') || '';
-  const { limit } = parsePaginationParams(url.searchParams, {
-    defaultLimit: 10,
-    maxLimit: 50,
-  });
+  const limit = parseListLimit(url.searchParams, { defaultLimit: 10 });
   const tags = sharingEnabled()
     ? await searchTags(storageScope, query, limit)
     : [];

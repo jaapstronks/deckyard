@@ -252,12 +252,34 @@ that one has no id beside it yet.
     (`presentationCommentsEnabled`). `tests/pg/comment-list-page.pgtest.js`
     holds it equal to the comments on `listDecks`. The open count beside a
     deck's list stays its own count.
-  - The other lists follow one by one (B825); until a list has moved,
-    it is read whole (`listPresentationVersions`, `getPublishedIndex`) and
-    the routes that page it slice in memory over `parsePaginationParams`,
-    which goes once the last list has moved. Those whole reads carry no row
-    cap on purpose: an accidental `.limit(100)` once silently dropped the
+  - The rest (B825). A deck's viewer sessions (`listViewSessions`,
+    `GET /api/presentations/:id/analytics/sessions`, `(started_at desc, id
+desc)`, the date window in the fingerprint; the count is the overview's
+    `totalViews`) and reports (`listAnalyticsReports`, `…/analytics/reports`).
+    The analytics dashboard's decks (`listDashboardPresentations`,
+    `GET /api/analytics/presentations`) in the deck order `(modified_at desc,
+id desc)`; the old `sort` (`views`, `duration`, `recent`) is refused with
+    `details.field = 'sort'`, a ranking by views being the dashboard's
+    top-ten. Which decks a dashboard covers is one SQL subquery every
+    aggregation filters on (`dashboardDeckIds` in
+    `server/storage/analytics/dashboard.js`): owner by address, or a
+    collaborator row with `edit`/`admin`, narrower than reading a deck.
+    `tests/pg/analytics-dashboard-scope.pgtest.js` holds the decks and every
+    aggregate equal to the id list it replaced. An organization's members
+    (`listOrganizationMembers`, `GET /api/organizations/:id/members`, the
+    membership's `(created_at desc, id desc)`, newest first) with the count
+    on its own path (`…/members/count`), and the admin user list
+    (`listUsers`, `GET /api/admin/users`). `tests/pg/remaining-list-page.pgtest.js`
+    carries the six checks for these four.
+  - The typeahead reads (`GET /api/tags/search`, `GET /api/users/search`)
+    take their `limit` through `parseListLimit()`, the same 1..100 bound
+    without a cursor. A list that reads a whole set does so on purpose and
+    carries no row cap: an accidental `.limit(100)` once silently dropped the
     tail for any org past 100 items (B79, B85).
+  - **The growth gate** (`tests/list-page-growth-gate.test.js`): every
+    exported `list*` function under `server/storage/` builds its page with
+    `keysetPage()`, or stands on the gate's closed list of lists bounded by
+    nature with the reason why. The list only shrinks.
   - Outside the contract: typeahead and top-N reads (one bounded query, no
     next page), lists bounded by nature (collaborators, share links, api
     keys, themes, versions, …) and search results in relevance order.

@@ -227,7 +227,7 @@ export function validatePermission(permission, res) {
 }
 
 // ============================================================
-// PAGINATION PARSING
+// QUERY FLAGS
 // ============================================================
 
 /**
@@ -245,37 +245,6 @@ export function parseQueryFlag(searchParams, key) {
   if (raw === 'true') return true;
   if (raw === 'false') return false;
   return raw;
-}
-
-/**
- * Parse pagination parameters from URL search params.
- * Provides consistent parsing with configurable defaults and limits.
- *
- * @param {URLSearchParams} searchParams - URL search parameters
- * @param {Object} [options] - Configuration options
- * @param {number} [options.defaultLimit=50] - Default limit if not specified
- * @param {number} [options.maxLimit=100] - Maximum allowed limit
- * @param {number} [options.minLimit=1] - Minimum allowed limit
- * @returns {{limit: number, offset: number}} - Parsed and clamped values
- */
-export function parsePaginationParams(searchParams, options = {}) {
-  const { defaultLimit = 50, maxLimit = 100, minLimit = 1 } = options;
-
-  const rawLimit = searchParams.get('limit');
-  const rawOffset = searchParams.get('offset');
-
-  // Parse limit with clamping to [minLimit, maxLimit]
-  const parsedLimit = rawLimit ? parseInt(rawLimit, 10) : defaultLimit;
-  const limit = Math.min(
-    Math.max(parsedLimit || defaultLimit, minLimit),
-    maxLimit,
-  );
-
-  // Parse offset with minimum of 0
-  const parsedOffset = rawOffset ? parseInt(rawOffset, 10) : 0;
-  const offset = Math.max(parsedOffset || 0, 0);
-
-  return { limit, offset };
 }
 
 // ============================================================

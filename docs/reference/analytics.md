@@ -42,7 +42,7 @@ Storage (`server/storage/analytics/`):
 
 - `server/storage/analytics/view-sessions.js` — session CRUD
   (`createViewSession`, `updateViewSession`, `endViewSession`,
-  `getViewSessionByToken`, `getViewSessionsForPresentation`,
+  `getViewSessionByToken`, `listViewSessions`,
   `getActiveViewerCount`, `deleteOldViewSessions`), `VIEWER_TYPES`, and a
   re-export of the GDPR functions.
 - `server/storage/analytics/view-sessions-gdpr.js` — export/erase/anonymize; see
@@ -56,7 +56,7 @@ Storage (`server/storage/analytics/`):
   `getViewerJourneyData`.
 - `server/storage/analytics/dashboard.js` — the cross-deck dashboard:
   `getDashboardSummary`, `getDashboardTimeline`, `getTopPresentations`,
-  `getSourceBreakdown`, `getPresentationsWithAnalytics`.
+  `getSourceBreakdown`, `listDashboardPresentations`.
 - `server/storage/analytics/reports.js` — report CRUD plus
   `getAnalyticsReportByToken` and `regenerateShareToken`.
 - `server/storage/analytics/weekly-summary.js` — the week's numbers per user,
@@ -258,7 +258,19 @@ public report reads 10 / 0.2 per IP.
   stream and report _reads_ use `read`; creating, updating, deleting a report and
   regenerating its token require `write`.
 - **Cross-deck reads** (`/api/analytics/dashboard`, `/api/analytics/presentations`)
-  are keyed on the caller's email and scoped to their organization.
+  cover the decks in the caller's organization that they own by address or
+  hold through a collaborator row with `edit` or `admin`: narrower than reading
+  a deck, so organization visibility and a `view`/`comment` row give no
+  dashboard. It is one SQL subquery every aggregation filters on
+  (`dashboardDeckIds` in `server/storage/analytics/dashboard.js`), held equal
+  to the id list it replaced by `tests/pg/analytics-dashboard-scope.pgtest.js`.
+  That list did not look at `revoked_at`, so a revoked `edit`/`admin` row still
+  counts, and a trashed deck stays in; the move kept both as they were.
+- **The lists** (`…/analytics/sessions`, `…/analytics/reports`,
+  `/api/analytics/presentations`) are on the list-page contract
+  ([`storage-layer.md`](storage-layer.md) § A list read): `{ limit, cursor }`
+  in, `{ <collection>, nextCursor }` out, no `total`, no `offset`. The deck list
+  has the one deck order, last change first; `sort` is refused.
 - **Reports** are stored with an `organization_id` and read through a scope. The
   public token route is the deliberate exception: it uses
   `crossOrganizationScope(null, 'public analytics report: the report token is

@@ -8,22 +8,15 @@ import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 
 /**
- * Fetch users from the API.
- * @param {Function} onSuccess - Callback with users array
- * @param {Function} onError - Callback for error handling
- * @returns {Promise<void>}
+ * Fetch one page of users, newest account first (list-page contract, D358).
+ * @param {string|null} cursor - Where the page starts; null = the top.
+ * @returns {Promise<{items: Object[], nextCursor: string|null}>}
+ * @throws {Error} The `api()` error when the request failed.
  */
-export async function fetchUsers(onSuccess, onError) {
-  try {
-    const data = await api('/api/admin/users');
-    if (data.users) {
-      onSuccess(data.users);
-    } else {
-      onError();
-    }
-  } catch (e) {
-    onError();
-  }
+export async function fetchUsers(cursor) {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  const data = await api(`/api/admin/users${query}`);
+  return { items: data?.users || [], nextCursor: data?.nextCursor || null };
 }
 
 /**

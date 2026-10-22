@@ -93,7 +93,11 @@ globalThis.fetch = async (input, init = {}) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, members: ALL, total: ALL.length }),
+    JSON.stringify(
+      path.includes('/members/count')
+        ? { count: ALL.length }
+        : { ok: true, members: ALL, nextCursor: null },
+    ),
     {
       status: 200,
       headers: { 'content-type': 'application/json' },
@@ -216,11 +220,13 @@ test('a successful invite reloads the page the reader is on', async () => {
 
   requested = [];
   await onInvited();
-  assert.equal(requested.length, 1, 'the list is re-read');
-  assert.match(
-    requested[0].path,
-    /offset=0/,
-    'and stays on the page it was showing',
+  assert.deepEqual(
+    requested.map((r) => r.path).sort(),
+    [
+      `/api/organizations/${ORG}/members/count`,
+      `/api/organizations/${ORG}/members?limit=25`,
+    ],
+    'the list is re-read from the top, with its count',
   );
 });
 

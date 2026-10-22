@@ -13,30 +13,45 @@ import { api } from '../../../lib/api.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 
-/** How many members one page holds. The server clamps `limit` to 100. */
+/** How many members one page holds (the list-page maximum is 100). */
 export const MEMBERS_PAGE_SIZE = 25;
 
 /**
- * Load one page of members.
+ * Load one page of members, newest membership first (list-page contract,
+ * D358).
  *
  * @param {string} organizationId - The organization to read.
  * @param {Object} [options]
- * @param {number} [options.offset=0] - Where the page starts.
+ * @param {string|null} [options.cursor] - Where the page starts; none = the top.
  * @param {number} [options.limit=MEMBERS_PAGE_SIZE] - Page size.
- * @returns {Promise<{ members: Array<Object>, total: number, offset: number }>}
+ * @returns {Promise<{ members: Array<Object>, nextCursor: string|null }>}
  */
 export async function fetchMembers(organizationId, options = {}) {
-  const offset = Math.max(0, Number(options.offset) || 0);
-  const limit = Math.max(1, Number(options.limit) || MEMBERS_PAGE_SIZE);
-  const query = `limit=${limit}&offset=${offset}`;
+  const params = new URLSearchParams({
+    limit: String(options.limit || MEMBERS_PAGE_SIZE),
+  });
+  if (options.cursor) params.set('cursor', options.cursor);
   const res = await api(
-    `/api/organizations/${encodeURIComponent(organizationId)}/members?${query}`,
+    `/api/organizations/${encodeURIComponent(organizationId)}/members?${params}`,
   );
-  const members = Array.isArray(res?.members) ? res.members : [];
-  // `total` counts the whole organization, not this page — the panel uses the
-  // difference to place the reader and to decide whether paging is possible.
-  const total = Number.isFinite(res?.total) ? res.total : members.length;
-  return { members, total, offset };
+  return {
+    members: Array.isArray(res?.members) ? res.members : [],
+    nextCursor: res?.nextCursor || null,
+  };
+}
+
+/**
+ * How many members the organization has: a question of its own, not a field
+ * of every page.
+ *
+ * @param {string} organizationId
+ * @returns {Promise<number>}
+ */
+export async function fetchMemberCount(organizationId) {
+  const res = await api(
+    `/api/organizations/${encodeURIComponent(organizationId)}/members/count`,
+  );
+  return Number.isFinite(res?.count) ? res.count : 0;
 }
 
 /**
