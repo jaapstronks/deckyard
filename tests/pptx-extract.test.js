@@ -359,3 +359,16 @@ test('colour modifiers: lighter and darker variants of a scheme colour', () => {
     '#111111',
   );
 });
+
+test('a `>` inside an attribute value does not end the tag', () => {
+  const root = parseXml(
+    `<p:pic><p:cNvPr descr="a > b" name='x>y'/><a:t>after</a:t></p:pic>`,
+  );
+  assert.deepEqual(
+    root.children.map((c) => [c.name, c.attrs, c.text]),
+    [
+      ['p:cNvPr', { descr: 'a > b', name: 'x>y' }, ''],
+      ['a:t', {}, 'after'],
+    ],
+  );
+});
