@@ -228,6 +228,46 @@ export function textFieldSpecForDef(def) {
 }
 
 /**
+ * Text spec for a slide whose type has no definition here, read from the
+ * content it stores: `textFieldSpecForDef(undefined)`, plus every undeclared
+ * key that holds a list of objects, walked as an `items` field whose item
+ * keys fall to the value rule in turn, at every nesting level.
+ *
+ * Without a definition the spec declares no `items` fields, so the walk never
+ * reached a list and its text read as one value per deck: an imported slide
+ * of an unknown type kept the base language's list text in every version
+ * (B836). The shape is the stored one, read across every version passed, so a
+ * list that only a translation holds is walked too. A list of plain strings
+ * stays a machine value: an item without keys has nothing for the value rule
+ * to read, and nothing to match its translation by.
+ *
+ * Only for a type without a definition: a known type's spec comes from its
+ * fields, and an undeclared list on it stays a machine value.
+ *
+ * @param {...*} contents - The slide's content in each language version
+ * @returns {{textKeys: Set<string>, declaredKeys: Set<string>, items: Map<string, Object>}}
+ */
+export function textFieldSpecForContent(...contents) {
+  const spec = textFieldSpecForDef(undefined);
+  inferItems(spec, contents.filter(isPlainObject));
+  return spec;
+}
+
+function inferItems(spec, objects) {
+  const keys = new Set(objects.flatMap((o) => Object.keys(o)));
+  for (const key of keys) {
+    if (spec.declaredKeys.has(key)) continue;
+    const entries = objects
+      .flatMap((o) => (Array.isArray(o[key]) ? o[key] : []))
+      .filter(isPlainObject);
+    if (!entries.length) continue;
+    const sub = emptyTextFieldSpec();
+    inferItems(sub, entries);
+    spec.items.set(key, sub);
+  }
+}
+
+/**
  * Text spec for a slide type: `textFieldSpecForDef` of its registry entry.
  * An unknown type declares only the derived background keys.
  * @param {string} type - Slide type name

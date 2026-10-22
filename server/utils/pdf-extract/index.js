@@ -244,6 +244,26 @@ export async function extractPdfPages(
 }
 
 /**
+ * The number of pages of a PDF, without reading them: what the slide import
+ * pairs a PowerPoint file's slides with when the PDF is only the pixel source
+ * (B829).
+ *
+ * @param {Uint8Array} buffer - the PDF bytes
+ * @param {object} [opts]
+ * @param {AbortSignal} [opts.signal]
+ * @returns {Promise<number>}
+ */
+export async function countPdfPages(buffer, { signal } = {}) {
+  signal?.throwIfAborted();
+  const task = openPdf(buffer);
+  try {
+    return (await task.promise).numPages;
+  } finally {
+    await task.destroy();
+  }
+}
+
+/**
  * Extract a PDF as one document: headings over the whole document, page
  * breaks and running furniture gone (B773, `document.js`).
  *

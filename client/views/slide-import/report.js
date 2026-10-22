@@ -3,7 +3,10 @@
  * `POST /api/presentations/import/slides` (`server/services/deck-slides-import.js`)
  * as one line naming the pages that became an image of themselves and why,
  * plus a sentence per picture that is missing, in the words of its code, and
- * one sentence for the pictures left out as decoration (B831).
+ * one sentence for the pictures left out as decoration (B831). From a
+ * PowerPoint file alone (`source: 'pptx'`) those pages have no image, so the
+ * line names them without that claim and one sentence says what the PDF
+ * would add (B829).
  *
  * Pure: no DOM, no fetch. The host decides where the words go.
  */
@@ -40,6 +43,11 @@ const ERROR_LABELS = {
     ),
   'not-rendered': () =>
     t('editor.importSlides.error.notRendered', 'the page was not rendered'),
+  'unsupported-image': () =>
+    t(
+      'editor.importSlides.error.unsupportedImage',
+      'an image in a format that cannot be imported (SVG, EMF or WMF) was left out',
+    ),
 };
 
 const errorLabel = (code) =>
@@ -48,6 +56,7 @@ const errorLabel = (code) =>
 
 /**
  * @param {object} report - The `complete` event's `report`.
+ * @param {'pdf'|'pptx'|'both'} [report.source]
  * @param {number} [report.slidesExtracted]
  * @param {Array<{ page: number, reason?: string }>} [report.pages]
  * @param {Array<{ page: number, code: string }>} [report.errors]
@@ -108,6 +117,27 @@ export function slidesImportOutcome(report) {
       return label ? `${page} (${label})` : String(page);
     })
     .join(', ');
+  const vars = { count: fallbacks.length, total, pages: list };
+  if (report?.source === 'pptx') {
+    return {
+      clean: false,
+      line: t(
+        'editor.importSlides.report.fallbacksText',
+        {
+          one: '1 of {total} pages fits no slide type: {pages}.',
+          many: '{count} of {total} pages fit no slide type: {pages}.',
+        },
+        vars,
+      ),
+      errors: [
+        t(
+          'editor.importSlides.report.addPdf',
+          'Their text is kept; add the PDF export for an image of these pages.',
+        ),
+        ...errors,
+      ],
+    };
+  }
   return {
     clean: false,
     line: t(
@@ -116,7 +146,7 @@ export function slidesImportOutcome(report) {
         one: '1 of {total} pages was taken over as an image: {pages}.',
         many: '{count} of {total} pages were taken over as images: {pages}.',
       },
-      { count: fallbacks.length, total, pages: list },
+      vars,
     ),
     errors,
   };

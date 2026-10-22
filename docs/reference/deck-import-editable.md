@@ -1,16 +1,16 @@
 # Importing a deck as editable slides
 
 How "Import an existing deck → PowerPoint or PDF → As editable slides" turns
-a PDF the presentation app exported into a deck of editable slides: what is
-read from each page, which slide type a page becomes, when a page becomes an
+a PowerPoint file, a PDF the presentation app exported, or both into a deck
+of editable slides: which file gives what, what is read from each page, which slide type a page becomes, when a page becomes an
 image of itself instead, and where the text goes that is not on a slide.
 Where this route sits next to the other creation routes:
 [deck-creation-and-reuse.md](deck-creation-and-reuse.md) § Two routes.
 
 The route is `POST /api/presentations/import/slides` (SSE), the sibling of
-`import/images`: the same body (`dataUrl` for the PDF, required here;
-`pptxDataUrl` for the speaker notes; `lang`; `theme`), the same refusals of
-the files, its own endpoint. No AI anywhere on this route: nothing is
+`import/images`: the same body (`dataUrl` for the PDF, `pptxDataUrl` for the
+PowerPoint file, at least one of them; `lang`; `theme`), the same refusals
+of the files, its own endpoint. No AI anywhere on this route: nothing is
 interpreted, summarised or rewritten.
 
 | Layer           | Module                                                                      |
@@ -31,8 +31,8 @@ interpreted, summarised or rewritten.
   markers in the source are escaped. Nothing else: no casing, no hyphens, no
   summary, no truncation.
 - **A page that does not fit falls back on its own**, never the whole deck:
-  it becomes an `image-slide` of the rendered page, and the report names the
-  page and a reason.
+  it becomes an `image-slide` of the rendered page (without a PDF, its text
+  on a slide, § Two sources), and the report names the page and a reason.
 
 ## The page model
 
@@ -80,8 +80,37 @@ map. Footer, slide-number and date placeholders and the text a layout or
 master paints are `artifact`. Hidden slides are left out, as a PDF export
 leaves them out, so page `n` of both sources is the same slide. A
 paragraph is whole, so its text needs no joining; its box is an estimate
-(PowerPoint does not store where it wraps). The route still reads the PDF;
-the PowerPoint file as structure source is open work (B829).
+(PowerPoint does not store where it wraps).
+
+## Two sources
+
+Which file gives what (B829); `report.source` names the case:
+
+| Files            | Structure (the page model) | Speaker notes       | Pixels of a fallback page or cut-out |
+| ---------------- | -------------------------- | ------------------- | ------------------------------------ |
+| PDF              | the PDF                    | none                | the PDF                              |
+| PowerPoint       | the PowerPoint file        | the PowerPoint file | none                                 |
+| PDF + PowerPoint | the PowerPoint file        | the PowerPoint file | the PDF                              |
+
+- **Both files**: the PowerPoint file states what the PDF would have to
+  rebuild, so it is read for the pages; the PDF is only rendered, for the
+  pages that fall back and the pages a drawing is cut out of. Page `n` of
+  both is the same slide, so the PDF's page count must equal the visible
+  slides; otherwise the import is refused with both numbers (a PDF that
+  kept the hidden slides does not pair).
+- **A PowerPoint file alone** has no pixels. A mapped page is the same
+  slide as with the PDF beside it. A page that falls back keeps its text:
+  its heading and literal text as a `content-slide`, a heading alone as a
+  `chapter-title-slide`; where neither holds the text (no heading, or text
+  longer than the fields hold) it is an empty `image-slide` with the text
+  in the notes. The report line names those pages and adds that the PDF
+  export would give an image of them. A drawing is never cut out without a
+  rendering.
+- **A PDF alone** is read as described above (track 1a).
+
+A picture the PowerPoint file holds as SVG, EMF or WMF does not become a
+PNG: it is left out, its description goes to the notes, and the report
+names its page (`unsupported-image`).
 
 ## Page → slide
 
@@ -193,9 +222,8 @@ a browser.
 
 Every slide's notes are built in one order, parts separated by a blank line:
 
-1. the speaker notes of the PowerPoint file beside the PDF, paired by slide
-   order (as in the import as images; a page count that does not pair is
-   refused);
+1. the speaker notes of the PowerPoint file, slide by slide (beside a PDF,
+   a page count that does not pair is refused);
 2. on a fallback slide only, the page's text, so it can still be copied;
 3. under "Not on the slide:" ("Niet op de slide:" in a Dutch deck), the text
    the slide does not show: dropped footers, page numbers and footnotes, and
@@ -239,6 +267,7 @@ generation route uses:
 
 ```json
 {
+  "source": "both",
   "slidesExtracted": 12,
   "slidesConverted": 9,
   "errors": [{ "page": 4, "code": "upload-failed" }],
@@ -256,15 +285,19 @@ imported as editable slides."). Otherwise the sub-tab shows one line, "3 of
 sentence per missing picture, and an "Open presentation" button. An entry in
 `errors` carries a `code` from the closed set `REPORT_ERROR_CODES`
 (`upload-failed`: the media library refused the picture; `not-rendered`: a
-page that fell back got no image from the rasteriser) and the client puts it
-into words in the deck's language ("Page 4: an image could not be
-uploaded"); the server sends no sentence of its own. The slide keeps an empty
-image either way. Pictures left out as decoration add one sentence after
-those ("A picture repeated on 3 pages (a logo or mark) was left out."), and
-an import with one is not clean, so the sub-tab shows it.
+page that fell back got no image from the rasteriser; `unsupported-image`: a
+picture of the PowerPoint file in SVG, EMF or WMF was left out) and the
+client puts it into words in the deck's language ("Page 4: an image could
+not be uploaded"); the server sends no sentence of its own. The slide keeps
+an empty image either way. From a PowerPoint file alone (`source: 'pptx'`)
+the line names the same pages and reasons without calling them images,
+and one sentence follows it: "Their text is kept; add the PDF export for an
+image of these pages." Pictures left out as
+decoration add one sentence after those ("A picture repeated on 3 pages (a
+logo or mark) was left out."), and an import with one is not clean, so the
+sub-tab shows it.
 
 ## Not on this route
 
-PowerPoint as the source of editable slides (B828, B829), inserting
-editable slides into an open deck (B307), OCR of text inside images, form
-content and annotations.
+Inserting editable slides into an open deck (B307), OCR of text inside
+images, form content and annotations.

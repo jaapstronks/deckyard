@@ -5,6 +5,7 @@ import {
   applyContentTranslation,
   contentTranslation,
   isTextField,
+  textFieldSpecForContent,
   textFieldSpecForDef,
   textFieldSpecForType,
 } from './text-fields.js';
@@ -591,8 +592,8 @@ function rewriteSlideJumpIds(slidesRaw, slides, slideTypes) {
  * gets this far (`deckImportLang`). A slide that imported as the unknown-type
  * placeholder has no type to read its translation against: every version gets
  * its own placeholder, built from the stored content with that language's
- * text read by the value rule (B833). That rule reads top-level strings only:
- * a list keeps the base language's text in every version (B836).
+ * text read by the value rule (B833), at every level of the stored lists
+ * (`textFieldSpecForContent`, B836).
  */
 function deckTranslations(
   deck,
@@ -639,7 +640,7 @@ function deckTranslations(
             : placeholderContent(
                 name,
                 applyContentTranslation(
-                  textFieldSpecForDef(undefined),
+                  textFieldSpecForContent(raw?.content, contentTr),
                   raw?.content,
                   contentTr,
                 ),

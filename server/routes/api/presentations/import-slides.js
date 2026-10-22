@@ -2,11 +2,13 @@
  * POST /api/presentations/import/slides
  *
  * Creates a new deck from an existing one as editable slides (B752, track 1a
- * of B737): one slide per page of a PDF the presentation app exported, of the
- * type the page's structure asks for, with the page's text letter for letter.
- * A page that fits no type becomes an image of itself, with its text in the
- * notes and a reason in the report. The speaker notes of a PowerPoint file
- * beside the PDF come along, paired by slide order.
+ * of B737; B829): one slide per page, of the type the page's structure asks
+ * for, with the page's text letter for letter. The structure is read from
+ * the PowerPoint file when it comes (with its speaker notes), else from the
+ * PDF the presentation app exported. A page that fits no type becomes an
+ * image of itself rendered from the PDF, with its text in the notes; without
+ * a PDF it keeps its text on a text slide. The report names those pages, a
+ * reason for each, and the source the pages were read from.
  *
  * The sibling of `import/images` (every page as a picture): the same body,
  * the same refusals of the files, its own endpoint, because the route is the
@@ -17,13 +19,14 @@
  *
  * Request body:
  * {
- *   dataUrl: "data:application/pdf;base64,...",   // the deck (required)
+ *   dataUrl: "data:application/pdf;base64,...",   // the pages' pixels (and their structure without a .pptx)
  *   filename: "talk.pdf",
- *   pptxDataUrl: "data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,...", // the notes
+ *   pptxDataUrl: "data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,...", // the structure and the notes
  *   pptxFilename: "talk.pptx",
  *   lang: "nl",
  *   theme: "<theme id>"                         // optional, settled like every create
  * }
+ * At least one of `dataUrl` and `pptxDataUrl`.
  */
 
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
@@ -51,6 +54,7 @@ export async function handlePresentationsImportSlides({
   req,
   res,
   authedUser,
+  renderPages,
 } = {}) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -59,11 +63,6 @@ export async function handlePresentationsImportSlides({
   assertCreatableDeckInput(body);
   const read = readDeckImageFiles(body);
   if (!read.ok) return badRequest(res, read.message);
-  // Editable slides are read from the PDF; a PowerPoint file alone has notes
-  // but no pages.
-  if (!read.files.pdfBytes) {
-    return badRequest(res, 'A PDF of the deck is required');
-  }
 
   const lang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
   // Checked before the work, so an unknown theme costs nothing (B486).
@@ -88,6 +87,8 @@ export async function handlePresentationsImportSlides({
       lang,
       slideTypes,
       signal,
+      // The page rasteriser; tests pass one so no browser starts.
+      ...(renderPages ? { renderPages } : {}),
       onProgress: (message, data = {}) =>
         sseWrite(res, { event: 'progress', data: { message, ...data } }),
     });

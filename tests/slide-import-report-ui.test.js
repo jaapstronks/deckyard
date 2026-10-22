@@ -94,14 +94,41 @@ test("a failed upload is not clean and names its page, in the client's words (B8
 
 test('every error code the server names has its own words', () => {
   const { errors } = slidesImportOutcome({
-    slidesExtracted: 2,
-    pages: [1, 2].map((page) => ({ page, type: 'image-slide' })),
+    slidesExtracted: 3,
+    pages: [1, 2, 3].map((page) => ({ page, type: 'image-slide' })),
     errors: REPORT_ERROR_CODES.map((code, i) => ({ page: i + 1, code })),
   });
   assert.deepEqual(errors, [
     'Page 1: an image could not be uploaded',
     'Page 2: the page was not rendered',
+    'Page 3: an image in a format that cannot be imported (SVG, EMF or WMF) was left out',
   ]);
+});
+
+test('from a PowerPoint file alone, the fallback pages are named without "as images", and the PDF is suggested (B829)', () => {
+  const outcome = slidesImportOutcome({
+    source: 'pptx',
+    slidesExtracted: 6,
+    slidesConverted: 5,
+    errors: [],
+    pages: [
+      { page: 1, type: 'title-slide' },
+      { page: 5, type: 'chapter-title-slide', reason: 'drawing' },
+    ],
+  });
+  assert.equal(outcome.clean, false);
+  assert.equal(outcome.line, '1 of 6 pages fits no slide type: 5 (chart).');
+  assert.deepEqual(outcome.errors, [
+    'Their text is kept; add the PDF export for an image of these pages.',
+  ]);
+  // Every page mapped: nothing to add, the PowerPoint file was enough.
+  const clean = slidesImportOutcome({
+    source: 'pptx',
+    slidesExtracted: 2,
+    pages: [1, 2].map((page) => ({ page, type: 'list-slide' })),
+  });
+  assert.equal(clean.clean, true);
+  assert.deepEqual(clean.errors, []);
 });
 
 test('an error code the client does not know still names the page', () => {

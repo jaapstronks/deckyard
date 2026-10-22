@@ -119,12 +119,12 @@ export async function readSourceSlides(pptxBytes) {
 
 /**
  * The refusal for a PDF and a PowerPoint file that do not pair.
- * @param {number} pageCount
- * @param {Array<{ hidden: boolean }>} slides
+ * @param {number} pageCount - the pages of the PDF
+ * @param {number} shown - the slides of the PowerPoint file a PDF export
+ *   shows (hidden slides left out)
  * @returns {DeckImagesRefusal}
  */
-export function countMismatch(pageCount, slides) {
-  const shown = slides.filter((s) => !s.hidden).length;
+export function countMismatch(pageCount, shown) {
   return new DeckImagesRefusal(
     `The PDF has ${pageCount} pages but the PowerPoint file has ${shown} slides. Export the PDF from the same presentation and try again.`,
   );
@@ -211,7 +211,12 @@ export async function buildDeckImageSlides({
     pages = images;
     if (sourceSlides) {
       notes = notesForPages(sourceSlides, images.length);
-      if (!notes) throw countMismatch(images.length, sourceSlides);
+      if (!notes) {
+        throw countMismatch(
+          images.length,
+          sourceSlides.filter((s) => !s.hidden).length,
+        );
+      }
     }
   } else {
     notes = sourceSlides.filter((s) => !s.hidden).map((s) => s.notes);
