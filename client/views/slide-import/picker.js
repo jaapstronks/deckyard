@@ -2,9 +2,10 @@
  * The two-slot file chooser for importing an existing deck (B700, D334): a
  * PDF the presentation app exported gives the pages, the PowerPoint file
  * beside it the speaker notes. A later file of the same kind replaces the
- * earlier one. As images either may come alone; as editable slides (B753)
- * the slides are read from the PDF, so the PDF is required and the chooser
- * says so when only the PowerPoint file is there.
+ * earlier one. Either may come alone. As editable slides (B753, B829) the
+ * PowerPoint file gives the slides and the PDF the images of the pages that
+ * fit no slide type, so the chooser says before the import what a
+ * PowerPoint file alone leaves out.
  *
  * Shared by the editor's "Import from file" tab and the creation view's
  * "PowerPoint or PDF" import sub-tab (B306). The chooser only holds the files;
@@ -76,7 +77,10 @@ export function createDeckFilesPicker({
       use === 'slides'
         ? t('editor.importSlides.role.pdfSlides', 'Slides')
         : t('editor.importSlides.role.pdf', 'Images'),
-    pptx: () => t('editor.importSlides.role.pptx', 'Speaker notes'),
+    pptx: () =>
+      use === 'slides'
+        ? t('editor.importSlides.role.pptxSlides', 'Slides and speaker notes')
+        : t('editor.importSlides.role.pptx', 'Speaker notes'),
   };
   const fileRows = {};
   for (const kind of KINDS) {
@@ -98,8 +102,8 @@ export function createDeckFilesPicker({
     fileRows[kind] = { el, name, size, clear };
   }
 
-  // Said before the import, not after: a PowerPoint file alone brings notes
-  // but no pictures.
+  // Said before the import, not after: a PowerPoint file alone brings no
+  // picture of a page.
   const pptxOnlyNotice = h('div', {
     class: 'import-slides-help help',
     hidden: true,
@@ -111,7 +115,7 @@ export function createDeckFilesPicker({
       use === 'slides'
         ? t(
             'editor.importSlides.dropzone.hintSlides',
-            'The PDF gives the slides, the .pptx the speaker notes',
+            'The .pptx gives the slides and speaker notes, the PDF the images of pages that fit no slide type; either can come alone',
           )
         : t(
             'editor.importSlides.dropzone.hint',
@@ -121,7 +125,7 @@ export function createDeckFilesPicker({
       use === 'slides'
         ? t(
             'editor.importSlides.pptxOnlyNoticeSlides',
-            'Editable slides are read from the PDF. Export a PDF from PowerPoint or Keynote and add it; the .pptx only brings the speaker notes.',
+            'Without a PDF, a page that fits no slide type, such as a chart, keeps its text but not its picture. Add the PDF export from PowerPoint or Keynote for an image of those pages.',
           )
         : t(
             'editor.importSlides.pptxOnlyNotice',

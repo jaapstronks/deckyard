@@ -1,13 +1,14 @@
 /**
  * The "PowerPoint or PDF" sub-tab of the creation view's import method: an
- * existing deck taken over as a new deck, one slide per PDF page, with the
- * speaker notes of the PowerPoint file beside it. Two ways to take it over,
+ * existing deck taken over as a new deck, one slide per page, with the
+ * speaker notes of the PowerPoint file. Two ways to take it over,
  * each its own endpoint (the route is the endpoint, D235):
  *
  * - **As editable slides** (B753, the default): `/api/presentations/import/slides`
  *   gives each page the slide type its structure asks for, with the same
- *   text; a page that fits none becomes an image of itself, and the report
- *   says which and why.
+ *   text, read from the .pptx when it comes; a page that fits none becomes
+ *   an image of itself from the PDF (without one, a text slide), and the
+ *   report says which and why (B829).
  * - **As images** (B306, D334): `/api/presentations/import/images`, every
  *   page a picture.
  *
@@ -150,15 +151,6 @@ export function createPptxPdfImportPanel() {
         t(
           'editor.importSlides.error.unsupported',
           'Choose a PDF, a PowerPoint (.pptx) file, or both',
-        ),
-      );
-      return;
-    }
-    if (mode === 'slides' && !files.pdf) {
-      refusal.show(
-        t(
-          'list.creationView.importPptxPdf.pdfRequired',
-          'Editable slides are read from the PDF. Add the PDF of the deck.',
         ),
       );
       return;
