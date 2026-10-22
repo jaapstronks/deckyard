@@ -30,11 +30,14 @@
  * beside it, and a small picture in the same place on three pages or more
  * is decoration, left out and named once in the report.
  *
- * The speaker notes of a PowerPoint file beside the PDF come first in every
- * slide's notes, paired by slide order like the import as images
- * (`deck-images-import.js`, whose file reading and pairing this module
- * shares). No AI: the route is the endpoint (D235), and this one never
- * interprets.
+ * Two sources of the same page model (B829): a PowerPoint file states the
+ * structure a PDF has to rebuild, so when it comes, its slides are read
+ * (`server/utils/pptx-extract/`) with their speaker notes, and the PDF beside
+ * it is only the pixel source for the pages that fall back or have a drawing
+ * cut out. Page `n` of both is the same slide. A PowerPoint file alone has no
+ * pixels: a page that falls back keeps its heading and text as a text slide,
+ * and the report says the PDF export would add the image. No AI: the route is
+ * the endpoint (D235), and this one never interprets.
  */
 
 import { createHash } from 'node:crypto';
@@ -43,6 +46,7 @@ import sharp from 'sharp';
 import { uploadImageBuffer } from '../media/upload-buffer.js';
 import { pdfToImages } from '../render/pdf-to-images.js';
 import {
+  countPdfPages,
   extractPdfPages,
   blockText,
   FOOTNOTE_ZONE,
@@ -53,13 +57,12 @@ import {
   overlapArea,
   pageText,
 } from '../utils/pdf-extract/index.js';
+import { extractPptxPages } from '../utils/pptx-extract/index.js';
 import { createLogger } from '../utils/logger.js';
 import {
   DeckImagesRefusal,
   countMismatch,
   deckImageBaseName,
-  notesForPages,
-  readSourceSlides,
 } from './deck-images-import.js';
 import {
   newSlide,
@@ -104,11 +107,17 @@ export const FALLBACK_REASONS = Object.freeze([
  *
  * - `upload-failed`: the media library refused the picture.
  * - `not-rendered`: the page fell back but the rasteriser gave no image.
+ * - `unsupported-image`: a picture of the PowerPoint file in a format that
+ *   does not become a PNG (SVG, EMF, WMF) was left out (B829).
  */
 export const REPORT_ERROR_CODES = Object.freeze([
   'upload-failed',
   'not-rendered',
+  'unsupported-image',
 ]);
+
+/** Where an import read its pages from: `report.source` (B829). */
+export const IMPORT_SOURCES = Object.freeze(['pdf', 'pptx', 'both']);
 
 /**
  * More vector paths than this beside the text is a drawing (brief
@@ -662,6 +671,39 @@ export function contentSlide(page) {
   };
 }
 
+/**
+ * A page that falls back without pixels to show (a PowerPoint file alone,
+ * B829). Its text stays on a slide where a text type holds it: the heading
+ * and the literal text as a text slide, a heading alone as a section title.
+ * Where none does (no heading, or text longer than the fields hold), the
+ * slide is an empty image slide, as for a page the rasteriser skipped, and
+ * the text goes to the notes; it is never cut.
+ *
+ * @param {PageModel} page
+ * @param {object} ctx - as {@link planPage}
+ * @returns {{ slide: object, textOnSlide: boolean }}
+ */
+export function fallbackWithoutPixels(page, ctx) {
+  const background = backgroundOf(page, ctx.theme);
+  if (page.heading) {
+    const text =
+      page.blocks.length > 0
+        ? contentSlide(page)
+        : chapterTitleSlide(page, page.heading, '');
+    const slide = composeValid(text, ctx, background);
+    if (slide) return { slide, textOnSlide: true };
+  }
+  const slide = newSlide({
+    type: 'image-slide',
+    theme: ctx.theme ?? null,
+    lang: ctx.lang ?? null,
+    presentationId: ctx.presentationId || '',
+    slideTypes: ctx.slideTypes,
+    content: { image: '', alt: '', bleed: true },
+  });
+  return { slide, textOnSlide: false };
+}
+
 // ---------------------------------------------------------------------------
 // Layout and background (B830)
 // ---------------------------------------------------------------------------
@@ -1046,12 +1088,18 @@ export async function cutOutOfRendering(rendering, page, box) {
 // ---------------------------------------------------------------------------
 
 /**
- * Build one slide per page of the PDF: mapped where the page fits a type,
- * the rendered page where it does not, with the notes and a report.
+ * Build one slide per page: mapped where the page fits a type, and where it
+ * does not, the rendered page of the PDF, or without a PDF the page's text
+ * on a text slide; with the notes and a report.
+ *
+ * The PowerPoint file, when it comes, is the structure source and gives the
+ * speaker notes; the PDF is then only rendered, and its page count must
+ * pair with the visible slides. Without a PowerPoint file the PDF is read
+ * as in track 1a.
  *
  * @param {object} opts
  * @param {import('./deck-images-import.js').DeckImageFiles} opts.files - From
- *   `readDeckImageFiles`; the PDF is required, the PowerPoint file optional.
+ *   `readDeckImageFiles`: a PDF, a PowerPoint file, or both.
  * @param {object} opts.theme - The target deck's resolved theme.
  * @param {string} opts.lang - The target deck's language.
  * @param {string} [opts.presentationId]
@@ -1062,8 +1110,8 @@ export async function cutOutOfRendering(rendering, page, box) {
  * @param {typeof pdfToImages} [opts.renderPages] - The page rasteriser, for
  *   tests; the browser-backed `pdfToImages` by default.
  * @returns {Promise<{ slides: object[], report: DeckSlidesReport }>}
- * @throws {DeckImagesRefusal} the PDF is missing, unreadable or empty, or its
- *   page count does not pair with the PowerPoint file.
+ * @throws {DeckImagesRefusal} neither file came, a file is unreadable or
+ *   empty, or the PDF's page count does not pair with the PowerPoint file.
  */
 export async function buildDeckSlides({
   files,
@@ -1076,39 +1124,33 @@ export async function buildDeckSlides({
   renderPages = pdfToImages,
 }) {
   const { pdfBytes, pptxBytes } = files;
-  if (!pdfBytes) {
-    throw new DeckImagesRefusal('A PDF of the deck is required');
+  if (!pdfBytes && !pptxBytes) {
+    throw new DeckImagesRefusal('A PDF or a PowerPoint file is required');
   }
-  const sourceSlides = pptxBytes ? await readSourceSlides(pptxBytes) : null;
+  const source = pdfBytes ? (pptxBytes ? 'both' : 'pdf') : 'pptx';
 
-  onProgress('Reading the PDF...', { stage: 'reading', current: 0, total: 0 });
-  let extracted;
-  try {
-    extracted = await extractPdfPages(new Uint8Array(pdfBytes), { signal });
-  } catch (err) {
-    if (signal?.aborted) throw err;
-    log.warn('[import-slides] unreadable PDF:', err?.message);
-    throw new DeckImagesRefusal('The PDF could not be read');
-  }
-  if (extracted.pages.length === 0) {
-    throw new DeckImagesRefusal('No pages found in PDF');
+  const extracted = pptxBytes
+    ? await readPptxSource(pptxBytes, { signal, onProgress })
+    : await readPdfSource(pdfBytes, { signal, onProgress });
+  if (source === 'both') {
+    const pageCount = await countPdfPagesOrRefuse(pdfBytes, signal);
+    if (pageCount !== extracted.pages.length) {
+      throw countMismatch(pageCount, extracted.pages.length);
+    }
   }
   const { pages, decorations } = findDecorations(extracted.pages);
-
-  const speakerNotes = sourceSlides
-    ? notesForPages(sourceSlides, pages.length)
-    : null;
-  if (sourceSlides && !speakerNotes) {
-    throw countMismatch(pages.length, sourceSlides);
-  }
+  const speakerNotes = extracted.notes || null;
 
   // The PDF is the pixel source: a drawing can be cut out of its rendering.
-  const ctx = { slideTypes, theme, lang, presentationId, pagePixels: true };
+  const pagePixels = Boolean(pdfBytes);
+  const ctx = { slideTypes, theme, lang, presentationId, pagePixels };
   const plans = pages.map((page) => planPage(page, ctx));
   const cutsOut = (plan) => Boolean(plan.uploads?.some((u) => u.crop));
-  const renderedPages = pages
-    .filter((_p, i) => plans[i].reason || cutsOut(plans[i]))
-    .map((p) => p.page);
+  const renderedPages = pagePixels
+    ? pages
+        .filter((_p, i) => plans[i].reason || cutsOut(plans[i]))
+        .map((p) => p.page)
+    : [];
 
   // Only the pages that fell back, or that a drawing is cut out of, are
   // rendered.
@@ -1186,8 +1228,31 @@ export async function buildDeckSlides({
     const notOnSlide = page.dropped
       .filter((d) => d.reason !== 'reference')
       .map((d) => d.text);
+    // A picture the PowerPoint file holds in a format that does not become a
+    // PNG is missing from the slide: the report names it (B829). A page shown
+    // as its rendering from the PDF still has it.
+    const showsRendering = Boolean(plan.reason) && pagePixels;
+    for (const d of page.dropped) {
+      if (d.reason === 'unsupported-image' && !showsRendering) {
+        errors.push({ page: page.page, code: 'unsupported-image' });
+      }
+    }
     let slide;
-    if (plan.reason) {
+    if (plan.reason && !pagePixels) {
+      // No pixels to show: the heading and the text stay, as text where a
+      // text slide holds them.
+      const fallback = fallbackWithoutPixels(page, ctx);
+      slide = fallback.slide;
+      slide.notes = composeNotes({
+        speakerNotes: speakerNotes?.[i],
+        pageText: fallback.textOnSlide ? '' : pageText(page),
+        notOnSlide: [
+          ...notOnSlide,
+          ...(page.drawing?.labels || []).map((l) => l.text),
+        ],
+        lang,
+      });
+    } else if (plan.reason) {
       const buffer = rendered.get(page.page);
       const image = buffer
         ? await upload(buffer, `page-${num}`, page.page, errors)
@@ -1247,6 +1312,7 @@ export async function buildDeckSlides({
   return {
     slides,
     report: {
+      source,
       slidesExtracted: pages.length,
       slidesConverted: reportPages.filter((p) => !p.reason).length,
       errors,
@@ -1257,10 +1323,68 @@ export async function buildDeckSlides({
 }
 
 /**
+ * The page model of the PDF, the structure source when no PowerPoint file
+ * comes. No speaker notes.
+ */
+async function readPdfSource(pdfBytes, { signal, onProgress }) {
+  onProgress('Reading the PDF...', { stage: 'reading', current: 0, total: 0 });
+  let extracted;
+  try {
+    extracted = await extractPdfPages(new Uint8Array(pdfBytes), { signal });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    log.warn('[import-slides] unreadable PDF:', err?.message);
+    throw new DeckImagesRefusal('The PDF could not be read');
+  }
+  if (extracted.pages.length === 0) {
+    throw new DeckImagesRefusal('No pages found in PDF');
+  }
+  return { pages: extracted.pages, notes: null };
+}
+
+/**
+ * The page model of the PowerPoint file, one page per visible slide, with
+ * the speaker notes beside the pages.
+ */
+async function readPptxSource(pptxBytes, { signal, onProgress }) {
+  onProgress('Reading the PowerPoint file...', {
+    stage: 'reading',
+    current: 0,
+    total: 0,
+  });
+  let extracted;
+  try {
+    extracted = await extractPptxPages(pptxBytes, { signal });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    log.warn('[import-slides] unreadable PowerPoint file:', err?.message);
+    throw new DeckImagesRefusal('The PowerPoint file could not be read');
+  }
+  if (extracted.pages.length === 0) {
+    throw new DeckImagesRefusal('No slides found in the PowerPoint file');
+  }
+  return { pages: extracted.pages, notes: extracted.notes };
+}
+
+/** The pages of the PDF beside a PowerPoint file, to pair them. */
+async function countPdfPagesOrRefuse(pdfBytes, signal) {
+  try {
+    return await countPdfPages(new Uint8Array(pdfBytes), { signal });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    log.warn('[import-slides] unreadable PDF:', err?.message);
+    throw new DeckImagesRefusal('The PDF could not be read');
+  }
+}
+
+/**
  * The report of an import, in the names the generation route's report uses
  * (`convert-file/index.js`), so one renderer shows both.
  * @typedef {object} DeckSlidesReport
- * @property {number} slidesExtracted - pages read from the PDF
+ * @property {'pdf' | 'pptx' | 'both'} source - what the pages were read from
+ *   ({@link IMPORT_SOURCES}): `pptx` has no pixels, so a page with a
+ *   `reason` became a text slide instead of an image of itself
+ * @property {number} slidesExtracted - pages read from the source
  * @property {number} slidesConverted - pages that became an editable slide
  * @property {Array<{ page: number, code: string }>} errors - one per picture
  *   that is missing, `code` from {@link REPORT_ERROR_CODES}

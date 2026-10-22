@@ -24,6 +24,7 @@ import {
   pageText,
 } from '../server/utils/pdf-extract/index.js';
 import sharp from 'sharp';
+import JSZip from 'jszip';
 
 import {
   CROP_MAX_COVER,
@@ -36,9 +37,11 @@ import {
   chooseSlide,
   composeNotes,
   cutOutOfRendering,
+  fallbackWithoutPixels,
   findDecorations,
   planPage,
 } from '../server/services/deck-slides-import.js';
+import { extractPptxPages } from '../server/utils/pptx-extract/index.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { escapeMarkdownText, markdownToSafeHtml } from '../shared/markdown.js';
 import { minimalPdf } from './helpers/minimal-pdf.js';
@@ -513,6 +516,7 @@ test('only the pages that fall back are rendered; each is an image slide with it
 test('the error codes are a closed set, and a page the rasteriser skipped is one of them', async () => {
   assert.deepEqual([...REPORT_ERROR_CODES].sort(), [
     'not-rendered',
+    'unsupported-image',
     'upload-failed',
   ]);
   // The rasteriser returns page 1 only: page 2 fell back and has no image,
@@ -542,42 +546,6 @@ test('the error codes are a closed set, and a page the rasteriser skipped is one
   }
 });
 
-test(
-  'the notes of the PowerPoint file come first, the page text after them',
-  { skip: PptxGenJS ? false : 'pptxgenjs is not installed' },
-  async () => {
-    const pptx = new PptxGenJS();
-    ['Open with a story', 'Point at the chart', 'Three plans'].forEach(
-      (notes, i) => {
-        const slide = pptx.addSlide();
-        slide.addText(`Slide ${i + 1}`, { x: 1, y: 1 });
-        slide.addNotes(notes);
-      },
-    );
-    const pptxBytes = Buffer.from(
-      await pptx.write({ outputType: 'nodebuffer' }),
-    );
-    const { render } = stubRenderer();
-    const { slides } = await buildDeckSlides({
-      files: { pdfBytes: handPdf, pptxBytes, filename: 'hand.pdf' },
-      theme: null,
-      lang: 'en',
-      slideTypes: SLIDE_TYPES,
-      signal: new AbortController().signal,
-      onProgress: () => {},
-      renderPages: render,
-    });
-    assert.deepEqual(
-      slides.map((s) => s.notes),
-      [
-        'Open with a story',
-        'Point at the chart\n\nChart of growth\nRevenue rose in every quarter',
-        'Three plans',
-      ],
-    );
-  },
-);
-
 test('text the slide does not show goes to its notes, under its own heading', async () => {
   const { slides, report } = await buildDeckSlides({
     files: { pdfBytes: fixture, pptxBytes: null, filename: 'deck.pdf' },
@@ -596,7 +564,234 @@ test('text the slide does not show goes to its notes, under its own heading', as
   assert.equal(report.slidesConverted, 4);
 });
 
-test('a missing or unreadable PDF is refused, and an abort stops the reading', async () => {
+// ---------------------------------------------------------------------------
+// The PowerPoint file as source (B829)
+// ---------------------------------------------------------------------------
+
+const keynotePdf = await fs.readFile(
+  new URL('./fixtures/slide-deck-keynote.pdf', import.meta.url),
+);
+const keynotePptx = await fs.readFile(
+  new URL('./fixtures/slide-deck-keynote.pptx', import.meta.url),
+);
+const generatedPptx = await fs.readFile(
+  new URL('./fixtures/slide-deck.pptx', import.meta.url),
+);
+
+const pptxImport = (files, renderPages) =>
+  buildDeckSlides({
+    files: { filename: 'deck.pdf', pptxFilename: 'deck.pptx', ...files },
+    theme: null,
+    lang: 'en',
+    slideTypes: SLIDE_TYPES,
+    signal: new AbortController().signal,
+    onProgress: () => {},
+    renderPages,
+  });
+
+test('with both files the PowerPoint file gives the slides, the PDF the pixels of the pages that fall back', async () => {
+  const { render, calls } = stubRenderer();
+  const { slides, report } = await pptxImport(
+    { pdfBytes: keynotePdf, pptxBytes: keynotePptx },
+    render,
+  );
+  assert.equal(report.source, 'both');
+  // The headings are the PowerPoint file's placeholders, not lines read back
+  // from the PDF.
+  const { pages } = await extractPptxPages(keynotePptx);
+  assert.deepEqual(
+    slides.map((s) => [s.type, s.content.title ?? null]),
+    pages.map((p, i) =>
+      i === 4 ? ['image-slide', ''] : [slides[i].type, p.heading],
+    ),
+  );
+  // Only the chart page is rendered, from the PDF.
+  assert.deepEqual(calls, [[5]]);
+  assert.deepEqual(
+    report.pages.map(({ page, reason }) => [page, reason ?? null]),
+    [1, 2, 3, 4, 5, 6].map((page) => [page, page === 5 ? 'drawing' : null]),
+  );
+});
+
+test('a PowerPoint file alone: no page is rendered, a page that falls back keeps its text', async () => {
+  const { slides, report } = await pptxImport(
+    { pdfBytes: null, pptxBytes: generatedPptx },
+    () => assert.fail('a PowerPoint file alone has no pixels to render'),
+  );
+  assert.equal(report.source, 'pptx');
+  assert.deepEqual(
+    report.pages.map(({ page, type, reason }) => [page, type, reason ?? null]),
+    [
+      [1, 'title-slide', null],
+      [2, 'list-slide', null],
+      [3, 'image-text-slide', null],
+      [4, 'table-slide', null],
+      // A heading beside a chart, and no other text: the heading stays, as a
+      // section title (a text slide asks for a body the page does not have).
+      [5, 'chapter-title-slide', 'drawing'],
+      [6, 'chapter-title-slide', null],
+    ],
+  );
+  assert.equal(slides[4].content.title, 'Growth per quarter');
+  assert.equal(report.slidesConverted, 5);
+});
+
+test('without pixels a fallback page is a text slide, a section title, or an empty image slide with its text in the notes', () => {
+  const ctx = { slideTypes: SLIDE_TYPES, lang: 'en' };
+  const withText = model({
+    heading: 'Chart of growth',
+    blocks: [para('Revenue rose in every quarter')],
+  });
+  const text = fallbackWithoutPixels(withText, ctx);
+  assert.equal(text.textOnSlide, true);
+  assert.equal(text.slide.type, 'content-slide');
+  assertInOrder(slideText(text.slide), keptLines(withText), 'text slide');
+
+  const headingOnly = model({ heading: 'Chart of growth' });
+  const title = fallbackWithoutPixels(headingOnly, ctx);
+  assert.equal(title.textOnSlide, true);
+  assert.deepEqual(
+    [title.slide.type, title.slide.content.title],
+    ['chapter-title-slide', 'Chart of growth'],
+  );
+
+  const noHeading = model({ blocks: [para('A loose remark')] });
+  const empty = fallbackWithoutPixels(noHeading, ctx);
+  assert.equal(empty.textOnSlide, false);
+  assert.deepEqual(
+    [empty.slide.type, empty.slide.content.image],
+    ['image-slide', ''],
+  );
+});
+
+test('every kept line of a PowerPoint source lands letter for letter, and in order, on its slide', async () => {
+  const ctx = { slideTypes: SLIDE_TYPES, lang: 'en', pagePixels: false };
+  for (const [name, bytes] of [
+    ['slide-deck.pptx', generatedPptx],
+    ['slide-deck-keynote.pptx', keynotePptx],
+  ]) {
+    const { pages } = await extractPptxPages(bytes);
+    for (const page of pages) {
+      const plan = planPage(page, ctx);
+      const slide = plan.slide ?? fallbackWithoutPixels(page, ctx).slide;
+      const lines = keptLines(page);
+      assertInOrder(slideText(slide), lines, `${name} page ${page.page}`);
+    }
+  }
+});
+
+test(
+  'the speaker notes of the PowerPoint file come first in every slide',
+  { skip: PptxGenJS ? false : 'pptxgenjs is not installed' },
+  async () => {
+    const pptx = new PptxGenJS();
+    const speaker = ['Open with a story', 'Point at the plan', 'Close'];
+    speaker.forEach((notes, i) => {
+      const slide = pptx.addSlide();
+      slide.addText(`Slide ${i + 1}`, { x: 1, y: 1, fontSize: 32 });
+      slide.addText('One line of body text', { x: 1, y: 3, fontSize: 16 });
+      slide.addNotes(notes);
+    });
+    const pptxBytes = Buffer.from(
+      await pptx.write({ outputType: 'nodebuffer' }),
+    );
+    const { slides } = await pptxImport({ pdfBytes: null, pptxBytes }, () =>
+      assert.fail('nothing is rendered'),
+    );
+    assert.equal(slides.length, 3);
+    slides.forEach((slide, i) => {
+      assert.ok(
+        slide.notes.startsWith(speaker[i]),
+        `slide ${i + 1} notes: ${JSON.stringify(slide.notes)}`,
+      );
+    });
+  },
+);
+
+test('a picture the PowerPoint file holds as EMF is named in the report', async () => {
+  const zip = await JSZip.loadAsync(generatedPptx);
+  const part = 'ppt/slides/slide3.xml';
+  const xml = await zip.file(part).async('string');
+  const pic = /<p:pic>[\s\S]*?<\/p:pic>/.exec(xml)[0];
+  zip.file(
+    part,
+    xml.replace(
+      pic,
+      pic +
+        pic
+          .replace(/descr="[^"]*"/, 'descr="Company logo"')
+          .replace(/r:embed="[^"]*"/, 'r:embed="rIdEmf"'),
+    ),
+  );
+  const rels = 'ppt/slides/_rels/slide3.xml.rels';
+  zip.file(
+    rels,
+    (await zip.file(rels).async('string')).replace(
+      '</Relationships>',
+      '<Relationship Id="rIdEmf" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/logo.emf"/></Relationships>',
+    ),
+  );
+  zip.file('ppt/media/logo.emf', Buffer.from('not really a metafile'));
+  const { report } = await pptxImport(
+    {
+      pdfBytes: null,
+      pptxBytes: await zip.generateAsync({ type: 'nodebuffer' }),
+    },
+    () => assert.fail('nothing is rendered'),
+  );
+  assert.deepEqual(
+    report.errors.filter((e) => e.code === 'unsupported-image'),
+    [{ page: 3, code: 'unsupported-image' }],
+  );
+});
+
+test('an EMF picture on a page shown as its rendering from the PDF is not reported missing', async () => {
+  const zip = await JSZip.loadAsync(keynotePptx);
+  // Page 5, the chart page, falls back to its rendering with both files.
+  const part = 'ppt/slides/slide5.xml';
+  const pic =
+    '<p:pic><p:nvPicPr><p:cNvPr id="300" name="Logo" descr="Company logo"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>' +
+    '<p:blipFill><a:blip r:embed="rIdEmf"/></p:blipFill>' +
+    '<p:spPr><a:xfrm><a:off x="100000" y="100000"/><a:ext cx="1000000" cy="1000000"/></a:xfrm></p:spPr></p:pic>';
+  zip.file(
+    part,
+    (await zip.file(part).async('string')).replace(
+      '</p:spTree>',
+      `${pic}</p:spTree>`,
+    ),
+  );
+  const rels = 'ppt/slides/_rels/slide5.xml.rels';
+  zip.file(
+    rels,
+    (await zip.file(rels).async('string')).replace(
+      '</Relationships>',
+      '<Relationship Id="rIdEmf" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/logo.emf"/></Relationships>',
+    ),
+  );
+  zip.file('ppt/media/logo.emf', Buffer.from('not really a metafile'));
+  const pptxBytes = await zip.generateAsync({ type: 'nodebuffer' });
+  const { pages } = await extractPptxPages(pptxBytes);
+  assert.ok(
+    pages[4].dropped.some((d) => d.reason === 'unsupported-image'),
+    'the fixture drops the EMF picture',
+  );
+
+  const { render } = stubRenderer();
+  const both = await pptxImport({ pdfBytes: keynotePdf, pptxBytes }, render);
+  assert.deepEqual(
+    both.report.errors.filter((e) => e.code === 'unsupported-image'),
+    [],
+  );
+  const alone = await pptxImport({ pdfBytes: null, pptxBytes }, () =>
+    assert.fail('nothing is rendered'),
+  );
+  assert.deepEqual(
+    alone.report.errors.filter((e) => e.code === 'unsupported-image'),
+    [{ page: 5, code: 'unsupported-image' }],
+  );
+});
+
+test('neither file, or an unreadable one, is refused, and an abort stops the reading', async () => {
   const base = {
     theme: null,
     lang: 'en',
@@ -606,7 +801,7 @@ test('a missing or unreadable PDF is refused, and an abort stops the reading', a
   };
   await assert.rejects(
     buildDeckSlides({ ...base, files: { pdfBytes: null, pptxBytes: null } }),
-    { message: 'A PDF of the deck is required' },
+    { message: 'A PDF or a PowerPoint file is required' },
   );
   await assert.rejects(
     buildDeckSlides({
@@ -614,6 +809,20 @@ test('a missing or unreadable PDF is refused, and an abort stops the reading', a
       files: { pdfBytes: Buffer.from('%PDF-1.4 broken'), pptxBytes: null },
     }),
     { message: 'The PDF could not be read' },
+  );
+  await assert.rejects(
+    buildDeckSlides({
+      ...base,
+      files: { pdfBytes: null, pptxBytes: Buffer.from('PK\x03\x04rest') },
+    }),
+    { message: 'The PowerPoint file could not be read' },
+  );
+  await assert.rejects(
+    buildDeckSlides({
+      ...base,
+      files: { pdfBytes: fixture, pptxBytes: keynotePptx },
+    }),
+    { message: /4 pages.*6 slides/ },
   );
   const aborted = new AbortController();
   aborted.abort();

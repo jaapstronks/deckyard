@@ -149,7 +149,6 @@
   "list.creationView.importPptxPdf.help": "The speaker notes from the .pptx come along. Export the PDF from PowerPoint or Keynote.",
   "list.creationView.importPptxPdf.images": "As images",
   "list.creationView.importPptxPdf.imagesHelp": "Each page becomes an image slide that looks exactly like the original; its text cannot be edited.",
-  "list.creationView.importPptxPdf.pdfRequired": "Editable slides are read from the PDF. Add the PDF of the deck.",
   "list.creationView.importPptxPdf.slides": "As editable slides",
   "list.creationView.importPptxPdf.slidesHelp": "Each page becomes a slide with the same text and its own images, which you can edit; a page that fits no slide type, such as a chart, becomes an image of itself.",
   "list.creationView.library.collectionCount.many": "{count} slides",

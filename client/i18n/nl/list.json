@@ -149,7 +149,6 @@
   "list.creationView.importPptxPdf.help": "De sprekersnotities uit de .pptx komen mee. Exporteer de PDF uit PowerPoint of Keynote.",
   "list.creationView.importPptxPdf.images": "Als beelden",
   "list.creationView.importPptxPdf.imagesHelp": "Elke pagina wordt een beeldslide die er precies zo uitziet als het origineel; de tekst is niet bewerkbaar.",
-  "list.creationView.importPptxPdf.pdfRequired": "Bewerkbare slides worden uit de PDF gelezen. Voeg de PDF van het deck toe.",
   "list.creationView.importPptxPdf.slides": "Als bewerkbare slides",
   "list.creationView.importPptxPdf.slidesHelp": "Elke pagina wordt een slide met dezelfde tekst en de eigen beelden, die je kunt bewerken; een pagina die in geen slidetype past, zoals een grafiek, wordt een beeld van zichzelf.",
   "list.creationView.library.collectionCount.many": "{count} slides",

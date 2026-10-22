@@ -3,8 +3,10 @@
  * deck of editable slides, next to `import/images` (every page a picture).
  * Same body, same refusals of the files, its own endpoint (D235); the
  * `complete` event carries the deck and the report. Cancelling writes
- * nothing. Driven against the in-memory database double; the fixture maps
- * every page, so no test here renders a page in a browser.
+ * nothing. Three combinations of files (B829): a PDF alone, a PowerPoint
+ * file alone (the structure without pixels), and both (the PowerPoint file
+ * the structure, the PDF the pixels). Driven against the in-memory database
+ * double; a stub rasteriser stands in for the browser.
  *
  * Run with: node --test tests/import-slides-route.test.js
  */
@@ -15,6 +17,7 @@ import { EventEmitter } from 'node:events';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import sharp from 'sharp';
 import { seedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
@@ -42,6 +45,15 @@ const { handlePresentationsImportSlides } =
 
 const fixture = await fs.readFile(
   new URL('./fixtures/slide-deck-tagged.pdf', import.meta.url),
+);
+const pptxFixture = await fs.readFile(
+  new URL('./fixtures/slide-deck.pptx', import.meta.url),
+);
+const keynotePdf = await fs.readFile(
+  new URL('./fixtures/slide-deck-keynote.pdf', import.meta.url),
+);
+const keynotePptx = await fs.readFile(
+  new URL('./fixtures/slide-deck-keynote.pptx', import.meta.url),
 );
 const PPTX_MIME =
   'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -139,14 +151,22 @@ const pdfBody = (pdf) => ({
   dataUrl: `data:application/pdf;base64,${pdf.toString('base64')}`,
   filename: 'results.pdf',
 });
+const pptxBody = (pptx) => ({
+  pptxDataUrl: `data:${PPTX_MIME};base64,${pptx.toString('base64')}`,
+  pptxFilename: 'results.pptx',
+});
 
-async function run(body, res = makeSseRes()) {
+/** A rasteriser that renders nothing, unless a test hands it a stub. */
+const noRender = () => assert.fail('no page should be rendered');
+
+async function run(body, res = makeSseRes(), renderPages = noRender) {
   await handlePresentationsImportSlides({
     repoRoot: process.cwd(),
     storageScope: scope(),
     req: makeReq({ lang: 'en', ...body }),
     res,
     authedUser: OWNER,
+    renderPages,
   });
   return res;
 }
@@ -184,11 +204,12 @@ test('a slide PDF becomes a new deck of editable slides, with the report', async
   );
   assert.deepEqual(
     {
+      source: report.source,
       slidesExtracted: report.slidesExtracted,
       slidesConverted: report.slidesConverted,
       errors: report.errors,
     },
-    { slidesExtracted: 4, slidesConverted: 4, errors: [] },
+    { source: 'pdf', slidesExtracted: 4, slidesConverted: 4, errors: [] },
   );
   assert.deepEqual(
     report.pages.map((p) => [p.page, p.type, p.reason ?? null, p.dropped]),
@@ -237,16 +258,81 @@ test('files that are not what their field says are refused like import/images, b
   }
 });
 
-test('a PowerPoint file alone is refused: editable slides are read from the PDF', async () => {
+test('a PowerPoint file alone becomes a deck of editable slides; the chart page keeps its heading', async () => {
   seed();
-  const zip = `data:${PPTX_MIME};base64,${Buffer.from('PK\x03\x04rest').toString('base64')}`;
-  const res = await run({ pptxDataUrl: zip, pptxFilename: 'talk.pptx' });
-  assert.equal(res.statusCode, 400);
-  assert.equal(
-    JSON.parse(res.chunks.join('')).message,
-    'A PDF of the deck is required',
+  const res = await run(pptxBody(pptxFixture));
+  const done = lastEvent(res);
+  assert.equal(done.event, 'complete', res.chunks.join(''));
+  const { presentation, report } = done.data;
+  assert.equal(presentation.title, 'results');
+  assert.deepEqual(
+    presentation.slides.map((s) => s.type),
+    [
+      'title-slide',
+      'list-slide',
+      'image-text-slide',
+      'table-slide',
+      'chapter-title-slide',
+      'chapter-title-slide',
+    ],
   );
-  assert.equal(deckCount(), 0);
+  // The picture comes out of the PowerPoint file itself.
+  assert.match(presentation.slides[2].content.image, /\.png$/);
+  assert.equal(presentation.slides[4].content.title, 'Growth per quarter');
+  assert.equal(report.source, 'pptx');
+  assert.deepEqual(
+    report.pages.filter((p) => p.reason).map((p) => [p.page, p.reason]),
+    [[5, 'drawing']],
+  );
+  assert.equal(report.slidesConverted, 5);
+  assert.deepEqual(report.errors, []);
+  assert.equal(deckCount(), 1);
+});
+
+test('a PDF and a PowerPoint file: the text from the PowerPoint file, the fallback image from the PDF', async () => {
+  seed();
+  const calls = [];
+  const render = async ({ buffer, pages }) => {
+    calls.push({ magic: buffer.subarray(0, 5).toString(), pages });
+    const png = await sharp({
+      create: { width: 16, height: 9, channels: 3, background: '#336699' },
+    })
+      .png()
+      .toBuffer();
+    return pages.map((page) => ({ page, buffer: png }));
+  };
+  const res = await run(
+    { ...pdfBody(keynotePdf), ...pptxBody(keynotePptx) },
+    makeSseRes(),
+    render,
+  );
+  const done = lastEvent(res);
+  assert.equal(done.event, 'complete', res.chunks.join(''));
+  const { presentation, report } = done.data;
+  assert.equal(report.source, 'both');
+  // The headings are the PowerPoint file's title placeholders.
+  assert.deepEqual(
+    presentation.slides.map((s) => s.content.title ?? ''),
+    [
+      'Voorbeeldpresentatie',
+      'Drie punten',
+      'Een kleine tabel',
+      'Beeld met tekst',
+      '',
+      'Hoofdstuk twee',
+    ],
+  );
+  // The chart page fell back and is the PDF's rendering of that page.
+  assert.deepEqual(calls, [{ magic: '%PDF-', pages: [5] }]);
+  const chart = presentation.slides[4];
+  assert.equal(chart.type, 'image-slide');
+  assert.match(chart.content.image, /-page-005-[0-9a-f-]+\.png$/);
+  assert.match(chart.notes, /Groei per kwartaal/);
+  assert.deepEqual(
+    report.pages.filter((p) => p.reason).map((p) => [p.page, p.reason]),
+    [[5, 'drawing']],
+  );
+  assert.equal(deckCount(), 1);
 });
 
 test('an unknown theme is refused before any work, and no deck is created', async () => {
