@@ -32,17 +32,46 @@ export function createCommentsApi({
     ? `/api/share/${encodeURIComponent(shareToken)}/comments`
     : deckBase;
 
+  /**
+   * One page of the deck's comments (the list-page contract, D358): pass the
+   * previous page's `nextCursor` as `cursor`, with the same filters, for the
+   * next one.
+   * @param {{slideId?: string, status?: string, commentType?: string, limit?: number, cursor?: string|null}} [opts]
+   * @returns {Promise<{comments: Object[], nextCursor: string|null, openCount: number}>}
+   */
   const listComments = async (opts = {}) => {
     const params = new URLSearchParams();
     if (opts.slideId) params.set('slideId', opts.slideId);
     if (opts.status) params.set('status', opts.status);
     if (opts.commentType) params.set('commentType', opts.commentType);
+    if (opts.limit) params.set('limit', String(opts.limit));
+    if (opts.cursor) params.set('cursor', opts.cursor);
     const qs = params.toString() ? `?${params.toString()}` : '';
     const resp = await api(`${base}${qs}`);
     return {
       comments: resp?.comments || [],
+      nextCursor: resp?.nextCursor || null,
       openCount: resp?.openCount || 0,
     };
+  };
+
+  /**
+   * Every comment thread on one slide, read page by page. For the pins on a
+   * slide: a pin left out is a comment that seems not to exist, so they are
+   * the whole set, and one slide's threads are few. A list a person reads
+   * goes through {@link listComments} and a "Load more" instead.
+   * @param {string} slideId
+   * @returns {Promise<Object[]>}
+   */
+  const listSlideComments = async (slideId) => {
+    const all = [];
+    let cursor = null;
+    do {
+      const page = await listComments({ slideId, limit: 100, cursor });
+      all.push(...page.comments);
+      cursor = page.nextCursor;
+    } while (cursor);
+    return all;
   };
 
   const createComment = async ({
@@ -138,6 +167,7 @@ export function createCommentsApi({
 
   return {
     listComments,
+    listSlideComments,
     createComment,
     getComment,
     updateComment,

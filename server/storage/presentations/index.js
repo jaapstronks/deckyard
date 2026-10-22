@@ -1513,6 +1513,7 @@ export const __store = {
 };
 
 export {
+  deckListedCondition,
   deckReadableExpression,
   listDecks,
   listPresentations,
@@ -1540,7 +1541,7 @@ export {
   getCommentAuthorEmail,
   getThreadParticipants,
   listComments,
-  listRecentCommentsOnDecks,
+  listRecentComments,
   updateComment,
   deleteComment,
   reopenComment,

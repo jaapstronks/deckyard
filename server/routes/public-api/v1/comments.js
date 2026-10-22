@@ -91,17 +91,18 @@ function decorateComments(comments, pres, slideTypes) {
 // ============================================================
 
 /**
- * GET /api/v1/presentations/:id/comments - List comments.
- * Query: status (open|resolved|dismissed|all), slideId, since (ISO date). The
- * reading rule and the filters are `services/comments.js`; a refusal is
- * thrown and `withV1ErrorHandler` renders it.
+ * GET /api/v1/presentations/:id/comments - One page of comments.
+ * Query: status (open|resolved|dismissed|all), slideId, since (ISO date), and
+ * the page: limit, cursor (D358). The reading rule, the filters and the page
+ * are `services/comments.js`; a refusal is thrown and `withV1ErrorHandler`
+ * renders it.
  */
 async function handleListComments(ctx, presentationId) {
   const { url } = ctx;
 
   if (!requirePermission(ctx, 'comments:read')) return true;
 
-  const { comments, presentation, since } = await listComments(
+  const { comments, nextCursor, presentation, since } = await listComments(
     ctx.storageScope,
     { actor: ctx.authedUser },
     {
@@ -110,6 +111,7 @@ async function handleListComments(ctx, presentationId) {
       slideId: url.searchParams.get('slideId') || null,
       since: url.searchParams.get('since') || null,
     },
+    url.searchParams,
   );
 
   await apiSuccess(ctx, {
@@ -120,7 +122,7 @@ async function handleListComments(ctx, presentationId) {
       presentation,
       await buildMergedSlideTypes(ctx.storageScope),
     ),
-    total: comments.length,
+    nextCursor,
     since,
   });
   return true;

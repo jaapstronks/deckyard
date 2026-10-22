@@ -2033,8 +2033,14 @@ paths:
         - Comments
       summary: List comments
       description: |
-        Returns the comments on a presentation (newest first) with nested
-        replies. Each comment carries current slide context (`slide`), the
+        Returns one page of the comments on a presentation, newest first
+        (`createdAt desc`, then `id desc`), with nested replies. A page counts
+        top-level comments, each with all its replies. Pass `nextCursor` back
+        as `cursor`, with the same filters, for the next page;
+        `nextCursor: null` is the end of the list. Every page but the last is
+        full. There is no total and no `offset`: a request naming `offset` is
+        refused with 400 `invalid` and `details: { field: offset, use: cursor }`.
+        Each comment carries current slide context (`slide`), the
         slide snapshot captured when the comment was created
         (`slideSnapshot`, `null` for comments that predate snapshots) and an
         `editUrl` deep link anchored to the commented slide.
@@ -2046,6 +2052,26 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: limit
+          in: query
+          description: >-
+            Top-level comments per page, 1 to 100. A value outside that range
+            is refused with 400 `invalid` and `details.field: limit`, not
+            clamped.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          description: >-
+            The `nextCursor` of the previous page. A cursor that does not
+            decode, that belongs to another presentation or that was made with
+            other filters is refused with 400 `invalid` and
+            `details.field: cursor`.
+          schema:
+            type: string
         - name: status
           in: query
           description: Filter by status (default all)
@@ -2071,6 +2097,7 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [comments, nextCursor]
                 properties:
                   presentationId:
                     type: string
@@ -2081,17 +2108,22 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Comment'
-                  total:
-                    type: integer
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: >-
+                      Opaque position after the last comment of this page;
+                      `null` when there are no more.
                   since:
                     type: string
                     format: date-time
                     nullable: true
         '400':
           description: |
-            A `status` outside its values or a `since` that is not a date is
-            refused with 400 `invalid`, `details.field` naming the parameter
-            (the same refusal the app and MCP give).
+            A `status` outside its values, a `since` that is not a date, a
+            `limit` out of range, an `offset` or a foreign `cursor` is refused
+            with 400 `invalid`, `details.field` naming the parameter (the same
+            refusal the app and MCP give).
           content:
             application/json:
               schema:

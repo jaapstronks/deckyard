@@ -329,8 +329,9 @@ export function createPreviewLightbox({
       try {
         const slideId = getSelectedSlideId?.();
         if (slideId) {
-          const result = await commentsApi.listComments({ slideId });
-          commentMarkers.setComments(result.comments || []);
+          commentMarkers.setComments(
+            await commentsApi.listSlideComments(slideId),
+          );
         }
       } catch (err) {
         console.error('Failed to refresh markers:', err);

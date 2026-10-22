@@ -86,7 +86,7 @@ export function createViewerPreview({
     let comments = [];
     if (slideId) {
       try {
-        comments = (await commentsApi.listComments({ slideId })).comments || [];
+        comments = await commentsApi.listSlideComments(slideId);
       } catch (err) {
         // Comments off (a sandbox example deck) or unreachable: no pins.
         debugLog('[viewer] slide comments for pins unavailable', err);

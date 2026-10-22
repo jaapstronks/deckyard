@@ -174,8 +174,9 @@ export function createPreviewPanel({
     try {
       const slideId = getSelectedSlideId?.();
       if (slideId) {
-        const result = await commentsApi.listComments({ slideId });
-        commentMarkers.setComments(result.comments || []);
+        commentMarkers.setComments(
+          await commentsApi.listSlideComments(slideId),
+        );
       } else {
         commentMarkers.setComments([]);
       }

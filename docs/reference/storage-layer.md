@@ -207,8 +207,7 @@ that one has no id beside it yet.
     an admin or the auth-off operator sees all). `tests/pg/deck-list-page.pgtest.js`
     and `tests/pg/trash-list-page.pgtest.js` hold each pair equal. Without
     `limit` the deck query answers the whole list, which search (a result
-    set in relevance order) and the comment service's deck set (B824) still
-    read.
+    set in relevance order) still reads.
   - The libraries (B822), all through `server/services/library-lists.js`:
     the slide-library shelves and their trash (`listLibraryShelf` in
     `server/storage/slide-library.js`: `GET /api/slide-library/{personal,organization}`
@@ -236,7 +235,24 @@ that one has no id beside it yet.
     still opens by id). `tests/pg/activity-list-page.pgtest.js` holds it equal
     to `loadPresentationForActor`. The unread badge
     (`GET /api/activity/unread-count`) stays its own count.
-  - The other lists follow one by one (B824, B825); until a list has moved,
+  - The comments (B824), through `listComments` and `listRecentComments` in
+    `server/services/comments.js`, ordered `(created_at desc, id desc)`. A
+    deck's comments (`listComments` in
+    `server/storage/presentations/comments.js`: the internal
+    `GET /api/presentations/:id/comments`, the guest's
+    `GET /api/share/:token/comments`, v1 and MCP `list_comments`) are paged
+    by thread: a page holds top-level comments, each with all its replies
+    (with `includeReplies`, every comment is a row). Each surface keeps its
+    own gate (deck reader, or the guest of a link to that deck); the deck is
+    part of the cursor's fingerprint. The recent comments across decks
+    (`listRecentComments`, MCP `list_recent_comments`) join the deck and
+    keep a comment only when that deck is on the reader's list under
+    `ownership` (`deckListedCondition` in `deck-list.js`, the same terms as
+    `listDecks`), leaving out organization-visible decks while sharing is off
+    (`presentationCommentsEnabled`). `tests/pg/comment-list-page.pgtest.js`
+    holds it equal to the comments on `listDecks`. The open count beside a
+    deck's list stays its own count.
+  - The other lists follow one by one (B825); until a list has moved,
     it is read whole (`listPresentationVersions`, `getPublishedIndex`) and
     the routes that page it slice in memory over `parsePaginationParams`,
     which goes once the last list has moved. Those whole reads carry no row

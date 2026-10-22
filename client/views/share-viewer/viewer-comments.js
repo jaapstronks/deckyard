@@ -13,6 +13,7 @@ import {
 } from '../comments/index.js';
 import { h } from '../../lib/dom/index.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
+import { createListPager } from '../../lib/dom/list-pager.js';
 import { icon } from '../../lib/dom/icons.js';
 
 /**
@@ -109,6 +110,26 @@ export function createShareViewerCommentsSection({
     loadComments();
   }
 
+  // Read a page at a time (D358): the first page on every load, the next
+  // behind "Load more".
+  const pager = createListPager({
+    fetchPage: async (opts, cursor) => {
+      const result = await commentsApi.listComments({ ...opts, cursor });
+      return { items: result.comments || [], nextCursor: result.nextCursor };
+    },
+    onPage: (threads, { first }) => {
+      if (first) {
+        comments = threads;
+        renderComments();
+      } else {
+        comments = [...comments, ...threads];
+        for (const comment of threads) {
+          list.insertBefore(renderCommentThread(comment), pager.el);
+        }
+      }
+    },
+  });
+
   async function loadComments() {
     try {
       const opts = {};
@@ -116,9 +137,7 @@ export function createShareViewerCommentsSection({
         const slideId = getCurrentSlideId?.();
         if (slideId) opts.slideId = slideId;
       }
-      const result = await commentsApi.listComments(opts);
-      comments = result.comments || [];
-      renderComments();
+      await pager.load(opts);
     } catch {
       // A list that did not load is a state of the list, not a refusal: the
       // message sits where the comments would have been, politely.
@@ -153,6 +172,7 @@ export function createShareViewerCommentsSection({
       const threadEl = renderCommentThread(comment);
       list.append(threadEl);
     }
+    list.append(pager.el);
   }
 
   function renderCommentThread(comment) {

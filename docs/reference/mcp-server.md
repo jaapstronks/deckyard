@@ -59,8 +59,8 @@ Add to your Cursor MCP settings:
 | `get_presentation`     | Get full deck data (all slides)                                                                                                                       |
 | `get_presentation_url` | Get edit and present URLs for sharing                                                                                                                 |
 | `list_themes`          | List available themes with brand colors                                                                                                               |
-| `list_comments`        | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped                                      |
-| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date (DB store only)                                                           |
+| `list_comments`        | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped; one page per call (`cursor`)        |
+| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date; one page per call: pass `nextCursor` back as `cursor`                    |
 
 ### Creating
 

@@ -198,7 +198,7 @@ test('read-only markers show pins but never enter add mode', () => {
 function makePreview({ support } = {}) {
   const posted = [];
   const commentsApi = {
-    listComments: async () => ({ comments: [] }),
+    listSlideComments: async () => [],
     createComment: async (c) => posted.push(c),
   };
   const panel = createPreviewPanel({
@@ -293,9 +293,9 @@ test('the in-app viewer shows the slide’s pins read-only', async () => {
     },
     getSelectedSlideId: () => 's1',
     commentsApi: {
-      listComments: async (opts) => {
-        asked.push(opts);
-        return { comments: [ANCHORED, SLIDE_LEVEL] };
+      listSlideComments: async (slideId) => {
+        asked.push({ slideId });
+        return [ANCHORED, SLIDE_LEVEL];
       },
     },
   });

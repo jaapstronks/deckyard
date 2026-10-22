@@ -258,7 +258,7 @@ export async function renderShareViewer(root, token) {
     const request = ++markersRequest;
     let comments = [];
     try {
-      comments = (await markersApi.listComments({ slideId })).comments || [];
+      comments = await markersApi.listSlideComments(slideId);
     } catch (err) {
       // Unreachable or refused: no pins, the slide still shows.
       debugLog('[share-viewer] slide comments for pins unavailable', err);
