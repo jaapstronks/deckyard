@@ -25,6 +25,11 @@
  * Only options the types declare, never a free colour or a font: the theme
  * stays the user's choice.
  *
+ * Mixed pages (B831): a tagged table's own paths do not make a drawing, a
+ * drawing that stands apart from the text is cut out of the rendered page
+ * beside it, and a small picture in the same place on three pages or more
+ * is decoration, left out and named once in the report.
+ *
  * The speaker notes of a PowerPoint file beside the PDF come first in every
  * slide's notes, paired by slide order like the import as images
  * (`deck-images-import.js`, whose file reading and pairing this module
@@ -32,11 +37,20 @@
  * interprets.
  */
 
+import { createHash } from 'node:crypto';
+import sharp from 'sharp';
+
 import { uploadImageBuffer } from '../media/upload-buffer.js';
 import { pdfToImages } from '../render/pdf-to-images.js';
 import {
   extractPdfPages,
   blockText,
+  FOOTNOTE_ZONE,
+  bodyLineTest,
+  boxArea,
+  lineBox,
+  liesWithin,
+  overlapArea,
   pageText,
 } from '../utils/pdf-extract/index.js';
 import { createLogger } from '../utils/logger.js';
@@ -96,8 +110,46 @@ export const REPORT_ERROR_CODES = Object.freeze([
   'not-rendered',
 ]);
 
-/** More vector paths than this beside the text is a drawing (brief § Mappingtabel). */
+/**
+ * More vector paths than this beside the text is a drawing (brief
+ * § Mappingtabel). The paths a tagged table owns (`drawing.tablePaths`) do
+ * not count: its borders and cell fills are the table (B831).
+ */
 export const DRAWING_MIN_PATHS = 60;
+
+/**
+ * A drawing cut out of the rendered page, beside the text, covers this share
+ * of the page at least and at most (B831). Measured on the 17 `drawing`
+ * pages of Philips Q4 2024: the two whose drawing holds no body line, p13
+ * and p24, cover 63% and 33%; a box under 8% is a stray rule or a logo, one
+ * over 75% leaves no room for the text.
+ */
+export const CROP_MIN_COVER = 0.08;
+export const CROP_MAX_COVER = 0.75;
+
+/**
+ * A block lies in the drawing when at least this share of its box does: its
+ * text is a label of the drawing, shown in the cut-out and kept in the
+ * notes. A block that only touches the drawing keeps the page whole.
+ */
+const CROP_BLOCK_INSIDE = 0.5;
+
+/** The blocks that can be a drawing's labels; a list or a table never is. */
+const LABEL_KINDS = new Set(['para', 'caption']);
+
+/**
+ * The same picture in the same place on this many pages, or more, is
+ * decoration (a logo, a corner mark) when it is also this small: left out,
+ * named once in the report (B831). Measured: the repeated pictures of both
+ * decks are content (Philips one photo at 50% on three pages, CIIIC five
+ * photos at 14% on four), so without the size bound the rule would take
+ * them; at 3% it fires on neither.
+ */
+export const DECORATION_MIN_PAGES = 3;
+export const DECORATION_MAX_COVER = 0.03;
+
+/** Two boxes of a repeated picture are one place within this many pt. */
+const DECORATION_BOX_TOLERANCE = 2;
 
 /** A picture that covers this much of the title page is its background. */
 export const TITLE_BACKGROUND_MIN_COVER = 0.6;
@@ -180,9 +232,17 @@ const NOT_ON_SLIDE = {
  */
 
 /**
- * The plan for one page: the slide as `newSlide` composed it, with the page
- * images to upload into which content key, or the reason it falls back.
- * @typedef {{ slide: object, uploads: Array<{ key: string, index: number }> } | { reason: string }} PagePlan
+ * A picture a slide takes into content key `key`: the page's embedded image
+ * at `index`, or `crop`, the box of the page (in page units) cut out of its
+ * rendering (B831).
+ * @typedef {{ key: string, index: number } | { key: string, crop: import('../utils/pdf-extract/boxes.js').Box }} PageUpload
+ */
+
+/**
+ * The plan for one page: the slide as `newSlide` composed it, with the
+ * pictures to upload into which content key and the text of the page it
+ * leaves for the notes, or the reason it falls back.
+ * @typedef {{ slide: object, uploads: PageUpload[], notOnSlide: string[] } | { reason: string }} PagePlan
  */
 
 /**
@@ -201,14 +261,21 @@ const NOT_ON_SLIDE = {
  * @param {object} [ctx.theme]
  * @param {string} [ctx.lang]
  * @param {string} [ctx.presentationId]
+ * @param {boolean} [ctx.pagePixels=true] - see {@link chooseSlide}
  * @returns {PagePlan}
  */
 export function planPage(page, ctx) {
-  const choice = chooseSlide(page);
+  const choice = chooseSlide(page, { pagePixels: ctx.pagePixels ?? true });
   if (choice.reason) return choice;
   const background = backgroundOf(page, ctx.theme);
   const slide = composeValid(choice, ctx, background);
-  if (slide) return { slide, uploads: choice.uploads || [] };
+  if (slide) {
+    return {
+      slide,
+      uploads: choice.uploads || [],
+      notOnSlide: choice.notOnSlide || [],
+    };
+  }
   // Too long for the chosen type: the text slide is the widest home, but
   // only for a page without a picture to lose.
   if (
@@ -218,7 +285,7 @@ export function planPage(page, ctx) {
   ) {
     const text = contentSlide(page);
     const fallback = composeValid(text, ctx, background);
-    if (fallback) return { slide: fallback, uploads: [] };
+    if (fallback) return { slide: fallback, uploads: [], notOnSlide: [] };
   }
   return { reason: 'too-long' };
 }
@@ -250,11 +317,15 @@ function composeValid({ type, content }, ctx, background = null) {
  * The mapping table of the brief (`pdf-import-two-modes.md` § Mappingtabel),
  * one rule after the other; the first that fits wins.
  * @param {PageModel} page
- * @returns {{ type: string, content: object, uploads?: Array<{ key: string, index: number }> } | { reason: string }}
+ * @param {object} [opts]
+ * @param {boolean} [opts.pagePixels=true] - the source has a rendering of
+ *   each page, so a drawing can be cut out of it; a source without one (a
+ *   PowerPoint file alone, B829) keeps a drawing page whole
+ * @returns {{ type: string, content: object, uploads?: PageUpload[], notOnSlide?: string[] } | { reason: string }}
  */
-export function chooseSlide(page) {
+export function chooseSlide(page, { pagePixels = true } = {}) {
   const { heading, blocks, images } = page;
-  const paths = page.drawing?.paths || 0;
+  const paths = drawingPaths(page);
 
   if (!heading && blocks.length === 0) {
     // A page without text: a picture is an image slide, anything else (a
@@ -284,8 +355,11 @@ export function chooseSlide(page) {
   const tables = blocks.filter((b) => b.kind === 'table');
   const tableOnly = tables.length === 1 && blocks.every(isTableOrCaption);
   // A table's rules are paths too; a page that holds only the table is no
-  // drawing.
-  if (paths > DRAWING_MIN_PATHS && !tableOnly) return { reason: 'drawing' };
+  // drawing. A drawing beside text becomes a picture of itself where it can
+  // be cut out without a line of the text in it.
+  if (paths > DRAWING_MIN_PATHS && !tableOnly) {
+    return (pagePixels && drawingCutOut(page)) || { reason: 'drawing' };
+  }
   if (images.length > 1) return { reason: 'multi-image' };
   if (tables.length && !page.tagged) return { reason: 'table-untagged' };
 
@@ -334,27 +408,115 @@ function imageSlide(page, { title = '', caption = '' }) {
 }
 
 /**
- * A picture beside text: on the side it sits, as wide as the split width
- * nearest to its share of the page, or in its corner when it is small and
- * set there.
+ * A picture beside text: on the side it sits (of the page's middle, or of
+ * `beside`), as wide as the split width nearest to its share of the page, or
+ * in its corner when it is small and set there. The page's one picture and
+ * all its blocks unless a cut-out names its own.
  */
-function imageTextSlide(page) {
-  const img = page.images[0];
+function imageTextSlide(
+  page,
+  {
+    img = page.images[0],
+    blocks = page.blocks,
+    upload = { key: 'image', index: 0 },
+    beside = page.width / 2,
+  } = {},
+) {
   const centre = img.box.x + img.box.width / 2;
   const corner = isCornerImage(page, img);
   return {
     type: 'image-text-slide',
     content: {
       title: page.heading,
-      body: blocksToMarkdown(page.blocks),
+      body: blocksToMarkdown(blocks),
       alt: img.alt || '',
       imageRole: 'content',
       layout: corner ? 'corner' : 'split',
-      imageSide: centre < page.width / 2 ? 'left' : 'right',
+      imageSide: centre < beside ? 'left' : 'right',
       ...(corner ? {} : { imageWidth: imageWidthOf(page, img) }),
     },
-    uploads: [{ key: 'image', index: 0 }],
+    uploads: [upload],
   };
+}
+
+/**
+ * A drawing beside text, cut out of the rendered page: an image-text slide
+ * with the drawing as its picture and the text outside it as its body (B831,
+ * brief § Beslissingen 5). Only where the cut cannot lose or repeat text: a
+ * page with a heading and no picture of its own, a drawing box of
+ * `CROP_MIN_COVER`–`CROP_MAX_COVER` of the page with neither the heading, a
+ * body line nor a table cell in it, at least one block outside it, and no
+ * block across its edge. The blocks inside are the drawing's labels: in the picture, and in
+ * the notes. The box stops above the page's footer band, which a vector
+ * logo there would otherwise pull in. Null when the page is no such page.
+ * @param {PageModel} page
+ * @returns {{ type: string, content: object, uploads: PageUpload[], notOnSlide: string[] } | null}
+ */
+export function drawingCutOut(page) {
+  const drawing = page.drawing?.box;
+  if (!drawing || !page.heading || page.images.length) return null;
+  // What the drawing holds is judged on its whole box, the cut on the box
+  // above the footer.
+  const box = aboveFooter(page, drawing);
+  const area = page.width * page.height;
+  const share = box && area > 0 ? boxArea(box) / area : 0;
+  if (share < CROP_MIN_COVER || share > CROP_MAX_COVER) return null;
+  const isBody = bodyLineTest(page.lines);
+  const kept = (l) =>
+    l.role === 'heading' || l.role === 'table-cell' || isBody(l);
+  if (page.lines.some((l) => kept(l) && overlapArea(lineBox(l), drawing) > 0)) {
+    return null;
+  }
+  const inside = [];
+  const outside = [];
+  for (const block of page.blocks) {
+    if (!block.box) return null;
+    if (overlapArea(block.box, drawing) === 0) outside.push(block);
+    else if (
+      LABEL_KINDS.has(block.kind) &&
+      liesWithin(block.box, drawing, CROP_BLOCK_INSIDE)
+    ) {
+      inside.push(block);
+    } else return null;
+  }
+  if (!outside.length) return null;
+  return {
+    ...imageTextSlide(page, {
+      img: { box, alt: page.heading },
+      blocks: outside,
+      upload: { key: 'image', crop: box },
+      // A wide drawing is often centred: its side is the one away from the
+      // text.
+      beside:
+        outside.reduce((sum, b) => sum + b.box.x + b.box.width / 2, 0) /
+        outside.length,
+    }),
+    notOnSlide: inside.map(blockText),
+  };
+}
+
+/**
+ * The box with its bottom edge above the footer band, the bottom
+ * `FOOTNOTE_ZONE` of the page, when a dropped line there (a footer, a
+ * footnote, the page number) reaches into it; a logo beside the footer
+ * goes with it. Higher up a dropped line can be a chart label
+ * (PowerPoint marks those as artifacts too), which the picture keeps. A
+ * dropped line carries no width: it counts from its start to the page edge.
+ * Null when nothing is left.
+ * @param {PageModel} page
+ * @param {import('../utils/pdf-extract/boxes.js').Box} box
+ */
+function aboveFooter(page, box) {
+  const band = (1 - FOOTNOTE_ZONE) * page.height;
+  let bottom = box.y + box.height;
+  for (const line of page.dropped || []) {
+    if (line.y <= band || line.x >= box.x + box.width) continue;
+    const { y: lineTop, height } = lineBox({ ...line, width: 0 });
+    if (lineTop < bottom && lineTop + height > box.y) {
+      bottom = Math.min(lineTop, band);
+    }
+  }
+  return bottom > box.y ? { ...box, height: bottom - box.y } : null;
 }
 
 /**
@@ -743,6 +905,14 @@ export function composeNotes({
 // Page measures
 // ---------------------------------------------------------------------------
 
+/** The paths of the page's drawing: every path but those of a tagged table. */
+function drawingPaths(page) {
+  return Math.max(
+    0,
+    (page.drawing?.paths || 0) - (page.drawing?.tablePaths || 0),
+  );
+}
+
 function cover(page, img) {
   const area = page.width * page.height;
   return area > 0 ? (img.box.width * img.box.height) / area : 0;
@@ -787,6 +957,88 @@ function splitLead(blocks) {
     return { lead: blocks[0].text, body: blocks.slice(1) };
   }
   return { lead: '', body: blocks };
+}
+
+// ---------------------------------------------------------------------------
+// Decoration and cut-outs (B831)
+// ---------------------------------------------------------------------------
+
+/**
+ * Take the deck's decoration out of its pages, before any page is mapped: a
+ * picture that stands with the same pixels (PNG hash) in the same place
+ * (within `DECORATION_BOX_TOLERANCE` pt) on `DECORATION_MIN_PAGES` pages or
+ * more and covers at most `DECORATION_MAX_COVER` of each. A logo in a
+ * corner would otherwise turn every page into a picture beside text. Pure:
+ * the pages that lose a picture are copies.
+ * @param {PageModel[]} pages
+ * @returns {{ pages: PageModel[], decorations: Array<{ pages: number[] }> }}
+ *   the pages without their decoration, and one entry per decorative
+ *   picture with the pages it was left out of
+ */
+export function findDecorations(pages) {
+  const groups = [];
+  for (const page of pages) {
+    for (const img of page.images) {
+      if (cover(page, img) > DECORATION_MAX_COVER) continue;
+      const hash = createHash('sha1').update(img.png).digest('hex');
+      let group = groups.find(
+        (g) => g.hash === hash && sameBox(g.box, img.box),
+      );
+      if (!group) {
+        group = { hash, box: img.box, pages: new Set(), images: new Set() };
+        groups.push(group);
+      }
+      group.pages.add(page.page);
+      group.images.add(img);
+    }
+  }
+  const decorative = groups.filter((g) => g.pages.size >= DECORATION_MIN_PAGES);
+  const left = new Set(decorative.flatMap((g) => [...g.images]));
+  return {
+    pages: pages.map((page) =>
+      page.images.some((img) => left.has(img))
+        ? { ...page, images: page.images.filter((img) => !left.has(img)) }
+        : page,
+    ),
+    decorations: decorative.map((g) => ({
+      pages: [...g.pages].sort((a, b) => a - b),
+    })),
+  };
+}
+
+function sameBox(a, b) {
+  return ['x', 'y', 'width', 'height'].every(
+    (k) => Math.abs(a[k] - b[k]) <= DECORATION_BOX_TOLERANCE,
+  );
+}
+
+/**
+ * Cut `box` (in page units) out of the page's rendering. The rasteriser fits
+ * the page into its canvas and centres it (`pdfToImages`), so the scale and
+ * the margins follow from the rendering's own size.
+ * @param {Buffer} rendering - the PNG of the whole page
+ * @param {PageModel} page
+ * @param {import('../utils/pdf-extract/boxes.js').Box} box
+ * @returns {Promise<Buffer>} a PNG
+ */
+export async function cutOutOfRendering(rendering, page, box) {
+  const { width: w, height: h } = await sharp(rendering).metadata();
+  const scale = Math.min(w / page.width, h / page.height);
+  const offsetX = (w - page.width * scale) / 2;
+  const offsetY = (h - page.height * scale) / 2;
+  const left = Math.max(0, Math.floor(offsetX + box.x * scale));
+  const top = Math.max(0, Math.floor(offsetY + box.y * scale));
+  const right = Math.min(w, Math.ceil(offsetX + (box.x + box.width) * scale));
+  const bottom = Math.min(h, Math.ceil(offsetY + (box.y + box.height) * scale));
+  return sharp(rendering)
+    .extract({
+      left,
+      top,
+      width: Math.max(1, right - left),
+      height: Math.max(1, bottom - top),
+    })
+    .png()
+    .toBuffer();
 }
 
 // ---------------------------------------------------------------------------
@@ -838,8 +1090,10 @@ export async function buildDeckSlides({
     log.warn('[import-slides] unreadable PDF:', err?.message);
     throw new DeckImagesRefusal('The PDF could not be read');
   }
-  const { pages } = extracted;
-  if (pages.length === 0) throw new DeckImagesRefusal('No pages found in PDF');
+  if (extracted.pages.length === 0) {
+    throw new DeckImagesRefusal('No pages found in PDF');
+  }
+  const { pages, decorations } = findDecorations(extracted.pages);
 
   const speakerNotes = sourceSlides
     ? notesForPages(sourceSlides, pages.length)
@@ -848,20 +1102,23 @@ export async function buildDeckSlides({
     throw countMismatch(pages.length, sourceSlides);
   }
 
-  const ctx = { slideTypes, theme, lang, presentationId };
+  // The PDF is the pixel source: a drawing can be cut out of its rendering.
+  const ctx = { slideTypes, theme, lang, presentationId, pagePixels: true };
   const plans = pages.map((page) => planPage(page, ctx));
-  const fallbackPages = pages
-    .filter((_p, i) => plans[i].reason)
+  const cutsOut = (plan) => Boolean(plan.uploads?.some((u) => u.crop));
+  const renderedPages = pages
+    .filter((_p, i) => plans[i].reason || cutsOut(plans[i]))
     .map((p) => p.page);
 
-  // Only the pages that fell back are rendered.
+  // Only the pages that fell back, or that a drawing is cut out of, are
+  // rendered.
   const rendered = new Map();
-  if (fallbackPages.length) {
+  if (renderedPages.length) {
     const images = await renderPages({
       buffer: pdfBytes,
       width: 1920,
       height: 1080,
-      pages: fallbackPages,
+      pages: renderedPages,
       signal,
       onProgress: (nth, count) =>
         onProgress(`Rendering page ${nth} of ${count}...`, {
@@ -872,6 +1129,12 @@ export async function buildDeckSlides({
     });
     for (const img of images || []) rendered.set(img.page, img.buffer);
   }
+  // A drawing without a rendering to cut it from keeps its page whole.
+  pages.forEach((page, i) => {
+    if (cutsOut(plans[i]) && !rendered.has(page.page)) {
+      plans[i] = { reason: 'drawing' };
+    }
+  });
 
   const baseFilename = deckImageBaseName(files);
   const upload = async (buffer, name, page, errors) => {
@@ -890,6 +1153,21 @@ export async function buildDeckSlides({
       errors.push({ page, code: 'upload-failed' });
       return '';
     }
+  };
+
+  const uploadCutOut = async (page, box, num, errors) => {
+    let buffer;
+    try {
+      buffer = await cutOutOfRendering(rendered.get(page.page), page, box);
+    } catch (err) {
+      log.warn(
+        `[import-slides] Could not cut page ${page.page}:`,
+        err?.message,
+      );
+      errors.push({ page: page.page, code: 'not-rendered' });
+      return '';
+    }
+    return upload(buffer, `page-${num}-drawing`, page.page, errors);
   };
 
   const slides = [];
@@ -937,18 +1215,21 @@ export async function buildDeckSlides({
       });
     } else {
       slide = plan.slide;
-      for (const { key, index } of plan.uploads) {
-        slide.content[key] = await upload(
-          page.images[index].png,
-          `page-${num}-image-${index + 1}`,
-          page.page,
-          errors,
-        );
+      for (const { key, index, crop } of plan.uploads) {
+        slide.content[key] = crop
+          ? await uploadCutOut(page, crop, num, errors)
+          : await upload(
+              page.images[index].png,
+              `page-${num}-image-${index + 1}`,
+              page.page,
+              errors,
+            );
       }
       slide.notes = composeNotes({
         speakerNotes: speakerNotes?.[i],
         notOnSlide: [
           ...notOnSlide,
+          ...plan.notOnSlide,
           ...(page.drawing?.labels || []).map((l) => l.text),
         ],
         lang,
@@ -970,6 +1251,7 @@ export async function buildDeckSlides({
       slidesConverted: reportPages.filter((p) => !p.reason).length,
       errors,
       pages: reportPages,
+      decorations,
     },
   };
 }
@@ -985,4 +1267,6 @@ export async function buildDeckSlides({
  * @property {Array<{ page: number, type: string, reason?: string, dropped: number }>} pages
  *   - one per page; `reason` (from {@link FALLBACK_REASONS}) on a page that
  *   fell back, `dropped` the lines of text not on the slide
+ * @property {Array<{ pages: number[] }>} decorations - one per picture left
+ *   out as decoration ({@link findDecorations}), with the pages it stood on
  */

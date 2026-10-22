@@ -114,6 +114,35 @@ test('an error code the client does not know still names the page', () => {
   assert.deepEqual(errors, ['Page 1: something went wrong']);
 });
 
+test('pictures left out as decoration are named in one sentence, after the errors (B831)', () => {
+  const outcome = slidesImportOutcome({
+    slidesExtracted: 3,
+    pages: [1, 2, 3].map((page) => ({ page, type: 'list-slide' })),
+    errors: [{ page: 2, code: 'upload-failed' }],
+    decorations: [{ pages: [1, 2, 3] }],
+  });
+  assert.equal(outcome.clean, false);
+  assert.equal(outcome.line, 'All 3 pages were imported as editable slides.');
+  assert.deepEqual(outcome.errors, [
+    'Page 2: an image could not be uploaded',
+    'A picture repeated on 3 pages (a logo or mark) was left out.',
+  ]);
+  const two = slidesImportOutcome({
+    slidesExtracted: 4,
+    pages: [],
+    decorations: [{ pages: [1, 2, 3] }, { pages: [2, 3, 4] }],
+  });
+  assert.deepEqual(two.errors, [
+    '2 pictures repeated on 4 pages (logos or marks) were left out.',
+  ]);
+  // No decoration, no sentence: a clean import stays clean.
+  assert.equal(
+    slidesImportOutcome({ slidesExtracted: 1, pages: [], decorations: [] })
+      .clean,
+    true,
+  );
+});
+
 test('the sub-tab offers editable slides first and checked, images second', () => {
   const { el } = createPptxPdfImportPanel();
   const radios = [...el.querySelectorAll('input[type="radio"]')];

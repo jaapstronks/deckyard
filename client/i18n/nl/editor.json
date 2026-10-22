@@ -487,6 +487,8 @@
   "editor.importSlides.reason.tooLong": "te veel tekst voor één slide",
   "editor.importSlides.report.allEditable.many": "Alle {count} pagina's zijn als bewerkbare slides geïmporteerd.",
   "editor.importSlides.report.allEditable.one": "De pagina is als bewerkbare slide geïmporteerd.",
+  "editor.importSlides.report.decorations.many": "{count} beelden die op {pages} pagina's terugkwamen (logo's of merktekens) zijn weggelaten.",
+  "editor.importSlides.report.decorations.one": "Een beeld dat op {pages} pagina's terugkwam (een logo of merkteken) is weggelaten.",
   "editor.importSlides.report.error": "Pagina {page}: {message}",
   "editor.importSlides.report.fallbacks.many": "{count} van {total} pagina's als beeld overgenomen: {pages}.",
   "editor.importSlides.report.fallbacks.one": "1 van {total} pagina's als beeld overgenomen: {pages}.",

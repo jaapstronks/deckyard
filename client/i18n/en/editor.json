@@ -487,6 +487,8 @@
   "editor.importSlides.reason.tooLong": "too much text for one slide",
   "editor.importSlides.report.allEditable.many": "All {count} pages were imported as editable slides.",
   "editor.importSlides.report.allEditable.one": "The page was imported as an editable slide.",
+  "editor.importSlides.report.decorations.many": "{count} pictures repeated on {pages} pages (logos or marks) were left out.",
+  "editor.importSlides.report.decorations.one": "A picture repeated on {pages} pages (a logo or mark) was left out.",
   "editor.importSlides.report.error": "Page {page}: {message}",
   "editor.importSlides.report.fallbacks.many": "{count} of {total} pages were taken over as images: {pages}.",
   "editor.importSlides.report.fallbacks.one": "1 of {total} pages was taken over as an image: {pages}.",
