@@ -86,15 +86,15 @@ export async function prepareNewPresentation(
   // its one spelling, or the create is refused.
   const { themeId: effectiveTheme, theme: themeConfig } =
     await settleNewDeckTheme(repoRoot, body?.theme, storageScope);
-  // Default title slide differs per theme. The theme also rides into
-  // newPresentation and on to newSlide, so that a slide type opting in via
-  // `autoBackgroundPreset` can draw a background from the theme's own presets.
+  // The theme rides into newPresentation and on to newSlide: it picks the
+  // title slide's type (`themeTitleSlideType`), and a slide type opting in via
+  // `autoBackgroundPreset` draws a background from the theme's own presets.
   // That declaration is the only rule, on every route (D92); the core title
   // slide carries it (B500), so it opens on a theme photo when the theme has
   // presets and stays flat when it has none.
-  const defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
 
-  // If slides are provided in the body, use them instead of the default title slide.
+  // If slides are provided in the body, the deck is made of them and no title
+  // slide is composed (B832).
   //
   // Each slide may carry per-language content under `contentByLang` (e.g. from
   // the slide library, which stores nl + en-GB). When present, we build one
@@ -190,17 +190,12 @@ export async function prepareNewPresentation(
     title,
     theme: effectiveTheme,
     lang: initialLang,
-    defaultTitleSlide,
     themeConfig,
+    slides: providedSlides,
     slideTypes,
   });
   pres.lang = initialLang;
   pres.extensions = body?.extensions ?? [];
-
-  // Use provided slides if any, otherwise keep the default title slide
-  if (providedSlides) {
-    pres.slides = providedSlides;
-  }
 
   // Allow a small set of safe deck-level settings at creation time.
   // (Keep this allowlisted; do not accept arbitrary settings blobs from clients.)

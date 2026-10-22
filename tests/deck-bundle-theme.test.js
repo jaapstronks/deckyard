@@ -50,6 +50,8 @@ const { updateOrganization } =
 const { loadThemeAssets, customThemeConfig, clearCustomThemeCache } =
   await import('../server/utils/themes.js');
 const { curatedFontFaces } = await import('../shared/theme-fonts.js');
+const { createPresentation } =
+  await import('../server/services/presentations.js');
 
 let tmpUploads;
 let repoRoot;
@@ -587,6 +589,61 @@ test('fonts: a missing managed family falls back and is reported; a named one bi
   assert.equal(record.fonts.heading, 'House Serif');
   assert.equal(record.fonts.headingFamilyId, own.fontFamily.id);
   assert.equal(record.slug, `${theme.slug}-2`);
+});
+
+test('a theme naming a title type this instance lacks still imports (B832)', async () => {
+  // The A2.6 shape: a fork theme opens its decks on its own title type, and
+  // the deck's first slide is of that type. The receiving instance has
+  // neither; the deck imports with the slide as a placeholder.
+  const theme = await senderTheme({
+    label: 'Fork title',
+    config: { defaultTitleSlide: 'acme-title-slide' },
+  });
+  const bundle = await buildDeckBundle(repoRoot, {
+    ...deckOn(theme.id),
+    slides: [
+      { id: '1', type: 'acme-title-slide', content: { title: 'Hello' } },
+      ...deckOn(theme.id).slides,
+    ],
+  });
+
+  for (const install of ['theme', null]) {
+    const { res, body } = await importInto(receiverScope(), bundle, {
+      install,
+    });
+    assert.equal(res.statusCode, 201, res.body);
+    assert.ok(body.bundledTheme, 'the theme is reported');
+    assert.deepEqual(
+      body.slides.map((s) => s.type),
+      ['content-slide', 'image-slide'],
+      "the deck is the bundle's slides, with no title slide in front",
+    );
+    assert.match(body.slides[0].content.body, /acme-title-slide/);
+    assert.match(body.slides[0].content.body, /Hello/);
+  }
+});
+
+test('an empty deck on such a theme opens on the core title slide (B832)', async () => {
+  const theme = await senderTheme({
+    label: 'Fork title, empty',
+    config: { defaultTitleSlide: 'acme-title-slide' },
+  });
+  const bundle = await buildDeckBundle(repoRoot, deckOn(theme.id));
+  const { body } = await importInto(receiverScope(), bundle, {
+    install: 'theme',
+  });
+  const installed = await getThemeRecord(receiverScope(), body.theme);
+  assert.equal(installed.config.defaultTitleSlide, 'acme-title-slide');
+
+  const created = await createPresentation(
+    { ...receiverScope(), actorEmail: OWNER },
+    { actor: designer },
+    { title: 'Empty', theme: body.theme },
+  );
+  assert.deepEqual(
+    created.slides.map((s) => s.type),
+    ['title-slide'],
+  );
 });
 
 test('an unknown install value is refused', async () => {

@@ -12,6 +12,8 @@ import { normalizeTheme } from '../../shared/theme-normalize.js';
 import { createLogger } from './logger.js';
 import { UUID_RE } from './uuid.js';
 import { AppError } from './errors.js';
+import { buildMergedSlideTypes } from './custom-slide-type-runtime.js';
+import { themeTitleSlideType } from '../../shared/slide-types.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../config/sandbox.js';
 import {
   getDefaultThemeId,
@@ -164,7 +166,12 @@ export async function loadAiThemeContext(
   );
   return {
     themeId,
-    titleSlideType: theme?.defaultTitleSlide || 'title-slide',
+    // Against the organization's registry, as the create itself does: a
+    // theme may name a title type this instance lacks (B832).
+    titleSlideType: themeTitleSlideType(
+      theme,
+      await buildMergedSlideTypes(storageScope),
+    ),
     themeContext: theme ? extractThemeContext(theme) : null,
     theme,
   };

@@ -43,6 +43,7 @@ import {
   newSlide,
   presentationToDeck,
   resolveSlideTypeName,
+  themeTitleSlideType,
 } from '../../shared/slide-types.js';
 import {
   VISIBILITY_PRESETS,
@@ -639,9 +640,16 @@ export function registerTools(
         storageScopeOf(context),
       );
 
+      // This session organization's registry: the title type below is chosen
+      // in it (B832), and validation runs against it so a published custom
+      // type is not refused before its content is read, and against the
+      // deck's theme so one of its own background variants is a value on
+      // offer (D88).
+      const slideTypes = await sessionSlideTypes(context);
+
       // Optional escape hatch: prepend an empty title slide if missing.
       if (auto_prepend_title) {
-        const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
+        const titleSlideType = themeTitleSlideType(themeObj, slideTypes);
 
         if (inputSlides[0]?.type !== titleSlideType) {
           inputSlides = [
@@ -651,11 +659,6 @@ export function registerTools(
         }
       }
 
-      // Validation, against this session organization's registry so a
-      // published custom type is not refused before its content is read, and
-      // against the deck's theme so one of its own background variants is a
-      // value on offer (D88).
-      const slideTypes = await sessionSlideTypes(context);
       let validatedSlides;
       let appliedFixes = [];
       if (validation === 'fix') {

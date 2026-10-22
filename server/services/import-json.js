@@ -100,10 +100,19 @@ export async function createImportedPresentation(
   assertValidImportedDeck(parts, slideTypes, { lang });
 
   const title = fields.title ?? parts.title;
+  // The slides go into the create too, so the deck is made of them and no
+  // title slide of the theme's type is composed only to be replaced (B832).
   const created = await createPresentation(
     scope,
     { actor },
-    { ...fields, title, theme, extensions: parts.extensions, lang },
+    {
+      ...fields,
+      title,
+      theme,
+      extensions: parts.extensions,
+      lang,
+      slides: parts.slides,
+    },
   );
 
   // The deck's translations land as the other language versions (D89).

@@ -79,13 +79,19 @@ test('the tile shows the preset the new deck is seeded with (D353)', () => {
   }
 });
 
-test('a title type the type map does not know is refused, not guessed', () => {
-  assert.throws(() =>
-    themePreviewSlide(
-      { id: 'x', label: 'X', defaultTitleSlide: 'no-such-title-slide' },
-      SLIDE_TYPES,
-    ),
-  );
+test('a title type the type map does not know shows the slide a new deck opens with (B832)', () => {
+  const theme = {
+    id: 'x',
+    label: 'X',
+    defaultTitleSlide: 'no-such-title-slide',
+  };
+  const deck = newPresentation({
+    theme: theme.id,
+    themeConfig: theme,
+    slideTypes: SLIDE_TYPES,
+  });
+  assert.equal(deck.slides[0].type, 'title-slide');
+  assert.equal(themePreviewSlide(theme, SLIDE_TYPES).type, 'title-slide');
 });
 
 test('the tile scroller holds the focus ring on every side', () => {

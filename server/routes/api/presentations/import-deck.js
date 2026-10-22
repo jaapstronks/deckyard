@@ -302,6 +302,8 @@ export async function handlePresentationsImportDeck({
   // exists (B693; the same check as the JSON import).
   assertValidImportedDeck(parts, slideTypes, { lang });
 
+  // The slides go into the create too, so the deck is made of them and no
+  // title slide of the theme's type is composed only to be replaced (B832).
   const created = await createPresentation(
     storageScope,
     { actor: authedUser },
@@ -310,6 +312,7 @@ export async function handlePresentationsImportDeck({
       theme,
       extensions: parts.extensions,
       lang,
+      slides: parts.slides,
     },
   );
 
