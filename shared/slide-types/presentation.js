@@ -31,14 +31,41 @@ import {
   normalizeLang,
 } from '../i18n-utils.js';
 
+/**
+ * The slide type a new deck on `theme` opens with: the theme's
+ * `defaultTitleSlide` when `slideTypes` has it, otherwise `title-slide`.
+ *
+ * The one place that choice is made (B832). A theme travels between instances
+ * (a `.deck` installs its theme, a fork's theme names the fork's own title
+ * type), so the type it names may not exist where the deck is created; that
+ * is no reason to refuse the create, and the core title slide is always there.
+ *
+ * @param {Object|null} theme - the loaded theme, or null for none
+ * @param {Record<string, Object>} slideTypes - the registry the deck is
+ *   created in
+ * @returns {string} a key of `slideTypes`
+ */
+export function themeTitleSlideType(theme, slideTypes) {
+  const named =
+    typeof theme?.defaultTitleSlide === 'string'
+      ? theme.defaultTitleSlide.trim()
+      : '';
+  return named && slideTypes?.[named] ? named : 'title-slide';
+}
+
 export function newPresentation({
   title = 'Untitled presentation',
   theme = 'default',
   lang = DEFAULT_DECK_LANG,
-  defaultTitleSlide = 'title-slide',
   // The loaded theme object, when the caller has one. `theme` above is just the
-  // id that gets stored on the deck; this is what supplies background presets.
+  // id that gets stored on the deck; this is what supplies background presets
+  // and the title slide's type (`themeTitleSlideType`).
   themeConfig = null,
+  // The deck's own slides, when the create brings them (import, library,
+  // agent payload). Without them the deck opens on one title slide; with them
+  // no title slide is composed at all, so a theme's title type is never
+  // looked up for a deck that would throw that slide away (B832).
+  slides = null,
   // The map the title slide composes from, required: the organization's
   // (`buildMergedSlideTypes`), which carries the installation's configured
   // defaults (B653) and its database types. A theme may name any registered
@@ -52,11 +79,6 @@ export function newPresentation({
     );
   }
   const now = new Date().toISOString();
-  // Use the provided default title slide, falling back to 'title-slide' if invalid.
-  const titleSlideType =
-    typeof defaultTitleSlide === 'string' && defaultTitleSlide.trim()
-      ? defaultTitleSlide.trim()
-      : 'title-slide';
   return {
     id: cryptoUuid(),
     // Durable schema version of this deck's envelope. Reads migrate older decks
@@ -102,14 +124,17 @@ export function newPresentation({
     // The deck's language reaches the factory, so a new NL deck's title slide
     // is seeded from `defaultsByLang.nl` — the same content an insert in the
     // editor produces for that type.
-    slides: [
-      newSlide({
-        type: titleSlideType,
-        theme: themeConfig,
-        lang: normalizeLang(lang) || DEFAULT_DECK_LANG,
-        slideTypes,
-      }),
-    ],
+    slides:
+      Array.isArray(slides) && slides.length > 0
+        ? slides
+        : [
+            newSlide({
+              type: themeTitleSlideType(themeConfig, slideTypes),
+              theme: themeConfig,
+              lang: normalizeLang(lang) || DEFAULT_DECK_LANG,
+              slideTypes,
+            }),
+          ],
   };
 }
 

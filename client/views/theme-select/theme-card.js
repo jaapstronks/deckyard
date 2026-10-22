@@ -18,7 +18,10 @@ import {
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
-import { newSlide } from '../../../shared/slide-types/presentation.js';
+import {
+  newSlide,
+  themeTitleSlideType,
+} from '../../../shared/slide-types/presentation.js';
 
 /**
  * The sample slide a theme card shows: the title slide a new deck in this
@@ -33,12 +36,13 @@ import { newSlide } from '../../../shared/slide-types/presentation.js';
  * @param {Object} theme - full theme object
  * @param {Record<string, Object>} slideTypes - the live type map
  *   (`/api/slide-types`), so a fork's own title type composes too
- * @returns {Object} a slide
- * @throws when the theme's title type is not in `slideTypes`
+ * @returns {Object} a slide, of the type a new deck opens with
+ *   (`themeTitleSlideType`: `title-slide` when the theme names a type
+ *   `slideTypes` lacks)
  */
 export function themePreviewSlide(theme, slideTypes) {
   return newSlide({
-    type: theme?.defaultTitleSlide || 'title-slide',
+    type: themeTitleSlideType(theme, slideTypes),
     theme,
     slideTypes,
     content: { title: theme?.label || 'Theme Preview' },
