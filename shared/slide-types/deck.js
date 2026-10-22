@@ -591,7 +591,8 @@ function rewriteSlideJumpIds(slidesRaw, slides, slideTypes) {
  * gets this far (`deckImportLang`). A slide that imported as the unknown-type
  * placeholder has no type to read its translation against: every version gets
  * its own placeholder, built from the stored content with that language's
- * text read by the value rule (B833), so no text in the bundle is lost.
+ * text read by the value rule (B833). That rule reads top-level strings only:
+ * a list keeps the base language's text in every version (B836).
  */
 function deckTranslations(
   deck,
