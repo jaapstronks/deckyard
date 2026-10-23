@@ -6,10 +6,12 @@
  * `IN (...)`. Now one SQL subquery decides it (`dashboardDeckIds` in
  * server/storage/analytics/dashboard.js), and the deck list is a keyset page.
  * The right moved from one spelling to another, so the old spelling stays
- * here as the oracle, verbatim:
+ * here as the oracle, with one term added since (B841, a revoked row gives
+ * no dashboard):
  *
  *   **rights parity**: over decks the reader owns, holds as `edit`, `admin`,
- *   `view` or `comment` collaborator, holds through a revoked `edit` row, sees
+ *   `view` or `comment` collaborator, held through a now revoked `edit` or
+ *   `admin` row, sees
  *   only through organization visibility, owns in the trash, owns in another
  *   organization or holds there as editor, and decks without an owner address
  *   or owned under an old address, the decks the list pages through equal the
@@ -17,9 +19,8 @@
  *   all included), and every aggregate (summary, trend, timeline, top decks,
  *   sources, completion) equals the same aggregate over the oracle's ids.
  *
- * The oracle keeps a revoked `edit`/`admin` row and a trashed deck in: that is
- * what the right was, and this item moves it without changing it. Whether a
- * revoked collaborator should keep a dashboard is a question of its own.
+ * A trashed deck stays in; a revoked `edit`/`admin` row is out, on the
+ * dashboard and in the weekly digest, which reads the same predicate (B841).
  *
  * And the six checks the deck list carries (brief `db-level-pagination.md`
  * § Checks): completeness, order, stability, org isolation, refusal and full
@@ -50,6 +51,7 @@ import {
   getDashboardTimeline,
   getSourceBreakdown,
   getTopPresentations,
+  getWeeklyAnalyticsForUser,
   listDashboardPresentations,
 } from '../../server/storage/analytics/index.js';
 import {
@@ -65,8 +67,9 @@ const READER = 'reader@example.com';
 const OTHER = 'other@example.com';
 
 /**
- * The right as it was before B825, verbatim: owner by address, or a
- * collaborator row with `edit`/`admin`, both inside the organization.
+ * The right as it was before B825: owner by address, or a collaborator row
+ * with `edit`/`admin`, both inside the organization; since B841 the row must
+ * not be revoked.
  */
 async function oracleDeckIds(db, userEmail, organizationId) {
   const email = normalizeEmail(userEmail);
@@ -88,6 +91,7 @@ async function oracleDeckIds(db, userEmail, organizationId) {
     .where('presentation_collaborators.user_email', '=', email)
     .where('presentations.organization_id', '=', organizationId)
     .where('presentation_collaborators.permission', 'in', ['edit', 'admin'])
+    .where('presentation_collaborators.revoked_at', 'is', null)
     .execute();
   return [...new Set([...owned, ...shared].map((r) => r.id))];
 }
@@ -210,6 +214,7 @@ pgDescribe('analytics dashboard decks in SQL (real PostgreSQL)', () => {
         visibility: 'organization',
       }),
       revokedEdit: await insertDeck({ ownerEmail: OTHER }),
+      revokedAdmin: await insertDeck({ ownerEmail: OTHER }),
       trashedOwned: await insertDeck({ ownerEmail: READER, trashed: true }),
       noOwner: await insertDeck({ ownerEmail: null }),
       oldAddress: await insertDeck({ ownerEmail: 'reader-before@example.com' }),
@@ -227,6 +232,7 @@ pgDescribe('analytics dashboard decks in SQL (real PostgreSQL)', () => {
     await collaborate(decks.view, READER, 'view');
     await collaborate(decks.comment, READER, 'comment');
     await collaborate(decks.revokedEdit, READER, 'edit', { revoked: true });
+    await collaborate(decks.revokedAdmin, READER, 'admin', { revoked: true });
     await collaborate(decks.otherOrgEdit, READER, 'edit', {
       organizationId: orgB,
     });
@@ -354,18 +360,14 @@ pgDescribe('analytics dashboard decks in SQL (real PostgreSQL)', () => {
 
     // The cases themselves, so the oracle is not silently empty.
     const reader = new Set(await oracleDeckIds(db, READER, orgA));
-    for (const key of [
-      'owned',
-      'edit',
-      'admin',
-      'revokedEdit',
-      'trashedOwned',
-    ]) {
+    for (const key of ['owned', 'edit', 'admin', 'trashedOwned']) {
       assert.equal(reader.has(decks[key]), true, `${key} is on the dashboard`);
     }
     for (const key of [
       'view',
       'comment',
+      'revokedEdit',
+      'revokedAdmin',
       'orgVisible',
       'noOwner',
       'oldAddress',
@@ -455,6 +457,55 @@ pgDescribe('analytics dashboard decks in SQL (real PostgreSQL)', () => {
         WHERE presentation_id = ${row.id} AND started_at >= ${since}
       `.execute(db);
       assert.equal(row.views, Number(own.rows[0].views), row.id);
+    }
+  });
+
+  it('B841: a revoked editor or admin has the deck nowhere, the weekly digest included', async () => {
+    const decks = await seedRights();
+    const revoked = [decks.revokedEdit, decks.revokedAdmin];
+    const listed = (await walkList(READER)).flat().map((row) => row.id);
+    for (const id of revoked) assert.equal(listed.includes(id), false, id);
+    const top = await getTopPresentations(scopeOf(orgA, READER), READER, orgA, {
+      period: '30d',
+      limit: 50,
+    });
+    for (const id of revoked) {
+      assert.equal(
+        top.some((row) => row.id === id),
+        false,
+        id,
+      );
+    }
+
+    // The digest covers exactly the dashboard's decks, for every reader.
+    const since = new Date(Date.now() - 7 * DAY).toISOString();
+    for (const organizationId of [orgA, orgB]) {
+      for (const email of READERS) {
+        const label = `${email || '(no address)'} in ${organizationId === orgA ? 'A' : 'B'}`;
+        const ids = await oracleDeckIds(db, email, organizationId);
+        const weekly = await getWeeklyAnalyticsForUser(
+          scopeOf(organizationId, email),
+          crypto.randomUUID(),
+          email,
+        );
+        assert.equal(weekly.presentationCount, ids.length, label);
+        const views = ids.length
+          ? await sql`
+              SELECT COUNT(id) AS views FROM view_sessions
+              WHERE presentation_id = ANY(${ids}::uuid[])
+                AND started_at >= ${since}
+            `.execute(db)
+          : { rows: [{ views: 0 }] };
+        assert.equal(weekly.totalViews, Number(views.rows[0].views), label);
+        if (normalizeEmail(email) !== READER) continue;
+        for (const id of revoked) {
+          assert.equal(
+            weekly.topPresentations.some((row) => row.id === id),
+            false,
+            `${label}: ${id}`,
+          );
+        }
+      }
     }
   });
 

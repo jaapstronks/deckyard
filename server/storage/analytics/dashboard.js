@@ -103,7 +103,7 @@ export async function getDashboardSummary(
       trend: { percentChange: 0, direction: 'flat' },
     },
     async (db) => {
-      const decks = dashboardDeckIds(db, userEmail, organizationId);
+      const decks = dashboardDeckIds(scope, db, userEmail);
       if (!decks) {
         return {
           summary: {
@@ -197,7 +197,7 @@ export async function getDashboardTimeline(
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard([], async (db) => {
-    const decks = dashboardDeckIds(db, userEmail, organizationId);
+    const decks = dashboardDeckIds(scope, db, userEmail);
     if (!decks) return [];
 
     let query = db
@@ -242,7 +242,7 @@ export async function getTopPresentations(
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard([], async (db) => {
-    const decks = dashboardDeckIds(db, userEmail, organizationId);
+    const decks = dashboardDeckIds(scope, db, userEmail);
     if (!decks) return [];
 
     let query = db
@@ -313,7 +313,7 @@ export async function getSourceBreakdown(
       embed: 0,
     },
     async (db) => {
-      const decks = dashboardDeckIds(db, userEmail, organizationId);
+      const decks = dashboardDeckIds(scope, db, userEmail);
       if (!decks) {
         return { shareLink: 0, published: 0, follow: 0, embed: 0 };
       }
@@ -391,7 +391,7 @@ export async function listDashboardPresentations(
   const empty = { items: [], next: null };
 
   return withDbGuard(empty, async (db) => {
-    const decks = dashboardDeckIds(db, userEmail, organizationId);
+    const decks = dashboardDeckIds(scope, db, userEmail);
     if (!decks) return empty;
 
     const query = db
@@ -473,18 +473,19 @@ function deckCompletionRate(completion, id) {
  * The right is narrower than reading a deck: the deck is in the organization
  * and the person owns it (`owner_email`) or holds a collaborator row with
  * `edit` or `admin`. Organization visibility and a `view`/`comment` row give
- * no dashboard. It is the predicate the id list before it applied, term for
- * term: the collaborator row is matched on its address and permission only,
- * so a revoked row still counts and a trashed deck stays in (both pinned in
- * `tests/pg/analytics-dashboard-scope.pgtest.js`).
+ * no dashboard, and neither does a revoked row (`revoked_at` set): a
+ * revoked editor loses the deck's numbers like every other right (B841). A
+ * trashed deck stays in. The weekly digest reads its decks through this same
+ * predicate; both are pinned in `tests/pg/analytics-dashboard-scope.pgtest.js`.
  *
+ * @param {import('../scope.js').StorageScope} scope - Its organization bounds the decks.
  * @param {import('kysely').Kysely<any>} db
  * @param {string} userEmail
- * @param {string} organizationId
  * @returns {import('kysely').SelectQueryBuilder<any, any, {id: string}>|null}
  *   null when there is no address to match, which covers no deck.
  */
-function dashboardDeckIds(db, userEmail, organizationId) {
+export function dashboardDeckIds(scope, db, userEmail) {
+  const { organizationId } = toStorageContext(scope, 'dashboardDeckIds');
   // D200: `owner_email` and `user_email` are normalised on write, so the
   // caller's address is normalised once here and compared bare below.
   const email = normalizeEmail(userEmail);
@@ -509,7 +510,8 @@ function dashboardDeckIds(db, userEmail, organizationId) {
             .where('presentation_collaborators.permission', 'in', [
               'edit',
               'admin',
-            ]),
+            ])
+            .where('presentation_collaborators.revoked_at', 'is', null),
         ),
       ]),
     );
