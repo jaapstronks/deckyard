@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.88.0](https://github.com/jaapstronks/deckyard/compare/v1.87.0...v1.88.0) (2026-10-24)
+
+
+### Added
+
+* the last lists are read a page at a time (B825) ([#1831](https://github.com/jaapstronks/deckyard/issues/1831)) ([e819113](https://github.com/jaapstronks/deckyard/commit/e81911358cbe3407f0b0f4b201d00c572ab29cc3))
+
+
+### Fixed
+
+* a revoked editor loses the analytics dashboard (B841) ([509a33c](https://github.com/jaapstronks/deckyard/commit/509a33c9263951fb982e93f8f5786404e473b797))
+
 ## [1.87.0](https://github.com/jaapstronks/deckyard/compare/v1.86.0...v1.87.0) (2026-10-22)
 
 
