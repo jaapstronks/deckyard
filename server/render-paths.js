@@ -86,8 +86,15 @@ export const RENDER_PATHS = Object.freeze([
       buildSlidesPngExportHtml(repoRoot, pres, options),
   },
   {
+    // Two modules, one path: `export/html.js` prepares the input an
+    // installation holds (filter, theme CSS, upload bytes) and
+    // `canvas-document.js` assembles the document from it. `module` names the
+    // assembler, because that is where the document opening lives; `build` is
+    // the preparer, because that is the path as a caller uses it. The split is
+    // what lets a sealed render bundle hold the assembler alone
+    // (docs/reference/renderer-bundle.md).
     name: 'export/html',
-    module: 'server/export/html.js',
+    module: 'server/export/canvas-document.js',
     kind: 'canvas',
     scope: 'deck',
     build: (repoRoot, pres, options = {}) =>
@@ -150,8 +157,10 @@ export const RENDER_PATHS = Object.freeze([
     // own, sharing nothing with the canvas vocabulary (no `.slide`, no `--t-*`).
     // Being a different document is why it has a second chain; being a render
     // path is why it still ends in the same fork seam.
+    // Preparer plus assembler, like `export/html` above: `reader.js` filters,
+    // `reader-document.js` owns the document.
     name: 'export/reader',
-    module: 'server/export/reader.js',
+    module: 'server/export/reader-document.js',
     kind: 'reflow',
     scope: 'deck',
     build: (repoRoot, pres, options = {}) =>

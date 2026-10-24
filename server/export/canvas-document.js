@@ -1,0 +1,724 @@
+/**
+ * The canvas document: a presentation as the letterboxed 1600x900 stage with
+ * presenter chrome, assembled from frozen input alone.
+ *
+ * This is the **render** half of the standalone/published canvas path. Its
+ * preparer is `./html.js`, which reads the visibility filter, the theme CSS
+ * bundle and the upload bytes out of the installation and then calls this
+ * module; a sealed render bundle calls the same function with input that was
+ * frozen when an edition was published (`server/render/renderer-bundle/`, T1.1).
+ * One assembler, two callers: that is what lets a published edition keep
+ * rendering the way it rendered on its publication day.
+ *
+ * Pure by contract. No database, no network, no clock, no live registry: the
+ * only I/O is reading the fork CSS seam under `bundleRoot`, which the CSS chain
+ * does, and reading the vendored Prism/KaTeX bytes when the slides need them.
+ * `docs/reference/renderer-bundle.md` states the boundary and what a caller has
+ * to hand over because of it.
+ */
+
+import {
+  renderSlideHtml,
+  computeHeadingShifts,
+} from '../utils/render-slide.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
+import {
+  buildPrismKatexTags,
+  detectPrismKatexNeeds,
+} from '../utils/prism-katex.js';
+import {
+  buildScriptChain,
+  detectSlideRuntimeNeeds,
+} from '../utils/script-chain.js';
+import { buildCssChain } from '../utils/css-chain.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
+import {
+  CONTROLS_STRIP_CSS,
+  controlsStripIcon,
+} from '../utils/controls-strip.js';
+import {
+  getSlideEffectiveDuration,
+  DEFAULT_ADVANCE_INTERVAL_SECONDS,
+} from '../../shared/slide-timing.js';
+
+/**
+ * Chrome the standalone/published page adds on top of the deck bundle: the
+ * letterboxed 1600x900 stage, the visible nav controls, and the `?ui=min`
+ * and `?ui=strip` embed shapes. A layer of the same chain, so the fork seam still lands last
+ * (server/utils/css-chain.js).
+ */
+const STANDALONE_CSS = `
+      /* Standalone published view: scale fixed design (1600×900) to fit viewport, letterboxed. */
+      .export-body .deck {
+        align-items: stretch;
+        justify-content: stretch;
+      }
+      .ps-standalone-stage-wrap {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      .ps-standalone-stage {
+        position: absolute;
+        width: 1600px;
+        height: 900px;
+        left: 0;
+        top: 0;
+        transform-origin: top left;
+        max-width: none;
+        max-height: none;
+      }
+
+      /* Standalone published view: visible navigation controls (touch + discoverability). */
+      .ps-standalone-progress-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+      }
+      .ps-standalone-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      /* The loop controls are toggled with the hidden attribute, which the
+         .btn primitive's display would otherwise override. */
+      .ps-standalone-nav [hidden] {
+        display: none;
+      }
+      .ps-standalone-loop {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--color-text-muted, #666);
+      }
+      .ps-standalone-loop-interval {
+        width: 56px;
+        padding: 4px 6px;
+        border: 1px solid var(--color-border, #d0d0d0);
+        border-radius: 6px;
+        font: inherit;
+        text-align: right;
+      }
+      .ps-standalone-loop-interval::-webkit-outer-spin-button,
+      .ps-standalone-loop-interval::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .ps-standalone-loop-interval[type='number'] {
+        -moz-appearance: textfield;
+      }
+      .ps-standalone-loop-bar {
+        position: relative;
+        height: 2px;
+        margin-bottom: 6px;
+        background: var(--color-border, rgba(0, 0, 0, 0.08));
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+      }
+      .ps-standalone-loop-bar.is-on {
+        display: block;
+      }
+      .ps-standalone-loop-bar-fill {
+        position: absolute;
+        inset: 0;
+        width: 0%;
+        background: var(--color-accent, #3b82f6);
+        transition: none;
+      }
+      .ps-standalone-loop-bar.is-paused .ps-standalone-loop-bar-fill {
+        opacity: 0.4;
+      }
+      .ps-standalone-row-end {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      /* The strip's icons stand in for the button labels under ui=strip only. */
+      .ps-standalone-progress-row .controls-strip-icon {
+        display: none;
+      }
+      /* Override presenter default spacing when we put the progress text in a row. */
+      .presenter-progress .presenter-progress-text {
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+
+      /* ?ui=min — embed-shaped chrome. The topbar and the control row go away
+         and their grid rows collapse to 0, so the scaled stage is the whole
+         frame and a host page can size the iframe with aspect-ratio: 16 / 9
+         alone (no "chrome height" constant to keep in sync). What remains is
+         the 3px progress fill, absolutely positioned so it costs no layout
+         height: it is the only cue that the deck has more slides, it is not
+         interactive, and it cannot wrap. The slide counter is dropped from
+         view but still announced through #srStatus.
+         Keyboard nav (arrows/space/Home/End) and F for fullscreen are
+         untouched — with the buttons gone they are the interaction surface. */
+      html.ui-min .presenter-shell {
+        --presenter-topbar-height: 0px;
+        --presenter-progress-height: 0px;
+      }
+      html.ui-min .presenter-topbar,
+      html.ui-min .ps-standalone-progress-row,
+      html.ui-min .ps-standalone-loop-bar {
+        display: none;
+      }
+      html.ui-min .presenter-progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        padding: 0;
+        background: transparent;
+        border-top: none;
+        backdrop-filter: none;
+        pointer-events: none;
+      }
+      html.ui-min .presenter-progress-bar {
+        height: 3px;
+        border-radius: 0;
+        background: transparent;
+      }
+
+      /* ?ui=strip — the stage on top, edge to edge, and one toolbar of
+         --controls-strip-height below it (B268/D102): Previous, Next and the
+         counter on the left, Fullscreen on the right, icons in place of the
+         labels (the aria-labels stay the accessible names). The topbar goes,
+         the progress fill becomes a 2px line along the strip's top edge. In
+         fullscreen the strip is the presenter's overlay like any bottom bar
+         (D111): its row collapses and it shows on pointer activity. */
+      html.ui-strip .presenter-shell {
+        --presenter-topbar-height: 0px;
+        --presenter-progress-height: var(--controls-strip-height);
+      }
+      html.ui-strip.is-fullscreen .presenter-shell {
+        --presenter-progress-height: 0px;
+      }
+      html.ui-strip .presenter-topbar {
+        display: none;
+      }
+      html.ui-strip .presenter-progress {
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        height: var(--controls-strip-height);
+        padding: 0 var(--ps-space-2);
+      }
+      html.ui-strip:not(.is-fullscreen) .presenter-progress {
+        position: relative;
+      }
+      html.ui-strip .ps-standalone-progress-row {
+        flex: 1;
+        min-width: 0;
+        margin-bottom: 0;
+        justify-content: flex-start;
+      }
+      /* The counter follows Next, Fullscreen takes the far end: the same
+         places as in the hosted embed's strip. */
+      html.ui-strip .ps-standalone-row-end {
+        display: contents;
+      }
+      html.ui-strip #btnFs {
+        margin-left: auto;
+      }
+      html.ui-strip .ps-standalone-progress-row .btn:has(.controls-strip-icon) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+      }
+      html.ui-strip .ps-standalone-progress-row .controls-strip-icon {
+        display: block;
+      }
+      html.ui-strip .ps-standalone-btn-label {
+        display: none;
+      }
+      html.ui-strip .presenter-progress-bar,
+      html.ui-strip .ps-standalone-loop-bar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 2px;
+        margin: 0;
+        border-radius: 0;
+      }
+`;
+
+/**
+ * The standalone/published deck runtime: slide navigation, the progress bar and
+ * screen-reader status, fullscreen wiring, and the auto-advance/loop machinery.
+ *
+ * Path-specific — no other render path shows one slide at a time with visible
+ * nav — so it stays here and is handed to the script chain as a body. What it
+ * is *not* responsible for any more: video embeds and stage scaling, which it
+ * shared byte-for-byte with the embed and which now come from
+ * `runtime: 'stage'` (server/utils/script-chain.js).
+ *
+ * @param {Object} options
+ * @param {string} options.autoAdvanceJson - Pre-serialised auto-advance config
+ * @returns {string} JavaScript source
+ */
+function deckRuntimeJs({ autoAdvanceJson }) {
+  return `
+        // Auto-advance / loop config baked in at render time. URL params can override.
+        window.__DECK_AUTO_ADVANCE__ = ${autoAdvanceJson};
+
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        const srStatus = document.getElementById('srStatus');
+
+        attachStageScale();
+
+        const slides = Array.from(document.querySelectorAll('.deck-slide'));
+        let idx = 0;
+        function clamp(n) { return Math.max(0, Math.min(slides.length - 1, n)); }
+        function updateNavDisabled() {
+          if (btnPrev) btnPrev.disabled = idx <= 0;
+          if (btnNext) btnNext.disabled = idx >= slides.length - 1;
+        }
+        function readHeadingFromSlideEl(deckSlideEl) {
+          const root = deckSlideEl ? deckSlideEl.querySelector('.slide') : null;
+          if (!root) return '';
+          const h = root.querySelector('h1, h2, h3');
+          const t = h ? String(h.textContent || '').trim() : '';
+          return t;
+        }
+        function slideA11yLabel(deckSlideEl) {
+          const n = idx + 1;
+          const total = slides.length;
+          const prefix = total ? ('Slide ' + n + ' of ' + total) : ('Slide ' + n);
+          const t1 = deckSlideEl && deckSlideEl.dataset ? String(deckSlideEl.dataset.a11yTitle || '').trim() : '';
+          const t2 = t1 || readHeadingFromSlideEl(deckSlideEl);
+          return t2 ? (prefix + ': ' + t2) : prefix;
+        }
+        function slideA11ySummary(deckSlideEl) {
+          return deckSlideEl && deckSlideEl.dataset
+            ? String(deckSlideEl.dataset.a11ySummary || '').trim()
+            : '';
+        }
+        function updateSlideA11y() {
+          for (let j = 0; j < slides.length; j += 1) {
+            const s = slides[j];
+            const isActive = j === idx;
+            s.classList.toggle('is-active', isActive);
+            s.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+            if (isActive) {
+              s.setAttribute('aria-current', 'true');
+              s.removeAttribute('inert');
+            } else {
+              s.removeAttribute('aria-current');
+              s.setAttribute('inert', '');
+            }
+          }
+        }
+        function show(i) {
+          const prev = slides[idx];
+          idx = clamp(i);
+          updateSlideA11y();
+          if (prev && prev !== slides[idx]) pauseVideoEmbeds(prev);
+          activateVideoEmbeds(slides[idx]);
+          const txt = document.getElementById('progressText');
+          const fill = document.getElementById('progressFill');
+          if (txt) txt.textContent = (idx + 1) + ' / ' + slides.length;
+          if (fill) fill.style.width = (slides.length ? ((idx + 1) / slides.length * 100) : 0) + '%';
+          updateNavDisabled();
+          if (srStatus) {
+            const label = slideA11yLabel(slides[idx]);
+            const summary = slideA11ySummary(slides[idx]);
+            srStatus.textContent = summary ? (label + '. ' + summary) : label;
+          }
+          history.replaceState(null, '', '#slide=' + idx);
+        }
+        function next() { show(idx + 1); }
+        function prev() { show(idx - 1); }
+        // Fullscreen: the presenter's own contract (D111), inlined from
+        // client/views/presenter/ by the script chain. Both bars (the strip,
+        // under ?ui=strip) become overlays that show on pointer activity.
+        // ?ui=min has no bars, so it keeps only the F key.
+        const shellEl = document.querySelector('.presenter-shell');
+        const fullscreenCtl = createPresenterFullscreenController({ shell: shellEl });
+        if (window.__DECK_UI__ !== 'min') {
+          fullscreenCtl.attach();
+          createChromeAutoHide({ shell: shellEl });
+        }
+        const toggleFullscreen = fullscreenCtl.toggleFullscreen;
+        const btnFs = document.getElementById('btnFs');
+        if (btnPrev) btnPrev.addEventListener('click', () => prev());
+        if (btnNext) btnNext.addEventListener('click', () => next());
+        if (btnFs) btnFs.addEventListener('click', () => toggleFullscreen());
+        document.addEventListener('keydown', (e) => {
+          const target = e.target;
+          const tag =
+            target && target.tagName ? String(target.tagName).toUpperCase() : '';
+          const isTyping =
+            tag === 'INPUT' ||
+            tag === 'TEXTAREA' ||
+            tag === 'SELECT' ||
+            (target && target.isContentEditable);
+          if (isTyping) return;
+          if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+          if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+          if (e.key === 'Home') { e.preventDefault(); show(0); }
+          if (e.key === 'End') { e.preventDefault(); show(slides.length - 1); }
+          if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); }
+          if (e.key === 'Escape' && document.fullscreenElement) { e.preventDefault(); document.exitFullscreen(); }
+        });
+        const m = location.hash.match(/slide=(\\d+)/);
+        if (m) idx = clamp(parseInt(m[1], 10));
+        show(idx);
+
+        // Auto-advance / loop runtime — driven by deck settings, URL params override.
+        // URL params: ?loop=1|0 (autoplay + loop at end), ?autoplay=1|0 (autoplay only),
+        // ?interval=N (seconds per slide, 1–300; overrides per-slide + deck defaults).
+        // (?ui=min is handled by the inline script at the top of <body>.)
+        (function setupAutoLoop() {
+          const cfg = window.__DECK_AUTO_ADVANCE__ || {};
+          const baseEnabled = !!cfg.enabled;
+          const baseLoop = !!cfg.loop;
+          const baseInterval = Number(cfg.intervalSeconds) || 20;
+          const slideDurs = Array.isArray(cfg.slideDurations) ? cfg.slideDurations : [];
+
+          const params = new URLSearchParams(location.search);
+          function paramBool(name) {
+            if (!params.has(name)) return null;
+            const v = String(params.get(name)).toLowerCase().trim();
+            if (v === '1' || v === 'true' || v === 'on' || v === 'yes') return true;
+            if (v === '0' || v === 'false' || v === 'off' || v === 'no') return false;
+            return null;
+          }
+          const pLoop = paramBool('loop');
+          const pAuto = paramBool('autoplay');
+          const pIntervalRaw = params.get('interval');
+          const pInterval = pIntervalRaw != null ? Number(pIntervalRaw) : null;
+
+          let shouldAutoplay;
+          if (pLoop === false || pAuto === false) shouldAutoplay = false;
+          else if (pLoop === true || pAuto === true) shouldAutoplay = true;
+          else shouldAutoplay = baseEnabled;
+
+          let loopAtEnd;
+          if (pLoop === false) loopAtEnd = false;
+          else if (pLoop === true) loopAtEnd = true;
+          else loopAtEnd = baseLoop;
+
+          let intervalOverride = null;
+          if (pInterval != null && Number.isFinite(pInterval) && pInterval >= 1 && pInterval <= 300) {
+            intervalOverride = Math.round(pInterval);
+          }
+
+          const btnLoop = document.getElementById('btnLoop');
+          const loopIntervalInput = document.getElementById('loopInterval');
+          const loopIntervalWrap = document.getElementById('loopIntervalWrap');
+          const loopBar = document.getElementById('loopBar');
+          const loopBarFill = document.getElementById('loopBarFill');
+
+          // The strip only carries the loop controls when the deck loops or
+          // autoplays; the default row always offers them.
+          const showLoopUi = window.__DECK_UI__ !== 'strip' || shouldAutoplay || loopAtEnd;
+          if (btnLoop) btnLoop.hidden = !showLoopUi;
+          if (loopIntervalWrap) loopIntervalWrap.hidden = !showLoopUi;
+          if (loopIntervalInput) {
+            loopIntervalInput.value = String(intervalOverride != null ? intervalOverride : baseInterval);
+          }
+
+          let isPlaying = false;
+          let timerId = null;
+          let rafId = null;
+          let slideStartedAt = 0;
+          let slideDurationMs = 0;
+
+          function getSlideDurationSec() {
+            const inputVal = Number(loopIntervalInput && loopIntervalInput.value);
+            if (Number.isFinite(inputVal) && inputVal >= 1 && inputVal <= 300) {
+              return Math.round(inputVal);
+            }
+            const slideDur = Number(slideDurs[idx]);
+            if (Number.isFinite(slideDur) && slideDur >= 1 && slideDur <= 300) return slideDur;
+            return baseInterval;
+          }
+
+          function tickBar() {
+            if (!isPlaying || !loopBarFill) return;
+            const now = performance.now();
+            const elapsed = now - slideStartedAt;
+            const pct = Math.min(100, (elapsed / slideDurationMs) * 100);
+            loopBarFill.style.width = pct.toFixed(1) + '%';
+            rafId = requestAnimationFrame(tickBar);
+          }
+
+          function clearTimers() {
+            if (timerId) { clearTimeout(timerId); timerId = null; }
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+          }
+
+          function scheduleNext() {
+            clearTimers();
+            if (!isPlaying) return;
+            const sec = getSlideDurationSec();
+            slideDurationMs = sec * 1000;
+            slideStartedAt = performance.now();
+            if (loopBarFill) loopBarFill.style.width = '0%';
+            rafId = requestAnimationFrame(tickBar);
+            timerId = setTimeout(() => {
+              if (idx >= slides.length - 1) {
+                if (loopAtEnd) show(0);
+                else { setPlaying(false); return; }
+              } else {
+                show(idx + 1);
+              }
+            }, slideDurationMs);
+          }
+
+          function updateButton() {
+            if (btnLoop) {
+              btnLoop.textContent = isPlaying ? '⏸ Loop' : '▶ Loop';
+              btnLoop.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+            }
+            if (loopBar) loopBar.classList.toggle('is-on', isPlaying);
+          }
+
+          function setPlaying(on) {
+            isPlaying = !!on;
+            if (isPlaying) scheduleNext();
+            else { clearTimers(); if (loopBarFill) loopBarFill.style.width = '0%'; }
+            updateButton();
+          }
+
+          // Re-arm timer on any slide change (including manual nav).
+          const __origShow = show;
+          show = function(i) {
+            __origShow(i);
+            if (isPlaying) scheduleNext();
+          };
+
+          if (btnLoop) btnLoop.addEventListener('click', () => setPlaying(!isPlaying));
+          if (loopIntervalInput) {
+            loopIntervalInput.addEventListener('change', () => {
+              if (isPlaying) scheduleNext();
+            });
+          }
+
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+              if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+            } else if (isPlaying) {
+              rafId = requestAnimationFrame(tickBar);
+            }
+          });
+
+          if (shouldAutoplay) setPlaying(true);
+          else updateButton();
+        })();
+`;
+}
+
+/**
+ * Assemble the canvas document from frozen input.
+ *
+ * Every argument is data the caller already resolved: the slides are filtered
+ * and their images embedded, the CSS layers are built, the theme is the
+ * effective record. Nothing here goes looking for a current value.
+ *
+ * @param {string} bundleRoot - Root the fork CSS seam and the vendored
+ *   Prism/KaTeX bytes are read from (a checkout for the live path, an unpacked
+ *   render bundle for a published edition)
+ * @param {object} pres - Presentation, already visibility-filtered
+ * @param {object} opts
+ * @param {Array<object>} opts.slides - The slides to render, images embedded
+ * @param {object} opts.css - CSS layers: `{ fontCss, chromeCss, themeVarsCss,
+ *   slidesCss, wmCss, wmHtml, customCss }`
+ * @param {object|null} [opts.theme] - Effective theme record
+ * @param {Record<string, object>|null} [opts.slideTypes] - Merged registry
+ * @param {string} opts.docLang - `<html lang>` value
+ * @param {string|null} opts.deckLang - Deck language for built-in slide copy
+ * @param {string} [opts.metaDescription] - `<meta name="description">`
+ * @param {string} [opts.headHtml] - Extra `<head>` markup
+ * @param {string} [opts.topbarRightHtml] - Extra topbar markup
+ * @param {'export'|'published'} [opts.context] - Decides whether Prism/KaTeX
+ *   are linked (served by this installation) or inlined (self-contained file)
+ * @param {string} [opts.externalFontCssLinks] - Managed-font `<link>` tags
+ * @param {string} [opts.externalFontScripts] - Managed-font `<script>` tags
+ * @param {((html: string) => Promise<string>)|null} [opts.htmlTransform] - Pass
+ *   over the rendered slide markup before it lands in the document. The live
+ *   path embeds the images it finds there; a sealed edition has none left to
+ *   embed, so it passes nothing.
+ * @returns {Promise<string>} a complete HTML document
+ */
+export async function renderCanvasDocument(
+  bundleRoot,
+  pres,
+  {
+    slides,
+    css,
+    theme = null,
+    slideTypes = null,
+    docLang,
+    deckLang = null,
+    metaDescription = '',
+    headHtml = '',
+    topbarRightHtml = '',
+    context = 'export',
+    externalFontCssLinks = '',
+    externalFontScripts = '',
+    htmlTransform = null,
+  },
+) {
+  // Auto-advance / loop config (used by published /p/ pages and downloaded standalone HTML).
+  // URL params (?loop / ?autoplay / ?interval) can override these at runtime.
+  const autoAdvanceCfg =
+    pres?.settings?.autoAdvance && typeof pres.settings.autoAdvance === 'object'
+      ? pres.settings.autoAdvance
+      : {};
+  const autoAdvanceEnabled =
+    !!autoAdvanceCfg.enabled && autoAdvanceCfg.mode !== 'pacing';
+  const autoAdvanceLoop = !!autoAdvanceCfg.loop;
+  const autoAdvanceInterval =
+    Number(autoAdvanceCfg.intervalSeconds) || DEFAULT_ADVANCE_INTERVAL_SECONDS;
+  const slideDurations = slides.map((s) =>
+    getSlideEffectiveDuration(s, autoAdvanceInterval),
+  );
+  const autoAdvanceJson = JSON.stringify({
+    enabled: autoAdvanceEnabled,
+    loop: autoAdvanceLoop,
+    intervalSeconds: autoAdvanceInterval,
+    slideDurations,
+  });
+
+  // Per-slide heading depth for the document outline: the deck title below is
+  // the single <h1>; chapter sections push their slides one level deeper.
+  const headingShifts = computeHeadingShifts(slides);
+  let slidesHtml = slides
+    .map((s, i) => {
+      const c = s?.content && typeof s.content === 'object' ? s.content : {};
+      const a11yTitle =
+        typeof c?.a11yTitle === 'string' ? c.a11yTitle.trim() : '';
+      const a11ySummary =
+        typeof c?.a11ySummary === 'string' ? c.a11ySummary.trim() : '';
+      const a11yTitleAttr = a11yTitle
+        ? ` data-a11y-title="${escapeHtml(a11yTitle)}"`
+        : '';
+      const a11ySummaryAttr = a11ySummary
+        ? ` data-a11y-summary="${escapeHtml(a11ySummary)}"`
+        : '';
+      return `<section class="deck-slide" data-slide-id="${escapeHtml(
+        s.id,
+      )}" data-slide-type="${escapeHtml(s.type)}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
+    })
+    .join('\n');
+  if (htmlTransform) slidesHtml = await htmlTransform(slidesHtml);
+  const title = escapeHtml(pres.title || 'Presentation');
+  const extraHead = String(headHtml || '');
+  const extraTopbar = String(topbarRightHtml || '');
+
+  // Prism/KaTeX come from client/vendor/, and only when the rendered slides
+  // actually contain a code block or math — Prism then loads just the language
+  // packs this deck uses. The two contexts reach the same bytes differently:
+  // a published /p/ page is served by this server, so it links them and the
+  // browser caches them across decks; a downloaded file has no origin to
+  // resolve `/client/vendor/…` against, so it carries them inline.
+  const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
+
+  return `${buildDocumentHead({
+    lang: docLang,
+    title: pres.title || 'Presentation',
+    description: metaDescription,
+    head: [
+      extraHead,
+      externalFontCssLinks,
+      externalFontScripts,
+      buildPrismKatexTags({
+        ...highlightNeeds,
+        mode: context === 'published' ? 'linked' : 'inlined',
+      }),
+    ],
+    styles: [
+      buildCssChain(
+        bundleRoot,
+        [
+          css.fontCss,
+          css.chromeCss,
+          css.themeVarsCss,
+          css.slidesCss,
+          css.wmCss,
+          CONTROLS_STRIP_CSS,
+          STANDALONE_CSS,
+        ],
+        { customCss: css.customCss },
+      ),
+    ],
+  })}
+  <body class="export-body">
+    <script>
+      // ?ui=min hides the presenter chrome, ?ui=strip puts one toolbar below
+      // the stage (see the .ui-min and .ui-strip rules above). Read before the
+      // shell renders so an embedded deck never flashes a topbar it is about
+      // to drop. Same param name and meaning as buildEmbedHtml's ui option,
+      // so the two runtimes keep one vocabulary.
+      (function () {
+        var ui = 'default';
+        try {
+          var raw = String(new URLSearchParams(location.search).get('ui') || '').toLowerCase().trim();
+          if (raw === 'min' || raw === 'strip') ui = raw;
+        } catch (e) {}
+        window.__DECK_UI__ = ui;
+        if (ui === 'min') document.documentElement.classList.add('ui-min');
+        if (ui === 'strip') document.documentElement.classList.add('ui-strip');
+      })();
+    </script>
+    <a class="skip-link" href="#deck">Skip to slides</a>
+    <div class="presenter-shell">
+      <header class="presenter-topbar">
+        <h1 class="presenter-title" title="${title}">${title}</h1>
+        <div class="row" style="gap: 10px; align-items:center;">
+          ${extraTopbar}
+          <div class="presenter-help">←/→ or Space · F fullscreen · Esc</div>
+        </div>
+      </header>
+      <main id="deck" class="deck" aria-live="polite">
+        <div id="stageWrap" class="ps-standalone-stage-wrap">
+          <div id="stage" class="ps-standalone-stage ps-theme">
+            ${css.wmHtml}
+            ${slidesHtml}
+          </div>
+        </div>
+      </main>
+      <footer class="presenter-progress">
+        <div id="srStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div id="loopBar" class="ps-standalone-loop-bar"><div id="loopBarFill" class="ps-standalone-loop-bar-fill"></div></div>
+        <div class="ps-standalone-progress-row">
+          <nav class="ps-standalone-nav" aria-label="Slide navigation">
+            <button id="btnPrev" class="btn btn-secondary btn-sm" type="button" aria-label="Previous slide">${controlsStripIcon('prev')}<span class="ps-standalone-btn-label">Previous</span></button>
+            <button id="btnNext" class="btn btn-secondary btn-sm" type="button" aria-label="Next slide">${controlsStripIcon('next')}<span class="ps-standalone-btn-label">Next</span></button>
+            <button id="btnLoop" class="btn btn-secondary btn-sm" type="button" aria-label="Auto-loop" aria-pressed="false" hidden>▶ Loop</button>
+            <label class="ps-standalone-loop" hidden id="loopIntervalWrap">
+              <input id="loopInterval" class="ps-standalone-loop-interval" type="number" min="1" max="300" step="1" aria-label="Seconds per slide" />
+              <span>s</span>
+            </label>
+          </nav>
+          <div class="ps-standalone-row-end">
+            <div id="progressText" class="presenter-progress-text" aria-live="polite"></div>
+            <button id="btnFs" class="btn btn-secondary btn-sm" type="button" aria-label="Fullscreen">${controlsStripIcon('fullscreen')}<span class="ps-standalone-btn-label">Fullscreen</span></button>
+          </div>
+        </div>
+        <div class="presenter-progress-bar"><div id="progressFill" class="presenter-progress-fill"></div></div>
+      </footer>
+    </div>
+    ${buildScriptChain({
+      runtime: 'stage',
+      needs: highlightNeeds,
+      slideNeeds: detectSlideRuntimeNeeds(slidesHtml),
+      clientModules: ['presenter-fullscreen', 'chrome-autohide'],
+      body: deckRuntimeJs({ autoAdvanceJson }),
+    })}
+  </body>
+</html>`;
+}

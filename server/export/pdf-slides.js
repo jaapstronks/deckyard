@@ -2,7 +2,8 @@ import { renderSlideHtml } from '../utils/render-slide.js';
 import { filterForExport } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
-import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
+import { embedImgSrcDataUrls } from '../utils/html-utils.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { debugLog } from '../utils/debug-log.js';
 import {
   buildPrismKatexTags,

@@ -10,7 +10,7 @@ import path from 'node:path';
 import { renderSlideHtml } from '../../shared/slide-types.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
-import { themeVarsCssText } from '../utils/themes.js';
+import { themeVarsCssText } from '../utils/theme-vars-css.js';
 import { embedSlideImages } from '../export/css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';

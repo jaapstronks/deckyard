@@ -20,9 +20,6 @@ const log = createLogger('html-utils');
 const TRANSPARENT_PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-// Re-export from shared helpers
-export { escapeHtml } from '../../shared/slide-types/helpers.js';
-
 /**
  * Read a file, returning empty string if it doesn't exist
  * @param {string} p - File path

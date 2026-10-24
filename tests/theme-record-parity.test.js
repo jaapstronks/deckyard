@@ -27,7 +27,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildThemeConfig } from '../server/utils/theme-builder.js';
-import { themeVarsCssText } from '../server/utils/themes.js';
+import { themeVarsCssText } from '../server/utils/theme-vars-css.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
 import {
   checkThemeConfig,

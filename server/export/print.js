@@ -12,7 +12,7 @@ import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
-import { escapeHtml } from '../utils/html-utils.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,

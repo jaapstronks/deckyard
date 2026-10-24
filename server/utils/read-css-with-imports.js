@@ -231,3 +231,47 @@ export async function readCssWithImports(repoRoot, absCssPath) {
     stack: new Set(),
   });
 }
+
+/**
+ * Every local file `readCssWithImports()` would read for one entry stylesheet.
+ *
+ * Same resolver, same `@import` parser, different output: the text for a render
+ * path, the file list for anything that has to *carry* that text. A render
+ * bundle freezes the stylesheets a published edition renders with
+ * (`scripts/build-renderer-bundle.js`), and a second walker written beside this
+ * one would be a second opinion about which files those are.
+ *
+ * @param {string} repoRoot - Installation root; `/`-rooted imports resolve here
+ * @param {string} absCssPath - Entry stylesheet
+ * @returns {Promise<string[]>} Absolute paths, entry first, then sorted
+ */
+export async function cssImportClosure(repoRoot, absCssPath) {
+  const root = path.resolve(absCssPath);
+  const found = new Set();
+  const stack = new Set();
+
+  async function walk(abs) {
+    const real = path.resolve(abs);
+    if (stack.has(real) || found.has(real)) return;
+    const css = await readTextIfExists(real);
+    if (!css) return;
+    found.add(real);
+    stack.add(real);
+    try {
+      for (const imp of parseTopLevelImports(css)) {
+        const childAbs = resolveImportAbsPath({
+          repoRoot,
+          fromAbsPath: real,
+          importUrl: imp.url,
+        });
+        if (childAbs) await walk(childAbs);
+      }
+    } finally {
+      stack.delete(real);
+    }
+  }
+
+  await walk(root);
+  const rest = [...found].filter((f) => f !== root).sort();
+  return found.has(root) ? [root, ...rest] : rest;
+}
