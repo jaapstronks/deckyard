@@ -6,7 +6,7 @@
  * Building is an **operator** action, which is why this lives with the other
  * build tooling rather than in `server/`: it walks a checkout, refuses what it
  * cannot close, and writes a verified directory into a store. Nothing in the
- * request path builds a bundle; the request path only opens one
+ * request path builds, opens or executes a bundle
  * (`server/render/renderer-bundle/`).
  *
  * What goes in, and why each set is declared rather than guessed:
@@ -35,11 +35,10 @@
  * input), `node_modules` (nothing in the closure imports a package), and
  * anything that reads a current value.
  *
- * **The refusal is the point.** The scan rejects a bundle whose closure can
- * reach the network, a database, another process or the filesystem outside
- * itself, and rejects a static import of any npm package, because a bundle that
- * can do those things is not frozen. A *dynamic* npm import in a branch the
- * renderer never takes is recorded in the manifest as an unsealed edge, and
+ * The scan rejects forbidden imports and literal file reads. It is a dependency
+ * inventory, not a capability proof: global APIs can bypass import resolution.
+ * Runtime isolation requires a boundary outside Node. A *dynamic* npm import
+ * in a branch the renderer never takes is recorded as an unsealed edge, and
  * only the edges in `ACCEPTED_UNSEALED` are allowed to be there at all.
  *
  * Usage:

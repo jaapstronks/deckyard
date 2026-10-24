@@ -9,11 +9,6 @@
     "reason": "Author vocabulary, exactly like on-surface-dark: written by decks and forks, never by this repo's own markup. Removing it is a vocabulary decision, not a dead-code one.",
     "see": "docs/reference/nested-surfaces.md"
   },
-  "constant": {
-    "kind": "vendor-emitted",
-    "reason": "Prism token type, emitted as class=\"token constant\"; defined by the vendored javascript and bash grammars. It read as alive until the canvas document builder was split out of server/export/html.js, which only shows the harvester had been catching the word inside a template literal by accident.",
-    "see": "client/vendor/prism/components/prism-javascript.min.js"
-  },
   "katex-error": {
     "kind": "vendor-emitted",
     "reason": "Written by vendored KaTeX in its throwOnError:false branch, so the raw LaTeX stays visible when a formula fails to parse.",

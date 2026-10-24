@@ -1,8 +1,8 @@
 /**
- * Two renderer revisions, one edition: the proof of T1.1.
+ * T1.1 reproducibility evidence and the network-isolation counterexample.
  *
- * The claim under test is the one a version number cannot make. A published
- * edition names a renderer; this file shows that naming it is enough:
+ * Trusted fixtures establish reproducibility; production execution is blocked.
+ * These tests distinguish document identity from execution isolation:
  *
  *   1. **Revision B does not reach edition A.** Renderer code, a core slide
  *      type's markup and a stylesheet all change in B; rendering the same
@@ -11,11 +11,12 @@
  *   2. **Losing the store changes nothing.** A bundle rebuilt from the same
  *      sources into a fresh store gets the same hash and renders the same
  *      bytes, so the store is a cache and not a source of truth.
- *   3. **The current installation is not needed and not reachable.** The worker
+ *   3. **Isolation is NOT established.** The trusted-fixture worker
  *      runs with a two-key environment, no write access, no child processes and
- *      the network sealed, and the closure that got in there has no database,
+ *      an import filter (NOT network isolation), and its closure has no database,
  *      no media provider and no feature-flag snapshot
- *      (`tests/renderer-bundle-closure.test.js` holds that half).
+ *      (`tests/renderer-bundle-closure.test.js` measures dependencies). A real
+ *      TCP connection still succeeds; production execution must refuse.
  *   4. **An unknown or damaged renderer refuses.** No fallback to the current
  *      one, in any of the five ways a bundle can be wrong.
  *
@@ -24,6 +25,15 @@
  *
  * Run with: node --test tests/renderer-bundle-isolation.test.js
  */
+
+import net from 'node:net';
+import { scanClosure } from '../scripts/build-renderer-bundle.js';
+import { renderEditionInBundle } from '../server/render/renderer-bundle/index.js';
+import {
+  renderTrustedEditionForProof,
+  rendererWorkerArgs,
+  workerEnv,
+} from './helpers/renderer-bundle-process.js';
 
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -35,9 +45,6 @@ import {
   RENDERER_BUNDLE_ERRORS,
   openRendererBundle,
   listRendererBundles,
-  renderEditionInBundle,
-  rendererWorkerArgs,
-  workerEnv,
 } from '../server/render/renderer-bundle/index.js';
 import { assertSealableEdition } from '../server/render/renderer-bundle/bundle/entry.js';
 import {
@@ -77,17 +84,17 @@ before(async () => {
   b = await buildBundle({ storeDir: store, sourceRoot: srcB });
 
   const input = frozenEditionInput();
-  rendered.a = await renderEditionInBundle(
+  rendered.a = await renderTrustedEditionForProof(
     await openRendererBundle(store, a.rendererHash),
     input,
   );
-  rendered.b = await renderEditionInBundle(
+  rendered.b = await renderTrustedEditionForProof(
     await openRendererBundle(store, b.rendererHash),
     input,
   );
   // Rendered again only after B exists and after B's sources were edited: this
   // is the "has anything leaked" read, not a warm-up.
-  rendered.aAgain = await renderEditionInBundle(
+  rendered.aAgain = await renderTrustedEditionForProof(
     await openRendererBundle(store, a.rendererHash),
     input,
   );
@@ -153,7 +160,7 @@ test('rebuilding into a fresh store gives the same renderer and the same bytes',
     a.rendererHash,
     'the same sources must give the same renderer hash, or the store is the source of truth',
   );
-  const out = await renderEditionInBundle(
+  const out = await renderTrustedEditionForProof(
     await openRendererBundle(freshStore, rebuilt.rendererHash),
     frozenEditionInput(),
   );
@@ -161,7 +168,7 @@ test('rebuilding into a fresh store gives the same renderer and the same bytes',
   assert.equal(out.reader, rendered.a.reader);
 });
 
-test('the render worker has no credentials and no network', () => {
+test('the proof worker scrubs credentials and reports its import filter', () => {
   const env = rendered.a.sealed.env;
   for (const secret of [
     'DATABASE_URL',
@@ -192,7 +199,7 @@ test('the render worker has no credentials and no network', () => {
   assert.deepEqual(
     rendered.a.sealed.keptGlobals,
     [],
-    'a network global the seal could not remove is a hole in the boundary',
+    'the diagnostic must report every global it could not remove',
   );
   for (const spec of ['node:net', 'node:https', 'node:dns', 'net', 'https']) {
     assert.ok(
@@ -202,11 +209,11 @@ test('the render worker has no credentials and no network', () => {
   }
 });
 
-test('a process with the worker boundary cannot write, spawn or connect', async () => {
+test('Node permissions refuse filesystem/process operations; the filter refuses imports', async () => {
   // The same flags the host passes, read from the host rather than retyped,
   // against a probe that tries each escape in turn. The probe gets its own
-  // readable directory, which the real worker does not: what is proved here is
-  // the boundary, not the bundle.
+  // readable directory: these probes measure the individual Node checks,
+  // not an OS boundary. The TCP counterexample below proves the limitation.
   const probeDir = path.join(scratch, 'probe');
   await mkdir(probeDir, { recursive: true });
   const probe = path.join(probeDir, 'probe.mjs');
@@ -216,7 +223,7 @@ test('a process with the worker boundary cannot write, spawn or connect', async 
 import { sealNetwork } from ${JSON.stringify(path.join(a.dir, 'files/server/render/renderer-bundle/bundle/net-guard.js'))};
 // Run twice, with and without the seal, so the two halves of the boundary are
 // told apart: the permission model denies the process escapes on its own, and
-// the seal is what closes the network the model has no opinion about.
+// the filter rejects imports but does not prevent network connections.
 if (process.env.PROBE_SEAL !== '0') sealNetwork();
 const out = {};
 const attempt = async (name, fn) => {
@@ -388,14 +395,17 @@ test('an edition input of an unknown schema refuses', async () => {
   );
   await assert.rejects(
     () =>
-      renderEditionInBundle(bundle, {
+      renderTrustedEditionForProof(bundle, {
         ...frozenEditionInput(),
         schema: 'deckyard.edition-input/2',
       }),
     (err) => err.code === RENDERER_BUNDLE_ERRORS.INPUT_INVALID,
   );
   await assert.rejects(
-    () => renderEditionInBundle(bundle, { schema: 'deckyard.edition-input/1' }),
+    () =>
+      renderTrustedEditionForProof(bundle, {
+        schema: 'deckyard.edition-input/1',
+      }),
     (err) => err.code === RENDERER_BUNDLE_ERRORS.INPUT_INVALID,
   );
 });
@@ -408,7 +418,7 @@ test('a slide type the bundle does not carry refuses, by name', async () => {
   const input = frozenEditionInput();
   input.presentation.slides[1].type = 'org-custom-hero';
   await assert.rejects(
-    () => renderEditionInBundle(bundle, input),
+    () => renderTrustedEditionForProof(bundle, input),
     (err) =>
       err.code === RENDERER_BUNDLE_ERRORS.UNSEALABLE_INPUT &&
       /org-custom-hero/.test(err.message),
@@ -442,4 +452,86 @@ test('author markup in a markup field refuses: the sanitizer is not in the bundl
       registry,
     ),
   );
+});
+
+test('production execution refuses before inspecting or running a bundle', async () => {
+  const bundle = new Proxy(
+    {},
+    {
+      get() {
+        assert.fail('a blocked runner must not inspect bundle paths');
+      },
+    },
+  );
+  await assert.rejects(
+    () => renderEditionInBundle(bundle, frozenEditionInput()),
+    { code: RENDERER_BUNDLE_ERRORS.SANDBOX_UNAVAILABLE },
+  );
+});
+
+test('counterproof: getBuiltinModule opens real TCP despite the filter and scan', async (t) => {
+  const connections = [];
+  const listener = net.createServer((socket) => {
+    connections.push(true);
+    socket.end('local-proof');
+  });
+  await new Promise((resolve, reject) => {
+    listener.once('error', reject);
+    listener.listen(0, '127.0.0.1', resolve);
+  });
+  t.after(() => new Promise((resolve) => listener.close(resolve)));
+  const probeDir = path.join(scratch, 'network-counterproof');
+  await mkdir(probeDir);
+  const probe = path.join(probeDir, 'probe.mjs');
+  // The source contains no imports. Even a dependency scanner that rejects
+  // literal calls to getBuiltinModule would not be a runtime boundary.
+  await writeFile(
+    probe,
+    `
+const socket = process.getBuiltinModule('net').connect(${listener.address().port}, '127.0.0.1');
+socket.setTimeout(2000, () => { socket.destroy(); process.exitCode = 1; });
+socket.on('data', bytes => process.stdout.write(bytes));
+socket.on('error', () => { process.exitCode = 1; });
+`,
+  );
+  assert.deepEqual((await scanClosure(probeDir, ['probe.mjs'])).reasons, []);
+  const launcher = path.join(probeDir, 'launcher.mjs');
+  await writeFile(
+    launcher,
+    `
+import { sealNetwork } from ${JSON.stringify(path.join(a.dir, 'files/server/render/renderer-bundle/bundle/net-guard.js'))};
+sealNetwork();
+await import('./probe.mjs');
+`,
+  );
+  const result = await new Promise((resolve, reject) => {
+    const child = spawn(
+      process.execPath,
+      rendererWorkerArgs({
+        script: launcher,
+        readable: [a.dir, probeDir],
+      }),
+      { env: workerEnv(), stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    const timer = setTimeout(() => child.kill('SIGKILL'), 5000);
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.once('error', (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.once('close', (code) => {
+      clearTimeout(timer);
+      resolve({ code, stdout, stderr });
+    });
+  });
+  assert.equal(result.code, 0, result.stderr);
+  assert.equal(result.stdout, 'local-proof');
+  assert.equal(connections.length, 1);
 });

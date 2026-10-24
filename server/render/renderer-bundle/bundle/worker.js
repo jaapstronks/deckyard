@@ -1,13 +1,9 @@
 /**
  * The render worker: the process a published edition is rendered in.
  *
- * It is started by `server/render/renderer-bundle/host.js` as a child process
- * with `--permission --allow-fs-read=<bundleDir>` and an environment scrubbed
- * down to nothing the renderer could use, so by the time this file runs the
- * process can read the bundle and little else: no write access anywhere, no
- * database credentials, no child processes, no worker threads, no native
- * addons. This file adds the one dimension the permission model has not got -
- * the network - and then renders.
+ * Only the trusted-fixture test helper starts this worker today. Production
+ * execution is refused until an external isolation boundary exists. The import
+ * filter below is diagnostic: it does not prevent access to socket APIs.
  *
  * Protocol, deliberately the simplest thing that cannot be half-successful:
  * the edition input arrives as JSON on stdin, one JSON object leaves on stdout.
@@ -23,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { sealNetwork } from './net-guard.js';
 
 // Before the render entry, and therefore before any module in its closure, can
-// capture a socket API.
+// run; this orders diagnostics, not a security boundary.
 const sealedWhat = sealNetwork();
 
 /** The unpacked renderer tree: four levels up from this file. */
@@ -74,7 +70,7 @@ async function main() {
       canvas,
       reader,
       // What the seal closed, reported back rather than assumed: the test that
-      // proves the isolation reads this, and so does an operator wondering
+      // measures the filter reads this, and so does an operator wondering
       // what a frozen renderer could still have reached.
       sealed: { ...sealedWhat, env: Object.keys(process.env).sort() },
     });

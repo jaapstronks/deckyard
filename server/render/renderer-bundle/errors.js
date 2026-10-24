@@ -9,7 +9,7 @@
  * (`docs/plans/briefs/publication-records.md` § Bevroren rendercontract).
  *
  * Pure and dependency-free on purpose: the bundle's own entry throws these from
- * inside the sealed worker, so this module has to be bundle-safe.
+ * inside the proof worker, so this module has to be bundle-safe.
  */
 
 /** Closed set of refusal codes. */
@@ -22,6 +22,8 @@ export const RENDERER_BUNDLE_ERRORS = Object.freeze({
   CORRUPT: 'renderer_bundle_corrupt',
   /** A file the manifest names is missing, or one it does not name is present. */
   INCOMPLETE: 'renderer_bundle_incomplete',
+  /** No OS-isolated runner has been implemented. */
+  SANDBOX_UNAVAILABLE: 'renderer_bundle_sandbox_unavailable',
   /** The worker died, timed out, or wrote something unreadable. */
   WORKER_FAILED: 'renderer_bundle_worker_failed',
   /** The edition input does not match the schema the entry accepts. */

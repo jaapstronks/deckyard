@@ -22,6 +22,8 @@
  * Run with: node --test tests/renderer-bundle-screenshot.test.js
  */
 
+import { renderTrustedEditionForProof } from './helpers/renderer-bundle-process.js';
+
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rm } from 'node:fs/promises';
@@ -35,10 +37,7 @@ import {
 } from '../server/utils/puppeteer-browser.js';
 import { loadExportDocument } from '../server/render/load-export-document.js';
 import { settleRenderedPage } from '../server/utils/settle-rendered-page.js';
-import {
-  openRendererBundle,
-  renderEditionInBundle,
-} from '../server/render/renderer-bundle/index.js';
+import { openRendererBundle } from '../server/render/renderer-bundle/index.js';
 import {
   MARKERS,
   buildBundle,
@@ -100,7 +99,8 @@ test(
 
     const a = await buildBundle({ storeDir: store });
     const bundleA = await openRendererBundle(store, a.rendererHash);
-    const beforeHtml = (await renderEditionInBundle(bundleA, input)).canvas;
+    const beforeHtml = (await renderTrustedEditionForProof(bundleA, input))
+      .canvas;
     const before = await shoot(beforeHtml);
 
     const srcB = await stageSource(
@@ -111,11 +111,12 @@ test(
     const b = await buildBundle({ storeDir: store, sourceRoot: srcB });
     const bundleB = await openRendererBundle(store, b.rendererHash);
     const changed = await shoot(
-      (await renderEditionInBundle(bundleB, input)).canvas,
+      (await renderTrustedEditionForProof(bundleB, input)).canvas,
     );
 
     // Rendered again from revision A, now that B exists and B's sources differ.
-    const afterHtml = (await renderEditionInBundle(bundleA, input)).canvas;
+    const afterHtml = (await renderTrustedEditionForProof(bundleA, input))
+      .canvas;
     const after = await shoot(afterHtml);
 
     assert.ok(before.length > 10_000, 'the screenshot is suspiciously small');

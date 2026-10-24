@@ -7,10 +7,7 @@ Its purpose is a single property: a published edition that names a bundle keeps
 rendering the way it rendered on the day it was published, whatever the
 installation does afterwards.
 
-Today this is a **technical proof, not a live publishing contract** (T1.1). No
-request path builds or opens a bundle. What it establishes is that the renderer
-can be closed at all, which everything built on top of an edition record
-depends on.
+**Status 2026-10-24: execution isolation is unresolved (T1.1).** The trusted-fixture tests establish content identity and reproducible documents, but the original import filter permits real TCP connections through `process.getBuiltinModule('net')`. Production `renderEditionInBundle()` now refuses with `renderer_bundle_sandbox_unavailable` before inspecting or executing a bundle. Nothing in the request path uses this proof. The runnable experiment lives only in `tests/helpers/renderer-bundle-process.js` and must only receive trusted fixtures.
 
 ## Why a version number was not enough
 
@@ -21,8 +18,7 @@ stylesheets from the checkout, the upload bytes from the asset store. Two
 visits to the same link could return different documents with no republication
 in between, and the version number would have been identical both times.
 
-Measuring the import closure made the size of that gap concrete. The closure of
-the two published document builders was **305 modules**, and it reached:
+Measuring the import closure made the size of that gap concrete. The closure of the published document builders reached:
 
 | Edge                                                           | Through                                                                                 | What it meant                                                                                                                                |
 | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,14 +54,14 @@ from `server/utils/html-utils.js`, so its importers name the canonical home
 What a bundle carries, measured by `node scripts/build-renderer-bundle.js
 --print-map`:
 
-| Group           | Count | What it is                                                                                                                                                                                                               |
-| --------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `modules`       | 140   | The renderer's own JavaScript: the two assemblers, the CSS/script/head chains, and 96 modules of `shared/slide-types/` (the registry _is_ renderer code).                                                                |
-| `runtime-reads` | 6     | Files a module in the closure reads through a `new URL('…', import.meta.url)` literal: three slide runtimes, two presenter client modules, and the one accessibility rule the reader borrows from the canvas stylesheet. |
-| `css`           | 62    | The `@import` closure of `client/styles/export.css` and `client/styles/slides.css`, resolved with `cssImportClosure()` - the same walker the render path reads them with.                                                |
-| `static-trees`  | 60    | `client/vendor/prism`, `client/vendor/katex`, `custom/styles/` and `custom/slide-types/`.                                                                                                                                |
+| Group           | Contents                                                                              |
+| --------------- | ------------------------------------------------------------------------------------- |
+| `modules`       | Assemblers, CSS/script/head chains and the frozen slide-type registry.                |
+| `runtime-reads` | Literal URL reads of slide runtimes, presenter code and the accessibility stylesheet. |
+| `css`           | Export and slide stylesheet import closures, using the same walker as rendering.      |
+| `static-trees`  | Vendored Prism/KaTeX and the custom styles/type seams.                                |
 
-A bundle built from this checkout is 267 files and about 2.9 MB.
+Use the builder's `--print-map` output for the current inventory and sizes.
 
 The closure contains **no** module under `server/storage/`, `server/db/` or
 `server/media/`, and not `flags-snapshot.js`, `html-utils.js`, `ssrf-guard.js`,
@@ -82,7 +78,7 @@ implementation. The edge is recorded in every manifest rather than hidden,
 because it is honest and because it changes the hash.
 
 It is unreachable rather than merely untaken. The loader is `initSanitizer()`,
-which only the server and the MCP entrypoint call; a sealed worker calls neither.
+which only the server and the MCP entrypoint call; the proof worker calls neither.
 And the render entry refuses the two inputs that would reach a sanitizer anyway
 (see _Refusals_ below).
 
@@ -99,7 +95,7 @@ file groups, hashes everything and writes a directory into a store:
 ```
 
 `files/` mirrors the source tree rather than flattening it to `files/<sha256>`,
-because the modules in it import each other by relative path and a sealed worker
+because the modules in it import each other by relative path and the proof worker
 has no loader hook to resolve a flat store with. Content-addressing lives where
 it has to: the manifest names every file by digest, and the directory name is
 the digest of the manifest. Opening a bundle verifies both, in both directions -
@@ -138,35 +134,19 @@ with every reason it found, not the first:
   directory the bundle carries whole;
 - a read of a file outside the checkout.
 
-## The isolation boundary
+## Execution gate and architecture question
 
-A published edition is rendered by code that was frozen months ago. That code is
-trusted - an operator built and verified the bundle - but it is old, and old
-code is what a security fix was about. So it runs in a process that can do
-almost nothing:
+The production entry always refuses with `renderer_bundle_sandbox_unavailable`. There is no flag, environment switch or fallback that enables the test runner. The old process launcher lives under `tests/helpers/renderer-bundle-process.js` to keep reproducibility measurements available for trusted fixtures.
 
-| Mechanism                                                         | Closes                                                                                                                                                                                                     |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--permission --allow-fs-read=<bundleDir>`, no `--allow-fs-write` | Reads nothing outside the bundle, writes nothing anywhere. Also denies `child_process`, `worker_threads`, `cluster` and native addons.                                                                     |
-| A two-key environment (`NODE_ENV`, `DECKYARD_RENDER_WORKER`)      | No `DATABASE_URL`, no S3 key, no LLM key, no `DECKYARD_CUSTOM_DIR`. It is an allowlist, because a blocklist of secrets is a list somebody has to remember to extend.                                       |
-| The network seal in `bundle/net-guard.js`                         | The sockets the permission model has no opinion about. A `module.registerHooks()` resolve hook refuses the networking specifiers and the network globals are deleted, before the render entry is imported. |
-| `--max-old-space-size`, a wall-clock timeout, an output cap       | A renderer that loops, allocates or writes forever.                                                                                                                                                        |
+The [Node 22 permission model](https://nodejs.org/docs/latest-v22.x/api/permissions.html) restricts selected APIs but is explicitly not a security boundary against malicious code. It has no network permission. The `bundle/net-guard.js` resolve hook rejects imports and removes globals; `process.getBuiltinModule('net')` bypasses it. The closure scanner also accepts that code because it has no import to inspect. Blocking this one spelling would leave the same architectural problem.
 
-`module.registerHooks()` rather than `module.register()`: the latter runs its
-hooks on a worker thread, which the permission model denies, so it cannot be the
-seal of a sealed worker.
+`tests/renderer-bundle-isolation.test.js` starts a local ephemeral TCP listener, launches a filtered probe with the proof runner's exact flags and scrubbed environment, and checks both receipt of `local-proof` and the listener's connection count. This is a retained counterexample, not a passing isolation claim. It also checks that the production entry refuses before reading bundle paths.
 
-Input arrives as JSON on stdin and one JSON object leaves on stdout, so the host
-never sees a partial document. What deliberately stays outside the worker: HTTP
-headers, access control, revocation, rate limiting and caching. Those are
-current policy and belong to the current server, never to a frozen renderer.
+The test runner retains Node filesystem/process permission checks, a scrubbed environment, heap limit, wall-clock timeout and output cap. These bound the trusted experiment; they do not protect the host from hostile historical code. Input uses stdin and output uses stdout. HTTP policy, access control, revocation and caching remain outside frozen code.
 
-`tests/renderer-bundle-isolation.test.js` runs a probe with the same flags, read
-from the host rather than retyped, and runs it twice - with and without the seal
+**Architecture question:** may edition rendering require a separately managed OS-isolated worker? Recommended: a Linux container worker with a pinned runtime image, read-only bundle input, no secrets or host sockets, its own process/user boundary, no capabilities, resource limits and independently enforced network isolation. [Docker's `none` network](https://docs.docker.com/engine/network/drivers/none/) removes external interfaces but retains private loopback; a strict no-socket requirement also needs a syscall policy. The application must not gain a Docker socket simply to run a renderer. A separate service changes deployment and scheduling, and needs an explicit design before implementation.
 
-- so the two halves are told apart: the permission model denies the process
-  escapes on its own, and without the seal a sealed renderer could still import
-  `node:net`.
+An OS-specific subprocess launcher would need separate macOS/Linux implementations and deployment support; adding a Linux container dependency would change the current plain-Node execution contract. Neither is a portable repair within that contract. Until the external boundary is implemented and real TCP/UDP and process/filesystem escape probes fail under it, the isolation criterion is unmet (T1.1) and downstream publication rollout stays blocked. Hash/rebuild/screenshot tests establish only reproducibility.
 
 ## The edition input
 
@@ -187,15 +167,16 @@ The render entry refuses rather than renders when it cannot derive the document
 from the input alone. A fallback to the current renderer would serve different
 content under a citation, which is the thing the whole design prevents.
 
-| Code                                | When                                                                                |
-| ----------------------------------- | ----------------------------------------------------------------------------------- |
-| `renderer_edition_input_invalid`    | Unknown input schema, or no presentation.                                           |
-| `renderer_edition_input_unsealable` | A slide type the bundle does not carry, or author markup in a `markup: true` field. |
-| `renderer_bundle_unknown`           | No bundle with that hash in the store.                                              |
-| `renderer_bundle_malformed_hash`    | Not a 64-character lowercase hex digest.                                            |
-| `renderer_bundle_corrupt`           | The manifest or a file does not match its digest, or the manifest is not canonical. |
-| `renderer_bundle_incomplete`        | A named file is missing, or an unnamed file is present.                             |
-| `renderer_bundle_worker_failed`     | The worker crashed, timed out, or wrote something unreadable.                       |
+| Code                                  | When                                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| `renderer_edition_input_invalid`      | Unknown input schema, or no presentation.                                           |
+| `renderer_edition_input_unsealable`   | A slide type the bundle does not carry, or author markup in a `markup: true` field. |
+| `renderer_bundle_unknown`             | No bundle with that hash in the store.                                              |
+| `renderer_bundle_malformed_hash`      | Not a 64-character lowercase hex digest.                                            |
+| `renderer_bundle_corrupt`             | The manifest or a file does not match its digest, or the manifest is not canonical. |
+| `renderer_bundle_incomplete`          | A named file is missing, or an unnamed file is present.                             |
+| `renderer_bundle_sandbox_unavailable` | No OS-isolated runner is implemented; production execution refuses.                 |
+| `renderer_bundle_worker_failed`       | The worker crashed, timed out, or wrote something unreadable.                       |
 
 ## The open question
 
@@ -239,5 +220,4 @@ type. Not something to decide inside a technical proof.
   is frozen, but a `url(/custom/assets/…)` inside it resolves against the
   serving origin at view time. Closing that needs the same per-edition serving
   as the highlighter bytes.
-- **A bundle is about 2.9 MB.** One per renderer revision actually in use by a
-  living edition, not one per release.
+- **Storage follows renderer revisions in use**, not releases. Measure bundle size with the builder rather than assuming a fixed size.

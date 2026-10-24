@@ -1,27 +1,8 @@
 /**
- * The network seal inside a render worker.
- *
- * Node's permission model (`--permission`) closes the filesystem outside the
- * bundle, `child_process`, `worker_threads` and native addons, but it has no
- * network dimension: a module in the worker could still open a socket. So the
- * seal has two halves, and they answer different questions.
- *
- *   - **Build time, in `scripts/build-renderer-bundle.js`:** the closure scan
- *     refuses a bundle in which any module imports a networking builtin or an
- *     npm client. That is what makes the renderer *incapable*, and it is the
- *     half that matters, because it holds for every future build.
- *   - **Run time, here:** a resolution hook refuses those specifiers anyway and
- *     the network globals are removed. That is what makes an escape *visible*:
- *     a renderer that tries to reach the network throws instead of succeeding
- *     quietly, in production and in the test that proves the seal.
- *
- * `module.registerHooks()` is used rather than `module.register()` on purpose:
- * the latter runs its hooks on a worker thread, which `--permission` denies, so
- * it cannot be the seal of a sealed worker. This one is synchronous and
- * in-thread.
- *
- * The seal is installed before the render entry is imported, so no module in
- * the closure can have captured a socket API beforehand.
+ * Diagnostic import filter for the trusted-fixture render proof, NOT a sandbox.
+ * process.getBuiltinModule() bypasses resolution hooks and can open sockets.
+ * Removing globals and scanning imports do not establish network isolation.
+ * Production execution is refused by host.js pending an external boundary.
  */
 
 import { registerHooks } from 'node:module';
@@ -98,8 +79,7 @@ export function sealNetwork() {
         removed.push(name);
       } catch {
         // A non-configurable global stays. Recorded rather than swallowed: the
-        // build-time refusal is what guarantees nothing in the closure reaches
-        // for it, and this says the runtime half did not hold.
+        // diagnostic reports removal failures without claiming isolation.
         kept.push(name);
       }
     }
