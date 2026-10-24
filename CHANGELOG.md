@@ -7,6 +7,16 @@ entries are grouped per release rather than exhaustively listed.
 ## [1.88.0](https://github.com/jaapstronks/deckyard/compare/v1.87.0...v1.88.0) (2026-10-24)
 
 
+### ⚠ BREAKING CHANGES
+
+* Forks importing `server/storage/analytics/index.js` (or its concern modules): replace `getViewSessionsForPresentation` with `listViewSessions` and `getPresentationsWithAnalytics` with `listDashboardPresentations`; `ANALYTICS_LIST_SORTS` is removed. These lists, `listAnalyticsReports`, `listOrganizationMembers` and `listUsers` now require a page argument and return `{ items, next }` instead of arrays or offset/total envelopes. See `docs/reference/storage-layer.md`.
+* `parsePaginationParams` is removed from `server/utils/request-validators.js`; use `parseListPage` or, for bounded searches, `parseListLimit` from `server/services/list-page.js`.
+* The internal dashboard, viewer-session, report, organization-member and admin-user list endpoints now use `limit`/`cursor` and return the named list plus `nextCursor`; `offset` is refused and `total` is removed. The dashboard deck list rejects `sort` and orders by last modification; members and users are newest first. Public v1 and MCP contracts are unchanged in this release.
+
+### Upgrade
+
+* Migration 101 backfills missing creation timestamps in analytics reports, organization memberships and users, makes those timestamps required and adds/replaces list indexes. It deletes no rows. Back up the database before upgrading; index creation can hold locks while startup migrations run. No new dependency or configuration setting.
+
 ### Added
 
 * the last lists are read a page at a time (B825) ([#1831](https://github.com/jaapstronks/deckyard/issues/1831)) ([e819113](https://github.com/jaapstronks/deckyard/commit/e81911358cbe3407f0b0f4b201d00c572ab29cc3))
