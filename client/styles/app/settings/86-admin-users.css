@@ -4,6 +4,22 @@
    ADMIN USERS CARD-BASED LAYOUT
    ============================================================ */
 
+.admin-users-header {
+  flex-wrap: wrap;
+  gap: var(--ps-space-3);
+}
+
+.admin-users-header > .stack {
+  flex: 1 1 16rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-users-header > .btn {
+  max-width: 100%;
+  min-height: 44px;
+}
+
 .admin-users-grid {
   display: flex;
   flex-direction: column;
@@ -27,11 +43,13 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--ps-space-3);
 }
 
 .admin-user-info {
   flex: 1;
+  overflow-wrap: anywhere;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -67,7 +85,9 @@
   letter-spacing: 0.03em;
   background: hsl(var(--app-bg-sunken));
   color: hsl(var(--app-text-secondary));
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-user-role-badge.is-admin {
@@ -82,6 +102,7 @@
 
 .admin-user-status {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ps-space-3);
   margin-top: var(--ps-space-1);
@@ -145,7 +166,9 @@
 .admin-user-actions .btn {
   padding: var(--ps-space-1) var(--ps-space-2);
   font-size: var(--ps-text-xs);
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  min-height: 44px;
 }
 
 .admin-user-actions .btn-danger {
@@ -188,7 +211,17 @@
 
 /* Responsive: stack actions below info on narrow screens */
 @media (max-width: 640px) {
+  .admin-users-card,
+  .admin-user-card {
+    padding: var(--ps-space-2);
+  }
+
+  .admin-users-header > .btn,
   .admin-users-more {
+    width: 100%;
+  }
+
+  .admin-user-info {
     width: 100%;
   }
 
