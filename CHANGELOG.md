@@ -4,6 +4,25 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.89.0](https://github.com/jaapstronks/deckyard/compare/v1.88.0...v1.89.0) (2026-10-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* `escapeHtml` is no longer re-exported from `server/utils/html-utils.js` and `themeVarsCssText` no longer from `server/utils/themes.js`. Import them from `shared/slide-types/helpers.js` and `server/utils/theme-vars-css.js`.
+
+### Added
+
+* Add the architecture proof for content-addressed renderer bundles. Historical renderer execution remains disabled in production pending an OS-isolated runner; this release does not enable immutable publication editions. ([#1833](https://github.com/jaapstronks/deckyard/issues/1833)) ([a9a31e2](https://github.com/jaapstronks/deckyard/commit/a9a31e2d0981ff19a472475a0e9277f12366af45))
+
+
+### Fixed
+
+* keep analytics and user management within narrow screens (B842) ([#1836](https://github.com/jaapstronks/deckyard/issues/1836)) ([8c908f3](https://github.com/jaapstronks/deckyard/commit/8c908f3e1ccb96e0dd375bb6257b2aef26b8c244))
+
+
+Upgrade: forks using the moved helpers must update the two imports listed above. No new database migration or required configuration accompanies this release.
+
 ## [1.88.0](https://github.com/jaapstronks/deckyard/compare/v1.87.0...v1.88.0) (2026-10-24)
 
 
