@@ -28,6 +28,7 @@ import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
+import sharp from 'sharp';
 
 import {
   closePuppeteerBrowser,
@@ -78,7 +79,15 @@ async function shoot(html) {
     await settleRenderedPage(page);
     const stage = await page.$('#stage');
     assert.ok(stage, 'the canvas document has no #stage element');
-    return toNodeBuffer(await stage.screenshot({ type: 'png' }));
+    const png = toNodeBuffer(await stage.screenshot({ type: 'png' }));
+    const { width, height } = await sharp(png).metadata();
+    // Chromium can interpolate the element clip's outer pixel differently
+    // between identical captures. Keep the whole interior, where the edition
+    // content and revision-B marker are painted.
+    return sharp(png)
+      .extract({ left: 1, top: 1, width: width - 2, height: height - 2 })
+      .png()
+      .toBuffer();
   } finally {
     try {
       await page.close();
