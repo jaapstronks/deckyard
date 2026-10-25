@@ -23,7 +23,7 @@
  * by a relative import.
  */
 
-import { readFile, readdir, realpath, stat } from 'node:fs/promises';
+import { lstat, readFile, readdir, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import { RENDERER_BUNDLE_ERRORS, RendererBundleError } from './errors.js';
@@ -32,6 +32,7 @@ import {
   canonicalManifestBytes,
   isRendererHash,
   sha256Hex,
+  validateRendererBundleManifest,
 } from './manifest.js';
 
 /** Name of the manifest inside a bundle directory. */
@@ -135,14 +136,28 @@ export async function openRendererBundle(storeDir, rendererHash) {
   }
   // A manifest whose canonical form is not the bytes on disk is not canonical,
   // so its hash would mean something different to the next reader.
-  if (!canonicalManifestBytes(manifest).equals(manifestBytes)) {
+  try {
+    validateRendererBundleManifest(manifest);
+    if (!canonicalManifestBytes(manifest).equals(manifestBytes)) {
+      throw new Error('not in canonical form');
+    }
+  } catch (err) {
     throw new RendererBundleError(
       RENDERER_BUNDLE_ERRORS.CORRUPT,
-      `manifest of ${rendererHash} is not in canonical form`,
+      `manifest of ${rendererHash} is invalid: ${err.message}`,
     );
   }
 
   const filesDir = path.join(dir, FILES_DIR);
+  try {
+    if (!(await lstat(filesDir)).isDirectory())
+      throw new Error('not a directory');
+  } catch {
+    throw new RendererBundleError(
+      RENDERER_BUNDLE_ERRORS.INCOMPLETE,
+      `render bundle ${rendererHash} has no ordinary ${FILES_DIR}/ directory`,
+    );
+  }
   let present;
   try {
     present = await listFilesRecursive(filesDir);
@@ -164,6 +179,23 @@ export async function openRendererBundle(storeDir, rendererHash) {
 
   for (const entry of manifest.files) {
     const abs = path.join(filesDir, entry.path);
+    let current = filesDir;
+    try {
+      const parts = entry.path.split('/');
+      for (const [index, part] of parts.entries()) {
+        current = path.join(current, part);
+        const info = await lstat(current);
+        if (index === parts.length - 1 ? !info.isFile() : !info.isDirectory()) {
+          throw new Error('not an ordinary file path');
+        }
+      }
+    } catch {
+      throw new RendererBundleError(
+        RENDERER_BUNDLE_ERRORS.INCOMPLETE,
+        `render bundle ${rendererHash}: ${entry.path} is not an ordinary file inside ${FILES_DIR}/`,
+        { path: entry.path },
+      );
+    }
     let bytes;
     try {
       bytes = await readFile(abs);

@@ -102,6 +102,12 @@ the digest of the manifest. Opening a bundle verifies both, in both directions -
 every file the manifest names must hash correctly, and no file under `files/`
 may be absent from the manifest, or somebody who can write the store could plant
 a module a relative import would pick up.
+The entry, worker and each file path must use one relative POSIX spelling
+inside `files/`, without `.`/`..` segments, empty segments or platform path
+aliases. Entry and worker must name declared files. The materialized tree must
+contain ordinary files and directories, not symlinks, before the store accepts
+it. An invalid manifest refuses with `renderer_bundle_corrupt`; a non-ordinary
+materialized path refuses with `renderer_bundle_incomplete`.
 
 A useful consequence: a bundle's `files/` directory is itself a buildable source
 root, and rebuilding it gives the same hash. That is what makes the store a

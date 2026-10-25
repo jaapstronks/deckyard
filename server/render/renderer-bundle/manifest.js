@@ -122,3 +122,47 @@ export function rendererHashFor(manifest) {
 export function isRendererHash(value) {
   return typeof value === 'string' && /^[0-9a-f]{64}$/.test(value);
 }
+
+/** A single POSIX spelling inside files/, with no filesystem aliases. */
+export function isCanonicalBundlePath(value) {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    !/[\\:\x00-\x1f]/.test(value) &&
+    value
+      .split('/')
+      .every((part) => part !== '' && part !== '.' && part !== '..')
+  );
+}
+
+/** Validate the paths and file declarations before a manifest can be opened. */
+export function validateRendererBundleManifest(manifest) {
+  if (!Array.isArray(manifest?.files)) {
+    throw new Error('files must be an array');
+  }
+  const declared = new Set();
+  for (const file of manifest.files) {
+    if (!isCanonicalBundlePath(file?.path)) {
+      throw new Error(`invalid file path ${JSON.stringify(file?.path)}`);
+    }
+    if (declared.has(file.path)) {
+      throw new Error(`duplicate file path ${file.path}`);
+    }
+    if (
+      !isRendererHash(file.sha256) ||
+      !Number.isSafeInteger(file.bytes) ||
+      file.bytes < 0
+    ) {
+      throw new Error(`invalid file declaration ${file.path}`);
+    }
+    declared.add(file.path);
+  }
+  for (const field of ['entry', 'worker']) {
+    const value = manifest[field];
+    if (!isCanonicalBundlePath(value) || !declared.has(value)) {
+      throw new Error(
+        `${field} must name a declared file inside files/: ${JSON.stringify(value)}`,
+      );
+    }
+  }
+}

@@ -38,8 +38,13 @@ import {
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import {
+  RENDERER_BUNDLE_SCHEMA,
+  rendererHashFor,
+  sha256Hex,
+} from '../server/render/renderer-bundle/manifest.js';
 
 import {
   RENDERER_BUNDLE_ERRORS,
@@ -319,6 +324,130 @@ test('a renderer hash that is not a digest refuses before touching disk', async 
       `accepted ${JSON.stringify(bad)}`,
     );
   }
+});
+
+test('entry, worker and file paths must name canonical declared files', async () => {
+  const store = path.join(scratch, 'invalid-manifest-store');
+  const content = Buffer.from('export default true;\n');
+  const file = {
+    path: 'entry.js',
+    sha256: sha256Hex(content),
+    bytes: content.length,
+  };
+  const base = {
+    schema: RENDERER_BUNDLE_SCHEMA,
+    entry: 'entry.js',
+    worker: 'entry.js',
+    files: [file],
+    unsealed: [],
+  };
+  const cases = [
+    { entry: '../outside.js' },
+    { worker: '../outside.js' },
+    { entry: '/entry.js' },
+    { worker: 'a/../entry.js' },
+    { worker: './entry.js' },
+    { worker: 'a//entry.js' },
+    { worker: 'a\\entry.js' },
+    { worker: 'C:/entry.js' },
+    { worker: 'undeclared.js' },
+    { files: [{ ...file, path: '../entry.js' }] },
+    { files: [{ ...file, path: 'a/./entry.js' }] },
+    { files: [{ ...file, path: 'a//entry.js' }] },
+    { files: [{ ...file, path: 'a\\entry.js' }] },
+  ];
+  for (const patch of cases) {
+    const manifest = { ...base, ...patch };
+    const { rendererHash, bytes } = rendererHashFor(manifest);
+    const dir = path.join(store, rendererHash);
+    await mkdir(path.join(dir, 'files'), { recursive: true });
+    await writeFile(path.join(dir, 'manifest.json'), bytes);
+    await assert.rejects(
+      () => openRendererBundle(store, rendererHash),
+      (err) => err.code === RENDERER_BUNDLE_ERRORS.CORRUPT,
+      `accepted ${JSON.stringify(patch)}`,
+    );
+  }
+});
+
+test('an undeclared worker cannot change output under one accepted hash', async () => {
+  const store = path.join(scratch, 'outside-worker-store');
+  const manifest = {
+    schema: RENDERER_BUNDLE_SCHEMA,
+    entry: '../outside.js',
+    worker: '../outside.js',
+    files: [],
+    unsealed: [],
+  };
+  const { rendererHash, bytes } = rendererHashFor(manifest);
+  const dir = path.join(store, rendererHash);
+  await mkdir(path.join(dir, 'files'), { recursive: true });
+  await writeFile(path.join(dir, 'manifest.json'), bytes);
+  for (const output of ['first bytes', 'changed bytes under same hash']) {
+    await writeFile(
+      path.join(dir, 'outside.js'),
+      `process.stdout.write(${JSON.stringify(output)});`,
+    );
+    await assert.rejects(
+      () => openRendererBundle(store, rendererHash),
+      (err) => err.code === RENDERER_BUNDLE_ERRORS.CORRUPT,
+    );
+  }
+});
+
+test('a declared path cannot traverse a symlink', async () => {
+  const store = path.join(scratch, 'symlink-store');
+  const content = Buffer.from('export default true;\n');
+  const manifest = {
+    schema: RENDERER_BUNDLE_SCHEMA,
+    entry: 'link/worker.js',
+    worker: 'link/worker.js',
+    files: [
+      {
+        path: 'link/worker.js',
+        sha256: sha256Hex(content),
+        bytes: content.length,
+      },
+    ],
+    unsealed: [],
+  };
+  const { rendererHash, bytes } = rendererHashFor(manifest);
+  const dir = path.join(store, rendererHash);
+  const outside = path.join(scratch, 'symlink-outside');
+  await mkdir(path.join(dir, 'files'), { recursive: true });
+  await mkdir(outside, { recursive: true });
+  await writeFile(path.join(dir, 'manifest.json'), bytes);
+  await writeFile(path.join(outside, 'worker.js'), content);
+  await symlink(outside, path.join(dir, 'files/link'));
+  await assert.rejects(
+    () => openRendererBundle(store, rendererHash),
+    (err) => err.code === RENDERER_BUNDLE_ERRORS.INCOMPLETE,
+  );
+});
+
+test('a declared file cannot itself be a symlink to matching bytes', async () => {
+  const store = path.join(scratch, 'symlink-file-store');
+  const content = Buffer.from('export default true;\n');
+  const manifest = {
+    schema: RENDERER_BUNDLE_SCHEMA,
+    entry: 'worker.js',
+    worker: 'worker.js',
+    files: [
+      { path: 'worker.js', sha256: sha256Hex(content), bytes: content.length },
+    ],
+    unsealed: [],
+  };
+  const { rendererHash, bytes } = rendererHashFor(manifest);
+  const dir = path.join(store, rendererHash);
+  const outside = path.join(scratch, 'symlink-file-outside.js');
+  await mkdir(path.join(dir, 'files'), { recursive: true });
+  await writeFile(path.join(dir, 'manifest.json'), bytes);
+  await writeFile(outside, content);
+  await symlink(outside, path.join(dir, 'files/worker.js'));
+  await assert.rejects(
+    () => openRendererBundle(store, rendererHash),
+    (err) => err.code === RENDERER_BUNDLE_ERRORS.INCOMPLETE,
+  );
 });
 
 test('one changed byte in a bundle refuses the whole bundle', async () => {

@@ -60,6 +60,7 @@ import {
   RENDERER_BUNDLE_SCHEMA,
   canonicalManifestBytes,
   rendererHashFor,
+  validateRendererBundleManifest,
 } from '../server/render/renderer-bundle/manifest.js';
 
 const defaultSourceRoot = path.resolve(
@@ -449,6 +450,7 @@ export async function buildRendererBundle({
     files,
     unsealed,
   };
+  validateRendererBundleManifest(manifest);
   const { rendererHash, bytes: manifestBytes } = rendererHashFor(manifest);
 
   const dir = path.join(path.resolve(storeDir), rendererHash);
