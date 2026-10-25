@@ -3,7 +3,7 @@
  * for PNG/image exports where videos cannot be embedded.
  */
 
-import { escapeHtml } from './html-utils.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { resolveVideoThumbnailDataUrl } from '../export/video-thumbnail.js';
 
 /**

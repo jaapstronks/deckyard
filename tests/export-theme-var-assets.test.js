@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 
 import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
-import { themeVarsCssText } from '../server/utils/themes.js';
+import { themeVarsCssText } from '../server/utils/theme-vars-css.js';
 import { createCoreFixtureRoot } from './helpers/core-fixture-root.js';
 
 // Core only: since B554 the fork seam's `url()`s share the cache and the

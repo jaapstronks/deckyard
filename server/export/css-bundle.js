@@ -5,7 +5,7 @@ import {
 } from '../utils/embed-fonts.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
 import { buildCssChain, readCustomStylesCss } from '../utils/css-chain.js';
-import { themeVarsCssText } from '../utils/themes.js';
+import { themeVarsCssText } from '../utils/theme-vars-css.js';
 import {
   sandboxWatermarkCss,
   sandboxWatermarkEnabled,
