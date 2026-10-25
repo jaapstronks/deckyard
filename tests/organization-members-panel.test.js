@@ -74,9 +74,11 @@ let requested = [];
 globalThis.fetch = async (input, init = {}) => {
   const path = String(input);
   requested.push(`${init?.method || 'GET'} ${path}`);
-  const body = path.includes('/members')
-    ? { members: MEMBERS, total: MEMBERS.length }
-    : { users: [] };
+  const body = path.includes('/members/count')
+    ? { count: MEMBERS.length }
+    : path.includes('/members')
+      ? { members: MEMBERS, nextCursor: null }
+      : { users: [], nextCursor: null };
   // Node's own Response, not jsdom's — this jsdom build does not expose one.
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -139,8 +141,9 @@ test('multi-organization asks the active organization for its members', async ()
   tab.load();
   await settle();
 
-  assert.deepEqual(requested, [
-    `GET /api/organizations/${ORG_B}/members?limit=25&offset=0`,
+  assert.deepEqual(requested.sort(), [
+    `GET /api/organizations/${ORG_B}/members/count`,
+    `GET /api/organizations/${ORG_B}/members?limit=25`,
   ]);
   assert.equal(
     requested.filter((r) => r.includes('/api/admin/users')).length,
@@ -162,8 +165,9 @@ test('the organization on the request is the session’s, not the default one', 
   });
   await panel.ready;
 
-  assert.deepEqual(requested, [
-    'GET /api/organizations/org-switched-into/members?limit=25&offset=0',
+  assert.deepEqual(requested.sort(), [
+    'GET /api/organizations/org-switched-into/members/count',
+    'GET /api/organizations/org-switched-into/members?limit=25',
   ]);
 });
 

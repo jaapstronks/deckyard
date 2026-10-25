@@ -31,6 +31,7 @@ import {
 } from '../../storage/users.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { checkRequestRateLimit } from '../../utils/rate-limit.js';
+import { listPageResult, parseListPage } from '../../services/list-page.js';
 import { normalizeEmail } from '../../../shared/email.js';
 import {
   getMembershipByEmail,
@@ -84,9 +85,15 @@ function buildSetupUrl(req, token) {
   return `${protocol}://${host}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
-// GET /api/admin/users - List all users
-async function handleAdminUserList({ storageScope: ctx, res }) {
-  const users = await listUsers(ctx);
+// GET /api/admin/users - One page of the organization's users (list-page
+// contract, D358): `{ users, nextCursor }`, newest account first.
+async function handleAdminUserList({ storageScope: ctx, res, url }) {
+  const page = parseListPage(url.searchParams, { sortKey: 'created_desc' });
+  const result = await listUsers(ctx, {
+    limit: page.limit,
+    after: page.after,
+  });
+  const { users, nextCursor } = listPageResult('users', result, page);
 
   // Enrich users with designer status from their org membership
   const orgId = getOrgId(ctx);
@@ -109,7 +116,7 @@ async function handleAdminUserList({ storageScope: ctx, res }) {
     }),
   );
 
-  serveJson(res, 200, { users: enrichedUsers });
+  serveJson(res, 200, { users: enrichedUsers, nextCursor });
   return true;
 }
 

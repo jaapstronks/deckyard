@@ -8,6 +8,7 @@ import { toStorageContext } from './scope.js';
 import { nowIso, isoAfter } from '../utils/normalize.js';
 import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
+import { keysetPage, keysetRows } from './keyset.js';
 import { escapeLikePattern } from './utils/index.js';
 import {
   generateSecureToken,
@@ -122,15 +123,19 @@ export async function createFirstAdmin(scope, email) {
 // ============================================================
 
 /**
- * List all users in the organization with status information.
+ * One page of the organization's users with status information (B825,
+ * D358): order `(created_at desc, id desc)`, newest account first. Last login
+ * and an open invitation are read for this page's addresses only.
+ *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
- * @returns {Promise<Array>} - List of users with status fields
+ * @param {{limit: number, after?: {value: string, id: string}|null}} page
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function listUsers(scope) {
-  return withDbGuard([], async (db) => {
-    const orgId = getOrgId(scope);
-
-    const rows = await db
+export async function listUsers(scope, page) {
+  toStorageContext(scope, 'listUsers');
+  const empty = { items: [], next: null };
+  return withDbGuard(empty, async (db) => {
+    const query = db
       .selectFrom('users')
       .select([
         'id',
@@ -142,26 +147,28 @@ export async function listUsers(scope) {
         'created_at',
         'updated_at',
       ])
-      .where('organization_id', '=', orgId)
-      .orderBy('created_at', 'desc')
-      .execute();
+      .where('organization_id', '=', getOrgId(scope));
+    const { rows, next } = keysetRows(
+      await keysetPage(query, {
+        column: 'created_at',
+        after: page.after ?? null,
+        limit: page.limit,
+      }).execute(),
+      page.limit,
+    );
+    const emails = rows.map((row) => row.email);
+    if (!emails.length) return empty;
 
-    // Fetch last login times for all users (successful logins only)
-    // Include both password logins and magic link logins
+    // Last login per address (successful password and magic-link logins)
+    // and the latest unused invitation token, for this page's addresses.
     const loginEvents = await db
       .selectFrom('auth_audit_log')
       .select(['user_email', 'created_at'])
-      .where((eb) =>
-        eb.or([
-          eb('event_type', '=', 'login'),
-          eb('event_type', '=', 'magic_link_login'),
-        ]),
-      )
+      .where('user_email', 'in', emails)
+      .where('event_type', 'in', ['login', 'magic_link_login'])
       .where('success', '=', true)
       .orderBy('created_at', 'desc')
       .execute();
-
-    // Build a map of email -> last login time
     const lastLoginMap = new Map();
     for (const event of loginEvents) {
       if (!lastLoginMap.has(event.user_email)) {
@@ -169,16 +176,13 @@ export async function listUsers(scope) {
       }
     }
 
-    // Fetch active invitation tokens (unused and not expired)
-    const now = nowIso();
     const invitationTokens = await db
       .selectFrom('password_reset_tokens')
       .select(['user_email', 'expires_at'])
+      .where('user_email', 'in', emails)
       .where('used_at', 'is', null)
       .orderBy('expires_at', 'desc')
       .execute();
-
-    // Build a map of email -> invitation expiry
     const invitationMap = new Map();
     for (const token of invitationTokens) {
       if (!invitationMap.has(token.user_email)) {
@@ -186,9 +190,45 @@ export async function listUsers(scope) {
       }
     }
 
-    return rows.map((row) =>
-      formatUserWithStatus(row, lastLoginMap, invitationMap, now),
-    );
+    const now = nowIso();
+    return {
+      items: rows.map((row) =>
+        formatUserWithStatus(row, lastLoginMap, invitationMap, now),
+      ),
+      next,
+    };
+  });
+}
+
+/**
+ * The organization's users with these addresses, as a Map address → user.
+ * Bounded by its argument: a caller that knows whom it means asks for them,
+ * instead of reading the whole user list to look them up.
+ *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string[]} emails - Addresses, normalized or not.
+ * @returns {Promise<Map<string, Object>>}
+ */
+export async function getUsersByEmails(scope, emails) {
+  toStorageContext(scope, 'getUsersByEmails');
+  const wanted = [...new Set(emails.map(normalizeEmail).filter(Boolean))];
+  if (!wanted.length) return new Map();
+  return withDbGuard(new Map(), async (db) => {
+    const rows = await db
+      .selectFrom('users')
+      .select([
+        'id',
+        'email',
+        'name',
+        'role',
+        'auth_source',
+        'created_at',
+        'updated_at',
+      ])
+      .where('organization_id', '=', getOrgId(scope))
+      .where('email', 'in', wanted)
+      .execute();
+    return new Map(rows.map((row) => [row.email, formatUser(row)]));
   });
 }
 

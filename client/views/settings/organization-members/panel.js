@@ -26,11 +26,13 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { renderMembersList } from './member-list.js';
 import { canInvite } from './permissions.js';
 import { showInviteModal } from './invite-modal.js';
 import {
   fetchMembers,
+  fetchMemberCount,
   changeMemberRole,
   removeMember,
   transferOwnership,
@@ -43,6 +45,7 @@ import {
  * @param {Object} options
  * @param {Object} options.user - Current user, from `/api/auth/me`.
  * @param {Function} [options.load] - Override for the members fetch (tests).
+ * @param {Function} [options.count] - Override for the member count (tests).
  * @param {Function} [options.reload] - Override for the full page reload (tests).
  * @param {Function} [options.openInvite] - Override for the invite dialog (tests).
  * @returns {{ el: HTMLElement, ready: Promise<void> }} The panel and its load.
@@ -50,6 +53,7 @@ import {
 export function renderOrganizationMembersPanel({
   user,
   load = fetchMembers,
+  count = fetchMemberCount,
   reload = () => location.reload(),
   openInvite = showInviteModal,
 } = {}) {
@@ -97,7 +101,10 @@ export function renderOrganizationMembersPanel({
     return { el: card, ready: Promise.resolve() };
   }
 
-  let offset = 0;
+  // The list is read by cursor (D358), newest member first: `members` is
+  // everything loaded so far, `nextCursor` where the next page starts.
+  let members = [];
+  let nextCursor = null;
   let total = 0;
   let busy = false;
 
@@ -111,10 +118,10 @@ export function renderOrganizationMembersPanel({
       openInvite({
         organizationId,
         user,
-        // Reload the page the reader is on rather than jumping to where the
-        // new member sorted: the toast already said what happened, and moving
-        // the list under them would lose their place in a long organization.
-        onInvited: () => show(offset),
+        // Reload as much of the list as the reader had open rather than
+        // folding it back to one page: the toast already said what happened,
+        // and losing their place in a long organization would not help.
+        onInvited: () => show(members.length),
       });
     header.append(inviteBtn);
   }
@@ -122,7 +129,7 @@ export function renderOrganizationMembersPanel({
   const handlers = {
     onChangeRole: async (member, role) => {
       const ok = await changeMemberRole({ organizationId, member, role });
-      if (ok) await show(offset);
+      if (ok) await show(members.length);
       return ok;
     },
     onTransferOwnership: async (member) => {
@@ -141,36 +148,33 @@ export function renderOrganizationMembersPanel({
         reload();
         return true;
       }
-      // A removal can empty the last page; step back rather than show nothing.
-      const remaining = Math.max(0, total - 1);
-      const nextOffset =
-        offset >= remaining && offset > 0 ? offset - MEMBERS_PAGE_SIZE : offset;
-      await show(Math.max(0, nextOffset));
+      await show(Math.max(1, members.length - 1));
       return true;
     },
   };
 
-  const ready = show(0);
+  const ready = show(MEMBERS_PAGE_SIZE);
 
   return { el: card, ready };
 
   /**
-   * Load and render one page.
-   * @param {number} nextOffset - Where the page starts.
+   * Load the list from the top, at least `depth` members deep (or to its
+   * end), with the count beside it, and render both.
+   * @param {number} depth - How many members the reader had open.
    * @returns {Promise<void>}
    */
-  async function show(nextOffset) {
+  async function show(depth) {
     if (busy) return;
     busy = true;
     try {
-      const page = await load(organizationId, {
-        offset: nextOffset,
-        limit: MEMBERS_PAGE_SIZE,
-      });
-      offset = Number.isFinite(page?.offset) ? page.offset : nextOffset;
-      total = Number.isFinite(page?.total) ? page.total : page.members.length;
-      renderMembersList(list, page.members, user, { handlers });
-      renderPager(page.members.length);
+      const [loaded, counted] = await Promise.all([
+        readUntil(depth),
+        count(organizationId),
+      ]);
+      ({ members, nextCursor } = loaded);
+      total = counted;
+      renderMembersList(list, members, user, { handlers });
+      renderPager();
     } catch (err) {
       console.warn('[organization-members] Could not load members:', err);
       showLoadFailure();
@@ -180,58 +184,77 @@ export function renderOrganizationMembersPanel({
   }
 
   /**
-   * Render the range line and the page buttons.
-   *
-   * The range is always stated, not only when the page is short of the total:
-   * "1–25 of 140" is what stops a page from reading like a whole organization,
-   * and it has to be true on the last page too.
-   *
-   * @param {number} shown - How many members this page holds.
+   * Read pages from the top until `depth` members are in or the list ends.
+   * @param {number} depth
+   * @returns {Promise<{ members: Array<Object>, nextCursor: string|null }>}
    */
-  function renderPager(shown) {
-    footer.replaceChildren();
-    if (!shown) return;
+  async function readUntil(depth) {
+    let rows = [];
+    let cursor = null;
+    do {
+      const page = await load(organizationId, {
+        cursor,
+        limit: MEMBERS_PAGE_SIZE,
+      });
+      rows = [...rows, ...page.members];
+      cursor = page.nextCursor;
+    } while (cursor && rows.length < depth);
+    return { members: rows, nextCursor: cursor };
+  }
 
-    const first = offset + 1;
-    const last = offset + shown;
+  /** Read the next page and append it. */
+  async function loadMore(button) {
+    if (busy || !nextCursor) return;
+    busy = true;
+    button.disabled = true;
+    button.textContent = t('common.loadingMore', 'Loading…');
+    try {
+      const page = await load(organizationId, {
+        cursor: nextCursor,
+        limit: MEMBERS_PAGE_SIZE,
+      });
+      members = [...members, ...page.members];
+      nextCursor = page.nextCursor;
+      renderMembersList(list, members, user, { handlers });
+    } catch (err) {
+      console.warn('[organization-members] Could not load more members:', err);
+      toast.error(t('common.loadMoreError', 'Could not load more.'));
+    } finally {
+      busy = false;
+      renderPager();
+    }
+  }
+
+  /**
+   * Render how many members are shown of how many there are, and the button
+   * for the next page while there is one.
+   *
+   * The count is always stated, not only when more remain: "25 of 140" is
+   * what stops a page from reading like a whole organization.
+   */
+  function renderPager() {
+    footer.replaceChildren();
+    if (!members.length) return;
 
     footer.append(
       h('div', {
         class: 'help',
         text: t(
-          'organization.members.range',
-          'Showing {first}–{last} of {total} members.',
-          {
-            first,
-            last,
-            total,
-          },
+          'organization.members.shown',
+          'Showing {shown} of {count} members.',
+          { shown: members.length, count: total },
         ),
       }),
     );
+    if (!nextCursor) return;
 
-    if (total <= shown && offset === 0) return;
-
-    const buttons = h('div', { class: 'row', style: 'gap: 8px;' });
-
-    const prev = h('button', {
-      class: 'btn btn-sm btn-secondary',
+    const more = h('button', {
+      class: 'btn btn-secondary admin-users-more',
       type: 'button',
-      text: t('organization.members.previousPage', 'Previous'),
-      disabled: offset === 0,
+      text: t('common.loadMore', 'Load more'),
     });
-    prev.onclick = () => show(Math.max(0, offset - MEMBERS_PAGE_SIZE));
-
-    const next = h('button', {
-      class: 'btn btn-sm btn-secondary',
-      type: 'button',
-      text: t('organization.members.nextPage', 'Next'),
-      disabled: last >= total,
-    });
-    next.onclick = () => show(offset + MEMBERS_PAGE_SIZE);
-
-    buttons.append(prev, next);
-    footer.append(buttons);
+    more.onclick = () => loadMore(more);
+    footer.append(more);
   }
 
   function showLoadFailure() {

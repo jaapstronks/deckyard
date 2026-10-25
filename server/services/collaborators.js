@@ -22,7 +22,7 @@ import {
   addCollaborator,
   listCollaborators,
 } from '../storage/collaborators.js';
-import { listUsers } from '../storage/users.js';
+import { getUsersByEmails } from '../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../integrations/brevo.js';
 import { createNotification } from '../storage/notifications.js';
 import {
@@ -87,8 +87,10 @@ export async function listCollaboratorsForActor(
     deckScope(scope, pres),
     presentationId,
   );
-  const users = await listUsers(scope);
-  const userMap = new Map(users.map((u) => [u.email, u]));
+  const userMap = await getUsersByEmails(
+    scope,
+    collaborators.map((c) => c.userEmail),
+  );
   return {
     presentation: pres,
     collaborators: collaborators.map((c) => ({
@@ -247,8 +249,7 @@ export async function inviteCollaborators(
     throw new ValidationError('Cannot add yourself as a collaborator');
   }
 
-  const users = await listUsers(scope);
-  const userMap = new Map(users.map((u) => [u.email, u]));
+  const userMap = await getUsersByEmails(scope, emails);
   const results = [];
 
   for (const userEmail of emails) {

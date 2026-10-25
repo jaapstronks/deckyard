@@ -7,6 +7,7 @@ import { crossOrganizationScope, toStorageContext } from '../scope.js';
 import crypto from 'node:crypto';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../../db/client.js';
+import { keysetPage, keysetRows } from '../keyset.js';
 import { getOrgId } from '../../utils/context.js';
 import {
   NO_DISPLAY_NAMES,
@@ -190,48 +191,37 @@ export async function getAnalyticsReportByToken(shareToken) {
 }
 
 /**
- * List analytics reports for a presentation.
+ * One page of a deck's analytics reports (B825, D358): order
+ * `(created_at desc, id desc)`, continued after `after`.
+ *
  * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
- * @param {Object} opts - Query options
- * @returns {Promise<{reports: Object[], total: number}>}
+ * @param {{limit: number, after?: {value: string, id: string}|null}} page
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function listAnalyticsReports(scope, presentationId, opts = {}) {
+export async function listAnalyticsReports(scope, presentationId, page) {
   toStorageContext(scope, 'listAnalyticsReports');
   const presId = norm(presentationId);
-  if (!presId) return { reports: [], total: 0 };
+  const empty = { items: [], next: null };
+  if (!presId) return empty;
 
-  return withDbGuard({ reports: [], total: 0 }, async (db) => {
-    const orgId = getOrgId(scope);
-
-    let query = db
+  return withDbGuard(empty, async (db) => {
+    const query = db
       .selectFrom('analytics_reports')
       .selectAll()
       .where('presentation_id', '=', presId)
-      .where('organization_id', '=', orgId);
-
-    // Count total
-    const countQuery = query
-      .clearSelect()
-      .select((eb) => eb.fn.count('id').as('count'));
-    const countResult = await countQuery.executeTakeFirst();
-    const total = Number(countResult?.count) || 0;
-
-    // Apply pagination
-    const limit = Math.min(opts?.limit || 20, 50);
-    const offset = opts?.offset || 0;
-
-    query = query.orderBy('created_at', 'desc').limit(limit).offset(offset);
-
-    const rows = await query.execute();
+      .where('organization_id', '=', getOrgId(scope));
+    const { rows, next } = keysetRows(
+      await keysetPage(query, {
+        column: 'created_at',
+        after: page.after ?? null,
+        limit: page.limit,
+      }).execute(),
+      page.limit,
+    );
 
     const lookup = await creatorNames(rows);
-    return {
-      reports: rows.map((row) => rowToReport(row, lookup)),
-      total,
-      limit,
-      offset,
-    };
+    return { items: rows.map((row) => rowToReport(row, lookup)), next };
   });
 }
 

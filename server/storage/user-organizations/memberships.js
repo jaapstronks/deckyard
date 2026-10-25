@@ -5,10 +5,10 @@
 
 import { toStorageContext } from '../scope.js';
 
-import { sql } from 'kysely';
 import { nowIso } from '../../utils/normalize.js';
 import { normalizeEmail } from '../../../shared/email.js';
 import { withDbGuard } from '../../db/client.js';
+import { keysetPage, keysetRows } from '../keyset.js';
 import { WORKSPACE_ROLES } from '../../../shared/organization-role.js';
 
 // ============================================================
@@ -219,34 +219,17 @@ export async function listUserOrganizations(scope, userId) {
 }
 
 /**
- * Rank a membership role for ordering: owner first, then admin, then member.
+ * One page of an organization's members (B825, D358): order
+ * `(created_at desc, id desc)` on the membership, newest member first, the
+ * one order every list has. How many there are is
+ * {@link countOrganizationMembers}, a question of its own.
  *
- * `ORDER BY role DESC` used to stand in for this and is not the same thing —
- * it sorts the *strings*, which alphabetically gives owner → member → admin.
- * The bug was invisible while the list had no second page and no actions; with
- * paging, a wrong order silently decides who lands on page 2.
- */
-const ROLE_RANK = sql`CASE user_organizations.role
-  WHEN 'owner' THEN 0
-  WHEN 'admin' THEN 1
-  ELSE 2
-END`;
-
-/**
- * List all members of an organization, owner first, then admins, then members,
- * each group oldest membership first.
  * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
- * @param {Object} options - Query options
- * @param {number} [options.limit=50] - Max results
- * @param {number} [options.offset=0] - Skip results
- * @returns {Promise<Array>}
+ * @param {{limit: number, after?: {value: string, id: string}|null}} page
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function listOrganizationMembers(
-  scope,
-  organizationId,
-  options = {},
-) {
+export async function listOrganizationMembers(scope, organizationId, page) {
   const { organizationId: scopedOrgId } = toStorageContext(
     scope,
     'listOrganizationMembers',
@@ -255,11 +238,9 @@ export async function listOrganizationMembers(
     throw new TypeError(
       'listOrganizationMembers() organization differs from storage scope',
     );
-  return withDbGuard([], async (db) => {
-    const limit = Math.min(Math.max(1, options.limit || 50), 100);
-    const offset = Math.max(0, options.offset || 0);
-
-    const rows = await db
+  const empty = { items: [], next: null };
+  return withDbGuard(empty, async (db) => {
+    const query = db
       .selectFrom('user_organizations')
       .innerJoin('users', 'users.id', 'user_organizations.user_id')
       .select([
@@ -273,14 +254,18 @@ export async function listOrganizationMembers(
         'users.name',
         'users.created_at',
       ])
-      .where('user_organizations.organization_id', '=', organizationId)
-      .orderBy(ROLE_RANK, 'asc')
-      .orderBy('user_organizations.joined_at', 'asc')
-      .limit(limit)
-      .offset(offset)
-      .execute();
-
-    return rows.map(formatMemberWithUser);
+      .where('user_organizations.organization_id', '=', organizationId);
+    const { rows, next } = keysetRows(
+      await keysetPage(query, {
+        column: 'user_organizations.created_at',
+        idColumn: 'user_organizations.id',
+        after: page.after ?? null,
+        limit: page.limit,
+      }).execute(),
+      page.limit,
+      'membership_id',
+    );
+    return { items: rows.map(formatMemberWithUser), next };
   });
 }
 

@@ -15,15 +15,17 @@ import { icon } from '../../lib/dom/icons.js';
 /**
  * Create viewer list component.
  * @param {Object} options
- * @param {Array} options.sessions - Session data
- * @param {number} options.total - Total session count
- * @param {Function} options.onLoadMore - Load more callback
+ * @param {Array} options.sessions - Session data (the first page)
+ * @param {string|null} options.nextCursor - Where the next page starts; null
+ *   when the first page was the whole list (list-page contract, D358)
+ * @param {(cursor: string) => Promise<{sessions: Array, nextCursor: string|null}>} options.onLoadMore
+ *   Read the page after `cursor`
  * @param {Function} options.onGenerateReport - Generate report callback
  * @returns {Object} List API with el and update method
  */
 export function createViewerList({
   sessions,
-  total,
+  nextCursor,
   onLoadMore,
   onGenerateReport,
 }) {
@@ -56,7 +58,6 @@ export function createViewerList({
   el.append(header, container, loadMoreBtn);
 
   let currentSessions = sessions || [];
-  let loadedCount = currentSessions.length;
 
   /**
    * Sort sessions by the current sort column and direction.
@@ -187,18 +188,17 @@ export function createViewerList({
     });
 
     // Show/hide load more button
-    if (loadedCount < total) {
+    if (nextCursor) {
       loadMoreBtn.style.display = 'block';
       loadMoreBtn.onclick = async () => {
+        if (!nextCursor) return;
         loadMoreBtn.disabled = true;
         loadMoreBtn.textContent = t('common.loading', 'Loading…');
         try {
-          const more = await onLoadMore?.(loadedCount);
-          if (more && more.length > 0) {
-            currentSessions = [...currentSessions, ...more];
-            loadedCount += more.length;
-            renderList();
-          }
+          const more = await onLoadMore?.(nextCursor);
+          currentSessions = [...currentSessions, ...(more?.sessions || [])];
+          nextCursor = more?.nextCursor || null;
+          renderList();
         } catch (err) {
           console.error('[analytics] Failed to load more sessions:', err);
           loadMoreBtn.textContent = t('analytics.loadFailed', 'Failed to load');
@@ -215,10 +215,9 @@ export function createViewerList({
     }
   }
 
-  function update(newSessions, newTotal) {
+  function update(newSessions, newNextCursor) {
     currentSessions = newSessions || [];
-    loadedCount = currentSessions.length;
-    total = newTotal;
+    nextCursor = newNextCursor || null;
     renderList();
   }
 

@@ -248,7 +248,7 @@ requests.
 
 Validate external input at boundaries with the helpers in
 `server/utils/request-validators.js` (`getString`, `getTrimmedString`,
-`getBoolean`, `getLang`, `parsePaginationParams`, …). Don't reach for a schema
+`getBoolean`, `getLang`, …; a list page reads `limit` and `cursor` through `parseListPage()` in `server/services/list-page.js`). Don't reach for a schema
 library: `zod` is in the tree for **LLM output schemas only**
 (`server/utils/ai/schemas/`), and a second validation vocabulary on request
 bodies is a second place the contract can drift from `docs/openapi.yaml`.

@@ -99,7 +99,11 @@ globalThis.fetch = async (input, init = {}) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, members: ALL, total: ALL.length }),
+    JSON.stringify(
+      path.includes('/members/count')
+        ? { count: ALL.length }
+        : { ok: true, members: ALL, nextCursor: null },
+    ),
     {
       status: 200,
       headers: { 'content-type': 'application/json' },
@@ -447,121 +451,114 @@ test('a destructive action asks first, and cancelling sends nothing', async () =
 // Paging
 // ---------------------------------------------------------------------------
 
+/**
+ * A load double over `people()` members, handing out pages by cursor: the
+ * cursor is the index the next page starts at.
+ */
+function pagedLoad(people, asked) {
+  return async (organizationId, { cursor, limit }) => {
+    asked.push({ cursor, limit });
+    const total = people();
+    const start = cursor ? Number(cursor) : 0;
+    const members = [];
+    for (let i = start; i < Math.min(start + limit, total); i += 1) {
+      members.push({
+        membershipId: `m-${i}`,
+        role: 'member',
+        isDesigner: false,
+        joinedAt: '2026-03-05T00:00:00.000Z',
+        user: {
+          id: `u-${i}`,
+          email: `person${i}@example.com`,
+          name: `Person ${i}`,
+        },
+      });
+    }
+    const end = start + members.length;
+    return { members, nextCursor: end < total ? String(end) : null };
+  };
+}
+
 /** A panel over `total` members, handing out pages of 25. */
 function pagedPanel(total, currentUser = viewer(OWNER, 'owner')) {
   const asked = [];
   const panel = renderOrganizationMembersPanel({
     user: currentUser,
     reload: () => {},
-    load: async (organizationId, { offset, limit }) => {
-      asked.push({ offset, limit });
-      const members = [];
-      for (let i = offset; i < Math.min(offset + limit, total); i += 1) {
-        members.push({
-          membershipId: `m-${i}`,
-          role: 'member',
-          isDesigner: false,
-          joinedAt: '2026-03-05T00:00:00.000Z',
-          user: {
-            id: `u-${i}`,
-            email: `person${i}@example.com`,
-            name: `Person ${i}`,
-          },
-        });
-      }
-      return { members, total, offset };
-    },
+    load: pagedLoad(() => total, asked),
+    count: async () => total,
   });
   return { panel, asked };
 }
 
-test('a single page states its range and offers no navigation', async () => {
+/** The pager's buttons. */
+const pagerButtons = (panel) =>
+  panel.el.querySelectorAll('.admin-users-pager button');
+
+test('a single page states the count and offers no more', async () => {
   const { panel } = pagedPanel(4);
   await panel.ready;
 
-  assert.match(panel.el.textContent, /Showing 1–4 of 4 members/);
-  assert.equal(
-    panel.el.querySelectorAll('.admin-users-pager button').length,
-    0,
-  );
+  assert.match(panel.el.textContent, /Showing 4 of 4 members/);
+  assert.equal(pagerButtons(panel).length, 0);
 });
 
-test('a long list pages, and the range follows', async () => {
+test('a long list loads more by cursor, and the count follows', async () => {
   const { panel, asked } = pagedPanel(140);
   await panel.ready;
 
   // Slice 3 asked for 100 and said out loud when the list was truncated, which
   // was honest but terminal: there was no way to reach member 101.
-  assert.match(panel.el.textContent, /Showing 1–25 of 140 members/);
+  assert.match(panel.el.textContent, /Showing 25 of 140 members/);
+  assert.deepEqual(asked, [{ cursor: null, limit: 25 }]);
 
-  const [prev, next] = panel.el.querySelectorAll('.admin-users-pager button');
-  assert.equal(prev.disabled, true, 'nothing before the first page');
-  assert.equal(next.disabled, false);
-
-  next.click();
+  const [more] = pagerButtons(panel);
+  assert.equal(more.textContent, 'Load more');
+  more.click();
   await settle();
-  assert.deepEqual(asked.at(-1), { offset: 25, limit: 25 });
-  assert.match(panel.el.textContent, /Showing 26–50 of 140 members/);
-
-  panel.el.querySelectorAll('.admin-users-pager button')[0].click();
-  await settle();
-  assert.deepEqual(asked.at(-1), { offset: 0, limit: 25 });
+  assert.deepEqual(asked.at(-1), { cursor: '25', limit: 25 });
+  assert.match(panel.el.textContent, /Showing 50 of 140 members/);
+  assert.equal(panel.el.querySelectorAll('.admin-user-card').length, 50);
 });
 
-test('the last page disables Next and still states a true range', async () => {
+test('the end of the list takes the button away and still states the count', async () => {
   const { panel } = pagedPanel(30);
   await panel.ready;
 
-  panel.el.querySelectorAll('.admin-users-pager button')[1].click();
+  pagerButtons(panel)[0].click();
   await settle();
 
-  assert.match(panel.el.textContent, /Showing 26–30 of 30 members/);
-  assert.equal(
-    panel.el.querySelectorAll('.admin-users-pager button')[1].disabled,
-    true,
-  );
+  assert.match(panel.el.textContent, /Showing 30 of 30 members/);
+  assert.equal(pagerButtons(panel).length, 0);
 });
 
-test('emptying the last page steps back to the one before it', async () => {
-  // A removal on a page of one would otherwise leave the reader staring at an
-  // empty list of a non-empty organization.
-  let total = 26;
+test('a removal re-reads as deep as the reader was, with the new count', async () => {
+  // Folding back to one page would lose the reader's place in a long list.
+  let total = 60;
   const asked = [];
   const panel = renderOrganizationMembersPanel({
     user: viewer(OWNER, 'owner'),
     reload: () => {},
-    load: async (organizationId, { offset, limit }) => {
-      asked.push(offset);
-      const members = [];
-      for (let i = offset; i < Math.min(offset + limit, total); i += 1) {
-        members.push({
-          membershipId: `m-${i}`,
-          role: 'member',
-          isDesigner: false,
-          joinedAt: '2026-03-05T00:00:00.000Z',
-          user: {
-            id: `u-${i}`,
-            email: `person${i}@example.com`,
-            name: `Person ${i}`,
-          },
-        });
-      }
-      return { members, total, offset };
-    },
+    load: pagedLoad(() => total, asked),
+    count: async () => total,
   });
   await panel.ready;
-
-  panel.el.querySelectorAll('.admin-users-pager button')[1].click();
+  pagerButtons(panel)[0].click();
   await settle();
-  assert.equal(asked.at(-1), 25, 'on the last page, holding one member');
+  assert.match(panel.el.textContent, /Showing 50 of 60 members/);
 
-  total = 25;
+  total = 59;
+  asked.length = 0;
   const remove = Array.from(
     panel.el.querySelectorAll('.admin-user-card button'),
   ).find((b) => b.textContent === 'Remove');
   remove.click();
   await confirmDialog();
 
-  assert.equal(asked.at(-1), 0, 'back to a page that has something on it');
-  assert.match(panel.el.textContent, /Showing 1–25 of 25 members/);
+  assert.deepEqual(
+    asked.map((a) => a.cursor),
+    [null, '25'],
+    'from the top, two pages deep again',
+  );
+  assert.match(panel.el.textContent, /Showing 50 of 59 members/);
 });

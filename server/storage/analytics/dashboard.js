@@ -9,6 +9,7 @@ import { withDbGuard } from '../../db/client.js';
 import { normalizeEmail } from '../../../shared/email.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 import { completionRate, getCompletionCounts } from './aggregations.js';
+import { keysetPage, keysetRows } from '../keyset.js';
 
 function requireDashboardOrganization(scope, organizationId, operation) {
   const context = toStorageContext(scope, operation);
@@ -102,13 +103,8 @@ export async function getDashboardSummary(
       trend: { percentChange: 0, direction: 'flat' },
     },
     async (db) => {
-      // Get user's presentations (owned + shared with edit/admin access)
-      const userPresentations = await getUserPresentationIds(
-        db,
-        userEmail,
-        organizationId,
-      );
-      if (!userPresentations.length) {
+      const decks = dashboardDeckIds(scope, db, userEmail);
+      if (!decks) {
         return {
           summary: {
             totalViews: 0,
@@ -130,7 +126,7 @@ export async function getDashboardSummary(
           ),
           (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
         ])
-        .where('presentation_id', 'in', userPresentations);
+        .where('presentation_id', 'in', decks);
 
       // Apply date filters
       currentQuery = applyDateFilters(currentQuery, dateRange);
@@ -141,18 +137,13 @@ export async function getDashboardSummary(
       let previousQuery = db
         .selectFrom('view_sessions')
         .select((eb) => eb.fn.count('id').as('total_views'))
-        .where('presentation_id', 'in', userPresentations);
+        .where('presentation_id', 'in', decks);
 
       previousQuery = applyDateFilters(previousQuery, previousRange);
 
       const previousResult = await previousQuery.executeTakeFirst();
 
-      const completion = await getCompletionCounts(
-        scope,
-        db,
-        userPresentations,
-        dateRange,
-      );
+      const completion = await getCompletionCounts(scope, db, decks, dateRange);
 
       const currentViews = Number(currentResult?.total_views) || 0;
       const previousViews = Number(previousResult?.total_views) || 0;
@@ -206,12 +197,8 @@ export async function getDashboardTimeline(
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard([], async (db) => {
-    const userPresentations = await getUserPresentationIds(
-      db,
-      userEmail,
-      organizationId,
-    );
-    if (!userPresentations.length) return [];
+    const decks = dashboardDeckIds(scope, db, userEmail);
+    if (!decks) return [];
 
     let query = db
       .selectFrom('view_sessions')
@@ -220,7 +207,7 @@ export async function getDashboardTimeline(
         (eb) => eb.fn.count('id').as('views'),
         sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as('unique_viewers'),
       ])
-      .where('presentation_id', 'in', userPresentations)
+      .where('presentation_id', 'in', decks)
       .groupBy(sql`date_trunc('day', started_at)`)
       .orderBy(sql`date_trunc('day', started_at)`, 'asc');
 
@@ -255,12 +242,8 @@ export async function getTopPresentations(
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard([], async (db) => {
-    const userPresentations = await getUserPresentationIds(
-      db,
-      userEmail,
-      organizationId,
-    );
-    if (!userPresentations.length) return [];
+    const decks = dashboardDeckIds(scope, db, userEmail);
+    if (!decks) return [];
 
     let query = db
       .selectFrom('view_sessions')
@@ -278,9 +261,10 @@ export async function getTopPresentations(
         ),
         (eb) => eb.fn.avg('view_sessions.duration_seconds').as('avg_duration'),
       ])
-      .where('view_sessions.presentation_id', 'in', userPresentations)
+      .where('view_sessions.presentation_id', 'in', decks)
       .groupBy(['presentations.id', 'presentations.title'])
       .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
+      .orderBy('presentations.id', 'desc')
       .limit(limit);
 
     query = applyDateFilters(query, dateRange, 'view_sessions.started_at');
@@ -329,19 +313,15 @@ export async function getSourceBreakdown(
       embed: 0,
     },
     async (db) => {
-      const userPresentations = await getUserPresentationIds(
-        db,
-        userEmail,
-        organizationId,
-      );
-      if (!userPresentations.length) {
+      const decks = dashboardDeckIds(scope, db, userEmail);
+      if (!decks) {
         return { shareLink: 0, published: 0, follow: 0, embed: 0 };
       }
 
       let query = db
         .selectFrom('view_sessions')
         .select(['source_type', (eb) => eb.fn.count('id').as('count')])
-        .where('presentation_id', 'in', userPresentations)
+        .where('presentation_id', 'in', decks)
         .groupBy('source_type');
 
       query = applyDateFilters(query, dateRange);
@@ -381,71 +361,40 @@ export async function getSourceBreakdown(
 }
 
 /**
- * How `getPresentationsWithAnalytics()` can order its rows, keyed by the
- * `sort` value. Every order is one SQL `ORDER BY` over the joined sessions, so
- * the page is cut in the database. Completion is not here: it comes from
- * `slide_views` after the page is cut (`getCompletionCounts`), so ordering on
- * it would mean reading every deck's completion first (B622).
- */
-const LIST_ORDERS = {
-  views: (query) =>
-    query.orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc'),
-  duration: (query) =>
-    query.orderBy((eb) => eb.fn.avg('view_sessions.duration_seconds'), 'desc'),
-  recent: (query) => query.orderBy('presentations.modified_at', 'desc'),
-};
-
-/** The `sort` values `getPresentationsWithAnalytics()` accepts. */
-export const ANALYTICS_LIST_SORTS = Object.freeze(Object.keys(LIST_ORDERS));
-
-/**
- * Get presentations list with analytics summary for the dashboard.
+ * One page of the decks the dashboard covers, each with its analytics over
+ * the period (B825, D358): order `(modified_at desc, id desc)`, the one order
+ * of a deck list, continued after `after`. There is no other order: a sort on
+ * views or duration would change between two pages as sessions arrive, so it
+ * cannot be a keyset (the retired `sort` is refused at the route).
+ *
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} userEmail - The user's email
  * @param {string} organizationId - The user's organization ID
- * @param {Object} opts - Query options; `sort` is one of
- *   `ANALYTICS_LIST_SORTS` (default `views`), anything else throws.
- * @returns {Promise<Array>}
+ * @param {Object} opts
+ * @param {string} [opts.period] - '7d' | '30d' | '90d' | '12m'
+ * @param {number} opts.limit - Rows per page.
+ * @param {{value: string, id: string}|null} [opts.after] - Last row seen.
+ * @returns {Promise<{items: Object[], next: {value: string, id: string}|null}>}
  */
-export async function getPresentationsWithAnalytics(
+export async function listDashboardPresentations(
   scope,
   userEmail,
   organizationId,
-  opts = {},
+  opts,
 ) {
   requireDashboardOrganization(
     scope,
     organizationId,
-    'getPresentationsWithAnalytics',
+    'listDashboardPresentations',
   );
-  const period = opts.period || '30d';
-  const sort = opts.sort || 'views';
-  const order = LIST_ORDERS[sort];
-  if (!order) throw new Error(`Unknown analytics list sort: ${sort}`);
-  const limit = opts.limit || 20;
-  const offset = opts.offset || 0;
-  const dateRange = getPeriodDateRange(period);
+  const dateRange = getPeriodDateRange(opts.period || '30d');
+  const empty = { items: [], next: null };
 
-  return withDbGuard({ presentations: [], total: 0 }, async (db) => {
-    const userPresentations = await getUserPresentationIds(
-      db,
-      userEmail,
-      organizationId,
-    );
-    if (!userPresentations.length) {
-      return { presentations: [], total: 0 };
-    }
+  return withDbGuard(empty, async (db) => {
+    const decks = dashboardDeckIds(scope, db, userEmail);
+    if (!decks) return empty;
 
-    // Get total count
-    const countResult = await db
-      .selectFrom('presentations')
-      .select((eb) => eb.fn.count('id').as('count'))
-      .where('id', 'in', userPresentations)
-      .executeTakeFirst();
-
-    const total = Number(countResult?.count) || 0;
-
-    // Get presentations with analytics
-    let query = db
+    const query = db
       .selectFrom('presentations')
       .leftJoin('view_sessions', (join) =>
         join
@@ -463,18 +412,22 @@ export async function getPresentationsWithAnalytics(
         ),
         (eb) => eb.fn.avg('view_sessions.duration_seconds').as('avg_duration'),
       ])
-      .where('presentations.id', 'in', userPresentations)
+      .where('presentations.id', 'in', decks)
       .groupBy([
         'presentations.id',
         'presentations.title',
         'presentations.modified_at',
       ]);
 
-    query = order(query);
-
-    query = query.limit(limit).offset(offset);
-
-    const rows = await query.execute();
+    const { rows, next } = keysetRows(
+      await keysetPage(query, {
+        column: 'presentations.modified_at',
+        idColumn: 'presentations.id',
+        after: opts.after ?? null,
+        limit: opts.limit,
+      }).execute(),
+      opts.limit,
+    );
     const completion = await getCompletionCounts(
       scope,
       db,
@@ -483,7 +436,7 @@ export async function getPresentationsWithAnalytics(
     );
 
     return {
-      presentations: rows.map((row) => ({
+      items: rows.map((row) => ({
         id: row.id,
         title: row.title || 'Untitled',
         updatedAt: row.modified_at,
@@ -492,9 +445,7 @@ export async function getPresentationsWithAnalytics(
         avgDurationSeconds: Math.round(Number(row.avg_duration) || 0),
         completionRate: deckCompletionRate(completion, row.id),
       })),
-      total,
-      limit,
-      offset,
+      next,
     };
   });
 }
@@ -515,47 +466,53 @@ function deckCompletionRate(completion, id) {
 }
 
 /**
- * Get presentation IDs that a user has access to (owned + shared with edit/admin).
- * @param {Object} db - Database connection
- * @param {string} userEmail - The user's email
- * @param {string} organizationId - The user's organization ID
- * @returns {Promise<string[]>}
+ * The decks a person's dashboard covers, as one SQL subquery every dashboard
+ * aggregation filters on (`presentation_id IN (…)`), so no id list is read
+ * into JavaScript (B825).
+ *
+ * The right is narrower than reading a deck: the deck is in the organization
+ * and the person owns it (`owner_email`) or holds a collaborator row with
+ * `edit` or `admin`. Organization visibility and a `view`/`comment` row give
+ * no dashboard, and neither does a revoked row (`revoked_at` set): a
+ * revoked editor loses the deck's numbers like every other right (B841). A
+ * trashed deck stays in. The weekly digest reads its decks through this same
+ * predicate; both are pinned in `tests/pg/analytics-dashboard-scope.pgtest.js`.
+ *
+ * @param {import('../scope.js').StorageScope} scope - Its organization bounds the decks.
+ * @param {import('kysely').Kysely<any>} db
+ * @param {string} userEmail
+ * @returns {import('kysely').SelectQueryBuilder<any, any, {id: string}>|null}
+ *   null when there is no address to match, which covers no deck.
  */
-async function getUserPresentationIds(db, userEmail, organizationId) {
+export function dashboardDeckIds(scope, db, userEmail) {
+  const { organizationId } = toStorageContext(scope, 'dashboardDeckIds');
   // D200: `owner_email` and `user_email` are normalised on write, so the
   // caller's address is normalised once here and compared bare below.
   const email = normalizeEmail(userEmail);
-  if (!email) return [];
-
-  // Get presentations where user is owner
-  const ownedQuery = db
+  if (!email) return null;
+  return db
     .selectFrom('presentations')
-    .select('id')
-    .where('owner_email', '=', email)
-    .where('organization_id', '=', organizationId);
-
-  // Get presentations shared with user (edit or admin access)
-  const sharedQuery = db
-    .selectFrom('presentation_collaborators')
-    .innerJoin(
-      'presentations',
-      'presentations.id',
-      'presentation_collaborators.presentation_id',
-    )
     .select('presentations.id')
-    .where('presentation_collaborators.user_email', '=', email)
     .where('presentations.organization_id', '=', organizationId)
-    .where('presentation_collaborators.permission', 'in', ['edit', 'admin']);
-
-  const [ownedRows, sharedRows] = await Promise.all([
-    ownedQuery.execute(),
-    sharedQuery.execute(),
-  ]);
-
-  const ids = new Set([
-    ...ownedRows.map((r) => r.id),
-    ...sharedRows.map((r) => r.id),
-  ]);
-
-  return Array.from(ids);
+    .where((eb) =>
+      eb.or([
+        eb('presentations.owner_email', '=', email),
+        eb.exists(
+          eb
+            .selectFrom('presentation_collaborators')
+            .select('presentation_collaborators.id')
+            .whereRef(
+              'presentation_collaborators.presentation_id',
+              '=',
+              'presentations.id',
+            )
+            .where('presentation_collaborators.user_email', '=', email)
+            .where('presentation_collaborators.permission', 'in', [
+              'edit',
+              'admin',
+            ])
+            .where('presentation_collaborators.revoked_at', 'is', null),
+        ),
+      ]),
+    );
 }

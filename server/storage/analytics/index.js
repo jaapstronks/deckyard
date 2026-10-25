@@ -20,7 +20,7 @@ export {
   updateViewSession,
   endViewSession,
   getViewSessionByToken,
-  getViewSessionsForPresentation,
+  listViewSessions,
   getActiveViewerCount,
   deleteOldViewSessions,
   countAnalyticsRows,
@@ -51,8 +51,7 @@ export {
   getDashboardTimeline,
   getTopPresentations,
   getSourceBreakdown,
-  getPresentationsWithAnalytics,
-  ANALYTICS_LIST_SORTS,
+  listDashboardPresentations,
 } from './dashboard.js';
 
 // Per-presentation aggregations.

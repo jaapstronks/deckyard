@@ -6,8 +6,8 @@ import { toStorageContext } from '../scope.js';
 
 import { sql } from 'kysely';
 import { withDbGuard } from '../../db/client.js';
-import { normalizeEmail } from '../../../shared/email.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
+import { dashboardDeckIds } from './dashboard.js';
 
 // ============================================================
 // DATE HELPERS
@@ -62,10 +62,8 @@ function getPreviousWeekDateRange() {
  * @returns {Promise<Object>}
  */
 export async function getWeeklyAnalyticsForUser(scope, userId, userEmail) {
-  const { organizationId } = toStorageContext(
-    scope,
-    'getWeeklyAnalyticsForUser',
-  );
+  // Checked up front: the digest's decks read the organization from it.
+  toStorageContext(scope, 'getWeeklyAnalyticsForUser');
   const dateRange = getWeekDateRange();
   const previousRange = getPreviousWeekDateRange();
 
@@ -112,9 +110,9 @@ export async function getWeeklyAnalyticsForUser(scope, userId, userEmail) {
 
       // Get user's presentations
       const userPresentations = await getUserPresentationIds(
+        scope,
         db,
         userEmail,
-        organizationId,
       );
       if (!userPresentations.length) {
         return {
@@ -598,48 +596,17 @@ async function getWeeklyInsights(db, presentationIds, dateRange) {
 // ============================================================
 
 /**
- * Get presentation IDs that a user has access to.
+ * The decks a user's digest covers: the analytics dashboard's decks
+ * (`dashboardDeckIds`), read as ids because the digest counts them.
+ * @param {import('../scope.js').StorageScope} scope
  * @param {Object} db - Database connection
  * @param {string} userEmail - The user's email
  * @returns {Promise<string[]>}
  */
-async function getUserPresentationIds(db, userEmail, organizationId) {
-  // D200: `owner_email` and `user_email` are normalised on write, so the
-  // caller's address is normalised once here and compared bare below.
-  const email = normalizeEmail(userEmail);
-  if (!email) return [];
-
-  // Get presentations where user is owner
-  const ownedQuery = db
-    .selectFrom('presentations')
-    .select('id')
-    .where('owner_email', '=', email)
-    .where('organization_id', '=', organizationId);
-
-  // Get presentations shared with user (edit or admin access)
-  const sharedQuery = db
-    .selectFrom('presentation_collaborators')
-    .innerJoin(
-      'presentations',
-      'presentations.id',
-      'presentation_collaborators.presentation_id',
-    )
-    .select('presentations.id')
-    .where('presentation_collaborators.user_email', '=', email)
-    .where('presentations.organization_id', '=', organizationId)
-    .where('presentation_collaborators.permission', 'in', ['edit', 'admin']);
-
-  const [ownedRows, sharedRows] = await Promise.all([
-    ownedQuery.execute(),
-    sharedQuery.execute(),
-  ]);
-
-  const ids = new Set([
-    ...ownedRows.map((r) => r.id),
-    ...sharedRows.map((r) => r.id),
-  ]);
-
-  return Array.from(ids);
+async function getUserPresentationIds(scope, db, userEmail) {
+  const decks = dashboardDeckIds(scope, db, userEmail);
+  if (!decks) return [];
+  return (await decks.execute()).map((row) => row.id);
 }
 
 /**

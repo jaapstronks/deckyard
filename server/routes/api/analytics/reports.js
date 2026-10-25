@@ -11,7 +11,7 @@ import {
   storageError,
 } from '../../../utils/http.js';
 import { norm, validateDateRange } from '../../../utils/normalize.js';
-import { parsePaginationParams } from '../../../utils/request-validators.js';
+import { listPageResult, parseListPage } from '../../../services/list-page.js';
 import { allowRequest, getClientIp } from '../../../utils/rate-limit.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
@@ -82,7 +82,8 @@ async function generateReportData(scope, presentationId, reportType, opts) {
 }
 
 /**
- * GET /api/presentations/:id/analytics/reports - List reports.
+ * GET /api/presentations/:id/analytics/reports - One page of the deck's
+ * reports (list-page contract, D358): `{ reports, nextCursor }`, newest first.
  */
 export async function handleListReports(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
@@ -96,15 +97,15 @@ export async function handleListReports(ctx, presentationId) {
   });
   if (!pres) return true;
 
-  const { limit, offset } = parsePaginationParams(url.searchParams, {
+  const page = parseListPage(url.searchParams, {
+    sortKey: 'created_desc',
     defaultLimit: 20,
   });
-
   const result = await listAnalyticsReports(ctx.storageScope, presentationId, {
-    limit,
-    offset,
+    limit: page.limit,
+    after: page.after,
   });
-  return (serveJson(res, 200, result), true);
+  return (serveJson(res, 200, listPageResult('reports', result, page)), true);
 }
 
 /**

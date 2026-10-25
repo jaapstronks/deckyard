@@ -70,8 +70,8 @@ const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 const { AUTH_RATE_LIMITS } = await import('../server/config/rate-limits.js');
 const { handleDashboard, handlePresentationsList } =
   await import('../server/routes/api/analytics/dashboard.js');
-const { ANALYTICS_LIST_SORTS, getPresentationsWithAnalytics } =
-  await import('../server/storage/analytics/index.js');
+const { handleAnalytics } =
+  await import('../server/routes/api/analytics/index.js');
 const {
   handleOverview,
   handleSlides,
@@ -463,7 +463,7 @@ test('presentations list refuses an unauthenticated caller with a 401', async ()
   assert.equal(res.json().error, 'unauthorized');
 });
 
-test('presentations list rejects an unknown period and an unknown sort', async () => {
+test('presentations list rejects an unknown period and any sort (B825)', async () => {
   await seed();
   const badPeriod = await call(
     handlePresentationsList,
@@ -477,8 +477,9 @@ test('presentations list rejects an unknown period and an unknown sort', async (
   assert.equal(badPeriod.res.json().error, 'invalid');
   assert.deepEqual(badPeriod.res.json().details, { field: 'period' });
 
-  // `completion` used to be accepted and silently sorted on views (B622).
-  for (const sort of ['alphabetical', 'completion']) {
+  // The list has one order, last change first (D358); the old `views`,
+  // `duration` and `recent` are refused like any other value.
+  for (const sort of ['views', 'duration', 'recent', 'completion']) {
     const badSort = await call(
       handlePresentationsList,
       'GET',
@@ -494,24 +495,27 @@ test('presentations list rejects an unknown period and an unknown sort', async (
   }
 });
 
-test('the list sorts are the orders storage can cut a page on', () => {
-  // The orderings themselves run against Postgres
-  // (tests/pg/analytics-completion-rate.pgtest.js); this pins the vocabulary.
-  assert.deepEqual([...ANALYTICS_LIST_SORTS], ['views', 'duration', 'recent']);
-});
-
-test('the storage reader throws on a sort it cannot order on', async () => {
-  await assert.rejects(
-    getPresentationsWithAnalytics(
-      { organizationId: 'org-a' },
-      'owner@example.com',
-      'org-a',
-      {
-        sort: 'completion',
-      },
-    ),
-    /Unknown analytics list sort: completion/,
-  );
+test('presentations list refuses offset and an out-of-range limit before any query', async () => {
+  await seed();
+  for (const [query, field] of [
+    ['offset=20', 'offset'],
+    ['limit=0', 'limit'],
+    ['limit=101', 'limit'],
+    ['cursor=nonsense', 'cursor'],
+  ]) {
+    // Through the module entry: its error handler turns the refusal into
+    // the canonical envelope.
+    const { res } = await call(
+      handleAnalytics,
+      'GET',
+      `/api/analytics/presentations?${query}`,
+      { as: ACTORS.owner },
+    );
+    assert.equal(res.statusCode, 400, query);
+    assert.equal(res.json().error, 'invalid', query);
+    assert.equal(res.json().details.field, field, query);
+    assert.deepEqual(db.__queryLog, [], `${query}: refused before any query`);
+  }
 });
 
 // ===========================================================================
@@ -629,10 +633,11 @@ test('list reports returns the deck’s reports for a reader', async () => {
   assert.equal(res.statusCode, 200);
   // deck-owned carries r-1, r-2 and the (public, private-deck) r-priv.
   assert.equal(
-    res.json().total,
-    3,
-    'every report on this deck is counted, org-scoped',
+    res.json().nextCursor,
+    null,
+    'one page holds every report on this deck, org-scoped',
   );
+  assert.equal(res.json().total, undefined, 'no total on a list page');
   assert.deepEqual(
     res
       .json()

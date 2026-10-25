@@ -644,10 +644,6 @@
       "forms": ["Mettre à la corbeille", "Supprimer"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fr  Next": {
-      "forms": ["Suivant", "Suivante"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Placeholder": {
       "forms": ["Espace réservé", "Texte indicatif"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -788,10 +784,6 @@
     },
     "it  New": {
       "forms": ["Nuova", "Nuovo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Next": {
-      "forms": ["Successiva", "Successivi"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  No presentations yet.": {
@@ -1304,10 +1296,6 @@
     },
     "pl  New": {
       "forms": ["Nowa", "Nowy"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  Next": {
-      "forms": ["Dalej", "Następne"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  No presentations yet.": {
