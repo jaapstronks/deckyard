@@ -11,7 +11,13 @@
   display: none;
 }
 
-/* Narrow screens: the button spans the column, so its label never wraps. */
+.list-pager-more {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* Narrow screens: the button spans the column. */
 @media (max-width: 640px) {
   .list-pager .list-pager-more {
     width: 100%;

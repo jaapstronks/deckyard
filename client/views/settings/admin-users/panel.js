@@ -90,7 +90,7 @@ export function renderAdminUsersPanel({ user }) {
   }
 
   const header = h('div', {
-    class: 'row is-between is-align-start',
+    class: 'row is-between is-align-start admin-users-header',
     style: 'margin-bottom: 12px;',
   });
   header.append(
