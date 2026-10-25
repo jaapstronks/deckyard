@@ -13,7 +13,7 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
-* freeze renderer bundles and gate execution on external isolation ([#1833](https://github.com/jaapstronks/deckyard/issues/1833)) ([a9a31e2](https://github.com/jaapstronks/deckyard/commit/a9a31e2d0981ff19a472475a0e9277f12366af45))
+* Add the architecture proof for content-addressed renderer bundles. Historical renderer execution remains disabled in production pending an OS-isolated runner; this release does not enable immutable publication editions. ([#1833](https://github.com/jaapstronks/deckyard/issues/1833)) ([a9a31e2](https://github.com/jaapstronks/deckyard/commit/a9a31e2d0981ff19a472475a0e9277f12366af45))
 
 
 ### Fixed
@@ -21,9 +21,7 @@ entries are grouped per release rather than exhaustively listed.
 * keep analytics and user management within narrow screens (B842) ([#1836](https://github.com/jaapstronks/deckyard/issues/1836)) ([8c908f3](https://github.com/jaapstronks/deckyard/commit/8c908f3e1ccb96e0dd375bb6257b2aef26b8c244))
 
 
-### Changed
-
-* keep the next release within beta ([ab9b70e](https://github.com/jaapstronks/deckyard/commit/ab9b70e499969e12552bf4893fe2e38644d3a0b8))
+Upgrade: forks using the moved helpers must update the two imports listed above. No new database migration or required configuration accompanies this release.
 
 ## [1.88.0](https://github.com/jaapstronks/deckyard/compare/v1.87.0...v1.88.0) (2026-10-24)
 
