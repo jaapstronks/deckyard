@@ -52,6 +52,7 @@ import { keysetPage, keysetRows } from '../keyset.js';
 const DECK_LIST_COLUMNS = Object.freeze([
   'id',
   'title',
+  'description',
   'modified_at as modified',
   'created_at as created',
   'theme',
@@ -319,6 +320,7 @@ async function toDeckListItems(ctx, rows) {
     return {
       id: row.id,
       title: row.title,
+      description: row.description,
       modified: row.modified,
       created: row.created,
       theme: row.theme,
