@@ -21,11 +21,10 @@ const TRANSPORTS = {
 
 /** Instance settings take precedence over the environment. */
 export async function getSenderIdentity(repoRoot) {
-  if (!repoRoot) return resolveMailSender();
   try {
     return await getEmailSender(
       crossOrganizationScope(
-        repoRoot,
+        repoRoot ?? null,
         'outgoing mail: sender identity is instance-level',
       ),
     );

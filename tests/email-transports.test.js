@@ -4,6 +4,7 @@ import { readMailConfig } from '../server/integrations/email/config.js';
 import {
   sendEmail,
   isEmailConfigured,
+  getSenderIdentity,
 } from '../server/integrations/email/index.js';
 import { sendSmtp } from '../server/integrations/email/transports/smtp.js';
 import { smtpCertificate, smtpInbox } from './helpers/smtp-inbox.js';
@@ -402,4 +403,37 @@ test('doctor reports partial transport configuration even with auth disabled', a
     if (original === undefined) delete process.env.AUTH_ENABLED;
     else process.env.AUTH_ENABLED = original;
   }
+});
+
+test('rootless PostgreSQL callers keep the same stored sender as capabilities and doctor', async () => {
+  Object.assign(process.env, envFor('brevo'));
+  delete process.env.MAIL_FROM;
+  __setTestDb(
+    createFakeDb({
+      app_settings: [
+        {
+          singleton: true,
+          settings: {
+            emailSender: {
+              email: 'stored@example.test',
+              name: 'Stored Sender',
+            },
+          },
+        },
+      ],
+    }),
+  );
+  const sender = await getSenderIdentity(null);
+  assert.deepEqual(sender, {
+    email: 'stored@example.test',
+    name: 'Stored Sender',
+  });
+  assert.equal(isEmailConfigured(sender), true);
+  let payload;
+  globalThis.fetch = async (_url, init) => {
+    payload = JSON.parse(init.body);
+    return new Response('', { status: 201 });
+  };
+  assert.equal((await sendEmail({ ...args, senderOverride: sender })).ok, true);
+  assert.deepEqual(payload.sender, sender);
 });

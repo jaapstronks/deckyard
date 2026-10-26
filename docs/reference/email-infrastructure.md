@@ -108,8 +108,7 @@ not, and that result is discarded by most call sites.
   `trySendCustomTemplate()` for its template type and locale; if an override
   exists the interpolated custom body is sent and the function returns, (c)
   otherwise falls through to the code default builder and calls `sendEmail()`.
-  Every sender takes an optional `repoRoot`; without it there is no override
-  lookup and no settings-based sender identity.
+  Every sender takes an optional `repoRoot`; without it there is no template override lookup. Sender settings are instance-level PostgreSQL data and retain their precedence even for rootless callers.
 - **Resolution** — `resolveTemplate()` rejects an unknown type, normalizes an
   unsupported locale to `en`, marks the result `isCustom` if any override field
   exists, and resolves each of the five fields independently — so an admin can
