@@ -191,7 +191,10 @@ for (const transport of ['brevo', 'scaleway', 'mailgun']) {
       assert.match(init.body.get('to'), /recipient@example.test/);
       process.env.MAILGUN_REGION = 'us';
       await sendEmail(args);
-      assert.match(calls[1].url, /^https:\/\/api.mailgun.net/);
+      assert.equal(
+        calls[1].url,
+        'https://api.mailgun.net/v3/mail.example.test/messages',
+      );
     } else {
       const body = JSON.parse(init.body);
       const from = body.sender || body.from;
