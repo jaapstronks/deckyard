@@ -116,3 +116,17 @@ test('naming no language falls back to the shipped subset', async () => {
 
   assert.deepEqual(out.langs, [...DEFAULT_SUPPORTED_DECK_LANGS]);
 });
+
+test('AI asks for 150 characters and caps overlong output within 180', async () => {
+  const long = 'Een bezoeker bekijkt een interactieve installatie. '.repeat(8);
+  const out = await generate({
+    langs: ['nl', 'de'],
+    model: { nl: long, de: '🖼'.repeat(150) },
+  });
+  assert.match(systemPrompt(), /within 150 characters/);
+  for (const value of Object.values(out.alts)) {
+    assert.ok(value.length <= 180);
+    assert.match(value, /…$/);
+    assert.ok(!/[\uD800-\uDBFF]…$/.test(value));
+  }
+});

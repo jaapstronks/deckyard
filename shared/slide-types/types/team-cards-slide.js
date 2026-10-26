@@ -1,3 +1,4 @@
+import { ALT_TEXT_CONSTRAINTS } from '../field-normalization.js';
 import {
   escapeHtml,
   pickAltText,
@@ -156,7 +157,12 @@ export default {
         // Declared because the renderer reads it (see resolveMembers) and
         // itemDefaults seeds it. gallery-slide's images[] declares its `alt`
         // the same way.
-        { key: 'alt', type: 'string', label: 'Photo alt text', maxLength: 180 },
+        {
+          key: 'alt',
+          type: 'string',
+          label: 'Photo alt text',
+          ...ALT_TEXT_CONSTRAINTS,
+        },
         // Focus is carried data, not editor surface (`hidden`): the inspector's
         // image card owns it. Declared for the same reason `alt` is — the
         // renderer reads it and `itemDefaults` seeds it — and shaped like

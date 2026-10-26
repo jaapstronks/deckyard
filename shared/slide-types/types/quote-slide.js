@@ -1,3 +1,4 @@
+import { ALT_TEXT_CONSTRAINTS } from '../field-normalization.js';
 import {
   curlyQuote,
   escapeHtml,
@@ -269,7 +270,7 @@ export default {
           label: 'Portrait 1 alt text (optional)',
           type: 'string',
           required: false,
-          maxLength: 180,
+          ...ALT_TEXT_CONSTRAINTS,
         },
         {
           key: 'authorImage2',
@@ -283,7 +284,7 @@ export default {
           label: 'Portrait 2 alt text (optional)',
           type: 'string',
           required: false,
-          maxLength: 180,
+          ...ALT_TEXT_CONSTRAINTS,
         },
       ],
     },

@@ -1,3 +1,4 @@
+import { normalizeFieldContent } from '../../../shared/slide-types/field-normalization.js';
 import crypto from 'node:crypto';
 
 import {
@@ -120,11 +121,14 @@ export function normalizeSlides(
     };
     const def = getSlideType(type, slideTypes);
     refuseUnofferedTextStyles(s?.content?.textStyles, def, index);
+    normalized.content = normalizeFieldContent(def?.fields, normalized.content);
     // Instance keys, from the type's declaration. Copied first so the write
     // lands on this slide's own content object rather than the caller's.
     if (Object.keys(slideInstanceKeys(def)).length) {
       normalized.content = {
-        ...(s?.content && typeof s.content === 'object' ? s.content : {}),
+        ...(normalized.content && typeof normalized.content === 'object'
+          ? normalized.content
+          : {}),
       };
       applyInstanceKeyDefaults(normalized, {
         def,

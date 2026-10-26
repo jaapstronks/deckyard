@@ -1,3 +1,4 @@
+import { normalizeFieldContent } from './field-normalization.js';
 /**
  * Content NORMALIZATION — a slide's stored shape folded to its canonical one,
  * run when the editor opens the slide.
@@ -139,5 +140,6 @@ export function normalizeSlideContent(type, def, content) {
   // The type's hook migrates shapes; this one settles values, so it gets the
   // final word on what is stored under a declared enum.
   foldUnofferedEnums(resolved, content);
+  Object.assign(content, normalizeFieldContent(resolved?.fields, content));
   return content;
 }

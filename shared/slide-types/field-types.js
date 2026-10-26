@@ -1,3 +1,4 @@
+import { normalizeFieldValue } from './field-normalization.js';
 import { isNonEmptyString, safeHref, slideJumpTarget } from './helpers.js';
 import {
   SLIDE_BG_ID_RE,
@@ -334,7 +335,7 @@ export const FIELD_TYPES = {
     description:
       'Single-line text. `mediaRef` marks the string as a reference to media the document cannot embed (a video source) rather than document text: the reflowable projection renders a named stand-in, linked where a link resolves, instead of printing the reference, and the field is not offered for translation — a video id is the same in every language. Three declarations pair the string with a sibling, which the projection then consumes: `unitKey` (a value and its unit read as one block, no space added), `hrefKey` (the string is the text of a link to a sibling `url`; without a target nothing projects) and `headingKey` (a sibling string is the `<h3>` over this block).',
     docExtra:
-      '`maxLength`, `required`, `placeholder`, `helpText`, `mediaRef` (`{ label, linkKey }`), `unitKey`, `hrefKey`, `headingKey`',
+      '`maxLength`, `overflow` (`truncate`), `required`, `placeholder`, `helpText`, `mediaRef` (`{ label, linkKey }`), `unitKey`, `hrefKey`, `headingKey`',
     valueKind: 'string',
     validate: validateText,
   },
@@ -459,5 +460,5 @@ export function isKnownFieldType(type) {
 export function validateFieldValue(value, field) {
   const spec = field && FIELD_TYPES[field.type];
   if (!spec) return [];
-  return spec.validate(value, field);
+  return spec.validate(normalizeFieldValue(value, field), field);
 }

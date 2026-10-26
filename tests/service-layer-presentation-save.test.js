@@ -970,3 +970,102 @@ test('v1 and editor: a save never moves the publication column, so an echoed cop
     }
   }
 });
+
+test('editor and v1 save a 299-character alt, including nested and translated fields', async () => {
+  const long =
+    'Een bezoeker bekijkt een tentoonstelling met interactieve installaties. '
+      .repeat(5)
+      .slice(0, 299);
+  for (const save of [editorSave, v1Save]) {
+    const db = await installDb();
+    const slides = [
+      {
+        id: 'slide-1',
+        type: 'image-slide',
+        content: { title: 'Beeld', alt: long },
+      },
+      {
+        id: 'slide-2',
+        type: 'gallery-slide',
+        content: {
+          title: 'Galerij',
+          images: [
+            { src: 'https://example.test/image.png', alt: long },
+            { src: 'https://example.test/image.png', alt: long },
+          ],
+        },
+      },
+    ];
+    const res = await save(OWNER, {
+      slides,
+      i18n: {
+        dominant: 'nl',
+        active: 'nl',
+        versions: {
+          nl: { title: 'Nieuw', slides },
+          'en-GB': { title: 'New', slides: structuredClone(slides) },
+        },
+      },
+    });
+    assert.equal(res.statusCode, 200, res.body);
+    const row = storedDeck(db);
+    for (const values of [
+      row.slides,
+      ...Object.values(row.i18n.versions).map((v) => v.slides),
+    ]) {
+      assert.ok(values[0].content.alt.length <= 180);
+      assert.match(values[0].content.alt, /…$/);
+      assert.equal(values[1].content.images[0].alt, values[0].content.alt);
+    }
+    assert.equal(
+      slides[0].content.alt.length,
+      299,
+      'the submitted caller data is not modified',
+    );
+  }
+});
+
+test('MCP slide update persists a canonical alt instead of refusing the deck', async () => {
+  const db = await installDb();
+  storedDeck(db).slides[0] = {
+    id: 'slide-1',
+    type: 'image-slide',
+    content: { title: 'Beeld', alt: '' },
+  };
+  const server = new McpServer({ name: 'test', version: '1' });
+  registerTools(server, { repoRoot: process.cwd() });
+  await server.tools.get('update_slide').handler(
+    {
+      presentationId: DECK_ID,
+      slideIndex: 0,
+      type: 'image-slide',
+      content: { title: 'Beeld', alt: 'a'.repeat(299) },
+    },
+    { ownerEmail: OWNER.email, organizationId: ORG },
+  );
+  const saved = storedDeck(db).slides[0].content.alt;
+  assert.equal(saved, 'a'.repeat(179) + '…');
+});
+
+test('normalizing descriptive alt never relaxes another field length refusal', async () => {
+  for (const save of [editorSave, v1Save]) {
+    const db = await installDb();
+    const before = structuredClone(storedDeck(db));
+    const res = await save(OWNER, {
+      slides: [
+        {
+          id: 'slide-1',
+          type: 'image-slide',
+          content: {
+            title: 'Beeld',
+            alt: 'a'.repeat(299),
+            caption: 'c'.repeat(161),
+          },
+        },
+      ],
+    });
+    assert.equal(res.statusCode, 400);
+    assert.equal(JSON.parse(res.body).details.field, 'caption');
+    assertUnchanged(db, before, 'overlong caption still refuses');
+  }
+});

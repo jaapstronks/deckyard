@@ -1,3 +1,4 @@
+import { ALT_TEXT_CONSTRAINTS } from '../field-normalization.js';
 import {
   bgClass,
   escapeHtml,
@@ -89,7 +90,7 @@ export default {
           labelKey: 'editor.slideField.alt.label',
           type: 'string',
           required: false,
-          maxLength: 180,
+          ...ALT_TEXT_CONSTRAINTS,
         },
         {
           // Per-image fit; empty = follow the type default

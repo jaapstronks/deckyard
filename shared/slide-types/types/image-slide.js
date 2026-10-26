@@ -1,3 +1,4 @@
+import { ALT_TEXT_CONSTRAINTS } from '../field-normalization.js';
 import { DEFAULT_IMAGE_PLACEHOLDER } from '../image-placeholder.js';
 import {
   escapeHtml,
@@ -71,7 +72,7 @@ export default {
       labelKey: 'editor.slideField.alt.label',
       type: 'string',
       required: false,
-      maxLength: 180,
+      ...ALT_TEXT_CONSTRAINTS,
       // A decorative image is hidden from screen readers, so its alt text is
       // dead UI. Was a show/hide branch in the hand-built form.
       visibleWhen: { field: 'imageRole', in: ['content'] },
