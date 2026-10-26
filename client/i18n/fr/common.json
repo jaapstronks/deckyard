@@ -147,7 +147,7 @@
   "dashboard.cards.avgDuration": "Durée moy.",
   "dashboard.cards.completionRate": "Taux d'achèvement",
   "dashboard.cards.totalViews": "Vues totales",
-  "dashboard.cards.uniqueViewers": "Visiteurs uniques",
+  "dashboard.cards.uniqueViewers": "Spectateurs uniques",
   "dashboard.chart.ariaLabel": "Diagramme en barres des vues dans le temps",
   "dashboard.chart.empty": "Pas de données de vues pour cette période",
   "dashboard.chart.title": "Vues dans le temps",

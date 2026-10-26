@@ -146,7 +146,7 @@
   "dashboard.back": "Zurück zu den Präsentationen",
   "dashboard.cards.avgDuration": "Durchschn. Dauer",
   "dashboard.cards.completionRate": "Abschlussrate",
-  "dashboard.cards.totalViews": "Gesamtaufrufe",
+  "dashboard.cards.totalViews": "Aufrufe gesamt",
   "dashboard.cards.uniqueViewers": "Eindeutige Betrachter",
   "dashboard.chart.ariaLabel": "Säulendiagramm der Aufrufe im Zeitverlauf",
   "dashboard.chart.empty": "Keine Aufrufdaten für diesen Zeitraum",
