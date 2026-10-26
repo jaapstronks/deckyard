@@ -149,7 +149,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Forma de la imagen",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Círculo",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Redondeada",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Cuadrada",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Esquinas rectas",
   "slideType.team-cards-slide.field.members.item.alt.label": "Texto alternativo de la foto",
   "slideType.team-cards-slide.field.members.item.byline.label": "Leyenda",
   "slideType.team-cards-slide.field.members.item.image.label": "Foto",

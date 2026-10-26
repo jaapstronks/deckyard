@@ -750,7 +750,7 @@
   "editor.slideTypeDesc.title-slide": "Un grand titre et un sous-titre pour ouvrir",
   "editor.slideTypeDesc.video-slide": "Une vidéo intégrée",
   "editor.slideTypeGroup.basic": "Base",
-  "editor.slideTypeGroup.custom": "Personnalisés",
+  "editor.slideTypeGroup.custom": "Types de diapositives personnalisés",
   "editor.slideTypeGroup.data": "Données",
   "editor.slideTypeGroup.frequent": "Fréquemment utilisés",
   "editor.slideTypeGroup.layouts": "Mises en page",

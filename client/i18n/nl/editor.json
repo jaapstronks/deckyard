@@ -949,7 +949,7 @@
   "editor.slideTypeDesc.title-slide": "Grote titel en ondertitel als opening",
   "editor.slideTypeDesc.video-slide": "Een ingesloten video",
   "editor.slideTypeGroup.basic": "Basis",
-  "editor.slideTypeGroup.custom": "Eigen",
+  "editor.slideTypeGroup.custom": "Eigen slidetypes",
   "editor.slideTypeGroup.data": "Data",
   "editor.slideTypeGroup.frequent": "Veelgebruikt",
   "editor.slideTypeGroup.interaction": "Interactie",

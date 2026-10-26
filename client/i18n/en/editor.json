@@ -949,7 +949,7 @@
   "editor.slideTypeDesc.title-slide": "Big title and subtitle to open with",
   "editor.slideTypeDesc.video-slide": "An embedded video",
   "editor.slideTypeGroup.basic": "Basic",
-  "editor.slideTypeGroup.custom": "Custom",
+  "editor.slideTypeGroup.custom": "Custom slide types",
   "editor.slideTypeGroup.data": "Data",
   "editor.slideTypeGroup.frequent": "Frequently used",
   "editor.slideTypeGroup.interaction": "Interaction",

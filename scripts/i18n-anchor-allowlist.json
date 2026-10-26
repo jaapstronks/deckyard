@@ -39,10 +39,6 @@
       "forms": ["Konvertering mislykkedes.", "Konverteringen mislykkedes."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Custom": {
-      "forms": ["Brugerdefineret", "Egne"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Dark": {
       "forms": ["Mørk", "Mørke"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -114,10 +110,6 @@
       "forms": ["Slide-bibliotek", "Slidebibliotek"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Square": {
-      "forms": ["Firkantet", "Kvadratisk", "Skarp"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Unpublish": {
       "forms": ["Afpublicér", "Fjern udgivelsen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -148,10 +140,6 @@
     },
     "de  Conversion failed.": {
       "forms": ["Konvertierung fehlgeschlagen.", "Umwandlung fehlgeschlagen."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Custom": {
-      "forms": ["Benutzerdefiniert", "Eigene", "Eigene Einstellung"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Generating…": {
@@ -216,10 +204,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "de  Square": {
-      "forms": ["Eckig", "Quadratisch"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  Weight": {
       "forms": ["Schriftstärke", "Stärke"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -256,8 +240,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Custom": {
-      "forms": ["Personalizada", "Personalizado", "Personalizados"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Personalizada", "Personalizado"],
+      "reason": "Personalizado agrees with ajuste (masculine singular) in editor.deckSettings.autoAdvance.presetCustom and recorrido (masculine singular) in slideType.image-slide.field.zoomSteps.option.custom.label; Personalizada agrees with visibilidad (feminine singular) in visibility.custom."
     },
     "es  Dark": {
       "forms": ["Oscuro", "Oscuros"],
@@ -360,10 +344,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "es  Square": {
-      "forms": ["Cuadrada", "Recto"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  This share link has expired.": {
       "forms": [
         "Este enlace compartido ha caducado.",
@@ -393,10 +373,6 @@
     },
     "fi  Collapse": {
       "forms": ["Supista", "Tiivistä"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Custom": {
-      "forms": ["Mukautettu", "Omat"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Dark": {
@@ -482,10 +458,6 @@
       "forms": ["Jaettu", "Jaetut"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
-    "fi  Square": {
-      "forms": ["Neliö", "Suora"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Unpublish": {
       "forms": ["Peru julkaisu", "Peruuta julkaisu"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -511,8 +483,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Custom": {
-      "forms": ["Personnalisé", "Personnalisée", "Personnalisés"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Personnalisé", "Personnalisée"],
+      "reason": "Personnalisé agrees with préréglage (masculine singular) in editor.deckSettings.autoAdvance.presetCustom and parcours (masculine singular) in slideType.image-slide.field.zoomSteps.option.custom.label; Personnalisée agrees with visibilité (feminine singular) in visibility.custom."
     },
     "fr  Dark": {
       "forms": ["Sombre", "Sombres"],
@@ -603,10 +575,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fr  Square": {
-      "forms": ["Carré", "Carrée", "Droit"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Uploading…": {
       "forms": ["Envoi…", "Téléversement en cours…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -629,10 +597,6 @@
     },
     "it  Creating…": {
       "forms": ["Creazione in corso…", "Creazione…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Custom": {
-      "forms": ["Personalizzate", "Personalizzato"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Dark": {
@@ -745,10 +709,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Square": {
-      "forms": ["Quadrata", "Quadrato", "Squadrato"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Unpublish": {
       "forms": ["Annulla la pubblicazione", "Annulla pubblicazione"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -818,10 +778,6 @@
     },
     "nl  Corner image": {
       "forms": ["Hoekafbeelding", "Hoekbeeld"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Custom": {
-      "forms": ["Aangepast", "Eigen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Delete": {
@@ -930,10 +886,6 @@
       "forms": ["Deze hulp tonen", "Toon deze hulp"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Square": {
-      "forms": ["Recht", "Vierkant"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Style": {
       "forms": ["Stijl", "Type"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -968,10 +920,6 @@
     },
     "no  Copy link": {
       "forms": ["Kopier lenke", "Kopier lenken"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Custom": {
-      "forms": ["Egendefinert", "Egne"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Dark": {
@@ -1061,10 +1009,6 @@
       "forms": ["Lysbilde-bibliotek", "Lysbildebibliotek"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Square": {
-      "forms": ["Firkantet", "Kvadratisk", "Skarp"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  This share link has expired.": {
       "forms": [
         "Denne delingslenken er utløpt.",
@@ -1089,8 +1033,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Custom": {
-      "forms": ["Niestandardowy", "Własne"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Niestandardowa", "Niestandardowe"],
+      "reason": "Niestandardowe agrees with ustawienia (non-masculine-personal plural) in editor.deckSettings.autoAdvance.presetCustom and pozycje (non-masculine-personal plural) in slideType.image-slide.field.zoomSteps.option.custom.label; Niestandardowa agrees with widoczność (feminine singular) in visibility.custom."
     },
     "pl  Dark": {
       "forms": ["Ciemne", "Ciemny"],
@@ -1208,10 +1152,6 @@
       "forms": ["Miękki", "Miękkie"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Square": {
-      "forms": ["Kwadrat", "Kwadratowy", "Proste"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  {count} presentations": {
       "forms": ["prezentacji: {count}", "{count} prezentacji"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1233,8 +1173,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Custom": {
-      "forms": ["Personalizada", "Personalizado", "Personalizados"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Personalizada", "Personalizado"],
+      "reason": "Personalizado agrees with ajuste (masculine singular) in editor.deckSettings.autoAdvance.presetCustom and percurso (masculine singular) in slideType.image-slide.field.zoomSteps.option.custom.label; Personalizada agrees with visibilidade (feminine singular) in visibility.custom."
     },
     "pt  Dark": {
       "forms": ["Escuro", "Escuros"],
@@ -1329,10 +1269,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pt  Square": {
-      "forms": ["Quadrada", "Reto"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  {count} selected": {
       "forms": ["{count} selecionadas", "{count} selecionados"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1359,10 +1295,6 @@
     },
     "sv  Copy link": {
       "forms": ["Kopiera länk", "Kopiera länken"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Custom": {
-      "forms": ["Anpassad", "Egna"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Dark": {
@@ -1446,10 +1378,6 @@
     },
     "sv  Slide library": {
       "forms": ["Slide-bibliotek", "Slidebibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Square": {
-      "forms": ["Fyrkantig", "Kvadratisk", "Skarp"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  This share link has expired.": {

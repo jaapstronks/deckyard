@@ -103,13 +103,19 @@ function createSurfacesSection({ config, onChange }) {
     ),
   );
 
+  const radiusLabels = {
+    none: t('settings.themes.config.radius.none', 'Sharp corners'),
+    soft: t('settings.themes.config.radius.soft', 'Soft'),
+    round: t('settings.themes.config.radius.round', 'Round'),
+  };
+
   el.append(
     choiceRow({
       label: t('settings.themes.config.radius', 'Corner rounding'),
       value: readValue(config, 'surfaces', 'radius'),
       options: Object.keys(RADIUS_SCALES).map((key) => ({
         value: key,
-        label: t(`settings.themes.config.radius.${key}`, key),
+        label: radiusLabels[key],
       })),
       onChange: (v) => {
         writeValue(config, 'surfaces', 'radius', v);

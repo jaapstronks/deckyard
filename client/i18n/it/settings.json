@@ -654,7 +654,7 @@
   "settings.themes.config.noBackgrounds": "Ancora nessuna immagine di sfondo.",
   "settings.themes.config.noVariants": "Ancora nessuno sfondo aggiuntivo.",
   "settings.themes.config.radius": "Arrotondamento angoli",
-  "settings.themes.config.radius.none": "Squadrato",
+  "settings.themes.config.radius.none": "Angoli retti",
   "settings.themes.config.radius.round": "Tondo",
   "settings.themes.config.radius.soft": "Morbido",
   "settings.themes.config.removeBackground": "Rimuovi",

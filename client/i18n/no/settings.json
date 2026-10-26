@@ -652,7 +652,7 @@
   "settings.themes.config.noBackgrounds": "Ingen bakgrunnsbilder ennå.",
   "settings.themes.config.noVariants": "Ingen ekstra bakgrunner ennå.",
   "settings.themes.config.radius": "Hjørneavrunding",
-  "settings.themes.config.radius.none": "Skarp",
+  "settings.themes.config.radius.none": "Skarpe hjørner",
   "settings.themes.config.radius.round": "Rund",
   "settings.themes.config.radius.soft": "Myk",
   "settings.themes.config.removeBackground": "Fjern",

@@ -640,7 +640,7 @@
   "settings.themes.config.noBackgrounds": "Noch keine Hintergrundbilder.",
   "settings.themes.config.noVariants": "Noch keine zusätzlichen Hintergründe.",
   "settings.themes.config.radius": "Eckenrundung",
-  "settings.themes.config.radius.none": "Eckig",
+  "settings.themes.config.radius.none": "Scharfe Ecken",
   "settings.themes.config.radius.round": "Rund",
   "settings.themes.config.radius.soft": "Weich",
   "settings.themes.config.removeBackground": "Entfernen",

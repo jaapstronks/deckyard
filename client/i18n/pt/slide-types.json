@@ -151,7 +151,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Forma da imagem",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Círculo",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Arredondada",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Quadrada",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Cantos retos",
   "slideType.team-cards-slide.field.members.item.alt.label": "Texto alternativo da fotografia",
   "slideType.team-cards-slide.field.members.item.byline.label": "Legenda",
   "slideType.team-cards-slide.field.members.item.image.label": "Fotografia",

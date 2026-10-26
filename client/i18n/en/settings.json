@@ -817,7 +817,7 @@
   "settings.themes.config.noBackgrounds": "No background images yet.",
   "settings.themes.config.noVariants": "No extra backgrounds yet.",
   "settings.themes.config.radius": "Corner rounding",
-  "settings.themes.config.radius.none": "Square",
+  "settings.themes.config.radius.none": "Sharp corners",
   "settings.themes.config.radius.round": "Round",
   "settings.themes.config.radius.soft": "Soft",
   "settings.themes.config.removeBackground": "Remove",

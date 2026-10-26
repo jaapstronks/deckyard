@@ -149,7 +149,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Forma dell'immagine",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Cerchio",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Arrotondata",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Quadrata",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Angoli retti",
   "slideType.team-cards-slide.field.members.item.alt.label": "Testo alternativo della foto",
   "slideType.team-cards-slide.field.members.item.byline.label": "Didascalia",
   "slideType.team-cards-slide.field.members.item.image.label": "Foto",

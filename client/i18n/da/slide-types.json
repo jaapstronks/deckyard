@@ -157,7 +157,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Billedets form",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Cirkel",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Afrundet",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Firkantet",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Skarpe hjørner",
   "slideType.team-cards-slide.field.members.item.alt.label": "Alt-tekst til fotoet",
   "slideType.team-cards-slide.field.members.item.byline.label": "Billedtekst",
   "slideType.team-cards-slide.field.members.item.image.label": "Foto",

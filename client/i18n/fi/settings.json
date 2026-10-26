@@ -666,7 +666,7 @@
   "settings.themes.config.noBackgrounds": "Ei vielä taustakuvia.",
   "settings.themes.config.noVariants": "Ei vielä lisätaustoja.",
   "settings.themes.config.radius": "Kulmien pyöristys",
-  "settings.themes.config.radius.none": "Suora",
+  "settings.themes.config.radius.none": "Terävät kulmat",
   "settings.themes.config.radius.round": "Pyöreä",
   "settings.themes.config.radius.soft": "Pehmeä",
   "settings.themes.config.removeBackground": "Poista",

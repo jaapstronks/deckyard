@@ -263,7 +263,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Beeldvorm",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Rond",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Afgerond",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Vierkant",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Rechte hoeken",
   "slideType.team-cards-slide.field.members.item.alt.label": "Alt-tekst (optioneel)",
   "slideType.team-cards-slide.field.members.item.body.label": "Beschrijving",
   "slideType.team-cards-slide.field.members.item.byline.label": "Onderschrift",
