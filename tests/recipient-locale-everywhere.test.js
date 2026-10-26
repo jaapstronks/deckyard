@@ -34,7 +34,9 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 process.env.BREVO_API_KEY = 'test-key-not-a-secret';
-process.env.BREVO_SENDER_EMAIL = 'noreply@deckyard.test';
+process.env.MAIL_TRANSPORT = 'brevo';
+process.env.MAIL_FROM ||= 'noreply@deckyard.test';
+process.env.MAIL_FROM = 'noreply@deckyard.test';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const DEFAULT_ORG = process.env.DEFAULT_ORGANIZATION_ID;

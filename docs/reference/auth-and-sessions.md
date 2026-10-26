@@ -80,7 +80,7 @@ Auth routes are dispatched from `server/routes/api/index.js`.
 
 **Magic-link** (`server/routes/api/magic-link.js`): `POST /api/auth/magic-link`
 requests a link (token expiry 15 min); `POST /api/auth/magic-link/verify`
-consumes it and sets the session. Delivery via `server/integrations/brevo.js`.
+consumes it and sets the session. Delivery via `server/integrations/email/index.js`.
 
 **Password reset** (`server/routes/api/password-reset.js`):
 `POST /api/auth/forgot-password`, `GET /api/auth/reset-password/validate`,
@@ -118,7 +118,7 @@ writes nothing, so it is not a second way to create users next to the admin UI.
 The first session runs through the existing flows:
 
 - **Without SSO**: a magic link or "Forgot password" on `/login`. Both mail the
-  address, so email must be configured (`BREVO_API_KEY`); the boot warns when it
+  address, so email must be configured (`MAIL_TRANSPORT` and its fields); the boot warns when it
   is not.
 - **With `SSO_ENFORCE=true`**: magic link and reset are refused, and the first
   login is the SSO callback, which matches the existing row by address
@@ -145,8 +145,8 @@ SSO (`server/config/sso.js`): `SSO_ENABLED`, `SSO_PROVIDER` (`oidc` only),
 `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI`, `OIDC_ALLOWED_DOMAINS`,
 `OIDC_AUTO_PROVISION`, `OIDC_DEFAULT_ROLE`, `OIDC_ADMIN_GROUPS`).
 
-Email delivery for magic-link/reset (`server/integrations/brevo.js`):
-`BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`.
+Email delivery for magic-link/reset (`server/integrations/email/index.js`):
+`MAIL_TRANSPORT`, provider-specific credentials, `MAIL_FROM`, `MAIL_FROM_NAME`.
 
 Expiries are hard-coded constants, not env vars: 14-day session, 15-min
 magic-link, 1-hour reset.

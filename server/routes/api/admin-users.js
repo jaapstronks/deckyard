@@ -20,7 +20,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import {
   sendUserInvitationEmail,
   sendActivationReminderEmail,
-} from '../../integrations/brevo.js';
+} from '../../integrations/email/index.js';
 import {
   listUsers,
   getUserById,
@@ -172,7 +172,7 @@ async function handleAdminUserCreate({
   });
 
   // Send invitation email if requested. Awaited, and the flag follows the
-  // result: sendEmail() reports a missing Brevo key by resolving with
+  // result: sendEmail() reports missing mail configuration by resolving with
   // { ok: false } rather than throwing, so reporting the *request* to send
   // promised a mail that an instance without email configuration never
   // sent. See the same correction in routes/api/organization-members.js.

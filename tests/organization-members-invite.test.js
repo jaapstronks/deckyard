@@ -496,13 +496,14 @@ test('no setup mail on an SSO-only instance: no password reset, the SSO way in',
   );
 });
 
-test('no setup mail on a password instance: the reset route stays', async () => {
+test('no setup mail on a password instance: arrange access with an administrator', async () => {
   const { report } = await inviteWithOutcome('created', async () => ({
     sso: { enabled: false, enforce: false },
+    emailConfigured: false,
   }));
 
-  assert.match(report.textContent, /set a password/);
-  assert.match(report.textContent, /Forgot password\?/);
+  assert.match(report.textContent, /administrator/);
+  assert.doesNotMatch(report.textContent, /Forgot password\?/);
   assert.doesNotMatch(report.textContent, /SSO/);
 });
 
@@ -535,7 +536,7 @@ test('the sign-in mode reads the public auth config and nothing else', () => {
     'https://x.test/login',
   );
   assert.match(mixed, /Sign in with SSO/);
-  assert.match(mixed, /Forgot password\?/);
+  assert.doesNotMatch(mixed, /Forgot password\?/);
 });
 
 test('the report names the SSO button in the words the login page shows (B432)', async () => {

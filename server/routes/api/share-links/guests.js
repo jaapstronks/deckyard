@@ -17,7 +17,7 @@ import {
   removeGuest,
   markInvitationSent,
 } from '../../../storage/share-links/index.js';
-import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
+import { sendGuestInvitationEmail } from '../../../integrations/email/index.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
   badRequest,
@@ -89,7 +89,7 @@ async function handleGuestPreRegister(
             } else {
               // eslint-disable-next-line no-console
               log.warn(
-                `[brevo] guest invitation email failed to=${result.guest.email} error=${emailResult.error || ''}`.trim(),
+                `[email] guest invitation email failed to=${result.guest.email} error=${emailResult.error || ''}`.trim(),
               );
             }
           }),

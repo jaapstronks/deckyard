@@ -54,10 +54,10 @@ The bucket serves `uploads/*` publicly and must keep `private/*` private; the do
 
 ### Mail (required for magic links and invitations)
 
-| Variable             | Why      | What to set                                                                                                      |
-| -------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| `BREVO_API_KEY`      | delivery | Magic links, invitations, password resets and notifications. Without it none of them is sent (a doctor warning). |
-| `BREVO_SENDER_EMAIL` | sender   | An address on a domain the provider has verified.                                                                |
+| Variable         | Why      | What to set                                                                                                                            |
+| ---------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `MAIL_TRANSPORT` | delivery | Magic links, invitations, password resets and notifications. Choose smtp, brevo, scaleway or mailgun and complete its provider fields. |
+| `MAIL_FROM`      | sender   | An address on a domain the provider has verified.                                                                                      |
 
 An SSO-only install signs in without mail; invitations and notifications still need it.
 
@@ -95,3 +95,5 @@ No key, no AI: nothing is sent to a model provider unless you set one.
 1. Deploy: [deploy-paas.md](deploy-paas.md) for a PaaS, [self-hosting.md](self-hosting.md) for a VPS with the bundled compose stack.
 2. Run the doctor in the running container: `node scripts/doctor.js`. Zero red lines before the first user.
 3. Set up back-ups and rehearse a restore once: [backup-restore.md](backup-restore.md).
+
+Use the complete [mail transport examples and Brevo migration](../reference/email-infrastructure.md#config--flags). Run doctor for complete transport/sender configuration, then admin test-send for a delivery attempt. `none` is deliberate mail disablement. Missing mail leaves SSO-only sign-in and existing passwords usable; new password-account setup, magic links and resets need working mail. Verify SPF, DKIM and DMARC for the sending domain.

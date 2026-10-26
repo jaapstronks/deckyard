@@ -36,7 +36,7 @@ import {
 } from '../../../shared/organization-role.js';
 import { createUser } from '../../storage/users.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
-import { sendUserInvitationEmail } from '../../integrations/brevo.js';
+import { sendUserInvitationEmail } from '../../integrations/email/index.js';
 import { createLogger } from '../../utils/logger.js';
 
 /**
@@ -258,7 +258,7 @@ async function handleMemberInvite(
   // Awaited, and the flag comes from the result. The inviter reads
   // `invitationSent` as "this person has a setup link in their inbox" and
   // acts on it by not following up, so it may only be true once the mail
-  // actually went out. A missing Brevo key does not throw — sendEmail()
+  // actually went out. Missing mail configuration does not throw — sendEmail()
   // resolves with { ok: false } — so a fire-and-forget call with a
   // .catch() cannot see the most common failure at all, and reported a
   // mail that no instance without email configuration ever sent.

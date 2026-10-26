@@ -27,16 +27,16 @@ shows no red line. Show me its output, then tell me the URL to sign in.
 
 Ask the operator for what only they know, before touching the platform:
 
-| Input                    | Used for                                                                                     |
-| ------------------------ | -------------------------------------------------------------------------------------------- |
-| Platform                 | Which section of [deploy-paas.md](deploy-paas.md) applies                                    |
-| Public URL (`https://…`) | `APP_URL`, the platform's domain, and the SSO callback                                       |
-| Admin email              | `AUTH_ADMIN_EMAIL`: this address gets the admin role on first sign-in                        |
-| Repository and ref       | The fork or `jaapstronks/deckyard`, at a release tag (a fork deploys tags, not `main`)       |
-| Media                    | Persistent volumes at `/app/server/uploads` and `/app/server/data`, or an S3 bucket (`S3_*`) |
-| Mail                     | A Brevo key and a verified sender, or a decision to run without mail (SSO-only sign-in)      |
-| SSO (optional)           | The provider's issuer URL, client id and secret; see [sso-oidc.md](../reference/sso-oidc.md) |
-| AI (optional)            | A provider key. No key means no AI features, and nothing is sent to a model provider         |
+| Input                    | Used for                                                                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Platform                 | Which section of [deploy-paas.md](deploy-paas.md) applies                                             |
+| Public URL (`https://…`) | `APP_URL`, the platform's domain, and the SSO callback                                                |
+| Admin email              | `AUTH_ADMIN_EMAIL`: this address gets the admin role on first sign-in                                 |
+| Repository and ref       | The fork or `jaapstronks/deckyard`, at a release tag (a fork deploys tags, not `main`)                |
+| Media                    | Persistent volumes at `/app/server/uploads` and `/app/server/data`, or an S3 bucket (`S3_*`)          |
+| Mail                     | A configured mail transport and verified sender, or a decision to run without mail (SSO-only sign-in) |
+| SSO (optional)           | The provider's issuer URL, client id and secret; see [sso-oidc.md](../reference/sso-oidc.md)          |
+| AI (optional)            | A provider key. No key means no AI features, and nothing is sent to a model provider                  |
 
 If the operator has no PaaS account or no database option, say so and stop. Do not sign up for a platform on their behalf.
 

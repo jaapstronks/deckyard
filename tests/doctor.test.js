@@ -79,6 +79,8 @@ const BASE = Object.freeze({
   DISABLE_UPLOADS: undefined,
   MEDIA_STORAGE_MODE: undefined,
   BREVO_API_KEY: undefined,
+  MAIL_TRANSPORT: undefined,
+  MAIL_FROM: undefined,
   TRUST_PROXY: undefined,
   UPLOADS_DIR: undefined,
   DATA_DIR: undefined,
@@ -664,7 +666,16 @@ test('mail: a warning without a transport, green with Brevo', async () => {
   assert.equal(red.status, 'warn');
   assert.match(red.message, /magic links/);
   assert.ok(red.fix);
-  assert.equal((await run(mailCheck, { BREVO_API_KEY: 'k' })).status, 'ok');
+  assert.equal(
+    (
+      await run(mailCheck, {
+        MAIL_TRANSPORT: 'brevo',
+        MAIL_FROM: 'sender@example.test',
+        BREVO_API_KEY: 'k',
+      })
+    ).status,
+    'ok',
+  );
 });
 
 test('mail: SSO-only says sign-in is unaffected; auth off skips', async () => {

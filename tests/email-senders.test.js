@@ -23,13 +23,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.BREVO_API_KEY = 'test-key-not-a-secret';
-process.env.BREVO_SENDER_EMAIL = 'noreply@deckyard.test';
-process.env.BREVO_SENDER_NAME = 'Deckyard Test';
+process.env.MAIL_TRANSPORT = 'brevo';
+process.env.MAIL_FROM ||= 'noreply@deckyard.test';
+process.env.MAIL_FROM = 'noreply@deckyard.test';
+process.env.MAIL_FROM_NAME = 'Deckyard Test';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { BREVO_API_URL } = await import('../server/integrations/email/core.js');
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const { sendPasswordResetEmail, sendMagicLinkEmail, sendUserInvitationEmail } =
   await import('../server/integrations/email/senders-auth.js');
 const { sendCollaboratorInviteEmail, sendGuestInvitationEmail } =
@@ -149,6 +151,8 @@ test('without an API key nothing is attempted and the reason says so', async () 
     assert.equal(result.reason, 'not_configured');
   } finally {
     process.env.BREVO_API_KEY = key;
+    process.env.MAIL_TRANSPORT = 'brevo';
+    process.env.MAIL_FROM ||= 'noreply@deckyard.test';
   }
 });
 

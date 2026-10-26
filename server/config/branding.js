@@ -28,10 +28,11 @@ const DEFAULT_OG_DESCRIPTION =
 
 /**
  * The configured application name, or the default.
+ * @param {NodeJS.ProcessEnv} [env] - Environment to resolve (defaults to the running installation).
  * @returns {string}
  */
-export function getAppName() {
-  const v = (process.env.APP_NAME || '').trim();
+export function getAppName(env = process.env) {
+  const v = (env.APP_NAME || '').trim();
   return v || DEFAULT_APP_NAME;
 }
 

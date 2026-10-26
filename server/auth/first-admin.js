@@ -18,7 +18,10 @@ import { createStorageScope } from '../utils/context.js';
 import { createFirstAdmin } from '../storage/users.js';
 import { envBool, envStr } from '../config/utils.js';
 import { isSsoEnabled } from '../config/sso.js';
-import { isEmailConfigured } from '../integrations/email/index.js';
+import {
+  isEmailConfigured,
+  getSenderIdentity,
+} from '../integrations/email/index.js';
 import { createLogger } from '../utils/logger.js';
 import { authEnabled } from './auth.js';
 
@@ -51,10 +54,13 @@ export async function bootstrapFirstAdmin() {
         ? 'Sign in through SSO with that address.'
         : 'Sign in with a magic link or "Forgot password" on the login page.'),
   );
-  if (!isSsoEnabled() && !isEmailConfigured()) {
+  if (
+    !isSsoEnabled() &&
+    !isEmailConfigured(await getSenderIdentity(process.cwd()))
+  ) {
     log.warn(
-      'The first admin signs in through an emailed link, but BREVO_API_KEY is ' +
-        'not set, so no mail can be sent. Configure email (or SSO) and restart.',
+      'The first admin signs in through an emailed link, but outgoing mail is ' +
+        'not configured, so no mail can be sent. Configure email (or SSO) and restart.',
     );
   }
   return { created: true };

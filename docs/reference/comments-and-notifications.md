@@ -57,7 +57,7 @@ arrives as `comment_created`.
 
 - **In-app** (bell + per-user SSE): every write path — app routes, public
   API v1, MCP.
-- **Email** (Brevo): app + REST v1. Gated per recipient on `emailEnabled`
+- **Email** (configured transport): app + REST v1. Gated per recipient on `emailEnabled`
   and per-type `emailByType.{comment_created,comment_reply,comment_mention}`.
   Mention markup is stripped from bodies/excerpts.
 - **Slack/Discord webhook**: app + REST v1. Channel-level: it fires from

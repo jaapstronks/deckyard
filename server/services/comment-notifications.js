@@ -2,14 +2,17 @@
  * Comment notification service.
  * Handles sending notifications when comments are created.
  * Sends in-app notifications (bell + SSE), webhooks (for Slack/Discord)
- * and email notifications (via Brevo).
+ * and email notifications (via the configured transport).
  */
 
 import { getAppSettings, getUserSettings } from '../storage/settings.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
-import { sendCommentNotification } from '../integrations/brevo.js';
+import {
+  sendCommentNotification,
+  isEmailConfigured,
+} from '../integrations/email/index.js';
 import { normalizeEmail } from '../../shared/email.js';
-import { envStr, getAppBaseUrl } from '../config/utils.js';
+import { getAppBaseUrl } from '../config/utils.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import {
   parseMentions,
@@ -37,8 +40,8 @@ const log = createLogger('comment-notifications');
 
 /**
  * Send notifications for a newly created comment: in-app (bell + SSE), the
- * Slack/Discord webhook and e-mail via Brevo, whichever contract the comment
- * came in on. Respects user notification preferences.
+ * Slack/Discord webhook and e-mail via the configured transport, whichever
+ * contract the comment came in on. Respects user notification preferences.
  *
  * Takes no request: the links it sends are built on the configured public
  * base URL (`getAppBaseUrl()`), so a comment from the public API or an MCP
@@ -510,7 +513,7 @@ async function fireCommentWebhook(
 }
 
 /**
- * Send email notifications for comment creation via Brevo.
+ * Send email notifications for comment creation via the configured transport.
  */
 async function sendCommentEmails({
   repoRoot,
@@ -526,7 +529,10 @@ async function sendCommentEmails({
   editUrl,
 }) {
   // Check if email notifications are enabled and configured
-  if (!settings.notifications?.emailEnabled || !envStr('BREVO_API_KEY')) {
+  if (
+    !settings.notifications?.emailEnabled ||
+    !isEmailConfigured(settings.emailSender)
+  ) {
     return;
   }
 
@@ -541,7 +547,7 @@ async function sendCommentEmails({
     // Fire-and-forget: the response is already on its way, so a failed email
     // must only ever produce a log line. The .then() below handles the
     // expected { ok: false } path; fireAndForget backstops an actual rejection
-    // (e.g. Brevo throwing) so it can't become a process-killing unhandled
+    // (e.g. transport throwing) so it can't become a process-killing unhandled
     // rejection.
     fireAndForget(
       sendCommentNotification({
@@ -557,7 +563,7 @@ async function sendCommentEmails({
       }).then((result) => {
         if (!result.ok) {
           log.warn(
-            `[brevo] email failed to=${recipientEmail} error=${result.error || ''}`.trim(),
+            `[email] email failed to=${recipientEmail} error=${result.error || ''}`.trim(),
           );
         }
       }),

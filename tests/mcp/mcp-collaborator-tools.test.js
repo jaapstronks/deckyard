@@ -46,8 +46,7 @@ const { invalidatePermission } =
   await import('../../server/storage/cache/permission-cache.js');
 const { resetRateLimitBuckets } =
   await import('../../server/utils/rate-limit.js');
-const { BREVO_API_URL } =
-  await import('../../server/integrations/email/core.js');
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 const DECK = {
   owned: '0000d0c0-0000-4000-8000-0000000000b1',
@@ -140,6 +139,8 @@ function collaboratorRow(id, p, permission) {
 before(async () => {
   // A configured key so a requested invite mail reaches the (stubbed) wire.
   process.env.BREVO_API_KEY = 'synthetic-test-key';
+  process.env.MAIL_TRANSPORT = 'brevo';
+  process.env.MAIL_FROM ||= 'noreply@deckyard.test';
   globalThis.fetch = async (url, init) => {
     if (String(url) === BREVO_API_URL) {
       mails.push({ to: JSON.parse(init.body).to[0].email });

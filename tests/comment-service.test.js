@@ -28,6 +28,8 @@ import assert from 'node:assert/strict';
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 process.env.APP_URL = 'https://decks.example.test';
 process.env.BREVO_API_KEY = 'test-key';
+process.env.MAIL_TRANSPORT = 'brevo';
+process.env.MAIL_FROM ||= 'noreply@deckyard.test';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const DECK = 'deck-service';
@@ -364,6 +366,51 @@ test('a comment from an actor without a request (MCP) mails the deck owner', asy
     new RegExp(`https://decks\\.example\\.test/app/${DECK}`),
     'links are built on the configured public base URL',
   );
+});
+
+test('SMTP configuration without a Brevo key enables comment mail', async () => {
+  const { default: nodemailer } = await import('nodemailer');
+  const original = nodemailer.createTransport;
+  const saved = Object.fromEntries(
+    [
+      'MAIL_TRANSPORT',
+      'SMTP_HOST',
+      'SMTP_PORT',
+      'SMTP_TLS',
+      'BREVO_API_KEY',
+    ].map((k) => [k, process.env[k]]),
+  );
+  const messages = [];
+  try {
+    delete process.env.BREVO_API_KEY;
+    Object.assign(process.env, {
+      MAIL_TRANSPORT: 'smtp',
+      SMTP_HOST: '127.0.0.1',
+      SMTP_PORT: '465',
+      SMTP_TLS: 'tls',
+    });
+    nodemailer.createTransport = () => ({
+      sendMail: async (message) => {
+        messages.push(message);
+      },
+      close() {},
+    });
+    await seed();
+    await createComment(
+      scopeFor(MEMBER),
+      { actor: MCP_ACTOR },
+      { presentationId: DECK, body: 'SMTP notification' },
+    );
+    await settle(() => messages.length > 0);
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].to.address, OWNER.email);
+  } finally {
+    nodemailer.createTransport = original;
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------
