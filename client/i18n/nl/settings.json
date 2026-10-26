@@ -271,7 +271,7 @@
   "settings.admin.analytics.retention": "Gegevensretentie",
   "settings.admin.analytics.retentionDays": "Sessiegegevens bewaren voor",
   "settings.admin.analytics.retentionIpDays": "IP-adressen anonimiseren na",
-  "settings.admin.analytics.title": "Engagement Inzichten",
+  "settings.admin.analytics.title": "Engagement-inzichten",
   "settings.admin.description": "Configureer installatiebrede instellingen die voor alle organisaties gelden.",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.hint": "Afzenderadres voor systeemmails. Valt terug op omgevingsvariabelen indien leeg.",

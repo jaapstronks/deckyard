@@ -786,3 +786,7 @@
   background: hsl(var(--app-accent-primary) / 0.08);
   overflow-wrap: anywhere;
 }
+
+.settings-admin-cards .field-label {
+  overflow-wrap: anywhere;
+}

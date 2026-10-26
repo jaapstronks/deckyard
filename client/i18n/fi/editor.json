@@ -232,7 +232,7 @@
   "editor.deckSettings.analytics.help": "Määrittää, miten sitoutumistietoja kerätään ja näytetään tälle esitykselle.",
   "editor.deckSettings.analytics.showDetailed": "Näytä tiimin katsojien nimet",
   "editor.deckSettings.analytics.showDetailedHelp": "Näyttää vain niiden tiimin jäsenten nimet, jotka ovat sallineet nimen näyttämisen.",
-  "editor.deckSettings.analytics.title": "Sitoutumisen analyysi",
+  "editor.deckSettings.analytics.title": "Sitoutumisanalyysi",
   "editor.deckSettings.analytics.trackTeam": "Sisällytä tiimin jäsenten katselukerrat tilastoihin",
   "editor.deckSettings.authorPreview.help": "Näyttää tekijän nimen ja kuvan somekuvan esikatselussa julkaisun jälkeen.",
   "editor.deckSettings.authorPreview.title": "Näytä tekijä esikatselussa",

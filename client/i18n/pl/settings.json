@@ -243,7 +243,7 @@
   "settings.admin.analytics.retention": "Przechowywanie danych",
   "settings.admin.analytics.retentionDays": "Przechowuj dane sesji przez",
   "settings.admin.analytics.retentionIpDays": "Anonimizuj adresy IP po",
-  "settings.admin.analytics.title": "Statystyki Zaangażowania",
+  "settings.admin.analytics.title": "Analiza zaangażowania",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.hint": "Adres nadawcy dla wiadomości systemowych. Używa zmiennych środowiskowych, jeśli puste.",
   "settings.admin.emailSender.name": "Nazwa",

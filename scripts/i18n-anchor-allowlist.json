@@ -27,13 +27,6 @@
       "forms": ["Alt-tekst", "Alternativ tekst"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Bar chart showing views over time": {
-      "forms": [
-        "Søjlediagram der viser visninger over tid",
-        "Søjlediagram over visninger over tid"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Changes applied": {
       "forms": ["Ændringer anvendt", "Ændringerne er anvendt"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -68,10 +61,6 @@
     },
     "da  Duplicate": {
       "forms": ["Dublér", "Duplikér"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "da  Engagement Insights": {
-      "forms": ["Engagement Indsigt", "Indsigt i engagement"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "da  Export": {
@@ -157,13 +146,6 @@
       "forms": ["Anwenden", "Übernehmen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "de  Bar chart showing views over time": {
-      "forms": [
-        "Balkendiagramm der Aufrufe im Zeitverlauf",
-        "Balkendiagramm mit Aufrufen im Zeitverlauf"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  Clear": {
       "forms": ["Leeren", "Zurücksetzen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -178,10 +160,6 @@
     },
     "de  Custom": {
       "forms": ["Benutzerdefiniert", "Eigene", "Eigene Einstellung"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Engagement Insights": {
-      "forms": ["Engagement-Einblicke", "Interaktions-Insights"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Generating…": {
@@ -277,13 +255,6 @@
       "forms": ["Todas", "Todo", "Todos"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "es  Bar chart showing views over time": {
-      "forms": [
-        "Gráfico de barras con las vistas a lo largo del tiempo",
-        "Gráfico de barras de vistas en el tiempo"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  Clear search": {
       "forms": ["Borrar la búsqueda", "Limpiar búsqueda"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -322,10 +293,6 @@
     },
     "es  Email address": {
       "forms": ["Dirección de correo", "Dirección de correo electrónico"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Engagement Insights": {
-      "forms": ["Datos de interacción", "Estadísticas de Engagement"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Export": {
@@ -440,13 +407,6 @@
       "forms": ["Tausta", "Taustaväri"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fi  Bar chart showing views over time": {
-      "forms": [
-        "Pylväskaavio katseluista ajan mittaan",
-        "Pylväskaavio katselukerroista ajan mittaan"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Body": {
       "forms": ["Leipäteksti", "Sisältö"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -473,14 +433,6 @@
     },
     "fi  Duplicate": {
       "forms": ["Kopioi", "Monista"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Engagement Insights": {
-      "forms": [
-        "Sitoutumisanalyysi",
-        "Sitoutumisen analyysi",
-        "Sitoutumistilastot"
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Export": {
@@ -590,13 +542,6 @@
       "forms": ["Tous", "Tout", "Toutes"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fr  Bar chart showing views over time": {
-      "forms": [
-        "Diagramme en barres des vues dans le temps",
-        "Graphique à barres des vues dans le temps"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Body": {
       "forms": ["Corps", "Corps du message"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -615,10 +560,6 @@
     },
     "fr  Drag to reorder": {
       "forms": ["Faites glisser pour réorganiser", "Glisser pour réorganiser"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Engagement Insights": {
-      "forms": ["Aperçu de l'engagement", "Aperçus d'engagement"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Grid": {
@@ -744,14 +685,6 @@
     },
     "it  Dismiss": {
       "forms": ["Chiudi", "Ignora"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Engagement Insights": {
-      "forms": [
-        "Analisi del coinvolgimento",
-        "Analisi engagement",
-        "Statistiche di Coinvolgimento"
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Export": {
@@ -959,10 +892,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Engagement Insights": {
-      "forms": ["Engagement Inzichten", "Engagement-inzichten"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Enlarge preview": {
       "forms": ["Vergroot voorbeeld", "Voorbeeld vergroten"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1077,13 +1006,6 @@
       "forms": ["Alt-tekst", "Alternativ tekst"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Bar chart showing views over time": {
-      "forms": [
-        "Søylediagram over visninger over tid",
-        "Søylediagram som viser visninger over tid"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Clear search": {
       "forms": ["Tøm søk", "Tøm søket"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1114,10 +1036,6 @@
     },
     "no  Drag to reorder": {
       "forms": ["Dra for å endre rekkefølgen", "Dra for å omorganisere"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Engagement Insights": {
-      "forms": ["Engasjementsinnsikt", "Innsikt i engasjement"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Export": {
@@ -1250,10 +1168,6 @@
       "forms": ["Szkic", "Wersja robocza"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Engagement Insights": {
-      "forms": ["Analiza zaangażowania", "Statystyki Zaangażowania"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Export": {
       "forms": ["Eksport", "Eksportuj"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1366,13 +1280,6 @@
       "forms": ["Todas", "Todos", "Tudo"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pt  Bar chart showing views over time": {
-      "forms": [
-        "Gráfico de barras com as visualizações ao longo do tempo",
-        "Gráfico de barras de visualizações ao longo do tempo"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  Clear search": {
       "forms": ["Limpar a pesquisa", "Limpar pesquisa"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1403,10 +1310,6 @@
     },
     "pt  Drag to reorder": {
       "forms": ["Arrastar para reordenar", "Arraste para reordenar"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  Engagement Insights": {
-      "forms": ["Dados de interação", "Estatísticas de Engagement"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Export": {
@@ -1506,13 +1409,6 @@
       "forms": ["Alt-text", "Alternativtext"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "sv  Bar chart showing views over time": {
-      "forms": [
-        "Stapeldiagram som visar visningar över tid",
-        "Stapeldiagram över visningar över tid"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Clear search": {
       "forms": ["Rensa sökning", "Rensa sökningen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1551,10 +1447,6 @@
     },
     "sv  Drag to reorder": {
       "forms": ["Dra för att omordna", "Dra för att ändra ordningen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Engagement Insights": {
-      "forms": ["Engagemangsinsikter", "Insikter om engagemang"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Generating…": {

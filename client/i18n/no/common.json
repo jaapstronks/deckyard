@@ -149,7 +149,7 @@
   "dashboard.cards.completionRate": "Fullføringsgrad",
   "dashboard.cards.totalViews": "Totale visninger",
   "dashboard.cards.uniqueViewers": "Unike seere",
-  "dashboard.chart.ariaLabel": "Søylediagram som viser visninger over tid",
+  "dashboard.chart.ariaLabel": "Søylediagram over visninger over tid",
   "dashboard.chart.empty": "Ingen visningsdata for denne perioden",
   "dashboard.chart.title": "Visninger over tid",
   "dashboard.error": "Kunne ikke laste innsikt",
