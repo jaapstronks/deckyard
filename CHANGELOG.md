@@ -4,6 +4,16 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.89.1](https://github.com/jaapstronks/deckyard/compare/v1.89.0...v1.89.1) (2026-10-26)
+
+
+### Fixed
+
+* apply organization theme offering to v1 and MCP ([#1842](https://github.com/jaapstronks/deckyard/issues/1842)) ([fa3c2f2](https://github.com/jaapstronks/deckyard/commit/fa3c2f27c1b2059c0d8b7cc4dd6e37d69707225c))
+* normalize descriptive image alt text before saving ([#1844](https://github.com/jaapstronks/deckyard/issues/1844)) ([6c6f2f3](https://github.com/jaapstronks/deckyard/commit/6c6f2f3def7e0b78de6154499742ed892108e1f4))
+* restore deck description metadata search ([#1839](https://github.com/jaapstronks/deckyard/issues/1839)) ([4f31deb](https://github.com/jaapstronks/deckyard/commit/4f31debd0b4d1ab864d2c99bdf5e0a5f233cbe4c))
+* stop retrying interrupted import streams ([#1841](https://github.com/jaapstronks/deckyard/issues/1841)) ([5974157](https://github.com/jaapstronks/deckyard/commit/5974157c8eb9989574bab0d454f6194bc02a465a))
+
 ## [1.89.0](https://github.com/jaapstronks/deckyard/compare/v1.88.0...v1.89.0) (2026-10-25)
 
 
