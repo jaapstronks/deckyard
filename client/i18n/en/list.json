@@ -254,6 +254,8 @@
   "list.newPresentation.importMarkdown.open": "Open presentation",
   "list.newPresentation.importMarkdown.warningsIntro.many": "Import succeeded, but {count} issues were detected:",
   "list.newPresentation.importMarkdown.warningsIntro.one": "Import succeeded, but 1 issue was detected:",
+  "list.newPresentation.importRequestFailed": "Import request failed (HTTP {status}).",
+  "list.newPresentation.importUnconfirmed": "Import was not confirmed. Check your presentation list before trying again; the presentation may already have been saved.",
   "list.newPresentation.importing": "Importing…",
   "list.newPresentation.mode.importDeck": "Import .deck",
   "list.newPresentation.mode.importJson": "Import JSON",

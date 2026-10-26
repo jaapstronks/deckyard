@@ -144,3 +144,9 @@ and its `complete` is `{ downloadUrl }`.
 Both are SSE import events, not the `/api/*` error envelope; an `error` event
 carries `{ message }`, and the export streams add `error: '<code>'`
 (`api-error-format.md` § SSE error events).
+
+## Completion and interrupted imports
+
+File conversion and Notion import send one creation POST to their streaming endpoint. A `complete` event carrying a presentation id confirms the import; an explicit SSE `error` or HTTP refusal returns its message to the form. A failed fetch, missing response body, stream read failure or EOF without a terminal event leaves the outcome unconfirmed. The client closes the loading modal, stops rotating messages and enables the form again, asking the user to check the presentation list before trying again because the server may already have saved the deck.
+
+The client never automatically repeats that creation request through the JSON endpoint. The JSON endpoints remain available to their own callers; a new click in the form is a separate user action. The two creation handlers share this completion contract in `client/views/list/modals/new-presentation/handlers.js`; `tests/import-stream-completion.test.js` exercises both through the real SSE parser.
