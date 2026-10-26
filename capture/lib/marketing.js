@@ -270,7 +270,7 @@ export const PRESENTER_CONSOLE_TARGET_SECONDS = 20 * 60;
  * Answer the slide-translation call with the deck's own other-language text,
  * without reaching a model.
  *
- * The fill-from-translation preview is a network-driven surface: the modal
+ * The translation workspace is a network-driven surface: it
  * posts the source fields to `/api/presentations/:id/translate/fields` and only
  * renders once the response is in hand. A capture cannot let that call through
  * — it needs a provider key, it costs money, and it comes back slightly
@@ -304,7 +304,9 @@ export async function stubTranslateFields(page, targetContent) {
     }
     const translations = {};
     for (const key of Object.keys(requested)) {
-      const value = targetContent?.[key];
+      // The translation view addresses fields as JSON paths, including items.
+      const path = JSON.parse(key);
+      const value = path.reduce((value, part) => value?.[part], targetContent);
       if (typeof value === 'string') translations[key] = value;
     }
     request

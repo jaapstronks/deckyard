@@ -7,6 +7,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import editorFull from './editor-full.js';
+import dashboardHomeNew from './dashboard-home-new.js';
+import imageTextSlideEditor from './image-text-slide-editor.js';
+import pollSlideEditor from './poll-slide-editor.js';
+import slideTypePickerCategories from './slide-type-picker-categories.js';
+import exportDropdownFull from './export-dropdown-full.js';
 import advancedImportDialog from './advanced-import-dialog.js';
 import newPresentationDialog from './new-presentation-dialog.js';
 import newFromContentDialog from './new-from-content-dialog.js';
@@ -56,6 +61,11 @@ import agentFillsFields from './agent-fills-fields.js';
 /** @type {Array<import('../lib/recipe.js').Recipe | import('../lib/recipe.js').VideoRecipe>} */
 export const RECIPES = [
   editorFull,
+  dashboardHomeNew,
+  imageTextSlideEditor,
+  pollSlideEditor,
+  slideTypePickerCategories,
+  exportDropdownFull,
   advancedImportDialog,
   newPresentationDialog,
   newFromContentDialog,
