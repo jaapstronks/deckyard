@@ -23,7 +23,7 @@ import {
   listCollaborators,
 } from '../storage/collaborators.js';
 import { getUsersByEmails } from '../storage/users.js';
-import { sendCollaboratorInviteEmail } from '../integrations/brevo.js';
+import { sendCollaboratorInviteEmail } from '../integrations/email/index.js';
 import { createNotification } from '../storage/notifications.js';
 import {
   broadcastToUser,
@@ -171,7 +171,7 @@ async function announceGrant(
     }).then((emailResult) => {
       if (!emailResult.ok) {
         log.warn(
-          `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim(),
+          `[email] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim(),
         );
       }
     }),

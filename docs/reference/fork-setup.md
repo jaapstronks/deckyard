@@ -613,3 +613,9 @@ Make sure your `.env` file on the server has:
 
 - `DEFAULT_THEME=your-org` (your seed theme's slug)
 - Any API keys (OpenAI, ImageKit, etc.)
+
+## Configure outgoing mail
+
+Forks can use SMTP, Brevo, Scaleway TEM or Mailgun. Set `MAIL_TRANSPORT`, the selected provider fields and `MAIL_FROM` (or the stored instance sender). [Email infrastructure](email-infrastructure.md#config--flags) has complete examples and the required Brevo migration: add `MAIL_TRANSPORT=brevo`, rename `BREVO_SENDER_EMAIL` to `MAIL_FROM` and `BREVO_SENDER_NAME` to `MAIL_FROM_NAME`. Old names have no runtime aliases.
+
+Run `npm run doctor` to identify missing or half-configured transport fields, then use admin template test-send. `MAIL_TRANSPORT=none` explicitly disables mail. SSO-only sign-in does not require mail; invitations and notifications do. Password resets, magic links and new password-account setup require working mail; existing passwords remain usable. Configure SPF, DKIM and DMARC for the sending domain.

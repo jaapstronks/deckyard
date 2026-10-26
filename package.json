@@ -70,6 +70,7 @@
     "kysely": "^0.29.6",
     "lucide-static": "^1.59.0",
     "mammoth": "^1.13.0",
+    "nodemailer": "^10.2.1",
     "openid-client": "^6.8.8",
     "pdfjs-dist": "5.4.296",
     "pg": "^8.23.1",

@@ -18,7 +18,7 @@ import {
   sendWeeklyDigestEmail,
   sendTeamDigestEmail,
   resolveRecipientLocale,
-} from '../integrations/brevo.js';
+} from '../integrations/email/index.js';
 import { getAppSettings, listDigestRecipients } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';

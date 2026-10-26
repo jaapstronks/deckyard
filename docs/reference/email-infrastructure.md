@@ -4,8 +4,7 @@
 
 Every email Deckyard sends — password resets, magic links, invitations,
 collaborator and guest invites, comment notifications, export-ready notices and
-the weekly digest — goes through **one transport function** over the
-Brevo transactional API, and gets its body from **one of two places**: a code
+the weekly digest — goes through **one transport function** with one explicitly selected SMTP, Brevo, Scaleway TEM or Mailgun adapter, and gets its body from **one of two places**: a code
 default (a builder function in `server/integrations/email-templates/`) or an
 admin's customized override stored in Postgres. The resolver in front decides
 which, per template type and locale.
@@ -21,10 +20,8 @@ Transport and senders (`server/integrations/email/`):
 
 - `server/integrations/email/index.js` — the barrel; re-exports the transport,
   the template-builder helpers and the three sender families.
-- `server/integrations/email/core.js` — `sendEmail({to, toName, subject,
-htmlContent, textContent, senderOverride})` (a `POST` to
-  `https://api.brevo.com/v3/smtp/email` with a 10 s abort), `getSenderIdentity()`
-  and `BREVO_API_URL`. **Never throws**: it returns `{ok:false, error}`.
+- `server/integrations/email/core.js` provides `sendEmail({to, toName, subject, htmlContent, textContent, senderOverride})`, `getSenderIdentity()` and `isEmailConfigured()`. Failed sends return `{ok:false, reason, error, status?}`; configuration failures use `not_configured`, attempted failures use `upstream`.
+- `server/integrations/email/config.js` owns pure transport validation and effective sender precedence. `transports/{smtp,brevo,scaleway,mailgun}.js` map the same normalized message to each protocol. API calls have a 10-second deadline and refuse redirects; SMTP requires verified TLS with a 10-second overall deadline that also destroys the socket. No retries or provider fallback. Provider response bodies and raw errors are never exposed.
 - `server/integrations/email/template-builder.js` — `trySendCustomTemplate()`
   (resolve an override; return `null` to mean "no override, fall back") and
   `buildFromResolvedTemplate()` (resolved fields → html + text).
@@ -85,12 +82,6 @@ Routes and UI:
 - `client/views/settings/email-templates/` (concerns: `index.js`, `builders.js`,
   `state.js`, `actions.js`, `labels.js`) — the admin panel.
 
-Compatibility shim:
-
-- `server/integrations/brevo.js` — a 10-line `export * from './email/index.js'`.
-  Ten call sites still import through it; new code should import
-  `integrations/email/index.js`.
-
 ## Data model
 
 Two tables, both created by
@@ -107,19 +98,17 @@ Neither table is organization-scoped: template overrides and the default locale
 are **instance-level**, set by an admin, applied to every organization.
 
 Nothing else about email is persisted. There is **no outbox, no send log and no
-delivery-status table** — a send either returns `{ok:true}` from Brevo or it does
+delivery-status table** — a send either returns `{ok:true}` from the selected transport or it does
 not, and that result is discarded by most call sites.
 
 ## Flows
 
 - **Sending one email** — a sender function (a) resolves the sender identity
-  (app settings → `BREVO_SENDER_EMAIL`/`BREVO_SENDER_NAME` → a hardcoded
-  fallback with `APP_NAME` as the display name), (b) calls
+  (app settings → `MAIL_FROM`/`MAIL_FROM_NAME`, with `APP_NAME` as the display-name fallback and no fallback address), (b) calls
   `trySendCustomTemplate()` for its template type and locale; if an override
   exists the interpolated custom body is sent and the function returns, (c)
   otherwise falls through to the code default builder and calls `sendEmail()`.
-  Every sender takes an optional `repoRoot`; without it there is no override
-  lookup and no settings-based sender identity.
+  Every sender takes an optional `repoRoot`; without it there is no template override lookup. Sender settings are instance-level PostgreSQL data and retain their precedence even for rootless callers.
 - **Resolution** — `resolveTemplate()` rejects an unknown type, normalizes an
   unsupported locale to `en`, marks the result `isCustom` if any override field
   exists, and resolves each of the five fields independently — so an admin can
@@ -167,31 +156,79 @@ not, and that result is discarded by most call sites.
 - **Export ready** — the bulk-export worker
   (`server/jobs/queue/workers/bulk-export-worker.js`) dynamically imports
   `senders-export.js` when a job finishes and mails the download URL.
-- **Unconfigured instance** — with no `BREVO_API_KEY`, `sendEmail` returns
-  `{ok:false, error:'BREVO_API_KEY not configured'}`. Nothing throws, nothing
-  retries, and callers that fire-and-forget (password reset, magic link, comment
-  notification) do not surface it — the flow looks successful and no mail
-  arrives. Self-hosting guidance: [`../ops/self-hosting.md`](../ops/self-hosting.md).
+- **Unconfigured instance**: an absent selector, invalid transport configuration or missing effective sender returns `reason:'not_configured'` before network access. Admin test-send maps this to 501 `email_not_configured`; provider failures remain 502. Password reset and magic link retain their anti-enumeration responses. Invite outcomes report whether the transport accepted the message, and failed mail never recommends a password reset as a working recovery route. Existing passwords and SSO remain usable.
 
 ## Config & flags
 
-| Name                 | Where                               | Purpose                                                                                                 |
-| -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `BREVO_API_KEY`      | `server/integrations/email/core.js` | The only credential. Absent = every send fails softly.                                                  |
-| `BREVO_SENDER_EMAIL` | idem                                | Fallback sender address when app settings carry none. Default `noreply@example.com`.                    |
-| `BREVO_SENDER_NAME`  | idem                                | Fallback sender name; defaults to `getAppName()` so a white-label deployment sends under its own brand. |
-| `APP_NAME`           | `server/config/branding.js`         | Feeds the sender-name default.                                                                          |
+`MAIL_TRANSPORT` selects exactly one of `none`, `smtp`, `brevo`, `scaleway`, `mailgun`. Unset selects no transport. There is no autodetection from credentials. Set `MAIL_FROM` to a verified sender address and optionally `MAIL_FROM_NAME`; instance `settings.emailSender.{email,name}` takes precedence field by field. Missing names fall back to `APP_NAME`; missing addresses refuse sending. Headers reject control characters before any adapter runs.
 
-Settings, not env: `settings.emailSender.{email,name}` (admin-set sender
-identity, takes precedence over the env vars) and the instance default locale in
-`email_template_settings` (the language of a mail to anyone without a stored
-preference). Per user, `settings.digest.{enabled, dayOfWeek}`
-controls the weekly digest. It is opt-in (D330): only an explicit
-`enabled: true` sends, so an account without a stored preference gets none;
-the day defaults to Monday.
+All examples below also need the shared sender:
 
-There is **no feature flag that disables email as a whole** — the switch is
-whether `BREVO_API_KEY` is set.
+```dotenv
+MAIL_FROM=noreply@example.org
+MAIL_FROM_NAME=Deckyard
+```
+
+SMTP (both credential fields may be omitted for a trusted relay):
+
+```dotenv
+MAIL_TRANSPORT=smtp
+SMTP_HOST=smtp.example.org
+SMTP_PORT=587
+SMTP_TLS=starttls
+SMTP_USER=your-user
+SMTP_PASSWORD=your-password
+```
+
+Use `SMTP_TLS=tls` for implicit TLS (usually port 465), or `starttls` for a mandatory upgrade (usually 587). The port is explicit, 1-65535. Certificate verification is mandatory; there is no plaintext or insecure-certificate switch. Nodemailer handles MIME and address encoding; file and URL content access are disabled.
+
+Brevo:
+
+```dotenv
+MAIL_TRANSPORT=brevo
+BREVO_API_KEY=your-key
+```
+
+Scaleway TEM:
+
+```dotenv
+MAIL_TRANSPORT=scaleway
+SCW_SECRET_KEY=your-key
+SCW_PROJECT_ID=00000000-0000-0000-0000-000000000000
+SCW_REGION=fr-par
+```
+
+Mailgun:
+
+```dotenv
+MAIL_TRANSPORT=mailgun
+MAILGUN_API_KEY=your-key
+MAILGUN_DOMAIN=mail.example.org
+MAILGUN_REGION=eu
+```
+
+Mailgun requires an explicit `eu` or `us` region. Scaleway currently supports `fr-par`. Endpoints are fixed by the adapter; there is no configurable API URL. Use the provider's verified sending domain. Configure SPF, DKIM and DMARC for that domain and check provider acceptance with the admin template test-send. Acceptance means accepted by the transport, not proven inbox delivery.
+
+### Brevo migration
+
+| Previous configuration                    | Required configuration                     |
+| ----------------------------------------- | ------------------------------------------ |
+| `BREVO_API_KEY` alone selected Brevo      | Add `MAIL_TRANSPORT=brevo`; retain the key |
+| `BREVO_SENDER_EMAIL`                      | Rename to `MAIL_FROM`                      |
+| `BREVO_SENDER_NAME`                       | Rename to `MAIL_FROM_NAME`                 |
+| `integrations/brevo.js` imports in a fork | Import `integrations/email/index.js`       |
+
+The old sender variables and module shim are removed without runtime aliases. Stored instance sender settings remain unchanged; no data migration is needed. Remove unused provider fields. Doctor reports legacy and unused field names without their values.
+
+### Disabled or missing mail
+
+`MAIL_TRANSPORT=none` deliberately disables all outgoing mail (doctor: skipped when no leftover fields). An unset selector warns when auth is enabled; invalid or partial configuration warns even with auth disabled. Doctor checks the effective instance sender using initialized storage and explicitly reports when only environment fallback could be checked. It never sends mail or claims reachability. Public `/api/auth/config` exposes only `emailConfigured`, alongside the existing sign-in configuration.
+
+SSO-only installations can sign in without mail, but invitations and notifications need a transport. Password installations need mail for new-account setup, resets and magic links. An existing password keeps working during mail failure. The invite report points to available SSO or an administrator and stays cautious if auth configuration could not be read.
+
+The instance default locale is stored in `email_template_settings`. User `settings.digest.{enabled,dayOfWeek}` controls weekly digests; only explicit `enabled:true` opts in and the day defaults to Monday.
+
+Protocol references: [Nodemailer SMTP](https://nodemailer.com/smtp), [Brevo transactional API](https://developers.brevo.com/reference/send-transac-email), [Scaleway TEM send](https://www.scaleway.com/en/developers/api/transactional-email/emails), [Mailgun send](https://documentation.mailgun.com/docs/mailgun/api-reference/send/mailgun/messages/post-v3--domain-name--messages).
 
 ## Authz & tenancy
 
@@ -211,9 +248,9 @@ whether `BREVO_API_KEY` is set.
 - **Test-send goes to the calling admin's own address**, so the admin API cannot
   be used to mail arbitrary third parties.
 
-## Implementation status (as of 2026-09-23)
+## Implementation status (as of 2026-10-26)
 
-Shipped and in use: the Brevo transport, all three sender families plus export,
+Implemented: SMTP, Brevo, Scaleway TEM and Mailgun transports, all three sender families plus export,
 the code-default builders in two locales' worth of translator strings (`en`,
 `nl` — the list used to claim nine, see B379), the Postgres override store with
 its migration off disk, the resolver's custom → default → `en` chain, and the
@@ -229,12 +266,8 @@ Honest gaps:
   `Invalid template type` into a catch-all — removed in #659.) The two digest
   senders likewise never attempt a custom template. So these three mails can
   be translated but not edited in the admin panel.
-- **`integrations/brevo.js` is a shim** with ten live importers — the module move
-  was made but the call sites were not followed through.
 - **No delivery observability.** No send log, no retry, no bounce handling, no
-  queue: a transient Brevo failure loses the message. Most call sites do not even
+  queue: a transient transport failure loses the message. Most call sites do not even
   await the result. For password reset and magic link that is the intended
   privacy stance (do not leak whether an address exists), but it is the same
   silence when the API key is simply missing.
-- **One provider, hardcoded.** There is no SMTP path and no provider seam; Brevo
-  is `core.js`. A self-hoster without a Brevo account cannot send mail at all.

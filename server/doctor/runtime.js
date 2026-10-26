@@ -23,6 +23,9 @@ import {
   getPuppeteerBrowser,
   resolveChromeExecutablePath,
 } from '../utils/puppeteer-browser.js';
+import { readMailConfig } from '../integrations/email/config.js';
+import { getEmailSender } from '../storage/settings.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 import { ok, warn, fail, skip } from './finding.js';
 
 /**
@@ -282,17 +285,43 @@ export const uploadsCheck = {
 export const mailCheck = {
   id: 'mail',
   label: 'Outgoing mail',
-  run() {
-    if (envStr('BREVO_API_KEY')) return ok('Brevo');
+  async run({ repoRoot, results } = {}) {
+    let sender;
+    let limitation = '';
+    if (results?.get('database')?.status === 'ok') {
+      try {
+        sender = await getEmailSender(
+          crossOrganizationScope(
+            repoRoot ?? null,
+            'doctor: instance outgoing-mail sender',
+          ),
+        );
+      } catch {
+        limitation =
+          ' Instance sender settings unavailable; checked environment only.';
+      }
+    } else {
+      limitation =
+        ' Instance sender settings unavailable; checked environment only.';
+    }
+    const config = readMailConfig(process.env, sender);
+    if (config.errors.length || config.warnings.length) {
+      return warn(
+        `Mail configuration fields: ${[...config.errors, ...config.warnings].join(', ')}.${limitation}`,
+        'Choose MAIL_TRANSPORT and complete its fields and MAIL_FROM. Rename BREVO_SENDER_EMAIL to MAIL_FROM and BREVO_SENDER_NAME to MAIL_FROM_NAME; old Brevo installs also need MAIL_TRANSPORT=brevo. Remove unused provider fields.',
+      );
+    }
+    if (config.transport === 'none') return skip('Mail explicitly disabled.');
+    if (config.configured)
+      return ok(
+        `${config.transport}: configured (delivery not probed).${limitation}`,
+      );
     if (!envBool('AUTH_ENABLED', true)) return skip('auth is disabled');
-    // A warning, never a failure: password and SSO sign-in work without mail,
-    // and an SSO-only install needs none. Choosing a transport, or none
-    // explicitly, is B434's; this check follows it there.
     return warn(
       isSsoEnforced()
         ? 'No mail transport: invitations and notifications are not sent (sign-in is SSO-only and unaffected).'
         : 'No mail transport: magic links, invitations, password resets and notifications are not sent.',
-      'Set BREVO_API_KEY and BREVO_SENDER_EMAIL.',
+      `Set MAIL_TRANSPORT and its credentials, plus MAIL_FROM.${limitation}`,
     );
   },
 };

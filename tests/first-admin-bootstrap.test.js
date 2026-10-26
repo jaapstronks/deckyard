@@ -27,7 +27,9 @@ delete process.env.SANDBOX_MODE;
 delete process.env.DEMO_MODE;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.BREVO_API_KEY = 'test-key-not-a-secret';
-process.env.BREVO_SENDER_EMAIL = 'noreply@decks.example.test';
+process.env.MAIL_TRANSPORT = 'brevo';
+process.env.MAIL_FROM ||= 'noreply@deckyard.test';
+process.env.MAIL_FROM = 'noreply@decks.example.test';
 for (const key of Object.keys(process.env)) {
   if (key.startsWith('OIDC_') || key.startsWith('SSO_'))
     delete process.env[key];
@@ -50,7 +52,7 @@ const { bootstrapFirstAdmin } = await import('../server/auth/first-admin.js');
 const { handleMagicLink } = await import('../server/routes/api/magic-link.js');
 const { getOrCreateSsoUser } = await import('../server/storage/sso.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { BREVO_API_URL } = await import('../server/integrations/email/index.js');
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 let db;
 let mails;

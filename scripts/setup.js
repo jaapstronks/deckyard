@@ -277,8 +277,8 @@ export const PRODUCTION_ENV = Object.freeze([
     optional: true,
     why: 'object-store',
   },
-  { group: 'Mail', key: 'BREVO_API_KEY', why: 'delivery' },
-  { group: 'Mail', key: 'BREVO_SENDER_EMAIL', why: 'sender' },
+  { group: 'Mail', key: 'MAIL_TRANSPORT', why: 'delivery' },
+  { group: 'Mail', key: 'MAIL_FROM', why: 'sender' },
   {
     group: 'SSO',
     key: 'SSO_ENABLED',

@@ -29,7 +29,10 @@ import {
   generatePreview,
   resolveTemplate,
 } from '../../integrations/email-template-resolver.js';
-import { sendEmail } from '../../integrations/brevo.js';
+import {
+  getSenderIdentity,
+  sendEmail,
+} from '../../integrations/email/index.js';
 import {
   EMAIL_STYLES,
   emailWrapper,
@@ -235,11 +238,13 @@ async function handleEmailTemplateTest(
   const htmlContent = buildPreviewHtml(preview);
 
   // Send test email to the admin
+  const senderOverride = await getSenderIdentity(repoRoot);
   const result = await sendEmail({
     to: user.email,
     toName: user.name || user.email,
     subject: `[TEST] ${preview.subject}`,
     htmlContent,
+    senderOverride,
   });
 
   if (!result.ok) {
@@ -251,7 +256,7 @@ async function handleEmailTemplateTest(
         res,
         501,
         'email_not_configured',
-        'Outgoing email is not configured on this install (BREVO_API_KEY)',
+        'Outgoing email is not configured on this install',
       );
     }
     // The request was valid; the upstream email provider failed. That is a

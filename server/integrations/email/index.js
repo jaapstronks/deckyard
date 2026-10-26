@@ -1,24 +1,6 @@
-/**
- * Email module - Brevo (formerly Sendinblue) transactional email client.
- *
- * API docs: https://developers.brevo.com/reference/sendtransacemail
- *
- * Templates are defined in ../email-templates/index.js
- * Admin-customized templates are resolved via ../email-template-resolver.js
- *
- * Sender identity can be configured via:
- * 1. Admin settings (emailSender.email, emailSender.name)
- * 2. Environment variables (BREVO_SENDER_EMAIL, BREVO_SENDER_NAME)
- * 3. Hardcoded fallbacks
- */
-
+/** Public transactional email seam. */
 // Core functionality
-export {
-  sendEmail,
-  isEmailConfigured,
-  getSenderIdentity,
-  BREVO_API_URL,
-} from './core.js';
+export { sendEmail, isEmailConfigured, getSenderIdentity } from './core.js';
 
 // The language a mail is written in
 export { resolveRecipientLocale } from './recipient-locale.js';

@@ -43,6 +43,10 @@ import { allowLoginAttempt } from '../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../shared/email.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { getSsoPublicConfig } from '../../config/sso.js';
+import {
+  isEmailConfigured,
+  getSenderIdentity,
+} from '../../integrations/email/index.js';
 import { getBranding } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
@@ -58,8 +62,12 @@ const authenticationScope = crossOrganizationScope(
  * to hide the password / magic-link forms (SSO_ENFORCE); plus the instance
  * branding, since the auth pages have no session to read the feature flags.
  */
-async function handleAuthConfig({ res }) {
-  serveJson(res, 200, { sso: getSsoPublicConfig(), branding: getBranding() });
+async function handleAuthConfig({ res, repoRoot }) {
+  serveJson(res, 200, {
+    sso: getSsoPublicConfig(),
+    branding: getBranding(),
+    emailConfigured: isEmailConfigured(await getSenderIdentity(repoRoot)),
+  });
   return true;
 }
 

@@ -49,7 +49,7 @@ import {
 } from '../../shared/constants/ai.js';
 import { DEFAULT_UI_LOCALE } from '../../shared/constants/ui-locale.js';
 import { normalizeEmail } from '../../shared/email.js';
-import { getAppName } from '../config/branding.js';
+import { resolveMailSender } from '../integrations/email/config.js';
 import { envStr } from '../config/utils.js';
 import {
   DEFAULT_SUPPORTED_DECK_LANGS,
@@ -159,8 +159,8 @@ export function defaultAppSettings() {
     },
     // Email sender identity (falls back to env vars if empty)
     emailSender: {
-      email: '', // Falls back to BREVO_SENDER_EMAIL env var
-      name: '', // Falls back to BREVO_SENDER_NAME env var
+      email: '', // Falls back to MAIL_FROM env var
+      name: '', // Falls back to MAIL_FROM_NAME env var
     },
     // Session duration in days (falls back to 30 if not set)
     sessionDurationDays: 30,
@@ -1175,14 +1175,7 @@ export async function getEmailSender(scope) {
     { allowCrossOrganization: true },
   );
   const settings = await getAppSettings(scope);
-  return {
-    email:
-      settings.emailSender?.email ||
-      envStr('BREVO_SENDER_EMAIL') ||
-      'noreply@example.com',
-    name:
-      settings.emailSender?.name || envStr('BREVO_SENDER_NAME') || getAppName(),
-  };
+  return resolveMailSender(settings.emailSender);
 }
 
 /** Read theme settings only from the organization named by the scope. */

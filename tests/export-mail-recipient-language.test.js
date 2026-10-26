@@ -33,7 +33,9 @@ process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 // A key makes `sendEmail` reach `fetch`, which is where the stub below reads
 // the composed mail. Nothing here touches the network.
 process.env.BREVO_API_KEY = 'test-key-not-a-secret';
-process.env.BREVO_SENDER_EMAIL = 'noreply@decks.example.test';
+process.env.MAIL_TRANSPORT = 'brevo';
+process.env.MAIL_FROM ||= 'noreply@deckyard.test';
+process.env.MAIL_FROM = 'noreply@decks.example.test';
 
 const DEFAULT_ORG = process.env.DEFAULT_ORGANIZATION_ID;
 

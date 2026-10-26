@@ -115,7 +115,6 @@ export function createdWithoutEmailMessage(email, config, url) {
     email,
     url,
     sso: ssoButtonLabel(config),
-    forgot: t('login.forgotPassword', 'Forgot password?'),
   };
   if (mode === 'sso') {
     return t(
@@ -127,14 +126,14 @@ export function createdWithoutEmailMessage(email, config, url) {
   if (mode === 'sso-or-password') {
     return t(
       'organization.members.invite.createdWithoutEmailSsoOrPassword',
-      '{email} is now a member, but no email went out. Let them know they can sign in at {url} with "{sso}", or set a password there via "{forgot}".',
+      '{email} is now a member, but no email went out. Let them know they can sign in at {url} with "{sso}". Contact an administrator if they need a password.',
       vars,
     );
   }
-  if (mode === 'password') {
+  if (mode === 'password' && typeof config?.emailConfigured === 'boolean') {
     return t(
       'organization.members.invite.createdWithoutEmailPassword',
-      '{email} is now a member, but no email went out. Let them know they can set a password at {url} via "{forgot}".',
+      '{email} is now a member, but no email went out. Contact an administrator to arrange access at {url}. An existing password still works.',
       vars,
     );
   }
@@ -185,7 +184,7 @@ export function showInviteModal({
     title: t('organization.members.invite.title', 'Invite someone'),
     hint: t(
       'organization.members.invite.hint',
-      'They join this organization right away. If they have no account here yet, they get an email with a link to set a password.',
+      'They join this organization right away. For a new account, we try to email a sign-in link; the result tells you whether it was sent.',
     ),
     modalClass: 'organization-invite-modal',
   });

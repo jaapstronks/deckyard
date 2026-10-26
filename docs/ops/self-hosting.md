@@ -81,7 +81,7 @@ every option; the ones most installs want:
 | `DEFAULT_THEME`                                              | Seed slug of the default theme for new decks                                       |
 | `ENABLED_THEMES`                                             | Comma-separated allowlist of pickable seed slugs (empty = all)                     |
 | `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`)                     | Real-time collaboration: presence, and optionally live co-editing (default off)    |
-| `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL`                | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
+| `MAIL_TRANSPORT`, provider fields, `MAIL_FROM`, `APP_URL`    | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
 
 After editing: `docker compose up -d` to apply, then check the result with
 `docker compose exec app node scripts/doctor.js`: one line per check, and the
@@ -267,3 +267,9 @@ What sandbox mode does, and what it deliberately leaves on:
 Storage lives in `SANDBOX_DATA_DIR` / `SANDBOX_UPLOADS_DIR` (separate from your
 main data), so the cleanup sweep only ever touches throwaway guest content. See
 `.env.example` for the full `SANDBOX_*` list.
+
+## Outgoing mail
+
+Choose one transport (SMTP, Brevo, Scaleway TEM or Mailgun) and a verified sender. Complete examples and the required Brevo migration are in [Email infrastructure](../reference/email-infrastructure.md#config--flags). `MAIL_TRANSPORT=none` explicitly disables mail. Run `npm run doctor` for missing or partial configuration, then use the admin template test-send for an actual delivery attempt.
+
+SSO-only sign-in works without mail; invitations and notifications still need it. Password resets, magic links and new password-account setup require mail. Existing passwords keep working; after a failed invite, use available SSO or contact an administrator. Configure SPF, DKIM and DMARC on your sending domain; provider acceptance alone does not prove inbox delivery.

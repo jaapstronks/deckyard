@@ -16,7 +16,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.BREVO_API_KEY = 'test-key-not-a-secret';
-process.env.BREVO_SENDER_EMAIL = 'noreply@deckyard.test';
+process.env.MAIL_TRANSPORT = 'brevo';
+process.env.MAIL_FROM ||= 'noreply@deckyard.test';
+process.env.MAIL_FROM = 'noreply@deckyard.test';
 
 const { sendWeeklyDigestEmail, sendTeamDigestEmail } =
   await import('../server/integrations/email/senders-digests.js');

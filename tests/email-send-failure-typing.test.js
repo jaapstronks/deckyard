@@ -24,6 +24,8 @@ beforeEach(() => {
 afterEach(() => {
   if (savedKey === undefined) delete process.env.BREVO_API_KEY;
   else process.env.BREVO_API_KEY = savedKey;
+  process.env.MAIL_TRANSPORT = 'brevo';
+  process.env.MAIL_FROM ||= 'noreply@deckyard.test';
   globalThis.fetch = savedFetch;
 });
 
@@ -40,11 +42,13 @@ test('a missing Brevo key resolves as not_configured without touching the networ
   const result = await sendEmail(args);
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'not_configured');
-  assert.match(result.error, /BREVO_API_KEY/);
+  assert.match(result.error, /MAIL_TRANSPORT|BREVO_API_KEY/);
 });
 
 test('a provider HTTP error resolves as upstream with the status', async () => {
   process.env.BREVO_API_KEY = 'test-key';
+  process.env.MAIL_TRANSPORT = 'brevo';
+  process.env.MAIL_FROM ||= 'noreply@deckyard.test';
   globalThis.fetch = async () => ({
     ok: false,
     status: 401,
@@ -54,22 +58,26 @@ test('a provider HTTP error resolves as upstream with the status', async () => {
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'upstream');
   assert.equal(result.status, 401);
-  assert.equal(result.error, 'unauthorized');
+  assert.match(result.error, /HTTP 401/);
 });
 
 test('a network failure resolves as upstream', async () => {
   process.env.BREVO_API_KEY = 'test-key';
+  process.env.MAIL_TRANSPORT = 'brevo';
+  process.env.MAIL_FROM ||= 'noreply@deckyard.test';
   globalThis.fetch = async () => {
     throw new Error('getaddrinfo ENOTFOUND api.brevo.com');
   };
   const result = await sendEmail(args);
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'upstream');
-  assert.match(result.error, /ENOTFOUND/);
+  assert.match(result.error, /connection failed/);
 });
 
 test('a successful send carries no reason', async () => {
   process.env.BREVO_API_KEY = 'test-key';
+  process.env.MAIL_TRANSPORT = 'brevo';
+  process.env.MAIL_FROM ||= 'noreply@deckyard.test';
   globalThis.fetch = async () => ({ ok: true, status: 201 });
   const result = await sendEmail(args);
   assert.deepEqual(result, { ok: true, status: 201 });

@@ -26,7 +26,7 @@ import {
   verifyGuestEmail,
   getGuestBySessionToken,
 } from '../../../storage/share-links/index.js';
-import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
+import { sendGuestVerificationEmail } from '../../../integrations/email/index.js';
 import {
   notifyAuthorOfAccessAttempt,
   ACCESS_TYPES,
@@ -445,7 +445,7 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
       if (!emailResult.ok) {
         // eslint-disable-next-line no-console
         log.warn(
-          `[brevo] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim(),
+          `[email] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim(),
         );
       }
     }),

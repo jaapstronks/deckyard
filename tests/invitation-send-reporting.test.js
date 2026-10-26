@@ -74,6 +74,8 @@ test.afterEach(() => {
  */
 function stubBrevo(mode) {
   process.env.BREVO_API_KEY = 'test-key';
+  process.env.MAIL_TRANSPORT = 'brevo';
+  process.env.MAIL_FROM ||= 'noreply@deckyard.test';
   globalThis.fetch = async () => {
     fetchCalls += 1;
     if (mode === 'throws') throw new Error('network down');
