@@ -54,16 +54,9 @@ dk_live_<32-character-base64url-token>
 
 ## Rate Limiting
 
-### Per-Minute Limits (In-Memory)
+### Per-Minute Limits (Shared Limiter)
 
-Uses token bucket algorithm in `server/utils/rate-limit.js`:
-
-```js
-allowRequest(`api:${apiKey.id}`, {
-  capacity: limits.requestsPerMinute,
-  refillPerSec: limits.requestsPerMinute / 60,
-});
-```
+`checkRequestRateLimit()` in `server/routes/public-api/v1/middleware.js` awaits the shared `consumeRequestLimit()` token bucket, keyed by API key id (`api:<id>`). It uses Redis when configured and reachable, with a per-process memory fallback when Redis is unavailable. See [Redis runtime configuration](../reference/jobs-and-queues.md#config--flags) for the existing connection settings. Memory buckets are local to each server process; Redis shares the bucket across processes.
 
 ### Daily Limits (Database)
 
@@ -75,17 +68,7 @@ Tracked in `api_usage_daily` table:
 
 ### Tier Configuration
 
-Defined in `server/storage/api-keys.js`:
-
-```js
-export const TIER_LIMITS = {
-  free: { requestsPerMinute: 60, aiCallsPerDay: 10, exportsPerDay: 50 },
-  pro: { requestsPerMinute: 300, aiCallsPerDay: 100, exportsPerDay: 500 },
-  enterprise: { requestsPerMinute: 1000, aiCallsPerDay: -1, exportsPerDay: -1 },
-};
-```
-
-Value of `-1` means unlimited.
+`TIER_LIMITS` in `server/storage/api-keys.js` is the source of truth for per-minute requests, daily AI calls and daily exports. A value of `-1` means unlimited; consult that export for the current tiers and values.
 
 ## Permissions
 
@@ -127,19 +110,21 @@ if (!requirePermission(ctx, 'write')) return true;
 
 ```js
 async function handleMyEndpoint(ctx) {
-  const { repoRoot, apiKey, url } = ctx;
+  const { storageScope, authedUser } = ctx;
 
   // Check the key's permissions
   if (!requirePermission(ctx, 'read')) return true;
 
-  // Do work
-  const data = await myOperation(repoRoot);
+  // Tutorial placeholder: implement the domain operation in server/services/.
+  const data = await myOperation(storageScope, { actor: authedUser });
 
   // Return response (includes rate limit headers automatically)
   await apiSuccess(ctx, { result: data });
   return true;
 }
 ```
+
+The example above is a handler skeleton: `myOperation` is a tutorial placeholder. Shared domain operations belong in [services](../reference/services-layer.md); pass the middleware-provided `storageScope` and resolved actor. Storage calls take that [StorageScope](../reference/storage-scope.md) first, never a bare repository path.
 
 ## Database Schema
 
@@ -178,21 +163,40 @@ CREATE TABLE api_usage_daily (
 
 ### Create Test API Key
 
+Prefer **Settings → API keys** in a running development instance. For a local operator script, run the following from the repository root against a migrated development database. Set `TEST_ORGANIZATION_ID` to the existing development organization's UUID and `TEST_OWNER_EMAIL` to an existing member's email. This script is a trusted operator path: it states the chosen organization and actor explicitly; disabling authentication does not establish either one or verify membership. Use only an organization and member you control. See [StorageScope](../reference/storage-scope.md) for request and non-request entry points.
+
 ```bash
-# Via Node.js (when auth is disabled)
-node -e "
-import('./server/storage/api-keys.js').then(async ({ createApiKey }) => {
-  const result = await createApiKey({
+TEST_ORGANIZATION_ID='<development-organization-uuid>' \
+TEST_OWNER_EMAIL='test@example.com' \
+node --env-file=.env --input-type=module <<'JS'
+import { createApiKey } from './server/storage/api-keys.js';
+import { initializeDatabase, closeDatabase } from './server/db/client.js';
+
+const organizationId = process.env.TEST_ORGANIZATION_ID;
+const actorEmail = process.env.TEST_OWNER_EMAIL;
+if (!organizationId || !actorEmail) {
+  throw new Error('Set TEST_ORGANIZATION_ID and TEST_OWNER_EMAIL');
+}
+const scope = { repoRoot: process.cwd(), organizationId, actorEmail };
+
+try {
+  await initializeDatabase();
+  const result = await createApiKey(scope, {
     name: 'Test Key',
-    ownerEmail: 'test@example.com',
+    ownerEmail: actorEmail,
     permissions: ['read', 'write', 'export', 'ai'],
   });
-  console.log(result);
-});
-"
+  if (!result.ok) throw new Error(`API key creation failed: ${result.reason}`);
+  // result.key is returned once; keep it in a local secret store if needed.
+  // Print only non-secret metadata, never the raw key or the whole result.
+  console.log({ id: result.id, name: result.name });
+} finally {
+  await closeDatabase();
+}
+JS
 ```
 
-Or insert directly into database if needed.
+Do not insert a key with SQL: use the storage operation so validation, hashing and organization assignment follow the same contract. To obtain a key for the curl examples below, the settings UI displays it once; keep it out of logs and source control and revoke it after testing.
 
 ### Test Endpoints
 
