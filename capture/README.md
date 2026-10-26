@@ -248,7 +248,7 @@ because a docs screenshot never needs them:
   worse than a decorative one. A genuinely scannable join shot has to be taken
   on a real deckyard.eu instance.
 - **`stubTranslateFields()`** answers the slide-translation call from the deck
-  instead of from a model. The fill-from-translation preview only renders once
+  instead of from a model. Field suggestions in the translation workspace render once
   `/api/presentations/:id/translate/fields` responds, and a live call would need
   a provider key, cost money and return different words every run. The deck is
   already bilingual, so the other version of the slide _is_ the translation:
@@ -539,3 +539,34 @@ share the launch itself, so a take on Linux is headful on the same Xvfb.
 separate repo for four reasons — Remotion is source-available rather than MIT,
 the music is licensed, launch copy predates publication, and 4K masters do not
 belong in an OSS repo's history. See `briefs/screencast-video-factory.md` § D4.
+
+## B838 recipe refresh
+
+`ai-fills-fields-{en,nl}` and `agent-fills-fields` use the language menu's translation workspace and its selected slide's Suggest action. The stub resolves the current JSON field paths, including nested item text, from the bilingual sample's target content. Suggestions remain unaccepted. The workspace scrolls by design; framing keeps the slide heading below the sticky column labels. The video keeps the `button` and `preview` labels and its existing output paths.
+
+The docs recipes `dashboard-home-new`, `image-text-slide-editor`, `poll-slide-editor`, `slide-type-picker-categories` and `export-dropdown-full` write their namesake PNGs under `public/images/screenshots/`. The export image shows the current dialog. The dashboard requires a clean capture database, clears the known marketing fixture and waits for both sample thumbnails. The editor recipes reuse the sample-deck factory; the image is bundled locally.
+
+Local verification images are development evidence. Published recordings still run through deckyard-video on dev-server-1 against the first regular release tag containing these recipes. A patched older tag cannot establish release provenance.
+
+### Source coverage for the refreshed recipes
+
+For website registration, use the following conservative source sets, relative to the core root. They cover the visible shell, rail, form, styles, locale and slide rendering, including transitive shared dependencies. Directory entries include their descendants. Keep the entry's existing sources as well: these sets extend coverage and do not authorize removing dependencies or baselining.
+
+- **Common:** `client/index.html`, `client/app.js`, `client/lib/`, `client/styles/`, `client/i18n/`, `client/views/user/`, `shared/`, `themes/`, `assets/`, `server/config/`, `server/routes/api/slide-types.js`.
+- **Editor:** Common plus `client/views/editor/`, `client/views/comments/`, `client/views/slide-library/`, `client/views/theme-select/`, `server/routes/api/presentations/`.
+- **Home:** Common plus `client/views/list/`, `client/views/tags/`, `client/views/slide-library/`, `server/routes/api/presentations/`, `server/routes/api/tags.js`, `server/render/`.
+- **AI:** Editor plus `server/routes/api/ai/`, `server/utils/llm/`, `server/utils/ai/` (the capture stubs model output, while the registry retains the feature's existing backend dependencies).
+- **Export:** Editor plus `server/export/`.
+
+| Recipe ID                      | Module under `capture/recipes/`   | Sources | Output relative to runner root                                                    |
+| ------------------------------ | --------------------------------- | ------- | --------------------------------------------------------------------------------- |
+| `ai-fills-fields-en`           | `ai-fills-fields-en.js`           | AI      | `public/images/marketing/ai-fills-fields-en.png`                                  |
+| `ai-fills-fields-nl`           | `ai-fills-fields-nl.js`           | AI      | `public/images/marketing/ai-fills-fields-nl.png`                                  |
+| `agent-fills-fields`           | `agent-fills-fields.js`           | AI      | `capture/takes/agent-fills-fields.webm`, `capture/events/agent-fills-fields.json` |
+| `dashboard-home-new`           | `dashboard-home-new.js`           | Home    | `public/images/screenshots/dashboard-home-new.png`                                |
+| `image-text-slide-editor`      | `image-text-slide-editor.js`      | Editor  | `public/images/screenshots/image-text-slide-editor.png`                           |
+| `poll-slide-editor`            | `poll-slide-editor.js`            | Editor  | `public/images/screenshots/poll-slide-editor.png`                                 |
+| `slide-type-picker-categories` | `slide-type-picker-categories.js` | Editor  | `public/images/screenshots/slide-type-picker-categories.png`                      |
+| `export-dropdown-full`         | `export-dropdown-full.js`         | Export  | `public/images/screenshots/export-dropdown-full.png`                              |
+
+The shared directories intentionally over-invalidate rather than omit visible inputs. Recipe hashes still come from the existing capture module-graph hasher. The video's public MP4 and derivatives remain outputs of deckyard-video's composition, with the same published paths and labels.

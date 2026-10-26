@@ -436,34 +436,8 @@ export function shareLinkRulesShot(lang) {
 }
 
 /**
- * `ai-fills-fields-{nl,en}` — the fill-from-translation preview: per declared
- * field, its label, the source text and what the model produced for it.
- *
- * This is the surface where the AI claim is literally visible. The field names
- * are the app's, not the model's; the model is handed one named field at a
- * time and hands text back; nothing is applied until the Apply button is
- * pressed. A generation wizard would have shown a prompt box, which proves the
- * opposite of "it fills in, it does not design".
- *
- * **No model is called.** `/api/presentations/:id/translate/fields` is
- * intercepted and answered with the deck's *own* other-language text, which is
- * both deterministic and true: the response says what the field says in the
- * other version of this deck. A live call would need a key, cost money, and
- * come back slightly different every run.
- *
- * The English shot seeds a deck whose dominant language is `en-GB`: the modal
- * fills the deck's *active* version from the other one, so the direction of the
- * arrow in the title follows the dominant.
- *
- * The funnel slide, for two reasons that both come down to the labels. Only
- * top-level string fields are translatable (`translatable.js`), so a slide with
- * eight of them — the comparison — makes a preview three times taller than it
- * is wide, unusable as a figure. And the funnel's field labels are among the
- * ones `client/i18n/nl/slide-types.json` actually carries; on a type with no
- * Dutch field labels the preview would name its fields in English inside a
- * Dutch dialog, which is precisely the sloppiness this shot is claiming the
- * product avoids.
- *
+ * The current translation workspace, with deterministic field suggestions for
+ * the selected funnel slide. No live model is called and nothing is applied.
  * @param {'nl'|'en'} lang
  * @returns {import('../lib/recipe.js').Recipe}
  */
@@ -475,13 +449,14 @@ export function aiFillsFieldsShot(lang) {
     output: `ai-fills-fields-${suffix}.png`,
     registryPath: `public/images/marketing/ai-fills-fields-${suffix}.png`,
     viewport: MODAL_SHOT_VIEWPORT,
-    clip: '.modal.translate-slide-modal',
+    clip: '.modal.translate-view-modal',
+    clipMayScroll: 'the full-deck translation workspace scrolls its slide list',
     localStorage: EDITOR_LOCAL_STORAGE,
 
     async state(api) {
-      // Dominant = the shot's language, so the preview fills *this* version.
+      // The workspace opens from the dominant source into the target language.
       const { deckId, deck } = await seedMarketingDeck(api, lang, {
-        dominant: deckLang,
+        dominant: sourceLang,
       });
       const slideId = deck.slideIds.funnel;
       const target = deck.versions[deckLang].find((s) => s.id === slideId);
@@ -494,43 +469,60 @@ export function aiFillsFieldsShot(lang) {
 
     async action(page, ctx) {
       await aiFillsFieldsSetup(page, ctx);
-      await page.click(AI_FILLS_FIELDS_SELECTORS.button);
+      await page.locator(AI_FILLS_FIELDS_SELECTORS.button).click();
       await page.waitForSelector(AI_FILLS_FIELDS_SELECTORS.preview, {
         visible: true,
         timeout: 15_000,
       });
+      await frameTranslationSlide(page, ctx.slideId);
     },
   };
 }
 
-/**
- * The two elements the fill-from-translation flow runs through, named once:
- * "Fill slide…" in the inspector's AI box and the preview it opens.
- *
- * The shot clicks them to *arrive* at the preview; the take built on the same
- * shape (`recipes/agent-fills-fields.js`) clicks them to *show* the arriving.
- * Naming them here is what keeps those two from photographing different
- * buttons after a rename.
- */
+/** Shared selectors for the screenshot and the video suggestion action. */
 export const AI_FILLS_FIELDS_SELECTORS = {
-  button: '.ai-iterate-panel .ai-fill-slide-btn',
-  preview: '.modal.translate-slide-modal .translate-preview-list',
+  button:
+    '.translate-view-slide.is-capture-subject .translate-view-propose-slide',
+  preview: '.translate-view-proposal-text',
 };
 
 /**
- * Everything the fill-from-translation shot needs *before* anything is clicked:
- * the request stub in place and the editor past its skeleton.
- *
- * Split out of the shot's `action` so a take can start filming exactly here —
- * with the app ready and nothing clicked yet — and drive the click itself.
- * The stub has to be installed before the button is clicked: the modal only
- * renders once the response is in hand.
- *
+ * Open the real translation workspace before filming a suggestion request.
+ * The class marks the selected section for capture only; it changes no UI.
  * @param {import('puppeteer-core').Page} page
- * @param {{ target: { content: object } }} ctx the shot's seed context
+ * @param {{ slideId: string, target: { content: object } }} ctx
  * @returns {Promise<void>}
  */
 export async function aiFillsFieldsSetup(page, ctx) {
   await stubTranslateFields(page, ctx.target.content);
   await editorReady(page);
+  await page.click('.lang-menu summary');
+  await page.waitForSelector('.lang-menu-translate', { visible: true });
+  await page.locator('.lang-menu-translate').click();
+  await page.waitForSelector('.translate-view-slide', { visible: true });
+  const section = await page.$(
+    `.translate-view-slide[data-slide-id="${ctx.slideId}"]`,
+  );
+  if (!section) throw new Error('Selected translation slide is missing');
+  await section.evaluate((el) => el.classList.add('is-capture-subject'));
+  await frameTranslationSlide(page, ctx.slideId);
+  await page.waitForSelector(AI_FILLS_FIELDS_SELECTORS.button, {
+    visible: true,
+  });
+}
+
+/** Keep the section heading below the workspace's sticky column labels. */
+async function frameTranslationSlide(page, slideId) {
+  await page.$eval(
+    `.translate-view-slide[data-slide-id="${slideId}"]`,
+    (el) => {
+      const body = el.closest('.translate-view-body');
+      const head = body.querySelector('.translate-view-head');
+      body.scrollTop +=
+        el.getBoundingClientRect().top -
+        body.getBoundingClientRect().top -
+        head.getBoundingClientRect().height -
+        16;
+    },
+  );
 }
