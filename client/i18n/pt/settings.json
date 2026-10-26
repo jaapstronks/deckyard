@@ -240,7 +240,7 @@
   "settings.admin.analytics.retention": "Retenção de dados",
   "settings.admin.analytics.retentionDays": "Manter dados de sessão por",
   "settings.admin.analytics.retentionIpDays": "Anonimizar endereços IP após",
-  "settings.admin.analytics.title": "Estatísticas de Engagement",
+  "settings.admin.analytics.title": "Dados de interação",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.hint": "Endereço de remetente para e-mails do sistema. Usa variáveis de ambiente se vazio.",
   "settings.admin.emailSender.name": "Nome",

@@ -232,7 +232,7 @@
   "settings.admin.analytics.retention": "Dataopbevaring",
   "settings.admin.analytics.retentionDays": "Behold sessionsdata i",
   "settings.admin.analytics.retentionIpDays": "Anonymiser IP-adresser efter",
-  "settings.admin.analytics.title": "Engagement Indsigt",
+  "settings.admin.analytics.title": "Indsigt i engagement",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.hint": "Afsenderadresse for system-e-mails. Bruger miljøvariabler hvis tom.",
   "settings.admin.emailSender.name": "Navn",

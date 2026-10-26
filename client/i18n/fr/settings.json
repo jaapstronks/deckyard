@@ -237,7 +237,7 @@
   "settings.admin.analytics.retention": "Conservation des données",
   "settings.admin.analytics.retentionDays": "Conserver les données de session pendant",
   "settings.admin.analytics.retentionIpDays": "Anonymiser les adresses IP après",
-  "settings.admin.analytics.title": "Aperçus d'engagement",
+  "settings.admin.analytics.title": "Aperçu de l'engagement",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.hint": "Adresse d'expédition pour les e-mails système. Utilise les variables d'environnement si vide.",
   "settings.admin.emailSender.name": "Nom",

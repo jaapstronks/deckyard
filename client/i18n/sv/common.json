@@ -146,7 +146,7 @@
   "dashboard.cards.completionRate": "Slutförandegrad",
   "dashboard.cards.totalViews": "Totala visningar",
   "dashboard.cards.uniqueViewers": "Unika tittare",
-  "dashboard.chart.ariaLabel": "Stapeldiagram som visar visningar över tid",
+  "dashboard.chart.ariaLabel": "Stapeldiagram över visningar över tid",
   "dashboard.chart.empty": "Inga visningsdata för denna period",
   "dashboard.chart.title": "Visningar över tid",
   "dashboard.error": "Kunde inte ladda insikter",

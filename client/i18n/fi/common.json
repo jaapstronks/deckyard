@@ -150,7 +150,7 @@
   "dashboard.cards.completionRate": "Valmistumisaste",
   "dashboard.cards.totalViews": "Katselut yhteensä",
   "dashboard.cards.uniqueViewers": "Yksilölliset katsojat",
-  "dashboard.chart.ariaLabel": "Pylväskaavio katseluista ajan mittaan",
+  "dashboard.chart.ariaLabel": "Pylväskaavio katselukerroista ajan mittaan",
   "dashboard.chart.empty": "Ei tietoja tälle ajanjaksolle",
   "dashboard.chart.title": "Katselut ajan mittaan",
   "dashboard.error": "Analyysien lataus epäonnistui",

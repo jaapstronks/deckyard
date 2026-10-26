@@ -239,7 +239,7 @@
   "settings.admin.analytics.retention": "Conservazione dati",
   "settings.admin.analytics.retentionDays": "Conserva i dati delle sessioni per",
   "settings.admin.analytics.retentionIpDays": "Anonimizza gli indirizzi IP dopo",
-  "settings.admin.analytics.title": "Statistiche di Coinvolgimento",
+  "settings.admin.analytics.title": "Analisi del coinvolgimento",
   "settings.admin.emailSender.hint": "Indirizzo mittente per le email di sistema. Se lasciato vuoto, vengono usate le variabili d'ambiente.",
   "settings.admin.emailSender.name": "Nome",
   "settings.admin.emailSender.title": "Identità Mittente Email",

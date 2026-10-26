@@ -245,7 +245,7 @@
   "settings.admin.analytics.retention": "Tietojen säilytys",
   "settings.admin.analytics.retentionDays": "Säilytä istuntotietoja",
   "settings.admin.analytics.retentionIpDays": "Anonymisoi IP-osoitteet",
-  "settings.admin.analytics.title": "Sitoutumistilastot",
+  "settings.admin.analytics.title": "Sitoutumisanalyysi",
   "settings.admin.emailSender.email": "Sähköposti",
   "settings.admin.emailSender.hint": "Järjestelmäsähköpostien lähettäjäosoite. Käyttää ympäristömuuttujia, jos tyhjä.",
   "settings.admin.emailSender.name": "Nimi",
