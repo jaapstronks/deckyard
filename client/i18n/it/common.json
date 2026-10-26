@@ -147,7 +147,7 @@
   "dashboard.cards.avgDuration": "Durata media",
   "dashboard.cards.completionRate": "Tasso di completamento",
   "dashboard.cards.totalViews": "Visualizzazioni totali",
-  "dashboard.cards.uniqueViewers": "Visitatori unici",
+  "dashboard.cards.uniqueViewers": "Spettatori unici",
   "dashboard.chart.ariaLabel": "Grafico a barre delle visualizzazioni nel tempo",
   "dashboard.chart.empty": "Nessun dato per questo periodo",
   "dashboard.chart.title": "Visualizzazioni nel tempo",

@@ -149,7 +149,7 @@
   "dashboard.cards.avgDuration": "Duração média",
   "dashboard.cards.completionRate": "Taxa de conclusão",
   "dashboard.cards.totalViews": "Visualizações totais",
-  "dashboard.cards.uniqueViewers": "Visitantes únicos",
+  "dashboard.cards.uniqueViewers": "Espectadores únicos",
   "dashboard.chart.ariaLabel": "Gráfico de barras com as visualizações ao longo do tempo",
   "dashboard.chart.empty": "Sem dados de visualização para este período",
   "dashboard.chart.title": "Visualizações ao longo do tempo",

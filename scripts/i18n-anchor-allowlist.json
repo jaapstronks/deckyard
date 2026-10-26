@@ -35,10 +35,6 @@
       "forms": ["Ryd søgning", "Ryd søgningen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Completion": {
-      "forms": ["Fuldførelse", "Gennemførsel"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Conversion failed.": {
       "forms": ["Konvertering mislykkedes.", "Konverteringen mislykkedes."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -120,10 +116,6 @@
     },
     "da  Square": {
       "forms": ["Firkantet", "Kvadratisk", "Skarp"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "da  Total Views": {
-      "forms": ["Samlede visninger", "Visninger i alt"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "da  Unpublish": {
@@ -226,10 +218,6 @@
     },
     "de  Square": {
       "forms": ["Eckig", "Quadratisch"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Total Views": {
-      "forms": ["Aufrufe gesamt", "Gesamtaufrufe"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Weight": {
@@ -383,14 +371,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "es  Unique Viewers": {
-      "forms": ["Espectadores únicos", "Visitantes únicos"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Views Over Time": {
-      "forms": ["Vistas a lo largo del tiempo", "Vistas en el tiempo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Add to team library": {
       "forms": ["Lisää tiimikirjastoon", "Lisää tiimin kirjastoon"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -413,10 +393,6 @@
     },
     "fi  Collapse": {
       "forms": ["Supista", "Tiivistä"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Completion": {
-      "forms": ["Loppuun katsotut", "Valmistuminen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Custom": {
@@ -510,28 +486,12 @@
       "forms": ["Neliö", "Suora"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fi  Total Views": {
-      "forms": ["Katselukertoja yhteensä", "Katselut yhteensä"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Unique Viewers": {
-      "forms": ["Yksilöityjä katsojia", "Yksilölliset katsojat"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Unpublish": {
       "forms": ["Peru julkaisu", "Peruuta julkaisu"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Uploading…": {
       "forms": ["Ladataan…", "Lähetetään…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Views": {
-      "forms": ["Katselukerrat", "Katselut"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Views Over Time": {
-      "forms": ["Katselukerrat ajan mittaan", "Katselut ajan mittaan"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Weight": {
@@ -645,10 +605,6 @@
     },
     "fr  Square": {
       "forms": ["Carré", "Carrée", "Droit"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Unique Viewers": {
-      "forms": ["Spectateurs uniques", "Visiteurs uniques"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Uploading…": {
@@ -791,10 +747,6 @@
     },
     "it  Square": {
       "forms": ["Quadrata", "Quadrato", "Squadrato"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Unique Viewers": {
-      "forms": ["Spettatori unici", "Visitatori unici"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Unpublish": {
@@ -1010,10 +962,6 @@
       "forms": ["Tøm søk", "Tøm søket"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Completion": {
-      "forms": ["Fullføring", "Fullført"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Conversion failed.": {
       "forms": ["Konvertering mislyktes.", "Konverteringen mislyktes."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1122,10 +1070,6 @@
         "Denne delingslenken er utløpt.",
         "Denne delingslenken har utløpt."
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Total Views": {
-      "forms": ["Totale visninger", "Visninger totalt"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  {count}d ago": {
@@ -1268,10 +1212,6 @@
       "forms": ["Kwadrat", "Kwadratowy", "Proste"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Total Views": {
-      "forms": ["Łączna liczba wyświetleń", "Łączne wyświetlenia"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  {count} presentations": {
       "forms": ["prezentacji: {count}", "{count} prezentacji"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1393,10 +1333,6 @@
       "forms": ["Quadrada", "Reto"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pt  Unique Viewers": {
-      "forms": ["Espectadores únicos", "Visitantes únicos"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  {count} selected": {
       "forms": ["{count} selecionadas", "{count} selecionados"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1411,10 +1347,6 @@
     },
     "sv  Clear search": {
       "forms": ["Rensa sökning", "Rensa sökningen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Completion": {
-      "forms": ["Slutförande", "Slutförda"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Conversion failed.": {
@@ -1525,10 +1457,6 @@
         "Den här delningslänken har gått ut.",
         "Denna delningslänk har gått ut."
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Total Views": {
-      "forms": ["Totala visningar", "Visningar totalt"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  this presentation": {

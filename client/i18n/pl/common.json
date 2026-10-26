@@ -148,7 +148,7 @@
   "dashboard.back": "Wróć do prezentacji",
   "dashboard.cards.avgDuration": "Średni czas",
   "dashboard.cards.completionRate": "Wskaźnik ukończenia",
-  "dashboard.cards.totalViews": "Łączne wyświetlenia",
+  "dashboard.cards.totalViews": "Łączna liczba wyświetleń",
   "dashboard.cards.uniqueViewers": "Unikalni widzowie",
   "dashboard.chart.ariaLabel": "Wykres słupkowy wyświetleń w czasie",
   "dashboard.chart.empty": "Brak danych dla tego okresu",

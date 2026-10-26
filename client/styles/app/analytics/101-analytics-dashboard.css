@@ -98,7 +98,7 @@
 /* Metric Cards */
 .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: var(--ps-space-4);
   margin-bottom: var(--ps-space-6);
 }
@@ -124,6 +124,7 @@
 }
 
 .dashboard-metric-label {
+  overflow-wrap: anywhere;
   font-size: var(--ps-text-sm);
   font-weight: 500;
   color: hsl(var(--app-text-secondary));
@@ -173,6 +174,7 @@
 }
 
 .dashboard-card-title {
+  overflow-wrap: anywhere;
   font-size: var(--ps-text-base);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
