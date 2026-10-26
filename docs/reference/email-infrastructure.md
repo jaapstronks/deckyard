@@ -211,6 +211,8 @@ Mailgun requires an explicit `eu` or `us` region. Scaleway currently supports `f
 
 ### Brevo migration
 
+When upgrading from v1.89.1 or earlier to v1.90.0, apply these changes before restarting an instance that sends mail.
+
 | Previous configuration                    | Required configuration                     |
 | ----------------------------------------- | ------------------------------------------ |
 | `BREVO_API_KEY` alone selected Brevo      | Add `MAIL_TRANSPORT=brevo`; retain the key |
