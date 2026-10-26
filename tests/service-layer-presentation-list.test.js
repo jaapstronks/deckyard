@@ -74,6 +74,7 @@ function deckRow({
   owner,
   title,
   modified,
+  description = null,
   visibility = 'private',
   viewOnly = false,
 }) {
@@ -87,7 +88,7 @@ function deckRow({
     created_by_user_id: userIdFor(owner),
     updated_by_user_id: userIdFor(owner),
     title,
-    description: null,
+    description,
     theme: null,
     lang: 'en',
     visibility,
@@ -125,6 +126,7 @@ async function installDb() {
         id: OWN,
         owner: OWNER_EMAIL,
         title: 'Roadmap',
+        description: 'Blue zebras only',
         modified: '2026-08-04T00:00:00.000Z',
       }),
       deckRow({
@@ -145,6 +147,7 @@ async function installDb() {
         id: HIDDEN,
         owner: STRANGER_EMAIL,
         title: 'Private roadmap',
+        description: 'Hidden zebras only',
         modified: '2026-08-01T00:00:00.000Z',
       }),
     ],
@@ -317,6 +320,44 @@ test('service: a page continues on its cursor, search sorts title matches first'
   );
   assert.deepEqual(ids(ranked.presentations), [OWN]);
   assert.deepEqual(ranked.presentations[0]._matchLocations, ['title']);
+});
+
+test('service: metadata search preserves descriptions and excludes private decks', async () => {
+  await installDb();
+  const scope = createStorageScope(OWNER, { repoRoot: process.cwd() });
+  for (const [q, expectedIds, locations] of [
+    ['roadmap', [OWN], ['title']],
+    ['zebras', [OWN], ['description']],
+    [OWNER_EMAIL, [OWN], ['owner']],
+    ['hidden', [], []],
+  ]) {
+    const { presentations } = await listPresentationsForActor(
+      scope,
+      { actor: OWNER },
+      { q },
+    );
+    assert.deepEqual(ids(presentations), expectedIds, q);
+    if (presentations.length) {
+      assert.deepEqual(presentations[0]._matchLocations, locations, q);
+    }
+  }
+
+  const found = await internal(
+    handleInternalPresentations,
+    '/api/presentations/search?q=zebras',
+    OWNER,
+  );
+  assert.equal(found.statusCode, 200);
+  assert.deepEqual(ids(found.json().results), [OWN]);
+  assert.deepEqual(found.json().results[0]._matchLocations, ['description']);
+
+  const outsider = await internal(
+    handleInternalPresentations,
+    '/api/presentations/search?q=zebras&ownership=all',
+    OUTSIDER,
+  );
+  assert.equal(outsider.statusCode, 200);
+  assert.deepEqual(outsider.json().results, []);
 });
 
 test('service: a value outside the vocabulary is 400 invalid naming the field', async () => {
