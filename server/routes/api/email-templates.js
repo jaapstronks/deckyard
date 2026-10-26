@@ -29,7 +29,10 @@ import {
   generatePreview,
   resolveTemplate,
 } from '../../integrations/email-template-resolver.js';
-import { sendEmail } from '../../integrations/email/index.js';
+import {
+  getSenderIdentity,
+  sendEmail,
+} from '../../integrations/email/index.js';
 import {
   EMAIL_STYLES,
   emailWrapper,
@@ -235,11 +238,13 @@ async function handleEmailTemplateTest(
   const htmlContent = buildPreviewHtml(preview);
 
   // Send test email to the admin
+  const senderOverride = await getSenderIdentity(repoRoot);
   const result = await sendEmail({
     to: user.email,
     toName: user.name || user.email,
     subject: `[TEST] ${preview.subject}`,
     htmlContent,
+    senderOverride,
   });
 
   if (!result.ok) {
