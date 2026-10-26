@@ -4,6 +4,29 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.90.0](https://github.com/jaapstronks/deckyard/compare/v1.89.1...v1.90.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* support explicit transactional mail transports ([#1848](https://github.com/jaapstronks/deckyard/issues/1848))
+* Outgoing mail now requires an explicit `MAIL_TRANSPORT` (`smtp`, `brevo`, `scaleway`, `mailgun`; `none` disables mail). Existing Brevo installs must add `MAIL_TRANSPORT=brevo`, keep `BREVO_API_KEY`, and rename `BREVO_SENDER_EMAIL` to `MAIL_FROM` and `BREVO_SENDER_NAME` to `MAIL_FROM_NAME`. Stored instance sender settings remain supported; no database migration is required.
+* Forks importing the removed `server/integrations/brevo.js` must use the public `server/integrations/email/index.js` seam. Legacy environment aliases and the old module shim are removed.
+
+### Added
+
+* support explicit transactional mail transports ([#1848](https://github.com/jaapstronks/deckyard/issues/1848)) ([fdd0be8](https://github.com/jaapstronks/deckyard/commit/fdd0be88f849bf5fd61568e2b988a747caa79eeb))
+
+
+### Fixed
+
+* refresh capture recipes for the current editor ([#1846](https://github.com/jaapstronks/deckyard/issues/1846)) ([9da4b53](https://github.com/jaapstronks/deckyard/commit/9da4b53376051241e1f366a7b9e71648306e791f))
+
+
+### Changed
+
+* identify the transactional mail upgrade boundary ([0a9300d](https://github.com/jaapstronks/deckyard/commit/0a9300d05bf70feaacde03278fd517ba7639c760))
+
 ## [1.89.1](https://github.com/jaapstronks/deckyard/compare/v1.89.0...v1.89.1) (2026-10-26)
 
 
