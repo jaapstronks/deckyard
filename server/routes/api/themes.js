@@ -23,11 +23,9 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { clearCustomThemeCache } from '../../utils/themes.js';
-import { sandboxEnabled } from '../../config/sandbox.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { canManage } from '../../utils/route-middleware.js';
 import {
-  listThemes,
   getThemeRecord,
   createTheme,
   updateTheme,
@@ -45,10 +43,8 @@ import {
 } from '../../export/pipeline.js';
 import { THEME_FIELD_PROBLEMS } from '../../../shared/theme-config-schema.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
-import {
-  getDefaultThemeId,
-  getEnabledThemeIds,
-} from '../../storage/settings.js';
+import { getDefaultThemeId } from '../../storage/settings.js';
+import { listOfferedThemes } from '../../services/theme.js';
 import {
   getOptionalString,
   getOptionalObject,
@@ -127,76 +123,33 @@ function canManageThemes(authedUser) {
 }
 
 // GET /api/themes - List the themes this workspace offers
-async function handleThemeList({
-  repoRoot,
-  storageScope,
-  url,
-  res,
-  authedUser,
-}) {
-  const records = await listThemes(storageScope);
-  const visible = sandboxEnabled()
-    ? records.filter((theme) => theme.source === 'seed')
-    : records;
-  const themesBySource = visible.map((t) => ({
-    id: t.id,
-    slug: t.slug,
-    source: t.source,
-    label: t.label,
-    logoUrl: t.logoUrl,
-    colors: t.colors,
-    fonts: t.fonts,
+async function handleThemeList({ storageScope, url, res, authedUser }) {
+  const { themes: offered, enabledThemes } = await listOfferedThemes(
+    storageScope,
+    {
+      currentThemeId: url?.searchParams?.get('current'),
+      // The settings editor needs the complete catalog; the existing management
+      // gate stays on this adapter and is never inferred by v1 or MCP.
+      includeAll:
+        url?.searchParams?.get('all') === '1' && canManageThemes(authedUser),
+    },
+  );
+  const themes = offered.map((theme) => ({
+    id: theme.id,
+    slug: theme.slug,
+    source: theme.source,
+    label: theme.label,
+    logoUrl: theme.logoUrl,
+    colors: theme.colors,
+    fonts: theme.fonts,
+    isDefault: theme.isDefault,
   }));
-  const allThemes = themesBySource;
-  allThemes.sort((a, b) => {
-    if (a.source !== b.source) return a.source === 'organization' ? -1 : 1;
-    return String(a.label).localeCompare(String(b.label));
-  });
-
-  // Enforce the organization allowlist (D70). `enabledThemes` has one meaning:
-  // a theme outside it is not offered anywhere, so the filter lives here rather
-  // than as an annotation each picker is free to soften. An empty allowlist
-  // means none is configured — every theme is offered.
-  const [allowlist, defaultThemeId] = await Promise.all([
-    getEnabledThemeIds(storageScope),
-    getDefaultThemeId(storageScope),
-  ]);
-  const allowSet = new Set(allowlist);
-  // The default theme is always offered, or a workspace could allowlist itself
-  // out of the theme its own new decks get.
-  allowSet.add(String(defaultThemeId).toLowerCase());
-
-  // `?current=<id>` keeps one extra theme in the list: the theme a deck is
-  // already on. A deck that predates a withdrawal keeps rendering and keeps
-  // showing its own selection instead of silently reading as something else.
-  // No validation beyond casing and a length cap: the value is only ever a
-  // lookup key into the theme list, so an unknown id widens the allowlist by
-  // exactly nothing.
-  const current = String(url?.searchParams?.get('current') || '')
-    .trim()
-    .toLowerCase()
-    .slice(0, 64);
-  if (current) allowSet.add(current);
-
-  // `?all=1` returns the unfiltered list for the Settings → Themes allowlist
-  // editor, which cannot offer a checkbox for a theme it can't see. Only for
-  // users who may manage themes — otherwise it is the leak D70 closes.
-  const wantsAll =
-    url?.searchParams?.get('all') === '1' && canManageThemes(authedUser);
-
-  const themes =
-    wantsAll || allowlist.length === 0
-      ? allThemes
-      : allThemes.filter((theme) =>
-          allowSet.has(String(theme.id).toLowerCase()),
-        );
-  for (const theme of themes) theme.isDefault = theme.id === defaultThemeId;
 
   // The default is named once, on the theme itself (`isDefault`), as on
   // `GET /api/themes/:id` and `/api/v1/themes` (B584).
   serveJson(res, 200, {
     themes,
-    enabledThemes: allowlist,
+    enabledThemes,
   });
   return true;
 }

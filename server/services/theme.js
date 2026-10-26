@@ -1,6 +1,5 @@
 /**
- * Theme change — the one way a deck changes theme, decided and done in one
- * place (A7.4, B575).
+ * Theme offering and change, decided in one place (D70, A7.4, B575).
  *
  * The shared write path hard-locks `theme` (see `updatePresentation`), so a
  * stray save can never flip a deck's branding. A deliberate switch goes
@@ -17,6 +16,9 @@
  * @module server/services/theme
  */
 
+import { listThemes } from '../storage/themes.js';
+import { getDefaultThemeId, getEnabledThemeIds } from '../storage/settings.js';
+import { sandboxEnabled } from '../config/sandbox.js';
 import { updatePresentation } from '../storage/presentations/index.js';
 import { findTheme } from '../utils/themes.js';
 import { convertSlideToType } from '../../shared/slide-types/convert.js';
@@ -29,6 +31,52 @@ import {
 } from '../utils/errors.js';
 import { dominantSlidesBody, mapVersionSlides } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
+
+/**
+ * The themes this organization offers, shared by browser, v1 and MCP (D70).
+ * An empty effective allowlist offers all scoped records; the visible default
+ * always survives a configured list. Raw storage remains available for reads
+ * and management that do not describe a picker catalog.
+ *
+ * @param {import('../storage/scope.js').StorageScope} scope
+ * @param {Object} [options]
+ * @param {string|null} [options.currentThemeId] - Browser: keep a deck's selection.
+ * @param {boolean} [options.includeAll=false] - Browser: adapter already checked
+ *   theme-management capability before requesting the settings catalog.
+ * @returns {Promise<{themes: Object[], enabledThemes: string[]}>}
+ */
+export async function listOfferedThemes(
+  scope,
+  { currentThemeId = null, includeAll = false } = {},
+) {
+  const [records, enabledThemes, defaultThemeId] = await Promise.all([
+    listThemes(scope),
+    getEnabledThemeIds(scope),
+    getDefaultThemeId(scope),
+  ]);
+  const allowed = new Set(enabledThemes);
+  allowed.add(String(defaultThemeId).toLowerCase());
+  const current = String(currentThemeId || '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 64);
+  if (current) allowed.add(current);
+  const sandbox = sandboxEnabled();
+  const themes = records
+    .filter((theme) => !sandbox || theme.source === 'seed')
+    .filter(
+      (theme) =>
+        includeAll ||
+        enabledThemes.length === 0 ||
+        allowed.has(String(theme.id).toLowerCase()),
+    )
+    .map((theme) => ({ ...theme, isDefault: theme.id === defaultThemeId }));
+  themes.sort((a, b) => {
+    if (a.source !== b.source) return a.source === 'organization' ? -1 : 1;
+    return String(a.label).localeCompare(String(b.label));
+  });
+  return { themes, enabledThemes };
+}
 
 /**
  * The caller chose this conversion in the compatibility dialog; a switch that

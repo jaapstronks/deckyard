@@ -58,9 +58,11 @@ Add to your Cursor MCP settings:
 | `list_presentations`   | Browse presentations you can access (`ownership`: owned/shared/collection/all; with edit URLs), one page per call: pass `nextCursor` back as `cursor` |
 | `get_presentation`     | Get full deck data (all slides)                                                                                                                       |
 | `get_presentation_url` | Get edit and present URLs for sharing                                                                                                                 |
-| `list_themes`          | List available themes with brand colors                                                                                                               |
+| `list_themes`          | List offered theme IDs, slugs, sources and labels                                                                                                     |
 | `list_comments`        | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped; one page per call (`cursor`)        |
 | `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date; one page per call: pass `nextCursor` back as `cursor`                    |
+
+`list_themes` uses the same organization offer as the browser and `GET /api/v1/themes`: a nonempty stored allowlist wins over installation `ENABLED_THEMES`, an empty effective list offers all scoped themes, and the visible default is always included. Sandbox mode offers only seed themes. The browser alone can retain a deck's current selection or request the complete catalog with theme-management capability; MCP exposes neither override. This controls catalog offering; existing decks and direct theme reads keep their existing behavior.
 
 ### Creating
 

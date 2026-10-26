@@ -1818,7 +1818,13 @@ paths:
       tags:
         - Resources
       summary: List available themes
-      description: Returns all available themes (system and custom).
+      description: >-
+        Returns the organization’s offered seed and custom themes, using the
+        same policy as the browser and MCP. A nonempty organization allowlist
+        takes precedence over installation ENABLED_THEMES; an empty effective
+        list offers every scoped theme. The visible default is always included.
+        Sandbox mode offers only seed themes. There is no current-theme or
+        management bypass on this endpoint.
       responses:
         '200':
           description: List of themes
