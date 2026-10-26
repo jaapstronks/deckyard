@@ -1,3 +1,4 @@
+import { ALT_TEXT_CONSTRAINTS } from '../field-normalization.js';
 import { DEFAULT_IMAGE_PLACEHOLDER } from '../image-placeholder.js';
 import {
   bgClass,
@@ -162,7 +163,7 @@ export default {
           labelKey: 'editor.slideField.alt.label',
           type: 'string',
           required: false,
-          maxLength: 200,
+          ...ALT_TEXT_CONSTRAINTS,
           placeholder: 'Describe the image',
         },
       ],

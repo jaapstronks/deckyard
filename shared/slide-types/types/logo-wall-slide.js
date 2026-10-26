@@ -1,3 +1,4 @@
+import { ALT_TEXT_CONSTRAINTS } from '../field-normalization.js';
 import {
   escapeHtml,
   pickAltText,
@@ -146,7 +147,12 @@ export default {
         },
         // Declared because the renderer reads it and itemDefaults seeds it —
         // it was only ever missing here (team-cards/gallery declare theirs).
-        { key: 'alt', type: 'string', label: 'Alt text', maxLength: 180 },
+        {
+          key: 'alt',
+          type: 'string',
+          label: 'Alt text',
+          ...ALT_TEXT_CONSTRAINTS,
+        },
         // Optional: makes the whole logo clickable. `#slide:<id>` / `#N` jumps
         // to a slide of the deck (presenter only; a link to that section in the
         // reader); an http(s)/mailto URL opens in a new tab.

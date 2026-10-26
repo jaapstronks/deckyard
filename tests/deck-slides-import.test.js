@@ -366,20 +366,20 @@ test('fallback too-long: literal text longer than any slide field holds', () => 
 });
 
 test('a page with a picture has no second home without it: too long falls back (B826)', () => {
-  // The alt text of the figure is longer than `image-text-slide` holds;
+  // The heading is longer than `image-text-slide` holds;
   // `content-slide` would take the text, but only by dropping the picture.
   const page = model({
-    heading: 'The figure',
+    heading: 'The figure '.repeat(20),
     lines: [line('The figure', 'heading', 28), line('Body')],
     blocks: [para('Body text')],
     images: [
       {
         ...image({ x: 400, y: 100, width: 280, height: 200 }),
-        alt: `A long description ${'of the figure '.repeat(20)}`.trim(),
+        alt: 'A figure',
       },
     ],
   });
-  assert.ok(page.images[0].alt.length > 180);
+  assert.ok(page.heading.length > 120);
   const choice = chooseSlide(page);
   assert.equal(choice.type, 'image-text-slide');
   assert.equal(choice.uploads.length, 1);

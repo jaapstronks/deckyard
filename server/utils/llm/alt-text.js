@@ -1,4 +1,8 @@
 import {
+  ALT_TEXT_CONSTRAINTS,
+  truncateFieldText,
+} from '../../../shared/slide-types/field-normalization.js';
+import {
   DEFAULT_SUPPORTED_DECK_LANGS,
   TRANSLATION_LANG_LABELS,
   normalizeLang,
@@ -85,7 +89,7 @@ export async function generateImageAltTexts({
     `{ ${shape} }`,
     '',
     'Rules:',
-    '- Keep each alt text short (usually 6–18 words).',
+    '- Keep each alt text within 150 characters (usually 6–18 words).',
     '- Do not start with "Image of" / "Photo of" unless necessary for clarity.',
     '- If the image is decorative or contains no meaningful information, return empty strings.',
     '- If there is visible text, summarize it only if it is central and short.',
@@ -144,7 +148,7 @@ export async function generateImageAltTexts({
   const alts = {};
   for (const lang of targetLangs) {
     const v = typeof obj[lang] === 'string' ? obj[lang].trim() : '';
-    alts[lang] = v.slice(0, 220);
+    alts[lang] = truncateFieldText(v, ALT_TEXT_CONSTRAINTS.maxLength);
   }
 
   return {
