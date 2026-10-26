@@ -10,6 +10,8 @@ entries are grouped per release rather than exhaustively listed.
 ### ⚠ BREAKING CHANGES
 
 * support explicit transactional mail transports ([#1848](https://github.com/jaapstronks/deckyard/issues/1848))
+* Outgoing mail now requires an explicit `MAIL_TRANSPORT` (`smtp`, `brevo`, `scaleway`, `mailgun`; `none` disables mail). Existing Brevo installs must add `MAIL_TRANSPORT=brevo`, keep `BREVO_API_KEY`, and rename `BREVO_SENDER_EMAIL` to `MAIL_FROM` and `BREVO_SENDER_NAME` to `MAIL_FROM_NAME`. Stored instance sender settings remain supported; no database migration is required.
+* Forks importing the removed `server/integrations/brevo.js` must use the public `server/integrations/email/index.js` seam. Legacy environment aliases and the old module shim are removed.
 
 ### Added
 
