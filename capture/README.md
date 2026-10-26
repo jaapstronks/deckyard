@@ -541,6 +541,7 @@ the music is licensed, launch copy predates publication, and 4K masters do not
 belong in an OSS repo's history. See `briefs/screencast-video-factory.md` § D4.
 
 ## B838 recipe refresh
+
 `ai-fills-fields-{en,nl}` and `agent-fills-fields` use the language menu's translation workspace and its selected slide's Suggest action. The stub resolves the current JSON field paths, including nested item text, from the bilingual sample's target content. Suggestions remain unaccepted. The workspace scrolls by design; framing keeps the slide heading below the sticky column labels. The video keeps the `button` and `preview` labels and its existing output paths.
 
 The docs recipes `dashboard-home-new`, `image-text-slide-editor`, `poll-slide-editor`, `slide-type-picker-categories` and `export-dropdown-full` write their namesake PNGs under `public/images/screenshots/`. The export image shows the current dialog. The dashboard requires a clean capture database, clears the known marketing fixture and waits for both sample thumbnails. The editor recipes reuse the sample-deck factory; the image is bundled locally.
