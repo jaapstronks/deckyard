@@ -16,7 +16,7 @@ This section is for developers working on the codebase.
 - **The `test-postgres` CI job**: [docs/developer/pg-test-suite.md](./pg-test-suite.md) - the storage layer's `onConflict` paths against a real PostgreSQL, and why it lives outside `npm test`
 - **`npm test` IPC flake (B50)**: [docs/developer/test-runner-ipc-flake.md](./test-runner-ipc-flake.md) - the intermittent "Unable to deserialize cloned data" failure, its Node-core root cause, and the rule for keeping new tests quiet
 
-- **Internationalization**: [docs/developer/i18n.md](./i18n.md) - locales, `t()`, and the translation files
+- **Internationalization**: [docs/developer/i18n.md](./i18n.md) - locales, `t()`, and the translation files; [locale glossary](./i18n-glossary.md) for reviewed terminology and Dutch style
 - **Live data sources**: [docs/developer/live-data-sources-testing.md](./live-data-sources-testing.md) - testing checklist
 
 The complete documentation index lives in `docs/README.md`.
