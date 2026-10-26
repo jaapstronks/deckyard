@@ -254,6 +254,8 @@
   "list.newPresentation.importMarkdown.open": "Open presentatie",
   "list.newPresentation.importMarkdown.warningsIntro.many": "Import geslaagd, maar er zijn {count} aandachtspunten gevonden:",
   "list.newPresentation.importMarkdown.warningsIntro.one": "Import geslaagd, maar er is 1 aandachtspunt gevonden:",
+  "list.newPresentation.importRequestFailed": "Importverzoek mislukt (HTTP {status}).",
+  "list.newPresentation.importUnconfirmed": "De import is niet bevestigd. Controleer je presentatieoverzicht voordat je het opnieuw probeert; de presentatie is mogelijk al opgeslagen.",
   "list.newPresentation.importing": "Importeren…",
   "list.newPresentation.mode.importDeck": ".deck importeren",
   "list.newPresentation.mode.importJson": "JSON importeren",

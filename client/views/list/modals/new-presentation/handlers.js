@@ -69,6 +69,82 @@ function createProgressBinding({ loadingModal, rotator }) {
 }
 
 /**
+ * Make one creation request. Only a terminal event confirms its outcome;
+ * losing the response can mean the deck was saved, so never repeat the POST.
+ *
+ * @param {Object} opts
+ * @param {string} opts.url
+ * @param {Object} opts.body
+ * @param {Object} opts.progressBinding
+ * @param {string} opts.failureMessage - Fallback for an explicit SSE refusal.
+ * @returns {Promise<Object>} The confirmed import result.
+ */
+async function createStreamingImport({
+  url,
+  body,
+  progressBinding,
+  failureMessage,
+}) {
+  const unconfirmed = () =>
+    new Error(
+      t(
+        'list.newPresentation.importUnconfirmed',
+        'Import was not confirmed. Check your presentation list before trying again; the presentation may already have been saved.',
+      ),
+    );
+  let response;
+  try {
+    // SSE progress is consumed incrementally, unlike api()'s JSON contract.
+    // eslint-disable-next-line no-restricted-syntax
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw unconfirmed();
+  }
+  if (!response.ok) {
+    let message;
+    try {
+      message = (await response.json())?.message;
+    } catch {
+      // A proxy may return HTML or no body. The status still confirms refusal.
+      message = null;
+    }
+    throw new Error(
+      message ||
+        t(
+          'list.newPresentation.importRequestFailed',
+          'Import request failed (HTTP {status}).',
+          { status: response.status },
+        ),
+    );
+  }
+  if (!response.body) throw unconfirmed();
+
+  let result;
+  let refusal;
+  try {
+    await processSSEStream(response.body, {
+      ...progressBinding,
+      onComplete: (data) => {
+        result = data;
+      },
+      onError: (data) => {
+        refusal = data?.message || failureMessage;
+      },
+    });
+  } catch {
+    // A terminal event remains authoritative if the subsequent read fails.
+    if (!result && !refusal) throw unconfirmed();
+  }
+  if (refusal) throw new Error(refusal);
+  if (!result?.presentation?.id) throw unconfirmed();
+  return result;
+}
+
+/**
  * Handle empty presentation creation.
  *
  * A missing title and a refusal from the server are states of the form, not
@@ -209,7 +285,6 @@ export async function handlePasteText({
  * Handle file conversion (PPTX/PDF)
  */
 export async function handleConvertFile({
-  api,
   root,
   selectedFile,
   langMode,
@@ -252,93 +327,19 @@ export async function handleConvertFile({
   const progressBinding = createProgressBinding({ loadingModal, rotator });
 
   try {
-    let useStreaming = true;
-
-    try {
-      // SSE stream: progress events are read from response.body.
-      // eslint-disable-next-line no-restricted-syntax
-      const response = await fetch('/api/convert/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dataUrl,
-          filename: selectedFile.name,
-          lang,
-          theme: themeId,
-        }),
-      });
-
-      if (!response.ok || !response.body) {
-        useStreaming = false;
-      } else {
-        let streamComplete = false;
-        let streamError = false;
-
-        await processSSEStream(response.body, {
-          onStatus: progressBinding.onStatus,
-          onMessages: progressBinding.onMessages,
-          onComplete: async (data) => {
-            streamComplete = true;
-            rotator.stop();
-            const result = data;
-            loadingModal.update(t('common.done', 'Done'), { immediate: true });
-            loadingModal.setProgress(100);
-            await new Promise((r) => setTimeout(r, 500));
-            loadingModal.close();
-            close();
-            nav(
-              `/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`,
-            );
-          },
-          onError: (data) => {
-            streamError = true;
-            rotator.stop();
-            loadingModal.close();
-            showBackdrop?.();
-            setStatus(
-              data?.message ||
-                t('list.fileConverter.failed', 'Conversion failed.'),
-            );
-            setBusy(false);
-          },
-        });
-
-        if (streamComplete || streamError) return;
-      }
-    } catch {
-      useStreaming = false;
-    }
-
-    if (!useStreaming) {
-      loadingModal.update(
-        t('list.fileConverter.converting', 'Converting file…'),
-      );
-      const result = await api('/api/convert', {
-        method: 'POST',
-        body: {
-          dataUrl,
-          filename: selectedFile.name,
-          lang,
-          theme: themeId,
-        },
-      });
-
-      if (result.success && result.presentation) {
-        loadingModal.update(t('common.done', 'Done'), { immediate: true });
-        loadingModal.setProgress(100);
-        await new Promise((r) => setTimeout(r, 500));
-        loadingModal.close();
-        close();
-        nav(`/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`);
-      } else {
-        loadingModal.close();
-        showBackdrop?.();
-        setStatus(
-          result.error || t('list.fileConverter.failed', 'Conversion failed.'),
-        );
-        setBusy(false);
-      }
-    }
+    const result = await createStreamingImport({
+      url: '/api/convert/stream',
+      body: { dataUrl, filename: selectedFile.name, lang, theme: themeId },
+      progressBinding,
+      failureMessage: t('list.fileConverter.failed', 'Conversion failed.'),
+    });
+    rotator.stop();
+    loadingModal.update(t('common.done', 'Done'), { immediate: true });
+    loadingModal.setProgress(100);
+    await new Promise((r) => setTimeout(r, 500));
+    loadingModal.close();
+    close();
+    nav(`/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`);
   } catch (e) {
     rotator.stop();
     loadingModal.close();
@@ -538,7 +539,6 @@ export async function handlePasteMarkdown({
  * Handle Notion import
  */
 export async function handleNotion({
-  api,
   root,
   notionUrl,
   themeId,
@@ -581,101 +581,25 @@ export async function handleNotion({
   const progressBinding = createProgressBinding({ loadingModal, rotator });
 
   try {
-    let useStreaming = true;
-
-    try {
-      // SSE stream: progress events are read from response.body.
-      // eslint-disable-next-line no-restricted-syntax
-      const response = await fetch('/api/notion/import/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: notionUrl,
-          theme: themeId,
-        }),
-      });
-
-      if (!response.ok || !response.body) {
-        useStreaming = false;
-      } else {
-        let streamComplete = false;
-        let streamError = false;
-
-        await processSSEStream(response.body, {
-          onStatus: progressBinding.onStatus,
-          onMessages: progressBinding.onMessages,
-          onComplete: async (data) => {
-            streamComplete = true;
-            rotator.stop();
-            const result = data;
-            const detectedLang =
-              normalizeLang(result.detectedLang) ||
-              normalizeLang(result.presentation?.lang) ||
-              DEFAULT_DECK_LANG;
-            loadingModal.update(t('common.done', 'Done'), { immediate: true });
-            loadingModal.setProgress(100);
-            await new Promise((r) => setTimeout(r, 500));
-            loadingModal.close();
-            close();
-            nav(
-              `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
-            );
-          },
-          onError: (data) => {
-            streamError = true;
-            rotator.stop();
-            loadingModal.close();
-            showBackdrop?.();
-            setStatus(
-              data?.message ||
-                t('list.newPresentation.notion.failed', 'Import failed.'),
-            );
-            setBusy(false);
-          },
-        });
-
-        if (streamComplete || streamError) return;
-      }
-    } catch {
-      useStreaming = false;
-    }
-
-    // Fallback to non-streaming endpoint
-    if (!useStreaming) {
-      loadingModal.update(
-        t('list.newPresentation.notion.importing', 'Importing Notion page…'),
-      );
-      const result = await api('/api/notion/import', {
-        method: 'POST',
-        body: {
-          url: notionUrl,
-          theme: themeId,
-        },
-      });
-
-      if (result.success && result.presentation) {
-        const detectedLang =
-          normalizeLang(result.detectedLang) ||
-          normalizeLang(result.presentation?.lang) ||
-          DEFAULT_DECK_LANG;
-        loadingModal.update(t('common.done', 'Done'), { immediate: true });
-        loadingModal.setProgress(100);
-        await new Promise((r) => setTimeout(r, 500));
-        loadingModal.close();
-        close();
-        nav(
-          `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
-        );
-      } else {
-        loadingModal.close();
-        showBackdrop?.();
-        setStatus(
-          result.error ||
-            t('list.newPresentation.notion.failed', 'Import failed.'),
-        );
-        setBusy(false);
-      }
-    }
+    const result = await createStreamingImport({
+      url: '/api/notion/import/stream',
+      body: { url: notionUrl, theme: themeId },
+      progressBinding,
+      failureMessage: t('list.newPresentation.notion.failed', 'Import failed.'),
+    });
+    rotator.stop();
+    const detectedLang =
+      normalizeLang(result.detectedLang) ||
+      normalizeLang(result.presentation?.lang) ||
+      DEFAULT_DECK_LANG;
+    loadingModal.update(t('common.done', 'Done'), { immediate: true });
+    loadingModal.setProgress(100);
+    await new Promise((r) => setTimeout(r, 500));
+    loadingModal.close();
+    close();
+    nav(
+      `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
+    );
   } catch (e) {
     rotator.stop();
     loadingModal.close();
