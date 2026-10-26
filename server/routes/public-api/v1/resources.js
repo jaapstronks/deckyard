@@ -3,9 +3,7 @@
  * Provides access to themes, slide types, and image library.
  */
 
-import { sandboxEnabled } from '../../../config/sandbox.js';
-import { listThemes } from '../../../storage/themes.js';
-import { getDefaultThemeId } from '../../../storage/settings.js';
+import { listOfferedThemes } from '../../../services/theme.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
@@ -27,31 +25,17 @@ import { listImageLibraryTags } from '../../../storage/image-library.js';
 async function handleThemes(ctx) {
   if (!requirePermission(ctx, 'read')) return true;
 
-  // A key acts in the organization it belongs to; the storage scope built by
-  // the v1 auth middleware carries exactly that.
-  const routeCtx = ctx.storageScope;
-
-  const [records, defaultThemeId] = await Promise.all([
-    listThemes(routeCtx),
-    getDefaultThemeId(routeCtx),
-  ]);
-  const visible = sandboxEnabled()
-    ? records.filter((theme) => theme.source === 'seed')
-    : records;
-  const allThemes = visible.map((t) => ({
-    id: t.id,
-    slug: t.slug,
-    source: t.source,
-    label: t.label,
-    logoUrl: t.logoUrl || null,
-    colors: t.colors || null,
-    fonts: t.fonts || null,
-    isDefault: t.id === defaultThemeId,
+  const { themes } = await listOfferedThemes(ctx.storageScope);
+  const allThemes = themes.map((theme) => ({
+    id: theme.id,
+    slug: theme.slug,
+    source: theme.source,
+    label: theme.label,
+    logoUrl: theme.logoUrl || null,
+    colors: theme.colors || null,
+    fonts: theme.fonts || null,
+    isDefault: theme.isDefault,
   }));
-  allThemes.sort((a, b) => {
-    if (a.source !== b.source) return a.source === 'organization' ? -1 : 1;
-    return String(a.label).localeCompare(String(b.label));
-  });
 
   await apiSuccess(ctx, {
     themes: allThemes,

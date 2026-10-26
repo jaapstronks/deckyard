@@ -80,7 +80,7 @@ import {
   loadAiThemeContext,
   settleNewDeckTheme,
 } from '../utils/themes.js';
-import { listThemes } from '../storage/themes.js';
+import { listOfferedThemes } from '../services/theme.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
 import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
@@ -1085,9 +1085,9 @@ export function registerTools(
       properties: {},
     },
     async (_args, context) => {
-      const records = await listThemes(storageScopeOf(context));
+      const { themes } = await listOfferedThemes(storageScopeOf(context));
       return {
-        themes: records.map((theme) => ({
+        themes: themes.map((theme) => ({
           id: theme.id,
           slug: theme.slug,
           source: theme.source,

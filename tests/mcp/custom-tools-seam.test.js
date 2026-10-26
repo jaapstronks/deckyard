@@ -43,6 +43,8 @@ import {
 } from '../../server/mcp/authorization.js';
 import { resolveScope } from '../../server/storage/scope.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
+import { createFakeDb } from '../helpers/fake-db.js';
+import { __setTestDb } from '../../server/db/client.js';
 
 const OWNER = 'owner@example.com';
 const SCHEMA = { type: 'object', properties: {} };
@@ -162,10 +164,41 @@ describe('custom-tools seam — enriching a core tool keeps its gate', () => {
   it('runs the fork wrapper around the core handler', async () => {
     const server = serverWithEnrichingRegistrar();
 
-    const result = await server.tools.get('list_themes').handler({}, {});
-
-    assert.equal(result.enriched, true);
-    assert.ok(Array.isArray(result.themes));
+    // The catalog reads organization policy as well as theme records (B845).
+    const themeId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    __setTestDb(
+      createFakeDb({
+        organizations: [
+          {
+            id: getDefaultOrganizationId(),
+            name: 'Default',
+            slug: 'default',
+            settings: { defaultThemeId: themeId, enabledThemes: [themeId] },
+          },
+        ],
+        themes: [
+          {
+            id: themeId,
+            organization_id: null,
+            slug: 'brand',
+            label: 'Brand',
+            colors: {},
+            fonts: {},
+            config: {},
+          },
+        ],
+      }),
+    );
+    try {
+      const result = await server.tools.get('list_themes').handler({}, {});
+      assert.equal(result.enriched, true);
+      assert.deepEqual(
+        result.themes.map((theme) => theme.id),
+        [themeId],
+      );
+    } finally {
+      __setTestDb(null);
+    }
   });
 });
 
