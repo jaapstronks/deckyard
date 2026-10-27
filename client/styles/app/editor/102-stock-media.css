@@ -13,12 +13,19 @@
 
 .stock-media-search-row {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--ps-space-2);
+}
+
+.stock-media-search-row .btn,
+.stock-media-load-more {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .stock-media-search-input {
   flex: 1;
-  min-width: 200px;
+  min-width: min(200px, 100%);
 }
 
 /* Stock media grid */

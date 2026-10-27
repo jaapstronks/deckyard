@@ -21,6 +21,7 @@
   color: hsl(var(--app-text-secondary));
   cursor: pointer;
   transition: all var(--ps-transition-fast);
+  min-height: 44px;
 }
 
 .tag-filter-btn:hover {
@@ -56,8 +57,9 @@
   position: absolute;
   top: calc(100% + var(--ps-space-1));
   right: 0;
-  min-width: 220px;
-  max-width: 300px;
+  /* Never wider than the viewport, so the clear action stays reachable. */
+  min-width: min(220px, calc(100vw - var(--ps-space-4)));
+  max-width: min(300px, calc(100vw - var(--ps-space-4)));
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg);
@@ -140,6 +142,7 @@
 
 .tag-filter-clear {
   width: 100%;
+  min-height: 44px;
   padding: var(--ps-space-2);
   border: none;
   border-top: 1px solid hsl(var(--app-border-default));

@@ -61,6 +61,7 @@ export function openVersionsModal({
   theme,
 } = {}) {
   const modal = createModal({
+    modalClass: 'versions-modal',
     title: t('editor.versions.title', 'Versions'),
     hint: t(
       'editor.versions.hint',

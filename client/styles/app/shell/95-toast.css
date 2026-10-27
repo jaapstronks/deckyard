@@ -20,6 +20,8 @@
   margin-top: 10px;
   pointer-events: auto;
   display: flex;
+  /* The action moves under the message when both do not fit. */
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--ps-space-2);
   border-radius: var(--ps-radius-xl);
@@ -78,6 +80,9 @@
 .toast-action {
   flex: none;
   align-self: center;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
   appearance: none;
   cursor: pointer;
   border: 1px solid hsl(var(--app-border-default));
@@ -88,7 +93,10 @@
   font-weight: 600;
   padding: 4px var(--ps-space-2);
   border-radius: var(--ps-radius-md);
-  white-space: nowrap;
+  /* Short labels stay on one line; a long one wraps at word boundaries
+     inside the button rather than running out of a narrow toast. */
+  white-space: normal;
+  text-wrap: balance;
 }
 .toast-action:hover {
   background: hsl(var(--app-bg-hover));

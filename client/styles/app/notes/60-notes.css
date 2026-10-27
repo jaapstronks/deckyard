@@ -83,11 +83,16 @@
 }
 
 @media (max-width: 480px) {
+  /* Flex, not a two-column grid: the two preview buttons stack when their
+     labels do not fit side by side; the position line goes underneath. */
   .notes-preview-controls {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      'prev next'
-      'meta meta';
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .notes-preview-controls .notes-preview-meta {
+    order: 1;
+    flex-basis: 100%;
   }
   .notes-preview-prev {
     grid-area: prev;
@@ -228,6 +233,21 @@
 }
 .notes-controls > .help {
   margin-bottom: var(--ps-space-2);
+}
+/* Whole remote buttons wrap; a long label wraps inside its own button. */
+.notes-controls > .row {
+  flex-wrap: wrap;
+}
+.notes-controls .btn,
+.notes-preview-controls .btn,
+.notes-qa-footer .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+}
+/* One long word (sv Förhandsgranskning) hyphenates inside its button. */
+.notes-preview-controls .btn {
+  hyphens: auto;
 }
 .notes-body {
   line-height: 1.45;
