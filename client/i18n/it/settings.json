@@ -616,7 +616,7 @@
   "settings.slideTypes.slugReadonly": "Lo slug non può essere modificato dopo la creazione.",
   "settings.slideTypes.title": "Tipi di slide",
   "settings.slideTypes.toggleType": "Attiva/disattiva {type}",
-  "settings.slideTypes.unpublish": "Annulla la pubblicazione",
+  "settings.slideTypes.unpublish": "Annulla pubblicazione",
   "settings.slideTypes.updateSuccess": "Tipo di slide aggiornato.",
   "settings.slideTypes.usage": "Regole d'uso per l'IA",
   "settings.slideTypes.usageHint": "Regole che un assistente IA deve seguire quando compila questo tipo di slide: fonti, date di riferimento, spiegazioni obbligatorie. Non è una descrizione di che cosa sia il tipo: a questo servono il nome e i campi.",
