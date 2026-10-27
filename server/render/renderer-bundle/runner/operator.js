@@ -27,12 +27,7 @@ import {
 } from './build.js';
 import { PATHS, loadInstallation, loadControl } from './paths.js';
 import { saveLedger } from './ledger.js';
-import {
-  readFrame,
-  OUTPUT_LIMIT,
-  validateRequest,
-  parseJson,
-} from './protocol.js';
+import { readFrame, OUTPUT_LIMIT, parseRequest } from './protocol.js';
 
 const source = path.dirname(fileURLToPath(import.meta.url));
 function freeze(dir) {
@@ -247,7 +242,7 @@ export async function registerBundle(sourceStore, hash) {
  * cannot read the root-only installation config, state or supervisor socket. */
 export async function callRunner(requestFile) {
   const bytes = readFileSync(requestFile);
-  validateRequest(parseJson(bytes));
+  parseRequest(bytes);
   const socket = net.createConnection({
     path: PATHS.socket,
     allowHalfOpen: true,

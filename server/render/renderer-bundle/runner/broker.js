@@ -15,13 +15,7 @@ import {
   jobPaths,
   isInternalId,
 } from './paths.js';
-import {
-  parseJson,
-  validateRequest,
-  readFrame,
-  isRequestId,
-  responseBytes,
-} from './protocol.js';
+import { parseRequest, readFrame, responseBytes } from './protocol.js';
 import { lifecycleChannel } from './channel.js';
 import { SELF_TEST_RESULT } from './policy.js';
 
@@ -139,10 +133,9 @@ export async function startBroker() {
               schema: 'deckyard.renderer-runner.request/1',
               requestId: 'runner-self-test',
               rendererHash: config.build.selfTestHash,
-              input: {
-                schema: 'deckyard.edition-input/1',
-                presentation: { slides: [] },
-              },
+              input: Buffer.from(
+                '{"schema":"deckyard.edition-input/1","presentation":{"slides":[]}}',
+              ),
             },
           },
           job: null,
@@ -289,11 +282,9 @@ export async function startBroker() {
           .then((bytes) => {
             if (socket.destroyed || !ready) return;
             try {
-              const parsed = parseJson(bytes);
-              if (isRequestId(parsed?.requestId))
-                token.request = { requestId: parsed.requestId };
-              token.request = validateRequest(parsed);
-            } catch {
+              token.request = parseRequest(bytes);
+            } catch (error) {
+              token.request = { requestId: error.requestId ?? null };
               answer(token, { code: 'invalid_request' });
               return;
             }

@@ -25,10 +25,15 @@ const exact = (v, keys) =>
   Object.keys(v).length === keys.length &&
   keys.every((k) => Object.hasOwn(v, k));
 
-/** Strict UTF-8 JSON, including duplicate keys at every depth. Depth is bounded
- * before JSON.parse, which also keeps pathological inputs inside admission. */
-export function parseJson(bytes) {
-  const source = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+/** Strict UTF-8 JSON grammar, including duplicate keys at every depth and a
+ * byte-order mark. Depth is bounded before any tree is built. Values are not
+ * materialised: the scan returns character offsets, and only the members named
+ * in `want` (a nested key map) record their own offsets for the caller. */
+function scan(bytes, want = null) {
+  const source = new TextDecoder('utf-8', {
+    fatal: true,
+    ignoreBOM: true,
+  }).decode(bytes);
   let i = 0;
   const whitespace = () => {
     while (/[\t\r\n ]/.test(source[i] || '\0')) i++;
@@ -42,51 +47,62 @@ export function parseJson(bytes) {
     }
     throw new Error('invalid_request');
   }
-  function value(depth) {
+  // `wanted` is null for an unrecorded value, true for a recorded leaf, or a
+  // key map whose members are recorded too. Unrecorded values allocate nothing.
+  function value(depth, wanted) {
     if (depth > 64) throw new Error('invalid_request');
     whitespace();
-    const c = source[i];
-    if (c === '"') {
-      string();
-      return;
-    }
-    if (c === '{' || c === '[') {
+    const start = i,
+      c = source[i];
+    let keys = 0,
+      members = null;
+    if (c === '"') string();
+    else if (c === '{' || c === '[') {
       const end = c === '{' ? '}' : ']';
-      const keys = new Set();
+      const seen = new Set();
+      if (wanted && wanted !== true) members = new Map();
       i++;
       whitespace();
-      if (source[i] === end) {
-        i++;
-        return;
-      }
-      for (;;) {
-        whitespace();
-        if (c === '{') {
-          if (source[i] !== '"') throw new Error('invalid_request');
-          const key = string();
-          if (keys.has(key)) throw new Error('invalid_request');
-          keys.add(key);
+      if (source[i] === end) i++;
+      else
+        for (;;) {
           whitespace();
-          if (source[i++] !== ':') throw new Error('invalid_request');
+          let inner = null;
+          if (c === '{') {
+            if (source[i] !== '"') throw new Error('invalid_request');
+            const key = string();
+            if (seen.has(key)) throw new Error('invalid_request');
+            seen.add(key);
+            keys++;
+            whitespace();
+            if (source[i++] !== ':') throw new Error('invalid_request');
+            if (members && Object.hasOwn(wanted, key))
+              members.set(key, (inner = value(depth + 1, wanted[key])));
+          }
+          if (!inner) value(depth + 1, null);
+          whitespace();
+          if (source[i] === end) {
+            i++;
+            break;
+          }
+          if (source[i++] !== ',') throw new Error('invalid_request');
         }
-        value(depth + 1);
-        whitespace();
-        if (source[i] === end) {
-          i++;
-          return;
-        }
-        if (source[i++] !== ',') throw new Error('invalid_request');
-      }
+    } else {
+      while (i < source.length && !/[\s,\]}]/.test(source[i])) i++;
+      if (start === i) throw new Error('invalid_request');
+      JSON.parse(source.slice(start, i));
     }
-    const start = i;
-    while (i < source.length && !/[\s,\]}]/.test(source[i])) i++;
-    if (start === i) throw new Error('invalid_request');
-    JSON.parse(source.slice(start, i));
+    return wanted ? { start, end: i, keys, members } : null;
   }
-  value(0);
+  const root = value(0, want ?? true);
   whitespace();
   if (i !== source.length) throw new Error('invalid_request');
-  return JSON.parse(source);
+  return { source, root };
+}
+
+/** Strict JSON for small lifecycle frames and the bounded guest output. */
+export function parseJson(bytes) {
+  return JSON.parse(scan(bytes).source);
 }
 
 /** ASCII correlation identifier; final line terminators are not identifiers. */
@@ -99,21 +115,56 @@ export function isRequestId(value) {
   );
 }
 
-/** Validate the closed caller envelope without importing historical code. */
-export function validateRequest(v) {
-  if (
-    !exact(v, ['schema', 'requestId', 'rendererHash', 'input']) ||
-    v.schema !== 'deckyard.renderer-runner.request/1' ||
-    !isRequestId(v.requestId) ||
-    !isRendererHash(v.rendererHash) ||
-    !object(v.input) ||
-    v.input.schema !== EDITION_INPUT_SCHEMA ||
-    !object(v.input.presentation) ||
-    !Array.isArray(v.input.presentation.slides)
-  ) {
-    throw new Error('invalid_request');
+const REQUEST_MEMBERS = Object.freeze({
+  schema: true,
+  requestId: true,
+  rendererHash: true,
+  input: { schema: true, presentation: { slides: true } },
+});
+
+/** Validate the closed caller envelope without importing historical code or
+ * building the input tree. Only the envelope scalars are parsed; the input
+ * stays the caller's own validated JSON bytes, so a queued request costs at
+ * most its 16 MiB body (§2). A refusal carries a decodable requestId. */
+export function parseRequest(bytes) {
+  let scanned;
+  try {
+    scanned = scan(bytes, REQUEST_MEMBERS);
+  } catch {
+    throw Object.assign(new Error('invalid_request'), { requestId: null });
   }
-  return v;
+  const { source, root } = scanned;
+  const kind = (node) => source[node?.start];
+  const text = (node) => source.slice(node.start, node.end);
+  const scalar = (node) =>
+    node && kind(node) !== '{' && kind(node) !== '['
+      ? JSON.parse(text(node))
+      : undefined;
+  const members = root.members;
+  const requestId = scalar(members?.get('requestId'));
+  const input = members?.get('input');
+  const presentation = input?.members?.get('presentation');
+  if (
+    kind(root) !== '{' ||
+    root.keys !== 4 ||
+    members.size !== 4 ||
+    scalar(members.get('schema')) !== 'deckyard.renderer-runner.request/1' ||
+    !isRequestId(requestId) ||
+    !isRendererHash(scalar(members.get('rendererHash'))) ||
+    kind(input) !== '{' ||
+    scalar(input.members.get('schema')) !== EDITION_INPUT_SCHEMA ||
+    kind(presentation) !== '{' ||
+    kind(presentation.members.get('slides')) !== '['
+  )
+    throw Object.assign(new Error('invalid_request'), {
+      requestId: isRequestId(requestId) ? requestId : null,
+    });
+  return {
+    schema: 'deckyard.renderer-runner.request/1',
+    requestId,
+    rendererHash: scalar(members.get('rendererHash')),
+    input: Buffer.from(text(input)),
+  };
 }
 
 /** Discard all guest metadata. A valid sealed object is diagnostic data only. */
@@ -197,14 +248,17 @@ export function responseBytes(request, outcome, runnerId) {
     )
       v = { ...base, ok: false, code: 'output_limit' };
   }
-  let body = Buffer.from(JSON.stringify(v));
-  if (body.length > OUTPUT_LIMIT)
-    body = Buffer.from(
-      JSON.stringify({ ...base, ok: false, code: 'output_limit' }),
-    );
-  const header = Buffer.alloc(4);
-  header.writeUInt32BE(body.length);
-  return Buffer.concat([header, body]);
+  let json = JSON.stringify(v),
+    length = Buffer.byteLength(json);
+  if (length > OUTPUT_LIMIT) {
+    json = JSON.stringify({ ...base, ok: false, code: 'output_limit' });
+    length = Buffer.byteLength(json);
+  }
+  // One allocation for header and body: no second 64 MiB copy in the broker.
+  const framed = Buffer.allocUnsafe(4 + length);
+  framed.writeUInt32BE(length);
+  framed.write(json, 4);
+  return framed;
 }
 
 /** Read one frame and EOF against one absolute deadline. Call only after peer

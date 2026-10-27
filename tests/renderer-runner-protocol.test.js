@@ -4,7 +4,7 @@ import net from 'node:net';
 import { once } from 'node:events';
 import {
   parseJson,
-  validateRequest,
+  parseRequest,
   validateOutput,
   responseBytes,
   readFrame,
@@ -46,15 +46,42 @@ test('strict JSON refuses duplicate decoded keys, malformed UTF-8, trailing valu
   );
 });
 
+const refused = (v) => {
+  try {
+    parseRequest(typeof v === 'string' ? Buffer.from(v) : bytes(v));
+  } catch (error) {
+    assert.equal(error.message, 'invalid_request');
+    return error.requestId;
+  }
+  assert.fail('request accepted');
+};
+
 test('caller envelope has one exact schema and no path, command, environment or limit knobs', () => {
-  assert.deepEqual(validateRequest(request()), request());
+  const parsed = parseRequest(bytes(request()));
+  assert.deepEqual(
+    { ...parsed, input: JSON.parse(parsed.input) },
+    { ...request() },
+  );
   for (const key of Object.keys(request())) {
     const v = request();
     delete v[key];
-    assert.throws(() => validateRequest(v));
+    refused(v);
   }
-  for (const key of ['path', 'env', 'command', 'runnerId', 'limits'])
-    assert.throws(() => validateRequest({ ...request(), [key]: {} }));
+  for (const key of [
+    'path',
+    'env',
+    'command',
+    'runnerId',
+    'limits',
+    '__proto__',
+    'constructor',
+  ])
+    assert.equal(
+      refused(
+        JSON.stringify(request()).replace(/}$/, `,${JSON.stringify(key)}:{}}`),
+      ),
+      'a_1',
+    );
   for (const patch of [
     { requestId: null },
     { requestId: 'x'.repeat(65) },
@@ -64,6 +91,8 @@ test('caller envelope has one exact schema and no path, command, environment or 
     { rendererHash: 'A'.repeat(64) },
     { schema: 'other' },
     { input: [] },
+    { input: { schema: 'other', presentation: { slides: [] } } },
+    { input: { schema: 'deckyard.edition-input/1', presentation: [] } },
     {
       input: {
         schema: 'deckyard.edition-input/1',
@@ -71,7 +100,38 @@ test('caller envelope has one exact schema and no path, command, environment or 
       },
     },
   ])
-    assert.throws(() => validateRequest({ ...request(), ...patch }));
+    refused({ ...request(), ...patch });
+  assert.equal(refused({ ...request(), schema: 'other' }), 'a_1');
+  assert.equal(refused({ ...request(), requestId: 'a\n' }), null);
+  assert.equal(refused(`\ufeff${JSON.stringify(request())}`), null);
+  assert.equal(
+    refused(
+      JSON.stringify(request()).replace(
+        '"slides":[]',
+        '"slides":[{"a":1,"a":2}]',
+      ),
+    ),
+    null,
+  );
+});
+
+test('the validated input is forwarded as the caller bytes, not a rebuilt tree', () => {
+  const source =
+    '{ "input" : {"presentation":{ "title":"\\u0041", "slides":[ {} ] },"schema":"deckyard.edition-input/1"},' +
+    '"schema":"deckyard.renderer-runner.request/1","requestId":"r","rendererHash":"' +
+    'b'.repeat(64) +
+    '"}';
+  const parsed = parseRequest(Buffer.from(source));
+  assert.equal(
+    parsed.input.toString(),
+    '{"presentation":{ "title":"\\u0041", "slides":[ {} ] },"schema":"deckyard.edition-input/1"}',
+  );
+  assert.deepEqual(Object.keys(parsed), [
+    'schema',
+    'requestId',
+    'rendererHash',
+    'input',
+  ]);
 });
 
 test('guest metadata has no authority: valid lies disappear, invalid output is refused', () => {

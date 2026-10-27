@@ -68,18 +68,19 @@ async function execute() {
       cwd: '/',
     },
   );
-  const chunks = [];
+  // The single bounded stdout buffer of §2; chunks are not retained twice.
+  const output = Buffer.allocUnsafe(OUTPUT_LIMIT);
   let length = 0,
     stderr = 0,
     violation = false;
   child.stdout.on('data', (chunk) => {
-    length += chunk.length;
-    if (length > OUTPUT_LIMIT && !violation) {
+    if (violation) return;
+    if (length + chunk.length > OUTPUT_LIMIT) {
       violation = true;
       child.stdout.pause();
       child.stderr.pause();
       parentPort.postMessage({ cancel: 'output_limit' });
-    } else chunks.push(chunk);
+    } else length += chunk.copy(output, length);
   });
   child.stderr.on('data', (chunk) => {
     stderr += chunk.length;
@@ -91,7 +92,7 @@ async function execute() {
     }
   });
   child.stdin.on('error', () => {});
-  child.stdin.end(JSON.stringify(request.input));
+  child.stdin.end(request.input);
   const code = await new Promise((resolve, reject) => {
     child.once('error', reject);
     child.once('close', resolve);
@@ -99,7 +100,7 @@ async function execute() {
   if (violation) throw new Error('output_limit');
   if (code !== 0) throw new Error('worker_failed');
   try {
-    return validateOutput(Buffer.concat(chunks, length));
+    return validateOutput(output.subarray(0, length));
   } catch {
     throw new Error('worker_failed');
   }
