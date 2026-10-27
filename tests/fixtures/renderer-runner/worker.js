@@ -29,11 +29,19 @@ else if (mode === 'sleep')
 else if (mode === 'oom') {
   const held = [];
   for (;;) held.push(Buffer.alloc(8 * 1024 * 1024, 1));
-} else if (mode === 'stdout')
-  for (;;) process.stdout.write('x'.repeat(1024 * 1024));
-else if (mode === 'stderr')
-  for (;;) process.stderr.write('x'.repeat(1024 * 1024));
-else if (mode === 'scratch') {
+} else if (mode === 'stdout' || mode === 'stderr') {
+  // Synchronous writes on the raw descriptor: the output limit, not a queued
+  // stream growing into the memory limit, must stop this guest.
+  const fd = mode === 'stdout' ? 1 : 2;
+  const chunk = Buffer.alloc(1024 * 1024, 0x78);
+  for (;;) {
+    try {
+      fs.writeSync(fd, chunk);
+    } catch (e) {
+      if (e.code !== 'EAGAIN') throw e;
+    }
+  }
+} else if (mode === 'scratch') {
   const fd = fs.openSync('/tmp/full', 'wx');
   for (;;) fs.writeSync(fd, Buffer.alloc(1024 * 1024, 1));
 } else if (mode === 'threadstorm') {
