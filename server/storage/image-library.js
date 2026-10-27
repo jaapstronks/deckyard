@@ -12,6 +12,7 @@
  */
 
 import { getDb, sql } from '../db/client.js';
+import { normalizeAltMap } from '../../shared/slide-types/field-normalization.js';
 import { getOrgId } from '../utils/context.js';
 import { resolveScope, toStorageContext } from './scope.js';
 import { keysetPage, keysetRows } from './keyset.js';
@@ -225,7 +226,7 @@ async function createImage(data, ctx) {
       // An open map keyed by deck language, empty when the caller supplied
       // none — seeding a Dutch and an English key here made the pair look like
       // the shape of the field, which it never was (B182 fase 5).
-      alts: jsonb(data.alts || {}),
+      alts: jsonb(normalizeAltMap(data.alts)),
       sources: sql`${data.sources || []}::text[]`,
       uploaded_by: data.uploadedBy || null,
     })
@@ -247,7 +248,7 @@ async function updateImage(id, data, ctx) {
       description: data.description,
       photographer: data.photographer,
       tags: data.tags ? sql`${data.tags}::text[]` : undefined,
-      alts: data.alts ? jsonb(data.alts) : undefined,
+      alts: data.alts ? jsonb(normalizeAltMap(data.alts)) : undefined,
       sources: data.sources ? sql`${data.sources}::text[]` : undefined,
       updated_at: now(),
     })

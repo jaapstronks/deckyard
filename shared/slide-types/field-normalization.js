@@ -4,6 +4,19 @@ export const ALT_TEXT_CONSTRAINTS = Object.freeze({
   overflow: 'truncate',
 });
 
+/** Normalize the image library's language-keyed descriptive alternatives. */
+export function normalizeAltMap(alts) {
+  if (!alts || typeof alts !== 'object' || Array.isArray(alts)) return {};
+  return Object.fromEntries(
+    Object.entries(alts).map(([lang, value]) => [
+      lang,
+      typeof value === 'string'
+        ? truncateFieldText(value, ALT_TEXT_CONSTRAINTS.maxLength)
+        : value,
+    ]),
+  );
+}
+
 /**
  * Shorten text at a word boundary, reserving one UTF-16 code unit for an
  * ellipsis. Length follows HTML maxlength and field validation. A single long

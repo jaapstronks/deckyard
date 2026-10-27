@@ -98,12 +98,14 @@ async function assertChangedSlideFields(scope, pres, changes) {
   if (!buffers.some(({ slides }) => Array.isArray(slides))) return;
   const slideTypes = await buildMergedSlideTypes(scope);
   for (const { slides, before, lang } of buffers) {
-    const stored = new Map((before || []).map((s) => [s.id, canonicalJson(s)]));
+    const stored = new Map((before || []).map((s) => [s.id, s]));
     for (const slide of Array.isArray(slides) ? slides : []) {
-      if (stored.get(slide?.id) === canonicalJson(slide)) continue;
+      if (canonicalJson(stored.get(slide?.id)) === canonicalJson(slide))
+        continue;
       assertValidSlideFields(slide, slideTypes, {
         ...(lang ? { lang } : {}),
         allowMissingTranslationText: !!lang && lang !== dominant,
+        previousSlide: stored.get(slide?.id),
       });
     }
   }

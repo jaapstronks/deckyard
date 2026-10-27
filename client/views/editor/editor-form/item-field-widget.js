@@ -14,6 +14,7 @@
  */
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
+import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
 import { markLinkField } from '../fields/link-field.js';
 import { renderImageFitField } from '../fields/image-fit.js';
@@ -51,10 +52,23 @@ function itemInput(
   if (typeof placeholder === 'string' && placeholder)
     input.placeholder = placeholder;
   input.addEventListener('input', () => onChange(input.value));
-  const wrap = h('div', { class: 'stack is-field' }, [
-    h('div', { class: 'field-label', text: label }),
-    input,
-  ]);
+  const wrap = createFieldWrap(label, input);
+  if (Number(maxLength) > 0) {
+    const count = h('span', { class: 'help' });
+    const syncCount = () => {
+      count.textContent = t(
+        'editor.fields.lengthCount',
+        '{count} of {max} characters',
+        {
+          count: input.value.length,
+          max: maxLength,
+        },
+      );
+    };
+    input.addEventListener('input', syncCount);
+    syncCount();
+    wrap.append(count);
+  }
   return multiline ? wrap : markLinkField({ wrap, control: input, fieldType });
 }
 

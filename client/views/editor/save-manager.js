@@ -8,6 +8,8 @@ import {
   valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
+import { normalizeFieldContent } from '../../../shared/slide-types/field-normalization.js';
+import { getSlideType } from '../../../shared/slide-types/registry.js';
 
 // Session idle timeout: create session-end snapshot after 5 minutes of no edits
 const SESSION_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -25,6 +27,8 @@ export function createSaveManager({
   getSelectedSlideId,
   onServerTruth,
   onFieldRefusal,
+  onSaveError,
+  onFieldsNormalized,
 } = {}) {
   let dirty = false;
   let saving = false;
@@ -136,6 +140,7 @@ export function createSaveManager({
 
   const setLastError = (e) => {
     lastError = String(e?.message || e || '');
+    onSaveError?.(e || null);
     updatePills();
   };
 
@@ -491,6 +496,23 @@ export function createSaveManager({
         // ignore (best-effort)
       }
 
+      const normalizedFields = [];
+      for (const [lang, version] of Object.entries(pres.i18n.versions)) {
+        for (const slide of version.slides || []) {
+          const content = normalizeFieldContent(
+            getSlideType(slide.type, SLIDE_TYPES)?.fields,
+            slide.content,
+          );
+          if (content === slide.content) continue;
+          for (const field of Object.keys(content)) {
+            if (content[field] !== slide.content[field])
+              normalizedFields.push({ slideId: slide.id, lang, field });
+          }
+          slide.content = content;
+        }
+      }
+      onFieldsNormalized?.(normalizedFields);
+
       const sentRevision = Number(pres?.revision) || 1;
       const headers = {
         'If-Match': String(sentRevision),
@@ -553,10 +575,12 @@ export function createSaveManager({
 
     try {
       await saveInFlight;
+      onSaveError?.(null);
       onFieldRefusal?.(null);
       savedVersion = Math.max(savedVersion, savingVersion);
       lastError = '';
     } catch (e) {
+      onSaveError?.(e);
       if (e?.details?.field && e?.details?.slideId) onFieldRefusal?.(e);
       // Conflict: someone else saved a newer version. Stop autosave spam and ask user to reload.
       // Only the revision conflict blocks: another 409 (a deck over the size
