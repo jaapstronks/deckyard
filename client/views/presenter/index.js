@@ -589,8 +589,9 @@ export async function renderPresenter(root, id) {
             'presenter.leave.message',
             'Return to the editor? You can start presenting again anytime.',
           ),
-          confirmLabel: t('presenter.leave.confirm', 'Leave'),
+          confirmLabel: t('presenter.leave.confirm', 'Leave presentation'),
           cancelLabel: t('presenter.leave.stay', 'Stay'),
+          modalClass: 'presenter-leave-modal',
         });
       } finally {
         leaveConfirmOpen = false;

@@ -69,6 +69,7 @@
 .media-lib-nav-item {
   display: flex;
   align-items: center;
+  min-height: 44px;
   gap: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
   border-radius: var(--ps-radius-md);
@@ -205,6 +206,7 @@
   }
 
   .media-lib-mobile-nav-item {
+    min-height: 44px;
     padding: var(--ps-space-2) var(--ps-space-3);
     border-radius: var(--ps-radius-md);
     background: transparent;

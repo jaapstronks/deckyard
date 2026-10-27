@@ -215,7 +215,7 @@
   "list.search.resultCount.many": "Znaleziono {count} prezentacji",
   "list.search.resultCount.one": "Znaleziono 1 prezentację",
   "list.search.resultsTitle": "Wyniki wyszukiwania",
-  "list.search.title": "Szukaj",
+  "list.search.title": "Wyszukiwanie prezentacji",
   "list.search.tooShort": "Wpisz co najmniej dwa znaki, aby wyszukać.",
   "list.section.count.many": "{count} prezentacji",
   "list.section.count.one": "1 prezentacja",

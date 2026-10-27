@@ -124,7 +124,7 @@
   "slideType.pyramid-slide.field.levels.item.label.label": "Libellé du niveau",
   "slideType.pyramid-slide.field.levels.label": "Niveaux",
   "slideType.pyramid-slide.label": "Pyramide",
-  "slideType.quote-slide.field.quotes.item.authorName.label": "Nom",
+  "slideType.quote-slide.field.quotes.item.authorName.label": "Nom complet",
   "slideType.quote-slide.field.quotes.item.authorTitle.label": "Rôle / titre",
   "slideType.quote-slide.field.quotes.item.quote.label": "Citation",
   "slideType.quote-slide.label": "Citation",

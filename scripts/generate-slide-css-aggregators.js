@@ -321,6 +321,7 @@ export const APP_FEATURE_LAYER = {
     'notes/60-notes.css',
     'follow/70-follow.css',
     'presenter/72-video-layer.css',
+    'presenter/73-leave-dialog.css',
     'share-viewer/75-share-viewer.css',
     'editor/modals/19-modals-revoke.css',
     'notes/80-notes-join.css',

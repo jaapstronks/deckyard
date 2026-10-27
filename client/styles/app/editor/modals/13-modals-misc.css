@@ -292,6 +292,16 @@
   margin: 0;
 }
 
+.creation-view-footer > .row {
+  flex-wrap: wrap;
+}
+
+.creation-view-footer .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+}
+
 @media (max-width: 640px) {
   .creation-view-body {
     flex-direction: column;
@@ -728,6 +738,14 @@
 .modal.is-fill.modal-wide > .modal-content,
 .modal.is-fill.modal-compare > .modal-content {
   overflow-y: auto;
+}
+
+/* The per-version actions (preview, compare, restore, export) wrap as whole
+   buttons and keep a touch-sized target. */
+.versions-modal .editor-callout .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
 }
 
 /* Version Preview Grid */

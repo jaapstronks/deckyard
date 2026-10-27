@@ -558,6 +558,7 @@
 
 .search-header-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--ps-space-4);
@@ -567,10 +568,15 @@
 .search-header-row .presentation-grid-title {
   margin: 0;
   padding: 0;
+  min-width: 0;
+  /* A one-word compound (no Presentasjonssøk) breaks at a syllable with a
+     hyphen in the narrowest column instead of running out of it. */
+  hyphens: auto;
 }
 
 .search-clear-btn {
   flex-shrink: 0;
+  min-height: 44px;
 }
 
 .search-status {

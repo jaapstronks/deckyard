@@ -1,0 +1,16 @@
+/* The leave confirmation names its object (Leave presentation): its two
+   actions wrap as whole buttons and keep a touch-sized target, and a long
+   title hyphenates instead of running out of a narrow dialog. */
+.presenter-leave-modal .row {
+  flex-wrap: wrap;
+}
+
+.presenter-leave-modal .row > .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.presenter-leave-modal h2 {
+  hyphens: auto;
+}

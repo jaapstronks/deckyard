@@ -884,7 +884,7 @@
   "editor.versions.labelModalHint": "Lägg gärna till en etikett så att sparpunkten blir lättare att känna igen senare.",
   "editor.versions.labelModalTitle": "Skapa sparpunkt",
   "editor.versions.labelPlaceholder": "T.ex. Före stora ändringar",
-  "editor.versions.preview": "Förhandsgranskning",
+  "editor.versions.preview": "Förhandsgranska version",
   "editor.versions.preview.noSlides": "Inga slides i den här versionen.",
   "editor.versions.preview.renderError": "Det gick inte att visa",
   "editor.versions.preview.title": "Förhandsgranskning: {date}",
