@@ -199,13 +199,13 @@ const OUTPUT_MEMBERS = Object.freeze({
   details: true,
 });
 
-/** Validate one complete guest answer and frame the broker's success response
- * from it, discarding all guest metadata (a valid `sealed` object is diagnostic
- * data only). The canvas and reader values are copied as their own string
- * tokens: the strict scan proved them complete JSON strings, so no decoded
- * copies of up to 64 MiB are built and nothing else of the guest can reach the
- * caller. Returns `{frame}` with its own transferable ArrayBuffer, or `{code}`
- * when the serialized response would exceed the 64 MiB limit. */
+/** Validate one complete guest answer, discarding all guest metadata (a valid
+ * `sealed` object is diagnostic data only). The success response is described,
+ * not built: its envelope plus the byte ranges of the canvas and reader string
+ * tokens in `bytes`. The strict scan proved those tokens complete JSON strings,
+ * so the broker can send them as views on the guest output, without a decoded
+ * or framed copy of up to 64 MiB, and nothing else of the guest reaches the
+ * caller. Returns `{code}` when the response would exceed the 64 MiB limit. */
 export function validateOutput(bytes, request, runnerId) {
   let root;
   try {
@@ -226,34 +226,46 @@ export function validateOutput(bytes, request, runnerId) {
     kind(reader) === '"' &&
     kind(m.get('sealed')) === '{'
   ) {
-    const head = Buffer.from(
-      JSON.stringify({
-        schema: RESPONSE_SCHEMA,
-        requestId: request.requestId,
-        ok: true,
-        rendererHash: request.rendererHash,
-        runnerId,
-      }).slice(0, -1),
-    );
-    const parts = [
-      head,
-      Buffer.from(',"canvas":'),
-      bytes.subarray(canvas.start, canvas.end),
-      Buffer.from(',"reader":'),
-      bytes.subarray(reader.start, reader.end),
-      Buffer.from('}'),
-    ];
-    const length = parts.reduce((n, part) => n + part.length, 0);
+    const head = `${JSON.stringify({
+      schema: RESPONSE_SCHEMA,
+      requestId: request.requestId,
+      ok: true,
+      rendererHash: request.rendererHash,
+      runnerId,
+    }).slice(0, -1)},"canvas":`;
+    const length =
+      Buffer.byteLength(head) +
+      (canvas.end - canvas.start) +
+      READER.length +
+      (reader.end - reader.start) +
+      1;
     if (length > OUTPUT_LIMIT) return { code: 'output_limit' };
-    const frame = Buffer.from(new ArrayBuffer(4 + length));
-    frame.writeUInt32BE(length);
-    let offset = 4;
-    for (const part of parts) offset += part.copy(frame, offset);
-    return { frame };
+    return {
+      head,
+      canvas: [canvas.start, canvas.end],
+      reader: [reader.start, reader.end],
+      length,
+    };
   }
   // A well-formed historical refusal is still only a worker failure; its
   // message and details never cross the caller interface.
   throw new Error('worker_failed');
+}
+const READER = ',"reader":';
+
+/** The ordered pieces of a validated success frame: views on the validated
+ * guest output for the two documents, fresh bytes for everything else. */
+export function successParts(result, output) {
+  const header = Buffer.alloc(4);
+  header.writeUInt32BE(result.length);
+  return [
+    header,
+    Buffer.from(result.head),
+    output.subarray(...result.canvas),
+    Buffer.from(READER),
+    output.subarray(...result.reader),
+    Buffer.from('}'),
+  ];
 }
 
 /** A framed closed refusal. Unknown codes collapse to sandbox_unavailable. */

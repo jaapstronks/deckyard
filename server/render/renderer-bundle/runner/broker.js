@@ -15,15 +15,23 @@ import {
   jobPaths,
   isInternalId,
 } from './paths.js';
-import { parseRequest, readFrame, refusalBytes } from './protocol.js';
+import {
+  parseRequest,
+  readFrame,
+  refusalBytes,
+  successParts,
+} from './protocol.js';
 import { lifecycleChannel } from './channel.js';
 import { SELF_TEST_RESULT } from './policy.js';
 
 // The fixed capability job answers exactly its own marker in both documents.
 function selfTestPassed(result) {
-  if (!result.frame) return false;
-  const v = JSON.parse(Buffer.from(result.frame.buffer).subarray(4));
-  return v.canvas === SELF_TEST_RESULT && v.reader === SELF_TEST_RESULT;
+  if (!result.output) return false;
+  const text = (range) => JSON.parse(result.output.toString('utf8', ...range));
+  return (
+    text(result.canvas) === SELF_TEST_RESULT &&
+    text(result.reader) === SELF_TEST_RESULT
+  );
 }
 
 /** Six connection tokens, four queued validated requests, one supervisor-owned
@@ -60,9 +68,9 @@ export async function startBroker() {
     token.answered = true;
     clearTimeout(token.queueTimer);
     const deadline = performance.now() + 5000;
-    const bytes = outcome.frame
-      ? Buffer.from(outcome.frame.buffer)
-      : refusalBytes(token.request, outcome.code);
+    const parts = outcome.output
+      ? successParts(outcome, outcome.output)
+      : [refusalBytes(token.request, outcome.code)];
     if (performance.now() >= deadline) {
       token.socket.destroy();
       return;
@@ -72,7 +80,9 @@ export async function startBroker() {
       Math.max(1, deadline - performance.now()),
     );
     token.socket.once('close', () => clearTimeout(timer));
-    token.socket.end(bytes, () => {
+    token.socket.cork();
+    for (const part of parts.slice(0, -1)) token.socket.write(part);
+    token.socket.end(parts.at(-1), () => {
       clearTimeout(timer);
       token.socket.destroy();
     });
@@ -187,9 +197,20 @@ export async function startBroker() {
           if (active !== owner || owner.closed) return;
           if (message.phase === 'prepared') send('running', owner.job.id);
           else if (message.cancel || message.error) cancel();
-          else if (message.result && !owner.result)
-            owner.result = message.result;
-          else cancel();
+          else if (message.result && !owner.result) {
+            const { output } = message.result;
+            // A transferred Uint8Array view; wrap it as a Buffer without a copy.
+            owner.result = output
+              ? {
+                  ...message.result,
+                  output: Buffer.from(
+                    output.buffer,
+                    output.byteOffset,
+                    output.length,
+                  ),
+                }
+              : message.result;
+          } else cancel();
         });
         worker.once('error', cancel);
         worker.once('exit', (code) => {

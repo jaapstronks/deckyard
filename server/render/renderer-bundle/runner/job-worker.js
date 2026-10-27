@@ -100,15 +100,20 @@ async function execute() {
   if (violation) throw new Error('output_limit');
   if (code !== 0) throw new Error('worker_failed');
   try {
-    return validateOutput(output.subarray(0, length), request, config.runnerId);
+    const answer = output.subarray(0, length);
+    const result = validateOutput(answer, request, config.runnerId);
+    return result.code ? result : { ...result, output: answer };
   } catch {
     throw new Error('worker_failed');
   }
 }
 try {
   const result = await execute();
-  // The validated frame moves to the broker thread without a copy.
-  parentPort.postMessage({ result }, result.frame ? [result.frame.buffer] : []);
+  // The validated guest output moves to the broker thread without a copy.
+  parentPort.postMessage(
+    { result },
+    result.output ? [result.output.buffer] : [],
+  );
 } catch (error) {
   parentPort.postMessage({
     error: ['bundle_refused', 'worker_failed', 'output_limit'].includes(

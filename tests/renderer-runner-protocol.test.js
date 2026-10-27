@@ -6,6 +6,7 @@ import {
   parseJson,
   parseRequest,
   validateOutput,
+  successParts,
   refusalBytes,
   readFrame,
   OUTPUT_LIMIT,
@@ -135,7 +136,12 @@ test('the validated input is forwarded as the caller bytes, not a rebuilt tree',
 });
 
 const success = (bytesValue) => {
-  const { frame } = validateOutput(bytesValue, request(), 'broker');
+  const result = validateOutput(bytesValue, request(), 'broker');
+  const parts = successParts(result, bytesValue);
+  // The documents are views on the guest output, not copies.
+  assert.equal(parts[2].buffer, bytesValue.buffer);
+  assert.equal(parts[4].buffer, bytesValue.buffer);
+  const frame = Buffer.concat(parts);
   assert.equal(frame.readUInt32BE(), frame.length - 4);
   return JSON.parse(frame.subarray(4));
 };
