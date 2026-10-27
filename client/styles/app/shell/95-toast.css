@@ -73,9 +73,12 @@
   outline: var(--app-focus-ring);
   outline-offset: 2px;
 }
+/* Basis 0 keeps the message on the icon's line however long it is; the
+   minimum width decides when the action no longer fits beside it and wraps.
+   2.5rem leaves room for the icon and the gap in the narrowest toast. */
 .toast-text {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 1 1 0;
+  min-width: min(10rem, calc(100% - 2.5rem));
 }
 .toast-action {
   flex: none;

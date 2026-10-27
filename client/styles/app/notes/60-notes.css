@@ -94,15 +94,6 @@
     order: 1;
     flex-basis: 100%;
   }
-  .notes-preview-prev {
-    grid-area: prev;
-  }
-  .notes-preview-next {
-    grid-area: next;
-  }
-  .notes-preview-meta {
-    grid-area: meta;
-  }
 }
 .notes-hint {
   padding: var(--ps-space-2) var(--ps-space-3-5);
