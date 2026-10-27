@@ -66,7 +66,7 @@
   "share.guest.emailSentHelp": "Vi har sendt en bekreftelseslenke til <strong>{email}</strong>. Klikk på lenken for å begynne å kommentere.",
   "share.guest.error.generic": "Noe gikk galt. Prøv igjen.",
   "share.guest.error.invalidEmail": "Skriv inn en gyldig e-postadresse.",
-  "share.guest.error.linkExpired": "Denne delingslenken har utløpt.",
+  "share.guest.error.linkExpired": "Denne delingslenken er utløpt.",
   "share.guest.error.linkNotFound": "Delingslenke ikke funnet.",
   "share.guest.error.linkRevoked": "Denne delingslenken har blitt tilbakekalt.",
   "share.guest.error.notInvited": "Denne presentasjonen krever en invitasjon. Kontakt forfatteren for å be om tilgang.",

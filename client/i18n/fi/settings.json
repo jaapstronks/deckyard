@@ -405,7 +405,7 @@
   "settings.apiKeys.permissions.export": "Vienti",
   "settings.apiKeys.permissions.read": "Luku",
   "settings.apiKeys.permissions.write": "Kirjoitus",
-  "settings.apiKeys.revoke": "Kumoa",
+  "settings.apiKeys.revoke": "Peruuta",
   "settings.apiKeys.revokeError": "API-avaimen kumoaminen epäonnistui",
   "settings.apiKeys.revokeModal.confirm": "Kumoa avain",
   "settings.apiKeys.revokeModal.error": "API-avaimen kumoaminen epäonnistui.",

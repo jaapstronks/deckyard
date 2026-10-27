@@ -263,13 +263,6 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "es  This share link has expired.": {
-      "forms": [
-        "Este enlace compartido ha caducado.",
-        "Este enlace compartido ha expirado."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Add to team library": {
       "forms": ["Lisää tiimikirjastoon", "Lisää tiimin kirjastoon"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -326,10 +319,6 @@
       "forms": ["Vaalea", "Vaaleat"],
       "reason": "grammatical number — Vaalea is singular for tila and tekstin väri in appearance.light and editor.slideField.slideBgText.option.light; Vaaleat is plural for liukuvärit in stockMedia.gradients.tone.light."
     },
-    "fi  Never expires": {
-      "forms": ["Ei vanhene", "Ei vanhene koskaan"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Placeholder": {
       "forms": ["Ohjeteksti kentässä", "Paikkamerkki"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -340,10 +329,6 @@
     },
     "fi  Reset": {
       "forms": ["Nollaa", "Palauta"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Revoke": {
-      "forms": ["Kumoa", "Peruuta"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Right": {
@@ -495,10 +480,6 @@
     "it  Light": {
       "forms": ["Chiari", "Chiaro"],
       "reason": "grammatical agreement — Chiaro agrees with tema and testo (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Chiari agrees with gradienti (masculine plural) in stockMedia.gradients.tone.light."
-    },
-    "it  Never expires": {
-      "forms": ["Nessuna scadenza", "Non scade mai"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  New": {
       "forms": ["Nuova", "Nuovo"],
@@ -799,10 +780,6 @@
       "forms": ["Nullstill", "Tilbakestill"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Revoke": {
-      "forms": ["Tilbakekall", "Trekk tilbake"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Search slides": {
       "forms": ["Søk i lysbilder", "Søk lysbilder"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -813,13 +790,6 @@
     },
     "no  Slide library": {
       "forms": ["Lysbilde-bibliotek", "Lysbildebibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  This share link has expired.": {
-      "forms": [
-        "Denne delingslenken er utløpt.",
-        "Denne delingslenken har utløpt."
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  {count}d ago": {
@@ -1100,10 +1070,6 @@
       "forms": ["Laddar…", "Läser in…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "sv  Never expires": {
-      "forms": ["Går aldrig ut", "Utgår aldrig"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Preview": {
       "forms": ["Förhandsgranska", "Förhandsgranskning"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1126,13 +1092,6 @@
     },
     "sv  Slide library": {
       "forms": ["Slide-bibliotek", "Slidebibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  This share link has expired.": {
-      "forms": [
-        "Den här delningslänken har gått ut.",
-        "Denna delningslänk har gått ut."
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  this presentation": {
