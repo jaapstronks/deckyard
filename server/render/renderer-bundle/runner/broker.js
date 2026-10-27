@@ -138,14 +138,19 @@ export async function startBroker() {
           token: {
             internal: true,
             socket: null,
-            request: {
-              schema: 'deckyard.renderer-runner.request/1',
-              requestId: 'runner-self-test',
-              rendererHash: config.build.selfTestHash,
-              input: Buffer.from(
-                '{"schema":"deckyard.edition-input/1","presentation":{"slides":[]}}',
+            request: parseRequest(
+              Buffer.from(
+                JSON.stringify({
+                  schema: 'deckyard.renderer-runner.request/1',
+                  requestId: 'runner-self-test',
+                  rendererHash: config.build.selfTestHash,
+                  input: {
+                    schema: 'deckyard.edition-input/1',
+                    presentation: { slides: [] },
+                  },
+                }),
               ),
-            },
+            ),
           },
           job: null,
           worker: null,

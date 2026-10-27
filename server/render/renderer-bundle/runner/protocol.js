@@ -1,4 +1,4 @@
-import { TextDecoder } from 'node:util';
+import { isUtf8 } from 'node:buffer';
 import { EDITION_INPUT_SCHEMA } from '../edition-input.js';
 import { isRendererHash } from '../manifest.js';
 
@@ -18,96 +18,110 @@ export const CODES = Object.freeze([
   'worker_failed',
   'output_limit',
 ]);
-/** Strict UTF-8 JSON grammar, including duplicate keys at every depth and a
- * byte-order mark. Depth is bounded before any tree is built. Values are not
- * materialised: the scan returns character offsets, and only the members named
- * in `want` (a nested key map) record their own offsets for the caller. */
+const WHITESPACE = new Set([0x20, 0x09, 0x0a, 0x0d]);
+const ESCAPES = new Set([0x22, 0x5c, 0x2f, 0x62, 0x66, 0x6e, 0x72, 0x74]);
+const HEX = /^[0-9a-fA-F]{4}$/;
+const fail = () => {
+  throw new Error('invalid_request');
+};
+
+/** Strict UTF-8 JSON grammar on the bytes themselves, including duplicate keys
+ * at every depth and a byte-order mark. Depth is bounded and no value is
+ * decoded: the scan returns byte offsets, and only the members named in `want`
+ * (a nested key map) record their own offsets for the caller. The input is
+ * never copied, so a 64 MiB guest answer costs no second 64 MiB. */
 function scan(bytes, want = null) {
-  const source = new TextDecoder('utf-8', {
-    fatal: true,
-    ignoreBOM: true,
-  }).decode(bytes);
+  if (!isUtf8(bytes)) fail();
+  const b = bytes;
   let i = 0;
   const whitespace = () => {
-    while (/[\t\r\n ]/.test(source[i] || '\0')) i++;
+    while (WHITESPACE.has(b[i])) i++;
   };
   // Validates one string token in place. Only keys are decoded (for duplicate
-  // detection); a value token is never copied, however long it is.
+  // detection); a value token is never copied, however long it is. Bytes of
+  // 0x80 and above are parts of sequences isUtf8 has already validated.
   function string(decode) {
     const start = i++;
     for (;;) {
-      if (i >= source.length) throw new Error('invalid_request');
-      const c = source.charCodeAt(i++);
+      if (i >= b.length) fail();
+      const c = b[i++];
       if (c === 0x22) break;
-      if (c < 0x20) throw new Error('invalid_request');
+      if (c < 0x20) fail();
       if (c === 0x5c) {
-        const e = source[i++];
-        if (e === 'u') {
-          if (!/^[0-9a-fA-F]{4}$/.test(source.slice(i, i + 4)))
-            throw new Error('invalid_request');
+        const e = b[i++];
+        if (e === 0x75) {
+          if (!HEX.test(b.toString('latin1', i, i + 4))) fail();
           i += 4;
-        } else if (e === undefined || !'"\\/bfnrt'.includes(e))
-          throw new Error('invalid_request');
+        } else if (!ESCAPES.has(e)) fail();
       }
     }
-    return decode ? JSON.parse(source.slice(start, i)) : null;
+    return decode ? JSON.parse(b.toString('utf8', start, i)) : null;
   }
   // `wanted` is null for an unrecorded value, true for a recorded leaf, or a
   // key map whose members are recorded too. Unrecorded values allocate nothing.
   function value(depth, wanted) {
-    if (depth > 64) throw new Error('invalid_request');
+    if (depth > 64) fail();
     whitespace();
     const start = i,
-      c = source[i];
+      c = b[i];
     let keys = 0,
       members = null;
-    if (c === '"') string(false);
-    else if (c === '{' || c === '[') {
-      const end = c === '{' ? '}' : ']';
+    if (c === 0x22) string(false);
+    else if (c === 0x7b || c === 0x5b) {
+      const end = c === 0x7b ? 0x7d : 0x5d;
       const seen = new Set();
       if (wanted && wanted !== true) members = new Map();
       i++;
       whitespace();
-      if (source[i] === end) i++;
+      if (b[i] === end) i++;
       else
         for (;;) {
           whitespace();
           let inner = null;
-          if (c === '{') {
-            if (source[i] !== '"') throw new Error('invalid_request');
+          if (c === 0x7b) {
+            if (b[i] !== 0x22) fail();
             const key = string(true);
-            if (seen.has(key)) throw new Error('invalid_request');
+            if (seen.has(key)) fail();
             seen.add(key);
             keys++;
             whitespace();
-            if (source[i++] !== ':') throw new Error('invalid_request');
+            if (b[i++] !== 0x3a) fail();
             if (members && Object.hasOwn(wanted, key))
               members.set(key, (inner = value(depth + 1, wanted[key])));
           }
           if (!inner) value(depth + 1, null);
           whitespace();
-          if (source[i] === end) {
+          if (b[i] === end) {
             i++;
             break;
           }
-          if (source[i++] !== ',') throw new Error('invalid_request');
+          if (b[i++] !== 0x2c) fail();
         }
     } else {
-      while (i < source.length && !/[\s,\]}]/.test(source[i])) i++;
-      if (start === i) throw new Error('invalid_request');
-      JSON.parse(source.slice(start, i));
+      // Literals and numbers are ASCII; JSON.parse checks their grammar.
+      while (
+        i < b.length &&
+        !WHITESPACE.has(b[i]) &&
+        b[i] !== 0x2c &&
+        b[i] !== 0x5d &&
+        b[i] !== 0x7d
+      )
+        i++;
+      if (start === i) fail();
+      JSON.parse(b.toString('latin1', start, i));
     }
     return wanted ? { start, end: i, keys, members } : null;
   }
   const root = value(0, want ?? true);
   whitespace();
-  if (i !== source.length) throw new Error('invalid_request');
-  return { source, root };
+  if (i !== b.length) fail();
+  return root;
 }
 
 /** Strict JSON for small lifecycle frames and the bounded guest output. */
 export function parseJson(bytes) {
-  return JSON.parse(scan(bytes).source);
+  scan(bytes);
+  return JSON.parse(bytes.toString('utf8'));
 }
 
 /** ASCII correlation identifier; final line terminators are not identifiers. */
@@ -132,15 +146,14 @@ const REQUEST_MEMBERS = Object.freeze({
  * stays the caller's own validated JSON bytes, so a queued request costs at
  * most its 16 MiB body (§2). A refusal carries a decodable requestId. */
 export function parseRequest(bytes) {
-  let scanned;
+  let root;
   try {
-    scanned = scan(bytes, REQUEST_MEMBERS);
+    root = scan(bytes, REQUEST_MEMBERS);
   } catch {
     throw Object.assign(new Error('invalid_request'), { requestId: null });
   }
-  const { source, root } = scanned;
-  const kind = (node) => source[node?.start];
-  const text = (node) => source.slice(node.start, node.end);
+  const kind = (node) => node && String.fromCharCode(bytes[node.start]);
+  const text = (node) => bytes.toString('utf8', node.start, node.end);
   const scalar = (node) =>
     node && kind(node) !== '{' && kind(node) !== '['
       ? JSON.parse(text(node))
@@ -164,11 +177,15 @@ export function parseRequest(bytes) {
     throw Object.assign(new Error('invalid_request'), {
       requestId: isRequestId(requestId) ? requestId : null,
     });
+  // Its own ArrayBuffer: structured clone to the job worker copies exactly the
+  // input, never a pooled or larger backing store.
+  const owned = Buffer.from(new ArrayBuffer(input.end - input.start));
+  bytes.copy(owned, 0, input.start, input.end);
   return {
     schema: 'deckyard.renderer-runner.request/1',
     requestId,
     rendererHash: scalar(members.get('rendererHash')),
-    input: Buffer.from(text(input)),
+    input: owned,
   };
 }
 
@@ -190,16 +207,15 @@ const OUTPUT_MEMBERS = Object.freeze({
  * caller. Returns `{frame}` with its own transferable ArrayBuffer, or `{code}`
  * when the serialized response would exceed the 64 MiB limit. */
 export function validateOutput(bytes, request, runnerId) {
-  let scanned;
+  let root;
   try {
-    scanned = scan(bytes, OUTPUT_MEMBERS);
+    root = scan(bytes, OUTPUT_MEMBERS);
   } catch {
     throw new Error('worker_failed');
   }
-  const { source, root } = scanned;
   const m = root.members;
-  const kind = (node) => source[node?.start];
-  const text = (node) => source.slice(node.start, node.end);
+  const kind = (node) => node && String.fromCharCode(bytes[node.start]);
+  const text = (node) => bytes.toString('utf8', node.start, node.end);
   if (kind(root) !== '{' || root.keys !== 4 || m.size !== 4)
     throw new Error('worker_failed');
   const [ok, canvas, reader] = ['ok', 'canvas', 'reader'].map((k) => m.get(k));
@@ -210,7 +226,7 @@ export function validateOutput(bytes, request, runnerId) {
     kind(reader) === '"' &&
     kind(m.get('sealed')) === '{'
   ) {
-    const parts = [
+    const head = Buffer.from(
       JSON.stringify({
         schema: RESPONSE_SCHEMA,
         requestId: request.requestId,
@@ -218,18 +234,21 @@ export function validateOutput(bytes, request, runnerId) {
         rendererHash: request.rendererHash,
         runnerId,
       }).slice(0, -1),
-      ',"canvas":',
-      text(canvas),
-      ',"reader":',
-      text(reader),
-      '}',
+    );
+    const parts = [
+      head,
+      Buffer.from(',"canvas":'),
+      bytes.subarray(canvas.start, canvas.end),
+      Buffer.from(',"reader":'),
+      bytes.subarray(reader.start, reader.end),
+      Buffer.from('}'),
     ];
-    const length = parts.reduce((n, part) => n + Buffer.byteLength(part), 0);
+    const length = parts.reduce((n, part) => n + part.length, 0);
     if (length > OUTPUT_LIMIT) return { code: 'output_limit' };
     const frame = Buffer.from(new ArrayBuffer(4 + length));
     frame.writeUInt32BE(length);
     let offset = 4;
-    for (const part of parts) offset += frame.write(part, offset);
+    for (const part of parts) offset += part.copy(frame, offset);
     return { frame };
   }
   // A well-formed historical refusal is still only a worker failure; its
