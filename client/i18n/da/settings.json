@@ -158,7 +158,7 @@
   "organization.members.invite.hint": "Personen bliver straks medlem af organisationen. For en ny konto forsøger vi at sende et loginlink; resultatet viser, om det blev sendt.",
   "organization.members.invite.invalidEmail": "Indtast en gyldig e-mailadresse.",
   "organization.members.invite.nameHelp": "Bruges til at tiltale dem i invitationsmailen. Ignoreres, hvis de allerede har en konto.",
-  "organization.members.invite.nameLabel": "Navn",
+  "organization.members.invite.nameLabel": "Fulde navn",
   "organization.members.invite.namePlaceholder": "Valgfrit",
   "organization.members.invite.open": "Invitér",
   "organization.members.invite.roleFixed": "De bliver medlem. Kun ejeren kan invitere administratorer.",

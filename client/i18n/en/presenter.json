@@ -117,7 +117,7 @@
   "presenter.langMode": "Language mode (presenting)",
   "presenter.laser": "Laser",
   "presenter.laserToggle": "Toggle laser pointer (L)",
-  "presenter.leave.confirm": "Leave",
+  "presenter.leave.confirm": "Leave presentation",
   "presenter.leave.message": "Return to the editor? You can start presenting again anytime.",
   "presenter.leave.stay": "Stay",
   "presenter.leave.title": "Leave presentation?",

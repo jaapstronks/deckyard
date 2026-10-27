@@ -160,7 +160,7 @@
   "organization.members.invite.hint": "Personen blir medlem i organisationen direkt. För ett nytt konto försöker vi skicka en inloggningslänk; resultatet visar om den skickades.",
   "organization.members.invite.invalidEmail": "Ange en giltig e-postadress.",
   "organization.members.invite.nameHelp": "Används för att tilltala dem i inbjudningsmejlet. Ignoreras om de redan har ett konto.",
-  "organization.members.invite.nameLabel": "Namn",
+  "organization.members.invite.nameLabel": "Fullständigt namn",
   "organization.members.invite.namePlaceholder": "Valfritt",
   "organization.members.invite.open": "Bjud in",
   "organization.members.invite.roleFixed": "De går med som medlem. Bara ägaren kan bjuda in administratörer.",

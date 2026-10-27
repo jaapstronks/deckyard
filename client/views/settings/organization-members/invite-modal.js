@@ -219,7 +219,7 @@ export function showInviteModal({
   nameField.append(
     h('span', {
       class: 'field-label',
-      text: t('organization.members.invite.nameLabel', 'Name'),
+      text: t('organization.members.invite.nameLabel', 'Full name'),
     }),
     h('span', {
       class: 'help',

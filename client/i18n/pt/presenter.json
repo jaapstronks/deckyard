@@ -107,7 +107,7 @@
   "presenter.interaction.voteStatus.many": "{label}: {state} · {count} votos",
   "presenter.langMode": "Modo de idioma (apresentação)",
   "presenter.laserToggle": "Ativar ou desativar o ponteiro laser (L)",
-  "presenter.leave.confirm": "Sair",
+  "presenter.leave.confirm": "Sair da apresentação",
   "presenter.leave.message": "Voltar ao editor? Pode recomeçar a apresentar quando quiser.",
   "presenter.leave.stay": "Ficar",
   "presenter.leave.title": "Sair da apresentação?",

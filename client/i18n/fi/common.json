@@ -8,7 +8,7 @@
   "ai.generationFailed": "Luonti epäonnistui",
   "ai.streamIncomplete": "Virta päättyi ennen valmistumista",
   "analytics.allTime": "Koko ajalta",
-  "analytics.anonymous": "Nimetön",
+  "analytics.anonymous": "Anonyymi",
   "analytics.avgTime": "Keskim. aika",
   "analytics.barAriaLabel": "{date}: {views} katselukertaa",
   "analytics.chartAriaLabel": "Pylväskaavio katselukerroista ajan mittaan",

@@ -108,7 +108,7 @@
   "presenter.interactions.total": "Yhteensä: {n}",
   "presenter.langMode": "Kielitila (esitys)",
   "presenter.laserToggle": "Laserosoitin päälle/pois (L)",
-  "presenter.leave.confirm": "Poistu",
+  "presenter.leave.confirm": "Poistu esityksestä",
   "presenter.leave.message": "Palataanko editoriin? Esityksen voi käynnistää uudelleen milloin tahansa.",
   "presenter.leave.stay": "Jää",
   "presenter.leave.title": "Poistutaanko esityksestä?",

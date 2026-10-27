@@ -168,7 +168,7 @@
   "organization.members.invite.hint": "Henkilö liittyy organisaatioon heti. Uudelle tilille yritämme lähettää kirjautumislinkin; tulos kertoo, lähetettiinkö se.",
   "organization.members.invite.invalidEmail": "Anna kelvollinen sähköpostiosoite.",
   "organization.members.invite.nameHelp": "Käytetään kutsusähköpostin puhuttelussa. Jätetään huomiotta, jos hänellä on jo tili.",
-  "organization.members.invite.nameLabel": "Nimi",
+  "organization.members.invite.nameLabel": "Koko nimi",
   "organization.members.invite.namePlaceholder": "Valinnainen",
   "organization.members.invite.open": "Kutsu",
   "organization.members.invite.roleFixed": "Hän liittyy jäsenenä. Vain omistaja voi kutsua ylläpitäjiä.",

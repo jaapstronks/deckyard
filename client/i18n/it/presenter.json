@@ -105,7 +105,7 @@
   "presenter.interactions.total": "Totale: {n}",
   "presenter.langMode": "Modalità lingua (presentazione)",
   "presenter.laserToggle": "Attiva/disattiva il puntatore laser (L)",
-  "presenter.leave.confirm": "Esci",
+  "presenter.leave.confirm": "Esci dalla presentazione",
   "presenter.leave.message": "Tornare all'editor? Può riavviare la presentazione in qualsiasi momento.",
   "presenter.leave.stay": "Resta",
   "presenter.leave.title": "Uscire dalla presentazione?",

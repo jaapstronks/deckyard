@@ -8,7 +8,7 @@
   "ai.generationFailed": "Generowanie nie powiodło się",
   "ai.streamIncomplete": "Strumień zakończył się przed ukończeniem",
   "analytics.allTime": "Cały okres",
-  "analytics.anonymous": "Anonimowo",
+  "analytics.anonymous": "Anonimowy",
   "analytics.avgTime": "Śr. czas",
   "analytics.barAriaLabel": "{date}: wyświetleń: {views}",
   "analytics.chartAriaLabel": "Wykres słupkowy wyświetleń w czasie",
