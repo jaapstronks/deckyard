@@ -1,5 +1,6 @@
 import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
 import { applyAltFromPick } from './apply-pick.js';
+import { normalizeAltMap } from '../../../../shared/slide-types/field-normalization.js';
 
 /** The declarative image collection contract, or null for unrelated items. */
 export function imageCollectionSpec(field) {
@@ -227,14 +228,6 @@ export function applyBatchToCollection({
     ) {
       return { ok: false, reason: 'invalid' };
     }
-    if (
-      spec.altMaxLength &&
-      Object.values(picked.alts || {}).some(
-        (alt) => typeof alt === 'string' && alt.length > spec.altMaxLength,
-      )
-    ) {
-      return { ok: false, reason: 'invalid' };
-    }
   }
   const nextByTarget = targets.map((target) => ({
     target,
@@ -261,7 +254,7 @@ export function applyBatchToCollection({
       if (Object.hasOwn(altByLang, target.lang))
         item.alt = altByLang[target.lang];
       else if (picked.alts && Object.hasOwn(picked.alts, target.lang)) {
-        item.alt = picked.alts[target.lang] || '';
+        item.alt = normalizeAltMap(picked.alts)[target.lang] || '';
       }
       if (
         spec.nameKey &&

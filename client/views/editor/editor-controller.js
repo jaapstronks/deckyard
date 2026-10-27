@@ -397,6 +397,8 @@ export async function createEditorController({
 
   // Bridges save failures to the banner created after the topbar.
   let setSaveStatus = () => {};
+  let setSaveError = () => {};
+  let setNormalizedFields = () => {};
   // Re-reads the published-alt warning (B331). Reassigned once it exists; a
   // save transition or a publish/unpublish may change what it says.
   let syncPublishedAltWarning = () => {};
@@ -411,19 +413,9 @@ export async function createEditorController({
   const saveManager = createSaveManager({
     onFieldRefusal: (err) => {
       saveRefusal.set(err);
-      if (!err) return;
-      if (
-        err.details.lang &&
-        normalizeLang(err.details.lang) !== normalizeLang(pres.i18n?.active)
-      ) {
-        topbarApi?.revealRefusedVersion(err.details.lang);
-      }
-      setSelectedSlideIdWithLock(err.details.slideId);
-      setInspectorCollapsed(false);
-      rerenderSlideList();
-      rerenderEditor();
-      rerenderPreview();
     },
+    onSaveError: (err) => setSaveError(err),
+    onFieldsNormalized: (fields) => setNormalizedFields(fields),
     api,
     toast,
     pres,
@@ -854,10 +846,35 @@ export async function createEditorController({
   syncPublishedAltWarning = publishedAltWarning.sync;
   syncPublishedAltWarning();
 
-  const saveStatus = createSaveStatus();
+  const saveStatus = createSaveStatus({
+    pres,
+    slideTypes: SLIDE_TYPES,
+    getSelectedSlideId: () => selectedSlideId,
+    onReveal: (issue) => {
+      if (issue.lang && !topbarApi.revealRefusedVersion(issue.lang)) return;
+      setSelectedSlideIdWithLock(issue.slideId);
+      setInspectorCollapsed(false);
+      rerenderSlideList();
+      rerenderEditor();
+      rerenderPreview();
+      saveRefusal.reveal();
+      const field = Array.from(
+        shell.querySelectorAll('[data-collab-field-key]'),
+      ).find((el) => el.dataset.collabFieldKey === issue.field);
+      for (
+        let parent = field?.parentElement;
+        parent;
+        parent = parent.parentElement
+      )
+        if (parent.tagName === 'DETAILS') parent.open = true;
+      field?.querySelector('input, textarea, select, button')?.focus();
+    },
+  });
   cleanup.register('saveStatus', saveStatus.detach);
   shell.append(saveStatus.el);
   setSaveStatus = saveStatus.setStatus;
+  setSaveError = saveStatus.setError;
+  setNormalizedFields = saveStatus.setNormalized;
   setSaveStatus(saveManager.getStatus(), saveManager.getLastError());
 
   // Let the undo manager drive the topbar undo/redo button states, and set the

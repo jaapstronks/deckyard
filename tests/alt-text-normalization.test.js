@@ -72,3 +72,39 @@ test('every declared core alt shares the same limit on editor and storage folds'
   }
   assert.equal(count, 8);
 });
+
+test('library metadata normalizes per language without mutating or losing other keys', async () => {
+  const { normalizeAltMap } =
+    await import('../shared/slide-types/field-normalization.js');
+  const alts = { nl: long, 'en-GB': 'A short description' };
+  const normalized = normalizeAltMap(alts);
+  assert.equal(normalized.nl, truncateFieldText(long, 180));
+  assert.equal(normalized['en-GB'], alts['en-GB']);
+  assert.equal(alts.nl, long);
+  assert.deepEqual(normalizeAltMap(normalized), normalized);
+});
+
+test('a nested image collection uses the same canonical normalization at every depth', () => {
+  const fields = [
+    {
+      key: 'rows',
+      type: 'items',
+      itemFields: [
+        {
+          key: 'images',
+          type: 'items',
+          itemFields: [
+            { key: 'alt', type: 'string', ...ALT_TEXT_CONSTRAINTS },
+            { key: 'caption', type: 'string', maxLength: 180 },
+          ],
+        },
+      ],
+    },
+  ];
+  const original = { rows: [{ images: [{ alt: long, caption: long }] }] };
+  const normalized = normalizeFieldContent(fields, original);
+  assert.equal(normalized.rows[0].images[0].alt, truncateFieldText(long, 180));
+  assert.equal(normalized.rows[0].images[0].caption, long);
+  assert.equal(original.rows[0].images[0].alt, long);
+  assert.equal(normalizeFieldContent(fields, normalized), normalized);
+});

@@ -15,6 +15,7 @@
  */
 
 import { getSupportedLangs } from '../../../lib/format/i18n.js';
+import { normalizeAltMap } from '../../../../shared/slide-types/field-normalization.js';
 
 /**
  * @typedef {import('./picker-provider.js').PickedImage} PickedImage
@@ -59,13 +60,15 @@ export function applyAltFromPick({
   if (sourceLang) targets.add(sourceLang);
 
   const alts =
-    picked.alts && typeof picked.alts === 'object' ? picked.alts : null;
+    picked.alts && typeof picked.alts === 'object'
+      ? normalizeAltMap(picked.alts)
+      : null;
   if (alts) {
     for (const lang of targets) setAltForLang(lang, alts[lang] || '');
     return;
   }
 
-  const seed = typeof picked.alt === 'string' ? picked.alt : '';
+  const seed = normalizeAltMap({ seed: picked.alt }).seed || '';
   if (!seed) return;
   for (const lang of targets) setAltForLang(lang, seed);
 }
