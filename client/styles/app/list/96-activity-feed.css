@@ -166,6 +166,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
   padding: var(--ps-space-3);
   margin-top: var(--ps-space-2);
   font-size: var(--ps-text-sm);

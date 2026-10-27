@@ -148,6 +148,10 @@
   flex-wrap: wrap;
 }
 
+.settings-page .email-template-preview .field-label {
+  hyphens: auto;
+}
+
 .settings-page .themes-list-header .btn,
 .settings-page .api-keys-card button {
   min-width: 44px;

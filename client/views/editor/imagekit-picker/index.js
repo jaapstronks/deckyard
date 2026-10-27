@@ -204,7 +204,7 @@ export function createImageKitPanel({
       h('label', { class: 'stack is-field' }, [
         h('div', {
           class: 'field-label',
-          text: t('imagekit.search.label', 'Search'),
+          text: t('imagekit.search.label', 'Search query'),
         }),
         qInput,
       ]),

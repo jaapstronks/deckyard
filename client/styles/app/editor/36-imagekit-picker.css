@@ -143,12 +143,14 @@
 /* Search controls row */
 .imagekit-search-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: flex-end;
 }
 
 .imagekit-search-row .is-field {
-  flex: 1;
+  /* Fields stack before their labels would be squeezed. */
+  flex: 1 1 10rem;
   min-width: 0;
 }
 
@@ -157,7 +159,8 @@
 }
 
 .imagekit-search-row .btn {
-  height: 38px;
+  min-width: 44px;
+  min-height: 44px;
   flex-shrink: 0;
 }
 

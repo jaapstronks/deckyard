@@ -1162,7 +1162,7 @@
   "editor.versions.labelModalHint": "Optionally add a label to help identify this save point later.",
   "editor.versions.labelModalTitle": "Create save point",
   "editor.versions.labelPlaceholder": "E.g. Before major changes",
-  "editor.versions.preview": "Preview",
+  "editor.versions.preview": "Preview version",
   "editor.versions.preview.noSlides": "No slides in this version.",
   "editor.versions.preview.renderError": "Could not render",
   "editor.versions.preview.slideCount.many": "{count} slides",

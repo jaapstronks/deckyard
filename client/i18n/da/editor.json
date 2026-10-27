@@ -876,7 +876,7 @@
   "editor.versions.labelModalHint": "Tilføj eventuelt en etiket, så gemmepunktet er lettere at genkende senere.",
   "editor.versions.labelModalTitle": "Opret gemmepunkt",
   "editor.versions.labelPlaceholder": "F.eks. Før store ændringer",
-  "editor.versions.preview": "Forhåndsvisning",
+  "editor.versions.preview": "Forhåndsvis version",
   "editor.versions.preview.noSlides": "Ingen slides i denne version.",
   "editor.versions.preview.renderError": "Kunne ikke vises",
   "editor.versions.preview.title": "Forhåndsvisning: {date}",

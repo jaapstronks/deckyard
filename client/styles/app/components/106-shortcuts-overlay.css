@@ -4,7 +4,7 @@
 
 .shortcuts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 20px 28px;
 }
 
@@ -27,6 +27,7 @@
 
 .shortcuts-keys {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   justify-content: flex-end;
@@ -56,6 +57,19 @@
 
 .shortcuts-desc {
   margin: 0;
+  hyphens: auto;
   font-size: 0.9rem;
   color: hsl(var(--app-text-primary));
+}
+
+/* A narrow modal has no room for two columns: each description goes under its
+   keys. */
+@media (max-width: 480px) {
+  .shortcuts-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shortcuts-keys {
+    justify-content: flex-start;
+  }
 }
