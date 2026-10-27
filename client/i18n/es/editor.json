@@ -430,7 +430,7 @@
   "editor.inline.removeLogo": "Quitar el logotipo",
   "editor.inline.removeMember": "Quitar la tarjeta",
   "editor.inline.removeQuote": "Quitar la cita",
-  "editor.inline.removeRow": "Quitar la fila",
+  "editor.inline.removeRow": "Eliminar fila",
   "editor.inline.removeScaleLabel": "Quitar la etiqueta",
   "editor.inline.reorderItem": "Arrastre para reordenar",
   "editor.inline.toolbar.label": "Formato de texto",

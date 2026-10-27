@@ -33,7 +33,7 @@
   "admin.users.addModal.successNoEmail": "Användaren lades till, men inbjudningsmejlet kunde inte skickas. Kontrollera e-postinställningarna.",
   "admin.users.addModal.title": "Lägg till ny användare",
   "admin.users.addUser": "Lägg till användare",
-  "admin.users.delete": "Ta bort",
+  "admin.users.delete": "Radera",
   "admin.users.deleteConfirm": "Är du säker på att du vill ta bort den här användaren? Det går inte att ångra.",
   "admin.users.designerHelp": "Kan hantera teman och slidetyper. Administratörer och ägare har det som standard.",
   "admin.users.edit": "Redigera",

@@ -67,17 +67,6 @@
       "forms": ["Lys", "Lyse"],
       "reason": "grammatical agreement — Lys agrees with tilstand and tekstfarve (common gender singular) in appearance.light and editor.slideField.slideBgText.option.light; Lyse agrees with gradienter (plural) in stockMedia.gradients.tone.light."
     },
-    "da  Move \"{title}\" to trash?": {
-      "forms": [
-        "Flyt \"{title}\" til papirkurven?",
-        "Slet \"{title}\"? Dette kan ikke fortrydes."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "da  Move to trash": {
-      "forms": ["Flyt til papirkurven", "Slet"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Preview": {
       "forms": ["Forhåndsvis", "Forhåndsvisning"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -156,17 +145,6 @@
     },
     "de  Loading…": {
       "forms": ["Lädt…", "Wird geladen…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Move \"{title}\" to trash?": {
-      "forms": [
-        "„{title}“ in den Papierkorb verschieben?",
-        "„{title}“ löschen? Dies kann nicht rückgängig gemacht werden."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Move to trash": {
-      "forms": ["In den Papierkorb verschieben", "Löschen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Next": {
@@ -271,17 +249,6 @@
       "forms": ["Claro", "Claros"],
       "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with degradados (masculine plural) in stockMedia.gradients.tone.light."
     },
-    "es  Move \"{title}\" to trash?": {
-      "forms": [
-        "¿Eliminar «{title}»? Esto no se puede deshacer.",
-        "¿Mover «{title}» a la papelera?"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Move to trash": {
-      "forms": ["Eliminar", "Mover a la papelera"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  Placeholder": {
       "forms": ["Marcador de posición", "Texto de ejemplo"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -299,14 +266,6 @@
     },
     "es  Reading file…": {
       "forms": ["Leyendo archivo…", "Leyendo el archivo…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Remove": {
-      "forms": ["Eliminar", "Quitar"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Remove row": {
-      "forms": ["Eliminar fila", "Quitar la fila"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Search": {
@@ -395,13 +354,6 @@
       "forms": ["Vaalea", "Vaaleat"],
       "reason": "grammatical number — Vaalea is singular for tila and tekstin väri in appearance.light and editor.slideField.slideBgText.option.light; Vaaleat is plural for liukuvärit in stockMedia.gradients.tone.light."
     },
-    "fi  Move \"{title}\" to trash?": {
-      "forms": [
-        "Siirretäänkö \"{title}\" roskakoriin?",
-        "Siirretäänkö ”{title}” roskakoriin?"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Never expires": {
       "forms": ["Ei vanhene", "Ei vanhene koskaan"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -482,17 +434,6 @@
       "forms": ["Clair", "Clairs"],
       "reason": "grammatical agreement — Clair agrees with mode and texte (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Clairs agrees with dégradés (masculine plural) in stockMedia.gradients.tone.light."
     },
-    "fr  Move \"{title}\" to trash?": {
-      "forms": [
-        "Mettre « {title} » à la corbeille ?",
-        "Supprimer « {title} » ? Cette action est irréversible."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Move to trash": {
-      "forms": ["Mettre à la corbeille", "Supprimer"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Placeholder": {
       "forms": ["Espace réservé", "Texte indicatif"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -510,10 +451,6 @@
     },
     "fr  Published": {
       "forms": ["Publié", "Publiée"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Remove": {
-      "forms": ["Retirer", "Supprimer"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Search": {
@@ -626,10 +563,6 @@
       "forms": ["Inserire un nome.", "Inserisci un nome."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Remove row": {
-      "forms": ["Rimuovi la riga", "Rimuovi riga"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Reset": {
       "forms": ["Azzera", "Ripristina"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -736,10 +669,6 @@
       "forms": ["Hoekafbeelding", "Hoekbeeld"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Delete": {
-      "forms": ["Verwijder", "Verwijderen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Description": {
       "forms": ["Beschrijving", "Omschrijving"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -816,7 +745,7 @@
     },
     "nl  Restore": {
       "forms": ["Herstel", "Herstellen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "noun versus button — Herstel is the noun in editor.versions.reason.restore, the label that says why a version exists, next to Automatische snapshot and Backup (vóór herstel); Herstellen is the infinitive on the buttons editor.versions.restore, list.restore, list.bulk.restore and slideLibrary.action.restore."
     },
     "nl  Save to library": {
       "forms": ["Bewaren in bibliotheek", "Opslaan in beeldbank"],
@@ -908,17 +837,6 @@
     },
     "no  Loading…": {
       "forms": ["Laster inn…", "Laster…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Move \"{title}\" to trash?": {
-      "forms": [
-        "Flytte «{title}» til papirkurven?",
-        "Slett «{title}»? Dette kan ikke angres."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Move to trash": {
-      "forms": ["Flytt til papirkurven", "Slett"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  No results.": {
@@ -1144,17 +1062,6 @@
       "forms": ["Claro", "Claros"],
       "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with gradientes (masculine plural) in stockMedia.gradients.tone.light."
     },
-    "pt  Move \"{title}\" to trash?": {
-      "forms": [
-        "Eliminar «{title}»? Isto não pode ser desfeito.",
-        "Mover «{title}» para a reciclagem?"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  Move to trash": {
-      "forms": ["Eliminar", "Mover para a reciclagem"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  Off": {
       "forms": ["Desativado", "Desligado"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1180,10 +1087,6 @@
     },
     "pt  Reading file…": {
       "forms": ["A ler ficheiro…", "A ler o ficheiro…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  Remove row": {
-      "forms": ["Remover a linha", "Remover linha"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Search": {
@@ -1237,10 +1140,6 @@
       "forms": ["Mörk", "Mörka", "Mörkt"],
       "reason": "grammatical agreement — Mörkt agrees with utseende (neuter singular, the appearance.label group) in appearance.dark; Mörk agrees with färg, bakgrund and textfärg (common gender singular) in editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mörka agrees with gradienter (plural) in stockMedia.gradients.tone.dark."
     },
-    "sv  Delete": {
-      "forms": ["Radera", "Ta bort"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Dismiss": {
       "forms": ["Avvisa", "Stäng"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1271,17 +1170,6 @@
     },
     "sv  Loading…": {
       "forms": ["Laddar…", "Läser in…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Move \"{title}\" to trash?": {
-      "forms": [
-        "Flytta \"{title}\" till papperskorgen?",
-        "Radera \"{title}\"? Detta kan inte ångras."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Move to trash": {
-      "forms": ["Flytta till papperskorgen", "Radera"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Never expires": {
