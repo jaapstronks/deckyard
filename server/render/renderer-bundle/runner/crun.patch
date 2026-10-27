@@ -1,0 +1,44 @@
+--- a/src/libcrun/linux.c
++++ b/src/libcrun/linux.c
+@@ -2186,3 +2185,0 @@
+-                                  { "/dev/full", "c", 1, 7, 0666, 0, 0 },
+-                                  { "/dev/tty", "c", 5, 0, 0666, 0, 0 },
+-                                  { "/dev/random", "c", 1, 8, 0666, 0, 0 },
+@@ -2416,2 +2412,0 @@
+-                                       { "/proc/kcore", "core", false },
+-                                       { "pts/ptmx", "ptmx", true },
+@@ -6586,3 +6581,7 @@
+-      if (pid >= 0)
+-        cgroup_dirfd->joined = true;
+-
++      if (pid < 0)
++        {
++          int clone_error = errno;
++          close_and_reset (cgroup_dirfd->dirfd);
++          return crun_make_error (err, clone_error, "T1 requires clone3 CLONE_INTO_CGROUP");
++        }
++      cgroup_dirfd->joined = true;
+@@ -6591,7 +6590,2 @@
+-  /* fallback to clone() for any error.  */
+-  if (pid < 0)
+-    {
+-      pid = syscall_clone (first_clone_args | SIGCHLD, NULL);
+-      if (UNLIKELY (pid < 0))
+-        return crun_make_error (err, errno, "clone");
+-    }
++  else
++    return crun_make_error (err, ENOTSUP, "T1 requires a precreated cgroup fd");
+--- a/src/libcrun/container.c
++++ b/src/libcrun/container.c
+@@ -882,10 +882 @@
+-  if (getenv ("HOME") == NULL)
+-    {
+-      ret = set_home_env (container_uid);
+-      if (UNLIKELY (ret < 0))
+-        {
+-          libcrun_warning ("cannot detect HOME environment variable, setting default");
+-          if (UNLIKELY (setenv ("HOME", "/", 1) < 0))
+-            return crun_make_error (err, errno, "setenv HOME");
+-        }
+-    }
++  /* Deckyard T1: the environment is exactly process.env, no HOME injection. */

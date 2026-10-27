@@ -120,7 +120,11 @@ export function rendererHashFor(manifest) {
 
 /** A 64-char lowercase hex digest, which is the only shape a hash may have. */
 export function isRendererHash(value) {
-  return typeof value === 'string' && /^[0-9a-f]{64}$/.test(value);
+  return (
+    typeof value === 'string' &&
+    value.length === 64 &&
+    /^[0-9a-f]{64}$/.test(value)
+  );
 }
 
 /** A single POSIX spelling inside files/, with no filesystem aliases. */

@@ -22,7 +22,7 @@ export const RENDERER_BUNDLE_ERRORS = Object.freeze({
   CORRUPT: 'renderer_bundle_corrupt',
   /** A file the manifest names is missing, or one it does not name is present. */
   INCOMPLETE: 'renderer_bundle_incomplete',
-  /** No OS-isolated runner has been implemented. */
+  /** Production execution awaits runner acceptance and separate activation. */
   SANDBOX_UNAVAILABLE: 'renderer_bundle_sandbox_unavailable',
   /** The worker died, timed out, or wrote something unreadable. */
   WORKER_FAILED: 'renderer_bundle_worker_failed',

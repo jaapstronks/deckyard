@@ -44,11 +44,6 @@
     "reason": "Prism token type, emitted as class=\"token entity\"; defined by the vendored markup and bash grammars.",
     "see": "client/vendor/prism/components/prism-markup.min.js"
   },
-  "operator": {
-    "kind": "vendor-emitted",
-    "reason": "Prism token type, emitted as class=\"token operator\"; defined by the vendored clike, cpp and json grammars.",
-    "see": "client/vendor/prism/components/prism-clike.min.js"
-  },
   "prolog": {
     "kind": "vendor-emitted",
     "reason": "Prism token type, emitted as class=\"token prolog\"; defined by the vendored markup and markdown grammars.",

@@ -1,0 +1,24 @@
+[Unit]
+Description=Deckyard operator render broker
+After=deckyard-render-supervisor.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+User=root
+Group=root
+ExecStart=/opt/deckyard-render/image/bin/node /opt/deckyard-render/code/runner/index.js broker
+Restart=no
+KillMode=control-group
+TimeoutStopSec=5
+MemoryMax=512M
+MemorySwapMax=0
+TasksMax=64
+CPUAccounting=yes
+UMask=0077
+SystemCallArchitectures=native
+SystemCallErrorNumber=EPERM
+SystemCallFilter=~io_setup io_submit io_getevents io_pgetevents io_cancel io_destroy io_uring_setup io_uring_enter io_uring_register
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
