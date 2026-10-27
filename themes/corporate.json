@@ -38,6 +38,12 @@
     "gradient": {
       "enabled": false
     },
+    "backgroundPresets": [
+      "/assets/images/backgrounds/demo-paper.jpg",
+      "/assets/images/backgrounds/demo-moss.jpg",
+      "/assets/images/backgrounds/demo-dusk.jpg",
+      "/assets/images/backgrounds/demo-aurora.jpg"
+    ],
     "defaultTitleSlide": "title-slide",
     "titleLayout": "bottom",
     "cssVarOverrides": {
