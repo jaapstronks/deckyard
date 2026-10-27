@@ -57,7 +57,7 @@
   "share.expiration.30d": "30 giorni",
   "share.expiration.7d": "7 giorni",
   "share.expiration.label": "Scadenza",
-  "share.expiration.never": "Nessuna scadenza",
+  "share.expiration.never": "Non scade mai",
   "share.guest.emailExpires": "Il link scade tra 24 ore.",
   "share.guest.emailPlaceholder": "tua@email.com",
   "share.guest.emailRequired": "L'email è obbligatoria",

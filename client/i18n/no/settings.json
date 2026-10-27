@@ -393,7 +393,7 @@
   "settings.apiKeys.permissions.export": "Eksport",
   "settings.apiKeys.permissions.read": "Lese",
   "settings.apiKeys.permissions.write": "Skrive",
-  "settings.apiKeys.revoke": "Trekk tilbake",
+  "settings.apiKeys.revoke": "Tilbakekall",
   "settings.apiKeys.revokeError": "Klarte ikke å trekke tilbake API-nøkkelen",
   "settings.apiKeys.revokeModal.confirm": "Trekk tilbake nøkkelen",
   "settings.apiKeys.revokeModal.error": "Klarte ikke å trekke tilbake API-nøkkelen.",

@@ -57,7 +57,7 @@
   "share.expiration.30d": "30 päivää",
   "share.expiration.7d": "7 päivää",
   "share.expiration.label": "Voimassaolo",
-  "share.expiration.never": "Ei vanhene",
+  "share.expiration.never": "Ei vanhene koskaan",
   "share.guest.email": "Sähköposti",
   "share.guest.emailExpires": "Linkki vanhenee 24 tunnin kuluttua.",
   "share.guest.emailPlaceholder": "osoite@sahkoposti.fi",
