@@ -154,6 +154,45 @@ The test runner retains Node filesystem/process permission checks, a scrubbed en
 
 The operator runner is a separate execution contract from the old trusted-fixture process helper. A successful hash/rebuild/screenshot experiment proves reproducibility only. The full external boundary gate and its independent code review must pass before merge, and a separately reviewed activation change must pass before production or downstream publication rollout can use it.
 
+## Operator runner: boundary contract
+
+This section is the reviewable contract of the experimental operator runner under `server/render/renderer-bundle/runner/`. It describes what the code enforces, not an activation: production still refuses (see above). Installation, recovery and the operator procedure are in the [runbook](../ops/renderer-runner.md).
+
+### Components and identities
+
+| Component         | Process and containment                                                                                                                  | May create                                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Caller            | One configured numerical UID; connects to `/run/deckyard-render/broker.sock` (0660 `root:<caller gid>`, parent 0750)                     | Nothing; one request frame per connection                                                                                       |
+| Broker            | Rootful `deckyard-render-broker.service`, `Restart=no`, 512 MiB/64 tasks, systemd filter denies legacy AIO and io_uring                  | Job staging, the private copy, the OCI config and the launcher, only from the single-use job Worker after a durable reservation |
+| Supervisor        | Rootful `deckyard-render-supervisor.service`, the only automatic restart, delegated `cpu memory pids`, manager subgroup 256 MiB/64       | The job and helper cgroups before reserve-ack; cleanup (`crun delete`, unmount checks, removal)                                 |
+| Launcher and crun | Created atomically in `helpers/<job>` with `clone3(CLONE_INTO_CGROUP)`; crun creates the guest in `jobs/<job>` the same way              | The container; nothing after the job ends                                                                                       |
+| Guest             | UID/GID 1000 in its own user namespace mapped to a reserved 65,536-ID host range, no capabilities, `no_new_privs`, non-dumpable after B3 | Files in its 64 MiB `/tmp` only                                                                                                 |
+
+### Wire contract and memory
+
+A request is one frame (4-byte big-endian length, at most 16 MiB of UTF-8 JSON, then write-half-close). The broker checks `SO_PEERCRED` against the configured UID and takes `SO_PEERPIDFD` before it reads a byte; any other UID is closed unread. The envelope is validated by a strict byte-level scan (UTF-8 via `buffer.isUtf8`, JSON grammar, duplicate keys at every depth, a byte-order mark, depth 64) that decodes only the envelope scalars: the input travels as the caller's own validated bytes, so a queued request costs its body and no parse tree. The guest answer is validated by the same scan; the success frame is the broker's envelope plus the two validated string tokens of `canvas` and `reader`, written as views on the guest output. No guest field other than those two reaches the caller. Measured broker peaks at the gate SHA stayed below 200 MB with four queued 16 MiB bodies, six held tokens and a 60 MiB response.
+
+### Syscall boundary
+
+Three filter layers apply to the guest, oldest first: the broker unit's systemd filters (native architecture only; AIO and io_uring denied) inherited through launcher and crun, crun's initial OCI profile (io_uring denied before Node starts), and the final B3 filter installed by `bootstrap.node` with `SECCOMP_FILTER_FLAG_TSYNC`. Only a return of 0 continues; an errno or a positive thread ID exits 126 before any historical instruction. Before installing it, B3 checks `no_new_privs` and sets `PR_SET_DUMPABLE` to 0: the host's `core_pattern` may pipe to a crash helper, which ignores `RLIMIT_CORE`, so a dumpable guest crash would start a host process with the guest's memory.
+
+The final filter (`filter.c`, 199 BPF instructions) checks `AUDIT_ARCH_X86_64` and kills the process on any other architecture or on the x32 bit. It allows these 88 syscalls unconditionally:
+
+`read write readv writev pread64 pwrite64 close close_range fstat newfstatat statx stat lstat lseek open openat access faccessat faccessat2 getdents64 readlink readlinkat getcwd fcntl dup dup2 dup3 mkdir mkdirat unlink unlinkat rename renameat renameat2 ftruncate fsync fdatasync utimensat brk mmap mprotect munmap mremap madvise msync membarrier futex rseq set_robust_list set_tid_address rt_sigaction rt_sigprocmask rt_sigreturn sigaltstack tgkill restart_syscall clock_gettime clock_getres clock_nanosleep nanosleep gettimeofday times getpid getppid gettid getuid geteuid getgid getegid getgroups getrandom uname sysinfo sched_yield sched_getaffinity getrusage getrlimit prlimit64 epoll_create1 epoll_ctl epoll_wait epoll_pwait eventfd2 pipe2 poll ppoll exit exit_group`
+
+Two are argument-checked: `ioctl` only with `FIONBIO` (0x5421) or `FIONREAD` (0x541b) and a zero upper request word; `clone` only with exactly the glibc pthread flag word `0x003d0f00` (`CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID`, no namespace flags) and a zero upper word. `clone3` returns `ENOSYS`, because seccomp cannot inspect its argument structure, so glibc falls back to the inspectable `clone`. Every other syscall, including `execve`, `execveat`, `fork`, `vfork`, process clones, `unshare`, `setns`, `mount`, `ptrace`, `process_vm_*`, `bpf`, `perf_event_open`, every socket call, `prctl` and all io_uring and AIO calls, returns `EPERM`. Later JS Workers and native threads inherit the filter; there is no user-notification broker or ptrace exception.
+
+### Producer paths and joins
+
+Every object a job can leave behind has one creator, and each creator ends before `QUIESCENT` or is killed before cleanup:
+
+1. The supervisor durably records the reservation and creates both cgroups (limits verified, `cgroup.kill` opened) before it acknowledges.
+2. The broker starts one `node:worker_threads` Worker per job. Its synchronous `mkdir`, the native `openat2` copy and the freeze run on that thread; verification reads complete before it posts `prepared`; after the supervisor accepts `RUNNING` it spawns the launcher and awaits its `close` event. The Worker has no message handler for further work and exits after one result.
+3. The launcher joins all pipe I/O and `waitpid` before exiting; crun's guest lives only in the job cgroup.
+4. Only the Worker's `exit` event lets the broker send `QUIESCENT`. The supervisor accepts it in `RUNNING`, before the deadline, with both job cgroups empty.
+5. Any cancellation, deadline, channel loss, late or malformed message instead kills the whole broker cgroup and both job subtrees and waits for the held broker pidfd and `populated 0` everywhere. A producer stuck in an uninterruptible syscall keeps the slot occupied and admission closed.
+6. Cleanup then runs `crun delete`, refuses while a mount remains (no lazy unmount), removes staging and runtime state, re-inventories, removes the cgroups and only then writes `CLEANED`. Only a `CLEANED` record releases the slot or a success response.
+
 ## The edition input
 
 Everything that varies per installation or per day is in the input; everything
