@@ -69,6 +69,7 @@ export function createDeckReviewOpeners({
       theme,
       SLIDE_TYPES,
       onJumpToSlide: jumpToSlide,
+      onOpenAiReview: () => openAiDeckReview(),
     });
   };
 

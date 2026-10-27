@@ -99,3 +99,13 @@ everywhere. Other vendors ignore `role`.
 (sonnet-5, opus-4.7+, fable/mythos, and any major ≥ 5) get `temperature`
 omitted — sending it returns a 400; unknown future models therefore degrade to
 default sampling instead of hard-failing.
+
+## Verified source passages and reopening
+
+The generation service checks outline excerpts against its real source input after outline revision. Only an exact source substring (whitespace may differ) becomes `_aiReview.sourceExcerpt`; invented or translated excerpts are omitted. Title and structural slides use the same evidence path. The title introduces the source topic; its quote does not claim that the generated title itself appeared literally in the source. The file and Notion adapters use the same service and assembly path, and successful AI imports open the review automatically. Direct portable-deck/Markdown/PPTX imports do not open a generation review.
+
+`_aiReview` is private author metadata alongside `_aiReasoning`, `_aiAlternatives` and `_aiWarnings`. It survives generated-deck composition, storage and the Yjs codec, and the existing audience projection strips it from reader/share/follow/published responses in every language. It introduces no new MCP/v1 write contract.
+
+A shared fingerprint binds the explanation to slide type and content. It treats implicit logo-off/background-text-auto defaults like their explicit effective values and excludes only the declared derived contrast cache. Content/type changes display an earlier-version notice in both the grid and enlarged preview; save/reload does not refresh the binding. Undo to the original content restores it. Converting to another type records the new explanation without carrying the old source claim. Older explanations without source evidence explicitly say that no source passage was verified.
+
+Authors can reopen the review from the topbar More menu or from Slide overview when the deck carries AI review metadata. The normal overview remains available. Source passages render as text, never HTML. Suggestions, placeholders and public API review links are separate follow-up work.

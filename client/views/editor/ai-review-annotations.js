@@ -6,6 +6,7 @@
  */
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom/index.js';
+import { isAiReviewCurrent, bindAiReview } from '../../../shared/ai-review.js';
 
 /**
  * @param {Object} options
@@ -55,7 +56,7 @@ export function createAiReviewAnnotations({
         );
       }
       setStatus('');
-      replaceSlide(slide, {
+      const next = {
         ...slide,
         type: converted.type,
         content: converted.content || {},
@@ -69,7 +70,9 @@ export function createAiReviewAnnotations({
             ),
           },
         ],
-      });
+      };
+      bindAiReview(next, { kind: 'content', sourceExcerpt: null });
+      replaceSlide(slide, next);
     } catch (e) {
       setStatus(String(e?.message || e));
       btn.disabled = false;
@@ -79,13 +82,46 @@ export function createAiReviewAnnotations({
   };
 
   const annotationFor = (slide) => {
-    const why = String(slide?._aiReasoning || '').trim();
+    const why = aiReviewDescription(slide);
     const alts = Array.isArray(slide?._aiAlternatives)
       ? slide._aiAlternatives
       : [];
-    if (!why && !alts.length) return null;
+    if (!why && !alts.length && !slide?._aiReview) return null;
     const holder = h('div', {});
     if (why) holder.append(h('p', { class: 'deck-grid-why', text: why }));
+    if (slide?._aiReview?.fingerprint && !isAiReviewCurrent(slide)) {
+      holder.append(
+        h('p', {
+          class: 'deck-grid-review-status',
+          text: t(
+            'editor.aiReview.stale',
+            'This slide has changed. The explanation and source below describe the earlier version.',
+          ),
+        }),
+      );
+    }
+    const excerpt = slide?._aiReview?.sourceExcerpt;
+    if (excerpt) {
+      holder.append(
+        h('p', {
+          class: 'deck-grid-source-label',
+          text: t('editor.aiReview.source', 'From your source'),
+        }),
+      );
+      holder.append(
+        h('blockquote', { class: 'deck-grid-source', text: excerpt }),
+      );
+    } else {
+      holder.append(
+        h('p', {
+          class: 'deck-grid-review-status',
+          text: t(
+            'editor.aiReview.noSource',
+            'No source passage could be verified for this explanation.',
+          ),
+        }),
+      );
+    }
     const row = h('div', { class: 'deck-grid-alt-row' });
     for (const alt of alts) {
       if (!SLIDE_TYPES?.[alt?.type]) continue;
@@ -109,4 +145,56 @@ export function createAiReviewAnnotations({
   };
 
   return { annotationFor };
+}
+
+/** User-facing explanation shared by the grid and its enlarged preview. */
+export function aiReviewDescription(slide) {
+  const kind = slide?._aiReview?.kind;
+  if (kind === 'title')
+    return t(
+      'editor.aiReview.titleReason',
+      'This opening introduces the topic of your source.',
+    );
+  if (kind === 'chapter')
+    return t(
+      'editor.aiReview.chapterReason',
+      'This divider introduces the next section of your source.',
+    );
+  if (kind === 'quote')
+    return t(
+      'editor.aiReview.quoteReason',
+      'This quotation highlights a passage from your source.',
+    );
+  if (kind === 'fallback')
+    return t(
+      'editor.aiReview.fallbackReason',
+      'The suggested layout could not be completed. A simple slide preserves the proposed text for you to review.',
+    );
+  if (kind === 'closing')
+    return t(
+      'editor.aiReview.closingReason',
+      'This closing brings the main message together.',
+    );
+  return String(slide?._aiReasoning || '').trim();
+}
+
+/** The preview carries the same evidence and freshness status as its tile. */
+export function aiReviewPreviewText(slide) {
+  const parts = [aiReviewDescription(slide)];
+  if (slide?._aiReview?.fingerprint && !isAiReviewCurrent(slide))
+    parts.push(
+      t(
+        'editor.aiReview.stale',
+        'This slide has changed. The explanation and source below describe the earlier version.',
+      ),
+    );
+  parts.push(
+    slide?._aiReview?.sourceExcerpt
+      ? `${t('editor.aiReview.source', 'From your source')}: “${slide._aiReview.sourceExcerpt}”`
+      : t(
+          'editor.aiReview.noSource',
+          'No source passage could be verified for this explanation.',
+        ),
+  );
+  return parts.filter(Boolean).join('\n\n');
 }

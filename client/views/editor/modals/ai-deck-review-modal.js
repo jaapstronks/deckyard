@@ -15,7 +15,10 @@ import { openModal, confirmModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
-import { createAiReviewAnnotations } from '../ai-review-annotations.js';
+import {
+  createAiReviewAnnotations,
+  aiReviewPreviewText,
+} from '../ai-review-annotations.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
 
@@ -130,7 +133,7 @@ export function openAiDeckReviewModal({
     selectable: true,
     previewOnClick: true,
     // The AI's per-slide rationale, shown inside the peek preview too.
-    peekNoteFor: (slide) => String(slide?._aiReasoning || '').trim() || null,
+    peekNoteFor: (slide) => aiReviewPreviewText(slide),
     onSelectionChange: syncSelectionUi,
     // Tile click opens the preview; a corner checkbox selects. The peek
     // lightbox offers the jump into the editor.
@@ -289,7 +292,7 @@ export function openAiDeckReviewModal({
     selectionHint,
     btnClearSelection,
   ]);
-  const actions = h('div', { class: 'row is-end modal-actions' }, [
+  const actions = h('div', { class: 'row is-wrap is-end modal-actions' }, [
     ...(btnDiscardDeck ? [btnDiscardDeck] : []),
     btnAdjust,
     btnDone,

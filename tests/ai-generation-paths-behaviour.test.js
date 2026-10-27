@@ -32,6 +32,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import { isAiReviewCurrent } from '../shared/ai-review.js';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
@@ -111,9 +112,17 @@ const ANSWER = {
   subtitle: SUBTITLE,
   summary: 'The partners we work with',
   rationale: 'test',
+  sections: [
+    {
+      heading: 'Partners',
+      keyPoints: ['The partners we work with'],
+      excerpt: 'The partners we work with',
+    },
+  ],
   slides: [
     {
       intent: 'content',
+      section: 0,
       roughContent: 'The partners we work with',
       type: 'content-slide',
       content: { title: 'Our partners', body: 'Three partners.' },
@@ -217,6 +226,20 @@ function assertOnePipeline(prompts, label, { titleSlide = true } = {}) {
     `${label}: presenter notes on a content slide: ${JSON.stringify(rest)}`,
   );
   assert.equal(content._aiReasoning, REASONING, `${label}: _aiReasoning`);
+  assert.equal(
+    content._aiReview.sourceExcerpt,
+    'The partners we work with',
+    `${label}: verified source survives storage`,
+  );
+  assert.equal(
+    isAiReviewCurrent(content),
+    true,
+    `${label}: saved content matches its explanation`,
+  );
+  assert.ok(
+    deck.slides.every(isAiReviewCurrent),
+    `${label}: title and content bindings survive normalization ${JSON.stringify(deck.slides.filter((s) => !isAiReviewCurrent(s)))}`,
+  );
   assert.deepEqual(
     content._aiAlternatives?.map((alt) => alt.type),
     [ALTERNATIVE],
