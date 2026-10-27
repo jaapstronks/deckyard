@@ -29,3 +29,8 @@
 .slide-type-modal .ps-modal-header {
   padding: var(--ps-space-3) var(--ps-space-5);
 }
+
+.save-to-library-modal .modal-actions .btn {
+  min-width: 44px;
+  min-height: 44px;
+}

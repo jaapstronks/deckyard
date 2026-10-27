@@ -84,6 +84,7 @@ export function openSaveToLibraryModal({
   openSlideLibraryModal,
 } = {}) {
   const modal = createModal({
+    modalClass: 'save-to-library-modal',
     title: t('editor.slideLibrary.saveModal.title', 'Save to slide library'),
     hint: t(
       'editor.slideLibrary.saveModal.hint',
