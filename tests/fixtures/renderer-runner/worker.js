@@ -40,7 +40,62 @@ else if (mode === 'scratch') {
 } else if (mode === 'x32') native.x32();
 else if (mode === 'compat') native.compat();
 else if (mode === 'syscalls') finish(native.probe());
-else if (mode === 'inventory') {
+else if (mode === 'network') {
+  while (!fs.existsSync('/tmp/network-ready'))
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  const net = await import('node:net');
+  const dgram = await import('node:dgram');
+  const dns = await import('node:dns/promises');
+  const results = {};
+  for (const [name, options] of [
+    ['tcp4', { host: '127.0.0.1', port: 48471 }],
+    ['tcp6', { host: '::1', port: 48472 }],
+    ['unix', { path: '/tmp/network-listener.sock' }],
+  ]) {
+    results[name] = await new Promise((resolve) => {
+      const s = net.createConnection(options);
+      s.once('connect', () => {
+        s.destroy();
+        resolve('CONNECTED');
+      });
+      s.once('error', (e) => resolve(e.code));
+    });
+  }
+  for (const [name, type, host, port] of [
+    ['udp4', 'udp4', '127.0.0.1', 48471],
+    ['udp6', 'udp6', '::1', 48472],
+  ]) {
+    results[name] = await new Promise((resolve) => {
+      const s = dgram.createSocket(type);
+      s.once('error', (e) => {
+        s.close();
+        resolve(e.code);
+      });
+      s.send('guest', port, host, (e) => {
+        s.close();
+        resolve(e?.code || 'SENT');
+      });
+    });
+  }
+  for (const [name, operation] of [
+    ['fetch', () => fetch('http://127.0.0.1:48471')],
+    ['dns', () => dns.resolve4('runner.invalid')],
+  ]) {
+    try {
+      await operation();
+      results[name] = 'ALLOWED';
+    } catch (e) {
+      results[name] = e.cause?.code || e.code || e.name;
+    }
+  }
+  results.builtinSocket = await new Promise((resolve) => {
+    const s = process
+      .getBuiltinModule('net')
+      .createConnection(48471, '127.0.0.1');
+    s.once('error', (e) => resolve(e.code));
+  });
+  finish({ results, direct: native.probe() });
+} else if (mode === 'inventory') {
   const denied = {};
   for (const p of [
     '/root/deckyard-render-canary',
