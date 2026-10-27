@@ -242,7 +242,7 @@ export default {
         },
         {
           key: 'authorName',
-          label: 'Name',
+          label: 'Full name',
           type: 'string',
           required: true,
           maxLength: 80,

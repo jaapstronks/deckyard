@@ -127,7 +127,7 @@
   "slideType.pyramid-slide.field.levels.item.label.label": "Niveauetiket",
   "slideType.pyramid-slide.field.levels.label": "Niveauer",
   "slideType.pyramid-slide.label": "Pyramide",
-  "slideType.quote-slide.field.quotes.item.authorName.label": "Navn",
+  "slideType.quote-slide.field.quotes.item.authorName.label": "Fulde navn",
   "slideType.quote-slide.field.quotes.item.authorTitle.label": "Rolle / titel",
   "slideType.quote-slide.field.quotes.item.quote.label": "Citat",
   "slideType.quote-slide.label": "Citat",

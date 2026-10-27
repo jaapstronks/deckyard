@@ -66,7 +66,7 @@
   "share.guest.emailSent": "Controleer je e-mail!",
   "share.guest.emailSentHelp": "We hebben een verificatielink gestuurd naar <strong>{email}</strong>. Klik op de link om te beginnen met reageren.",
   "share.guest.error.generic": "Er is iets misgegaan. Probeer het opnieuw.",
-  "share.guest.error.invalidEmail": "Voer een geldig e-mailadres in.",
+  "share.guest.error.invalidEmail": "Vul een geldig e-mailadres in.",
   "share.guest.error.linkExpired": "Deze deellink is verlopen.",
   "share.guest.error.linkNotFound": "Deellink niet gevonden.",
   "share.guest.error.linkRevoked": "Deze deellink is ingetrokken.",

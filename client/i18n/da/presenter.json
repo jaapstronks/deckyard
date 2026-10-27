@@ -103,7 +103,7 @@
   "presenter.interactions.total": "I alt: {n}",
   "presenter.langMode": "Sprogtilstand (præsentation)",
   "presenter.laserToggle": "Slå laserpegepind til/fra (L)",
-  "presenter.leave.confirm": "Forlad",
+  "presenter.leave.confirm": "Forlad præsentationen",
   "presenter.leave.message": "Tilbage til editoren? Du kan altid starte præsentationen igen.",
   "presenter.leave.stay": "Bliv",
   "presenter.leave.title": "Forlad præsentationen?",

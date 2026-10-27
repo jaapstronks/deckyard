@@ -142,18 +142,6 @@
       "forms": ["Oscuro", "Oscuros"],
       "reason": "grammatical agreement — Oscuro agrees with modo, color, fondo and color del texto (masculine singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Oscuros agrees with degradados (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
-    "es  Display name": {
-      "forms": ["Nombre para mostrar", "Nombre visible"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Email": {
-      "forms": ["Correo", "Correo electrónico"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Email address": {
-      "forms": ["Dirección de correo", "Dirección de correo electrónico"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  Export": {
       "forms": ["Exportación", "Exportar"],
       "reason": "Exportar is het werkwoord op de drie editoracties; Exportación is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
@@ -172,13 +160,6 @@
     },
     "es  Placeholder": {
       "forms": ["Marcador de posición", "Texto de ejemplo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Please enter a valid email address.": {
-      "forms": [
-        "Introduzca una dirección de correo válida.",
-        "Por favor, ingresa una dirección de correo válida."
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Published": {
@@ -202,10 +183,6 @@
         "Algo ha ido mal. Inténtelo de nuevo.",
         "Algo salió mal. Por favor, inténtalo de nuevo."
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Anonymous": {
-      "forms": ["Anonyymi", "Nimetön"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Apply": {
@@ -308,13 +285,6 @@
       "forms": ["Espace réservé", "Texte indicatif"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fr  Please enter a valid email address.": {
-      "forms": [
-        "Veuillez entrer une adresse e-mail valide.",
-        "Veuillez saisir une adresse e-mail valide."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Primary": {
       "forms": ["Couleur principale", "Principal"],
       "reason": "colour name versus style option — Couleur principale is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Principal agrees with bouton (masculine singular) as the button style in editor.slideField.actions.item.style.option.primary."
@@ -327,17 +297,9 @@
       "forms": ["Partagé", "Partagées"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
-    "fr  Sign in": {
-      "forms": ["Connexion", "Se connecter"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Soft": {
       "forms": ["Douce", "Doux"],
       "reason": "grammatical agreement — Doux agrees with style (masculine singular) in editor.slideField.tableStyle.option.soft and arrondi (masculine singular) in settings.themes.config.radius.soft; Douce agrees with élévation (feminine singular) in settings.themes.config.shadow.soft, next to Marquée."
-    },
-    "fr  Someone": {
-      "forms": ["Quelqu'un", "Quelqu’un"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Something went wrong": {
       "forms": ["Une erreur est survenue", "Une erreur s'est produite"],
@@ -407,10 +369,6 @@
     },
     "it  Placeholder": {
       "forms": ["Segnaposto", "Testo segnaposto"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Please enter a name.": {
-      "forms": ["Inserire un nome.", "Inserisci un nome."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Reset": {
@@ -508,10 +466,6 @@
       "forms": ["Importeer", "Importeren"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Leave": {
-      "forms": ["Afsluiten", "Verlaten"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Link \"{text}\" to:": {
       "forms": [
         "\"{text}\" linken naar:",
@@ -523,23 +477,12 @@
       "forms": ["Logo's", "Logo’s"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Members": {
-      "forms": ["Blokken", "Leden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  New": {
       "forms": ["Nieuw", "Nieuw maken"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Notifications": {
       "forms": ["Meldingen", "Notificaties"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Please enter a valid email address.": {
-      "forms": [
-        "Voer een geldig e-mailadres in.",
-        "Vul een geldig e-mailadres in."
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Reading file…": {
@@ -622,10 +565,6 @@
       "forms": ["for {count} t siden", "{count}t siden"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Anonymous": {
-      "forms": ["Anonimowo", "Anonimowy"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Custom": {
       "forms": ["Niestandardowa", "Niestandardowe"],
       "reason": "Niestandardowe agrees with ustawienia (non-masculine-personal plural) in editor.deckSettings.autoAdvance.presetCustom and pozycje (non-masculine-personal plural) in slideType.image-slide.field.zoomSteps.option.custom.label; Niestandardowa agrees with widoczność (feminine singular) in visibility.custom."
@@ -642,10 +581,6 @@
       "forms": ["Odrzuć", "Zamknij"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Display name": {
-      "forms": ["Nazwa wyświetlana", "Wyświetlana nazwa"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Draft": {
       "forms": ["Szkic", "Wersja robocza"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -658,10 +593,6 @@
       "forms": ["Adres URL obrazu", "URL obrazu"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Leave": {
-      "forms": ["Opuść", "Wyjdź"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Left": {
       "forms": ["Do lewej", "Lewo"],
       "reason": "position versus alignment — Lewo names a position in editor.imagePosition.left and slideType.title-slide.field.logoCorner.option.left.label, next to Środek; Do lewej names an alignment direction in editor.layoutVariant.blockLeft and editor.textStyle.align.left, next to Wyśrodkowane."
@@ -672,14 +603,6 @@
     },
     "pl  Max items": {
       "forms": ["Maksymalna liczba elementów", "Maksymalna liczba pozycji"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  Name": {
-      "forms": ["Imię i nazwisko", "Nazwa"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  Never logged in": {
-      "forms": ["Nigdy nie zalogowany", "Nigdy się nie logował"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  New": {
@@ -700,10 +623,6 @@
     },
     "pl  On": {
       "forms": ["Wł", "Włączone"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  Please enter a name.": {
-      "forms": ["Podaj nazwę.", "Wprowadź nazwę."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Published": {
@@ -742,17 +661,9 @@
       "forms": ["Escuro", "Escuros"],
       "reason": "grammatical agreement — Escuro agrees with modo, tom, fundo and texto (masculine singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Escuros agrees with gradientes (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
-    "pt  Display name": {
-      "forms": ["Nome a apresentar", "Nome de exibição"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  Export": {
       "forms": ["Exportar", "Exportação"],
       "reason": "Exportar is het werkwoord op de drie editoracties; Exportação is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
-    },
-    "pt  Go to login": {
-      "forms": ["Ir para login", "Ir para o início de sessão"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Grid": {
       "forms": ["Grade", "Tabela"],
@@ -772,13 +683,6 @@
     },
     "pt  Placeholder": {
       "forms": ["Marcador de posição", "Texto de exemplo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  Please enter a valid email address.": {
-      "forms": [
-        "Introduza um endereço de e-mail válido.",
-        "Por favor, introduza um endereço de e-mail válido."
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Published": {

@@ -820,6 +820,17 @@
   margin-right: auto;
 }
 
+/* At narrow widths the edit footer wraps whole controls; the refusal claims a
+   line of its own before it is squeezed narrower than a word. */
+.ps-lib-edit-footer,
+.ps-lib-edit-footer > .row {
+  flex-wrap: wrap;
+}
+
+.ps-lib-edit-footer > .inline-error.is-callout {
+  flex-basis: 12rem;
+}
+
 /* A shared slide you may not edit: the reason sits beside the greyed-out
    button instead of hiding in a tooltip. */
 .ps-lib-edit-reason {

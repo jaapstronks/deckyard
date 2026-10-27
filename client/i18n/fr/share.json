@@ -64,7 +64,7 @@
   "share.guest.emailSent": "Vérifiez votre e-mail !",
   "share.guest.emailSentHelp": "Nous avons envoyé un lien de vérification à <strong>{email}</strong>. Cliquez sur le lien pour commencer à commenter.",
   "share.guest.error.generic": "Une erreur s'est produite. Veuillez réessayer.",
-  "share.guest.error.invalidEmail": "Veuillez entrer une adresse e-mail valide.",
+  "share.guest.error.invalidEmail": "Veuillez saisir une adresse e-mail valide.",
   "share.guest.error.linkExpired": "Ce lien de partage a expiré.",
   "share.guest.error.linkNotFound": "Lien de partage non trouvé.",
   "share.guest.error.linkRevoked": "Ce lien de partage a été révoqué.",

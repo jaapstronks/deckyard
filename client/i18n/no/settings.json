@@ -160,7 +160,7 @@
   "organization.members.invite.hint": "Personen blir medlem av organisasjonen med en gang. For en ny konto prøver vi å sende en innloggingslenke; resultatet viser om den ble sendt.",
   "organization.members.invite.invalidEmail": "Skriv inn en gyldig e-postadresse.",
   "organization.members.invite.nameHelp": "Brukes til å tiltale dem i invitasjonsmeldingen. Ignoreres hvis de allerede har en konto.",
-  "organization.members.invite.nameLabel": "Navn",
+  "organization.members.invite.nameLabel": "Fullt navn",
   "organization.members.invite.namePlaceholder": "Valgfritt",
   "organization.members.invite.open": "Inviter",
   "organization.members.invite.roleFixed": "De blir medlem. Bare eieren kan invitere administratorer.",

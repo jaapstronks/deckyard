@@ -116,7 +116,7 @@ export default {
     // leads with content (the blocks), settings after.
     {
       key: 'members',
-      label: 'Members',
+      label: 'Blocks',
       type: 'items',
       required: false,
       // The first block is what the slide is; further ones are optional (D211).

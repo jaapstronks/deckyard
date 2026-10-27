@@ -104,7 +104,7 @@
   "presenter.interactions.total": "Totalt: {n}",
   "presenter.langMode": "Språkmodus (presentasjon)",
   "presenter.laserToggle": "Slå laserpeker på/av (L)",
-  "presenter.leave.confirm": "Forlat",
+  "presenter.leave.confirm": "Forlat presentasjonen",
   "presenter.leave.message": "Tilbake til redigeringsverktøyet? Du kan starte presentasjonen igjen når som helst.",
   "presenter.leave.stay": "Bli",
   "presenter.leave.title": "Forlate presentasjonen?",

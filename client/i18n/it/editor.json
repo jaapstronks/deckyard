@@ -710,7 +710,7 @@
   "editor.slideLibrary.saveModal.languages": "Lingue",
   "editor.slideLibrary.saveModal.name": "Nome",
   "editor.slideLibrary.saveModal.namePlaceholder": "Es. Slide contatti",
-  "editor.slideLibrary.saveModal.nameRequired": "Inserisci un nome.",
+  "editor.slideLibrary.saveModal.nameRequired": "Inserire un nome.",
   "editor.slideLibrary.saveModal.onlyOneLang": "Questa slide ha contenuti solo in {lang}. Valuti se tradurla prima, per salvare entrambe le versioni.",
   "editor.slideLibrary.saveModal.save": "Salva la slide nella libreria",
   "editor.slideLibrary.saveModal.saveTo": "Salva in",

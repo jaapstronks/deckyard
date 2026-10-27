@@ -80,6 +80,7 @@
 .share-viewer-guest-modal > .inline-error.is-callout {
   margin-top: var(--ps-space-3);
   font-size: var(--ps-text-base);
+  hyphens: auto;
 }
 
 /* Viewer layout */

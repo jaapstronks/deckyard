@@ -104,7 +104,7 @@
   "presenter.interactions.total": "Total : {n}",
   "presenter.langMode": "Mode langue (présentation)",
   "presenter.laserToggle": "Activer/désactiver le pointeur laser (L)",
-  "presenter.leave.confirm": "Quitter",
+  "presenter.leave.confirm": "Quitter la présentation",
   "presenter.leave.message": "Revenir à l'éditeur ? Vous pouvez relancer la présentation à tout moment.",
   "presenter.leave.stay": "Rester",
   "presenter.leave.title": "Quitter la présentation ?",

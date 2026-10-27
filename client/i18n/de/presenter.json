@@ -105,7 +105,7 @@
   "presenter.interactions.total": "Gesamt: {n}",
   "presenter.langMode": "Sprachmodus (Präsentieren)",
   "presenter.laserToggle": "Laserpointer umschalten (L)",
-  "presenter.leave.confirm": "Verlassen",
+  "presenter.leave.confirm": "Präsentation verlassen",
   "presenter.leave.message": "Zurück zum Editor? Sie können jederzeit wieder präsentieren.",
   "presenter.leave.stay": "Bleiben",
   "presenter.leave.title": "Präsentation verlassen?",

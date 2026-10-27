@@ -164,7 +164,7 @@
   "organization.members.invite.hint": "La persona entra subito nell’organizzazione. Per un nuovo account proviamo a inviare un link di accesso; il risultato indica se è stato inviato.",
   "organization.members.invite.invalidEmail": "Inserire un indirizzo email valido.",
   "organization.members.invite.nameHelp": "Usato per rivolgersi alla persona nell’email di invito. Ignorato se ha già un account.",
-  "organization.members.invite.nameLabel": "Nome",
+  "organization.members.invite.nameLabel": "Nome completo",
   "organization.members.invite.namePlaceholder": "Facoltativo",
   "organization.members.invite.open": "Invita",
   "organization.members.invite.roleFixed": "Entra come membro. Solo il proprietario può invitare amministratori.",
