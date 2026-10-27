@@ -119,18 +119,39 @@ the catalog carries prose only.
 
 Which fields reach an agent is therefore a property of the field:
 
-| On the field       | Meaning                                                                        | Reaches agents                                 |
-| ------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------- |
-| _(nothing)_        | an ordinary authorable field                                                   | yes — this is the default                      |
-| `hidden: true`     | legacy mirror of a structured field; also skipped by the semantic projection   | no                                             |
-| `deprecated: true` | legacy field kept for stored decks                                             | no                                             |
-| `ai: false`        | live and editable, but deliberately withheld (infrastructure, legacy counters) | no                                             |
-| `helpText: '…'`    | the editor's own prose about the field                                         | yes — becomes the schema entry's `description` |
+| On the field    | Meaning                                                                        | Reaches agents                                 |
+| --------------- | ------------------------------------------------------------------------------ | ---------------------------------------------- |
+| _(nothing)_     | an ordinary authorable field                                                   | yes — this is the default                      |
+| `hidden: true`  | legacy mirror of a structured field; also skipped by the semantic projection   | no                                             |
+| `ai: false`     | live and editable, but deliberately withheld (infrastructure, legacy counters) | no                                             |
+| `helpText: '…'` | the editor's own prose about the field                                         | yes — becomes the schema entry's `description` |
 
 The default is _offered_, matching the type-level rule from #386: withholding is
 a decision somebody writes down, not something that happens by omission. The
 `ai` key means the same thing on a field as it does on a type
 (`isAgentOptOut`), one level down.
+
+### Which keys each surface names
+
+Three audiences read a type's content keys, and each needs a different slice
+of the same declaration. The slices are one vocabulary in one module,
+`shared/slide-types/declared-keys.js` (D359); a surface imports its predicate
+and never writes its own.
+
+| Surface                                                                                 | Predicate               | `fields[]` | `hidden` | `ai: false` | Global slide fields  | `instanceKeys`, `textStyles`, derived contrast keys | Undeclared key           |
+| --------------------------------------------------------------------------------------- | ----------------------- | ---------- | -------- | ----------- | -------------------- | --------------------------------------------------- | ------------------------ |
+| Writes: strict MCP, `validateSlideFields` (editor save, API v1, MCP add/update, create) | `declaredContentKeys()` | yes        | yes      | yes         | yes                  | yes                                                 | refused, `unknown_field` |
+| Deck import (`normalizeDeckSlide`)                                                      | `declaredContentKeys()` | yes        | yes      | yes         | yes                  | yes                                                 | dropped                  |
+| Published JSON Schema (`/api/v1/schema/*`): `properties`                                | `isPublishedField()`    | yes        | no       | yes         | yes                  | `textStyles` only                                   | —                        |
+| Published JSON Schema: `propertyNames`                                                  | `declaredContentKeys()` | yes        | yes      | yes         | yes                  | yes                                                 | invalid                  |
+| Agent catalogue (`get_slide_types` schema, generation prompts)                          | `isAgentField()`        | yes        | no       | no          | no (`globalOptions`) | no                                                  | —                        |
+
+`derived` is the third kind of declared key beside fields and `instanceKeys`
+(`DERIVED_SLIDE_CONTENT_KEYS`, `compose.js`): machine values no author writes,
+declared once next to the field they derive from. Stored decks were held to
+the write row by migration 102 (`server/db/migrations/102_strip_undeclared_content_keys.js`),
+which stripped every key the read funnel neither folds nor the type declares;
+there is no tolerant read path for a stray key (D360).
 
 ## Also owed, but not a companion: `structure` and `runtime`
 

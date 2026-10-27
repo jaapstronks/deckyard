@@ -132,13 +132,11 @@ A single powerful quote. Keep quotes short (1-3 sentences, max 260 chars).
 }
 
 --- payoff-slide ---
-Closing slide. Always last.
+Closing slide. Always last. It renders the theme's payoff logo and takes no content.
 
 {
   "type": "payoff-slide",
-  "content": {
-    "tagline": "Optional closing message"
-  }
+  "content": {}
 }
 
 ────────────────────────────────────────

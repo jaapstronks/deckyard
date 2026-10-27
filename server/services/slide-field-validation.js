@@ -3,7 +3,10 @@ import { validateSlideFields } from '../../shared/slide-types/presentation.js';
 import { AppError } from '../utils/errors.js';
 
 /**
- * Refuse the first invalid declared field, retaining all of its diagnostics.
+ * Refuse the first problem with the slide's content, retaining all of its
+ * diagnostics: a key its type does not declare is 400 `unknown_field`, an
+ * invalid declared field 400 `invalid`, each naming the key in
+ * `details.field`.
  * @param {Object} slide
  * @param {Record<string, Object>} slideTypes
  * @param {{lang?: string, allowMissingTranslationText?: boolean}} [location]
@@ -15,15 +18,16 @@ export function assertValidSlideFields(slide, slideTypes, location = {}) {
     allowMissingTranslationText,
   })[0];
   if (!problem) return;
+  const { code = 'invalid', ...diagnostics } = problem;
   throw new AppError(
-    problem.errors.join('; '),
+    diagnostics.errors.join('; '),
     400,
     {
-      ...problem,
+      ...diagnostics,
       slideId: slide.id,
       ...details,
     },
-    'invalid',
+    code,
   );
 }
 

@@ -42,6 +42,7 @@ import {
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../../../../shared/slide-types/registry.js';
 import { formatCanonicalId } from '../../../../shared/slide-types/type-id.js';
+import { isAgentField } from '../../../../shared/slide-types/declared-keys.js';
 import { customSlideTypeKey } from '../../../../shared/slide-types/custom-type-runtime.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
@@ -121,29 +122,6 @@ export function agentWithheldTypesRule(slideTypes = SLIDE_TYPES) {
 }
 
 /**
- * True when a single field definition is outside the agent contract.
- *
- * Two markers:
- *  - `hidden: true` — carried data beside a structured field the agent
- *    already gets. `semantic-projection.js` reads `hidden` the same way, so
- *    this is the existing vocabulary rather than a new one.
- *  - `ai: false` — "this field is not offered to agents" for a live, editable
- *    field. Same key and same meaning as the type-level `ai: false` that
- *    isAgentOptOut() honours, one level down.
- *
- * The default is therefore *offered*: a field an author may fill is a field an
- * agent may fill, and withholding one is a decision somebody has to write down.
- * That is deliberate — the opposite default is what let the hand-written
- * schemas drift out of the registry unnoticed for as long as they did.
- *
- * @param {object} field - A field definition from a slide type's `fields[]`.
- * @returns {boolean}
- */
-function isFieldOptOut(field) {
-  return field?.hidden === true || field?.ai === false;
-}
-
-/**
  * Derive a content schema from a type's editor field definitions.
  *
  * This is the *only* source of the agent-facing `fields[]` shape. Catalog
@@ -157,8 +135,9 @@ function isFieldOptOut(field) {
  *
  * Global fields (background image, logo, a11y…) are left out — they travel in
  * the response's `globalOptions` instead, and repeating them on every type
- * would bury the fields that actually distinguish it. Opted-out fields
- * (see isFieldOptOut) are left out too.
+ * would bury the fields that actually distinguish it. So is every field
+ * `isAgentField()` withholds (`hidden`, `ai: false`; the vocabulary lives in
+ * `shared/slide-types/declared-keys.js`, D359).
  *
  * @param {Array<object>} fields
  * @returns {Object<string, object>}
@@ -168,7 +147,7 @@ export function deriveAgentSchema(fields) {
   for (const field of Array.isArray(fields) ? fields : []) {
     const key = typeof field?.key === 'string' ? field.key : '';
     if (!key || GLOBAL_FIELDS.has(key)) continue;
-    if (isFieldOptOut(field)) continue;
+    if (!isAgentField(field)) continue;
 
     const entry = { type: FIELD_TYPE_TO_SCHEMA_TYPE[field.type] || 'string' };
     if (field.required === true) entry.required = true;

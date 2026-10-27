@@ -72,13 +72,7 @@ export async function renderFollow(root, presentationId) {
   } = buildFollowLayout({ getCopy: () => copy });
   let uiMode = initialUiMode;
 
-  const videoLayer = createVideoLayer({
-    containerEl: stageWrap,
-    getCurrentSlide: () => {
-      if (!pres?.slides?.length) return null;
-      return pres.slides.find((slide) => slide?.id === lastSlideId) || null;
-    },
-  });
+  const videoLayer = createVideoLayer({ containerEl: stageWrap });
 
   root.append(shell);
 
@@ -471,7 +465,6 @@ export async function renderFollow(root, presentationId) {
         if (!ok) return;
       }
       renderSlide();
-      videoLayer.updatePosition();
     },
     onInteractionStateEvent: (data) => {
       interactions?.onInteractionStateEvent?.(data);

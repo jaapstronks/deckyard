@@ -296,10 +296,6 @@ export async function renderShareViewer(root, token) {
     if (liveVideo?.enabled && liveVideo?.streamUrl) {
       videoLayer = createVideoLayer({
         containerEl: stage,
-        getCurrentSlide: () => {
-          const slides = presentation.slides || [];
-          return slides[currentSlideIndex] || null;
-        },
       });
       videoLayer.setConfig(liveVideo);
     }
@@ -335,7 +331,6 @@ export async function renderShareViewer(root, token) {
       onLoopReset: () => {
         currentSlideIndex = 0;
         updateSlide(slideWrap, slideCounter);
-        videoLayer?.updatePosition();
       },
     });
 
@@ -415,7 +410,6 @@ export async function renderShareViewer(root, token) {
       if (newIndex >= 0 && newIndex < slides.length) {
         currentSlideIndex = newIndex;
         updateSlide(slideWrap, slideCounter);
-        videoLayer?.updatePosition();
         // Reset auto-advance timer on manual navigation
         autoAdvanceInstance?.onSlideChanged(currentSlideIndex, slides.length);
         // Refresh comments when slide changes if visible

@@ -40,21 +40,6 @@ Configured in the editor under **Deck settings → Live video**
 (`client/views/editor/deck-settings/live-video.js`): enable-toggle, URL input with
 live provider-detection hint, position select, mobile-position select.
 
-## Per-slide override
-
-`createVideoLayer.updatePosition()` reads `slide.content.videoOverride`:
-
-```json
-{ "videoOverride": { "visible": false } }
-{ "videoOverride": { "position": "strip-bottom" } }
-{ "videoOverride": { "position": { "x": 5, "y": 60, "width": 40 } } }
-```
-
-`visible: false` hides the layer on that slide; `position` (preset name or
-custom object) overrides `defaultPosition`. **There is no editor UI and no
-slide-schema entry for this** - the runtime honors it, but it can currently
-only be set via the API/JSON.
-
 ## Position presets
 
 Defined in `shared/video-stream-providers.js` (`POSITION_PRESETS`),
@@ -119,9 +104,10 @@ Position transitions are disabled on mobile.
 
 ## Surfaces
 
-The layer is mounted by three views via `createVideoLayer({ containerEl,
-getCurrentSlide })`, with `setConfig(pres.settings.liveVideo)` on load and
-`updatePosition()` on every slide render:
+The layer is mounted by three views via `createVideoLayer({ containerEl })`,
+with `setConfig(pres.settings.liveVideo)` on load. The position is the deck's
+setting on every slide; there is no per-slide override (a slide carries only
+the content keys its type declares, D359):
 
 - **Presenter view** (`client/views/presenter/index.js`) — on the presenter's stage.
 - **Follow view** (`client/views/follow/index.js`) — the main audience surface;

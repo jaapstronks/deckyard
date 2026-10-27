@@ -21,6 +21,7 @@ import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
 import { isTextField } from './text-fields.js';
+import { undeclaredContentKeys } from './declared-keys.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import { renderUnresolvedSlideHtml } from './unresolved.js';
 import { resolveThemeLogo } from '../theme-logo.js';
@@ -642,11 +643,15 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
 }
 
 /**
- * Validate declared content fields, preserving their key for inline feedback.
+ * Validate a slide's content against its type's declaration, preserving the
+ * key for inline feedback. A key the type does not declare is refused as
+ * `unknown_field` (D359): every write holds content to the list strict
+ * validation and the import read (`declaredContentKeys()`), and stored decks
+ * were stripped to it by migration 102, so a stray key is the caller's.
  * Item-field checks remain owned by validateFieldValue, at every write surface.
  * @param {Object} slide
  * @param {{slideTypes?: Record<string, Object>, allowMissingTranslationText?: boolean}} [opts]
- * @returns {Array<{field: string, errors: string[]}>}
+ * @returns {Array<{field: string, errors: string[], code?: 'unknown_field'}>}
  */
 export function validateSlideFields(
   slide,
@@ -654,6 +659,26 @@ export function validateSlideFields(
 ) {
   const def = getSlideType(slide?.type, slideTypes);
   if (!def) return [];
+  const unknown = undeclaredContentKeys(def, slide?.content).map((key) => ({
+    field: key,
+    code: /** @type {const} */ ('unknown_field'),
+    errors: [
+      `Unknown field "${key}": slide type ${slide.type} does not declare it`,
+    ],
+  }));
+  return unknown.concat(
+    declaredFieldProblems(def, slide, allowMissingTranslationText),
+  );
+}
+
+/**
+ * The declared fields of `slide` whose value its field refuses.
+ * @param {Object} def
+ * @param {Object} slide
+ * @param {boolean} allowMissingTranslationText
+ * @returns {Array<{field: string, errors: string[]}>}
+ */
+function declaredFieldProblems(def, slide, allowMissingTranslationText) {
   return def.fields.flatMap((field) => {
     // An untranslated version is allowed to have gaps in prose, including
     // nested item prose. Its present values still pass the same type and

@@ -187,6 +187,42 @@ test('update_slide refuses items past the maximum instead of cutting them', asyn
   assert.deepEqual(deckSlides(db)[0].content.items, listItems(2));
 });
 
+// ── an undeclared key is refused, not stored (B257 B5-rest, D359) ───────────
+
+test('add_slide refuses a key the type does not declare', async () => {
+  const db = await installDb();
+  await assert.rejects(
+    () =>
+      callTool('add_slide', {
+        presentationId: DECK_ID,
+        type: 'list-slide',
+        content: { title: 'Lijst', items: listItems(2), heading: 'Oud' },
+      }),
+    (err) =>
+      err.statusCode === 400 &&
+      err.code === 'unknown_field' &&
+      err.details?.field === 'heading',
+  );
+  assert.equal(deckSlides(db).length, 1, 'nothing was stored');
+});
+
+test('update_slide refuses a key the type does not declare', async () => {
+  const db = await installDb();
+  await assert.rejects(
+    () =>
+      callTool('update_slide', {
+        presentationId: DECK_ID,
+        slideIndex: 0,
+        content: { tagline: 'Bedankt' },
+      }),
+    (err) =>
+      err.statusCode === 400 &&
+      err.code === 'unknown_field' &&
+      err.details?.field === 'tagline',
+  );
+  assert.equal('tagline' in deckSlides(db)[0].content, false);
+});
+
 // ── the theme's background variants are on offer ────────────────────────────
 
 test("a strict bulk create accepts the theme's own background variant", async () => {
