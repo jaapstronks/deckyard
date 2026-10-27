@@ -239,7 +239,7 @@
   "list.trash.loading": "Indlæser…",
   "list.trash.title": "Papirkurv",
   "list.visibility.private": "Privat",
-  "list.visibility.published": "Offentliggjort",
+  "list.visibility.published": "Publiceret",
   "list.visibility.shared.many": "Delt med {count} personer",
   "list.visibility.workspace": "Delt med arbejdsområde",
   "mediaLibrary.sandboxSourceTooltip": "I dit eget Deckyard forbinder du billedkilder her — Unsplash, Giphy eller dit eget digitale mediearkiv.",
