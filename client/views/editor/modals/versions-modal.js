@@ -149,7 +149,7 @@ export function openVersionsModal({
         // Preview button
         const previewBtn = h('button', {
           class: 'btn btn-ghost btn-sm',
-          text: t('editor.versions.preview', 'Preview'),
+          text: t('editor.versions.preview', 'Preview version'),
           onclick: () => {
             openVersionPreviewModal({
               root,

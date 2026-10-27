@@ -149,7 +149,7 @@ export function createEmailTemplatesPanel({ user }) {
   const previewBtn = h('button', {
     class: 'btn btn-secondary',
     type: 'button',
-    text: t('settings.admin.emailTemplates.previewBtn', 'Preview'),
+    text: t('settings.admin.emailTemplates.previewBtn', 'Preview email'),
   });
 
   const testBtn = h('button', {

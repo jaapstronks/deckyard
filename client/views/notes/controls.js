@@ -26,7 +26,7 @@ export function createNotesControls({ sessionId, enabled, flashHint }) {
   });
   const nextBtn = h('button', {
     class: 'btn btn-secondary',
-    text: t('notes.next', 'Next'),
+    text: t('notes.next', 'Go to next slide'),
   });
   const gotoInput = h('input', {
     class: 'form-input notes-goto-input',

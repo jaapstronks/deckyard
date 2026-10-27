@@ -215,7 +215,7 @@
   "list.search.resultCount.many": "{count} esitystä löytyi",
   "list.search.resultCount.one": "1 esitys löytyi",
   "list.search.resultsTitle": "Hakutulokset",
-  "list.search.title": "Haku",
+  "list.search.title": "Esityshaku",
   "list.search.tooShort": "Kirjoita vähintään kaksi merkkiä hakeaksesi.",
   "list.section.count.many": "{count} esitystä",
   "list.section.count.one": "1 esitys",

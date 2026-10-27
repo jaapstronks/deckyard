@@ -900,7 +900,7 @@
   "editor.versions.labelModalHint": "Se quiser, adicione uma etiqueta para reconhecer este ponto de gravação mais tarde.",
   "editor.versions.labelModalTitle": "Criar ponto de gravação",
   "editor.versions.labelPlaceholder": "Ex.: antes de grandes alterações",
-  "editor.versions.preview": "Pré-visualização",
+  "editor.versions.preview": "Pré-visualizar versão",
   "editor.versions.preview.noSlides": "Não há diapositivos nesta versão.",
   "editor.versions.preview.renderError": "Não foi possível apresentar",
   "editor.versions.preview.slideCount.many": "{count} diapositivos",

@@ -57,7 +57,7 @@ export function createSearchView({ api, renderCard, onClearSearch }) {
     const mine = ++generation;
 
     if (!currentQuery) {
-      searchTitle.textContent = t('list.search.title', 'Search');
+      searchTitle.textContent = t('list.search.title', 'Presentation search');
       showStatus(
         h('div', {
           class: 'empty-note',

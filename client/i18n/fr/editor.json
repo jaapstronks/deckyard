@@ -875,7 +875,7 @@
   "editor.versions.labelModalHint": "Vous pouvez ajouter un libellé pour reconnaître ce point de sauvegarde plus tard.",
   "editor.versions.labelModalTitle": "Créer un point de sauvegarde",
   "editor.versions.labelPlaceholder": "Ex. : avant grosses modifications",
-  "editor.versions.preview": "Aperçu",
+  "editor.versions.preview": "Afficher l'aperçu de la version",
   "editor.versions.preview.noSlides": "Aucune diapositive dans cette version.",
   "editor.versions.preview.renderError": "Affichage impossible",
   "editor.versions.preview.slideCount.many": "{count} diapositives",
