@@ -79,6 +79,11 @@ void renderer_install_filter(void) {
   _exit(126);
 #else
   if (prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1) _exit(126);
+  /* A pipe core_pattern ignores RLIMIT_CORE: a crash would start a host
+   * helper with this process's memory. A non-dumpable mm dumps nothing, and
+   * prctl is outside the final filter, so the guest cannot undo it. */
+  if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0 ||
+      prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) != 0) _exit(126);
   struct sock_fprog program = {
     .len = (unsigned short)(sizeof(filter) / sizeof(filter[0])),
     .filter = (struct sock_filter *)filter,
