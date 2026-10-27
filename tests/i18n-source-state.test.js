@@ -22,6 +22,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { walkFiles } from './helpers/walk-files.js';
 
 import {
   SOURCE_STATE_PATH,
@@ -83,20 +84,15 @@ function stateFor(reference, translations, status = 'unreviewed') {
 
 /** sha256 of every file under a directory, to prove "nothing was written". */
 function fingerprint(dir) {
-  const out = {};
-  const walk = (d) => {
-    for (const e of fsSync.readdirSync(d, { withFileTypes: true })) {
-      const full = path.join(d, e.name);
-      if (e.isDirectory()) walk(full);
-      else
-        out[path.relative(dir, full)] = crypto
-          .createHash('sha256')
-          .update(fsSync.readFileSync(full))
-          .digest('hex');
-    }
-  };
-  walk(dir);
-  return out;
+  return Object.fromEntries(
+    walkFiles(dir).map((file) => [
+      path.relative(dir, file),
+      crypto
+        .createHash('sha256')
+        .update(fsSync.readFileSync(file))
+        .digest('hex'),
+    ]),
+  );
 }
 
 describe('the fingerprint', () => {
