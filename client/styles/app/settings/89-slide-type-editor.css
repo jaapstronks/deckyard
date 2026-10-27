@@ -5,7 +5,7 @@
 /* Custom types grid (mirrors .themes-grid) */
 .custom-types-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: var(--ps-space-4);
 }
 
@@ -58,8 +58,14 @@
 
 .custom-type-card-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--ps-space-2);
+}
+
+.custom-type-card-actions .btn {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 /* Status badges */
@@ -347,7 +353,12 @@
 
 .custom-type-context-menu {
   display: block;
-  min-width: 160px;
+  min-width: min(160px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+}
+
+.custom-type-context-menu .dropdown-item {
+  min-height: 44px;
 }
 
 .custom-type-context-menu .dropdown-item.is-danger {
