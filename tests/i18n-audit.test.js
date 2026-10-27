@@ -29,6 +29,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -176,5 +177,39 @@ describe('i18n orphan keys', () => {
       [],
       `${stale.length} stale orphan exemption(s) — the key is gone, remove the entry.`,
     );
+  });
+});
+
+describe('i18n translation freshness in the audit CLI', () => {
+  // The rules are pinned in tests/i18n-source-state.test.js against the shared
+  // collector. This pins the wiring: the CLI reports the same axis and its exit
+  // code follows it, so `npm run i18n:audit` cannot go green on drift the
+  // suite would catch.
+  it('--json carries the freshness axis and exits 0 only when it is clean', () => {
+    const result = spawnSync(
+      process.execPath,
+      [path.join(repoRoot, 'scripts', 'i18n-audit.js'), '--json'],
+      { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+    );
+    const report = JSON.parse(result.stdout);
+    for (const field of ['hardcoded', 'orphans', 'runtimeGaps', 'freshness'])
+      assert.ok(field in report, `audit --json lost "${field}"`);
+    const { freshness } = report;
+    assert.deepStrictEqual(Object.keys(freshness.totals).sort(), [
+      'dangling',
+      'missing',
+      'reviewedCurrent',
+      'sourceChanged',
+      'sourceMissing',
+      'translationChanged',
+      'unreviewed',
+      'untracked',
+    ]);
+    assert.equal(freshness.failed, freshness.findings.length > 0);
+    const othersFailed =
+      report.unexpected.length ||
+      report.newOrphans.length ||
+      report.runtimeGaps.length;
+    assert.equal(result.status, othersFailed || freshness.failed ? 1 : 0);
   });
 });

@@ -45,6 +45,7 @@ import {
   collectFallbackSites,
 } from '../scripts/lib/i18n-keys.js';
 import { loadLocale } from '../scripts/lib/i18n-fs.js';
+import { placeholderNames } from '../scripts/lib/i18n-values.js';
 import {
   LOCALE_IDS,
   REFERENCE_LOCALE,
@@ -174,13 +175,6 @@ export function detectCarbonCopies(reference, dicts) {
   return rows.sort();
 }
 
-/** @param {string} s @returns {string[]} sorted {var} names in a string */
-function placeholders(s) {
-  return [...String(s).matchAll(/\{([a-zA-Z0-9_]+)\}/g)]
-    .map((m) => m[1])
-    .sort();
-}
-
 describe('i18n coverage', () => {
   for (const locale of REQUIRED_LOCALES) {
     it(`${locale}/ defines every t() key used in client/`, async () => {
@@ -228,8 +222,8 @@ describe('i18n coverage', () => {
       const mismatched = [];
       for (const key of Object.keys(reference)) {
         if (typeof dict[key] !== 'string') continue;
-        const a = placeholders(reference[key]);
-        const b = placeholders(dict[key]);
+        const a = placeholderNames(reference[key]);
+        const b = placeholderNames(dict[key]);
         if (a.join(',') !== b.join(',')) {
           mismatched.push(
             `${key}: ${REFERENCE_LOCALE}{${a.join(',')}} vs ${locale}{${b.join(',')}}`,

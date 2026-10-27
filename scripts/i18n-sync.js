@@ -35,6 +35,12 @@
  * (write by default, `--dry-run` to hold back), which meant the safe run was
  * the one you had to remember.
  *
+ * A deletion also retires the translation's record in
+ * `scripts/i18n-source-state.json` (see scripts/lib/i18n-source-state.js):
+ * a record without a translation fails the audit as `dangling`. That is the
+ * only thing this script does to the sidecar. It never refreshes a hash or
+ * changes a status; a review is the reviewed import's job, never a sync's.
+ *
  * Usage:
  *   node scripts/i18n-sync.js              # report the plan, write nothing
  *   node scripts/i18n-sync.js --apply      # prune + strip, writing to disk
@@ -46,6 +52,12 @@ import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { slideTypeUiKeys } from './lib/slide-type-i18n-keys.js';
 import { I18N_DIR, readJson, writeJson } from './lib/i18n-fs.js';
 import { isCli } from './lib/is-cli.js';
+import {
+  SOURCE_STATE_PATH,
+  dropSourceRecords,
+  readSourceState,
+  writeSourceState,
+} from './lib/i18n-source-state.js';
 import { parseArgs } from './lib/cli-args.js';
 import {
   LOCALE_IDS,
@@ -99,6 +111,15 @@ export function liveSlideTypeI18nKeys() {
  * @property {number} totalStripped  carbon copies removed across all files
  * @property {string[]} skippedModules modules with no reference to compare against
  * @property {SyncScope} scope       the locale/module matrix the plan covers
+ * @property {SourceStateEdit} sourceState the sidecar records the deletions retire
+ */
+
+/**
+ * @typedef {object} SourceStateEdit
+ * @property {Array<{locale: string, key: string, status: string}>} removed
+ *   records dropped because their translation is deleted
+ * @property {import('./lib/i18n-source-state.js').SourceState} data
+ *   the sidecar with those records dropped and every other record unchanged
  */
 
 /**
@@ -142,6 +163,9 @@ export function liveSlideTypeI18nKeys() {
  */
 export async function planSync() {
   const valid = liveSlideTypeI18nKeys();
+  // Strict, and first: a sidecar that cannot be read must stop the run before
+  // a plan is made, not after its locale half has been written.
+  const sourceState = await readSourceState(SOURCE_STATE_PATH);
   /** @type {Map<string, SyncFileEdit>} */
   const edits = new Map();
   /** locale/module → contents as they stand after the prune */
@@ -212,6 +236,12 @@ export async function planSync() {
   }
 
   const list = [...edits.values()];
+  const deleted = list
+    .filter((e) => e.locale !== REFERENCE_LOCALE)
+    .flatMap((e) =>
+      [...e.pruned, ...e.stripped].map((key) => ({ locale: e.locale, key })),
+    );
+  const { state: nextState, removed } = dropSourceRecords(sourceState, deleted);
   return {
     edits: list,
     totalPruned: list.reduce((n, e) => n + e.pruned.length, 0),
@@ -226,6 +256,7 @@ export async function planSync() {
       stripLocales: [...TIER_2],
       reference: REFERENCE_LOCALE,
     },
+    sourceState: { removed, data: nextState },
   };
 }
 
@@ -249,6 +280,8 @@ export async function applyPlan(plan) {
   for (const edit of plan.edits) {
     await writeJson(edit.filePath, edit.data);
   }
+  if (plan.sourceState.removed.length)
+    await writeSourceState(plan.sourceState.data, SOURCE_STATE_PATH);
 }
 
 function formatKeys(keys) {
@@ -289,10 +322,22 @@ function reportPlan(plan, { apply }) {
     console.log(`Skipping ${moduleName}: no English source`);
   }
 
+  const { removed } = plan.sourceState;
+  if (removed.length) {
+    console.log(
+      `scripts/i18n-source-state.json: -${removed.length} record(s) of deleted translations`,
+    );
+    if (!apply)
+      console.log(
+        formatKeys(removed.map((r) => `${r.locale} ${r.key} (${r.status})`)),
+      );
+  }
+
   console.log(
     `\n${plan.edits.length} file(s) ${apply ? 'changed' : 'would change'}: ` +
       `${plan.totalPruned} orphaned slideType key(s) pruned, ` +
-      `${plan.totalStripped} carbon copy of ${reference} stripped.`,
+      `${plan.totalStripped} carbon copy of ${reference} stripped, ` +
+      `${removed.length} source-state record(s) retired.`,
   );
 }
 

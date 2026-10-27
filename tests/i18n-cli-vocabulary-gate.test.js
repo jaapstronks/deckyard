@@ -36,8 +36,13 @@ const SCRIPTS = fs
   .filter((name) => name.startsWith('i18n-') && name.endsWith('.js'))
   .sort();
 
-/** The words a script may use. Adding one here is a deliberate decision. */
-const VOCABULARY = ['--apply', '--json', '--orphans'];
+/**
+ * The words a script may use. Adding one here is a deliberate decision.
+ * `--review` names a second *report* of `i18n-fill.js` (present translations
+ * awaiting review, beside the missing-keys one); it reads, so it does not
+ * re-split the read/write vocabulary.
+ */
+const VOCABULARY = ['--apply', '--json', '--orphans', '--review'];
 
 /**
  * @param {string} script
