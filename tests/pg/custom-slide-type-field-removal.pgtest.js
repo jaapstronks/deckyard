@@ -21,6 +21,7 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert';
 import crypto from 'node:crypto';
+import { __setTestDb } from '../../server/db/client.js';
 
 import {
   closeTestDb,
@@ -301,6 +302,36 @@ pgDescribe('custom slide type field removal (PostgreSQL)', () => {
       .where('organization_id', '=', otherOrg)
       .executeTakeFirstOrThrow();
     assert.strictEqual(otherType.fields.length, 2);
+  });
+
+  it('rolls back the type, every content surface and the binary if commit fails', async () => {
+    const before = await snapshotAll();
+    const proxy = new Proxy(db, {
+      get(target, prop) {
+        if (prop === 'transaction')
+          return () => ({
+            execute: (fn) =>
+              target.transaction().execute(async (trx) => {
+                await fn(trx);
+                throw new Error('injected field migration failure');
+              }),
+          });
+        const value = Reflect.get(target, prop, target);
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    __setTestDb(proxy);
+    try {
+      await assert.rejects(
+        updateCustomSlideType(storageScope, ids.type, ONE_FIELD, {
+          force: true,
+        }),
+        /injected field migration failure/,
+      );
+    } finally {
+      __setTestDb(db);
+    }
+    assert.deepStrictEqual(await snapshotAll(), before);
   });
 
   it('a second forced run finds nothing left to strip', async () => {

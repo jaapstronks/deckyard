@@ -205,6 +205,8 @@ and applies the change to open collab docs (B849,
 confirmation whose button sends the forced save. Renaming a field key is a
 removal plus an addition, so it asks the same question.
 
+The count, pre-strip deck reads, type update and strip run inside `withContentTransaction` (`server/db/client.js`). It locks the organization's row before reading the registry. Deck create/update/duplicate, version and comment snapshots, library create/PATCH and sandbox seeds, and collab load/store use the same boundary. Nested facade calls share its connection through an async-local context. This deliberately serializes content writes within one organization, including when no slide yet uses the removed field; other organizations can write independently. A waiting writer reads the committed registry and refuses obsolete custom keys with `unknown_field`, including unchanged submitted slides and historical copies. Snapshot checks do not impose today's required-field rules. Collab stores validate before persisting the binary, so a waiting store cannot restore a dropped binary with obsolete fields. Cache invalidation and the field-removal live-doc diff run after commit.
+
 ## Config & flags
 
 No dedicated feature flag gates custom slide types. Two conditions apply:

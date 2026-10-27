@@ -4,6 +4,7 @@
  */
 
 import pg from 'pg';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import { getDatabaseConfig } from '../config/database.js';
 import { createLogger } from '../utils/logger.js';
@@ -17,6 +18,9 @@ let db = null;
 
 /** @type {pg.Pool | null} */
 let pool = null;
+
+// A content write and its registry reads must use the same locked connection.
+const contentTransaction = new AsyncLocalStorage();
 
 /**
  * @typedef {Object} Database
@@ -106,7 +110,8 @@ export function getDb() {
       'Database not initialized. Call initializeDatabase() first or check STORAGE_MODE.',
     );
   }
-  return db;
+  const active = contentTransaction.getStore();
+  return active?.open ? active.db : db;
 }
 
 /**
@@ -144,6 +149,47 @@ export function isDatabaseAvailable() {
 export async function withDbGuard(fallback, fn) {
   if (!isDatabaseAvailable()) return fallback;
   return fn(getDb());
+}
+
+/**
+ * Serialize registry changes and content writes within one organization.
+ *
+ * The organization row is the common database lock, including when no type or
+ * slide uses a removed field yet. READ COMMITTED registry reads happen after
+ * acquiring it. Nested facade calls reuse the transaction through getDb(), so
+ * validation and persistence cannot fall on opposite sides of a type change.
+ * The context is marked closed before commit: detached work must never reuse
+ * a transaction after its callback has returned.
+ *
+ * @template T
+ * @param {string} organizationId
+ * @param {() => Promise<T>} fn
+ * @returns {Promise<T>}
+ */
+export async function withContentTransaction(organizationId, fn) {
+  const active = contentTransaction.getStore();
+  if (active?.open) {
+    if (active.organizationId !== organizationId)
+      throw new Error('A content transaction cannot cross organizations');
+    return fn();
+  }
+  if (!isDatabaseAvailable()) return fn();
+  return getDb()
+    .transaction()
+    .execute(async (trx) => {
+      await trx
+        .selectFrom('organizations')
+        .select('id')
+        .where('id', '=', organizationId)
+        .forUpdate()
+        .executeTakeFirst();
+      const context = { db: trx, organizationId, open: true };
+      try {
+        return await contentTransaction.run(context, fn);
+      } finally {
+        context.open = false;
+      }
+    });
 }
 
 /**

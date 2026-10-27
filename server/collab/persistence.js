@@ -20,6 +20,11 @@
  * `createCollabPersistence({ repoRoot })` from mount.js, gated by
  * COLLAB_LIVE_EDITS.
  */
+import {
+  withContentWrite,
+  assertCurrentCustomFields,
+  contentSlides,
+} from '../storage/content-write.js';
 
 import { isDeepStrictEqual } from 'node:util';
 import * as YDefault from 'yjs';
@@ -92,67 +97,69 @@ export function createCollabPersistence({
     const id = presentationIdFromDocumentName(documentName);
     if (!id) return document;
 
-    const stored = await getYDocState(storageScopeFor(documentName), id);
-    if (stored instanceof Uint8Array && stored.length > 0) {
-      Y.applyUpdate(document, stored, 'collab-load');
-      // Create the shared container before any peers connect: two clients
-      // initializing a nested Y.Map independently would compete for its slot.
-      // This adds no records or inferred translation history.
-      codec.ensureTranslationSources(document);
-      // A binary can predate any canonical shape fold, just like the JSON.
-      // Normalize its projection through the same funnel before peers see it,
-      // then apply only the diff so existing collaborative text identities and
-      // translation provenance survive (B800).
-      const before = codec.projectDocToPresentation(document);
-      const canonical = migratePresentation(structuredClone(before));
-      if (!isDeepStrictEqual(before, canonical)) {
-        codec.applyPresentationToDoc(canonical, document, { base: before });
+    return withContentWrite(storageScopeFor(documentName), async () => {
+      const stored = await getYDocState(storageScopeFor(documentName), id);
+      if (stored instanceof Uint8Array && stored.length > 0) {
+        Y.applyUpdate(document, stored, 'collab-load');
+        // Create the shared container before any peers connect: two clients
+        // initializing a nested Y.Map independently would compete for its slot.
+        // This adds no records or inferred translation history.
+        codec.ensureTranslationSources(document);
+        // A binary can predate any canonical shape fold, just like the JSON.
+        // Normalize its projection through the same funnel before peers see it,
+        // then apply only the diff so existing collaborative text identities and
+        // translation provenance survive (B800).
+        const before = codec.projectDocToPresentation(document);
+        const canonical = migratePresentation(structuredClone(before));
+        if (!isDeepStrictEqual(before, canonical)) {
+          codec.applyPresentationToDoc(canonical, document, { base: before });
+          await setYDocState(
+            storageScopeFor(documentName),
+            id,
+            Y.encodeStateAsUpdate(document),
+          );
+        }
+        return document;
+      }
+
+      // The connection was authorized in onConnect, which is where a deck the user
+      // may not read is rejected; this read is addressed by that authorization.
+      const pres = await getPresentation(
+        {
+          ...storageScopeFor(documentName),
+          crossOrganization:
+            'collab document load: the connection was authorized in onConnect',
+        },
+        id,
+      );
+      if (!pres) return document; // authz already rejected unknown decks
+      if (pres.organizationId)
+        documentOrganizations.set(documentName, pres.organizationId);
+
+      const { warnings } = codec.bootstrapPresentationToDoc(pres, document);
+      if (warnings.length) {
+        log.warn(
+          `[collab] bootstrap of ${id} normalized diverged language versions (${warnings.length} warning(s)):\n` +
+            warnings.map((w) => `  - ${w}`).join('\n'),
+        );
+      }
+
+      // Persist the bootstrap immediately so later opens load the doc binary
+      // instead of re-bootstrapping (and re-normalizing) from JSON.
+      try {
         await setYDocState(
           storageScopeFor(documentName),
           id,
           Y.encodeStateAsUpdate(document),
         );
+      } catch (err) {
+        log.error(
+          `[collab] failed to store bootstrap state for ${id}:`,
+          err?.message || err,
+        );
       }
       return document;
-    }
-
-    // The connection was authorized in onConnect, which is where a deck the user
-    // may not read is rejected; this read is addressed by that authorization.
-    const pres = await getPresentation(
-      {
-        ...storageScopeFor(documentName),
-        crossOrganization:
-          'collab document load: the connection was authorized in onConnect',
-      },
-      id,
-    );
-    if (!pres) return document; // authz already rejected unknown decks
-    if (pres.organizationId)
-      documentOrganizations.set(documentName, pres.organizationId);
-
-    const { warnings } = codec.bootstrapPresentationToDoc(pres, document);
-    if (warnings.length) {
-      log.warn(
-        `[collab] bootstrap of ${id} normalized diverged language versions (${warnings.length} warning(s)):\n` +
-          warnings.map((w) => `  - ${w}`).join('\n'),
-      );
-    }
-
-    // Persist the bootstrap immediately so later opens load the doc binary
-    // instead of re-bootstrapping (and re-normalizing) from JSON.
-    try {
-      await setYDocState(
-        storageScopeFor(documentName),
-        id,
-        Y.encodeStateAsUpdate(document),
-      );
-    } catch (err) {
-      log.error(
-        `[collab] failed to store bootstrap state for ${id}:`,
-        err?.message || err,
-      );
-    }
-    return document;
+    });
   }
 
   /** Drop the per-document organization when Hocuspocus unloads the doc. */
@@ -171,63 +178,77 @@ export function createCollabPersistence({
       return;
     }
 
-    try {
-      await setYDocState(
-        storageScopeFor(documentName),
-        id,
-        Y.encodeStateAsUpdate(document),
-      );
-    } catch (err) {
-      // Do NOT fall through to the JSON write. If the binary store failed but
-      // the JSON write then succeeded, the stored binary would be OLDER than
-      // the JSON, and nothing invalidates it (collab-reason saves never delete
-      // the binary) — the next collab open would load the stale binary and
-      // revert the newer JSON on its first store. Bailing keeps the pair
-      // consistent: the JSON is at most one debounce window stale and
-      // self-heals on the next (retried) store.
-      log.error(
-        `[collab] failed to store doc binary for ${id}; skipping the JSON write ` +
-          'this cycle to keep binary/JSON consistent (retries next store):',
-        err?.message || err,
-      );
-      return;
-    }
-
-    // Serialize to the legacy JSON through the facade. The doc is the merge,
-    // so no expectedRevision (no conflict check); locks don't apply to
-    // collab-managed saves.
-    try {
-      // Through the read funnel first: a doc binary stored before a schema
-      // step still holds the old shapes, and the write seam refuses some of
-      // them (an unoffered text style, B464). Folding here is what every read
-      // of the stored JSON does too.
-      const projected = migratePresentation(
-        codec.projectDocToPresentation(document),
-      );
-      // Skip the JSON write when the doc already equals the stored deck —
-      // notably right after the server-as-collaborator seam applied a fresh
-      // server save to the doc (live-apply.js flushes this hook on
-      // disconnect). Storing anyway would bump the revision and fire SSE
-      // for a byte-identical deck.
-      const storageScope = storageScopeFor(documentName);
-      const current = await getPresentation(storageScope, id);
-      if (current && isDeepStrictEqual(projected, current)) return;
-      const result = await updatePresentation(storageScope, id, projected, {
-        bypassLockCheck: true,
-        reason: 'collab',
-      });
-      if (!result || result.ok === false) {
+    return withContentWrite(storageScopeFor(documentName), async () => {
+      try {
+        await assertCurrentCustomFields(
+          storageScopeFor(documentName),
+          contentSlides(codec.projectDocToPresentation(document)),
+        );
+      } catch (err) {
         log.error(
-          `[collab] serializing ${id} to JSON was rejected (${result?.reason || 'unknown'}); ` +
-            'doc binary kept, JSON left as-is (at most one debounce window stale)',
+          `[collab] refusing obsolete custom fields for ${id}:`,
+          err?.message || err,
+        );
+        return;
+      }
+      try {
+        await setYDocState(
+          storageScopeFor(documentName),
+          id,
+          Y.encodeStateAsUpdate(document),
+        );
+      } catch (err) {
+        // Do NOT fall through to the JSON write. If the binary store failed but
+        // the JSON write then succeeded, the stored binary would be OLDER than
+        // the JSON, and nothing invalidates it (collab-reason saves never delete
+        // the binary) — the next collab open would load the stale binary and
+        // revert the newer JSON on its first store. Bailing keeps the pair
+        // consistent: the JSON is at most one debounce window stale and
+        // self-heals on the next (retried) store.
+        log.error(
+          `[collab] failed to store doc binary for ${id}; skipping the JSON write ` +
+            'this cycle to keep binary/JSON consistent (retries next store):',
+          err?.message || err,
+        );
+        return;
+      }
+
+      // Serialize to the legacy JSON through the facade. The doc is the merge,
+      // so no expectedRevision (no conflict check); locks don't apply to
+      // collab-managed saves.
+      try {
+        // Through the read funnel first: a doc binary stored before a schema
+        // step still holds the old shapes, and the write seam refuses some of
+        // them (an unoffered text style, B464). Folding here is what every read
+        // of the stored JSON does too.
+        const projected = migratePresentation(
+          codec.projectDocToPresentation(document),
+        );
+        // Skip the JSON write when the doc already equals the stored deck —
+        // notably right after the server-as-collaborator seam applied a fresh
+        // server save to the doc (live-apply.js flushes this hook on
+        // disconnect). Storing anyway would bump the revision and fire SSE
+        // for a byte-identical deck.
+        const storageScope = storageScopeFor(documentName);
+        const current = await getPresentation(storageScope, id);
+        if (current && isDeepStrictEqual(projected, current)) return;
+        const result = await updatePresentation(storageScope, id, projected, {
+          bypassLockCheck: true,
+          reason: 'collab',
+        });
+        if (!result || result.ok === false) {
+          log.error(
+            `[collab] serializing ${id} to JSON was rejected (${result?.reason || 'unknown'}); ` +
+              'doc binary kept, JSON left as-is (at most one debounce window stale)',
+          );
+        }
+      } catch (err) {
+        log.error(
+          `[collab] serializing ${id} to JSON failed; doc binary kept, JSON left as-is:`,
+          err?.message || err,
         );
       }
-    } catch (err) {
-      log.error(
-        `[collab] serializing ${id} to JSON failed; doc binary kept, JSON left as-is:`,
-        err?.message || err,
-      );
-    }
+    });
   }
 
   return { onLoadDocument, onStoreDocument, afterUnloadDocument };
