@@ -35,6 +35,10 @@ const entries = [
     'worker.js',
     readFileSync(`${root}/tests/fixtures/renderer-runner/worker.js`),
   ],
+  [
+    'static-network.js',
+    readFileSync(`${root}/tests/fixtures/renderer-runner/static-network.js`),
+  ],
   ['probe.node', readFileSync(`${scratch}/probe.node`)],
   ['package.json', Buffer.from('{"type":"module"}\n')],
 ];

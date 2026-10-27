@@ -10,6 +10,7 @@ const chunks = [];
 for await (const c of process.stdin) chunks.push(c);
 const input = JSON.parse(Buffer.concat(chunks));
 const mode = input.presentation.title;
+const options = input.presentation.probe ?? {};
 const finish = (canvas, sealed = {}) =>
   process.stdout.write(
     JSON.stringify({
@@ -47,13 +48,18 @@ else if (mode === 'network') {
   const dgram = await import('node:dgram');
   const dns = await import('node:dns/promises');
   const results = {};
-  for (const [name, options] of [
+  for (const [name, target] of [
     ['tcp4', { host: '127.0.0.1', port: 48471 }],
     ['tcp6', { host: '::1', port: 48472 }],
     ['unix', { path: '/tmp/network-listener.sock' }],
+    ...(options.tcp ?? []).map(([host, port]) => [
+      `tcp:${host}:${port}`,
+      { host, port },
+    ]),
+    ...(options.unix ?? []).map((path) => [`unix:${path}`, { path }]),
   ]) {
     results[name] = await new Promise((resolve) => {
-      const s = net.createConnection(options);
+      const s = net.createConnection(target);
       s.once('connect', () => {
         s.destroy();
         resolve('CONNECTED');
@@ -64,6 +70,12 @@ else if (mode === 'network') {
   for (const [name, type, host, port] of [
     ['udp4', 'udp4', '127.0.0.1', 48471],
     ['udp6', 'udp6', '::1', 48472],
+    ...(options.udp ?? []).map(([host, port]) => [
+      `udp:${host}:${port}`,
+      host.includes(':') ? 'udp6' : 'udp4',
+      host,
+      port,
+    ]),
   ]) {
     results[name] = await new Promise((resolve) => {
       const s = dgram.createSocket(type);
@@ -80,6 +92,18 @@ else if (mode === 'network') {
   for (const [name, operation] of [
     ['fetch', () => fetch('http://127.0.0.1:48471')],
     ['dns', () => dns.resolve4('runner.invalid')],
+    ['dnsLookup', () => dns.lookup('localhost')],
+    ['dnsLookupHost', () => dns.lookup('github.com')],
+    [
+      'websocket',
+      () =>
+        new Promise((resolve, reject) => {
+          const ws = new WebSocket('ws://127.0.0.1:48471');
+          ws.onopen = () => resolve(ws.close());
+          ws.onerror = (event) =>
+            reject(event.error ?? new Error('websocket error'));
+        }),
+    ],
   ]) {
     try {
       await operation();
@@ -88,6 +112,8 @@ else if (mode === 'network') {
       results[name] = e.cause?.code || e.code || e.name;
     }
   }
+  // A statically importing module, evaluated after B3 like any bundle file.
+  results.staticImport = await (await import('./static-network.js')).probe();
   results.builtinSocket = await new Promise((resolve) => {
     const s = process
       .getBuiltinModule('net')
@@ -96,6 +122,7 @@ else if (mode === 'network') {
   });
   finish({ results, direct: native.probe() });
 } else if (mode === 'inventory') {
+  const net = await import('node:net');
   const denied = {};
   for (const p of [
     '/root/deckyard-render-canary',
@@ -104,6 +131,7 @@ else if (mode === 'network') {
     '/run/deckyard-render/broker.sock',
     '/sys/fs/cgroup',
     '/proc/1/root/root/deckyard-render-canary',
+    ...(options.canaries ?? []),
   ]) {
     try {
       fs.readFileSync(p);
@@ -112,6 +140,39 @@ else if (mode === 'network') {
       denied[p] = e.code;
     }
   }
+  const writes = {};
+  for (const p of [
+    '/bundle/manifest.json',
+    '/bundle/files/worker.js',
+    '/bundle/files/new',
+    '/new',
+    '/etc/hosts',
+    '/opt/runner/bootstrap.js',
+    '/proc/sys/kernel/hostname',
+    '/proc/self/attr/current',
+    '/dev/new',
+  ]) {
+    try {
+      fs.writeFileSync(p, 'guest');
+      writes[p] = 'WRITTEN';
+    } catch (e) {
+      writes[p] = e.code;
+    }
+  }
+  const sockets = {};
+  for (const p of [
+    '/run/deckyard-render/broker.sock',
+    '/run/deckyard-render/private/supervisor.sock',
+    ...(options.unix ?? []),
+  ])
+    sockets[p] = await new Promise((resolve) => {
+      const s = net.createConnection({ path: p });
+      s.once('connect', () => {
+        s.destroy();
+        resolve('CONNECTED');
+      });
+      s.once('error', (e) => resolve(e.code));
+    });
   fs.writeFileSync('/tmp/private', 'job');
   finish({
     env: process.env,
@@ -124,7 +185,10 @@ else if (mode === 'network') {
     }),
     mounts: fs.readFileSync('/proc/self/mountinfo', 'utf8'),
     devices: fs.readdirSync('/dev'),
+    pids: fs.readdirSync('/proc').filter((name) => /^\d+$/.test(name)),
     denied,
+    writes,
+    sockets,
     tmp: fs.readFileSync('/tmp/private', 'utf8'),
   });
 } else if (mode === 'worker') {
@@ -161,7 +225,32 @@ else if (mode === 'truthy')
 else if (mode === 'partial') process.stdout.write('{"ok":true,');
 else if (mode === 'extra-json')
   process.stdout.write('{"ok":true,"canvas":"x","reader":"x","sealed":{}}{}');
-else if (mode === 'failure')
+else if (mode === 'sealed-array')
+  process.stdout.write('{"ok":true,"canvas":"x","reader":"x","sealed":[]}');
+else if (mode === 'sealed-string')
+  process.stdout.write('{"ok":true,"canvas":"x","reader":"x","sealed":"ok"}');
+else if (mode === 'sealed-missing')
+  process.stdout.write('{"ok":true,"canvas":"x","reader":"x"}');
+else if (mode === 'canvas-number')
+  process.stdout.write('{"ok":true,"canvas":1,"reader":"x","sealed":{}}');
+else if (mode === 'reader-missing')
+  process.stdout.write('{"ok":true,"canvas":"x","sealed":{}}');
+else if (mode === 'unknown-code')
+  process.stdout.write(
+    '{"ok":false,"code":"invented","message":"private canary","details":null}',
+  );
+else if (mode === 'crash-partial') {
+  fs.writeSync(1, '{"ok":true,"canvas":"');
+  process.abort();
+} else if (mode === 'large') {
+  // Bounded output near the limits; options select size and code point.
+  const text = String.fromCodePoint(options.codePoint ?? 0x61).repeat(
+    options.count ?? 1,
+  );
+  process.stdout.write(
+    JSON.stringify({ ok: true, canvas: text, reader: 'large', sealed: {} }),
+  );
+} else if (mode === 'failure')
   process.stdout.write(
     '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":null}',
   );
