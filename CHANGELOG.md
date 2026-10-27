@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.91.1](https://github.com/jaapstronks/deckyard/compare/v1.91.0...v1.91.1) (2026-10-27)
+
+
+### Fixed
+
+* **editor:** preserve authoring flow through validation failures ([#1861](https://github.com/jaapstronks/deckyard/issues/1861)) ([be31e36](https://github.com/jaapstronks/deckyard/commit/be31e3699f9efc1d0718ec686bc6044abaa47bbd))
+
 ## [1.91.0](https://github.com/jaapstronks/deckyard/compare/v1.90.0...v1.91.0) (2026-10-27)
 
 
