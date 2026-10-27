@@ -78,6 +78,10 @@ int main(int argc, char **argv) {
     if (!exited && pollfds[6].revents) {
       while (waitpid(pid,&status,0)<0) if (errno!=EINTR) return 126;
       exited=1;
+      /* A failed or killed runtime is a failure now: a still-running guest
+       * keeps the pipes open, so waiting for EOF would last until the
+       * deadline. Only a clean exit drains the remaining output. */
+      if (!WIFEXITED(status) || WEXITSTATUS(status)) break;
       if (flows[0].from>=0) close(flows[0].from);
       if (flows[0].to>=0) close(flows[0].to);
       flows[0].from=flows[0].to=-1;flows[0].begin=flows[0].end=0;flows[0].eof=1;
