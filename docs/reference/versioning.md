@@ -61,6 +61,13 @@ and docs alike:
    `⚠ BREAKING CHANGES` note (the beta rule above) and a migration for stored
    data where one applies. Forks sync on tags and should expect breaking
    releases while the badge is up — the beta badge _is_ that warning.
+   **Stored data is migrated, never tolerated.** The only stored decks that
+   count are those of the one production fork; dev and sandbox data are
+   disposable. "An old deck might still carry X" is therefore not a reason to
+   keep a lenient read or write path: measure X on that instance if it
+   matters, and ship a one-off migration that brings it to the strict form.
+   Do not design compatibility layers, dry-run/rollback machinery or
+   transition periods for installs that do not exist.
 3. **Tolerance is not compatibility.** Accepting several shapes or spellings
    for one meaning, without normalizing to a single canonical form, is drift
    wearing a friendly face. The rule at every boundary: accept what you must,

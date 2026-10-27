@@ -22,6 +22,10 @@ Apply it at the recurring moments:
 - **Weighing a design**: "the code already accepts X" is never an argument —
   current behaviour describes the codebase, it does not justify the contract.
   When surfaces disagree, the inconsistency is the defect, not the precedent.
+  Neither is "old stored decks might carry X": the only stored decks that
+  count are the production fork's, and the answer is a one-off migration,
+  not a lenient path (versioning.md, rule 2). Weigh the strict option first
+  and do not spend a proposal on compatibility nobody needs.
 - **Meeting a form question mid-build**: decide it on the doctrine side
   (declaration over a branch on a name, one shape, refuse over silently
   repair) and state the decision in the PR body for the reviewer to test.
