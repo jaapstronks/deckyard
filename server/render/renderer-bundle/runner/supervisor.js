@@ -79,6 +79,8 @@ export async function startSupervisor() {
     }
     throw new Error('reservation id unavailable');
   }
+  const stuck = new Set(),
+    blocked = new Set();
   let ready = false,
     active = null,
     instance = null,
@@ -235,7 +237,10 @@ export async function startSupervisor() {
       ready = false;
       if (job.phase === 'CLEANED') retireInstance();
       else revoke(job, 'sandbox_unavailable');
-      log(job, 'cleanup_blocked');
+      if (!blocked.has(job.id)) {
+        blocked.add(job.id);
+        log(job, 'cleanup_blocked');
+      }
     } finally {
       cleaning = false;
     }
@@ -265,11 +270,15 @@ export async function startSupervisor() {
   if (props.ControlGroup) kill(`${CG}${props.ControlGroup}`);
   stopInstance();
   const start = now();
+  let reported = false;
   while (
     (props.ControlGroup && populated(`${CG}${props.ControlGroup}`)) ||
     ledger.jobs.some((j) => j.phase !== 'CLEANED' && roots(j).some(populated))
   ) {
-    if (now() - start > 5000) log(null, 'reconciliation_not_ready');
+    if (!reported && now() - start > 5000) {
+      reported = true;
+      log(null, 'reconciliation_not_ready');
+    }
     await pause();
   }
   const known = new Set(ledger.jobs.map((j) => j.id));
@@ -465,7 +474,11 @@ export async function startSupervisor() {
       ) {
         if (now() >= active.revokedAt + 5000) {
           ready = false;
-          log(active, 'cleanup_not_ready');
+          // Reported once per job; the slot stays occupied until real rest.
+          if (!stuck.has(active.id)) {
+            stuck.add(active.id);
+            log(active, 'cleanup_not_ready');
+          }
         }
         clean(active);
       }
