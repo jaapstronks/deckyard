@@ -25,22 +25,22 @@ export const ai = {
       A small set of 2-3 images that share one story, with a title and a short
       body beside or under them.
 
-      IMAGES: the "images" array, 2-3 items, each { src, alt }. There is no
+      IMAGES: the \`images\` array, 2-3 items, each { \`images.src\`, \`images.alt\` }. There is no
       single-image field on this type - one image beside text is an
       image-text-slide.
 
       LAYOUT VARIANTS:
-      - layout "top" (default) / "bottom": a row of images above/below the
+      - \`layout="top"\` (default) / \`layout="bottom"\`: a row of images above/below the
         text; the number of images sets the columns. About half the slide is
         images, so keep the body short (2-4 bullets).
-      - layout "beside": the images stack beside the text. imageSide picks the
-        side, imageWidth the split ("narrow" 1/3, "half" default, "wide" 2/3).
-      - textColumns "2" sets the body in two columns, in every layout.
+      - \`layout="beside"\`: the images stack beside the text. \`imageSide\` picks the
+        side, \`imageWidth\` the split (\`imageWidth="narrow"\` 1/3, \`imageWidth="half"\` default, \`imageWidth="wide"\` 2/3).
+      - \`textColumns="2"\` sets the body in two columns, in every layout.
 
       ASIDE (optional): a small contrast block inside the slide, for a caveat
       or pointer that would clutter the body but does not deserve its own
-      slide. Set asideVariant to "note", "tip" or "warning" and put one or two
-      sentences in asideText; leave asideVariant "none" (the default) and there
+      slide. Set \`asideVariant\` to \`asideVariant="note"\`, \`asideVariant="tip"\` or \`asideVariant="warning"\` and put one or two
+      sentences in \`asideText\`; leave \`asideVariant="none"\` (the default) and there
       is no aside.
     `,
   bestFor: [

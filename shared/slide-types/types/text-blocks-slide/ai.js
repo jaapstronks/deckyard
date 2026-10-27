@@ -33,7 +33,7 @@ export const ai = {
       use text-blocks — use list-slide (title+text items) or content-slide
       (bullets). When in doubt, choose the plainer type.
 
-      SIGNAL TEST: if you would leave every row's arrow on "none", the content
+      SIGNAL TEST: if you would leave every row's arrow on \`rows.arrow="none"\`, the content
       almost certainly does NOT belong on a text-blocks-slide.
 
       HOMOGENEITY TEST: the blocks of one row are all the kind of thing the
@@ -41,15 +41,15 @@ export const ai = {
       ("complementary to other programmes" under "Intended effect") belongs
       in the subheading or presenterNotes, not in the row.
 
-      STRUCTURE: rows[] array with 1-3 row objects. Each row has:
-      - title: Optional heading for the row (usually empty for row 1)
-      - color: "yellow" (accent, good for inputs/activities) or "black" (dark, good for outputs)
-      - arrow: "none", "down", or "up" — the flow to the NEXT row; set "down"/"up"
+      STRUCTURE: \`rows\` array with 1-3 row objects. Each row has:
+      - \`rows.title\`: Optional heading for the row (usually empty for row 1)
+      - \`rows.color\`: \`rows.color="yellow"\` (accent, good for inputs/activities) or \`rows.color="black"\` (dark, good for outputs)
+      - \`rows.arrow\`: \`rows.arrow="none"\`, \`rows.arrow="down"\`, or \`rows.arrow="up"\` — the flow to the NEXT row; set \`rows.arrow="down"\`/\`rows.arrow="up"\`
         when the next row is caused by / produced from this one
-      - blocks: Array of 1-6 block objects, each with { title, body }
+      - \`rows.blocks\`: Array of 1-6 block objects, each with { \`rows.blocks.title\`, \`rows.blocks.body\` }
 
       GENUINE PATTERNS (each has a real relationship):
-      1. TWO-ROW CAUSE→EFFECT: Row 1 (activities, arrow: "down") -> Row 2 (outputs)
+      1. TWO-ROW CAUSE→EFFECT: Row 1 (activities, arrow: \`rows.arrow="down"\`) -> Row 2 (outputs)
       2. THREE-ROW FLOW: Inputs -> Processing -> Outputs
       3. PROBLEM → SOLUTION or BEFORE → AFTER (two contrasting rows)
     `,

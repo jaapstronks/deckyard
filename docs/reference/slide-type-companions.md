@@ -383,3 +383,9 @@ design. The test picks it up automatically, in both directions.
   above are consumed, and what a descriptor can declare.
 - `docs/reference/editing-surfaces.md` — the audit rule behind `INSPECTOR_KEEPS`
   (what may be canvas-only and what may never be).
+
+### Editorial field references
+
+In `types/<type>/ai.js`, mark technical field references in `description`, `bestFor` and `notFor` with Markdown code spans: `layout`, `items.title` or `layout="two-column"`. Use the complete item path for nested fields and a JSON string for an enum value. `tests/agent-slide-type-contract.test.js` checks those references against that core type's own `fields[]`; ordinary English outside code spans is not parsed. This pins explicit names and enum values, not every factual claim in natural language. Examples have their own strict-validation gate.
+
+Editorial copy may explain declared carried fields such as the table's hidden `colCount`; declaration membership is broader than the agent schema's offer. The global options contract uses `isAgentField()` and `GLOBAL_SLIDE_FIELD_KEYS` to pin membership, types, enum options, optionality and declared constraints across all core types. Accessibility title and summary are optional overrides, documented once in global options and omitted from each type's schema. Editorial defaults and focus-range suggestions are not registry constraints.

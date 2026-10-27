@@ -35,10 +35,10 @@ export const ai = {
       DO NOT use list-slide for numeric highlights - the numbers will look small and buried!
 
       Each metric has:
-      - value: The number itself (displayed LARGE)
-      - unit: Optional suffix (%, M, K, etc.)
-      - label: What the number represents
-      - note: Optional context — if it starts with +N or -N (e.g. "+12% vs last year"),
+      - \`metrics.value\`: The number itself (displayed LARGE)
+      - \`metrics.unit\`: Optional suffix (%, M, K, etc.)
+      - \`metrics.label\`: What the number represents
+      - \`metrics.note\`: Optional context — if it starts with +N or -N (e.g. "+12% vs last year"),
               the leading number is auto-coloured green/red
     `,
   bestFor: [

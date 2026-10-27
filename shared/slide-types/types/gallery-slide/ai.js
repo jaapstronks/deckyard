@@ -28,10 +28,10 @@ export const ai = {
       ratios well, especially in the masonry layout.
 
       STRUCTURE:
-      - images: Array of 2-6 objects, each with { src, caption, alt }
-      - layout: 'grid' (default, even cells), 'masonry' (preserves each image's
+      - \`images\`: Array of 2-6 objects, each with { \`images.src\`, \`images.caption\`, \`images.alt\` }
+      - \`layout\`: \`layout="grid"\` (default, even cells), \`layout="masonry"\` (preserves each image's
         native aspect ratio — best for screenshots and mixed-shape images), or
-        'featured' (one large image + smaller ones).
+        \`layout="featured"\` (one large image + smaller ones).
 
       Use for photo galleries, sets of screenshots, or a handful of related
       images shown together. For images that each need a Title AND a Caption,

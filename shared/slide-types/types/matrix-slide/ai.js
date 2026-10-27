@@ -24,7 +24,7 @@ export const ai = {
   description: `
       2x2 grid for SWOT, risk matrices, priority grids.
       Exactly 4 cells in quadrants. Each cell has title, body, and tone.
-      Tones: default, positive (green), negative (red), neutral.
+      Tones: \`cells.tone="default"\`, \`cells.tone="positive"\` (green), \`cells.tone="negative"\` (red), \`cells.tone="neutral"\`.
     `,
   bestFor: [
     'SWOT analysis',
