@@ -28,12 +28,12 @@ static napi_value fail(napi_env env) {
 static int integer(napi_env env, napi_value v, int *out) {
   return napi_get_value_int32(env, v, out) == napi_ok;
 }
-static napi_value number(napi_env env, int value) {
+static napi_value number(napi_env env, uint32_t value) {
   napi_value out;
-  if (napi_create_int32(env, value, &out) != napi_ok) return NULL;
+  if (napi_create_uint32(env, value, &out) != napi_ok) return NULL;
   return out;
 }
-static void property(napi_env env, napi_value obj, const char *name, int value) {
+static void property(napi_env env, napi_value obj, const char *name, uint32_t value) {
   napi_set_named_property(env, obj, name, number(env, value));
 }
 static napi_value peer(napi_env env, napi_callback_info info) {

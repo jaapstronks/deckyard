@@ -53,12 +53,16 @@ export function loadInstallation() {
     config.schema !== 'deckyard.renderer-runner.installation/1' ||
     !Number.isInteger(config.callerUid) ||
     config.callerUid <= 0 ||
+    config.callerUid >= 4294967295 ||
     !Number.isInteger(config.callerGid) ||
     config.callerGid <= 0 ||
+    config.callerGid >= 4294967295 ||
     !Number.isInteger(config.subuid) ||
     config.subuid < 100000 ||
+    config.subuid + 65536 >= 4294967295 ||
     !Number.isInteger(config.subgid) ||
     config.subgid < 100000 ||
+    config.subgid + 65536 >= 4294967295 ||
     (config.callerUid >= config.subuid &&
       config.callerUid < config.subuid + 65536)
   )

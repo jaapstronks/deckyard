@@ -55,8 +55,10 @@ export async function installRunner(build, callerUid, callerGid, subid) {
     process.geteuid() !== 0 ||
     !Number.isSafeInteger(callerUid) ||
     callerUid <= 0 ||
+    callerUid >= 4294967295 ||
     !Number.isSafeInteger(callerGid) ||
     callerGid <= 0 ||
+    callerGid >= 4294967295 ||
     !Number.isSafeInteger(subid) ||
     subid < 100000 ||
     subid + 65536 >= 4294967295
