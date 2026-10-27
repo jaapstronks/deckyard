@@ -259,7 +259,7 @@ export function createImageLibraryUpload({
     type: 'button',
     text: onPick
       ? t('imageLibrary.useThis', 'Use this image')
-      : t('imageLibrary.addButton', 'Save to library'),
+      : t('imageLibrary.addButton', 'Save image to library'),
     onclick: async () => {
       if (!newUrl) return;
       if (onPick && !(await ensureAlt())) return;

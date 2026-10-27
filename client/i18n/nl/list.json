@@ -1,5 +1,5 @@
 {
-  "imageLibrary.addButton": "Opslaan in beeldbank",
+  "imageLibrary.addButton": "Afbeelding opslaan in beeldbank",
   "imageLibrary.addNew": "Nieuw toevoegen",
   "imageLibrary.added": "Toegevoegd.",
   "imageLibrary.alt.autoOnUpload": "Alt-tekst automatisch genereren na upload",
@@ -359,7 +359,7 @@
   "slideLibrary.action.favorite": "Favoriet",
   "slideLibrary.action.insert": "Invoegen",
   "slideLibrary.action.preview": "Klik voor een voorbeeld",
-  "slideLibrary.action.pushToTeam": "Toevoegen aan team bibliotheek",
+  "slideLibrary.action.pushToTeam": "Toevoegen aan teambibliotheek",
   "slideLibrary.action.restore": "Herstellen",
   "slideLibrary.action.select": "Slide selecteren",
   "slideLibrary.action.trash": "Naar prullenbak",

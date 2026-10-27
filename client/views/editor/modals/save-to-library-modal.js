@@ -391,7 +391,10 @@ export function openSaveToLibraryModal({
     onCancel: () => modal.close(),
     onAction: doSave,
     cancelText: t('common.cancel', 'Cancel'),
-    actionText: t('editor.slideLibrary.saveModal.save', 'Save to library'),
+    actionText: t(
+      'editor.slideLibrary.saveModal.save',
+      'Save slide to library',
+    ),
   });
 
   // Handle Enter key in name input
