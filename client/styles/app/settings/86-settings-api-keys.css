@@ -162,6 +162,8 @@
 }
 
 .api-key-actions .btn {
+  min-height: 44px;
+  min-width: 44px;
   padding: 4px 10px;
   font-size: 12px;
   white-space: nowrap;

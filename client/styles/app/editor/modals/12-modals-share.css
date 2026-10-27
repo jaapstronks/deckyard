@@ -214,6 +214,10 @@
   color: hsl(var(--app-text-primary));
 }
 
+.share-links-wrapper {
+  container: share-links / inline-size;
+}
+
 .share-create-section {
   padding: var(--ps-space-4);
   background: hsl(var(--app-bg-sunken));
@@ -251,6 +255,13 @@
   width: 90px;
   font-size: var(--ps-text-sm);
   font-weight: 600;
+}
+
+.share-form-actions .btn,
+.share-link-actions .btn,
+.share-expiration-select {
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .share-form-actions {
@@ -413,10 +424,12 @@
 }
 .share-link-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--ps-space-2);
   flex-shrink: 0;
 }
 .share-link-actions .btn-sm {
+  max-width: 100%;
   padding: var(--ps-space-1-5) var(--ps-space-2-5);
   font-size: 12px;
 }
@@ -683,4 +696,17 @@
   padding: 0;
   min-width: 0;
   opacity: 0.5;
+}
+
+/* A native select cannot wrap its selected option. Give its text the card
+   padding back at extreme zoom, keeping the control touch-sized. */
+@container share-links (max-width: 240px) {
+  .share-create-section {
+    padding-inline: 0;
+  }
+
+  .share-expiration-select {
+    padding-inline: var(--ps-space-0-5);
+    font-size: var(--ps-text-sm);
+  }
 }
