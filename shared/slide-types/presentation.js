@@ -20,6 +20,7 @@ import { SLIDE_TYPES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
+import { validateFieldChange } from './field-change-validation.js';
 import { isTextField } from './text-fields.js';
 import { undeclaredContentKeys } from './declared-keys.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
@@ -650,15 +651,24 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
  * were stripped to it by migration 102, so a stray key is the caller's.
  * Item-field checks remain owned by validateFieldValue, at every write surface.
  * @param {Object} slide
- * @param {{slideTypes?: Record<string, Object>, allowMissingTranslationText?: boolean}} [opts]
+ * @param {{slideTypes?: Record<string, Object>, allowMissingTranslationText?: boolean, previousSlide?: Object}} [opts]
  * @returns {Array<{field: string, errors: string[], code?: 'unknown_field'}>}
  */
 export function validateSlideFields(
   slide,
-  { slideTypes = SLIDE_TYPES, allowMissingTranslationText = false } = {},
+  {
+    slideTypes = SLIDE_TYPES,
+    allowMissingTranslationText = false,
+    previousSlide,
+  } = {},
 ) {
   const def = getSlideType(slide?.type, slideTypes);
   if (!def) return [];
+  const previous =
+    previousSlide?.id === slide?.id &&
+    getSlideType(previousSlide?.type, slideTypes) === def
+      ? previousSlide
+      : null;
   const unknown = undeclaredContentKeys(def, slide?.content).map((key) => ({
     field: key,
     code: /** @type {const} */ ('unknown_field'),
@@ -667,7 +677,7 @@ export function validateSlideFields(
     ],
   }));
   return unknown.concat(
-    declaredFieldProblems(def, slide, allowMissingTranslationText),
+    declaredFieldProblems(def, slide, allowMissingTranslationText, previous),
   );
 }
 
@@ -678,7 +688,12 @@ export function validateSlideFields(
  * @param {boolean} allowMissingTranslationText
  * @returns {Array<{field: string, errors: string[]}>}
  */
-function declaredFieldProblems(def, slide, allowMissingTranslationText) {
+function declaredFieldProblems(
+  def,
+  slide,
+  allowMissingTranslationText,
+  previousSlide,
+) {
   return def.fields.flatMap((field) => {
     // An untranslated version is allowed to have gaps in prose, including
     // nested item prose. Its present values still pass the same type and
@@ -686,7 +701,13 @@ function declaredFieldProblems(def, slide, allowMissingTranslationText) {
     const definition = allowMissingTranslationText
       ? translationFieldDefinition(field)
       : field;
-    const errors = validateFieldValue(slide?.content?.[field.key], definition);
+    const errors = previousSlide
+      ? validateFieldChange(
+          slide?.content?.[field.key],
+          previousSlide?.content?.[field.key],
+          definition,
+        )
+      : validateFieldValue(slide?.content?.[field.key], definition);
     return errors.length ? [{ field: field.key, errors }] : [];
   });
 }

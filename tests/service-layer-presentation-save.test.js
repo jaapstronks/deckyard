@@ -1069,3 +1069,135 @@ test('normalizing descriptive alt never relaxes another field length refusal', a
     assertUnchanged(db, before, 'overlong caption still refuses');
   }
 });
+
+for (const operation of ['add', 'remove']) {
+  test(`timeline ${operation}: old invalid English prose never blocks Dutch structure changes`, async () => {
+    const db = await installDb();
+    const timeline = (lang) => ({
+      id: 'slide-1',
+      type: 'timeline-slide',
+      content: {
+        title: lang,
+        items: Array.from({ length: 7 }, (_, i) => ({
+          date:
+            lang === 'EN' && i === 6
+              ? 'January with an old overlong date label'
+              : `${2020 + i}`,
+          title: `${lang} milestone ${i}`,
+          text: `${lang} text ${i}`,
+        })),
+      },
+    });
+    const nl = [timeline('NL')];
+    const en = [timeline('EN')];
+    storedDeck(db).slides = nl;
+    storedDeck(db).i18n = {
+      active: 'nl',
+      dominant: 'nl',
+      versions: {
+        nl: { title: 'NL', slides: nl },
+        'en-GB': { title: 'EN', slides: en },
+      },
+    };
+    const pres = (await editorRead(OWNER)).json();
+    pres.i18n.active = 'nl';
+    pres.slides = structuredClone(nl);
+    const originalEn = structuredClone(en[0].content.items);
+    let failure;
+    const manager = createSaveManager({
+      pres,
+      id: pres.id,
+      SLIDE_TYPES: (await import('../shared/slide-types/registry.js'))
+        .SLIDE_TYPES,
+      normalizeLang,
+      toast: { info() {}, success() {}, error() {} },
+      getSelectedSlideId: () => 'slide-1',
+      onFieldRefusal: (error) => {
+        failure = error;
+      },
+      api: async (_path, options) => {
+        const res = await editorSave(OWNER, options.body, {
+          revision: Number(options.headers['If-Match']),
+        });
+        if (res.statusCode !== 200)
+          throw Object.assign(new Error(res.json().message), res.json());
+        return res.json();
+      },
+    });
+    if (operation === 'add') {
+      pres.slides[0].content.items.push({
+        date: '2027',
+        title: 'Nieuw',
+        text: 'Nieuwe tekst',
+      });
+    } else {
+      // Remove an item after the invalid one: the retained invalid value must
+      // still be checked against its own stored language and path.
+      for (const slides of [
+        nl,
+        en,
+        pres.slides,
+        pres.i18n.versions['en-GB'].slides,
+      ])
+        slides[0].content.items.push({
+          date: '2027',
+          title: 'Extra',
+          text: '',
+        });
+      pres.slides[0].content.items.pop();
+    }
+    manager.markDirty({ slideId: 'slide-1' });
+    await manager.requestSave();
+    manager.cancelAutosave();
+    assert.equal(failure, null);
+    assert.equal(manager.getStatus(), 'saved');
+    assert.equal(pres.i18n.active, 'nl');
+    const loaded = (await editorRead(OWNER)).json();
+    assert.deepEqual(
+      loaded.i18n.versions['en-GB'].slides[0].content.items.slice(0, 7),
+      originalEn,
+    );
+    assert.deepEqual(
+      loaded.i18n.versions.nl.slides[0].content.items,
+      pres.slides[0].content.items,
+    );
+    // A newly edited overlong value remains a local correction, not an
+    // exemption obtained merely by editing a deck with an old quality defect.
+    pres.slides[0].content.items[0].date =
+      'New overlong date label deliberately entered';
+    manager.markDirty({ slideId: 'slide-1' });
+    await manager.requestSave();
+    manager.cancelAutosave();
+    assert.equal(failure.details.lang, 'nl');
+    assert.equal(failure.details.field, 'items');
+    assert.equal(manager.getStatus(), 'error');
+    assert.equal(storedDeck(db).revision, loaded.revision);
+  });
+}
+
+test('an existing overlong alt and an unedited missing prose field do not block a title edit', async () => {
+  const db = await installDb();
+  storedDeck(db).slides = [
+    {
+      id: 'slide-1',
+      type: 'image-slide',
+      content: {
+        alt: 'An old image description. '.repeat(20),
+        title: '',
+        caption: '',
+      },
+    },
+  ];
+  const pres = (await editorRead(OWNER)).json();
+  pres.slides[0].content.caption = 'A new caption';
+  const res = await editorSave(OWNER, {
+    title: 'New presentation title',
+    slides: pres.slides,
+  });
+  assert.equal(res.statusCode, 200, res.body);
+  const reread = (await editorRead(OWNER)).json();
+  assert.equal(reread.title, 'New presentation title');
+  assert.ok(reread.slides[0].content.alt.length <= 180);
+  assert.equal(reread.slides[0].content.caption, 'A new caption');
+  assert.equal(reread.slides[0].content.title, '');
+});

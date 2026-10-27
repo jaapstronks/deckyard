@@ -1,5 +1,6 @@
 import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
+import { createSaveFeedback } from './save-feedback.js';
 
 /**
  * How long a save runs before the status line says so. An autosave that lands
@@ -14,7 +15,8 @@ export const SAVING_VISIBLE_AFTER_MS = 1500;
  * {@link SAVING_VISIBLE_AFTER_MS} shows as in progress.
  * @returns {{ el: HTMLElement, setStatus: Function, detach: Function }}
  */
-export function createSaveStatus() {
+export function createSaveStatus(options = {}) {
+  const feedback = createSaveFeedback(options);
   const message = h('span');
   const el = h(
     'div',
@@ -24,7 +26,7 @@ export function createSaveStatus() {
       'aria-live': 'polite',
       hidden: true,
     },
-    [message],
+    [message, feedback.el],
   );
   let savingTimer = 0;
 
@@ -37,6 +39,7 @@ export function createSaveStatus() {
     savingTimer = 0;
     el.classList.remove('is-failure');
     message.textContent = t('editor.save.saving', 'Saving changes…');
+    message.hidden = false;
     el.hidden = false;
   };
 
@@ -51,8 +54,11 @@ export function createSaveStatus() {
     }
     clearSavingTimer();
     const failed = status === 'error' || status === 'disconnected';
+    const hasFeedback = feedback.sync(status);
     el.classList.toggle('is-failure', failed);
-    el.hidden = !failed;
+    el.classList.toggle('is-quality-warning', !failed && hasFeedback);
+    el.hidden = !failed && !hasFeedback;
+    message.hidden = !failed;
     if (el.hidden) return;
     if (status === 'disconnected') {
       message.textContent = t(
@@ -71,5 +77,14 @@ export function createSaveStatus() {
     }
   };
 
-  return { el, setStatus, detach: clearSavingTimer };
+  return {
+    el,
+    setStatus,
+    setError: feedback.setError,
+    setNormalized: feedback.setNormalized,
+    detach() {
+      clearSavingTimer();
+      feedback.detach();
+    },
+  };
 }

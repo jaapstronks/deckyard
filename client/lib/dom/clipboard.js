@@ -15,7 +15,9 @@ import { t } from '../ui-i18n.js';
 export async function copyToClipboard(text) {
   const t = String(text ?? '');
   try {
-    await navigator.clipboard?.writeText?.(t);
+    if (!navigator.clipboard?.writeText)
+      throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(t);
     return true;
   } catch {
     // Fallback: execCommand (best-effort for older Safari / blocked clipboard API)

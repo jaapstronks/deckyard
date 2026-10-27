@@ -5,6 +5,10 @@ import { getSupportedLangs } from '../../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { debugLog } from '../../../lib/state/debug.js';
+import {
+  ALT_TEXT_CONSTRAINTS,
+  normalizeAltMap,
+} from '../../../../shared/slide-types/field-normalization.js';
 
 /** Slide aspect ratio (16:9) */
 const SLIDE_ASPECT_RATIO = 16 / 9;
@@ -127,7 +131,16 @@ export function createAltLangInputs({
 } = {}) {
   const langs = getSupportedLangs();
   const inputs = new Map();
-  const fields = [];
+  const fields = [
+    h('p', {
+      class: 'help',
+      text: t(
+        'imageLibrary.alt.lengthHint',
+        'Describe the purpose of the image briefly. Descriptions longer than {max} characters are shortened when saved or used.',
+        { max: ALT_TEXT_CONSTRAINTS.maxLength },
+      ),
+    }),
+  ];
 
   for (const lang of langs) {
     const label = t('imageLibrary.alt.langLabel', 'Alt text ({lang})', {
@@ -147,7 +160,8 @@ export function createAltLangInputs({
   return {
     langs,
     fields,
-    read: () => Object.fromEntries(langs.map((l) => [l, valueOf(l)])),
+    read: () =>
+      normalizeAltMap(Object.fromEntries(langs.map((l) => [l, valueOf(l)]))),
     write: (alts) => {
       const map = alts && typeof alts === 'object' ? alts : {};
       for (const lang of langs) {

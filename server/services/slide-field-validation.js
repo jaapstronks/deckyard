@@ -9,13 +9,18 @@ import { AppError } from '../utils/errors.js';
  * `details.field`.
  * @param {Object} slide
  * @param {Record<string, Object>} slideTypes
- * @param {{lang?: string, allowMissingTranslationText?: boolean}} [location]
+ * @param {{lang?: string, allowMissingTranslationText?: boolean, previousSlide?: Object}} [location]
  */
 export function assertValidSlideFields(slide, slideTypes, location = {}) {
-  const { allowMissingTranslationText = false, ...details } = location;
+  const {
+    allowMissingTranslationText = false,
+    previousSlide,
+    ...details
+  } = location;
   const problem = validateSlideFields(slide, {
     slideTypes,
     allowMissingTranslationText,
+    previousSlide,
   })[0];
   if (!problem) return;
   const { code = 'invalid', ...diagnostics } = problem;

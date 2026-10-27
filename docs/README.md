@@ -1,5 +1,7 @@
 # Documentation
 
+- [Validation while authoring](reference/authoring-validation.md): stored prose quality, image metadata normalization, recovery and bug reports.
+
 ## Map
 
 | Folder              | What lives there                                                                                                                                                                                                                  |
