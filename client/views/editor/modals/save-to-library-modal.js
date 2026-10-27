@@ -84,6 +84,7 @@ export function openSaveToLibraryModal({
   openSlideLibraryModal,
 } = {}) {
   const modal = createModal({
+    modalClass: 'save-to-library-modal',
     title: t('editor.slideLibrary.saveModal.title', 'Save to slide library'),
     hint: t(
       'editor.slideLibrary.saveModal.hint',
@@ -391,7 +392,10 @@ export function openSaveToLibraryModal({
     onCancel: () => modal.close(),
     onAction: doSave,
     cancelText: t('common.cancel', 'Cancel'),
-    actionText: t('editor.slideLibrary.saveModal.save', 'Save to library'),
+    actionText: t(
+      'editor.slideLibrary.saveModal.save',
+      'Save slide to library',
+    ),
   });
 
   // Handle Enter key in name input

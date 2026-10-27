@@ -853,7 +853,17 @@
 }
 
 .ps-type-peek-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   gap: var(--ps-space-2);
   flex: 0 0 auto;
+}
+
+.ps-type-peek-actions .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
 }

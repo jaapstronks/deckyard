@@ -101,7 +101,7 @@ export function openTypePeek(type, _anchorBtn, preset, ctx) {
   const insertBtn = h('button', {
     class: 'btn btn-primary',
     type: 'button',
-    text: t('editor.slideTypePicker.insertThis', 'Insert slide'),
+    text: t('editor.slideTypePicker.insertThis', 'Insert this slide'),
     onclick: () => {
       close();
       onPick(type, preset);

@@ -1,5 +1,5 @@
 {
-  "imageLibrary.addButton": "Salva nella libreria",
+  "imageLibrary.addButton": "Salva l'immagine nella libreria",
   "imageLibrary.addNew": "Aggiungi",
   "imageLibrary.added": "Aggiunta.",
   "imageLibrary.alt.generate": "Genera il testo alternativo (IA)",
@@ -309,7 +309,7 @@
   "slideLibrary.loadError": "Impossibile caricare la libreria slide.",
   "slideLibrary.modal.browseHelp": "Sfoglia la tua libreria di slide. Copia una slide per incollarla in seguito, oppure avviane una nuova presentazione.",
   "slideLibrary.modal.help": "La tua libreria personale è riservata a te. La libreria del team è condivisa con tutti.",
-  "slideLibrary.modal.title": "Libreria slide",
+  "slideLibrary.modal.title": "Libreria di slide",
   "slideLibrary.newPresentation.defaultTitle": "Nuova presentazione",
   "slideLibrary.preview.untitled": "Senza titolo",
   "slideLibrary.search.aria": "Cerca nella libreria slide",
