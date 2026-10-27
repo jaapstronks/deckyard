@@ -111,7 +111,7 @@ export function openVersionsModal({
         const label = String(v?.label || '').trim();
         const slideCount =
           typeof v?.slideCount === 'number' ? v.slideCount : null;
-        const row = h('div', { class: 'row spread editor-callout' });
+        const row = h('div', { class: 'row spread is-wrap editor-callout' });
         const metaParts = [who, when];
         if (slideCount !== null) {
           metaParts.push(
@@ -245,7 +245,7 @@ export function openVersionsModal({
           },
         });
 
-        const buttons = h('div', { class: 'row is-gap-xs' }, [
+        const buttons = h('div', { class: 'row is-wrap is-gap-xs' }, [
           previewBtn,
           compareBtn,
           exportBtn,
