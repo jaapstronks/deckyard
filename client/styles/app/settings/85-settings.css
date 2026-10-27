@@ -708,8 +708,15 @@
 
 .bulk-export-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ps-space-2);
+}
+
+#settings-tab-export .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
 }
 
 .bulk-export-progress {
