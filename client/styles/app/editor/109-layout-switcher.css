@@ -15,14 +15,19 @@
   gap: var(--ps-space-2);
 }
 
+/* Four columns, but a tile never narrower than its label: a `rowLabel` tile
+   whose label is longer than a quarter of the row (Wyśrodkowane, Vasemmalle
+   at 320px) widens and the row wraps, instead of the label spilling over its
+   neighbour. */
 .layout-row-tiles {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--ps-space-1-5);
 }
 
 /* Compact tiles: the schematic alone, its label in title/aria-label. */
 .layout-row-tiles .layout-tile {
+  flex: 0 0 calc((100% - 3 * var(--ps-space-1-5)) / 4);
   padding: 4px;
 }
 

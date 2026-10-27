@@ -33,8 +33,7 @@
   flex-direction: column;
   gap: var(--ps-space-3);
   padding: var(--ps-space-3);
-  width: 140px;
-  flex-shrink: 0;
+  min-width: 0;
   border: 2px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
   background: hsl(var(--app-bg-elevated));
@@ -57,26 +56,14 @@
   box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
 }
 
-@media (max-width: 640px) {
-  .theme-card {
-    width: 110px;
-  }
-}
-
 @media (max-width: 480px) {
-  .themes-list-header,
-  .theme-card-name-row {
+  .themes-list-header {
     flex-wrap: wrap;
     gap: var(--ps-space-2);
   }
 
   .themes-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .theme-card {
-    width: 100%;
-    min-width: 0;
   }
 
   .theme-card-info,
@@ -117,8 +104,11 @@
   flex: 1;
 }
 
+/* The badge (Built-in, Default, Predeterminado) wraps under a long name
+   instead of being cut off by the card's overflow. */
 .theme-card-name-row {
   justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .theme-card-name {

@@ -715,7 +715,7 @@
   "settings.themes.errorInvalidBackground": "Nieprawidłowy kolor tła.",
   "settings.themes.errorInvalidPrimary": "Nieprawidłowy kolor główny.",
   "settings.themes.errorNameRequired": "Nazwa motywu jest wymagana.",
-  "settings.themes.fonts": "Czcionki",
+  "settings.themes.fonts": "Kroje pisma",
   "settings.themes.fontsHint": "Wybierz kroje pisma dla nagłówków i tekstu głównego.",
   "settings.themes.headingFont": "Czcionka Nagłówków",
   "settings.themes.hideUrl": "Ukryj URL",

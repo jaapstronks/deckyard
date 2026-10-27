@@ -700,7 +700,7 @@
   "settings.themes.contrast.title": "Contraste:",
   "settings.themes.createTheme": "Criar tema",
   "settings.themes.customThemes": "Temas disponíveis",
-  "settings.themes.default": "Por omissão",
+  "settings.themes.default": "Predefinido",
   "settings.themes.deleteConfirm": "Eliminar o tema «{label}»? Isto não pode ser anulado.",
   "settings.themes.derivedColors": "Cores de destaque derivadas:",
   "settings.themes.description": "Escolha um tema integrado ou crie um tema para a sua organização.",

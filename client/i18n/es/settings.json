@@ -701,7 +701,7 @@
   "settings.themes.contrast.title": "Contraste:",
   "settings.themes.createTheme": "Crear tema",
   "settings.themes.customThemes": "Temas disponibles",
-  "settings.themes.default": "Por defecto",
+  "settings.themes.default": "Predeterminado",
   "settings.themes.deleteConfirm": "¿Eliminar el tema «{label}»? Esto no se puede deshacer.",
   "settings.themes.derivedColors": "Colores de acento derivados:",
   "settings.themes.description": "Elija un tema integrado o cree uno para su organización.",
