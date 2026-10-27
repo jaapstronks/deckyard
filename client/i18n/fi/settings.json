@@ -626,7 +626,7 @@
   "settings.slideTypes.template": "Mallipohja (HTML)",
   "settings.slideTypes.title": "Diatyypit",
   "settings.slideTypes.toggleType": "Vaihda: {type}",
-  "settings.slideTypes.unpublish": "Peru julkaisu",
+  "settings.slideTypes.unpublish": "Peruuta julkaisu",
   "settings.slideTypes.updateSuccess": "Diatyyppi päivitetty.",
   "settings.slideTypes.usage": "Tekoälyn käyttösäännöt",
   "settings.slideTypes.usageHint": "Säännöt, joita tekoälyavustajan on noudatettava tätä diatyyppiä täyttäessään — lähteet, katkaisupäivät, pakolliset selitykset. Tämä ei ole kuvaus siitä, mikä tyyppi on: siihen ovat nimi ja kentät.",

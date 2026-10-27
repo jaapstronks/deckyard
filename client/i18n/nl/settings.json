@@ -767,7 +767,7 @@
   "settings.slideTypes.template": "Sjabloon (HTML)",
   "settings.slideTypes.title": "Slide-types",
   "settings.slideTypes.toggleType": "{type} in- of uitschakelen",
-  "settings.slideTypes.unpublish": "Publicatie ongedaan maken",
+  "settings.slideTypes.unpublish": "Depubliceren",
   "settings.slideTypes.updateSuccess": "Slide-type bijgewerkt.",
   "settings.slideTypes.usage": "Gebruiksregels voor AI",
   "settings.slideTypes.usageHint": "Regels waar een AI-assistent zich aan moet houden bij het invullen van dit slide-type: bronnen, peildata, verplichte toelichtingen. Geen beschrijving van wat het type is; daar zijn de naam en de velden voor.",

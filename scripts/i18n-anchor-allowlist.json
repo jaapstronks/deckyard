@@ -57,7 +57,7 @@
     },
     "da  Export": {
       "forms": ["Eksport", "Eksportér"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Eksportér is de imperatief op editor.export.button, editor.export.exportAction, editor.versions.export; Eksport is de naam van de machtiging in settings.apiKeys.permissions.export."
     },
     "da  Image URL": {
       "forms": ["Billed-URL", "Billedets URL"],
@@ -71,14 +71,6 @@
       "forms": ["Forhåndsvis", "Forhåndsvisning"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Publish": {
-      "forms": ["Publicér", "Udgiv"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "da  Published": {
-      "forms": ["Offentliggjort", "Publiceret", "Udgivet"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Reading file…": {
       "forms": ["Læser filen…", "Læser fil…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -87,20 +79,12 @@
       "forms": ["Søg i slides", "Søg slides"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Share": {
-      "forms": ["Del", "Delingslinks"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Shared": {
       "forms": ["Delt", "Delte"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
     "da  Slide library": {
       "forms": ["Slide-bibliotek", "Slidebibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "da  Unpublish": {
-      "forms": ["Afpublicér", "Fjern udgivelsen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "da  {count}d ago": {
@@ -151,20 +135,12 @@
       "forms": ["Als Nächstes", "Weiter"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "de  Owner": {
-      "forms": ["Eigentümer", "Eigentümer/in"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  Primary": {
       "forms": ["Primär", "Primärfarbe"],
       "reason": "colour name versus style option — Primärfarbe is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Primär is the adjective for the button style in editor.slideField.actions.item.style.option.primary, next to Sekundär."
     },
     "de  Search": {
       "forms": ["Suche", "Suchen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Share": {
-      "forms": ["Freigabelinks", "Teilen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Something went wrong": {
@@ -235,7 +211,7 @@
     },
     "es  Export": {
       "forms": ["Exportación", "Exportar"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Exportar is het werkwoord op de drie editoracties; Exportación is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
     "es  Grid": {
       "forms": ["Cuadrícula", "Tabla"],
@@ -262,7 +238,7 @@
     },
     "es  Published": {
       "forms": ["Publicada", "Publicado"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Publicado bij dashboard.source.published (gepubliceerde inhoud, contenido, mannelijk) en settings.slideTypes.published (tipo, mannelijk); Publicada bij list.visibility.published (presentación, vrouwelijk enkelvoud)."
     },
     "es  Reading file…": {
       "forms": ["Leyendo archivo…", "Leyendo el archivo…"],
@@ -270,10 +246,6 @@
     },
     "es  Search": {
       "forms": ["Buscar", "Búsqueda"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Share": {
-      "forms": ["Compartir", "Enlaces compartidos"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Shared": {
@@ -332,7 +304,7 @@
     },
     "fi  Export": {
       "forms": ["Vie", "Vienti"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Vie is de imperatief op de drie editoracties; Vienti is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
     "fi  Image URL": {
       "forms": ["Kuvan URL", "Kuvan URL-osoite"],
@@ -382,17 +354,9 @@
       "forms": ["Hae dioista", "Hae dioja"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fi  Share": {
-      "forms": ["Jaa", "Jakolinkit"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Shared": {
       "forms": ["Jaettu", "Jaetut"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "fi  Unpublish": {
-      "forms": ["Peru julkaisu", "Peruuta julkaisu"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Uploading…": {
       "forms": ["Ladataan…", "Lähetetään…"],
@@ -451,14 +415,10 @@
     },
     "fr  Published": {
       "forms": ["Publié", "Publiée"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Publié bij dashboard.source.published (contenu, mannelijk) en settings.slideTypes.published (type, mannelijk); Publiée bij list.visibility.published (présentation, vrouwelijk enkelvoud)."
     },
     "fr  Search": {
       "forms": ["Recherche", "Rechercher"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Share": {
-      "forms": ["Liens de partage", "Partager"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Shared": {
@@ -522,7 +482,7 @@
     },
     "it  Export": {
       "forms": ["Esporta", "Esportazione"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Esporta is de imperatief op de drie editoracties; Esportazione is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
     "it  Image URL": {
       "forms": ["URL dell'immagine", "URL immagine"],
@@ -583,10 +543,6 @@
       "forms": ["Invio in corso…", "Invio…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Share": {
-      "forms": ["Condividi", "Link di condivisione"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Shared": {
       "forms": ["Condivise", "Condiviso"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
@@ -604,10 +560,6 @@
         "Qualcosa è andato storto. Riprova.",
         "Si è verificato un errore. Riprova."
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Unpublish": {
-      "forms": ["Annulla la pubblicazione", "Annulla pubblicazione"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  {count}d ago": {
@@ -635,14 +587,6 @@
     },
     "nl  Body": {
       "forms": ["Inhoud", "Tekst"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Can comment": {
-      "forms": ["Kan reageren", "Mag reageren"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Can edit": {
-      "forms": ["Kan bewerken", "Mag bewerken"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Caption": {
@@ -771,10 +715,6 @@
       "forms": ["Deze hulp tonen", "Toon deze hulp"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Unpublish": {
-      "forms": ["Depubliceren", "Publicatie ongedaan maken"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Untitled": {
       "forms": ["Naamloos", "Zonder titel"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -817,7 +757,7 @@
     },
     "no  Export": {
       "forms": ["Eksport", "Eksporter"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Eksporter is de imperatief op de drie editoracties; Eksport is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
     "no  Generating…": {
       "forms": ["Genererer…", "Lager…"],
@@ -865,10 +805,6 @@
     },
     "no  Search slides": {
       "forms": ["Søk i lysbilder", "Søk lysbilder"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Share": {
-      "forms": ["Del", "Delingslenker"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Shared": {
@@ -924,7 +860,7 @@
     },
     "pl  Export": {
       "forms": ["Eksport", "Eksportuj"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Eksportuj is de imperatief op de drie editoracties; Eksport is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
     "pl  Image URL": {
       "forms": ["Adres URL obrazu", "URL obrazu"],
@@ -983,8 +919,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Published": {
-      "forms": ["Opublikowane", "Opublikowany"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Opublikowana", "Opublikowane", "Opublikowany"],
+      "reason": "Opublikowane bij dashboard.source.published (gepubliceerde inhoud, treści, niet-mannelijk-persoonlijk meervoud); Opublikowana bij list.visibility.published (prezentacja, vrouwelijk enkelvoud); Opublikowany bij settings.slideTypes.published (typ, mannelijk enkelvoud). De bestaande Opublikowane op de enkele deckbadge wordt dus gecorrigeerd."
     },
     "pl  Reset": {
       "forms": ["Przywróć", "Zeruj"],
@@ -1000,10 +936,6 @@
     },
     "pl  Searching…": {
       "forms": ["Szukanie…", "Wyszukiwanie…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  Share": {
-      "forms": ["Linki do udostępnienia", "Udostępnij"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Soft": {
@@ -1048,7 +980,7 @@
     },
     "pt  Export": {
       "forms": ["Exportar", "Exportação"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Exportar is het werkwoord op de drie editoracties; Exportação is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
     "pt  Go to login": {
       "forms": ["Ir para login", "Ir para o início de sessão"],
@@ -1083,7 +1015,7 @@
     },
     "pt  Published": {
       "forms": ["Publicada", "Publicado"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Publicado bij dashboard.source.published (conteúdo, mannelijk) en settings.slideTypes.published (tipo, mannelijk); Publicada bij list.visibility.published (apresentação, vrouwelijk enkelvoud)."
     },
     "pt  Reading file…": {
       "forms": ["A ler ficheiro…", "A ler o ficheiro…"],
@@ -1091,10 +1023,6 @@
     },
     "pt  Search": {
       "forms": ["Pesquisa", "Pesquisar"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  Share": {
-      "forms": ["Links de partilha", "Partilhar"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Shared": {
@@ -1190,10 +1118,6 @@
     },
     "sv  Search slides": {
       "forms": ["Sök bland slides", "Sök slides"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Share": {
-      "forms": ["Dela", "Delningslänkar"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Shared": {

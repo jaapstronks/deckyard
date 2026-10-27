@@ -180,6 +180,10 @@
   margin-bottom: var(--ps-space-3);
 }
 
+.share-publish-actions .btn {
+  min-height: 44px;
+}
+
 .share-xref-hint {
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
