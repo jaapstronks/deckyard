@@ -4,6 +4,8 @@ import {
   writeFileSync,
   readdirSync,
   mkdirSync,
+  openSync,
+  closeSync,
 } from 'node:fs';
 export function populated(directory) {
   if (!existsSync(directory)) return false;
@@ -26,7 +28,7 @@ export function groupsBelow(directory) {
 export function limits(directory, memory, pids) {
   mkdirSync(directory);
   // The independent cancellation mechanism must exist before reserve-ack.
-  writeFileSync(`${directory}/cgroup.kill`, '1');
+  closeSync(openSync(`${directory}/cgroup.kill`, 'w'));
   for (const [name, value] of Object.entries({
     'cpu.max': '100000 100000',
     'memory.max': String(memory),
