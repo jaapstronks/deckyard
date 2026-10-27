@@ -9,7 +9,10 @@ entries are grouped per release rather than exhaustively listed.
 
 ### ⚠ BREAKING CHANGES
 
-* MCP add_slide/update_slide and API v1 slide writes refuse an undeclared content key with 400 unknown_field instead of storing it; /api/v1/schema content schemas carry propertyNames; the per-slide content.videoOverride of the live video layer is no longer read.
+* Every authored write, including the editor, API v1 and MCP add_slide/update_slide, rejects undeclared top-level content keys with `unknown_field`; `/api/v1/schema` closes content `propertyNames` against the same declarations. Remove unsupported keys from integrations before writing slides.
+* Migration 102 irreversibly strips undeclared keys from stored decks and their languages, version snapshots, comment snapshots and slide-library items and their languages. It preserves inputs still consumed by the read funnel and leaves unresolved slide types unchanged. Changed decks lose their collaboration binary cache, which is rebuilt on the next open. Back up the database before upgrading; removed keys cannot be restored by a down migration. Migration logs list each stripped `type :: key`.
+* The undeclared payoff `tagline` and per-slide `content.videoOverride` are no longer consumed. Use declared fields and the configured live video layer instead.
+* Removing or renaming a custom field that is in use returns `409 field_in_use` with usage counts. Explicitly confirmed removal (`?force=true` for API clients) strips that field atomically from stored content and active collaboration documents, preserving other concurrent edits. Content writes serialize within each organization and validate against its committed field definitions; throughput has not been benchmarked.
 
 ### Added
 
