@@ -494,7 +494,7 @@
   "editor.more.subscription": "Esityksen ilmoitukset…",
   "editor.more.subscription.title": "Valitse, mistä tämän esityksen kommenttitoiminnasta tulee ilmoitus.",
   "editor.more.trash": "Siirrä roskakoriin…",
-  "editor.more.trash.confirm": "Siirretäänkö \"{title}\" roskakoriin?",
+  "editor.more.trash.confirm": "Siirretäänkö ”{title}” roskakoriin?",
   "editor.more.trash.title": "Siirrä tämä esitys roskakoriin.",
   "editor.more.versions": "Versiot…",
   "editor.notes.collapse": "Piilota puhujan muistiinpanot",

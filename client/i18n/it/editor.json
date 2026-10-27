@@ -179,7 +179,7 @@
   "editor.chart.grid.columnName": "Nome della colonna {n}",
   "editor.chart.grid.helpBarPie": "Un'etichetta e un valore numerico per riga. Può incollare un blocco da Sheets/Excel in qualsiasi cella.",
   "editor.chart.grid.helpLine": "Etichetta X nella prima colonna, poi una o due serie numeriche. La riga di intestazione definisce i nomi delle serie.",
-  "editor.chart.grid.removeRow": "Rimuovi la riga",
+  "editor.chart.grid.removeRow": "Rimuovi riga",
   "editor.chart.grid.removeRowN": "Rimuovi la riga {n}",
   "editor.chart.grid.removeSeries": "Rimuovi la serie",
   "editor.chart.grid.tabGrid": "Griglia",

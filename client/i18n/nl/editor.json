@@ -1156,7 +1156,7 @@
   "editor.versions.reason.manual": "Save point",
   "editor.versions.reason.preRestore": "Backup (vóór herstel)",
   "editor.versions.reason.restore": "Herstel",
-  "editor.versions.restore": "Herstel",
+  "editor.versions.restore": "Herstellen",
   "editor.versions.restoreAborted": "Kon niet opslaan; herstellen afgebroken.",
   "editor.versions.restored": "Hersteld. Herladen…",
   "editor.versions.restoring": "Herstellen…",
