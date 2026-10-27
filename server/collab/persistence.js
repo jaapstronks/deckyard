@@ -179,10 +179,15 @@ export function createCollabPersistence({
     }
 
     return withContentWrite(storageScopeFor(documentName), async () => {
+      // Capture both representations synchronously before any await. Peer edits
+      // can change the live doc while registry/storage queries are pending;
+      // those edits remain in the doc for the next store, never in this pair.
+      const projectedSnapshot = codec.projectDocToPresentation(document);
+      const binarySnapshot = Y.encodeStateAsUpdate(document);
       try {
         await assertCurrentCustomFields(
           storageScopeFor(documentName),
-          contentSlides(codec.projectDocToPresentation(document)),
+          contentSlides(projectedSnapshot),
         );
       } catch (err) {
         log.error(
@@ -192,11 +197,7 @@ export function createCollabPersistence({
         return;
       }
       try {
-        await setYDocState(
-          storageScopeFor(documentName),
-          id,
-          Y.encodeStateAsUpdate(document),
-        );
+        await setYDocState(storageScopeFor(documentName), id, binarySnapshot);
       } catch (err) {
         // Do NOT fall through to the JSON write. If the binary store failed but
         // the JSON write then succeeded, the stored binary would be OLDER than
@@ -221,9 +222,7 @@ export function createCollabPersistence({
         // step still holds the old shapes, and the write seam refuses some of
         // them (an unoffered text style, B464). Folding here is what every read
         // of the stored JSON does too.
-        const projected = migratePresentation(
-          codec.projectDocToPresentation(document),
-        );
+        const projected = migratePresentation(projectedSnapshot);
         // Skip the JSON write when the doc already equals the stored deck —
         // notably right after the server-as-collaborator seam applied a fresh
         // server save to the doc (live-apply.js flushes this hook on

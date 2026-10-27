@@ -146,6 +146,146 @@ pgDescribe(
           .executeTakeFirstOrThrow()
       ).slides;
 
+    /** Pause the real register read after PG answers, before validation resumes. */
+    function pauseRegistryRead() {
+      const entered = deferred(),
+        release = deferred();
+      let armed = true;
+      function wrapQuery(q) {
+        return new Proxy(q, {
+          get(target, prop) {
+            const v = Reflect.get(target, prop, target);
+            if (prop === 'execute')
+              return async (...args) => {
+                const rows = await v.apply(target, args);
+                if (armed) {
+                  armed = false;
+                  entered.resolve();
+                  await release.promise;
+                }
+                return rows;
+              };
+            return typeof v === 'function'
+              ? (...args) => wrapQuery(v.apply(target, args))
+              : v;
+          },
+        });
+      }
+      const proxy = new Proxy(db, {
+        get(target, prop) {
+          if (prop === 'transaction')
+            return () => ({
+              execute: (fn) =>
+                target.transaction().execute((trx) =>
+                  fn(
+                    new Proxy(trx, {
+                      get(t, p) {
+                        const v = Reflect.get(t, p, t);
+                        if (p === 'selectFrom')
+                          return (table) =>
+                            table === 'custom_slide_types'
+                              ? wrapQuery(v.call(t, table))
+                              : v.call(t, table);
+                        return typeof v === 'function' ? v.bind(t) : v;
+                      },
+                    }),
+                  ),
+                ),
+            });
+          const v = Reflect.get(target, prop, target);
+          return typeof v === 'function' ? v.bind(target) : v;
+        },
+      });
+      __setTestDb(proxy);
+      return { entered: entered.promise, release: () => release.resolve() };
+    }
+
+    for (const obsolete of [false, true]) {
+      it(`collab store uses one snapshot across awaits, obsolete peer edit ${obsolete}`, async (t) => {
+        await remove();
+        const document = new Y.Doc();
+        t.after(() => document.destroy());
+        deckYdocCodec.bootstrapPresentationToDoc(
+          await getPresentation(scope, deckId),
+          document,
+        );
+        const errors = [];
+        const hooks = createCollabPersistence({
+          repoRoot: scope.repoRoot,
+          documentScope: () => scope,
+          deps: {
+            log: {
+              warn: () => {},
+              error: (...args) => errors.push(args.join(' ')),
+            },
+          },
+        });
+        const gate = pauseRegistryRead();
+        const save = () =>
+          hooks.onStoreDocument({
+            documentName: `presentation:${deckId}`,
+            document,
+          });
+        const saving = save();
+        await gate.entered;
+        const edit = (content) => {
+          const before = deckYdocCodec.projectDocToPresentation(document);
+          const next = structuredClone(before);
+          next.slides[0].content = content;
+          deckYdocCodec.applyPresentationToDoc(next, document, {
+            base: before,
+          });
+        };
+        try {
+          edit({
+            headline: 'Late valid edit',
+            ...(obsolete ? { kicker: 'REMOVED' } : {}),
+          });
+        } finally {
+          gate.release();
+        }
+        await saving;
+        __setTestDb(db);
+        const assertStored = async (headline) => {
+          const binary = new Y.Doc();
+          try {
+            Y.applyUpdate(binary, await getYDocState(scope, deckId));
+            assert.deepEqual(
+              deckYdocCodec.projectDocToPresentation(binary).slides[0].content,
+              { headline },
+            );
+            assert.deepEqual((await storedSlides())[0].content, { headline });
+          } finally {
+            binary.destroy();
+          }
+        };
+        await assertStored('H');
+        assert.equal(
+          deckYdocCodec.projectDocToPresentation(document).slides[0].content
+            .headline,
+          'Late valid edit',
+        );
+        if (obsolete) {
+          await save();
+          await assertStored('H');
+          assert.ok(
+            errors.some((line) => line.includes('obsolete custom fields')),
+          );
+          edit({ headline: 'Late valid edit' });
+        }
+        await save();
+        await assertStored('Late valid edit');
+        edit({ headline: 'Next valid edit' });
+        await save();
+        await assertStored('Next valid edit');
+        assert.equal(
+          errors.filter((line) => !line.includes('obsolete custom fields'))
+            .length,
+          0,
+        );
+      });
+    }
+
     it('a real facade save waiting behind removal refuses the stale field, and the next edit succeeds', async () => {
       const gate = pauseCommit();
       const removal = remove();
