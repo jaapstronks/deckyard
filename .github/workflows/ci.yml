@@ -111,6 +111,18 @@ jobs:
           CHROME_PATH="$(printf '%s\n' "$INSTALL_LOG" | tail -n1 | cut -d' ' -f2-)"
           test -x "$CHROME_PATH"
           echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+      # The translation-review burndown needs the sidecar *as the base holds
+      # it*, which a depth-1 checkout of the merge commit does not have. Fetch
+      # exactly that commit; the script fails rather than skips when it cannot
+      # read it (docs/developer/i18n.md § Translation freshness).
+      - name: Translation-review burndown against the base commit
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE"
+          node scripts/i18n-burndown.js "$BASE"
       - run: npm run lint
         if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
       - run: npm run format:check

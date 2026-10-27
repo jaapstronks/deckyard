@@ -45,6 +45,13 @@ the ten locales stay, we are just honest about what "supported" covers.
   Its empty-value and placeholder-parity checks derive from `LOCALE_IDS` and
   block on all twelve, per the paragraph above. `tests/i18n-locales.test.js`
   keeps the manifest, this document and the picker from disagreeing.
+- **Freshness is not tiered:** every present translation in every locale —
+  `nl` and Tier 2 alike — is bound to the English it was reviewed against in
+  `scripts/i18n-source-state.json`, and an English edit fails the audit for all
+  of them. What the tier changes is only absence: a Tier-2 key the locale lacks
+  is reported as `missing`, never failed, and deleting a Tier-2 translation
+  together with its record is a valid way to let English stand in.
+  [`../developer/i18n.md`](../developer/i18n.md) § Translation freshness.
 - **Missing fallbacks:** the one way Tier-2's graceful degradation can break is a
   `t()` call written without its English fallback argument — then a missing key
   renders the raw key string, not English. An ESLint rule
@@ -111,7 +118,9 @@ with a stated reason.
 
 To actually translate a locale rather than strip it, use
 `node scripts/i18n-fill.js <locale> --json` — the translator hand-off, which now
-reports the real gap.
+reports the real gap — and import the result as a reviewed package
+(`--review` and `--apply`, see
+[`../developer/i18n.md`](../developer/i18n.md) § Translation freshness).
 
 ## Adding or promoting a locale
 

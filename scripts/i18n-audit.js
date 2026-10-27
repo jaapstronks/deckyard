@@ -18,6 +18,16 @@
  * side of that list is empty — the 268-key backlog was pruned to zero — so any
  * new orphan is a real leftover, not a number to grow.
  *
+ * A third axis is **freshness**: whether each present translation was reviewed
+ * against the English it now sits under. `scripts/i18n-source-state.json`
+ * binds every `(locale, key)` pair to fingerprints of its English source and
+ * its translation (see scripts/lib/i18n-source-state.js). An English edit, a
+ * translation edited outside the reviewed import, a translation without a
+ * record and a record without a translation all fail here, in every locale,
+ * `nl` included. Pairs still exactly as the initial inventory observed them
+ * are reported as `unreviewed` debt and tolerated; the CI burndown
+ * (scripts/i18n-burndown.js) only lets that set shrink.
+ *
  * Read-only: this script never writes, so it has no `--apply`. `--json` is the
  * machine half of the shared vocabulary (scripts/lib/cli-args.js); without it
  * the output is for a human.
@@ -47,6 +57,7 @@ import {
 import { isCli } from './lib/is-cli.js';
 import { parseArgs } from './lib/cli-args.js';
 import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
+import { collectFreshness } from './lib/i18n-source-state.js';
 const slideTypesTypesDir = path.join(
   repoRoot,
   'shared',
@@ -390,6 +401,68 @@ export async function collectHardcodedHits() {
   ];
 }
 
+/** Column order of the freshness table: name in the JSON, header here. */
+const FRESHNESS_COLUMNS = [
+  ['reviewedCurrent', 'reviewed'],
+  ['unreviewed', 'unreviewed'],
+  ['sourceChanged', 'src-chg'],
+  ['translationChanged', 'tr-chg'],
+  ['untracked', 'untracked'],
+  ['sourceMissing', 'src-miss'],
+  ['dangling', 'dangling'],
+  ['missing', 'missing'],
+];
+
+/**
+ * The human half of the freshness axis: a count table per locale, then the
+ * failing pairs.
+ * @param {object} freshness - `collectFreshness()`'s result, or `{error}`
+ */
+function reportFreshness(freshness) {
+  console.log('\nTranslation freshness (scripts/i18n-source-state.json):');
+  if (freshness.error) {
+    console.log(`\n✗ ${freshness.error}`);
+    return;
+  }
+  const rows = [
+    ['', ...FRESHNESS_COLUMNS.map(([, h]) => h)],
+    ...Object.entries(freshness.locales).map(([locale, c]) => [
+      locale,
+      ...FRESHNESS_COLUMNS.map(([k]) => String(c[k])),
+    ]),
+    ['total', ...FRESHNESS_COLUMNS.map(([k]) => String(freshness.totals[k]))],
+  ];
+  const widths = rows[0].map((_, i) =>
+    Math.max(...rows.map((r) => r[i].length)),
+  );
+  for (const r of rows)
+    console.log(`  ${r.map((cell, i) => cell.padStart(widths[i])).join('  ')}`);
+  console.log(
+    '  unreviewed = unchanged since the initial inventory, tolerated debt; ' +
+      'missing = reported, not gated. A pair can count under both src-chg and tr-chg.',
+  );
+  if (!freshness.findings.length) {
+    console.log(
+      '✓ no translation drifted from the English it was recorded with',
+    );
+    return;
+  }
+  console.log(`\n✗ ${freshness.findings.length} freshness finding(s):\n`);
+  for (const f of freshness.findings.slice(0, 40))
+    console.log(
+      `  ${f.locale}  ${f.key}  ${f.kind}${f.status ? ` (${f.status})` : ''}`,
+    );
+  if (freshness.findings.length > 40)
+    console.log(
+      `  … ${freshness.findings.length - 40} more (--json lists every one)`,
+    );
+  console.log(
+    '\nReview each through `node scripts/i18n-fill.js <locale> --review --json` and\n' +
+      '`--apply <locale> <file.json>`; delete a translation together with its record\n' +
+      '(`npm run i18n:sync`) when English must stand in instead.',
+  );
+}
+
 async function main(argv = process.argv.slice(2)) {
   const { flags } = parseArgs(argv, {
     usage: 'node scripts/i18n-audit.js [--json] [--orphans]',
@@ -408,12 +481,30 @@ async function main(argv = process.argv.slice(2)) {
   const orphans = await findOrphanKeys('en');
   const newOrphans = orphans.filter((k) => !(k in allowedOrphans));
   const runtimeGaps = await findRuntimeKeyGaps();
-  const failed = unexpected.length || newOrphans.length || runtimeGaps.length;
+  /** @type {Awaited<ReturnType<typeof collectFreshness>> | {error: string, failed: true}} */
+  let freshness;
+  try {
+    freshness = await collectFreshness();
+  } catch (err) {
+    freshness = { error: err.message, failed: true };
+  }
+  const failed =
+    unexpected.length ||
+    newOrphans.length ||
+    runtimeGaps.length ||
+    freshness.failed;
 
   if (asJson) {
     console.log(
       JSON.stringify(
-        { hardcoded: hits, unexpected, orphans, newOrphans, runtimeGaps },
+        {
+          hardcoded: hits,
+          unexpected,
+          orphans,
+          newOrphans,
+          runtimeGaps,
+          freshness,
+        },
         null,
         2,
       ),
@@ -464,6 +555,8 @@ async function main(argv = process.argv.slice(2)) {
   } else {
     console.log('✓ every runtime-built key family has values in en/ and nl/');
   }
+
+  reportFreshness(freshness);
 
   return failed ? 1 : 0;
 }

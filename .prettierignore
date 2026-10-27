@@ -17,6 +17,9 @@ coverage
 # Written by tools, not by hand.
 CHANGELOG.md
 package-lock.json
+# One record per line in a canonical form the i18n tooling parses strictly
+# (scripts/lib/i18n-source-state.js); a reformat would make it unreadable.
+scripts/i18n-source-state.json
 
 # Symlink to the private deckyard-planning sibling repo (gitignored).
 docs/plans
