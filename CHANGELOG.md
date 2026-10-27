@@ -4,6 +4,34 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.91.0](https://github.com/jaapstronks/deckyard/compare/v1.90.0...v1.91.0) (2026-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* MCP add_slide/update_slide and API v1 slide writes refuse an undeclared content key with 400 unknown_field instead of storing it; /api/v1/schema content schemas carry propertyNames; the per-slide content.videoOverride of the live video layer is no longer read.
+
+### Added
+
+* **i18n:** bind every translation to the English it was reviewed against ([#1853](https://github.com/jaapstronks/deckyard/issues/1853)) ([3591ac4](https://github.com/jaapstronks/deckyard/commit/3591ac497ca2a168627d7b73b81992d89d9ec03a))
+* one inclusion vocabulary, undeclared keys refused on every write ([#1855](https://github.com/jaapstronks/deckyard/issues/1855)) ([feeaed8](https://github.com/jaapstronks/deckyard/commit/feeaed87b6f2593cd1e0169014acd1294c646eb6))
+
+
+### Fixed
+
+* **i18n:** distinguish custom slide types and sharp corners ([#1852](https://github.com/jaapstronks/deckyard/issues/1852)) ([1b69f19](https://github.com/jaapstronks/deckyard/commit/1b69f1942fd31f6e2377416dfe02fbed7cae94c3))
+* **i18n:** make Dark, Light, All and None agree with their nouns ([#1856](https://github.com/jaapstronks/deckyard/issues/1856)) ([46f9d8f](https://github.com/jaapstronks/deckyard/commit/46f9d8f3d1f084b5d453aba82fe36db7fe90268d))
+* **i18n:** one word per typography and alignment label ([#1857](https://github.com/jaapstronks/deckyard/issues/1857)) ([c147f6b](https://github.com/jaapstronks/deckyard/commit/c147f6b14d6f9119d105ab749a3c811aef6a0963))
+* **i18n:** record the reviewed B148 batch 03 translations ([#1854](https://github.com/jaapstronks/deckyard/issues/1854)) ([c0e386c](https://github.com/jaapstronks/deckyard/commit/c0e386c542f9bb39b880bbad2cb631e0c86f55e4))
+* **i18n:** stop promising the trash cannot be undone ([#1858](https://github.com/jaapstronks/deckyard/issues/1858)) ([51434d2](https://github.com/jaapstronks/deckyard/commit/51434d2aa1f761be4a6893709340b28e635c75a6))
+* **i18n:** unify analytics terminology across locales ([#1849](https://github.com/jaapstronks/deckyard/issues/1849)) ([5ead974](https://github.com/jaapstronks/deckyard/commit/5ead974d1237e3d19c684a2bf25fd2be9e2ef921))
+* unify analytics metric labels across locales ([#1851](https://github.com/jaapstronks/deckyard/issues/1851)) ([a58def4](https://github.com/jaapstronks/deckyard/commit/a58def4bdc4160e26de3e1752a6067bf3df05104))
+
+
+### Changed
+
+* record beta release review for strict content keys ([092b5aa](https://github.com/jaapstronks/deckyard/commit/092b5aa06d7b0fc492be5e06c70c64f5fa08da1a))
+
 ## [1.90.0](https://github.com/jaapstronks/deckyard/compare/v1.89.1...v1.90.0) (2026-10-26)
 
 
