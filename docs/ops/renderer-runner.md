@@ -78,7 +78,7 @@ sudo /opt/deckyard-render/image/bin/node /opt/deckyard-render/code/runner/index.
 
 Fixture modes exercise direct syscalls, new native/JS threads, environment/FD/mount inventory, invalid output, resource exhaustion and a healthy scratch-free successor. They are evidence inputs, not an isolation assertion or a substitute for the independent external observer. Keep raw commands, code SHA, every runtime/image/profile identity, cgroup/mount/inode/listener observations and the failure timeline. Development success for a subset must remain labelled as incomplete P1-P16.
 
-Hosted CI explicitly reports the renderer Linux acceptance gate as **NOT EXECUTED**. Its unit-suite result does not certify P1-P16, and optional unit skips do not count as OS evidence.
+Upstream ran the complete record below on code SHA `2483554d` (Linux 6.8 x86_64, systemd 255): every gate passed from a fresh installation, followed by full removal. Hosted CI explicitly reports the renderer Linux acceptance gate as **NOT EXECUTED**. Its unit-suite result does not certify P1-P16, and optional unit skips do not count as OS evidence.
 
 ## Wire contract
 
