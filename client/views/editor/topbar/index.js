@@ -62,6 +62,7 @@ export function createEditorTopbar({
   markDirty,
   onAnalyze,
   onOpenOverview,
+  onOpenAiReview,
   // Opens the side-by-side translation view (B763); listed in the language
   // menu.
   onOpenTranslateView,
@@ -279,6 +280,7 @@ export function createEditorTopbar({
     onSubscription: () =>
       openSubscriptionModal({ api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),
+    onOpenAiReview,
     onOpenCompanion: hasLive ? () => openNotesQr() : null,
   });
   detachers.push(moreMenu.detach);

@@ -38,6 +38,8 @@ import {
   normalizeLang,
 } from '../../../shared/i18n-utils.js';
 import { createLogger } from '../logger.js';
+import { bindAiReview, isAiReviewCurrent } from '../../../shared/ai-review.js';
+import { outlineSourceEvidence } from './source-evidence.js';
 
 const log = createLogger('generate-deck');
 
@@ -183,6 +185,8 @@ async function runPhases(
   }
   signal?.throwIfAborted();
 
+  outlineSourceEvidence(outline, rawContent);
+
   // ── Structural vs content slides ────────────────────────────────────────
   const { structuralSlides, contentGroups } = separateSlidesForProcessing(
     outline.slides,
@@ -221,6 +225,18 @@ async function runPhases(
     (a, b) => a.originalIndex - b.originalIndex,
   );
   const slides = validateAndFixRefinedSlides(allSlides, { slideTypes });
+
+  for (const slide of slides) {
+    const source = outline.slides.find(
+      (item) => item.index === slide.originalIndex,
+    );
+    slide._reviewEvidence = source?._reviewEvidence || {
+      kind: 'content',
+      sourceExcerpt: null,
+    };
+    if (slide._reviewFallback)
+      slide._reviewEvidence = { ...slide._reviewEvidence, kind: 'fallback' };
+  }
 
   // ── Source images: upload the ones a slide uses (B775) ──────────────────
   const { used } = await resolveSourceImages(slides, sourceImages, {
@@ -305,8 +321,12 @@ export function assembleDeck(
         ...titleSlide,
       },
       notes: '',
-      _aiReasoning: 'Automatic title slide',
+      _aiReasoning: '',
     });
+    bindAiReview(
+      deck.slides[0],
+      outline._reviewTitleEvidence || { kind: 'title', sourceExcerpt: null },
+    );
   }
 
   for (const refined of refinedSlides) {
@@ -330,6 +350,10 @@ export function assembleDeck(
     if (refined._aiWarnings?.length) {
       slide._aiWarnings = refined._aiWarnings;
     }
+    bindAiReview(
+      slide,
+      refined._reviewEvidence || { kind: 'content', sourceExcerpt: null },
+    );
     deck.slides.push(slide);
   }
 
@@ -400,10 +424,12 @@ export function generatedDeckToParts(deck, { theme, slideTypes }) {
   parts.slides.forEach((slide, i) => {
     const source = deck.slides?.[i];
     if (!source || !slide || typeof slide !== 'object') return;
+    const reviewWasCurrent = isAiReviewCurrent(source);
     for (const key of AI_REVIEW_KEYS) {
       const value = source[key];
       if (value && (!Array.isArray(value) || value.length)) slide[key] = value;
     }
+    if (reviewWasCurrent) bindAiReview(slide, source._aiReview);
   });
   return parts;
 }

@@ -76,6 +76,7 @@ const notedSlide = (title) => ({
   _aiReasoning: `Kept the claim "${NOTE}" from page 3`,
   _aiAlternatives: [{ type: 'quote-slide', reason: `${NOTE} as a quote` }],
   _aiWarnings: [`${NOTE} was shortened`],
+  _aiReview: { sourceExcerpt: NOTE, fingerprint: '12345678', kind: 'content' },
 });
 
 /** Every `_ai*` key on any slide of any slide list in `deck`. */
@@ -159,7 +160,7 @@ beforeEach(() => {
 describe('the stored deck carries the notes (precondition)', () => {
   it('every slide of every version has the three keys', () => {
     const row = db.__tables.presentations.find((r) => r.id === deckId);
-    assert.equal(aiKeysIn(row).length, 3 * 2 * 3);
+    assert.equal(aiKeysIn(row).length, 4 * 2 * 3);
   });
 });
 
@@ -234,13 +235,13 @@ describe('GET /api/presentations/:id', () => {
   it('the owner keeps them: the editor reads them', async () => {
     const body = await internalGet(OWNER);
     assert.equal(body.slides[0]._aiReasoning.includes(NOTE), true);
-    assert.equal(aiKeysIn(body).length, 3 * 2 * 3);
+    assert.equal(aiKeysIn(body).length, 4 * 2 * 3);
   });
 
   it('an edit collaborator keeps them as well', async () => {
     const body = await internalGet(EDITOR);
     assert.equal(body._userPermission, 'edit');
-    assert.equal(aiKeysIn(body).length, 3 * 2 * 3);
+    assert.equal(aiKeysIn(body).length, 4 * 2 * 3);
   });
 });
 
@@ -394,11 +395,11 @@ describe('GET /api/v1/presentations/:id', () => {
 
   it('the owner keeps them, so a GET-then-PUT does not drop them', async () => {
     const body = await v1Get(OWNER);
-    assert.equal(aiKeysIn(body.presentation).length, 3 * 2 * 3);
+    assert.equal(aiKeysIn(body.presentation).length, 4 * 2 * 3);
   });
 
   it('an edit collaborator keeps them, so their GET-then-PUT does not drop them', async () => {
     const body = await v1Get(EDITOR);
-    assert.equal(aiKeysIn(body.presentation).length, 3 * 2 * 3);
+    assert.equal(aiKeysIn(body.presentation).length, 4 * 2 * 3);
   });
 });

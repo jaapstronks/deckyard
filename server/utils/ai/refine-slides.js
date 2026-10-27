@@ -7,7 +7,7 @@
  * Key features:
  * - Processes slides in groups (1-4 slides per call) for consistency
  * - Has full knowledge of slide type catalog
- * - Includes reasoning/deliberation in output for debugging
+ * - Includes a source-based explanation for the author
  * - Considers adjacent slide context to avoid repetition
  */
 
@@ -207,6 +207,7 @@ function createFallbackSlide(originalSlide) {
         subheading: lines[1] || '',
         background: 'lime',
       },
+      _reviewFallback: true,
       reasoning: 'Fallback: Phase 2 failed, created basic title slide',
       presenterNotes,
     };
@@ -223,6 +224,7 @@ function createFallbackSlide(originalSlide) {
         title: lines[0] || 'Section',
         subheading: lines[1] || '',
       },
+      _reviewFallback: true,
       reasoning: 'Fallback: Phase 2 failed, created basic chapter slide',
       presenterNotes,
     };
@@ -242,6 +244,7 @@ function createFallbackSlide(originalSlide) {
           { quote: quote.trim(), authorName: 'Unknown', authorTitle: '' },
         ],
       },
+      _reviewFallback: true,
       reasoning: 'Fallback: Phase 2 failed, created basic quote slide',
       presenterNotes,
     };
@@ -254,6 +257,7 @@ function createFallbackSlide(originalSlide) {
       content: {
         tagline: originalSlide.roughContent.trim() || 'Thank you',
       },
+      _reviewFallback: true,
       reasoning: 'Fallback: Phase 2 failed, created basic closing slide',
       presenterNotes,
     };
@@ -269,6 +273,7 @@ function createFallbackSlide(originalSlide) {
       layout: 'one-column',
       background: 'lime',
     },
+    _reviewFallback: true,
     reasoning: 'Fallback: Phase 2 failed, created basic content slide',
     presenterNotes,
   };

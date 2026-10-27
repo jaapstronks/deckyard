@@ -26,6 +26,7 @@ export function createEditorTopbarMoreMenu({
   onShowShortcuts,
   onOpenSettings,
   onOpenOverview,
+  onOpenAiReview,
   onSubscription,
   // The opener behind the bar's analytics button. Like Export and Share this
   // is the same call, not a copy — but unlike them the control is conditional
@@ -234,6 +235,16 @@ export function createEditorTopbarMoreMenu({
     onclick: () => run(onOpenOverview),
   });
 
+  const btnAiReview =
+    onOpenAiReview &&
+    (pres?.slides || []).some((slide) => slide._aiReview || slide._aiReasoning)
+      ? menuItem({
+          class: 'dropdown-item ai-review-open',
+          text: t('editor.aiReview.reopen', 'Review AI explanations'),
+          onclick: () => run(onOpenAiReview),
+        })
+      : null;
+
   const btnExport = menuItem({
     class: 'dropdown-item topbar-fold-lg',
     text: t('editor.export.button', 'Export'),
@@ -336,6 +347,7 @@ export function createEditorTopbarMoreMenu({
       btnExport,
       btnShare,
       btnOverview,
+      btnAiReview,
       btnAnalytics,
       btnAnalyze,
       btnVersions,

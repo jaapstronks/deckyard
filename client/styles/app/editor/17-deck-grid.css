@@ -208,6 +208,10 @@
 }
 
 .deck-grid-alt-btn {
+  min-height: 44px;
+  min-width: 44px;
+  max-width: 100%;
+  white-space: normal;
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid hsl(var(--app-border-default));
@@ -451,4 +455,49 @@
     box-shadow: none;
     background: transparent;
   }
+}
+
+.deck-grid-source-label {
+  margin: var(--ps-space-2) 0 var(--ps-space-1);
+  font-weight: 600;
+}
+
+.deck-grid-source {
+  margin: 0;
+  padding-inline-start: var(--ps-space-2);
+  border-inline-start: 2px solid hsl(var(--app-border-default));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.deck-grid-review-status {
+  margin: var(--ps-space-1) 0;
+  font-style: italic;
+}
+
+.ai-review-open {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.modal.modal-ai-review > .row:first-child,
+.modal.modal-deck-grid > .row:first-child {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.modal.modal-ai-review > .row:first-child > h2,
+.modal.modal-deck-grid > .row:first-child > h2 {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.modal.modal-ai-review > .row:first-child > button,
+.modal.modal-deck-grid > .row:first-child > button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
 }

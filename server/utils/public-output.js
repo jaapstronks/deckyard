@@ -127,6 +127,7 @@ export const AI_REVIEW_KEYS = Object.freeze([
   '_aiReasoning',
   '_aiAlternatives',
   '_aiWarnings',
+  '_aiReview',
 ]);
 
 const hasAiReviewMeta = (slide) =>

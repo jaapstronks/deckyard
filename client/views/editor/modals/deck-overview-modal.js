@@ -7,6 +7,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { openModal } from '../../../lib/dom/modal.js';
 import { createDeckGridView } from '../deck-grid.js';
+import { h } from '../../../lib/dom/index.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 
 /**
@@ -23,6 +24,7 @@ export function openDeckOverviewModal({
   theme,
   SLIDE_TYPES,
   onJumpToSlide,
+  onOpenAiReview,
 } = {}) {
   const count = (pres?.slides || []).length;
 
@@ -57,6 +59,22 @@ export function openDeckOverviewModal({
     tilePickLabel: t('editor.deckGrid.jumpTo', 'Go to slide'),
   });
 
+  if (
+    onOpenAiReview &&
+    (pres?.slides || []).some((slide) => slide._aiReview || slide._aiReasoning)
+  ) {
+    modalApi.append(
+      h('button', {
+        class: 'btn btn-secondary ai-review-open',
+        type: 'button',
+        text: t('editor.aiReview.reopen', 'Review AI explanations'),
+        onclick: () => {
+          modalApi.close();
+          onOpenAiReview();
+        },
+      }),
+    );
+  }
   modalApi.append(grid.el);
   grid.render();
 

@@ -143,12 +143,6 @@ export async function convertWithAi(formattedContent, options = {}) {
     stepParagraphs: true,
     transitions: { preset: 'fade' },
   };
-  if (titleSlideCandidate) {
-    deck.slides[0]._aiReasoning = `Title slide with image from source first slide. Original title: "${titleSlideCandidate.title}"`;
-  } else if (titleSlide) {
-    deck.slides[0]._aiReasoning =
-      'Automatic title slide (source file did not have a clear title slide)';
-  }
 
   deck._generationMeta = {
     ...meta,

@@ -12,7 +12,10 @@ import { t } from '../../../lib/ui-i18n.js';
 import { openModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
-import { createAiReviewAnnotations } from '../ai-review-annotations.js';
+import {
+  createAiReviewAnnotations,
+  aiReviewPreviewText,
+} from '../ai-review-annotations.js';
 import { h } from '../../../lib/dom/index.js';
 
 /**
@@ -99,7 +102,7 @@ export function openAiBatchReviewModal({
     annotationFor,
     previewOnClick: true,
     // The AI's per-slide rationale, shown inside the peek preview too.
-    peekNoteFor: (slide) => String(slide?._aiReasoning || '').trim() || null,
+    peekNoteFor: (slide) => aiReviewPreviewText(slide),
   });
 
   // --- Adjust: feedback textarea + re-generate from prior batch ------------

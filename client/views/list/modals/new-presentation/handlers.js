@@ -339,7 +339,9 @@ export async function handleConvertFile({
     await new Promise((r) => setTimeout(r, 500));
     loadingModal.close();
     close();
-    nav(`/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`);
+    nav(
+      `/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}&aiReview=1`,
+    );
   } catch (e) {
     rotator.stop();
     loadingModal.close();
@@ -598,7 +600,7 @@ export async function handleNotion({
     loadingModal.close();
     close();
     nav(
-      `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
+      `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}&aiReview=1`,
     );
   } catch (e) {
     rotator.stop();

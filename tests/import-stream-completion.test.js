@@ -191,7 +191,7 @@ for (const [kind, handler, endpoint] of [
     assert.equal(document.querySelector('.loading-modal'), null);
   });
 
-  test(`${kind}: completion retains navigation and language`, async () => {
+  test(`${kind}: completion opens review with the detected language`, async () => {
     const result = await run(
       () =>
         new Response(
@@ -209,7 +209,7 @@ for (const [kind, handler, endpoint] of [
     assert.equal(document.querySelector('.loading-modal'), null);
     assert.equal(
       window.location.pathname + window.location.search,
-      `/app/imported-deck?lang=${kind === 'Notion' ? 'fr' : 'nl'}`,
+      `/app/imported-deck?lang=${kind === 'Notion' ? 'fr' : 'nl'}&aiReview=1`,
     );
     const body = JSON.parse(result.calls[0].opts.body);
     assert.equal(body.theme, 'default');

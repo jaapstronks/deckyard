@@ -805,6 +805,7 @@ export async function createEditorController({
     syncShareUi: dropdowns.syncShareUi,
     markDirty,
     onOpenOverview: openDeckOverview,
+    onOpenAiReview: openAiDeckReview,
     onOpenTranslateView: openTranslateView,
     // AI Analysis exists only where AI does: with AI off the server answers
     // its route 404, so the menu has no item for it (B337, D179).
