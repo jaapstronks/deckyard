@@ -591,6 +591,7 @@ export async function renderPresenter(root, id) {
           ),
           confirmLabel: t('presenter.leave.confirm', 'Leave presentation'),
           cancelLabel: t('presenter.leave.stay', 'Stay'),
+          modalClass: 'presenter-leave-modal',
         });
       } finally {
         leaveConfirmOpen = false;

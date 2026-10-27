@@ -547,6 +547,7 @@ export function openModal(root, options = {}) {
  * @param {string} [options.confirmLabel] - Confirm button label
  * @param {string} [options.cancelLabel] - Cancel button label
  * @param {boolean} [options.danger=false] - Use danger styling for confirm
+ * @param {string} [options.modalClass] - Additional CSS class for the modal
  * @returns {Promise<boolean>} Resolves true if confirmed, false if cancelled
  */
 export function confirmModal(root, options = {}) {
@@ -556,11 +557,13 @@ export function confirmModal(root, options = {}) {
     confirmLabel = t('common.confirm', 'Confirm'),
     cancelLabel = t('common.cancel', 'Cancel'),
     danger = false,
+    modalClass,
   } = options;
 
   return new Promise((resolve) => {
     const modalApi = createModal({
       title: titleText,
+      modalClass,
       closeOnBackdrop: false,
       onClose: (result) => resolve(result?.confirmed === true),
     });

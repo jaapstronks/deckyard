@@ -785,6 +785,17 @@
   color: hsl(var(--app-text-secondary));
 }
 
+/* The invite actions wrap as whole buttons and keep a touch-sized target. */
+.organization-invite-modal .modal-actions {
+  flex-wrap: wrap;
+}
+
+.organization-invite-modal .modal-actions .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+}
+
 /* What an invite did, when it asks the inviter to act (B433). It replaces the
    invite form and stays until the dialog is closed, so it reads as a state of
    the dialog, not as a refusal: accent, never the danger colour. */
