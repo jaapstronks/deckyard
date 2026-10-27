@@ -1,5 +1,5 @@
 {
-  "imageLibrary.addButton": "Guardar en la biblioteca",
+  "imageLibrary.addButton": "Guardar imagen en la biblioteca",
   "imageLibrary.addNew": "Añadir nueva",
   "imageLibrary.added": "Añadida.",
   "imageLibrary.alt.generate": "Generar texto alternativo (IA)",
@@ -257,7 +257,7 @@
   "slideLibrary.action.favorite": "Favorito",
   "slideLibrary.action.insert": "Insertar",
   "slideLibrary.action.preview": "Haga clic para ver la vista previa",
-  "slideLibrary.action.pushToTeam": "Agregar a biblioteca del equipo",
+  "slideLibrary.action.pushToTeam": "Añadir a la biblioteca del equipo",
   "slideLibrary.action.restore": "Restaurar",
   "slideLibrary.action.select": "Seleccionar diapositiva",
   "slideLibrary.action.trash": "Mover a la papelera",

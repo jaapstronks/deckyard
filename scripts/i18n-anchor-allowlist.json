@@ -19,10 +19,6 @@
     "rewritten)."
   ],
   "anchors": {
-    "da  Add to team library": {
-      "forms": ["Tilføj til team-bibliotek", "Tilføj til teamets bibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Alt text": {
       "forms": ["Alt-tekst", "Alternativ tekst"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -45,10 +41,6 @@
     },
     "da  Dismiss": {
       "forms": ["Afvis", "Luk"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "da  Drag to reorder": {
-      "forms": ["Træk for at omorganisere", "Træk for at ændre rækkefølgen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "da  Duplicate": {
@@ -75,17 +67,9 @@
       "forms": ["Læser filen…", "Læser fil…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Search slides": {
-      "forms": ["Søg i slides", "Søg slides"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Shared": {
       "forms": ["Delt", "Delte"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "da  Slide library": {
-      "forms": ["Slide-bibliotek", "Slidebibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "da  {count}d ago": {
       "forms": ["for {count} d siden", "{count}d siden"],
@@ -162,13 +146,6 @@
       "forms": ["vor {count} Std", "vor {count} Std."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "es  Add to team library": {
-      "forms": [
-        "Agregar a biblioteca del equipo",
-        "Añadir a la biblioteca del equipo"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  All": {
       "forms": ["Todas", "Todos"],
       "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Todos agrees with comentarios, tipos, tipos de diapositiva and degradados (masculine plural) in comments.filter.all, comments.filter.allTypes, slideLibrary.filter.all and stockMedia.gradients.tone.all; Todas agrees with categorías, etiquetas, presentaciones and notificaciones (feminine plural) in editor.iconPicker.allCategory, imageLibrary.tags.all, imagekit.tags.all, list.presentations.ownership.all and notifications.filter.all."
@@ -195,10 +172,6 @@
     },
     "es  Display name": {
       "forms": ["Nombre para mostrar", "Nombre visible"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Drag to reorder": {
-      "forms": ["Arrastrar para reordenar", "Arrastre para reordenar"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Email": {
@@ -261,10 +234,6 @@
         "Algo ha ido mal. Inténtelo de nuevo.",
         "Algo salió mal. Por favor, inténtalo de nuevo."
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Add to team library": {
-      "forms": ["Lisää tiimikirjastoon", "Lisää tiimin kirjastoon"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Anonymous": {
@@ -335,10 +304,6 @@
       "forms": ["Oikealla", "Oikealle"],
       "reason": "position versus alignment — Oikealla (adessive, where something sits) in editor.imagePosition.right and slideType.title-slide.field.logoCorner.option.right.label, next to Keskellä; Oikealle (allative, where text is aligned to) in editor.textStyle.align.right."
     },
-    "fi  Search slides": {
-      "forms": ["Hae dioista", "Hae dioja"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Shared": {
       "forms": ["Jaettu", "Jaetut"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
@@ -367,16 +332,8 @@
       "forms": ["Sombre", "Sombres"],
       "reason": "grammatical agreement — Sombre agrees with mode, couleur, fond and texte (singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Sombres agrees with dégradés (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
-    "fr  Drag to reorder": {
-      "forms": ["Faites glisser pour réorganiser", "Glisser pour réorganiser"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Grid": {
       "forms": ["Grille", "Tableau"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Insert slide": {
-      "forms": ["Insérer la diapositive", "Insérer une diapositive"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Light": {
@@ -473,10 +430,6 @@
       "forms": ["URL dell'immagine", "URL immagine"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Insert slide": {
-      "forms": ["Inserisci la slide", "Inserisci una slide"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Light": {
       "forms": ["Chiari", "Chiaro"],
       "reason": "grammatical agreement — Chiaro agrees with tema and testo (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Chiari agrees with gradienti (masculine plural) in stockMedia.gradients.tone.light."
@@ -516,10 +469,6 @@
       "forms": ["Salvate", "Salvato"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Search slides": {
-      "forms": ["Cerca slide", "Cerca tra le slide"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Sending…": {
       "forms": ["Invio in corso…", "Invio…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -527,10 +476,6 @@
     "it  Shared": {
       "forms": ["Condivise", "Condiviso"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "it  Slide library": {
-      "forms": ["Libreria di slide", "Libreria slide"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Soft": {
       "forms": ["Morbida", "Morbido"],
@@ -549,13 +494,6 @@
     },
     "it  {count}h ago": {
       "forms": ["{count} h fa", "{count}h fa"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Add to team library": {
-      "forms": [
-        "Toevoegen aan team bibliotheek",
-        "Toevoegen aan teambibliotheek"
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Alt text": {
@@ -600,14 +538,6 @@
     },
     "nl  Dismiss": {
       "forms": ["Negeren", "Sluiten"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Drag to reorder": {
-      "forms": [
-        "Sleep om te herordenen",
-        "Sleep om te herschikken",
-        "Sleep om te verplaatsen"
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Enlarge preview": {
@@ -672,20 +602,8 @@
       "forms": ["Herstel", "Herstellen"],
       "reason": "noun versus button — Herstel is the noun in editor.versions.reason.restore, the label that says why a version exists, next to Automatische snapshot and Backup (vóór herstel); Herstellen is the infinitive on the buttons editor.versions.restore, list.restore, list.bulk.restore and slideLibrary.action.restore."
     },
-    "nl  Save to library": {
-      "forms": ["Bewaren in bibliotheek", "Opslaan in beeldbank"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Search": {
       "forms": ["Zoek", "Zoeken"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Search slides": {
-      "forms": ["Slides zoeken", "Zoek in slides"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Select slide": {
-      "forms": ["Selecteer slide", "Slide selecteren"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Sending…": {
@@ -702,10 +620,6 @@
     },
     "nl  {count}d ago": {
       "forms": ["{count} d geleden", "{count} dagen geleden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Add to team library": {
-      "forms": ["Legg til i team-bibliotek", "Legg til i teamets bibliotek"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Alt text": {
@@ -732,10 +646,6 @@
       "forms": ["Avvis", "Lukk"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Drag to reorder": {
-      "forms": ["Dra for å endre rekkefølgen", "Dra for å omorganisere"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Export": {
       "forms": ["Eksport", "Eksporter"],
       "reason": "Eksporter is de imperatief op de drie editoracties; Eksport is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
@@ -746,10 +656,6 @@
     },
     "no  Image URL": {
       "forms": ["Bilde-URL", "Bildets URL"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Insert slide": {
-      "forms": ["Sett inn lysbilde", "Sett inn lysbildet"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Light": {
@@ -780,17 +686,9 @@
       "forms": ["Nullstill", "Tilbakestill"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Search slides": {
-      "forms": ["Søk i lysbilder", "Søk lysbilder"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Shared": {
       "forms": ["Delt", "Delte"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "no  Slide library": {
-      "forms": ["Lysbilde-bibliotek", "Lysbildebibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  {count}d ago": {
       "forms": ["for {count} d siden", "{count}d siden"],
@@ -900,10 +798,6 @@
       "forms": ["Do prawej", "Prawo"],
       "reason": "position versus alignment — Prawo names a position in editor.imagePosition.right and slideType.title-slide.field.logoCorner.option.right.label, next to Środek; Do prawej names an alignment direction in editor.textStyle.align.right."
     },
-    "pl  Search slides": {
-      "forms": ["Szukaj slajdów", "Szukaj w slajdach"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Searching…": {
       "forms": ["Szukanie…", "Wyszukiwanie…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -942,10 +836,6 @@
     },
     "pt  Display name": {
       "forms": ["Nome a apresentar", "Nome de exibição"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  Drag to reorder": {
-      "forms": ["Arrastar para reordenar", "Arraste para reordenar"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Export": {
@@ -1010,10 +900,6 @@
       "forms": ["{count} selecionadas", "{count} selecionados"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "sv  Add to team library": {
-      "forms": ["Lägg till i team-bibliotek", "Lägg till i teamets bibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Alt text": {
       "forms": ["Alt-text", "Alternativtext"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1042,20 +928,12 @@
       "forms": ["Avvisa", "Stäng"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "sv  Drag to reorder": {
-      "forms": ["Dra för att omordna", "Dra för att ändra ordningen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Generating…": {
       "forms": ["Genererar…", "Skapar…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Image URL": {
       "forms": ["Bild-URL", "Bildens URL"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Insert slide": {
-      "forms": ["Infoga slide", "Infoga sliden"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Light": {
@@ -1082,17 +960,9 @@
       "forms": ["Nollställ", "Återställ"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "sv  Search slides": {
-      "forms": ["Sök bland slides", "Sök slides"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Shared": {
       "forms": ["Delad", "Delade"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "sv  Slide library": {
-      "forms": ["Slide-bibliotek", "Slidebibliotek"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  this presentation": {
       "forms": ["den här presentationen", "denna presentation"],

@@ -1,5 +1,5 @@
 {
-  "imageLibrary.addButton": "Tallenna kirjastoon",
+  "imageLibrary.addButton": "Tallenna kuva kirjastoon",
   "imageLibrary.addNew": "Lisää uusi",
   "imageLibrary.added": "Lisätty.",
   "imageLibrary.alt.generate": "Luo vaihtoehtoinen teksti (tekoäly)",
@@ -258,7 +258,7 @@
   "slideLibrary.action.favorite": "Suosikki",
   "slideLibrary.action.insert": "Lisää",
   "slideLibrary.action.preview": "Napsauta esikatseluun",
-  "slideLibrary.action.pushToTeam": "Lisää tiimikirjastoon",
+  "slideLibrary.action.pushToTeam": "Lisää tiimin kirjastoon",
   "slideLibrary.action.restore": "Palauta",
   "slideLibrary.action.select": "Valitse dia",
   "slideLibrary.action.trash": "Siirrä roskakoriin",

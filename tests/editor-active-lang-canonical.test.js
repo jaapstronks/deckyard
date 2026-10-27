@@ -99,7 +99,7 @@ test('the library modal fallback keys the slide by the canonical language', asyn
   await tick();
 
   const saveBtn = [...document.querySelectorAll('.modal-actions .btn-primary')]
-    .filter((b) => b.textContent === 'Save to library')
+    .filter((b) => b.textContent === 'Save slide to library')
     .pop();
   assert.ok(saveBtn, 'the modal renders its save button');
   saveBtn.click();
