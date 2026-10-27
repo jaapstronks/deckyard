@@ -1,7 +1,6 @@
 import { TextDecoder } from 'node:util';
 import { EDITION_INPUT_SCHEMA } from '../edition-input.js';
 import { isRendererHash } from '../manifest.js';
-import { RENDERER_BUNDLE_ERRORS } from '../errors.js';
 
 export const REQUEST_LIMIT = 16 * 1024 * 1024;
 export const OUTPUT_LIMIT = 64 * 1024 * 1024;
@@ -19,12 +18,6 @@ export const CODES = Object.freeze([
   'worker_failed',
   'output_limit',
 ]);
-const object = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const exact = (v, keys) =>
-  object(v) &&
-  Object.keys(v).length === keys.length &&
-  keys.every((k) => Object.hasOwn(v, k));
-
 /** Strict UTF-8 JSON grammar, including duplicate keys at every depth and a
  * byte-order mark. Depth is bounded before any tree is built. Values are not
  * materialised: the scan returns character offsets, and only the members named
@@ -38,14 +31,26 @@ function scan(bytes, want = null) {
   const whitespace = () => {
     while (/[\t\r\n ]/.test(source[i] || '\0')) i++;
   };
-  function string() {
+  // Validates one string token in place. Only keys are decoded (for duplicate
+  // detection); a value token is never copied, however long it is.
+  function string(decode) {
     const start = i++;
-    while (i < source.length) {
-      const c = source[i++];
-      if (c === '"') return JSON.parse(source.slice(start, i));
-      if (c === '\\') i++;
+    for (;;) {
+      if (i >= source.length) throw new Error('invalid_request');
+      const c = source.charCodeAt(i++);
+      if (c === 0x22) break;
+      if (c < 0x20) throw new Error('invalid_request');
+      if (c === 0x5c) {
+        const e = source[i++];
+        if (e === 'u') {
+          if (!/^[0-9a-fA-F]{4}$/.test(source.slice(i, i + 4)))
+            throw new Error('invalid_request');
+          i += 4;
+        } else if (e === undefined || !'"\\/bfnrt'.includes(e))
+          throw new Error('invalid_request');
+      }
     }
-    throw new Error('invalid_request');
+    return decode ? JSON.parse(source.slice(start, i)) : null;
   }
   // `wanted` is null for an unrecorded value, true for a recorded leaf, or a
   // key map whose members are recorded too. Unrecorded values allocate nothing.
@@ -56,7 +61,7 @@ function scan(bytes, want = null) {
       c = source[i];
     let keys = 0,
       members = null;
-    if (c === '"') string();
+    if (c === '"') string(false);
     else if (c === '{' || c === '[') {
       const end = c === '{' ? '}' : ']';
       const seen = new Set();
@@ -70,7 +75,7 @@ function scan(bytes, want = null) {
           let inner = null;
           if (c === '{') {
             if (source[i] !== '"') throw new Error('invalid_request');
-            const key = string();
+            const key = string(true);
             if (seen.has(key)) throw new Error('invalid_request');
             seen.add(key);
             keys++;
@@ -167,97 +172,84 @@ export function parseRequest(bytes) {
   };
 }
 
-/** Discard all guest metadata. A valid sealed object is diagnostic data only. */
-export function validateOutput(bytes) {
-  const v = parseJson(bytes);
-  if (
-    exact(v, ['ok', 'canvas', 'reader', 'sealed']) &&
-    v.ok === true &&
-    typeof v.canvas === 'string' &&
-    typeof v.reader === 'string' &&
-    object(v.sealed)
-  ) {
-    return { canvas: v.canvas, reader: v.reader };
-  }
-  if (
-    exact(v, ['ok', 'code', 'message', 'details']) &&
-    v.ok === false &&
-    Object.values(RENDERER_BUNDLE_ERRORS).includes(v.code) &&
-    typeof v.message === 'string' &&
-    (v.details === null || object(v.details))
-  )
+const OUTPUT_MEMBERS = Object.freeze({
+  ok: true,
+  canvas: true,
+  reader: true,
+  sealed: true,
+  code: true,
+  message: true,
+  details: true,
+});
+
+/** Validate one complete guest answer and frame the broker's success response
+ * from it, discarding all guest metadata (a valid `sealed` object is diagnostic
+ * data only). The canvas and reader values are copied as their own string
+ * tokens: the strict scan proved them complete JSON strings, so no decoded
+ * copies of up to 64 MiB are built and nothing else of the guest can reach the
+ * caller. Returns `{frame}` with its own transferable ArrayBuffer, or `{code}`
+ * when the serialized response would exceed the 64 MiB limit. */
+export function validateOutput(bytes, request, runnerId) {
+  let scanned;
+  try {
+    scanned = scan(bytes, OUTPUT_MEMBERS);
+  } catch {
     throw new Error('worker_failed');
-  throw new Error('worker_failed');
-}
-
-// Count JSON string bytes before allocating an escaped 6x copy. In particular,
-// a guest-controlled control-character string must produce output_limit inside
-// the broker's memory budget, rather than relying on the OOM boundary.
-function escapedBytes(value) {
-  let bytes = 0;
-  for (let i = 0; i < value.length; i++) {
-    const c = value.charCodeAt(i);
-    if (c === 34 || c === 92 || [8, 9, 10, 12, 13].includes(c)) bytes += 2;
-    else if (c < 32) bytes += 6;
-    else if (c < 128) bytes++;
-    else if (c < 2048) bytes += 2;
-    else if (
-      c >= 0xd800 &&
-      c <= 0xdbff &&
-      value.charCodeAt(i + 1) >= 0xdc00 &&
-      value.charCodeAt(i + 1) <= 0xdfff
-    ) {
-      bytes += 4;
-      i++;
-    } else if (c >= 0xd800 && c <= 0xdfff) bytes += 6;
-    else bytes += 3;
-    if (bytes > OUTPUT_LIMIT) return bytes;
   }
-  return bytes;
-}
-
-/** A framed response; serialization overhead is covered by the body limit. */
-export function responseBytes(request, outcome, runnerId) {
-  const base = {
-    schema: RESPONSE_SCHEMA,
-    requestId: request?.requestId ?? null,
-  };
-  let v = outcome.code
-    ? {
-        ...base,
-        ok: false,
-        code: CODES.includes(outcome.code)
-          ? outcome.code
-          : 'sandbox_unavailable',
-      }
-    : {
-        ...base,
+  const { source, root } = scanned;
+  const m = root.members;
+  const kind = (node) => source[node?.start];
+  const text = (node) => source.slice(node.start, node.end);
+  if (kind(root) !== '{' || root.keys !== 4 || m.size !== 4)
+    throw new Error('worker_failed');
+  const [ok, canvas, reader] = ['ok', 'canvas', 'reader'].map((k) => m.get(k));
+  if (
+    ok &&
+    text(ok) === 'true' &&
+    kind(canvas) === '"' &&
+    kind(reader) === '"' &&
+    kind(m.get('sealed')) === '{'
+  ) {
+    const parts = [
+      JSON.stringify({
+        schema: RESPONSE_SCHEMA,
+        requestId: request.requestId,
         ok: true,
         rendererHash: request.rendererHash,
         runnerId,
-        canvas: outcome.canvas,
-        reader: outcome.reader,
-      };
-  if (!outcome.code) {
-    const overhead = Buffer.byteLength(
-      JSON.stringify({ ...v, canvas: '', reader: '' }),
-    );
-    if (
-      overhead + escapedBytes(v.canvas) + escapedBytes(v.reader) >
-      OUTPUT_LIMIT
-    )
-      v = { ...base, ok: false, code: 'output_limit' };
+      }).slice(0, -1),
+      ',"canvas":',
+      text(canvas),
+      ',"reader":',
+      text(reader),
+      '}',
+    ];
+    const length = parts.reduce((n, part) => n + Buffer.byteLength(part), 0);
+    if (length > OUTPUT_LIMIT) return { code: 'output_limit' };
+    const frame = Buffer.from(new ArrayBuffer(4 + length));
+    frame.writeUInt32BE(length);
+    let offset = 4;
+    for (const part of parts) offset += frame.write(part, offset);
+    return { frame };
   }
-  let json = JSON.stringify(v),
-    length = Buffer.byteLength(json);
-  if (length > OUTPUT_LIMIT) {
-    json = JSON.stringify({ ...base, ok: false, code: 'output_limit' });
-    length = Buffer.byteLength(json);
-  }
-  // One allocation for header and body: no second 64 MiB copy in the broker.
-  const framed = Buffer.allocUnsafe(4 + length);
-  framed.writeUInt32BE(length);
-  framed.write(json, 4);
+  // A well-formed historical refusal is still only a worker failure; its
+  // message and details never cross the caller interface.
+  throw new Error('worker_failed');
+}
+
+/** A framed closed refusal. Unknown codes collapse to sandbox_unavailable. */
+export function refusalBytes(request, code) {
+  const body = Buffer.from(
+    JSON.stringify({
+      schema: RESPONSE_SCHEMA,
+      requestId: request?.requestId ?? null,
+      ok: false,
+      code: CODES.includes(code) ? code : 'sandbox_unavailable',
+    }),
+  );
+  const framed = Buffer.alloc(4 + body.length);
+  framed.writeUInt32BE(body.length);
+  body.copy(framed, 4);
   return framed;
 }
 

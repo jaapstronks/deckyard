@@ -15,9 +15,16 @@ import {
   jobPaths,
   isInternalId,
 } from './paths.js';
-import { parseRequest, readFrame, responseBytes } from './protocol.js';
+import { parseRequest, readFrame, refusalBytes } from './protocol.js';
 import { lifecycleChannel } from './channel.js';
 import { SELF_TEST_RESULT } from './policy.js';
+
+// The fixed capability job answers exactly its own marker in both documents.
+function selfTestPassed(result) {
+  if (!result.frame) return false;
+  const v = JSON.parse(Buffer.from(result.frame.buffer).subarray(4));
+  return v.canvas === SELF_TEST_RESULT && v.reader === SELF_TEST_RESULT;
+}
 
 /** Six connection tokens, four queued validated requests, one supervisor-owned
  * active slot. A single-use, joinable worker owns every producer operation. */
@@ -53,7 +60,9 @@ export async function startBroker() {
     token.answered = true;
     clearTimeout(token.queueTimer);
     const deadline = performance.now() + 5000;
-    const bytes = responseBytes(token.request, outcome, config.runnerId);
+    const bytes = outcome.frame
+      ? Buffer.from(outcome.frame.buffer)
+      : refusalBytes(token.request, outcome.code);
     if (performance.now() >= deadline) {
       token.socket.destroy();
       return;
@@ -187,9 +196,7 @@ export async function startBroker() {
           if (
             code !== 0 ||
             !owner.result ||
-            (owner.token.internal &&
-              (owner.result.canvas !== SELF_TEST_RESULT ||
-                owner.result.reader !== SELF_TEST_RESULT))
+            (owner.token.internal && !selfTestPassed(owner.result))
           ) {
             cancel();
             return;

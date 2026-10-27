@@ -6,7 +6,7 @@ import {
   parseJson,
   parseRequest,
   validateOutput,
-  responseBytes,
+  refusalBytes,
   readFrame,
   OUTPUT_LIMIT,
 } from '../server/render/renderer-bundle/runner/protocol.js';
@@ -134,6 +134,12 @@ test('the validated input is forwarded as the caller bytes, not a rebuilt tree',
   ]);
 });
 
+const success = (bytesValue) => {
+  const { frame } = validateOutput(bytesValue, request(), 'broker');
+  assert.equal(frame.readUInt32BE(), frame.length - 4);
+  return JSON.parse(frame.subarray(4));
+};
+
 test('guest metadata has no authority: valid lies disappear, invalid output is refused', () => {
   const valid = {
     ok: true,
@@ -141,7 +147,12 @@ test('guest metadata has no authority: valid lies disappear, invalid output is r
     reader: 'A',
     sealed: { runnerId: 'lie', network: 'open', env: ['secret'] },
   };
-  assert.deepEqual(validateOutput(bytes(valid)), {
+  assert.deepEqual(success(bytes(valid)), {
+    schema: 'deckyard.renderer-runner.response/1',
+    requestId: 'a_1',
+    ok: true,
+    rendererHash: 'a'.repeat(64),
+    runnerId: 'broker',
     canvas: '<h1>A</h1>',
     reader: 'A',
   });
@@ -149,84 +160,87 @@ test('guest metadata has no authority: valid lies disappear, invalid output is r
     assert.throws(() => validateOutput(bytes({ ...valid, sealed })));
   for (const patch of [
     { ok: 1 },
+    { ok: 'true' },
     { canvas: null },
+    { canvas: ['x'] },
     { reader: 3 },
     { runnerId: 'lie' },
     { extra: false },
   ])
-    assert.throws(() => validateOutput(bytes({ ...valid, ...patch })));
+    assert.throws(
+      () => validateOutput(bytes({ ...valid, ...patch }), request(), 'b'),
+      /worker_failed/,
+    );
   for (const key of Object.keys(valid)) {
     const v = { ...valid };
     delete v[key];
-    assert.throws(() => validateOutput(bytes(v)));
+    assert.throws(() => validateOutput(bytes(v), request(), 'b'));
   }
-  assert.throws(() => validateOutput(Buffer.concat([bytes(valid), bytes({})])));
-  assert.throws(
-    () =>
-      validateOutput(
-        bytes({
-          ok: false,
-          code: 'renderer_bundle_worker_failed',
-          message: 'private input',
-          details: null,
-        }),
-      ),
-    /worker_failed/,
+  for (const raw of [
+    Buffer.concat([bytes(valid), bytes({})]),
+    Buffer.from('{"ok":true,"canvas":"a\\u12","reader":"","sealed":{}}'),
+    Buffer.from('{"ok":true,"canvas":"\\x","reader":"","sealed":{}}'),
+    Buffer.from('{"ok":true,"canvas":"\t","reader":"","sealed":{}}'),
+    Buffer.from('{"ok":true,"canvas":"x","reader":"","sealed":{},"ok":true}'),
+    Buffer.from('{"ok":true,"canvas":"x","reader":"","sealed":{}'),
+  ])
+    assert.throws(() => validateOutput(raw, request(), 'b'), /worker_failed/);
+  for (const refusal of [
+    {
+      ok: false,
+      code: 'renderer_bundle_worker_failed',
+      message: 'private input',
+      details: null,
+    },
+    { ok: false, code: 'invented', message: 'private input', details: {} },
+  ])
+    assert.throws(
+      () => validateOutput(bytes(refusal), request(), 'b'),
+      /worker_failed/,
+    );
+});
+
+test('the success frame copies validated string tokens without re-encoding drift', () => {
+  const raw = Buffer.from(
+    '{"sealed":{},"reader":"r\\u00e9\\n","ok":true,"canvas":"<p>\\"é\\ud800</p>"}',
   );
-  assert.throws(
-    () =>
-      validateOutput(
-        bytes({
-          ok: false,
-          code: 'invented',
-          message: 'private input',
-          details: {},
-        }),
-      ),
-    /worker_failed/,
-  );
+  const v = success(raw);
+  assert.equal(v.canvas, '<p>"é\ud800</p>');
+  assert.equal(v.reader, 'ré\n');
+  assert.deepEqual(Object.keys(v), [
+    'schema',
+    'requestId',
+    'ok',
+    'rendererHash',
+    'runnerId',
+    'canvas',
+    'reader',
+  ]);
 });
 
 test('only broker-selected identity and closed errors can reach the response', () => {
   const parse = (v) => JSON.parse(v.subarray(4));
-  assert.deepEqual(
-    parse(
-      responseBytes(
-        request(),
-        {
-          canvas: 'a',
-          reader: 'b',
-          runnerId: 'guest',
-          sealed: { input: 'secret' },
-        },
-        'broker',
-      ),
-    ),
-    {
-      schema: 'deckyard.renderer-runner.response/1',
-      requestId: 'a_1',
-      ok: true,
-      rendererHash: 'a'.repeat(64),
-      runnerId: 'broker',
-      canvas: 'a',
-      reader: 'b',
-    },
+  assert.deepEqual(parse(refusalBytes(null, 'unknown')), {
+    schema: 'deckyard.renderer-runner.response/1',
+    requestId: null,
+    ok: false,
+    code: 'sandbox_unavailable',
+  });
+  assert.deepEqual(parse(refusalBytes({ requestId: 'r' }, 'busy')), {
+    schema: 'deckyard.renderer-runner.response/1',
+    requestId: 'r',
+    ok: false,
+    code: 'busy',
+  });
+  // Escaping counts: a guest string of control characters fits the 64 MiB
+  // stdout limit but not the serialized response limit.
+  const controls = Buffer.from(
+    `{"ok":true,"canvas":"${'\\u0001'.repeat(Math.floor(OUTPUT_LIMIT / 6) - 20)}","reader":"","sealed":{}}`,
   );
-  assert.deepEqual(
-    parse(responseBytes(null, { code: 'unknown', message: 'private' })),
-    {
-      schema: 'deckyard.renderer-runner.response/1',
-      requestId: null,
-      ok: false,
-      code: 'sandbox_unavailable',
-    },
-  );
-  const result = responseBytes(
-    request(),
-    { canvas: '\0'.repeat(Math.floor(OUTPUT_LIMIT / 6)), reader: '' },
-    'broker',
-  );
-  assert.equal(parse(result).code, 'output_limit');
+  assert.ok(controls.length <= OUTPUT_LIMIT);
+  assert.deepEqual(validateOutput(controls, request(), 'broker'), {
+    code: 'output_limit',
+  });
 });
 
 async function connected(t) {
