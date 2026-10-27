@@ -71,6 +71,29 @@ static napi_value disconnected(napi_env env, napi_callback_info info) {
   napi_value out;
   napi_get_boolean(env,(p.revents & (POLLHUP|POLLERR|POLLNVAL))!=0,&out);return out;
 }
+static napi_value producer_io(napi_env env, napi_callback_info info) {
+  (void)info;
+  const long calls[]={SYS_io_setup,SYS_io_submit,SYS_io_getevents,SYS_io_pgetevents,
+    SYS_io_cancel,SYS_io_destroy,SYS_io_uring_setup,SYS_io_uring_enter,SYS_io_uring_register};
+  for (size_t i=0;i<sizeof(calls)/sizeof(calls[0]);i++) {
+    errno=0;
+    if (syscall(calls[i],0,0,0,0,0,0)!=-1 || errno!=EPERM) { errno=EPERM; return fail(env); }
+  }
+  DIR *directory=opendir("/proc/self/fd");
+  if (!directory) return fail(env);
+  int result=0; struct dirent *entry;
+  while ((entry=readdir(directory))) {
+    if (entry->d_name[0]=='.') continue;
+    char link[256];
+    ssize_t n=readlinkat(dirfd(directory),entry->d_name,link,sizeof(link)-1);
+    if (n<0) { if (errno==ENOENT) continue; result=-1; break; }
+    link[n]='\0';
+    if (strstr(link,"io_uring")) { errno=EPERM; result=-1; break; }
+  }
+  int saved=errno; closedir(directory); errno=saved;
+  if (result) return fail(env);
+  napi_value out; napi_get_boolean(env,true,&out); return out;
+}
 static int beneath(int parent, const char *path, int flags) {
   struct open_how h = {.flags=(uint64_t)(flags | O_CLOEXEC | O_NOFOLLOW),
     .resolve=RESOLVE_BENEATH | RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS | RESOLVE_NO_XDEV};
@@ -190,9 +213,10 @@ static napi_value init(napi_env env, napi_value exports) {
     {"peer",NULL,peer,NULL,NULL,NULL,napi_default,NULL},
     {"exited",NULL,exited,NULL,NULL,NULL,napi_default,NULL},
     {"disconnected",NULL,disconnected,NULL,NULL,NULL,napi_default,NULL},
+    {"assertProducerIo",NULL,producer_io,NULL,NULL,NULL,napi_default,NULL},
     {"copy",NULL,copy,NULL,NULL,NULL,napi_default,NULL},
   };
-  if (napi_define_properties(env,exports,4,methods)!=napi_ok) return NULL;
+  if (napi_define_properties(env,exports,5,methods)!=napi_ok) return NULL;
   return exports;
 }
 NAPI_MODULE(NODE_GYP_MODULE_NAME,init)

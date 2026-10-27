@@ -10,7 +10,7 @@ import {
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { sha256Hex } from '../manifest.js';
+import { sha256Hex, canonicalManifestBytes } from '../manifest.js';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const LIBS = {
@@ -134,9 +134,36 @@ export function buildRunner(output, crun) {
   });
   copyFileSync(crun, path.join(output, 'crun'));
   chmodSync(path.join(output, 'crun'), 0o555);
+  const probeFiles = [
+    [
+      'self-test-worker.js',
+      readFileSync(path.join(directory, 'self-test-worker.js')),
+    ],
+    ['policy.js', readFileSync(path.join(directory, 'policy.js'))],
+    ['package.json', Buffer.from('{"type":"module"}\n')],
+  ];
+  const manifest = canonicalManifestBytes({
+    schema: 'deckyard.renderer-bundle/1',
+    entry: 'self-test-worker.js',
+    worker: 'self-test-worker.js',
+    files: probeFiles.map(([path, bytes]) => ({
+      path,
+      bytes: bytes.length,
+      sha256: sha256Hex(bytes),
+    })),
+    unsealed: [],
+  });
+  const selfTestHash = sha256Hex(manifest),
+    selfTest = path.join(output, 'self-test');
+  mkdirSync(`${selfTest}/${selfTestHash}/files`, { recursive: true });
+  writeFileSync(`${selfTest}/${selfTestHash}/manifest.json`, manifest);
+  for (const [name, bytes] of probeFiles)
+    writeFileSync(`${selfTest}/${selfTestHash}/files/${name}`, bytes);
   const lock = {
     schema: 'deckyard.renderer-runner.build/1',
     hostLibraries: HOST_LIBRARIES,
+    selfTestHash,
+    selfTest: inventory(selfTest),
     node: NODE_DIGEST,
     crun: CRUN_DIGEST,
     image: inventory(image),

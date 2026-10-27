@@ -127,6 +127,11 @@ jobs:
         if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
       - run: npm run format:check
         if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
+      - name: Report renderer Linux acceptance as not executed
+        if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
+        run: |
+          echo '### Renderer runner Linux gate: NOT EXECUTED' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Hosted CI validates the Node suite only. P1-P16 require a separate real-runtime record for the exact code SHA and independent security review; unit passes and skips cannot satisfy that gate.' >> "$GITHUB_STEP_SUMMARY"
       - run: npm test
         if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
         env:

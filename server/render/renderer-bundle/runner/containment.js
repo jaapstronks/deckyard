@@ -25,6 +25,8 @@ export function groupsBelow(directory) {
 }
 export function limits(directory, memory, pids) {
   mkdirSync(directory);
+  // The independent cancellation mechanism must exist before reserve-ack.
+  writeFileSync(`${directory}/cgroup.kill`, '1');
   for (const [name, value] of Object.entries({
     'cpu.max': '100000 100000',
     'memory.max': String(memory),

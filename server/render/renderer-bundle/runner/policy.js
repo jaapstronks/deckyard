@@ -20,3 +20,5 @@ export const MOUNT_FLAGS = Object.freeze({
   '/proc': ['ro', 'nosuid', 'nodev', 'noexec'],
   '/tmp': ['nosuid', 'nodev', 'noexec', 'size=64m', 'mode=1777'],
 });
+
+export const SELF_TEST_RESULT = 'deckyard.renderer-runner.self-test/1';

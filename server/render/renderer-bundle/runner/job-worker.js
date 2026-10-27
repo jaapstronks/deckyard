@@ -9,7 +9,7 @@ import {
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { openRendererBundle } from '../store.js';
-import { loadControl, PATHS } from './paths.js';
+import { loadControl, PATHS, verifyHostLibraries } from './paths.js';
 import { OUTPUT_LIMIT, STDERR_LIMIT, validateOutput } from './protocol.js';
 import { ociProfile } from './profile.js';
 
@@ -28,6 +28,7 @@ function freeze(dir) {
   chmodSync(dir, 0o555);
 }
 async function execute() {
+  verifyHostLibraries();
   const copyStore = `${directory}/copy`;
   const bundle = `${copyStore}/${request.rendererHash}`;
   mkdirSync(directory, { mode: 0o700 });

@@ -59,6 +59,8 @@ test('caller envelope has one exact schema and no path, command, environment or 
     { requestId: null },
     { requestId: 'x'.repeat(65) },
     { requestId: 'é' },
+    { requestId: 'a\n' },
+    { rendererHash: 'a'.repeat(64) + '\n' },
     { rendererHash: 'A'.repeat(64) },
     { schema: 'other' },
     { input: [] },
@@ -304,6 +306,44 @@ test('containment paths come only from an internal UUID, never a lifecycle path 
     helper: `/sys/fs/cgroup${SUPERVISOR_CGROUP}/helpers/${id}`,
     guest: `${SUPERVISOR_CGROUP}/jobs/${id}`,
   });
-  for (const invalid of ['../job', '/host', 'A'.repeat(32), '', 'a'.repeat(33)])
+  for (const invalid of [
+    '../job',
+    '/host',
+    'A'.repeat(32),
+    '',
+    'a'.repeat(33),
+    'a'.repeat(32) + '\n',
+  ])
     assert.throws(() => jobPaths(invalid));
+});
+
+test('loaded producer policy must deny every AIO syscall before Node starts', async () => {
+  const { assertProducerPolicy } =
+    await import('../server/render/renderer-bundle/runner/service-policy.js');
+  const names = [
+    'io_setup',
+    'io_submit',
+    'io_getevents',
+    'io_pgetevents',
+    'io_cancel',
+    'io_destroy',
+    'io_uring_setup',
+    'io_uring_enter',
+    'io_uring_register',
+  ];
+  const properties = {
+    DropInPaths: '',
+    SystemCallFilter: `~${names.join(' ')}`,
+    SystemCallArchitectures: 'native',
+    SystemCallErrorNumber: '1',
+  };
+  assert.doesNotThrow(() => assertProducerPolicy(properties));
+  for (const patch of [
+    { SystemCallFilter: '' },
+    { SystemCallFilter: `~${names.slice(1).join(' ')}` },
+    { SystemCallArchitectures: '' },
+    { SystemCallErrorNumber: '38' },
+    { DropInPaths: '/unreviewed.conf' },
+  ])
+    assert.throws(() => assertProducerPolicy({ ...properties, ...patch }));
 });

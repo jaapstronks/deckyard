@@ -1,6 +1,6 @@
 # Historical renderer operator runner
 
-This is an experimental, operator-only implementation of the T1 Linux runner. Production `host.js` still refuses every execution with `renderer_bundle_sandbox_unavailable`. Installing or starting these services does not connect them to publication, v1 or MCP. Full P1-P16 acceptance and independent review of the exact code SHA are required before merge; a separate activation review remains necessary afterwards. Development probes are not that acceptance gate.
+This is an experimental, operator-only historical renderer implementation for Linux. Production `host.js` still refuses every execution with `renderer_bundle_sandbox_unavailable`. Installing or starting these services does not connect them to publication, v1 or MCP. Full P1-P16 acceptance and independent review of the exact code SHA are required before merge; a separate activation review remains necessary afterwards. Development probes are not that acceptance gate.
 
 The trusted base is OS-root, the rootful broker, the independent rootful supervisor, the pinned runtime, Node, bootstrap and image. This protects against historical guest code, not against a compromised rootful render service or administrator. The caller gets a Unix request socket, never runtime access, a general command interface or the supervisor socket.
 
@@ -32,7 +32,7 @@ sudo systemctl start deckyard-render-supervisor.service
 systemctl status deckyard-render-supervisor.service deckyard-render-broker.service
 ```
 
-The supervisor alone launches the fixed broker unit after reconciliation. The broker has `Restart=no`, no activation unit and no start-rate limit; failed jobs require a new broker invocation after complete producer stop and cleanup. This avoids treating repeated guest failures as supervisor crashes. Only the supervisor has an automatic systemd restart. Drop-ins, force-restart policy or socket/path/timer activation of the broker invalidate readiness. Both service files and the tmpfiles policy are pinned.
+The supervisor alone launches the fixed broker unit after reconciliation. Before opening its caller socket, every broker invocation runs a fixed content-addressed capability probe through the same reservation, private copy, native syscall filter, native runtime and cleanup path. It checks scratch I/O, socket refusal and a new JS Worker. Missing runtime features leave admission closed after cleanup; the journal reports `self_test_not_ready` and only an operator restart retries. The broker has `Restart=no`, no activation unit and no start-rate limit; failed jobs require a new broker invocation after complete producer stop and cleanup. This avoids treating repeated guest failures as supervisor crashes. Only the supervisor has an automatic systemd restart. Drop-ins, force-restart policy or socket/path/timer activation of the broker invalidate readiness. Both service files and the tmpfiles policy are pinned. The supervisor manager has its own 256 MiB/64-task subgroup; the delegated parent has 1 GiB, above the sum of manager, guest and helper limits, so guest memory exhaustion cannot consume the monitor's allowance. Both services deny legacy kernel AIO and all three io_uring syscalls from their first instruction through systemd filters, inherited by producer threads and helpers. Startup verifies the loaded systemd policy, actual syscall refusals and absence of pre-opened ring FDs. This is local to these services; no global kernel or environment workaround is used.
 
 As the configured caller UID, send a request file through the fixed operator entry:
 
@@ -69,7 +69,7 @@ The kernel interfaces are documented in [openat2(2)](https://man7.org/linux/man-
 
 ## Adversarial development fixtures
 
-Build a separately registered adversarial worker with the pinned Node headers and a native direct-syscall probe. This changes only the bundle's manifest worker and declared files; it does not preload historical code before B3 or change the trusted image.
+Build a separately registered adversarial worker with the pinned Node headers and a native direct-syscall probe. This changes only the bundle's manifest worker and declared files; it does not preload historical code before the mandatory syscall filter or change the trusted image.
 
 ```sh
 node scripts/build-renderer-runner-fixture.js .scratch/fixture-store .scratch/new-fixture-build
@@ -77,3 +77,50 @@ sudo /opt/deckyard-render/image/bin/node /opt/deckyard-render/code/runner/index.
 ```
 
 Fixture modes exercise direct syscalls, new native/JS threads, environment/FD/mount inventory, invalid output, resource exhaustion and a healthy scratch-free successor. They are evidence inputs, not an isolation assertion or a substitute for the independent external observer. Keep raw commands, code SHA, every runtime/image/profile identity, cgroup/mount/inode/listener observations and the failure timeline. Development success for a subset must remain labelled as incomplete P1-P16.
+
+Hosted CI explicitly reports the renderer Linux acceptance gate as **NOT EXECUTED**. Its unit-suite result does not certify P1-P16, and optional unit skips do not count as OS evidence.
+
+## Wire contract
+
+A connection carries one four-byte unsigned big-endian length, that many UTF-8 JSON bytes, then a write-half-close. Zero/oversized lengths, invalid UTF-8, duplicate keys, trailing bytes and a second frame refuse the request. The maximum request body is 16 MiB; JSON nesting is limited to 64 levels. The envelope has exactly these four fields:
+
+```json
+{
+  "schema": "deckyard.renderer-runner.request/1",
+  "requestId": "probe_1",
+  "rendererHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "input": {
+    "schema": "deckyard.edition-input/1",
+    "presentation": { "slides": [] }
+  }
+}
+```
+
+`requestId` is 1–64 ASCII letters, digits, underscores or hyphens. The renderer hash is exactly 64 lowercase hexadecimal characters and must already be registered by an operator. Input uses the frozen edition-input contract; no path, command, environment, image, mount or limit override is accepted in the envelope. Correlation IDs never become internal job names.
+
+The framed success body has exactly `schema`, `requestId`, `ok: true`, `rendererHash`, `runnerId`, `canvas` and `reader`. Its schema is `deckyard.renderer-runner.response/1`; both document values are strings. The broker supplies the runtime identity. A framed refusal has exactly `schema`, `requestId`, `ok: false` and `code`; its correlation ID is null if no valid one was decoded. Codes are `invalid_request`, `unauthorized`, `busy`, `queue_timeout`, `bundle_refused`, `sandbox_unavailable`, `job_timeout`, `job_cancelled`, `worker_failed` and `output_limit`. The complete serialized response body, including escaping, is at most 64 MiB. Cancellation of a broker instance closes its caller connections after independent cleanup; a closed connection is not a successful response and is never transparently replayed.
+
+Guest output is separately capped at 64 MiB stdout and 1 MiB stderr. Success is exactly `{ok:true, canvas:<string>, reader:<string>, sealed:<object>}`. A non-null, non-array `sealed` object is diagnostic data and is discarded completely, including any claims about isolation or identity. Extra top-level fields, truthy booleans and malformed outputs refuse success. Guest failures, stderr and private error details never cross the caller interface.
+
+## External Linux acceptance record
+
+Every gate requires the exact code SHA, runtime/image/native/profile digests, kernel and architecture, fixed limits and raw observations from outside the guest. Unit tests and guest-reported assertions cannot satisfy this record. A failure leaves the relevant gate incomplete.
+
+| Gate | Scenario                                                    | Required external evidence                                                                                                                 |
+| ---- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| P1   | Peer authorization and closed envelopes                     | Wrong UID is rejected before body read; invalid fields/types/UTF-8/duplicate keys start no copy or runtime.                                |
+| P2   | Admission pressure and partial frames                       | Six connection tokens, four queued requests, absolute 5-second read deadline and bounded overflow.                                         |
+| P3   | Queue expiry and blocked response readers                   | Absolute 40-second queue expiry, 5-second response writer and slot release independent of caller reads.                                    |
+| P4   | Filesystem aliases and special files                        | Symlink roots/components, hardlinks, mount transitions and special files refuse before execution.                                          |
+| P5   | Source changes around copy/verify/freeze                    | Exact hash bytes or refusal, new job inodes, immutable active copy and fresh verification on the next request.                             |
+| P6   | Missing or incompatible native/runtime boundary             | Fatal refusal before the first historical instruction; errno and positive TSYNC results are failures.                                      |
+| P7   | Existing and newly created threads                          | Actual forbidden syscalls fail in both; historical execution follows successful TSYNC only.                                                |
+| P8   | Direct process/namespace/ABI escape attempts                | Exec/fork/process-clone/clone3, ptrace, alternate ABIs and async kernel I/O fail; the permitted pthread works.                             |
+| P9   | IPv4/IPv6/TCP/UDP/Unix and JS/network bypasses              | External listeners receive nothing, with working positive controls including a listener in the guest network namespace.                    |
+| P10  | Host data and complete inventories                          | Real host canaries, other inputs, host PIDs and management sockets are inaccessible; mounts, env and FDs match the contract.               |
+| P11  | CPU, memory, tasks, output and scratch limits               | Actual kernel counters and output limits, complete cleanup and a healthy successor without old scratch data.                               |
+| P12  | Broker/runtime loss and paused producers                    | Stop precedes final inventory; late/resumed actions create nothing after cleanup; 5 seconds or unavailable with occupied slot.             |
+| P13  | Quiescence races, late messages and supervisor restart      | Irreversible executors and bindings, reconciliation before admission, negative cleanup controls and healthy successors.                    |
+| P14  | Guest response validation and discarded claims              | Wrong shapes/identity/booleans/trailing output fail; lies in a valid diagnostic object have no authority.                                  |
+| P15  | Renderer A/B, changed current inputs and rebuild/cache loss | Distinct content identities and documents, identical repeated A, canvas/reader from the same frozen input and pinned external screenshots. |
+| P16  | Production and environment unlock attempts                  | The production host still refuses unconditionally; no publication/v1/MCP route or current-renderer fallback.                               |

@@ -89,13 +89,22 @@ export function parseJson(bytes) {
   return JSON.parse(source);
 }
 
+/** ASCII correlation identifier; final line terminators are not identifiers. */
+export function isRequestId(value) {
+  return (
+    typeof value === 'string' &&
+    value.length >= 1 &&
+    value.length <= 64 &&
+    !/[^A-Za-z0-9_-]/.test(value)
+  );
+}
+
 /** Validate the closed caller envelope without importing historical code. */
 export function validateRequest(v) {
   if (
     !exact(v, ['schema', 'requestId', 'rendererHash', 'input']) ||
     v.schema !== 'deckyard.renderer-runner.request/1' ||
-    typeof v.requestId !== 'string' ||
-    !/^[A-Za-z0-9_-]{1,64}$/.test(v.requestId) ||
+    !isRequestId(v.requestId) ||
     !isRendererHash(v.rendererHash) ||
     !object(v.input) ||
     v.input.schema !== EDITION_INPUT_SCHEMA ||

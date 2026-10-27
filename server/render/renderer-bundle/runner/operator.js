@@ -70,7 +70,11 @@ export async function installRunner(build, callerUid, callerGid, subid) {
     JSON.stringify(lock.hostLibraries) !== JSON.stringify(HOST_LIBRARIES) ||
     lock.node !== NODE_DIGEST ||
     lock.crun !== CRUN_DIGEST ||
-    JSON.stringify(inventory(`${build}/image`)) !== JSON.stringify(lock.image)
+    JSON.stringify(inventory(`${build}/image`)) !==
+      JSON.stringify(lock.image) ||
+    JSON.stringify(inventory(`${build}/self-test`)) !==
+      JSON.stringify(lock.selfTest) ||
+    !isRendererHash(lock.selfTestHash)
   )
     throw new Error('image build pin mismatch');
   for (const [file, digest] of [
@@ -126,7 +130,13 @@ export async function installRunner(build, callerUid, callerGid, subid) {
   }
   process.umask(0o022);
   mkdirSync(PATHS.install, { mode: 0o755 });
-  for (const name of ['image', 'crun', 'control.node', 'launch-runtime'])
+  for (const name of [
+    'image',
+    'crun',
+    'control.node',
+    'launch-runtime',
+    'self-test',
+  ])
     cpSync(`${build}/${name}`, `${PATHS.install}/${name}`, {
       recursive: true,
       errorOnExist: true,
@@ -207,6 +217,7 @@ export async function installRunner(build, callerUid, callerGid, subid) {
     instance: null,
     jobs: [],
   });
+  await registerBundle(`${PATHS.install}/self-test`, lock.selfTestHash);
   execFileSync('/usr/bin/systemctl', ['daemon-reload']);
   process.stdout.write(
     'Operator runner installed, services stopped. Production host remains disabled.\n',

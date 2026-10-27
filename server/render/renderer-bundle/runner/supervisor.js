@@ -24,6 +24,8 @@ import { loadLedger, saveLedger, revokeRecord } from './ledger.js';
 import { lifecycleChannel } from './channel.js';
 import {
   brokerProperties,
+  supervisorProperties,
+  assertProducerPolicy,
   startBrokerService,
   stopBrokerService,
 } from './service-policy.js';
@@ -48,12 +50,17 @@ const log = (job, phase) =>
 export async function startSupervisor() {
   const config = loadInstallation(),
     native = loadControl();
+  native.assertProducerIo();
   const ledger = loadLedger(config.installation);
   const own = readFileSync('/proc/self/cgroup', 'utf8').trim().split('::')[1];
   if (own !== `${SUPERVISOR_CGROUP}/manager`)
     throw new Error('supervisor containment unavailable');
   const delegated = `${CG}${own.slice(0, -'/manager'.length)}`;
   writeFileSync(`${delegated}/cgroup.subtree_control`, '+cpu +memory +pids');
+  // Keep the monitor's memory budget separate from the delegated guest/helper
+  // budgets. Their combined maxima stay below the parent unit's 1 GiB ceiling.
+  writeFileSync(`${CG}${own}/memory.max`, '268435456');
+  writeFileSync(`${CG}${own}/pids.max`, '64');
   for (const kind of ['jobs', 'helpers']) {
     if (!existsSync(`${delegated}/${kind}`)) mkdirSync(`${delegated}/${kind}`);
     writeFileSync(
@@ -108,7 +115,7 @@ export async function startSupervisor() {
     for (const j of ledger.jobs.filter((j) => j.phase !== 'CLEANED'))
       for (const p of roots(j)) kill(p);
   }
-  async function retireInstance() {
+  async function retireInstance(restart = instance?.healthReady === true) {
     if (retiring) return;
     retiring = true;
     ready = false;
@@ -131,7 +138,8 @@ export async function startSupervisor() {
       previous?.close();
       if (retired) closeSync(retired.pidfd);
       stopBrokerService();
-      startBrokerService();
+      if (restart) startBrokerService();
+      else log(null, 'self_test_not_ready');
     } catch {
       log(null, 'instance_retirement_blocked');
     } finally {
@@ -198,6 +206,10 @@ export async function startSupervisor() {
         stopInstance();
         return;
       }
+      if (normal && !job.cancelled && job.preflight) {
+        instance.healthReady = true;
+        ledger.instance.healthReady = true;
+      }
       phase(job, 'CLEANED');
       active = null;
       if (
@@ -232,6 +244,8 @@ export async function startSupervisor() {
   // The fixed service cgroup covers stopped brokers even after pidfd loss on
   // supervisor restart. Kill+populated=0 includes every thread and descendant.
   const props = brokerProperties();
+  assertProducerPolicy(props);
+  assertProducerPolicy(supervisorProperties());
   if (
     props.Restart !== 'no' ||
     props.RestartForceExitStatus ||
@@ -318,11 +332,13 @@ export async function startSupervisor() {
         invocation: current.InvocationID,
         cgroup: current.ControlGroup,
         pidfd: peer.pidfd,
+        healthReady: false,
       };
       ledger.instance = {
         id: instance.id,
         invocation: instance.invocation,
         cgroup: instance.cgroup,
+        healthReady: false,
       };
       persist();
       const owner = instance;
@@ -353,6 +369,7 @@ export async function startSupervisor() {
               phase: 'RESERVED',
               reservedAt: now(),
               cancelled: false,
+              preflight: !instance.healthReady,
             };
             ledger.jobs.push(job);
             active = job;

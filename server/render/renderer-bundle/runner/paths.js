@@ -1,6 +1,6 @@
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { sha256Hex } from '../manifest.js';
+import { sha256Hex, isRendererHash } from '../manifest.js';
 import { inventory, HOST_LIBRARIES } from './build.js';
 import { runnerIdentity } from './identity.js';
 
@@ -51,6 +51,7 @@ export function loadInstallation() {
   const config = JSON.parse(readFileSync(PATHS.config, 'utf8'));
   if (
     config.schema !== 'deckyard.renderer-runner.installation/1' ||
+    !isRendererHash(config.build?.selfTestHash) ||
     !Number.isInteger(config.callerUid) ||
     config.callerUid <= 0 ||
     config.callerUid >= 4294967295 ||
@@ -87,11 +88,7 @@ export function loadInstallation() {
     JSON.stringify(HOST_LIBRARIES)
   )
     throw new Error('host library policy changed');
-  for (const [file, digest] of Object.entries(HOST_LIBRARIES)) {
-    trustedPath(realpathSync(file));
-    if (sha256Hex(readFileSync(file)) !== digest)
-      throw new Error('host library changed');
-  }
+  verifyHostLibraries();
   for (const entry of config.files)
     trustedPath(`${PATHS.install}/${entry.path}`);
   for (const p of [
@@ -121,11 +118,30 @@ export function loadControl() {
 export const SUPERVISOR_CGROUP =
   '/system.slice/deckyard-render-supervisor.service';
 
+/** Internal lifecycle identifiers always have exactly 32 lowercase hexadecimal characters. */
+export function isInternalId(value) {
+  return (
+    typeof value === 'string' &&
+    value.length === 32 &&
+    /^[a-f0-9]{32}$/.test(value)
+  );
+}
+
 /** Fixed containment names, derived from an internal reservation ID only. */
 export function jobPaths(id) {
-  if (!/^[a-f0-9]{32}$/.test(id)) throw new Error('invalid internal job id');
+  if (!isInternalId(id)) throw new Error('invalid internal job id');
   return {
     helper: `/sys/fs/cgroup${SUPERVISOR_CGROUP}/helpers/${id}`,
     guest: `${SUPERVISOR_CGROUP}/jobs/${id}`,
   };
+}
+
+/** Recheck before a job as well as at startup. Host package maintenance must
+ * never silently select a different dynamic runtime library set. */
+export function verifyHostLibraries() {
+  for (const [file, digest] of Object.entries(HOST_LIBRARIES)) {
+    trustedPath(realpathSync(file));
+    if (sha256Hex(readFileSync(file)) !== digest)
+      throw new Error('host library changed');
+  }
 }

@@ -13,20 +13,24 @@ import {
   PATHS,
   trustedPath,
   jobPaths,
+  isInternalId,
 } from './paths.js';
 import {
   parseJson,
   validateRequest,
   readFrame,
+  isRequestId,
   responseBytes,
 } from './protocol.js';
 import { lifecycleChannel } from './channel.js';
+import { SELF_TEST_RESULT } from './policy.js';
 
 /** Six connection tokens, four queued validated requests, one supervisor-owned
  * active slot. A single-use, joinable worker owns every producer operation. */
 export async function startBroker() {
   const config = loadInstallation(),
     native = loadControl();
+  native.assertProducerIo();
   let binding = null,
     channel = null,
     server = null,
@@ -122,11 +126,32 @@ export async function startBroker() {
       )
         throw new Error('invalid supervisor shape');
       if (m.op === 'registered' && !binding) {
-        if (typeof m.instance !== 'string' || typeof m.generation !== 'string')
+        if (!isInternalId(m.instance) || !isInternalId(m.generation))
           throw new Error('invalid registration');
         binding = { instance: m.instance, generation: m.generation };
-        ready = true;
-        beginAdmission();
+        // No caller socket exists until a fixed capability job has passed B3,
+        // completed its thread/socket checks and received the cleanup ack.
+        active = {
+          token: {
+            internal: true,
+            socket: null,
+            request: {
+              schema: 'deckyard.renderer-runner.request/1',
+              requestId: 'runner-self-test',
+              rendererHash: config.build.selfTestHash,
+              input: {
+                schema: 'deckyard.edition-input/1',
+                presentation: { slides: [] },
+              },
+            },
+          },
+          job: null,
+          worker: null,
+          result: null,
+          closed: false,
+          cancelled: false,
+        };
+        send('reserve');
         return;
       }
       if (
@@ -137,11 +162,11 @@ export async function startBroker() {
       )
         throw new Error('stale supervisor message');
       if (m.op === 'reserved' && !active.job) {
-        if (!/^[a-f0-9]{32}$/.test(m.job) || seenJobs.has(m.job))
+        if (!isInternalId(m.job) || seenJobs.has(m.job))
           throw new Error('invalid reservation');
         seenJobs.add(m.job);
         active.job = { id: m.job, ...jobPaths(m.job) };
-        if (active.closed || active.token.socket.destroyed) {
+        if (active.closed || active.token.socket?.destroyed) {
           send('cancel', m.job);
           return;
         }
@@ -166,7 +191,13 @@ export async function startBroker() {
           // submit closure survives this transition.
           if (active !== owner || owner.closed) return;
           owner.worker = null;
-          if (code !== 0 || !owner.result) {
+          if (
+            code !== 0 ||
+            !owner.result ||
+            (owner.token.internal &&
+              (owner.result.canvas !== SELF_TEST_RESULT ||
+                owner.result.reader !== SELF_TEST_RESULT))
+          ) {
             cancel();
             return;
           }
@@ -191,8 +222,13 @@ export async function startBroker() {
         const token = active.token,
           result = active.result;
         active = null;
-        if (ready && !dead) answer(token, result);
-        pump();
+        if (token.internal) {
+          ready = true;
+          beginAdmission();
+        } else {
+          if (ready && !dead) answer(token, result);
+          pump();
+        }
       } else throw new Error('invalid supervisor phase');
     },
     loseSupervisor,
@@ -254,10 +290,7 @@ export async function startBroker() {
             if (socket.destroyed || !ready) return;
             try {
               const parsed = parseJson(bytes);
-              if (
-                typeof parsed?.requestId === 'string' &&
-                /^[A-Za-z0-9_-]{1,64}$/.test(parsed.requestId)
-              )
+              if (isRequestId(parsed?.requestId))
                 token.request = { requestId: parsed.requestId };
               token.request = validateRequest(parsed);
             } catch {
