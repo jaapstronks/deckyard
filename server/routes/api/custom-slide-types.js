@@ -44,6 +44,8 @@ const ERROR_MESSAGES = {
   not_found: 'Slide type not found.',
   in_use:
     'Slides still use this slide type. Deleting it anyway makes them render as an unknown type.',
+  field_in_use:
+    'Stored slides still carry a field this change removes. Saving anyway deletes that content from them.',
   unavailable: 'Database unavailable.',
   order_mismatch:
     'The order does not list exactly the current slide types. Reload and try again.',
@@ -90,9 +92,9 @@ function slideTypeError(res, result) {
   const message = result.fieldProblem
     ? describeFieldFinding(result.fieldProblem)
     : INVALID_FIELD_MESSAGES[result.field] || ERROR_MESSAGES[result.reason];
-  // A delete refused for usage carries the count as its payload (`in_use`,
-  // registered in server/utils/error-details.js); the status still comes
-  // from the register.
+  // A delete or field removal refused for usage carries the count as its
+  // payload (`in_use`, `field_in_use`, registered in
+  // server/utils/error-details.js); the status still comes from the register.
   if (result.usage) {
     return jsonError(
       res,
@@ -230,17 +232,23 @@ async function handleCustomSlideTypeGet(
   return true;
 }
 
-// PUT /api/custom-slide-types/:id - Update (designer only)
+// PUT /api/custom-slide-types/:id[?force=true] - Update (designer only).
+// Removing a field stored slides still carry refuses with 409
+// `field_in_use` and the count in `details.usage`; `force=true` is the second
+// step, which strips the field from that content (B849).
 async function handleCustomSlideTypeUpdate(
-  { storageScope, req, res, authedUser },
+  { storageScope, req, url, res, authedUser },
   typeId,
 ) {
   if (!canManage(authedUser)) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  const force = url.searchParams.get('force') === 'true';
 
-  const result = await updateCustomSlideType(storageScope, typeId, body);
+  const result = await updateCustomSlideType(storageScope, typeId, body, {
+    force,
+  });
   if (!result.ok) {
     return slideTypeError(res, result);
   }

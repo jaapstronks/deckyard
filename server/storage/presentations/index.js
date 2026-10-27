@@ -312,6 +312,44 @@ export async function updatePresentation(scope, id, body, opts) {
 }
 
 /**
+ * Settle a deck whose stored JSON was rewritten outside
+ * {@link updatePresentation}, by a change elsewhere that migrates its content
+ * (a custom slide type's field removal, B849). The rewrite already dropped the
+ * cold collab binary; this drops the cached read, carries the change into an
+ * open collab doc (or its next store writes the old content back) and
+ * refreshes live presenting clients.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} id
+ * @param {Object|null} base - the deck as read before the rewrite, for the
+ *   live doc's three-way diff
+ */
+export async function settleRewrittenPresentation(scope, id, base) {
+  toStorageContext(scope, 'settleRewrittenPresentation');
+  invalidatePresentationCache(id);
+  if (isCollabLiveEditsEnabled()) {
+    try {
+      const stored = await getPresentation(scope, id);
+      const { applyServerWriteToActiveDoc } =
+        await import('../../collab/live-apply.js');
+      await applyServerWriteToActiveDoc(id, stored, { base });
+    } catch (err) {
+      log.error(
+        `[collab] applying rewritten content to active doc of ${id} failed; ` +
+          'open editors will write the old content back on their next store:',
+        err?.message || err,
+      );
+    }
+  }
+  fireAndForget(
+    import('../live-sessions/index.js').then((m) =>
+      m.notifyDeckUpdatedForPresentation(scope, id),
+    ),
+    'live-session deck refresh after rewrite',
+  );
+}
+
+/**
  * A write body that names the deck's top-level `title`/`slides` but no `i18n`,
  * extended with the language versions so the dominant one carries the write
  * (B740).

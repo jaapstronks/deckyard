@@ -48,6 +48,8 @@ const { createPresentation } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations } =
   await import('../server/routes/public-api/v1/presentations.js');
+const { updateCustomSlideType } =
+  await import('../server/storage/custom-slide-types.js');
 const { buildMergedSlideTypes } =
   await import('../server/utils/custom-slide-type-runtime.js');
 const { customSlideTypeKey } =
@@ -81,9 +83,15 @@ function customTypeRow(over = {}) {
   };
 }
 
-/** Install a freshly seeded double and point the storage facade at Postgres. */
-async function installDb(customSlideTypes = [customTypeRow()]) {
+/**
+ * Install a freshly seeded double and point the storage facade at Postgres.
+ * @param {object[]} [customSlideTypes]
+ * @param {{presentations?: object[], presentation_versions?: object[]}} [extra]
+ *   - rows added beside the default deck
+ */
+async function installDb(customSlideTypes = [customTypeRow()], extra = {}) {
   const db = createFakeDb({
+    presentation_versions: extra.presentation_versions || [],
     organizations: [
       { id: ORG, name: 'Default', slug: 'default' },
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
@@ -117,6 +125,7 @@ async function installDb(customSlideTypes = [customTypeRow()]) {
         modified_at: '2026-07-01T00:00:00.000Z',
         trashed_at: null,
       },
+      ...(extra.presentations || []),
     ],
   });
   __setTestDb(db);
@@ -314,4 +323,213 @@ test('the registry key the editor publishes is the key the seam resolves', async
   );
   assert.equal(registry[key].isCustom, true);
   assert.equal(registry[key].customId, 'cst-partner-wall');
+});
+
+// ── B849: removing a field stored slides still carry ─────────────────────────
+//
+// Since D359 every write refuses a key its type does not declare. A field
+// removed from a published type would leave the slides that carry it
+// unsaveable, so the update refuses with the count unless forced, and the
+// forced update strips the key in the same transaction.
+
+const TWO_FIELDS = [
+  { key: 'title', type: 'string', label: 'Title' },
+  { key: 'subtitle', type: 'string', label: 'Subtitle' },
+];
+const OTHER_DECK_ID = 'd0000002-0000-4000-8000-000000000002';
+
+/** A slide of the custom type carrying both fields. */
+function carrying(over = {}) {
+  return {
+    id: 'slide-1',
+    type: 'custom-partner-wall',
+    content: { title: 'Keep', subtitle: 'Stored' },
+    ...over,
+  };
+}
+
+/** The deck body that carried `subtitle` on the day it saved. */
+const CARRYING_BODY = {
+  slides: [carrying()],
+  i18n: {
+    dominant: 'nl',
+    versions: {
+      nl: { title: 'A deck', slides: [carrying()] },
+      'en-GB': {
+        title: 'A deck',
+        slides: [carrying({ content: { title: 'Keep', subtitle: 'EN' } })],
+      },
+    },
+  },
+};
+
+/** Seed: the org's type with two fields, plus the same slug in another org. */
+async function installTwoFieldType() {
+  const db = await installDb(
+    [
+      customTypeRow({ fields: TWO_FIELDS }),
+      customTypeRow({
+        id: 'cst-other-org',
+        organization_id: OTHER_ORG,
+        fields: TWO_FIELDS,
+      }),
+    ],
+    {
+      presentations: [
+        {
+          ...structuredClone(storedDeckSeed()),
+          id: OTHER_DECK_ID,
+          organization_id: OTHER_ORG,
+          slides: [carrying()],
+        },
+      ],
+      presentation_versions: [
+        {
+          id: 'v0000001-0000-4000-8000-000000000001',
+          presentation_id: DECK_ID,
+          organization_id: ORG,
+          presentation_data: { slides: [carrying()] },
+          created_at: '2026-07-01T00:00:00.000Z',
+        },
+      ],
+    },
+  );
+  const ctx = makeCtx('PUT', `/api/v1/presentations/${DECK_ID}`, CARRYING_BODY);
+  await handlePresentations(ctx);
+  assert.equal(ctx.res.statusCode, 200, JSON.stringify(ctx.res.body));
+  return db;
+}
+
+/** The default deck row as `installDb` seeds it, for cloning. */
+function storedDeckSeed() {
+  return {
+    organization_id: ORG,
+    owner_email: OWNER,
+    created_by: OWNER,
+    updated_by: OWNER,
+    owner_user_id: userIdFor(OWNER),
+    created_by_user_id: userIdFor(OWNER),
+    updated_by_user_id: userIdFor(OWNER),
+    title: 'Other deck',
+    theme: 'default',
+    lang: 'nl',
+    visibility: 'private',
+    revision: 1,
+    created_at: '2026-07-01T00:00:00.000Z',
+    modified_at: '2026-07-01T00:00:00.000Z',
+    trashed_at: null,
+  };
+}
+
+const ONE_FIELD = {
+  fields: [{ key: 'title', type: 'string', label: 'Title' }],
+};
+
+test('removing a field stored slides carry is refused with the count, and changes nothing', async () => {
+  const db = await installTwoFieldType();
+  const before = structuredClone(storedDeck(db));
+  const versionBefore = structuredClone(db.__tables.presentation_versions);
+
+  const result = await updateCustomSlideType(
+    scopeFor(),
+    'cst-partner-wall',
+    ONE_FIELD,
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'field_in_use');
+  assert.deepEqual(result.usage, {
+    fields: ['subtitle'],
+    slides: 1,
+    decks: 1,
+    libraryItems: 0,
+    versions: 1,
+    comments: 0,
+  });
+  const type = db.__tables.custom_slide_types.find(
+    (r) => r.id === 'cst-partner-wall',
+  );
+  const fields =
+    typeof type.fields === 'string' ? JSON.parse(type.fields) : type.fields;
+  assert.deepEqual(
+    fields.map((f) => f.key),
+    ['title', 'subtitle'],
+    'the type keeps its field',
+  );
+  assert.deepEqual(storedDeck(db), before, 'the deck is untouched');
+  assert.deepEqual(db.__tables.presentation_versions, versionBefore);
+});
+
+test('a forced field removal strips the key, and the slide saves again', async () => {
+  const db = await installTwoFieldType();
+
+  const result = await updateCustomSlideType(
+    scopeFor(),
+    'cst-partner-wall',
+    ONE_FIELD,
+    { force: true },
+  );
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.equal('rewritten' in result, false);
+
+  const deck = storedDeck(db);
+  assert.deepEqual(deck.slides[0].content, { title: 'Keep' });
+  for (const lang of ['nl', 'en-GB']) {
+    assert.equal(
+      Object.hasOwn(deck.i18n.versions[lang].slides[0].content, 'subtitle'),
+      false,
+      `${lang} version stripped`,
+    );
+  }
+  assert.deepEqual(
+    db.__tables.presentation_versions[0].presentation_data.slides[0].content,
+    { title: 'Keep' },
+    'the version snapshot a restore writes back is stripped too',
+  );
+
+  // The reproducer of the review: the next save of the deck as the editor
+  // holds it now (without the field) succeeds.
+  const ctx = makeCtx('PUT', `/api/v1/presentations/${DECK_ID}`, {
+    slides: [carrying({ content: { title: 'Keep' } })],
+  });
+  await handlePresentations(ctx);
+  assert.equal(ctx.res.statusCode, 200, JSON.stringify(ctx.res.body));
+
+  const other = db.__tables.presentations.find((r) => r.id === OTHER_DECK_ID);
+  assert.deepEqual(
+    other.slides[0].content,
+    { title: 'Keep', subtitle: 'Stored' },
+    "another organization's deck under the same key is left alone",
+  );
+});
+
+test('removing a field no stored slide carries needs no second step', async () => {
+  const db = await installDb([customTypeRow({ fields: TWO_FIELDS })]);
+  const ctx = makeCtx('PUT', `/api/v1/presentations/${DECK_ID}`, {
+    slides: [carrying({ content: { title: 'Only a title' } })],
+  });
+  await handlePresentations(ctx);
+  assert.equal(ctx.res.statusCode, 200, JSON.stringify(ctx.res.body));
+
+  const result = await updateCustomSlideType(
+    scopeFor(),
+    'cst-partner-wall',
+    ONE_FIELD,
+  );
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.deepEqual(storedDeck(db).slides[0].content, { title: 'Only a title' });
+});
+
+test('renaming a field key asks the same question', async () => {
+  await installTwoFieldType();
+
+  const result = await updateCustomSlideType(scopeFor(), 'cst-partner-wall', {
+    fields: [
+      { key: 'title', type: 'string', label: 'Title' },
+      { key: 'tagline', type: 'string', label: 'Tagline' },
+    ],
+  });
+
+  assert.equal(result.reason, 'field_in_use');
+  assert.deepEqual(result.usage.fields, ['subtitle']);
 });
