@@ -26,20 +26,20 @@ export const ai = {
       Great for visual breaks and when there's a relevant image.
       Keep body concise (3-6 bullets).
 
-      IMAGE: the flat "image" field (one URL) plus "alt". For a set of 2-3
+      IMAGE: the flat \`image\` field (one URL) plus \`alt\`. For a set of 2-3
       images sharing one story, use image-set-slide instead.
 
       LAYOUT VARIANTS:
-      - layout "split" (default): the image beside text. imageWidth picks the
-        split: "narrow" (1/3 image), "half" (default), "wide" (2/3 image -
+      - \`layout="split"\` (default): the image beside text. \`imageWidth\` picks the
+        split: \`imageWidth="narrow"\` (1/3 image), \`imageWidth="half"\` (default), \`imageWidth="wide"\` (2/3 image -
         image-dominant, keep body to 2-3 short bullets).
-      - layout "corner": the image only in the top corner, the space below
+      - \`layout="corner"\`: the image only in the top corner, the space below
         stays empty air. Very little text room - max 2-3 short bullets.
 
       ASIDE (optional): a small contrast block inside the slide, for a caveat
       or pointer that would clutter the body but does not deserve its own
-      slide. Set asideVariant to "note", "tip" or "warning" and put one or two
-      sentences in asideText; leave asideVariant "none" (the default) and there
+      slide. Set \`asideVariant\` to \`asideVariant="note"\`, \`asideVariant="tip"\` or \`asideVariant="warning"\` and put one or two
+      sentences in \`asideText\`; leave \`asideVariant="none"\` (the default) and there
       is no aside. Something the audience must actually stop at belongs on a
       callout-slide instead — an inset is a footnote, not a beat.
     `,

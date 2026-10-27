@@ -30,7 +30,7 @@ export const ai = {
       implication, an ambition, the sentence that introduces them) is not an
       item: put framing in the subheading, a caveat in the aside, background
       in presenterNotes. Keep the source's count; three items with
-      density:"comfortable" beat five items padded with commentary.
+      \`density="comfortable"\` beat five items padded with commentary.
 
       SUBHEADING (optional): a single-sentence intro that sets up the list, like a
       hero/lead paragraph on a web page - NOT a second title. Use it to frame WHY
@@ -39,23 +39,23 @@ export const ai = {
       de belangrijkste trends op een rij:". Keep it to one line.
 
       LAYOUT RULES:
-      - layout:"one-column" - Use for 2-4 items (default, items stack vertically)
-      - layout:"two-column" - Use for 5-8 items (items split into two columns to fit)
+      - \`layout="one-column"\` - Use for 2-4 items (default, items stack vertically)
+      - \`layout="two-column"\` - Use for 5-8 items (items split into two columns to fit)
 
-      IMPORTANT: When you have 5 or more items, ALWAYS use layout:"two-column"!
+      IMPORTANT: When you have 5 or more items, ALWAYS use \`layout="two-column"\`!
 
-      TEXT SIZE (density, optional): "auto" (default sizing), "comfortable" (larger
+      TEXT SIZE (density, optional): \`density="auto"\` (default sizing), \`density="comfortable"\` (larger
       titles + text, good for a short list of 2-4 items so it fills the slide),
-      "compact" (smaller, good when many items must fit). Prefer "comfortable" for
-      sparse lists and "compact" for dense ones.
+      \`density="compact"\` (smaller, good when many items must fit). Prefer \`density="comfortable"\` for
+      sparse lists and \`density="compact"\` for dense ones.
 
-      Use variant:"numbers" when order matters (steps, ranked items).
-      Use variant:"bullets" when order doesn't matter (tips, points).
+      Use \`variant="numbers"\` when order matters (steps, ranked items).
+      Use \`variant="bullets"\` when order doesn't matter (tips, points).
 
       ASIDE (optional): a small contrast block inside the slide, for a caveat
       or pointer that would clutter the body but does not deserve its own
-      slide. Set asideVariant to "note", "tip" or "warning" and put one or two
-      sentences in asideText; leave asideVariant "none" (the default) and there
+      slide. Set \`asideVariant\` to \`asideVariant="note"\`, \`asideVariant="tip"\` or \`asideVariant="warning"\` and put one or two
+      sentences in \`asideText\`; leave \`asideVariant="none"\` (the default) and there
       is no aside. Something the audience must actually stop at belongs on a
       callout-slide instead — an inset is a footnote, not a beat.
     `,

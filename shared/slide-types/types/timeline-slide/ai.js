@@ -39,8 +39,8 @@ export const ai = {
         (e.g. "42 partners across 5 consortia") — belongs in \`bottomSubheading\`.
       - Framing/context for the whole timeline belongs in \`subheading\`.
 
-      Keep item \`title\` short (a few words); put detail in the item's optional
-      \`text\`. Keep the slide \`title\` concise (e.g. "ADRIE activities"), not a
+      Keep item \`items.title\` short (a few words); put detail in the item's optional
+      \`items.text\`. Keep the slide \`title\` concise (e.g. "ADRIE activities"), not a
       long descriptive sentence.
 
       IMPORTANT: This is for TIME-BASED sequences, not meeting agendas.

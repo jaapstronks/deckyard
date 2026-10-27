@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import {
   SLIDE_TYPES,
   CORE_SLIDE_TYPE_DEFS,
+  GLOBAL_SLIDE_FIELD_KEYS,
 } from '../shared/slide-types/registry.js';
 import {
   TYPE_ID_PATTERN,
@@ -29,6 +30,12 @@ import {
   resolveAgentSlideTypes,
 } from '../server/utils/ai/slide-catalog/agent-catalog.js';
 import { getCoreSlideCatalog } from '../server/utils/ai/slide-catalog/definitions.js';
+import { isAgentField } from '../shared/slide-types/declared-keys.js';
+import {
+  GLOBAL_SLIDE_OPTIONS,
+  buildGlobalOptionsPromptSection,
+} from '../server/utils/ai/slide-catalog/global-options.js';
+import { invalidEditorialReferences } from './helpers/agent-editorial-references.js';
 import { ESSENTIAL } from './fixtures/essential-fields.js';
 
 test('every registered type is offered, derived, or explicitly opted out', () => {
@@ -294,4 +301,114 @@ test('every offered entry carries a canonical type id', () => {
       `${name} must expose the CANONICAL id, not an older spelling`,
     );
   }
+});
+
+test('editorial field paths and enum references match their own declarations', () => {
+  for (const [name, entry] of Object.entries(getCoreSlideCatalog())) {
+    const prose = [entry.description, ...entry.bestFor, ...entry.notFor].join(
+      '\n',
+    );
+    assert.deepEqual(
+      invalidEditorialReferences(prose, CORE_SLIDE_TYPE_DEFS[name].fields),
+      [],
+      `${name}: editorial code spans must name declared fields and enum values`,
+    );
+  }
+});
+
+test('editorial references distinguish English, nested fields and enum values', () => {
+  const fields = [
+    { key: 'layout', type: 'enum', options: [{ value: 'split' }, 'corner'] },
+    {
+      key: 'items',
+      type: 'items',
+      itemFields: [
+        { key: 'tone', type: 'enum', options: ['positive', 'negative'] },
+        { key: 'title', type: 'string' },
+      ],
+    },
+    { key: 'hidden', type: 'string', hidden: true },
+    { key: 'withheld', type: 'string', ai: false },
+  ];
+  assert.deepEqual(
+    invalidEditorialReferences(
+      'Good for: general text. Layout: split. Each item has a title. ' +
+        '`layout` `layout="split"` `layout="corner"` `items.title` `items.tone="positive"` `hidden` `withheld`',
+      fields,
+    ),
+    [],
+  );
+  assert.deepEqual(
+    invalidEditorialReferences(
+      '`layuot` `layout="stacked"` `tone="positive"` `items.layout` ' +
+        '`items.title="positive"` `layout=split` `items..title`',
+      fields,
+    ),
+    [
+      'layuot',
+      'layout="stacked"',
+      'tone="positive"',
+      'items.layout',
+      'items.title="positive"',
+      'layout=split',
+      'items..title',
+    ],
+  );
+});
+
+test('global agent options match every core type’s offered global fields', () => {
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
+    const globals = def.fields.filter(
+      (field) =>
+        GLOBAL_SLIDE_FIELD_KEYS.includes(field.key) && isAgentField(field),
+    );
+    assert.deepEqual(
+      Object.keys(GLOBAL_SLIDE_OPTIONS.fields).sort(),
+      globals.map((field) => field.key).sort(),
+      name,
+    );
+    for (const field of globals) {
+      const option = GLOBAL_SLIDE_OPTIONS.fields[field.key];
+      assert.equal(option.type, field.type, `${name}.${field.key}: type`);
+      assert.equal(
+        option.required === true,
+        field.required === true,
+        `${name}.${field.key}: required`,
+      );
+      if (field.type === 'enum')
+        assert.deepEqual(
+          option.options,
+          field.options.map((o) => (typeof o === 'object' ? o.value : o)),
+          `${name}.${field.key}: options`,
+        );
+      for (const constraint of ['min', 'max', 'maxLength']) {
+        assert.equal(
+          option[constraint],
+          field[constraint],
+          `${name}.${field.key}: ${constraint}`,
+        );
+      }
+      if (option.default !== undefined && field.type === 'enum') {
+        assert.ok(
+          option.options.includes(option.default),
+          `${field.key}: default`,
+        );
+      }
+    }
+  }
+});
+
+test('global prompt offers optional accessibility overrides with their limits', () => {
+  const prompt = buildGlobalOptionsPromptSection();
+  for (const key of ['a11yTitle', 'a11ySummary']) {
+    const option = GLOBAL_SLIDE_OPTIONS.fields[key];
+    assert.equal(option.required, false);
+    assert.match(option.description, /Optional.*override/);
+    assert.ok(
+      prompt.includes(
+        `- ${key} (string, max ${option.maxLength} characters): ${option.description}`,
+      ),
+    );
+  }
+  assert.match(GLOBAL_SLIDE_OPTIONS.description, /accessibility override/);
 });
