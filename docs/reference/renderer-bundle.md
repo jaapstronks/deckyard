@@ -7,7 +7,7 @@ Its purpose is a single property: a published edition that names a bundle keeps
 rendering the way it rendered on the day it was published, whatever the
 installation does afterwards.
 
-**Status 2026-10-24: execution isolation is unresolved (T1.1).** The trusted-fixture tests establish content identity and reproducible documents, but the original import filter permits real TCP connections through `process.getBuiltinModule('net')`. Production `renderEditionInBundle()` now refuses with `renderer_bundle_sandbox_unavailable` before inspecting or executing a bundle. Nothing in the request path uses this proof. The runnable experiment lives only in `tests/helpers/renderer-bundle-process.js` and must only receive trusted fixtures.
+**Status 2026-10-27: production execution remains disabled (T1.1).** The original trusted-fixture import filter permits real TCP connections through `process.getBuiltinModule('net')`; that counterexample is retained. An experimental Linux operator runner now lives under `server/render/renderer-bundle/runner/`, with separate broker/supervisor services, verified private copies and a native syscall boundary. Full P1-P16 acceptance and independent code review are still required. Production `renderEditionInBundle()` refuses with `renderer_bundle_sandbox_unavailable` before inspecting or executing a bundle, without an environment switch or fallback. The operator entry has no publication, v1 or MCP caller. Installation and recovery are described in the [operator runbook](../ops/renderer-runner.md).
 
 ## Why a version number was not enough
 
@@ -150,9 +150,9 @@ The [Node 22 permission model](https://nodejs.org/docs/latest-v22.x/api/permissi
 
 The test runner retains Node filesystem/process permission checks, a scrubbed environment, heap limit, wall-clock timeout and output cap. These bound the trusted experiment; they do not protect the host from hostile historical code. Input uses stdin and output uses stdout. HTTP policy, access control, revocation and caching remain outside frozen code.
 
-**Architecture question:** may edition rendering require a separately managed OS-isolated worker? Recommended: a Linux container worker with a pinned runtime image, read-only bundle input, no secrets or host sockets, its own process/user boundary, no capabilities, resource limits and independently enforced network isolation. [Docker's `none` network](https://docs.docker.com/engine/network/drivers/none/) removes external interfaces but retains private loopback; a strict no-socket requirement also needs a syscall policy. The application must not gain a Docker socket simply to run a renderer. A separate service changes deployment and scheduling, and needs an explicit design before implementation.
+**Deployment decision:** historical edition rendering may require a separately managed Linux worker with a pinned image, private namespaces, a read-only bundle, no host secrets/sockets or capabilities, resource bounds and an independently enforced syscall boundary. The webapp receives only the broker socket, never a Docker socket or general runtime access. The first implementation is rootful crun on Linux x86_64; other architectures and missing kernel features refuse readiness.
 
-An OS-specific subprocess launcher would need separate macOS/Linux implementations and deployment support; adding a Linux container dependency would change the current plain-Node execution contract. Neither is a portable repair within that contract. Until the external boundary is implemented and real TCP/UDP and process/filesystem escape probes fail under it, the isolation criterion is unmet (T1.1) and downstream publication rollout stays blocked. Hash/rebuild/screenshot tests establish only reproducibility.
+The operator runner is a separate execution contract from the old trusted-fixture process helper. A successful hash/rebuild/screenshot experiment proves reproducibility only. The full external boundary gate and its independent code review must pass before merge, and a separately reviewed activation change must pass before production or downstream publication rollout can use it.
 
 ## The edition input
 
@@ -181,7 +181,7 @@ content under a citation, which is the thing the whole design prevents.
 | `renderer_bundle_malformed_hash`      | Not a 64-character lowercase hex digest.                                            |
 | `renderer_bundle_corrupt`             | The manifest or a file does not match its digest, or the manifest is not canonical. |
 | `renderer_bundle_incomplete`          | A named file is missing, or an unnamed file is present.                             |
-| `renderer_bundle_sandbox_unavailable` | No OS-isolated runner is implemented; production execution refuses.                 |
+| `renderer_bundle_sandbox_unavailable` | Production execution remains disabled pending runner acceptance and activation.     |
 | `renderer_bundle_worker_failed`       | The worker crashed, timed out, or wrote something unreadable.                       |
 
 ## The open question
