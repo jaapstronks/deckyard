@@ -1,28 +1,13 @@
 --- a/src/libcrun/linux.c
 +++ b/src/libcrun/linux.c
-@@ -2183,9 +2183,6 @@
- 
- struct device_s needed_devs[] = { { "/dev/null", "c", 1, 3, 0666, 0, 0 },
-                                   { "/dev/zero", "c", 1, 5, 0666, 0, 0 },
+@@ -2186,3 +2185,0 @@
 -                                  { "/dev/full", "c", 1, 7, 0666, 0, 0 },
 -                                  { "/dev/tty", "c", 5, 0, 0666, 0, 0 },
 -                                  { "/dev/random", "c", 1, 8, 0666, 0, 0 },
-                                   { "/dev/urandom", "c", 1, 9, 0666, 0, 0 },
-                                   {} };
- 
-@@ -2413,8 +2410,6 @@
-                                        { "/proc/self/fd/0", "stdin", false },
-                                        { "/proc/self/fd/1", "stdout", false },
-                                        { "/proc/self/fd/2", "stderr", false },
+@@ -2416,2 +2412,0 @@
 -                                       { "/proc/kcore", "core", false },
 -                                       { "pts/ptmx", "ptmx", true },
-                                        { NULL, NULL, false } };
- 
- static int
-@@ -6583,18 +6578,17 @@
-       clone3_args.cgroup = *cgroup_dirfd->dirfd;
- 
-       pid = syscall_clone3 (&clone3_args);
+@@ -6586,3 +6581,7 @@
 -      if (pid >= 0)
 -        cgroup_dirfd->joined = true;
 -
@@ -33,8 +18,7 @@
 +          return crun_make_error (err, clone_error, "T1 requires clone3 CLONE_INTO_CGROUP");
 +        }
 +      cgroup_dirfd->joined = true;
-       close_and_reset (cgroup_dirfd->dirfd);
-     }
+@@ -6591,7 +6590,2 @@
 -  /* fallback to clone() for any error.  */
 -  if (pid < 0)
 -    {
@@ -44,15 +28,9 @@
 -    }
 +  else
 +    return crun_make_error (err, ENOTSUP, "T1 requires a precreated cgroup fd");
- 
-   if (pid)
-     {
 --- a/src/libcrun/container.c
 +++ b/src/libcrun/container.c
-@@ -879,16 +879,7 @@
-         }
-     }
- 
+@@ -882,10 +882 @@
 -  if (getenv ("HOME") == NULL)
 -    {
 -      ret = set_home_env (container_uid);
@@ -64,6 +42,3 @@
 -        }
 -    }
 +  /* Deckyard T1: the environment is exactly process.env, no HOME injection. */
- 
-   return 0;
- }
