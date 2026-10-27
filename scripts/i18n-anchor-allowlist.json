@@ -41,7 +41,7 @@
     },
     "da  Dark": {
       "forms": ["Mørk", "Mørke"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Mørk agrees with tilstand, farve, baggrund and tekstfarve (common gender singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mørke agrees with gradienter (plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
     "da  Dismiss": {
       "forms": ["Afvis", "Luk"],
@@ -65,7 +65,7 @@
     },
     "da  Light": {
       "forms": ["Lys", "Lyse"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Lys agrees with tilstand and tekstfarve (common gender singular) in appearance.light and editor.slideField.slideBgText.option.light; Lyse agrees with gradienter (plural) in stockMedia.gradients.tone.light."
     },
     "da  Move \"{title}\" to trash?": {
       "forms": [
@@ -173,10 +173,6 @@
       "forms": ["Als Nächstes", "Weiter"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "de  None": {
-      "forms": ["Keine", "Keins"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  Owner": {
       "forms": ["Eigentümer", "Eigentümer/in"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -224,8 +220,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  All": {
-      "forms": ["Todas", "Todo", "Todos"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Todas", "Todos"],
+      "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Todos agrees with comentarios, tipos, tipos de diapositiva and degradados (masculine plural) in comments.filter.all, comments.filter.allTypes, slideLibrary.filter.all and stockMedia.gradients.tone.all; Todas agrees with categorías, etiquetas, presentaciones and notificaciones (feminine plural) in editor.iconPicker.allCategory, imageLibrary.tags.all, imagekit.tags.all, list.presentations.ownership.all and notifications.filter.all."
     },
     "es  Clear search": {
       "forms": ["Borrar la búsqueda", "Limpiar búsqueda"],
@@ -245,7 +241,7 @@
     },
     "es  Dark": {
       "forms": ["Oscuro", "Oscuros"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Oscuro agrees with modo, color, fondo and color del texto (masculine singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Oscuros agrees with degradados (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
     "es  Default": {
       "forms": ["Por defecto", "Predeterminado"],
@@ -281,7 +277,7 @@
     },
     "es  Light": {
       "forms": ["Claro", "Claros"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with degradados (masculine plural) in stockMedia.gradients.tone.light."
     },
     "es  Move \"{title}\" to trash?": {
       "forms": [
@@ -377,7 +373,7 @@
     },
     "fi  Dark": {
       "forms": ["Tumma", "Tummat"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical number — Tumma is singular for tila, väri, tausta and tekstin väri in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Tummat is plural for liukuvärit in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
     "fi  Dismiss": {
       "forms": ["Hylkää", "Sulje"],
@@ -413,7 +409,7 @@
     },
     "fi  Light": {
       "forms": ["Vaalea", "Vaaleat"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical number — Vaalea is singular for tila and tekstin väri in appearance.light and editor.slideField.slideBgText.option.light; Vaaleat is plural for liukuvärit in stockMedia.gradients.tone.light."
     },
     "fi  Move \"{title}\" to trash?": {
       "forms": [
@@ -471,8 +467,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  All": {
-      "forms": ["Tous", "Tout", "Toutes"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Tous", "Toutes"],
+      "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Tous agrees with commentaires, types, types de diapositive and dégradés (masculine plural) in comments.filter.all, comments.filter.allTypes, slideLibrary.filter.all and stockMedia.gradients.tone.all; Toutes agrees with catégories, étiquettes, présentations and notifications (feminine plural) in editor.iconPicker.allCategory, imageLibrary.tags.all, imagekit.tags.all, list.presentations.ownership.all and notifications.filter.all."
     },
     "fr  Body": {
       "forms": ["Corps", "Corps du message"],
@@ -488,7 +484,7 @@
     },
     "fr  Dark": {
       "forms": ["Sombre", "Sombres"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Sombre agrees with mode, couleur, fond and texte (singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Sombres agrees with dégradés (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
     "fr  Drag to reorder": {
       "forms": ["Faites glisser pour réorganiser", "Glisser pour réorganiser"],
@@ -504,7 +500,7 @@
     },
     "fr  Light": {
       "forms": ["Clair", "Clairs"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Clair agrees with mode and texte (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Clairs agrees with dégradés (masculine plural) in stockMedia.gradients.tone.light."
     },
     "fr  Move \"{title}\" to trash?": {
       "forms": [
@@ -580,8 +576,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  All": {
-      "forms": ["Tutte", "Tutti", "Tutto"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Tutte", "Tutti"],
+      "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Tutti agrees with commenti, tipi, tag, tipi di slide and gradienti (masculine plural) in comments.filter.all, comments.filter.allTypes, imageLibrary.tags.all, imagekit.tags.all, slideLibrary.filter.all and stockMedia.gradients.tone.all; Tutte agrees with categorie, presentazioni and notifiche (feminine plural) in editor.iconPicker.allCategory, list.presentations.ownership.all and notifications.filter.all."
     },
     "it  Conversion failed.": {
       "forms": ["Conversione fallita.", "Conversione non riuscita."],
@@ -601,7 +597,7 @@
     },
     "it  Dark": {
       "forms": ["Scuri", "Scuro"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Scuro agrees with tema, colore, sfondo and testo (masculine singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Scuri agrees with gradienti (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
     "it  Dismiss": {
       "forms": ["Chiudi", "Ignora"],
@@ -629,7 +625,7 @@
     },
     "it  Light": {
       "forms": ["Chiari", "Chiaro"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Chiaro agrees with tema and testo (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Chiari agrees with gradienti (masculine plural) in stockMedia.gradients.tone.light."
     },
     "it  Never expires": {
       "forms": ["Nessuna scadenza", "Non scade mai"],
@@ -730,10 +726,6 @@
         "Toevoegen aan team bibliotheek",
         "Toevoegen aan teambibliotheek"
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  All": {
-      "forms": ["Alle", "Alles"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Alt text": {
@@ -924,7 +916,7 @@
     },
     "no  Dark": {
       "forms": ["Mørk", "Mørke", "Mørkt"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Mørkt agrees with utseende (neuter singular, the appearance.label group) in appearance.dark; Mørk agrees with farge, bakgrunn and tekstfarge (masculine/feminine singular) in editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mørke agrees with gradienter (plural) in stockMedia.gradients.tone.dark."
     },
     "no  Dismiss": {
       "forms": ["Avvis", "Lukk"],
@@ -952,7 +944,7 @@
     },
     "no  Light": {
       "forms": ["Lys", "Lyse", "Lyst"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Lyst agrees with utseende (neuter singular, the appearance.label group) in appearance.light; Lys agrees with tekstfarge (masculine/feminine singular) in editor.slideField.slideBgText.option.light; Lyse agrees with gradienter (plural) in stockMedia.gradients.tone.light."
     },
     "no  Loading…": {
       "forms": ["Laster inn…", "Laster…"],
@@ -1024,10 +1016,6 @@
       "forms": ["for {count} t siden", "{count}t siden"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  All": {
-      "forms": ["Wszystkie", "Wszystko"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Anonymous": {
       "forms": ["Anonimowo", "Anonimowy"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1038,7 +1026,7 @@
     },
     "pl  Dark": {
       "forms": ["Ciemne", "Ciemny"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Ciemny agrees with motyw, kolor and kolor tekstu (masculine singular) in appearance.dark, editor.color.preset.dark and editor.slideField.slideBgText.option.dark; Ciemne agrees with tło (neuter singular) in editor.slideField.background.option.dark and with gradienty (non-masculine-personal plural) in stockMedia.gradients.tone.dark."
     },
     "pl  Default": {
       "forms": ["Domyślnie", "Domyślny"],
@@ -1078,7 +1066,7 @@
     },
     "pl  Light": {
       "forms": ["Jasne", "Jasny"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Jasny agrees with motyw and kolor tekstu (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Jasne agrees with gradienty (non-masculine-personal plural) in stockMedia.gradients.tone.light."
     },
     "pl  Load more": {
       "forms": ["Wczytaj więcej", "Załaduj więcej"],
@@ -1157,8 +1145,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  All": {
-      "forms": ["Todas", "Todos", "Tudo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Todas", "Todos"],
+      "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Todos agrees with comentários, tipos, tipos de diapositivo and gradientes (masculine plural) in comments.filter.all, comments.filter.allTypes, slideLibrary.filter.all and stockMedia.gradients.tone.all; Todas agrees with categorias, etiquetas, apresentações and notificações (feminine plural) in editor.iconPicker.allCategory, imageLibrary.tags.all, imagekit.tags.all, list.presentations.ownership.all and notifications.filter.all."
     },
     "pt  Clear search": {
       "forms": ["Limpar a pesquisa", "Limpar pesquisa"],
@@ -1178,7 +1166,7 @@
     },
     "pt  Dark": {
       "forms": ["Escuro", "Escuros"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Escuro agrees with modo, tom, fundo and texto (masculine singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Escuros agrees with gradientes (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
     },
     "pt  Default": {
       "forms": ["Por omissão", "Predefinido"],
@@ -1206,7 +1194,7 @@
     },
     "pt  Light": {
       "forms": ["Claro", "Claros"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with gradientes (masculine plural) in stockMedia.gradients.tone.light."
     },
     "pt  Move \"{title}\" to trash?": {
       "forms": [
@@ -1299,7 +1287,7 @@
     },
     "sv  Dark": {
       "forms": ["Mörk", "Mörka", "Mörkt"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Mörkt agrees with utseende (neuter singular, the appearance.label group) in appearance.dark; Mörk agrees with färg, bakgrund and textfärg (common gender singular) in editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mörka agrees with gradienter (plural) in stockMedia.gradients.tone.dark."
     },
     "sv  Delete": {
       "forms": ["Radera", "Ta bort"],
@@ -1327,7 +1315,7 @@
     },
     "sv  Light": {
       "forms": ["Ljus", "Ljusa", "Ljust"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Ljust agrees with utseende (neuter singular, the appearance.label group) in appearance.light; Ljus agrees with textfärg (common gender singular) in editor.slideField.slideBgText.option.light; Ljusa agrees with gradienter (plural) in stockMedia.gradients.tone.light."
     },
     "sv  Load more": {
       "forms": ["Läs in fler", "Läs in mer"],

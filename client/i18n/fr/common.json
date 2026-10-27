@@ -182,7 +182,7 @@
   "notifications.archiveAll": "Tout archiver",
   "notifications.empty": "Aucune notification",
   "notifications.empty.archived": "Rien d'archivé pour l'instant",
-  "notifications.filter.all": "Tout",
+  "notifications.filter.all": "Toutes",
   "notifications.filter.archived": "Archivées",
   "notifications.filter.unread": "Non lues",
   "notifications.label.body": "{title} : {body}",

@@ -114,6 +114,7 @@
 /* Filter chips (events-inbox lenses: All / Mentions / Unread / Archived) */
 .notification-bell-filters {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--ps-space-1);
   padding: var(--ps-space-2) var(--ps-space-4);
   border-bottom: 1px solid hsl(var(--app-border-subtle));
