@@ -172,6 +172,7 @@
    settings scroll container, the same one the preview column sticks to; the
    background is what keeps the form from showing through as it passes under. */
 .theme-editor-header {
+  flex-wrap: wrap;
   position: sticky;
   top: 0;
   z-index: 5;
@@ -190,7 +191,7 @@
 
 .theme-editor-main {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ps-space-5);
   align-items: start;
   width: 100%;
@@ -198,7 +199,7 @@
 
 @media (max-width: 1023px) {
   .theme-editor-main {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -352,13 +353,13 @@
 /* Colors section */
 .theme-colors-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ps-space-3);
 }
 
 @media (max-width: 640px) {
   .theme-colors-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -435,6 +436,7 @@
 }
 
 .theme-contrast-badge {
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   gap: var(--ps-space-2);
@@ -468,6 +470,8 @@
 }
 
 .theme-contrast-readout {
+  flex-wrap: wrap;
+  max-width: 100%;
   display: inline-flex;
   align-items: baseline;
   gap: var(--ps-space-2);
@@ -521,12 +525,13 @@
 
 @media (max-width: 640px) {
   .theme-fonts-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 /* Font picker */
 .theme-font-picker {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-1);
@@ -539,10 +544,12 @@
 }
 
 .theme-font-picker-select-wrapper {
+  min-width: 0;
   position: relative;
 }
 
 .theme-font-picker-select {
+  min-width: 0;
   width: 100%;
 }
 
@@ -692,3 +699,28 @@
 }
 
 /* Stock media status helper */
+
+/* Keep full configuration labels and touch targets as the form narrows. */
+.theme-config-choice .sb-segmented-btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+.theme-editor-form .form-input {
+  min-width: 0;
+}
+
+.theme-editor .row {
+  flex-wrap: wrap;
+}
+
+.theme-editor .help {
+  overflow-wrap: anywhere;
+}
+
+.theme-editor .field-label {
+  overflow-wrap: anywhere;
+}

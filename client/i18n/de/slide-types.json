@@ -156,7 +156,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Bildform",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Kreis",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Abgerundet",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Quadratisch",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Scharfe Ecken",
   "slideType.team-cards-slide.field.members.item.alt.label": "Alt-Text des Fotos",
   "slideType.team-cards-slide.field.members.item.byline.label": "Bildunterschrift",
   "slideType.team-cards-slide.field.members.item.image.label": "Foto",

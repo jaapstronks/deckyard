@@ -664,7 +664,7 @@
   "settings.themes.config.noBackgrounds": "Brak obrazów tła.",
   "settings.themes.config.noVariants": "Brak dodatkowych teł.",
   "settings.themes.config.radius": "Zaokrąglenie rogów",
-  "settings.themes.config.radius.none": "Proste",
+  "settings.themes.config.radius.none": "Ostre narożniki",
   "settings.themes.config.radius.round": "Okrągłe",
   "settings.themes.config.radius.soft": "Miękkie",
   "settings.themes.config.removeBackground": "Usuń",

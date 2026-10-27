@@ -986,7 +986,7 @@ export function createSlideTypePicker({
       })),
       {
         key: 'custom',
-        title: t('editor.slideTypeGroup.custom', 'Custom'),
+        title: t('editor.slideTypeGroup.custom', 'Custom slide types'),
         defs: customDefs,
       },
     ];

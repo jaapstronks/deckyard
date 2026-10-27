@@ -144,7 +144,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Forme de l'image",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Cercle",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Arrondie",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Carrée",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Angles droits",
   "slideType.team-cards-slide.field.members.item.alt.label": "Texte alternatif de la photo",
   "slideType.team-cards-slide.field.members.item.byline.label": "Légende",
   "slideType.team-cards-slide.field.members.item.linkedin.label": "URL LinkedIn",

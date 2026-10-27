@@ -164,7 +164,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Kuvan muoto",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Ympyrä",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Pyöristetty",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Neliö",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Terävät kulmat",
   "slideType.team-cards-slide.field.members.item.alt.label": "Kuvan vaihtoehtoinen teksti",
   "slideType.team-cards-slide.field.members.item.byline.label": "Kuvateksti",
   "slideType.team-cards-slide.field.members.item.image.label": "Kuva",

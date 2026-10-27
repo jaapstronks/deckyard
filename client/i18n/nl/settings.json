@@ -817,7 +817,7 @@
   "settings.themes.config.noBackgrounds": "Nog geen achtergrondbeelden.",
   "settings.themes.config.noVariants": "Nog geen extra achtergronden.",
   "settings.themes.config.radius": "Hoekafronding",
-  "settings.themes.config.radius.none": "Recht",
+  "settings.themes.config.radius.none": "Rechte hoeken",
   "settings.themes.config.radius.round": "Rond",
   "settings.themes.config.radius.soft": "Zacht",
   "settings.themes.config.removeBackground": "Verwijderen",

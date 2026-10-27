@@ -232,7 +232,7 @@ export default {
       required: false,
       options: [
         { value: 'rounded', label: 'Rounded' },
-        { value: 'square', label: 'Square' },
+        { value: 'square', label: 'Sharp corners' },
         { value: 'circle', label: 'Circle' },
       ],
     },

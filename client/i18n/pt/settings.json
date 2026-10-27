@@ -660,7 +660,7 @@
   "settings.themes.config.noBackgrounds": "Ainda sem imagens de fundo.",
   "settings.themes.config.noVariants": "Ainda sem fundos adicionais.",
   "settings.themes.config.radius": "Arredondamento dos cantos",
-  "settings.themes.config.radius.none": "Reto",
+  "settings.themes.config.radius.none": "Cantos retos",
   "settings.themes.config.radius.round": "Redondo",
   "settings.themes.config.radius.soft": "Suave",
   "settings.themes.config.removeBackground": "Remover",

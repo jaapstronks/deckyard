@@ -145,6 +145,7 @@
 }
 
 .ps-type-group-name {
+  min-width: 0;
   flex: 1 1 auto;
   text-align: left;
 }
@@ -396,6 +397,18 @@
 }
 
 @media (max-width: 480px) {
+  /* Keep long localized shelf names whole at narrow widths and large zoom. */
+  .ps-type-group {
+    padding: var(--ps-space-2);
+  }
+
+  .ps-type-group-toggle {
+    gap: var(--ps-space-0-5);
+    font-size: var(--ps-text-xs);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
   .ps-view-toggle-text {
     display: none;
   }

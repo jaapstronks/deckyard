@@ -263,7 +263,7 @@
   "slideType.team-cards-slide.field.imageShape.label": "Image shape",
   "slideType.team-cards-slide.field.imageShape.option.circle.label": "Circle",
   "slideType.team-cards-slide.field.imageShape.option.rounded.label": "Rounded",
-  "slideType.team-cards-slide.field.imageShape.option.square.label": "Square",
+  "slideType.team-cards-slide.field.imageShape.option.square.label": "Sharp corners",
   "slideType.team-cards-slide.field.members.item.alt.label": "Photo alt text",
   "slideType.team-cards-slide.field.members.item.body.label": "Description",
   "slideType.team-cards-slide.field.members.item.byline.label": "Caption",

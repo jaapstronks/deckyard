@@ -661,7 +661,7 @@
   "settings.themes.config.noBackgrounds": "Aún no hay imágenes de fondo.",
   "settings.themes.config.noVariants": "Aún no hay fondos adicionales.",
   "settings.themes.config.radius": "Redondeo de esquinas",
-  "settings.themes.config.radius.none": "Recto",
+  "settings.themes.config.radius.none": "Esquinas rectas",
   "settings.themes.config.radius.round": "Redondo",
   "settings.themes.config.radius.soft": "Suave",
   "settings.themes.config.removeBackground": "Quitar",

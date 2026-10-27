@@ -642,7 +642,7 @@
   "settings.themes.config.noBackgrounds": "Aucune image d’arrière-plan pour l’instant.",
   "settings.themes.config.noVariants": "Aucun arrière-plan supplémentaire pour l’instant.",
   "settings.themes.config.radius": "Arrondi des coins",
-  "settings.themes.config.radius.none": "Droit",
+  "settings.themes.config.radius.none": "Angles droits",
   "settings.themes.config.radius.round": "Arrondi",
   "settings.themes.config.radius.soft": "Doux",
   "settings.themes.config.removeBackground": "Supprimer",
