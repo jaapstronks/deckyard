@@ -675,7 +675,7 @@
   "editor.slideField.slideBgOverlay.option.gradient-bottom": "Verlauf (unten)",
   "editor.slideField.slideBgOverlay.option.gradient-top": "Verlauf (oben)",
   "editor.slideField.slideBgOverlay.option.light": "Helles Overlay",
-  "editor.slideField.slideBgOverlay.option.none": "Keins",
+  "editor.slideField.slideBgOverlay.option.none": "Keine",
   "editor.slideField.slideBgText.help": "Auto wählt die Theme-Textfarbe mit dem besten Kontrast zum Hintergrundbild. Hell/Dunkel erzwingen sie. (Das alte „default“ gilt als Theme-Standard.)",
   "editor.slideField.slideBgText.label": "Textfarbe",
   "editor.slideField.slideBgText.option.auto": "Auto (erkennen)",
