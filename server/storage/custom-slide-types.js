@@ -19,7 +19,12 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 
 import { generateSlug, isValidSlug } from '../../shared/slug.js';
 
-import { sql, withDbGuard } from '../db/client.js';
+import {
+  sql,
+  withDbGuard,
+  getDb,
+  withContentTransaction,
+} from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { nowIso } from '../utils/normalize.js';
 import {
@@ -31,6 +36,10 @@ import { parseJson, getUserIdByEmail } from './utils/index.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
 import { customSlideTypeKey } from '../../shared/slide-types/custom-type-runtime.js';
 import { validateCustomFieldDefinitions } from '../../shared/slide-types/custom-field-definitions.js';
+import {
+  removedFieldContent,
+  removedFieldKeys,
+} from './custom-slide-type-fields.js';
 
 const MAX_LABEL_LEN = 255;
 
@@ -142,201 +151,311 @@ export async function createCustomSlideType(
   data,
   { published = false } = {},
 ) {
-  toStorageContext(scope, 'createCustomSlideType');
-  const label = String(data?.label || '').trim();
-  if (!label || label.length > MAX_LABEL_LEN) {
-    return { ok: false, reason: 'invalid', field: 'label' };
-  }
+  return withContentTransaction(
+    getOrgId(toStorageContext(scope, 'customSlideTypeWrite')),
+    async () => {
+      toStorageContext(scope, 'createCustomSlideType');
+      const label = String(data?.label || '').trim();
+      if (!label || label.length > MAX_LABEL_LEN) {
+        return { ok: false, reason: 'invalid', field: 'label' };
+      }
 
-  let slug = data?.slug ? String(data.slug).trim() : generateSlug(label);
-  if (!isValidSlug(slug)) {
-    return { ok: false, reason: 'invalid', field: 'slug' };
-  }
+      let slug = data?.slug ? String(data.slug).trim() : generateSlug(label);
+      if (!isValidSlug(slug)) {
+        return { ok: false, reason: 'invalid', field: 'slug' };
+      }
 
-  const fieldsResult = validateCustomFieldDefinitions(data?.fields);
-  if (!fieldsResult.ok) {
-    return invalidFields(fieldsResult.problem);
-  }
+      const fieldsResult = validateCustomFieldDefinitions(data?.fields);
+      if (!fieldsResult.ok) {
+        return invalidFields(fieldsResult.problem);
+      }
 
-  const baseType = data?.baseType ? String(data.baseType).trim() : null;
-  const template =
-    data?.template && typeof data.template === 'string' ? data.template : null;
-  const css = data?.css && typeof data.css === 'string' ? data.css : null;
+      const baseType = data?.baseType ? String(data.baseType).trim() : null;
+      const template =
+        data?.template && typeof data.template === 'string'
+          ? data.template
+          : null;
+      const css = data?.css && typeof data.css === 'string' ? data.css : null;
 
-  // Rejected rather than truncated: an author is standing right here, and a
-  // silently shortened rule is worse than a refused save. The tolerant half of
-  // that pair guards the fork load path instead (see shared/slide-types/usage.js).
-  const usageResult = validateUsage(data?.usage);
-  if (!usageResult.ok) {
-    // `field` rides on `invalid` and on nothing else, so it is forwarded only
-    // when the validator set one (D52).
-    return usageResult.field
-      ? { ok: false, reason: usageResult.reason, field: usageResult.field }
-      : { ok: false, reason: usageResult.reason };
-  }
+      // Rejected rather than truncated: an author is standing right here, and a
+      // silently shortened rule is worse than a refused save. The tolerant half of
+      // that pair guards the fork load path instead (see shared/slide-types/usage.js).
+      const usageResult = validateUsage(data?.usage);
+      if (!usageResult.ok) {
+        // `field` rides on `invalid` and on nothing else, so it is forwarded only
+        // when the validator set one (D52).
+        return usageResult.field
+          ? { ok: false, reason: usageResult.reason, field: usageResult.field }
+          : { ok: false, reason: usageResult.reason };
+      }
 
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
+      return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+        const orgId = getOrgId(scope);
 
-    // Check slug uniqueness per org
-    const existing = await db
-      .selectFrom('custom_slide_types')
-      .select('id')
-      .where('organization_id', '=', orgId)
-      .where('slug', '=', slug)
-      .executeTakeFirst();
+        // Check slug uniqueness per org
+        const existing = await db
+          .selectFrom('custom_slide_types')
+          .select('id')
+          .where('organization_id', '=', orgId)
+          .where('slug', '=', slug)
+          .executeTakeFirst();
 
-    if (existing) {
-      return { ok: false, reason: 'slug_exists' };
-    }
+        if (existing) {
+          return { ok: false, reason: 'slug_exists' };
+        }
 
-    const now = nowIso();
+        const now = nowIso();
 
-    const row = await db
-      .insertInto('custom_slide_types')
-      .values({
-        organization_id: orgId,
-        slug,
-        label,
-        base_type: baseType,
-        fields: JSON.stringify(fieldsResult.fields),
-        defaults: JSON.stringify(sanitizeDefaults(data?.defaults)),
-        defaults_by_lang: data?.defaultsByLang
-          ? JSON.stringify(data.defaultsByLang)
-          : null,
-        template,
-        css,
-        usage: usageResult.usage,
-        is_published: published === true,
-        sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
-        created_at: now,
-        updated_at: now,
-        created_by: scope?.actorEmail
-          ? await getUserIdByEmail(scope, db, scope.actorEmail)
-          : null,
-      })
-      .returningAll()
-      .executeTakeFirst();
+        const row = await db
+          .insertInto('custom_slide_types')
+          .values({
+            organization_id: orgId,
+            slug,
+            label,
+            base_type: baseType,
+            fields: JSON.stringify(fieldsResult.fields),
+            defaults: JSON.stringify(sanitizeDefaults(data?.defaults)),
+            defaults_by_lang: data?.defaultsByLang
+              ? JSON.stringify(data.defaultsByLang)
+              : null,
+            template,
+            css,
+            usage: usageResult.usage,
+            is_published: published === true,
+            sort_order:
+              typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
+            created_at: now,
+            updated_at: now,
+            created_by: scope?.actorEmail
+              ? await getUserIdByEmail(scope, db, scope.actorEmail)
+              : null,
+          })
+          .returningAll()
+          .executeTakeFirst();
 
-    return {
-      ok: true,
-      customSlideType: formatRow(row, await creatorNames([row])),
-    };
-  });
+        return {
+          ok: true,
+          customSlideType: formatRow(row, await creatorNames([row])),
+        };
+      });
+    },
+  );
 }
 
 /**
  * Update a custom slide type.
+ *
+ * Removing a field that stored slides of this type still carry would leave
+ * them unsaveable: every write refuses a key its type does not declare. The
+ * update then refuses with `field_in_use` and the count, and `force` is the
+ * explicit second step that strips those keys from the organization's stored
+ * content in the same transaction as the type update (B849; see
+ * ./custom-slide-type-fields.js).
+ *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} typeId - UUID
  * @param {Object} updates
- * @returns {Promise<{ ok: boolean, customSlideType?: Object, reason?: string }>}
+ * @param {{ force?: boolean }} [opts] - `force` strips the removed fields
+ *   from the content that carries them.
+ * @returns {Promise<{ ok: boolean, customSlideType?: Object, reason?: string, usage?: import('./custom-slide-type-fields.js').RemovedFieldUsage }>}
  */
-export async function updateCustomSlideType(scope, typeId, updates) {
+export async function updateCustomSlideType(
+  scope,
+  typeId,
+  updates,
+  { force = false } = {},
+) {
   toStorageContext(scope, 'updateCustomSlideType');
   if (!typeId || typeof typeId !== 'string') {
     return { ok: false, reason: 'invalid', field: 'id' };
   }
 
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
-    const updateData = { updated_at: nowIso() };
+  const outcome = await withDbGuard(
+    { ok: false, reason: 'unavailable' },
+    async (db) => {
+      const orgId = getOrgId(scope);
+      return withContentTransaction(orgId, async () => {
+        db = getDb();
+        const updateData = { updated_at: nowIso() };
+        let removed = [];
+        let typeKey = null;
 
-    if ('label' in updates) {
-      const label = String(updates.label || '').trim();
-      if (!label || label.length > MAX_LABEL_LEN) {
-        return { ok: false, reason: 'invalid', field: 'label' };
-      }
-      updateData.label = label;
+        if ('label' in updates) {
+          const label = String(updates.label || '').trim();
+          if (!label || label.length > MAX_LABEL_LEN) {
+            return { ok: false, reason: 'invalid', field: 'label' };
+          }
+          updateData.label = label;
+        }
+
+        if ('slug' in updates) {
+          const slug = String(updates.slug || '').trim();
+          if (!isValidSlug(slug)) {
+            return { ok: false, reason: 'invalid', field: 'slug' };
+          }
+          const existingSlug = await db
+            .selectFrom('custom_slide_types')
+            .select('id')
+            .where('organization_id', '=', orgId)
+            .where('slug', '=', slug)
+            .where('id', '!=', typeId)
+            .executeTakeFirst();
+          if (existingSlug) {
+            return { ok: false, reason: 'slug_exists' };
+          }
+          updateData.slug = slug;
+        }
+
+        if ('baseType' in updates) {
+          updateData.base_type = updates.baseType
+            ? String(updates.baseType).trim()
+            : null;
+        }
+
+        if ('fields' in updates) {
+          const fieldsResult = validateCustomFieldDefinitions(updates.fields);
+          if (!fieldsResult.ok) {
+            return invalidFields(fieldsResult.problem);
+          }
+          updateData.fields = JSON.stringify(fieldsResult.fields);
+
+          const current = await db
+            .selectFrom('custom_slide_types')
+            .select(['slug', 'fields'])
+            .where('id', '=', typeId)
+            .where('organization_id', '=', orgId)
+            .executeTakeFirst();
+          if (!current) return { ok: false, reason: 'not_found' };
+          // Stored slides carry the key the type had before this update, so a
+          // slug change in the same update is matched on the old one.
+          typeKey = customSlideTypeKey(current);
+          removed = removedFieldKeys(current.fields, fieldsResult.fields);
+        }
+
+        if ('defaults' in updates) {
+          updateData.defaults = JSON.stringify(
+            sanitizeDefaults(updates.defaults),
+          );
+        }
+
+        if ('defaultsByLang' in updates) {
+          updateData.defaults_by_lang = updates.defaultsByLang
+            ? JSON.stringify(updates.defaultsByLang)
+            : null;
+        }
+
+        if ('template' in updates) {
+          updateData.template =
+            typeof updates.template === 'string' ? updates.template : null;
+        }
+
+        if ('css' in updates) {
+          updateData.css = typeof updates.css === 'string' ? updates.css : null;
+        }
+
+        if ('usage' in updates) {
+          const usageResult = validateUsage(updates.usage);
+          if (!usageResult.ok) {
+            return usageResult.field
+              ? {
+                  ok: false,
+                  reason: usageResult.reason,
+                  field: usageResult.field,
+                }
+              : { ok: false, reason: usageResult.reason };
+          }
+          updateData.usage = usageResult.usage;
+        }
+
+        if ('isPublished' in updates) {
+          updateData.is_published = updates.isPublished === true;
+        }
+
+        if ('sortOrder' in updates) {
+          updateData.sort_order =
+            typeof updates.sortOrder === 'number' ? updates.sortOrder : 0;
+        }
+
+        // Count under the same organization lock as registry validation and
+        // every content write. No content can appear between count and strip.
+        const { usage, deckIds } = await removedFieldContent(
+          scope,
+          db,
+          typeKey,
+          removed,
+        );
+        if (usage.fields.length && !force) {
+          return { ok: false, reason: 'field_in_use', usage };
+        }
+        // Imported here, not at the top: the presentations facade reaches this
+        // module through the custom-type registry it validates against.
+        const { getPresentation } = await import('./presentations/index.js');
+        const { activePresentationIds } =
+          await import('../collab/live-apply.js');
+        const activeIds = removed.length ? activePresentationIds() : [];
+        // The transport spans organizations. Only database-owned ids in this
+        // organization may join the post-commit live cleanup, including docs
+        // whose removed fields have not reached the stored JSON yet.
+        const activeRows = activeIds.length
+          ? await db
+              .selectFrom('presentations')
+              .select('id')
+              .where('organization_id', '=', orgId)
+              .where('id', 'in', activeIds)
+              .execute()
+          : [];
+        const bases = new Map();
+        for (const id of new Set([
+          ...deckIds,
+          ...activeRows.map((r) => r.id),
+        ])) {
+          bases.set(id, await getPresentation(scope, id).catch(() => null));
+        }
+
+        const row = await db
+          .updateTable('custom_slide_types')
+          .set(updateData)
+          .where('id', '=', typeId)
+          .where('organization_id', '=', orgId)
+          .returningAll()
+          .executeTakeFirst();
+        let stripped = [];
+        if (row && removed.length) {
+          ({ deckIds: stripped } = await removedFieldContent(
+            scope,
+            db,
+            typeKey,
+            removed,
+            { strip: true },
+          ));
+        }
+
+        if (!row) {
+          return { ok: false, reason: 'not_found' };
+        }
+
+        return {
+          ok: true,
+          customSlideType: formatRow(row, await creatorNames([row])),
+          rewritten: [
+            ...new Set([...stripped, ...activeRows.map((r) => r.id)]),
+          ].map((id) => [id, bases.get(id) ?? null]),
+          removedFields: { type: typeKey, fields: removed },
+        };
+      });
+    },
+  );
+
+  if (!outcome.ok) return outcome;
+  const { rewritten, removedFields, ...result } = outcome;
+  if (rewritten.length) {
+    const { settleRewrittenPresentation } =
+      await import('./presentations/index.js');
+    for (const [id, base] of rewritten) {
+      await settleRewrittenPresentation(scope, id, base, { removedFields });
     }
-
-    if ('slug' in updates) {
-      const slug = String(updates.slug || '').trim();
-      if (!isValidSlug(slug)) {
-        return { ok: false, reason: 'invalid', field: 'slug' };
-      }
-      const existingSlug = await db
-        .selectFrom('custom_slide_types')
-        .select('id')
-        .where('organization_id', '=', orgId)
-        .where('slug', '=', slug)
-        .where('id', '!=', typeId)
-        .executeTakeFirst();
-      if (existingSlug) {
-        return { ok: false, reason: 'slug_exists' };
-      }
-      updateData.slug = slug;
-    }
-
-    if ('baseType' in updates) {
-      updateData.base_type = updates.baseType
-        ? String(updates.baseType).trim()
-        : null;
-    }
-
-    if ('fields' in updates) {
-      const fieldsResult = validateCustomFieldDefinitions(updates.fields);
-      if (!fieldsResult.ok) {
-        return invalidFields(fieldsResult.problem);
-      }
-      updateData.fields = JSON.stringify(fieldsResult.fields);
-    }
-
-    if ('defaults' in updates) {
-      updateData.defaults = JSON.stringify(sanitizeDefaults(updates.defaults));
-    }
-
-    if ('defaultsByLang' in updates) {
-      updateData.defaults_by_lang = updates.defaultsByLang
-        ? JSON.stringify(updates.defaultsByLang)
-        : null;
-    }
-
-    if ('template' in updates) {
-      updateData.template =
-        typeof updates.template === 'string' ? updates.template : null;
-    }
-
-    if ('css' in updates) {
-      updateData.css = typeof updates.css === 'string' ? updates.css : null;
-    }
-
-    if ('usage' in updates) {
-      const usageResult = validateUsage(updates.usage);
-      if (!usageResult.ok) {
-        return usageResult.field
-          ? { ok: false, reason: usageResult.reason, field: usageResult.field }
-          : { ok: false, reason: usageResult.reason };
-      }
-      updateData.usage = usageResult.usage;
-    }
-
-    if ('isPublished' in updates) {
-      updateData.is_published = updates.isPublished === true;
-    }
-
-    if ('sortOrder' in updates) {
-      updateData.sort_order =
-        typeof updates.sortOrder === 'number' ? updates.sortOrder : 0;
-    }
-
-    const row = await db
-      .updateTable('custom_slide_types')
-      .set(updateData)
-      .where('id', '=', typeId)
-      .where('organization_id', '=', orgId)
-      .returningAll()
-      .executeTakeFirst();
-
-    if (!row) {
-      return { ok: false, reason: 'not_found' };
-    }
-
-    return {
-      ok: true,
-      customSlideType: formatRow(row, await creatorNames([row])),
-    };
-  });
+  }
+  return result;
 }
 
 /**
@@ -413,45 +532,50 @@ export async function deleteCustomSlideType(
   typeId,
   { force = false } = {},
 ) {
-  toStorageContext(scope, 'deleteCustomSlideType');
-  if (!typeId || typeof typeId !== 'string') {
-    return { ok: false, reason: 'invalid', field: 'id' };
-  }
-
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
-
-    const type = await db
-      .selectFrom('custom_slide_types')
-      .select(['slug'])
-      .where('id', '=', typeId)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
-    if (!type) return { ok: false, reason: 'not_found' };
-
-    if (!force) {
-      const usage = await countCustomSlideTypeUsage(
-        db,
-        orgId,
-        customSlideTypeKey(type),
-      );
-      if (usage.slides + usage.libraryItems + usage.versions > 0) {
-        return { ok: false, reason: 'in_use', usage };
+  return withContentTransaction(
+    getOrgId(toStorageContext(scope, 'customSlideTypeWrite')),
+    async () => {
+      toStorageContext(scope, 'deleteCustomSlideType');
+      if (!typeId || typeof typeId !== 'string') {
+        return { ok: false, reason: 'invalid', field: 'id' };
       }
-    }
 
-    const result = await db
-      .deleteFrom('custom_slide_types')
-      .where('id', '=', typeId)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
+      return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+        const orgId = getOrgId(scope);
 
-    if (result.numDeletedRows === 0n) {
-      return { ok: false, reason: 'not_found' };
-    }
+        const type = await db
+          .selectFrom('custom_slide_types')
+          .select(['slug'])
+          .where('id', '=', typeId)
+          .where('organization_id', '=', orgId)
+          .executeTakeFirst();
+        if (!type) return { ok: false, reason: 'not_found' };
 
-    return { ok: true };
-  });
+        if (!force) {
+          const usage = await countCustomSlideTypeUsage(
+            db,
+            orgId,
+            customSlideTypeKey(type),
+          );
+          if (usage.slides + usage.libraryItems + usage.versions > 0) {
+            return { ok: false, reason: 'in_use', usage };
+          }
+        }
+
+        const result = await db
+          .deleteFrom('custom_slide_types')
+          .where('id', '=', typeId)
+          .where('organization_id', '=', orgId)
+          .executeTakeFirst();
+
+        if (result.numDeletedRows === 0n) {
+          return { ok: false, reason: 'not_found' };
+        }
+
+        return { ok: true };
+      });
+    },
+  );
 }
 
 /**

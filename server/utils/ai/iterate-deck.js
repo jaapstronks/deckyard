@@ -139,7 +139,7 @@ function detectTargetSlide(command, slides) {
  */
 function summarizeSlide(slide, index) {
   const content = slide.content || {};
-  const title = content.title || content.tagline || '(no title)';
+  const title = content.title || '(no title)';
   const itemCount =
     content.items?.length ||
     content.rows?.length ||

@@ -224,13 +224,16 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
           actorEmail: ALICE,
           expectedRevision: 0,
           allowEdit: async () => {
-            const winner = await updateOrganizationLibraryItem(
-              storageScope,
-              orgItem.id,
-              { name: 'Winner' },
-              { actorEmail: ALICE, expectedRevision: 0, allowEdit: () => true },
-            );
-            assert.equal(winner.item.revision, 1);
+            // Use the independent pool handle: a nested facade call now
+            // deliberately joins the loser's transaction and would roll back
+            // with it. This write must represent another committed session.
+            const winner = await db
+              .updateTable('slide_library')
+              .set({ name: 'Winner', revision: 1 })
+              .where('id', '=', orgItem.id)
+              .returning('revision')
+              .executeTakeFirstOrThrow();
+            assert.equal(winner.revision, 1);
             return true;
           },
         },

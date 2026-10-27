@@ -668,6 +668,45 @@ export function createSlideTypesTab({ user } = {}) {
   }
 
   /**
+   * Send an update. Removing a field stored slides still carry comes back as
+   * `field_in_use` with the count, which opens a second step: saving anyway
+   * strips that content (B849). Any other refusal rejects, for the editor to
+   * show beside its Save button.
+   * @param {Object} ct - Custom slide type being edited
+   * @param {Object} data - The editor's slide type data
+   * @returns {Promise<boolean>} false when the person kept the field after all
+   */
+  async function updateCustomType(ct, data) {
+    const url = `/api/custom-slide-types/${ct.id}`;
+    try {
+      await api(url, { method: 'PUT', body: data });
+      return true;
+    } catch (err) {
+      const usage = err?.details?.usage;
+      if (err?.code !== 'field_in_use' || !usage) throw err;
+      const confirmed = await confirmModal(document.body, {
+        title: t(
+          'settings.slideTypes.fieldInUseTitle',
+          'Remove field content?',
+        ),
+        message: t(
+          'settings.slideTypes.fieldInUse',
+          'The field(s) {fields} you removed still hold content in {slides} slide(s) in {decks} deck(s), {libraryItems} library item(s), {versions} saved version(s) and {comments} comment(s). Saving deletes that content.',
+          { ...usage, fields: usage.fields.join(', ') },
+        ),
+        confirmLabel: t(
+          'settings.slideTypes.fieldInUseConfirm',
+          'Save and delete',
+        ),
+        danger: true,
+      });
+      if (!confirmed) return false;
+      await api(`${url}?force=true`, { method: 'PUT', body: data });
+      return true;
+    }
+  }
+
+  /**
    * Duplicate a core type as a new custom type.
    * @param {string} coreTypeKey
    * @param {Object} meta - Slide type metadata
@@ -719,10 +758,7 @@ export function createSlideTypesTab({ user } = {}) {
       // (B200).
       onSave: async (data) => {
         if (slideType?.id) {
-          await api(`/api/custom-slide-types/${slideType.id}`, {
-            method: 'PUT',
-            body: data,
-          });
+          if (!(await updateCustomType(slideType, data))) return;
           toast.success(
             t('settings.slideTypes.updateSuccess', 'Slide type updated.'),
           );

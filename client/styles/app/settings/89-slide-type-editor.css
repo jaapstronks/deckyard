@@ -118,8 +118,18 @@
 }
 
 .slide-type-editor-header {
+  flex-wrap: wrap;
   padding-bottom: var(--ps-space-3);
   border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.slide-type-editor-header > .row {
+  flex-wrap: wrap;
+}
+
+.slide-type-editor-header .btn {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .slide-type-editor-title {

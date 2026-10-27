@@ -106,6 +106,9 @@ export const REASONS = Object.freeze(
     // Slides still carry the key of the custom slide type being deleted; the
     // refusal carries the count, and `force` is the explicit second step.
     in_use: { status: 409, kind: 'caller' },
+    // Stored slides still carry a field a custom slide type update removes;
+    // the refusal carries the count, and `force` strips them (B849).
+    field_in_use: { status: 409, kind: 'caller' },
 
     // ─── 404 Not Found ──────────────────────────────────────────────────────
     not_found: { status: 404, kind: 'caller' },

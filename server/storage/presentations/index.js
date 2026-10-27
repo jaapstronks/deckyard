@@ -10,6 +10,8 @@
  * and for the one legitimate way to say "this operation is not
  * organization-scoped".
  */
+import { withContentTransaction } from '../../db/client.js';
+import { assertCurrentCustomFields, contentSlides } from '../content-write.js';
 
 import { crossOrganizationScope } from '../scope.js';
 
@@ -135,56 +137,70 @@ export async function getPresentation(scope, id) {
  * @returns {Promise<Object>}
  */
 export async function createPresentation(scope, body) {
-  // Validate the scope before doing any work: a caller that gave none must fail
-  // here, not after preparing a deck it has nowhere to put.
-  const ctx = toStorageContext(scope, 'createPresentation', {
-    actorEmail: body?.ownerEmail,
-  });
-  const repoRoot = repoRootOf(scope);
-  // Sandbox: refuse the mint (typed 4xx) once the guest is at their storage
-  // quota, before preparing anything. Enforced here in the facade; no-op
-  // outside sandbox mode.
-  await assertSandboxQuotaForCreate(ctx, body?.ownerEmail);
+  return withContentTransaction(
+    getOrgId(toStorageContext(scope, 'presentationContentWrite')),
+    async () => {
+      // Validate the scope before doing any work: a caller that gave none must fail
+      // here, not after preparing a deck it has nowhere to put.
+      const ctx = toStorageContext(scope, 'createPresentation', {
+        actorEmail: body?.ownerEmail,
+      });
+      const repoRoot = repoRootOf(scope);
+      // Sandbox: refuse the mint (typed 4xx) once the guest is at their storage
+      // quota, before preparing anything. Enforced here in the facade; no-op
+      // outside sandbox mode.
+      await assertSandboxQuotaForCreate(ctx, body?.ownerEmail);
 
-  // Prepare the full presentation object (with slides, i18n, etc.) before storing.
-  // A create may carry slides (library insert, import, agent payload), and those
-  // pass the same write seam, so it gets the same organization registry an
-  // update does — see the note on `slideTypes` below.
-  const preparedPresentation = await prepareNewPresentation(repoRoot, body, {
-    slideTypes: await buildMergedSlideTypes(scope),
-    storageScope: scope,
-  });
+      // Prepare the full presentation object (with slides, i18n, etc.) before storing.
+      // A create may carry slides (library insert, import, agent payload), and those
+      // pass the same write seam, so it gets the same organization registry an
+      // update does — see the note on `slideTypes` below.
+      const preparedPresentation = await prepareNewPresentation(
+        repoRoot,
+        body,
+        {
+          slideTypes: await buildMergedSlideTypes(scope),
+          storageScope: scope,
+        },
+      );
 
-  // Text colour over a background image is settled before the deck is
-  // stored, so a deck that never meets the editor (MCP, import, AI) presents
-  // with a readable title (B627).
-  await settleBgTextContrast(preparedPresentation, {
-    repoRoot,
-    loadTheme: () => loadDeckTheme(repoRoot, preparedPresentation.theme, scope),
-  });
+      await assertCurrentCustomFields(
+        scope,
+        contentSlides(preparedPresentation),
+      );
+      // Text colour over a background image is settled before the deck is
+      // stored, so a deck that never meets the editor (MCP, import, AI) presents
+      // with a readable title (B627).
+      await settleBgTextContrast(preparedPresentation, {
+        repoRoot,
+        loadTheme: () =>
+          loadDeckTheme(repoRoot, preparedPresentation.theme, scope),
+      });
 
-  // Validate size limits before creating
-  const validation = validatePresentationSize(preparedPresentation);
-  if (!validation.ok) {
-    return {
-      ok: false,
-      reason: 'limit_exceeded',
-      errors: validation.errors,
-    };
-  }
+      // Validate size limits before creating
+      const validation = validatePresentationSize(preparedPresentation);
+      if (!validation.ok) {
+        return {
+          ok: false,
+          reason: 'limit_exceeded',
+          errors: validation.errors,
+        };
+      }
 
-  // The create answers the shape a read answers, like updatePresentation: a
-  // payload in a pre-fold shape (an agent writing text-blocks' numbered rows)
-  // is stored as sent and folded on every read, so the response folds too.
-  const result = migratePresentation(
-    await createPresentationRow(preparedPresentation, ctx),
+      // The create answers the shape a read answers, like updatePresentation: a
+      // payload in a pre-fold shape (an agent writing text-blocks' numbered rows)
+      // is stored as sent and folded on every read, so the response folds too.
+      const result = migratePresentation(
+        await createPresentationRow(preparedPresentation, ctx),
+      );
+
+      // Attach warnings to the result if any
+      if (validation.warnings) {
+        result._warnings = validation.warnings;
+      }
+      return result;
+    },
   );
-
-  // Attach warnings to the result if any
-  if (validation.warnings) {
-    result._warnings = validation.warnings;
-  }
-  return result;
 }
 
 /**
@@ -201,47 +217,53 @@ export async function updatePresentation(scope, id, body, opts) {
   toStorageContext(scope, 'updatePresentation', {
     actorEmail: opts?.actorEmail,
   });
-  // Server-as-collaborator seam: capture the pre-save state first. It is
-  // the base the caller's write was computed against, and live-apply's
-  // three-way diff needs it to leave concurrent client edits alone.
-  const collabEligible =
-    opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
-  let collabBase = null;
-  if (collabEligible) {
-    collabBase = await getPresentation(scope, id).catch(() => null);
-  }
-
-  // Merge-capable save (editor autosave with If-Match + modified-slide ids)
-  // by a client more than one revision behind: snapshot the current server
-  // state first (reason 'pre_merge'), so a bad merge is a one-click restore
-  // in the version history. Best-effort: never blocks the save.
-  const expectedRevision = Number(opts?.expectedRevision);
-  if (
-    Number.isFinite(expectedRevision) &&
-    Array.isArray(opts?.modifiedSlideIds)
-  ) {
-    try {
-      const current = collabBase || (await getPresentation(scope, id));
-      if (current && Number(current.revision) - expectedRevision > 1) {
-        await createPresentationVersion(scope, id, current, {
-          actorEmail: opts?.actorEmail || null,
-          reason: 'pre_merge',
-        });
-        await prunePresentationVersions(scope, id);
+  const { result, collabEligible, collabBase } = await withContentTransaction(
+    getOrgId(scope),
+    async () => {
+      // Server-as-collaborator seam: capture the pre-save state first. It is
+      // the base the caller's write was computed against, and live-apply's
+      // three-way diff needs it to leave concurrent client edits alone.
+      const collabEligible =
+        opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
+      let collabBase = null;
+      if (collabEligible) {
+        collabBase = await getPresentation(scope, id).catch(() => null);
       }
-    } catch {
-      // snapshots are best-effort
-    }
-  }
 
-  const write = await withDominantVersion(scope, id, body, collabBase);
+      // Merge-capable save (editor autosave with If-Match + modified-slide ids)
+      // by a client more than one revision behind: snapshot the current server
+      // state first (reason 'pre_merge'), so a bad merge is a one-click restore
+      // in the version history. Best-effort: never blocks the save.
+      const expectedRevision = Number(opts?.expectedRevision);
+      if (
+        Number.isFinite(expectedRevision) &&
+        Array.isArray(opts?.modifiedSlideIds)
+      ) {
+        try {
+          const current = collabBase || (await getPresentation(scope, id));
+          if (current && Number(current.revision) - expectedRevision > 1) {
+            await createPresentationVersion(scope, id, current, {
+              actorEmail: opts?.actorEmail || null,
+              reason: 'pre_merge',
+            });
+            await prunePresentationVersions(scope, id);
+          }
+        } catch {
+          // snapshots are best-effort
+        }
+      }
 
-  let result;
-  try {
-    result = await updatePresentationUncached(scope, id, write, opts);
-  } finally {
-    invalidatePresentationCache(id);
-  }
+      const write = await withDominantVersion(scope, id, body, collabBase);
+
+      let result;
+      try {
+        result = await updatePresentationUncached(scope, id, write, opts);
+      } finally {
+        invalidatePresentationCache(id);
+      }
+      return { result, collabEligible, collabBase };
+    },
+  );
   // Audit every performed slide-level merge (see the write paths, which
   // attach `_slideMerge` to the result). Fire-and-forget; the activity store
   // degrades to a no-op without a database.
@@ -312,6 +334,50 @@ export async function updatePresentation(scope, id, body, opts) {
 }
 
 /**
+ * Settle a deck whose stored JSON was rewritten outside
+ * {@link updatePresentation}, by a change elsewhere that migrates its content
+ * (a custom slide type's field removal, B849). The rewrite already dropped the
+ * cold collab binary; this drops the cached read, carries the change into an
+ * open collab doc (or its next store writes the old content back) and
+ * refreshes live presenting clients.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} id
+ * @param {Object|null} base - the deck as read before the rewrite, for the
+ *   live doc's three-way diff
+ * @param {{removedFields?: {type: string, fields: string[]}}} [opts]
+ */
+export async function settleRewrittenPresentation(
+  scope,
+  id,
+  base,
+  { removedFields } = {},
+) {
+  toStorageContext(scope, 'settleRewrittenPresentation');
+  invalidatePresentationCache(id);
+  if (isCollabLiveEditsEnabled()) {
+    try {
+      const stored = await getPresentation(scope, id);
+      const { applyServerWriteToActiveDoc } =
+        await import('../../collab/live-apply.js');
+      await applyServerWriteToActiveDoc(id, stored, { base, removedFields });
+    } catch (err) {
+      log.error(
+        `[collab] applying rewritten content to active doc of ${id} failed; ` +
+          'open editors will write the old content back on their next store:',
+        err?.message || err,
+      );
+    }
+  }
+  fireAndForget(
+    import('../live-sessions/index.js').then((m) =>
+      m.notifyDeckUpdatedForPresentation(scope, id),
+    ),
+    'live-session deck refresh after rewrite',
+  );
+}
+
+/**
  * A write body that names the deck's top-level `title`/`slides` but no `i18n`,
  * extended with the language versions so the dominant one carries the write
  * (B740).
@@ -376,6 +442,12 @@ async function updatePresentationUncached(scope, id, body, opts) {
     });
   }
   normalizeI18n(normalized, { slideTypes });
+  if (touchesSlides)
+    await assertCurrentCustomFields(
+      scope,
+      contentSlides(normalized),
+      slideTypes,
+    );
 
   // Validate size limits before updating (unless bypassed)
   if (!opts?.skipLimitCheck) {
@@ -516,13 +588,18 @@ export async function listTrashedPresentationsBefore(scope, cutoffIso) {
  *   `not_found` when the source deck is not visible in this organization.
  */
 export async function duplicatePresentation(scope, id, opts) {
-  const ctx = toStorageContext(scope, 'duplicatePresentation', {
-    actorEmail: opts?.actorEmail,
-  });
-  // A duplicate mints a new deck, so it counts against the guest's sandbox
-  // quota — refuse (typed 4xx) once they are at the cap. No-op outside sandbox.
-  await assertSandboxQuotaForCreate(ctx, opts?.actorEmail);
-  return duplicatePresentationRow(id, ctx);
+  return withContentTransaction(
+    getOrgId(toStorageContext(scope, 'presentationContentWrite')),
+    async () => {
+      const ctx = toStorageContext(scope, 'duplicatePresentation', {
+        actorEmail: opts?.actorEmail,
+      });
+      // A duplicate mints a new deck, so it counts against the guest's sandbox
+      // quota — refuse (typed 4xx) once they are at the cap. No-op outside sandbox.
+      await assertSandboxQuotaForCreate(ctx, opts?.actorEmail);
+      return duplicatePresentationRow(id, ctx);
+    },
+  );
 }
 
 // ============================================================
@@ -578,21 +655,27 @@ export async function createPresentationVersion(
   pres,
   opts = {},
 ) {
-  const ctx = toStorageContext(scope, 'createPresentationVersion', {
-    actorEmail: opts?.actorEmail,
-  });
-  // Identity is the living deck's, not the snapshot's: strip it from the
-  // embedded copy rather than stamping a person's address into every
-  // historical row. Who *took* the snapshot is still recorded, in the
-  // `created_by` column the store fills from `ctx.actorEmail`. See
-  // snapshot-identity.js for why restore does not need it back.
-  return createPresentationVersionRow(
-    presentationId,
-    stripIdentityForSnapshot(pres),
-    ctx,
-    {
-      reason: opts?.reason,
-      label: opts?.label,
+  return withContentTransaction(
+    getOrgId(toStorageContext(scope, 'presentationContentWrite')),
+    async () => {
+      const ctx = toStorageContext(scope, 'createPresentationVersion', {
+        actorEmail: opts?.actorEmail,
+      });
+      await assertCurrentCustomFields(scope, contentSlides(pres));
+      // Identity is the living deck's, not the snapshot's: strip it from the
+      // embedded copy rather than stamping a person's address into every
+      // historical row. Who *took* the snapshot is still recorded, in the
+      // `created_by` column the store fills from `ctx.actorEmail`. See
+      // snapshot-identity.js for why restore does not need it back.
+      return createPresentationVersionRow(
+        presentationId,
+        stripIdentityForSnapshot(pres),
+        ctx,
+        {
+          reason: opts?.reason,
+          label: opts?.label,
+        },
+      );
     },
   );
 }

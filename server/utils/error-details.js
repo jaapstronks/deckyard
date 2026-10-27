@@ -25,6 +25,8 @@
  *   picture publishing refused (`lang`, `slideIndex`, `slideId`, `field`,
  *   `itemIndex`, `itemField`) and how many there are (`count`); `in_use` the
  *   count of what still uses a custom slide type being deleted (`usage`);
+ *   `field_in_use` the removed fields stored content still carries and where
+ *   (`usage`);
  *   `unsupported_conversion` the refused type pair and the types the source
  *   does convert to (`from`, `to`, `convertible`).
  *
@@ -91,6 +93,7 @@ export const PAYLOAD_KEYS = Object.freeze({
   maintenance: Object.freeze(['active', 'reason', 'retryAfter']),
   sandbox_quota_exceeded: Object.freeze(['resource', 'limit', 'used']),
   in_use: Object.freeze(['usage']),
+  field_in_use: Object.freeze(['usage']),
   // The pair a slide-type change refused and what the source type does
   // convert to (`refuseUnsupportedConversion`, services/slides.js; B624).
   unsupported_conversion: Object.freeze(['from', 'to', 'convertible']),

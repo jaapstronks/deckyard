@@ -2,9 +2,8 @@
  * Persistent video overlay layer for live presentations.
  *
  * Usage:
- *   const vl = createVideoLayer({ containerEl, getCurrentSlide });
+ *   const vl = createVideoLayer({ containerEl });
  *   vl.setConfig(pres.settings.liveVideo);   // configure + start
- *   vl.updatePosition();                      // call on slide change
  *   vl.detach();                             // cleanup
  */
 
@@ -21,10 +20,9 @@ import { h } from '../dom/index.js';
 /**
  * @param {Object} opts
  * @param {HTMLElement} opts.containerEl - Stage wrapper to append the layer to
- * @param {() => Object|null} opts.getCurrentSlide - Returns current slide object
- * @returns {{ setConfig, updatePosition, show, hide, detach, el }}
+ * @returns {{ setConfig, show, hide, detach, el }}
  */
-export function createVideoLayer({ containerEl, getCurrentSlide }) {
+export function createVideoLayer({ containerEl }) {
   // --- DOM scaffold ---
   const unmuteBtn = h('button', {
     class: 'video-layer-unmute',
@@ -212,21 +210,8 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
   function updatePosition() {
     if (!config?.enabled) return;
 
-    const slide =
-      typeof getCurrentSlide === 'function' ? getCurrentSlide() : null;
-    const override = slide?.content?.videoOverride;
-
-    // Per-slide visibility override
-    if (override && override.visible === false) {
-      el.dataset.visible = 'false';
-      return;
-    }
     el.dataset.visible = 'true';
-
-    // Per-slide position override or deck default
-    const preset =
-      override?.position || config?.defaultPosition || 'pip-top-right';
-    applyPosition(resolvePosition(preset));
+    applyPosition(resolvePosition(config?.defaultPosition || 'pip-top-right'));
 
     // Mobile position via data attribute (CSS handles the rest)
     el.dataset.mobilePosition = config?.mobilePosition || 'bottom';
@@ -249,5 +234,5 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
     }
   }
 
-  return { setConfig, updatePosition, show, hide, detach, el };
+  return { setConfig, show, hide, detach, el };
 }

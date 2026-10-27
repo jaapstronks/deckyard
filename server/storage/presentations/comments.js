@@ -2,6 +2,8 @@
  * Presentation comments storage for collaborative annotations.
  * Allows organization members to leave feedback on slides without editing.
  */
+import { withContentTransaction } from '../../db/client.js';
+import { assertCurrentCustomFields } from '../content-write.js';
 
 import { getOrgId } from '../../utils/context.js';
 import { norm, nowIso } from '../../utils/normalize.js';
@@ -547,95 +549,108 @@ export async function getComment(scope, commentId) {
  * Create a new comment or reply.
  */
 export async function createComment(scope, presentationId, data) {
-  toStorageContext(scope, 'createComment');
-  const pid = norm(presentationId);
-  const authorEmail = normalizeEmail(data?.email || scope?.actorEmail);
-  const authorName = norm(data?.name) || authorEmail;
-  const body = norm(data?.body);
-  // A share-link guest is identified by their guest row, not by an address:
-  // they have no `users` row and never will (migration 079).
-  const authorGuestId = data?.guestId || null;
+  return withContentTransaction(
+    getOrgId(toStorageContext(scope, 'createComment')),
+    async () => {
+      toStorageContext(scope, 'createComment');
+      const pid = norm(presentationId);
+      const authorEmail = normalizeEmail(data?.email || scope?.actorEmail);
+      const authorName = norm(data?.name) || authorEmail;
+      const body = norm(data?.body);
+      // A share-link guest is identified by their guest row, not by an address:
+      // they have no `users` row and never will (migration 079).
+      const authorGuestId = data?.guestId || null;
 
-  if (!pid || !authorEmail || !body) {
-    return { ok: false, reason: 'invalid' };
-  }
-
-  // Dual-write the stable key beside the address, the way every other stamp
-  // does (storage/identity-resolver.js). A guest, or an address with no user
-  // row, resolves to a defined NULL.
-  const authorUserId = authorGuestId
-    ? null
-    : ((await resolveIdentityByEmail(scope, authorEmail))?.userId ?? null);
-
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
-    const now = nowIso();
-
-    // If this is a reply, validate parent exists
-    const parentId = data?.parentId || null;
-    if (parentId) {
-      const parent = await db
-        .selectFrom('presentation_comments')
-        .select('id')
-        .where('id', '=', parentId)
-        .where('presentation_id', '=', pid)
-        .where('organization_id', '=', orgId)
-        .executeTakeFirst();
-
-      if (!parent) {
-        return { ok: false, reason: 'parent_not_found' };
+      if (!pid || !authorEmail || !body) {
+        return { ok: false, reason: 'invalid' };
       }
-    }
 
-    // Position values (percentage 0-100, null if not positioned)
-    const positionX =
-      typeof data?.positionX === 'number' ? data.positionX : null;
-    const positionY =
-      typeof data?.positionY === 'number' ? data.positionY : null;
+      // Dual-write the stable key beside the address, the way every other stamp
+      // does (storage/identity-resolver.js). A guest, or an address with no user
+      // row, resolves to a defined NULL.
+      const authorUserId = authorGuestId
+        ? null
+        : ((await resolveIdentityByEmail(scope, authorEmail))?.userId ?? null);
 
-    // AI suggestion fields
-    const commentType = data?.commentType || 'human';
-    const suggestionCategory = data?.suggestionCategory || null;
-    const proposedSlide = data?.proposedSlide || null;
+      return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+        const orgId = getOrgId(scope);
+        const now = nowIso();
 
-    // Snapshot of the commented slide at create time (see migration 041);
-    // captured by the caller, only meaningful for comments with a slideId.
-    const slideSnapshot =
-      data?.slideId && data?.slideSnapshot ? data.slideSnapshot : null;
+        // If this is a reply, validate parent exists
+        const parentId = data?.parentId || null;
+        if (parentId) {
+          const parent = await db
+            .selectFrom('presentation_comments')
+            .select('id')
+            .where('id', '=', parentId)
+            .where('presentation_id', '=', pid)
+            .where('organization_id', '=', orgId)
+            .executeTakeFirst();
 
-    const row = await db
-      .insertInto('presentation_comments')
-      .values({
-        presentation_id: pid,
-        organization_id: orgId,
-        slide_id: data?.slideId || null,
-        parent_id: parentId,
-        author_email: authorEmail,
-        author_name: authorName,
-        author_user_id: authorUserId,
-        author_guest_id: authorGuestId,
-        body: body,
-        status: 'open',
-        position_x: positionX,
-        position_y: positionY,
-        comment_type: commentType,
-        suggestion_category: suggestionCategory,
-        proposed_slide: proposedSlide ? JSON.stringify(proposedSlide) : null,
-        slide_snapshot: slideSnapshot ? JSON.stringify(slideSnapshot) : null,
-        // Parsed from the body markup here — single source of truth for
-        // every write path (app, public API v1, MCP).
-        mentions: JSON.stringify(parseMentions(body)),
-        created_at: now,
-        updated_at: now,
-      })
-      .returningAll()
-      .executeTakeFirst();
+          if (!parent) {
+            return { ok: false, reason: 'parent_not_found' };
+          }
+        }
 
-    return {
-      ok: true,
-      comment: rowToComment(row, await commentReadContext([row], scope)),
-    };
-  });
+        // Position values (percentage 0-100, null if not positioned)
+        const positionX =
+          typeof data?.positionX === 'number' ? data.positionX : null;
+        const positionY =
+          typeof data?.positionY === 'number' ? data.positionY : null;
+
+        // AI suggestion fields
+        const commentType = data?.commentType || 'human';
+        const suggestionCategory = data?.suggestionCategory || null;
+        const proposedSlide = data?.proposedSlide || null;
+
+        // Snapshot of the commented slide at create time (see migration 041);
+        // captured by the caller, only meaningful for comments with a slideId.
+        const slideSnapshot =
+          data?.slideId && data?.slideSnapshot ? data.slideSnapshot : null;
+
+        await assertCurrentCustomFields(
+          scope,
+          slideSnapshot ? [slideSnapshot] : [],
+        );
+        const row = await db
+          .insertInto('presentation_comments')
+          .values({
+            presentation_id: pid,
+            organization_id: orgId,
+            slide_id: data?.slideId || null,
+            parent_id: parentId,
+            author_email: authorEmail,
+            author_name: authorName,
+            author_user_id: authorUserId,
+            author_guest_id: authorGuestId,
+            body: body,
+            status: 'open',
+            position_x: positionX,
+            position_y: positionY,
+            comment_type: commentType,
+            suggestion_category: suggestionCategory,
+            proposed_slide: proposedSlide
+              ? JSON.stringify(proposedSlide)
+              : null,
+            slide_snapshot: slideSnapshot
+              ? JSON.stringify(slideSnapshot)
+              : null,
+            // Parsed from the body markup here — single source of truth for
+            // every write path (app, public API v1, MCP).
+            mentions: JSON.stringify(parseMentions(body)),
+            created_at: now,
+            updated_at: now,
+          })
+          .returningAll()
+          .executeTakeFirst();
+
+        return {
+          ok: true,
+          comment: rowToComment(row, await commentReadContext([row], scope)),
+        };
+      });
+    },
+  );
 }
 
 /**

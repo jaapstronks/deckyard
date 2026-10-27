@@ -280,6 +280,16 @@ test('every registered code passes with exactly its keys', () => {
     maintenance: { active: true, reason: 'upgrade', retryAfter: 30 },
     sandbox_quota_exceeded: { resource: 'decks', limit: 2, used: 2 },
     in_use: { usage: { slides: 3, decks: 2, libraryItems: 1, versions: 0 } },
+    field_in_use: {
+      usage: {
+        fields: ['subtitle'],
+        slides: 1,
+        decks: 1,
+        libraryItems: 0,
+        versions: 0,
+        comments: 0,
+      },
+    },
     unsupported_conversion: {
       from: 'title-slide',
       to: 'quote-slide',

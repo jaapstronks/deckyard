@@ -41,7 +41,10 @@ export function fixTableSlideContent(content) {
     }
   }
 
-  // Check if AI returned a 'table' field as TSV string instead of 'rows' array
+  // Check if AI returned a 'table' field as TSV string instead of 'rows' array.
+  // `table` is no key of any type: this reads the model's raw output in the
+  // `fix` pipeline and folds it into the declared `rows`, deleting it below,
+  // so it never reaches a slide (B257 B5).
   if (typeof content.table === 'string' && content.table.includes('\t')) {
     logValidation('convert-table-tsv', {
       reason: 'AI returned table as TSV string instead of rows array',

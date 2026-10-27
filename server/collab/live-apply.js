@@ -37,7 +37,27 @@
 import { isCollabLiveEditsEnabled } from '../config/features.js';
 import { getActiveHocuspocus } from './mount.js';
 import { deckYdocCodec } from './deck-doc.js';
-import { COLLAB_DOC_PREFIX } from './auth.js';
+import { COLLAB_DOC_PREFIX, presentationIdFromDocumentName } from './auth.js';
+import { contentSlides } from '../storage/content-write.js';
+
+/**
+ * Loaded or loading presentation ids. Callers must resolve their organization
+ * through storage before using these process-wide transport candidates.
+ * @returns {string[]}
+ */
+export function activePresentationIds() {
+  if (!isCollabLiveEditsEnabled()) return [];
+  const hocuspocus = getActiveHocuspocus();
+  if (!hocuspocus) return [];
+  return [
+    ...new Set([
+      ...hocuspocus.documents.keys(),
+      ...(hocuspocus.loadingDocuments?.keys() ?? []),
+    ]),
+  ]
+    .map(presentationIdFromDocumentName)
+    .filter(Boolean);
+}
 
 /**
  * Apply a just-stored presentation to its actively loaded collab doc.
@@ -50,11 +70,14 @@ import { COLLAB_DOC_PREFIX } from './auth.js';
  * @param {Object} [opts] - { base } + test seams { hocuspocus, codec, log }
  * @param {Object|null} [opts.base] - Deck JSON as stored just before this
  *   save (what the caller's write was based on) — enables the three-way diff
+ * @param {{type: string, fields: string[]}} [opts.removedFields] - Explicit
+ *   registry removals, including keys absent from the stored base.
  * @returns {Promise<boolean>} true when the write reached the live doc
  */
 export async function applyServerWriteToActiveDoc(id, storedPres, opts = {}) {
   const {
     base = null,
+    removedFields = null,
     hocuspocus = getActiveHocuspocus(),
     codec = deckYdocCodec,
     log = console,
@@ -105,6 +128,20 @@ export async function applyServerWriteToActiveDoc(id, storedPres, opts = {}) {
           `[collab] live apply of ${id} normalized diverged language versions (${warnings.length} warning(s)):\n` +
             warnings.map((w) => `  - ${w}`).join('\n'),
         );
+      }
+      if (removedFields) {
+        // A three-way diff preserves keys the database base never knew. A
+        // registry removal deliberately takes those keys away as well, from
+        // the current live projection, leaving all other client edits alone.
+        const before = codec.projectDocToPresentation(document);
+        const cleaned = structuredClone(before);
+        for (const slide of contentSlides(cleaned)) {
+          if (slide?.type !== removedFields.type) continue;
+          for (const field of removedFields.fields) {
+            if (slide.content) delete slide.content[field];
+          }
+        }
+        codec.applyPresentationToDoc(cleaned, document, { base: before });
       }
       applied = true;
     });

@@ -294,10 +294,7 @@ export async function renderPresenter(root, id) {
   });
   deck.append(presenterConsole.el);
 
-  const videoLayer = createVideoLayer({
-    containerEl: stageWrap,
-    getCurrentSlide: () => deckCtl?.getState?.()?.current || null,
-  });
+  const videoLayer = createVideoLayer({ containerEl: stageWrap });
   videoLayer.setConfig(pres?.settings?.liveVideo);
 
   // Auto-advance UI: countdown bar, deck-time readout and the pause button's
@@ -407,7 +404,6 @@ export async function renderPresenter(root, id) {
         // ignore
       }
       interactionCtl?.sync();
-      videoLayer.updatePosition();
       syncProgressTime();
       updateConsole();
     },

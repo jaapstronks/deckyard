@@ -188,6 +188,25 @@ second confirmation whose button sends the forced delete. Unpublishing is not a
 softer route: the render registry reads published types only, so an unpublished
 type's slides render as unknown too — only the stored record survives.
 
+## Removing a field that slides still carry
+
+Every write refuses a content key the slide's type does not declare (D359), and
+a custom type declares its keys in `fields`. Removing a field that stored
+slides of the type still carry would make each of them unsaveable, so
+`PUT /api/custom-slide-types/:id` compares the old and new field keys, looks
+for the removed ones on that type's slides in the organization (decks and their
+language versions, trashed ones too; version snapshots; comment snapshots;
+library items and their language versions) and refuses: `409 field_in_use`,
+`details.usage` = `{ fields, slides, decks, libraryItems, versions, comments }`.
+`?force=true` saves anyway and strips those keys from all of that content in the
+same transaction as the type update, drops the changed decks' collab binaries
+and applies the change to open collab docs (B849,
+`server/storage/custom-slide-type-fields.js`). The editor shows the count in a
+confirmation whose button sends the forced save. Renaming a field key is a
+removal plus an addition, so it asks the same question.
+
+The count, pre-strip deck reads, type update and strip run inside `withContentTransaction` (`server/db/client.js`). It locks the organization's row before reading the registry. Deck create/update/duplicate, version and comment snapshots, library create/PATCH and sandbox seeds, and collab load/store use the same boundary. Nested facade calls share its connection through an async-local context. This deliberately serializes content writes within one organization, including when no slide yet uses the removed field; other organizations can write independently. A waiting writer reads the committed registry and refuses obsolete custom keys with `unknown_field`, including unchanged submitted slides and historical copies. Snapshot checks do not impose today's required-field rules. Collab stores validate before persisting the binary, so a waiting store cannot restore a dropped binary with obsolete fields. Cache invalidation and the field-removal live-doc diff run after commit.
+
 ## Config & flags
 
 No dedicated feature flag gates custom slide types. Two conditions apply:

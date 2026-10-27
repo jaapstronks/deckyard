@@ -20,6 +20,7 @@
 import { FIELD_TYPES, enumOptionValues } from './field-types.js';
 import { DECK_FORMAT_ID } from './deck-format-id.js';
 import { isTextField } from './text-fields.js';
+import { declaredContentKeys, isPublishedField } from './declared-keys.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import {
   TEXT_STYLE_REFUSAL_REASONS,
@@ -81,34 +82,10 @@ function contentDefKey(typeName) {
 }
 
 /**
- * Whether a field belongs in the *published* contract.
- *
- * A definition's `fields[]` is the editor's list, and it deliberately carries
- * shapes we no longer want anyone to build on: the hidden slots the editor
- * still reads beside a structured field. Those keys keep *parsing* - the
- * schema stays lenient (`additionalProperties: true`), so stored decks that
- * carry them still validate - but publishing them under `properties` states
- * them as the contract, which is the opposite of what `hidden` means.
- *
- * `ai: false` is deliberately **not** part of this test. That flag withholds a
- * field from agents for editorial reasons (`video-slide.watchUrl` points at a
- * landing page only a human knows exists); it is a live field an author fills,
- * so it stays in the contract. Compare `isFieldOptOut()` in
- * `server/utils/ai/slide-catalog/agent-catalog.js`, which is the agent-facing
- * predicate and does include `ai: false`.
- *
- * @param {any} field
- * @returns {boolean}
- */
-function isPublishedField(field) {
-  return field?.hidden !== true;
-}
-
-/**
  * JSON Schema for a single field's value, derived from its declared type plus
- * field-level constraints. Kept lenient (no `additionalProperties: false`) so
- * legacy decks with extra keys still validate - the schema is a contract, not a
- * gate that rejects historical shapes.
+ * field-level constraints. An item object stays open: the write surfaces hold
+ * a slide's top-level keys to its declaration (D359), item keys are read where
+ * the items are.
  * @param {any} field
  * @returns {object}
  */
@@ -229,6 +206,13 @@ function textStylesJsonSchema(def) {
  * field is a representation the editor still reads, not something the
  * published contract should promise. A type that offers text styling also
  * publishes `textStyles` ({@link textStylesJsonSchema}).
+ *
+ * The object is closed by `propertyNames`, not by `additionalProperties`: the
+ * names a slide may carry are `declaredContentKeys()`, the list every write
+ * refuses against (`unknown_field`, D359), and that list is wider than
+ * `properties` (hidden fields, the global slide fields, instance, style and
+ * derived keys are declared but not promised). One list, so the contract
+ * refuses exactly what the server refuses.
  * @param {string} typeName
  * @param {any} def - the slide-type definition (with `fields[]`)
  * @param {{withMeta?: boolean}} [opts] - withMeta adds `$id`/`$schema` (for a
@@ -252,9 +236,7 @@ export function slideTypeContentSchema(typeName, def, opts = {}) {
     title: `${typeName} slide content`,
     type: 'object',
     properties,
-    // Lenient: decks carry legacy keys (e.g. bgImage) and forward-compatible
-    // extras. The schema documents the known shape without rejecting history.
-    additionalProperties: true,
+    propertyNames: { enum: [...declaredContentKeys(def)].sort() },
   };
   if (required.length) schema.required = required;
   if (opts.withMeta) {

@@ -13,6 +13,8 @@
  * Queries run directly through Kysely (B79/D34 removed the adapter
  * indirection); getDb() throws on an uninitialized database.
  */
+import { withContentTransaction } from '../db/client.js';
+import { assertCurrentCustomFields } from './content-write.js';
 
 import { crossOrganizationScope, toStorageContext } from './scope.js';
 import { keysetPage, keysetRows } from './keyset.js';
@@ -455,43 +457,52 @@ function requireI18nObject(value, field) {
  * (`canonicalCreateI18n`).
  */
 async function createSlideLibraryRow(data, ctx) {
-  const i18n = canonicalCreateI18n(data.i18n);
+  return withContentTransaction(getOrgId(ctx), async () => {
+    const i18n = canonicalCreateI18n(data.i18n);
+    await assertCurrentCustomFields(ctx, [
+      { type: data.slideType, content: data.content },
+      ...Object.values(i18n.versions || {}).map((v) => ({
+        type: data.slideType,
+        content: v.content,
+      })),
+    ]);
 
-  const db = getDb();
-  const orgId = getOrgId(ctx);
+    const db = getDb();
+    const orgId = getOrgId(ctx);
 
-  // Dual-key (T10 PR F2): resolve the id once and stamp it beside both the
-  // created_by and updated_by e-mail (the same actor at create), so the
-  // organization-library authz guard can match on the stable id.
-  const actorEmail = normalizeEmail(ctx?.actorEmail);
-  const actorResolution = actorEmail
-    ? await resolveIdentityByEmail(ctx, actorEmail)
-    : null;
-  const actorUserId = actorResolution?.userId ?? null;
+    // Dual-key (T10 PR F2): resolve the id once and stamp it beside both the
+    // created_by and updated_by e-mail (the same actor at create), so the
+    // organization-library authz guard can match on the stable id.
+    const actorEmail = normalizeEmail(ctx?.actorEmail);
+    const actorResolution = actorEmail
+      ? await resolveIdentityByEmail(ctx, actorEmail)
+      : null;
+    const actorUserId = actorResolution?.userId ?? null;
 
-  const row = await db
-    .insertInto('slide_library')
-    .values({
-      organization_id: orgId,
-      owner_email: normalizeEmail(data.ownerEmail) || actorEmail,
-      shelf: data.shelf || 'personal',
-      name: data.name,
-      description: data.description || null,
-      slide_type: data.slideType,
-      theme_id: data.themeId || null,
-      content: jsonb(data.content || {}),
-      i18n: jsonb(i18n),
-      // A new item has no favorites; starring is a PATCH of its own.
-      favorites: sql`'{}'::text[]`,
-      created_by: actorEmail,
-      created_by_user_id: actorUserId,
-      updated_by: actorEmail,
-      updated_by_user_id: actorUserId,
-    })
-    .returningAll()
-    .executeTakeFirst();
+    const row = await db
+      .insertInto('slide_library')
+      .values({
+        organization_id: orgId,
+        owner_email: normalizeEmail(data.ownerEmail) || actorEmail,
+        shelf: data.shelf || 'personal',
+        name: data.name,
+        description: data.description || null,
+        slide_type: data.slideType,
+        theme_id: data.themeId || null,
+        content: jsonb(data.content || {}),
+        i18n: jsonb(i18n),
+        // A new item has no favorites; starring is a PATCH of its own.
+        favorites: sql`'{}'::text[]`,
+        created_by: actorEmail,
+        created_by_user_id: actorUserId,
+        updated_by: actorEmail,
+        updated_by_user_id: actorUserId,
+      })
+      .returningAll()
+      .executeTakeFirst();
 
-  return (await mapRowsFor([row], ctx))[0];
+    return (await mapRowsFor([row], ctx))[0];
+  });
 }
 
 // ============================================================
@@ -617,82 +628,93 @@ function favoritesWith(email, on) {
  * @throws {ConflictError} When `expectedRevision` is not the stored revision
  */
 async function patchLibraryItem(ctx, target, patch, opts = {}) {
-  const invalid = libraryPatchViolation(patch);
-  if (invalid) return invalid;
-  const edits = EDIT_KEYS.some((k) => k in patch);
-  const { expectedRevision = null } = opts;
-  if (edits && !Number.isInteger(expectedRevision)) {
-    // The route answers 428 before it gets here; reaching this is a caller bug.
-    throw new TypeError('patchLibraryItem: an edit needs expectedRevision');
-  }
+  return withContentTransaction(getOrgId(ctx), async () => {
+    const invalid = libraryPatchViolation(patch);
+    if (invalid) return invalid;
+    const edits = EDIT_KEYS.some((k) => k in patch);
+    const { expectedRevision = null } = opts;
+    if (edits && !Number.isInteger(expectedRevision)) {
+      // The route answers 428 before it gets here; reaching this is a caller bug.
+      throw new TypeError('patchLibraryItem: an edit needs expectedRevision');
+    }
 
-  const existing = await readItem(ctx, target);
-  if (!existing) return { ok: false, reason: 'not_found' };
+    const existing = await readItem(ctx, target);
+    if (!existing) return { ok: false, reason: 'not_found' };
+    if (patch.content !== undefined)
+      await assertCurrentCustomFields(ctx, [
+        { type: existing.slideType, content: patch.content },
+      ]);
 
-  if (target.shelf === 'organization' && (edits || 'trashed' in patch)) {
-    // Fail closed: a shared item is changed by its creator or an admin, and a
-    // caller that brings no guard is not either.
-    const allowed =
-      typeof opts.allowEdit === 'function' && (await opts.allowEdit(existing));
-    if (!allowed) return { ...NOT_EDITABLE };
-  }
-  if (edits && existing.revision !== expectedRevision) {
-    throw conflictError(existing);
-  }
-  const updateData = {};
-  if ('name' in patch) updateData.name = patch.name.trim();
-  if ('description' in patch) updateData.description = patch.description;
-  if ('content' in patch) {
-    updateData.content = jsonb(patch.content);
-    updateData.i18n = jsonb(
-      mergeLibraryI18n({
-        slideType: existing.slideType,
-        content: patch.content,
-        i18n: existing.i18n,
-      }),
+    if (target.shelf === 'organization' && (edits || 'trashed' in patch)) {
+      // Fail closed: a shared item is changed by its creator or an admin, and a
+      // caller that brings no guard is not either.
+      const allowed =
+        typeof opts.allowEdit === 'function' &&
+        (await opts.allowEdit(existing));
+      if (!allowed) return { ...NOT_EDITABLE };
+    }
+    if (edits && existing.revision !== expectedRevision) {
+      throw conflictError(existing);
+    }
+    const updateData = {};
+    if ('name' in patch) updateData.name = patch.name.trim();
+    if ('description' in patch) updateData.description = patch.description;
+    if ('content' in patch) {
+      updateData.content = jsonb(patch.content);
+      updateData.i18n = jsonb(
+        mergeLibraryI18n({
+          slideType: existing.slideType,
+          content: patch.content,
+          i18n: existing.i18n,
+        }),
+      );
+    }
+    if ('trashed' in patch) {
+      updateData.trashed_at = patch.trashed ? nowIso() : null;
+      updateData.trashed_by = patch.trashed
+        ? normalizeEmail(opts.trashedBy)
+        : null;
+    }
+    // Only a change to the item itself is stamped as an update; a favorite is
+    // the caller's own mark and leaves `updated_at`/`updated_by` alone.
+    const changesItem = Object.keys(updateData).length > 0;
+    if ('favorite' in patch) {
+      const viewer = normalizeEmail(ctx?.actorEmail);
+      // Every route passes the caller; reaching this without one is a caller bug.
+      if (!viewer)
+        throw new TypeError('patchLibraryItem: a favorite needs an actor');
+      updateData.favorites = favoritesWith(viewer, patch.favorite);
+    }
+    if (Object.keys(updateData).length === 0)
+      return { ok: true, item: existing };
+
+    if (changesItem) updateData.updated_at = nowIso();
+    // Dual-key (T10 PR F2): stamp updated_by_user_id from the same resolution
+    // only when there is an actor to stamp, so an actor-less write never nulls
+    // the id half while the e-mail half keeps the previous writer.
+    if (changesItem && ctx?.actorEmail) {
+      const actorResolution = await resolveIdentityByEmail(ctx, ctx.actorEmail);
+      updateData.updated_by = normalizeEmail(ctx.actorEmail);
+      updateData.updated_by_user_id = actorResolution?.userId ?? null;
+    }
+    if (edits) updateData.revision = expectedRevision + 1;
+
+    let query = whereItem(
+      getDb().updateTable('slide_library').set(updateData),
+      {
+        ...target,
+        orgId: getOrgId(ctx),
+      },
     );
-  }
-  if ('trashed' in patch) {
-    updateData.trashed_at = patch.trashed ? nowIso() : null;
-    updateData.trashed_by = patch.trashed
-      ? normalizeEmail(opts.trashedBy)
-      : null;
-  }
-  // Only a change to the item itself is stamped as an update; a favorite is
-  // the caller's own mark and leaves `updated_at`/`updated_by` alone.
-  const changesItem = Object.keys(updateData).length > 0;
-  if ('favorite' in patch) {
-    const viewer = normalizeEmail(ctx?.actorEmail);
-    // Every route passes the caller; reaching this without one is a caller bug.
-    if (!viewer)
-      throw new TypeError('patchLibraryItem: a favorite needs an actor');
-    updateData.favorites = favoritesWith(viewer, patch.favorite);
-  }
-  if (Object.keys(updateData).length === 0) return { ok: true, item: existing };
-
-  if (changesItem) updateData.updated_at = nowIso();
-  // Dual-key (T10 PR F2): stamp updated_by_user_id from the same resolution
-  // only when there is an actor to stamp, so an actor-less write never nulls
-  // the id half while the e-mail half keeps the previous writer.
-  if (changesItem && ctx?.actorEmail) {
-    const actorResolution = await resolveIdentityByEmail(ctx, ctx.actorEmail);
-    updateData.updated_by = normalizeEmail(ctx.actorEmail);
-    updateData.updated_by_user_id = actorResolution?.userId ?? null;
-  }
-  if (edits) updateData.revision = expectedRevision + 1;
-
-  let query = whereItem(getDb().updateTable('slide_library').set(updateData), {
-    ...target,
-    orgId: getOrgId(ctx),
+    // The revision test is part of the UPDATE, so it is atomic: a write that
+    // landed between the read above and this statement makes it match nothing.
+    if (edits) query = query.where('revision', '=', expectedRevision);
+    const row = await query.returningAll().executeTakeFirst();
+    if (row) return { ok: true, item: (await mapRowsFor([row], ctx))[0] };
+    const now = await readItem(ctx, target);
+    if (now && edits) throw conflictError(now);
+    return { ok: false, reason: 'not_found' };
   });
-  // The revision test is part of the UPDATE, so it is atomic: a write that
-  // landed between the read above and this statement makes it match nothing.
-  if (edits) query = query.where('revision', '=', expectedRevision);
-  const row = await query.returningAll().executeTakeFirst();
-  if (row) return { ok: true, item: (await mapRowsFor([row], ctx))[0] };
-  const now = await readItem(ctx, target);
-  if (now && edits) throw conflictError(now);
-  return { ok: false, reason: 'not_found' };
 }
 
 async function deleteLibraryItem(ctx, target) {
@@ -1168,11 +1190,17 @@ export async function upsertSandboxLibrarySeed(
     'upsertSandboxLibrarySeed',
   );
   const slideIds = new Map(slides.map((slide) => [slide.key, slide.id]));
-  await getDb()
-    .transaction()
-    .execute(async (trx) => {
-      for (const slide of slides) {
-        await sql`
+  await withContentTransaction(orgId, async () => {
+    const trx = getDb();
+    await assertCurrentCustomFields(
+      scope,
+      slides.map((slide) => ({
+        type: slide.slideType,
+        content: slide.content,
+      })),
+    );
+    for (const slide of slides) {
+      await sql`
           INSERT INTO slide_library (id, organization_id, owner_email, shelf, name, description,
             slide_type, theme_id, content, i18n, favorites, created_by, updated_by)
           VALUES (${slide.id}, ${orgId}, ${owner}, 'organization',
@@ -1192,10 +1220,10 @@ export async function upsertSandboxLibrarySeed(
             (EXCLUDED.name, EXCLUDED.description, EXCLUDED.slide_type,
               EXCLUDED.theme_id, EXCLUDED.content, EXCLUDED.i18n, NULL::timestamptz)
         `.execute(trx);
-      }
-      for (const collection of collections) {
-        const id = collection.id;
-        await sql`
+    }
+    for (const collection of collections) {
+      const id = collection.id;
+      await sql`
           INSERT INTO slide_collections (id, organization_id, owner_email, shelf, name, description,
             created_by, updated_by)
           VALUES (${id}, ${orgId}, ${owner}, 'organization', ${collection.name},
@@ -1205,22 +1233,22 @@ export async function upsertSandboxLibrarySeed(
           WHERE (slide_collections.name, slide_collections.description)
             IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.description)
         `.execute(trx);
-        await trx
-          .deleteFrom('slide_collection_items')
-          .where('collection_id', '=', id)
-          .execute();
-        await trx
-          .insertInto('slide_collection_items')
-          .values(
-            collection.slides.map((key, position) => ({
-              collection_id: id,
-              slide_library_id: slideIds.get(key),
-              position,
-            })),
-          )
-          .execute();
-      }
-    });
+      await trx
+        .deleteFrom('slide_collection_items')
+        .where('collection_id', '=', id)
+        .execute();
+      await trx
+        .insertInto('slide_collection_items')
+        .values(
+          collection.slides.map((key, position) => ({
+            collection_id: id,
+            slide_library_id: slideIds.get(key),
+            position,
+          })),
+        )
+        .execute();
+    }
+  });
 }
 
 // White-box seam: tests/pg/library-list-page.pgtest.js EXPLAINs the exact
