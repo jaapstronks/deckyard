@@ -7,7 +7,13 @@ import {
   chownSync,
 } from 'node:fs';
 import { Worker } from 'node:worker_threads';
-import { loadInstallation, loadControl, PATHS, trustedPath } from './paths.js';
+import {
+  loadInstallation,
+  loadControl,
+  PATHS,
+  trustedPath,
+  jobPaths,
+} from './paths.js';
 import {
   parseJson,
   validateRequest,
@@ -27,6 +33,7 @@ export async function startBroker() {
     active = null,
     ready = false,
     dead = false;
+  const seenJobs = new Set();
   const connections = new Set(),
     queue = [];
   function loseSupervisor() {
@@ -73,13 +80,21 @@ export async function startBroker() {
         continue;
       }
       clearTimeout(token.queueTimer);
-      active = { token, job: null, worker: null, result: null, closed: false };
+      active = {
+        token,
+        job: null,
+        worker: null,
+        result: null,
+        closed: false,
+        cancelled: false,
+      };
       send('reserve');
       return;
     }
   }
   function cancel() {
-    if (!active || active.closed) return;
+    if (!active || active.cancelled) return;
+    active.cancelled = true;
     active.closed = true;
     if (active.job) send('cancel', active.job.id);
     // If reserve is still in flight, its ack is handled only by cancellation.
@@ -92,6 +107,20 @@ export async function startBroker() {
   channel = lifecycleChannel(
     supervisor,
     (m) => {
+      const keys = Object.keys(m).sort().join(',');
+      if (
+        keys !==
+        [
+          'op',
+          'seq',
+          'instance',
+          'generation',
+          ...(m.op === 'registered' ? [] : ['job']),
+        ]
+          .sort()
+          .join(',')
+      )
+        throw new Error('invalid supervisor shape');
       if (m.op === 'registered' && !binding) {
         if (typeof m.instance !== 'string' || typeof m.generation !== 'string')
           throw new Error('invalid registration');
@@ -108,9 +137,10 @@ export async function startBroker() {
       )
         throw new Error('stale supervisor message');
       if (m.op === 'reserved' && !active.job) {
-        if (!/^[a-f0-9]{32}$/.test(m.job))
+        if (!/^[a-f0-9]{32}$/.test(m.job) || seenJobs.has(m.job))
           throw new Error('invalid reservation');
-        active.job = { id: m.job, helper: m.helper, guest: m.guest };
+        seenJobs.add(m.job);
+        active.job = { id: m.job, ...jobPaths(m.job) };
         if (active.closed || active.token.socket.destroyed) {
           send('cancel', m.job);
           return;
@@ -155,7 +185,8 @@ export async function startBroker() {
         active.job?.id === m.job &&
         active.closed &&
         !active.worker &&
-        active.result
+        active.result &&
+        !active.cancelled
       ) {
         const token = active.token,
           result = active.result;

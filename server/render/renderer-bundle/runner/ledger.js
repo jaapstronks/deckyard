@@ -74,3 +74,15 @@ export function loadLedger(installation) {
   }
   return v;
 }
+
+/** Cancellation also wins after normal QUIESCENT entered TERMINATING. Preserve
+ * its first cleanup deadline and never move a terminal phase backwards. */
+export function revokeRecord(job, code, monotonicTime) {
+  if (!job || job.phase === 'CLEANED' || job.cancelled) return false;
+  job.code = code;
+  job.cancelled = true;
+  job.revokedAt ??= monotonicTime;
+  if (['RESERVED', 'PREPARING', 'RUNNING'].includes(job.phase))
+    job.phase = 'TERMINATING';
+  return true;
+}

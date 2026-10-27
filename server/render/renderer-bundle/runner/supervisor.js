@@ -13,8 +13,14 @@ import {
   closeSync,
 } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { loadInstallation, loadControl, PATHS, trustedPath } from './paths.js';
-import { loadLedger, saveLedger } from './ledger.js';
+import {
+  loadInstallation,
+  loadControl,
+  PATHS,
+  trustedPath,
+  SUPERVISOR_CGROUP,
+} from './paths.js';
+import { loadLedger, saveLedger, revokeRecord } from './ledger.js';
 import { lifecycleChannel } from './channel.js';
 import {
   brokerProperties,
@@ -44,7 +50,7 @@ export async function startSupervisor() {
     native = loadControl();
   const ledger = loadLedger(config.installation);
   const own = readFileSync('/proc/self/cgroup', 'utf8').trim().split('::')[1];
-  if (!own.endsWith('/deckyard-render-supervisor.service/manager'))
+  if (own !== `${SUPERVISOR_CGROUP}/manager`)
     throw new Error('supervisor containment unavailable');
   const delegated = `${CG}${own.slice(0, -'/manager'.length)}`;
   writeFileSync(`${delegated}/cgroup.subtree_control`, '+cpu +memory +pids');
@@ -54,6 +60,17 @@ export async function startSupervisor() {
       `${delegated}/${kind}/cgroup.subtree_control`,
       '+cpu +memory +pids',
     );
+  }
+  const usedIds = new Set(ledger.jobs.map((job) => job.id));
+  function newJobId() {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const next = id();
+      if (!usedIds.has(next)) {
+        usedIds.add(next);
+        return next;
+      }
+    }
+    throw new Error('reservation id unavailable');
   }
   let ready = false,
     active = null,
@@ -81,17 +98,10 @@ export async function startSupervisor() {
   }
   function revoke(job, code = 'job_cancelled') {
     ready = false;
-    if (
-      !job ||
-      ['TERMINATING', 'PRODUCERS_STOPPED', 'CLEANING', 'CLEANED'].includes(
-        job.phase,
-      )
-    )
-      return;
-    job.code = code;
-    job.cancelled = true;
-    job.revokedAt = now();
-    phase(job, 'TERMINATING');
+    if (revokeRecord(job, code, now())) {
+      persist();
+      log(job, job.phase);
+    }
   }
   function stopInstance() {
     if (ledger.instance?.cgroup) kill(`${CG}${ledger.instance.cgroup}`);
@@ -173,7 +183,9 @@ export async function startSupervisor() {
     if (cleaning) return;
     cleaning = true;
     try {
+      normal = normal && !job.cancelled;
       if (!(await stopped(job, normal))) return;
+      if (normal && job.cancelled) return;
       if (job.phase === 'TERMINATING') phase(job, 'PRODUCERS_STOPPED');
       if (job.phase === 'PRODUCERS_STOPPED') phase(job, 'CLEANING');
       cleanupObjects(job);
@@ -209,6 +221,8 @@ export async function startSupervisor() {
       }
     } catch {
       ready = false;
+      if (job.phase === 'CLEANED') retireInstance();
+      else revoke(job, 'sandbox_unavailable');
       log(job, 'cleanup_blocked');
     } finally {
       cleaning = false;
@@ -333,7 +347,7 @@ export async function startSupervisor() {
           if (message.op === 'reserve') {
             if (!ready || active) throw new Error('slot unavailable');
             const job = {
-              id: id(),
+              id: newJobId(),
               instance: instance.id,
               generation: ledger.generation,
               phase: 'RESERVED',
@@ -351,8 +365,6 @@ export async function startSupervisor() {
               job: job.id,
               instance: instance.id,
               generation: ledger.generation,
-              helper: `${delegated}/helpers/${job.id}`,
-              guest: `${own.slice(0, -'/manager'.length)}/jobs/${job.id}`,
             });
           } else {
             if (

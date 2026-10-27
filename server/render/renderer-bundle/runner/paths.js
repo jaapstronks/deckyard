@@ -117,3 +117,15 @@ export function loadInstallation() {
 export function loadControl() {
   return createRequire(import.meta.url)(`${PATHS.install}/control.node`);
 }
+
+export const SUPERVISOR_CGROUP =
+  '/system.slice/deckyard-render-supervisor.service';
+
+/** Fixed containment names, derived from an internal reservation ID only. */
+export function jobPaths(id) {
+  if (!/^[a-f0-9]{32}$/.test(id)) throw new Error('invalid internal job id');
+  return {
+    helper: `/sys/fs/cgroup${SUPERVISOR_CGROUP}/helpers/${id}`,
+    guest: `${SUPERVISOR_CGROUP}/jobs/${id}`,
+  };
+}

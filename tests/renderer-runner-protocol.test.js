@@ -265,3 +265,45 @@ test('runner identity binds policies and binaries independently of object order 
   ])
     assert.notEqual(runnerIdentity(a), runnerIdentity({ ...a, ...patch }));
 });
+
+test('cancellation after normal quiescence remains terminal and keeps the first cleanup deadline', async () => {
+  const { revokeRecord } =
+    await import('../server/render/renderer-bundle/runner/ledger.js');
+  for (const phase of [
+    'RESERVED',
+    'PREPARING',
+    'RUNNING',
+    'TERMINATING',
+    'PRODUCERS_STOPPED',
+    'CLEANING',
+  ]) {
+    const job = { phase, cancelled: false, revokedAt: 50 };
+    assert.equal(revokeRecord(job, 'job_cancelled', 100), true);
+    assert.equal(job.cancelled, true);
+    assert.equal(job.revokedAt, 50);
+    assert.equal(
+      job.phase,
+      ['RESERVED', 'PREPARING', 'RUNNING'].includes(phase)
+        ? 'TERMINATING'
+        : phase,
+    );
+    const snapshot = structuredClone(job);
+    assert.equal(revokeRecord(job, 'job_timeout', 200), false);
+    assert.deepEqual(job, snapshot);
+  }
+  const cleaned = { phase: 'CLEANED', cancelled: false };
+  assert.equal(revokeRecord(cleaned, 'job_cancelled', 100), false);
+  assert.deepEqual(cleaned, { phase: 'CLEANED', cancelled: false });
+});
+
+test('containment paths come only from an internal UUID, never a lifecycle path field', async () => {
+  const { jobPaths, SUPERVISOR_CGROUP } =
+    await import('../server/render/renderer-bundle/runner/paths.js');
+  const id = 'a'.repeat(32);
+  assert.deepEqual(jobPaths(id), {
+    helper: `/sys/fs/cgroup${SUPERVISOR_CGROUP}/helpers/${id}`,
+    guest: `${SUPERVISOR_CGROUP}/jobs/${id}`,
+  });
+  for (const invalid of ['../job', '/host', 'A'.repeat(32), '', 'a'.repeat(33)])
+    assert.throws(() => jobPaths(invalid));
+});
