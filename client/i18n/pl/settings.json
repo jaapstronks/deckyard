@@ -458,7 +458,7 @@
   "settings.export.imageLibraryDesc": "Metadane wspólnej biblioteki obrazów oraz obrazy, do których się odwołuje.",
   "settings.export.optionsHint": "Wszystkie prezentacje są zawsze uwzględniane. Wybierz dodatkowe dane do dołączenia:",
   "settings.export.optionsTitle": "Opcje eksportu",
-  "settings.export.presentationCount.many": "prezentacji: {count}",
+  "settings.export.presentationCount.many": "{count} prezentacji",
   "settings.export.progress.building": "Tworzenie archiwum ZIP…",
   "settings.export.progress.collecting": "Zbieranie prezentacji…",
   "settings.export.progress.downloading": "Pobieranie obrazów…",

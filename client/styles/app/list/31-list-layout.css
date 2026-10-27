@@ -51,6 +51,7 @@
 
 .presentation-section-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   /* Cluster title + count + "View all" on the left so the link reads as part
      of the section, not marooned at the far right edge. */
@@ -61,6 +62,8 @@
 
 .presentation-section-title {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   align-items: center;
   gap: var(--ps-space-2);
   font-size: var(--ps-text-base);
@@ -111,6 +114,9 @@
 }
 
 .presentation-section-link {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
   font-size: var(--ps-text-sm);
   font-weight: 500;
   color: hsl(var(--app-accent-text));

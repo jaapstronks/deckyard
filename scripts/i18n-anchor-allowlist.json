@@ -806,10 +806,6 @@
       "forms": ["Miękki", "Miękkie"],
       "reason": "grammatical agreement — Miękki agrees with styl (masculine singular) in editor.slideField.tableStyle.option.soft and cień (masculine singular) in settings.themes.config.shadow.soft; Miękkie agrees with zaokrąglenie (neuter singular) in settings.themes.config.radius.soft, next to Okrągłe."
     },
-    "pl  {count} presentations": {
-      "forms": ["prezentacji: {count}", "{count} prezentacji"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  All": {
       "forms": ["Todas", "Todos"],
       "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Todos agrees with comentários, tipos, tipos de diapositivo and gradientes (masculine plural) in comments.filter.all, comments.filter.allTypes, slideLibrary.filter.all and stockMedia.gradients.tone.all; Todas agrees with categorias, etiquetas, apresentações and notificações (feminine plural) in editor.iconPicker.allCategory, imageLibrary.tags.all, imagekit.tags.all, list.presentations.ownership.all and notifications.filter.all."
@@ -898,7 +894,7 @@
     },
     "pt  {count} selected": {
       "forms": ["{count} selecionadas", "{count} selecionados"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "Agreement: list.bulk.selected uses {count} selecionadas for selected apresentações (feminine plural); slideLibrary.selection.count uses {count} selecionados for selected diapositivos (masculine plural). Same selection-count concept, with adjective gender required by the selected object; both keep {count}."
     },
     "sv  Alt text": {
       "forms": ["Alt-text", "Alternativtext"],
