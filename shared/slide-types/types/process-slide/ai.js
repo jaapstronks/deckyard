@@ -23,7 +23,7 @@ export const ai = {
   resolveInPhase1: false,
   description: `
       Linear step-by-step process with 3-7 numbered steps.
-      Direction: horizontal (default) or vertical.
+      \`direction\`: \`direction="horizontal"\` (default) or \`direction="vertical"\`.
       For one-time workflows, not recurring cycles.
     `,
   bestFor: [

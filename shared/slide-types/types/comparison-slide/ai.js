@@ -25,20 +25,20 @@ export const ai = {
       Side-by-side comparison of two options/concepts.
       Each side has title and body (Markdown bullets). Optional verdict badge.
 
-      The 'variant' field picks the TREATMENT — the same two columns, styled to
+      The \`variant\` field picks the TREATMENT — the same two columns, styled to
       say what kind of comparison this is. It changes nothing about the fields:
 
-      - versus       — the neutral duel, two options weighed evenly (default)
-      - before-after — a change over time; put the old state left, the new
+      - \`variant="versus"\`       — the neutral duel, two options weighed evenly (default)
+      - \`variant="before-after"\` — a change over time; put the old state left, the new
                        state right, because the left column reads as the one
                        being left behind
-      - pros-cons    — one subject's upsides against its downsides; the left
+      - \`variant="pros-cons"\`    — one subject's upsides against its downsides; the left
                        column is the pros and the right the cons, and the
                        bullets become ✓ / ✗
-      - tradeoff     — two options read off against criteria rather than pitted
+      - \`variant="tradeoff"\`     — two options read off against criteria rather than pitted
                        against each other ("A is faster, B is simpler")
 
-      Leave 'variant' out for an ordinary A-vs-B slide.
+      Leave \`variant\` out for an ordinary A-vs-B slide.
     `,
   bestFor: [
     'A vs B comparisons (products, approaches)',

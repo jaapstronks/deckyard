@@ -23,18 +23,18 @@ export const ai = {
   resolveInPhase1: false,
   description: `
       One idea, alone on a slide, with a stated promise about how to read it.
-      The 'variant' field carries that promise and picks the accent + icon:
+      The \`variant\` field carries that promise and picks the accent + icon:
 
-      - insight    — the takeaway the deck is building toward
-      - warning    — a gotcha the audience must not miss
-      - definition — one term pinned down before it is used; put the TERM in
-                     'label' and its meaning in 'body'
-      - note       — a quiet aside, an exception, a caveat
-      - tip        — a piece of practical advice
+      - \`variant="insight"\`    — the takeaway the deck is building toward
+      - \`variant="warning"\`    — a gotcha the audience must not miss
+      - \`variant="definition"\` — one term pinned down before it is used; put the TERM in
+                     \`label\` and its meaning in \`body\`
+      - \`variant="note"\`       — a quiet aside, an exception, a caveat
+      - \`variant="tip"\`        — a piece of practical advice
 
-      Leave 'label' empty for every variant except definition: it then falls
+      Leave \`label\` empty for every variant except definition: it then falls
       back to the right eyebrow ("Warning", "Tip", …) in the deck's language.
-      Keep 'body' to one or two sentences — the slide's whole force comes from
+      Keep \`body\` to one or two sentences — the slide's whole force comes from
       being short. Use it sparingly, at most a couple of times per deck; a
       callout every third slide stops being a contrast.
     `,

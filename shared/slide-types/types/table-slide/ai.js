@@ -25,20 +25,20 @@ export const ai = {
       Display tabular data with rows and columns.
 
       CRITICAL STRUCTURE - use this EXACT format:
-      - colCount: String number "2" to "10" indicating number of columns
-      - headerRow: "on" (first row is header) or "off" (no header)
-      - rows: Array of objects, each with keys c1, c2, c3... for each column
+      - \`colCount\`: String number \`colCount="2"\` to \`colCount="10"\` indicating number of columns
+      - \`headerRow\`: \`headerRow="on"\` (first row is header) or \`headerRow="off"\` (no header)
+      - \`rows\`: Array of objects, each with keys \`rows.c1\`, \`rows.c2\`, \`rows.c3\`... for each column
 
       EXAMPLE: For a 4-column table with header:
-      colCount: "4"
-      headerRow: "on"
-      rows: [
-        { c1: "Header 1", c2: "Header 2", c3: "Header 3", c4: "Header 4" },
-        { c1: "Row 1 data", c2: "...", c3: "...", c4: "..." },
-        { c1: "Row 2 data", c2: "...", c3: "...", c4: "..." }
+      \`colCount\`: \`colCount="4"\`
+      \`headerRow\`: \`headerRow="on"\`
+      \`rows\`: [
+        { \`rows.c1\`: "Header 1", \`rows.c2\`: "Header 2", \`rows.c3\`: "Header 3", \`rows.c4\`: "Header 4" },
+        { \`rows.c1\`: "Row 1 data", \`rows.c2\`: "...", \`rows.c3\`: "...", \`rows.c4\`: "..." },
+        { \`rows.c1\`: "Row 2 data", \`rows.c2\`: "...", \`rows.c3\`: "...", \`rows.c4\`: "..." }
       ]
 
-      The first row becomes the header if headerRow is "on".
+      The first row becomes the header if \`headerRow="on"\` is set.
     `,
   bestFor: [
     'Comparison tables',

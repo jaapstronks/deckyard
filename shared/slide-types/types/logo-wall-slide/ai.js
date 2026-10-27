@@ -28,7 +28,7 @@ export const ai = {
       and an optional link. Up to 30 logos; fewer logos render larger automatically.
 
       STRUCTURE:
-      - logos: Array of logo objects, each with { image, name, link }
+      - \`logos\`: Array of logo objects, each with { \`logos.image\`, \`logos.name\`, \`logos.link\` }
       - image can be empty string if unknown — names alone create placeholder cards
       - link (optional): makes the whole logo clickable — an http(s)/mailto URL,
         or '#N' to jump to slide N in the deck (presenter only)

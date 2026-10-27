@@ -24,7 +24,7 @@ export const ai = {
   description: `
       Circular process for recurring workflows.
       3-6 stages arranged in circle with arrows.
-      Optional centerLabel in the middle.
+      Optional \`centerLabel\` in the middle.
     `,
   bestFor: [
     'PDCA (Plan-Do-Check-Act) cycles',

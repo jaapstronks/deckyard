@@ -11,8 +11,22 @@
 
 export const GLOBAL_SLIDE_OPTIONS = {
   description:
-    'Optional fields that may be added to the content of ANY slide type, in addition to its per-type schema. Omit them unless the user asks for a background image, a logo, or specific styling.',
+    'Optional fields that may be added to the content of ANY slide type, in addition to its per-type schema. Omit them unless the user asks for a background image, a logo, specific styling, or an accessibility override.',
   fields: {
+    a11yTitle: {
+      type: 'string',
+      required: false,
+      maxLength: 140,
+      description:
+        'Optional accessibility title override for screen readers; use a short, descriptive phrase.',
+    },
+    a11ySummary: {
+      type: 'string',
+      required: false,
+      maxLength: 280,
+      description:
+        'Optional accessibility summary override, announced after the title; keep it brief.',
+    },
     slideBgImage: {
       type: 'image',
       required: false,
@@ -90,6 +104,8 @@ export function buildGlobalOptionsPromptSection() {
     } else {
       meta.push(spec.type);
     }
+    if (spec.maxLength !== undefined)
+      meta.push(`max ${spec.maxLength} characters`);
     if (spec.default !== undefined)
       meta.push(`default ${JSON.stringify(spec.default)}`);
     lines.push(`- ${key} (${meta.join(', ')}): ${spec.description}`);

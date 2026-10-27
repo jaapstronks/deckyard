@@ -25,8 +25,8 @@ export const ai = {
       Visualize numeric data as bar, line, or pie chart.
 
       STRUCTURE:
-      - chartType: "bar", "line", or "pie"
-      - data: Tab-separated values (TSV) string with header row
+      - \`chartType\`: \`chartType="bar"\`, \`chartType="line"\`, or \`chartType="pie"\`
+      - \`data\`: Tab-separated values (TSV) string with header row
 
       The first row is ALWAYS the header - column names, never a data point,
       even when the names are numbers. "Quarter\\t2023\\t2024" names two series

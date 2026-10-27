@@ -30,22 +30,22 @@ export const ai = {
       3-6 is the sweet spot for detailed intros, larger sets form a compact grid.
 
       STRUCTURE:
-      - members: Array of cards, each with { image, name (=Title),
-        byline (=Caption), body (=Description), alt, linkedin }. Every text
+      - \`members\`: Array of cards, each with { \`members.image\`, \`members.name\` (=Title),
+        \`members.byline\` (=Caption), \`members.body\` (=Description), \`members.alt\`, \`members.linkedin\` }. Every text
         and the image may be empty. body is optional markdown for a short bio
         or explanation under the caption (1-3 sentences); use it for speaker
         introductions (name, role, bio), keep it empty for plain rosters.
-      - imageAspect: 'square' (default, crops each image to a square) or
-        'original' (no crop — shows each image at its native aspect ratio).
-        RULE OF THUMB: use 'original' for screenshots, UI captures, logos, or
-        any mixed-shape images you must NOT crop; use 'square' (with
-        imageShape 'circle') for people/portrait grids.
-      - imageShape: 'rounded' (default), 'square', or 'circle'. 'circle' forces
+      - \`imageAspect\`: \`imageAspect="square"\` (default, crops each image to a square) or
+        \`imageAspect="original"\` (no crop — shows each image at its native aspect ratio).
+        RULE OF THUMB: use \`imageAspect="original"\` for screenshots, UI captures, logos, or
+        any mixed-shape images you must NOT crop; use \`imageAspect="square"\` (with
+        \`imageShape="circle"\`) for people/portrait grids.
+      - \`imageShape\`: \`imageShape="rounded"\` (default), \`imageShape="square"\`, or \`imageShape="circle"\`. \`imageShape="circle"\` forces
         a square crop — best for rosters/boards/team headshots.
-      - textPosition: 'below' (default, Title+Caption under the image) or
-        'split' (Title above image, Caption below).
-      - showPhotoFrame: 'on' | 'off' (default) — adds a card frame behind each image.
-      - columnSplit: '' | '1'..'5' — splits cards into a left/right group with
+      - \`textPosition\`: \`textPosition="below"\` (default, Title+Caption under the image) or
+        \`textPosition="split"\` (Title above image, Caption below).
+      - \`showPhotoFrame\`: \`showPhotoFrame="on"\` | \`showPhotoFrame="off"\` (default) — adds a card frame behind each image.
+      - \`columnSplit\`: \`columnSplit=""\` | \`columnSplit="1"\`..\`columnSplit="5"\` — splits cards into a left/right group with
         its own subheading (subheading2), e.g. two contrasting sets side by side.
 
       Use this whenever several distinct images belong together in one slide,

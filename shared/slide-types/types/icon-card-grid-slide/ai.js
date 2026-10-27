@@ -25,7 +25,7 @@ export const ai = {
       This is one of the BEST slide types for presenting parallel concepts visually!
 
       STRUCTURE:
-      - items: Array of 1-6 card objects, each with { icon, title, body }
+      - \`items\`: Array of 1-6 card objects, each with { \`items.icon\`, \`items.title\`, \`items.body\` }
 
       ICONS: Choose from this list - pick icons that represent the concept:
         People: user, users, users-three, handshake
