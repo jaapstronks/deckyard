@@ -345,8 +345,14 @@ export async function updatePresentation(scope, id, body, opts) {
  * @param {string} id
  * @param {Object|null} base - the deck as read before the rewrite, for the
  *   live doc's three-way diff
+ * @param {{removedFields?: {type: string, fields: string[]}}} [opts]
  */
-export async function settleRewrittenPresentation(scope, id, base) {
+export async function settleRewrittenPresentation(
+  scope,
+  id,
+  base,
+  { removedFields } = {},
+) {
   toStorageContext(scope, 'settleRewrittenPresentation');
   invalidatePresentationCache(id);
   if (isCollabLiveEditsEnabled()) {
@@ -354,7 +360,7 @@ export async function settleRewrittenPresentation(scope, id, base) {
       const stored = await getPresentation(scope, id);
       const { applyServerWriteToActiveDoc } =
         await import('../../collab/live-apply.js');
-      await applyServerWriteToActiveDoc(id, stored, { base });
+      await applyServerWriteToActiveDoc(id, stored, { base, removedFields });
     } catch (err) {
       log.error(
         `[collab] applying rewritten content to active doc of ${id} failed; ` +

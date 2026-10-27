@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { startCollabServer } from '../helpers/collab-socket.js';
+import { getYDocState } from '../../server/storage/presentations/index.js';
 import { Y, deckYdocCodec } from '../../server/collab/deck-doc.js';
 import { createCollabPersistence } from '../../server/collab/persistence.js';
 /** B849: the registry and all copies of its content share a PG write boundary. */
@@ -358,6 +360,129 @@ pgDescribe(
       assert.ok(errors.some((line) => line.includes('obsolete custom fields')));
       document.destroy();
     });
+
+    for (const initiallyUsed of [[], ['kicker']]) {
+      it(`live-only removed fields are cleaned, initial stored usage ${JSON.stringify(initiallyUsed)}`, async (t) => {
+        process.env.COLLAB_ENABLED = 'true';
+        process.env.COLLAB_LIVE_EDITS = 'true';
+        t.after(() => {
+          delete process.env.COLLAB_ENABLED;
+          delete process.env.COLLAB_LIVE_EDITS;
+        });
+        await db
+          .updateTable('presentations')
+          .set({
+            slides: JSON.stringify([
+              slide({
+                headline: 'H',
+                ...Object.fromEntries(initiallyUsed.map((k) => [k, 'stored'])),
+              }),
+            ]),
+          })
+          .where('id', '=', deckId)
+          .execute();
+        const otherOrg = crypto.randomUUID();
+        await db
+          .insertInto('organizations')
+          .values({ id: otherOrg, name: 'Other', slug: 'other' })
+          .execute();
+        await db
+          .insertInto('custom_slide_types')
+          .values({
+            organization_id: otherOrg,
+            slug: 'hero',
+            label: 'Other hero',
+            fields: JSON.stringify(fields),
+            is_published: true,
+          })
+          .execute();
+        const otherId = await seedPresentation(db, {
+          organizationId: otherOrg,
+          slides: [slide()],
+        });
+        const server = await startCollabServer({ repoRoot: scope.repoRoot });
+        t.after(() => server.stop());
+        const connection = await server.hocuspocus.openDirectConnection(
+          `presentation:${deckId}`,
+        );
+        const other = await server.hocuspocus.openDirectConnection(
+          `presentation:${otherId}`,
+        );
+        t.after(async () => {
+          await connection.disconnect();
+          await other.disconnect();
+        });
+        let document, otherDocument;
+        await other.transact((doc) => {
+          otherDocument = doc;
+        });
+        const otherBefore =
+          deckYdocCodec.projectDocToPresentation(otherDocument);
+        const edit = (doc, content) => {
+          const before = deckYdocCodec.projectDocToPresentation(doc);
+          const next = structuredClone(before);
+          next.slides[0].content = { ...next.slides[0].content, ...content };
+          for (const version of Object.values(next.i18n.versions)) {
+            version.slides[0].content = {
+              ...version.slides[0].content,
+              ...content,
+            };
+          }
+          deckYdocCodec.applyPresentationToDoc(next, doc, { base: before });
+        };
+        await connection.transact((doc) => {
+          document = doc;
+          edit(doc, {
+            headline: 'Concurrent valid edit',
+            kicker: 'Live K',
+            footer: 'Live F',
+          });
+        });
+        assert.equal(
+          Object.hasOwn((await storedSlides())[0].content, 'footer'),
+          false,
+        );
+        const liveBefore = deckYdocCodec.projectDocToPresentation(document);
+        const gate = pauseCommit({ fail: true });
+        const failed = caught(remove());
+        await gate.entered;
+        gate.release();
+        assert.match((await failed).error.message, /injected rollback/);
+        __setTestDb(db);
+        assert.deepEqual(
+          deckYdocCodec.projectDocToPresentation(document),
+          liveBefore,
+        );
+        assert.equal((await remove()).ok, true);
+        const cleaned = deckYdocCodec.projectDocToPresentation(document);
+        assert.deepEqual(cleaned.slides[0].content, {
+          headline: 'Concurrent valid edit',
+        });
+        for (const version of Object.values(cleaned.i18n.versions)) {
+          assert.deepEqual(version.slides[0].content, {
+            headline: 'Concurrent valid edit',
+          });
+        }
+        assert.deepEqual(
+          deckYdocCodec.projectDocToPresentation(otherDocument),
+          otherBefore,
+        );
+        await connection.transact((doc) =>
+          edit(doc, { headline: 'Next valid edit' }),
+        );
+        await connection.disconnect();
+        assert.deepEqual((await storedSlides())[0].content, {
+          headline: 'Next valid edit',
+        });
+        const binary = new Y.Doc();
+        Y.applyUpdate(binary, await getYDocState(scope, deckId));
+        assert.deepEqual(
+          deckYdocCodec.projectDocToPresentation(binary).slides[0].content,
+          { headline: 'Next valid edit' },
+        );
+        binary.destroy();
+      });
+    }
 
     it('another organization can write while this organization is migrating', async () => {
       const otherId = crypto.randomUUID();

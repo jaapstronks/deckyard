@@ -390,8 +390,25 @@ export async function updateCustomSlideType(
         // Imported here, not at the top: the presentations facade reaches this
         // module through the custom-type registry it validates against.
         const { getPresentation } = await import('./presentations/index.js');
+        const { activePresentationIds } =
+          await import('../collab/live-apply.js');
+        const activeIds = removed.length ? activePresentationIds() : [];
+        // The transport spans organizations. Only database-owned ids in this
+        // organization may join the post-commit live cleanup, including docs
+        // whose removed fields have not reached the stored JSON yet.
+        const activeRows = activeIds.length
+          ? await db
+              .selectFrom('presentations')
+              .select('id')
+              .where('organization_id', '=', orgId)
+              .where('id', 'in', activeIds)
+              .execute()
+          : [];
         const bases = new Map();
-        for (const id of deckIds) {
+        for (const id of new Set([
+          ...deckIds,
+          ...activeRows.map((r) => r.id),
+        ])) {
           bases.set(id, await getPresentation(scope, id).catch(() => null));
         }
 
@@ -420,19 +437,22 @@ export async function updateCustomSlideType(
         return {
           ok: true,
           customSlideType: formatRow(row, await creatorNames([row])),
-          rewritten: stripped.map((id) => [id, bases.get(id) ?? null]),
+          rewritten: [
+            ...new Set([...stripped, ...activeRows.map((r) => r.id)]),
+          ].map((id) => [id, bases.get(id) ?? null]),
+          removedFields: { type: typeKey, fields: removed },
         };
       });
     },
   );
 
   if (!outcome.ok) return outcome;
-  const { rewritten, ...result } = outcome;
+  const { rewritten, removedFields, ...result } = outcome;
   if (rewritten.length) {
     const { settleRewrittenPresentation } =
       await import('./presentations/index.js');
     for (const [id, base] of rewritten) {
-      await settleRewrittenPresentation(scope, id, base);
+      await settleRewrittenPresentation(scope, id, base, { removedFields });
     }
   }
   return result;
