@@ -179,7 +179,7 @@
     },
     "de  Primary": {
       "forms": ["Primär", "Primärfarbe"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "colour name versus style option — Primärfarbe is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Primär is the adjective for the button style in editor.slideField.actions.item.style.option.primary, next to Sekundär."
     },
     "de  Search": {
       "forms": ["Suche", "Suchen"],
@@ -198,10 +198,6 @@
         "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
         "Etwas ist schiefgelaufen. Bitte erneut versuchen."
       ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Weight": {
-      "forms": ["Schriftstärke", "Stärke"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  {count}d ago": {
@@ -242,10 +238,6 @@
     "es  Dark": {
       "forms": ["Oscuro", "Oscuros"],
       "reason": "grammatical agreement — Oscuro agrees with modo, color, fondo and color del texto (masculine singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Oscuros agrees with degradados (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
-    },
-    "es  Default": {
-      "forms": ["Por defecto", "Predeterminado"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Display name": {
       "forms": ["Nombre para mostrar", "Nombre visible"],
@@ -359,10 +351,6 @@
       "forms": ["Käytä", "Ota käyttöön"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fi  Background": {
-      "forms": ["Tausta", "Taustaväri"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Body": {
       "forms": ["Leipäteksti", "Sisältö"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -387,25 +375,21 @@
       "forms": ["Vie", "Vienti"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fi  Fonts": {
-      "forms": ["Fontit", "Kirjasimet"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Image URL": {
       "forms": ["Kuvan URL", "Kuvan URL-osoite"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Italic": {
       "forms": ["Kursiivi", "Kursivointi"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical role — Kursivointi is the action noun in editor.markdown.italic, the formatting button next to Lihavointi (bold); Kursiivi names the typeface style in fonts.italic, the font editor column next to Normaali."
     },
     "fi  Label": {
       "forms": ["Selite", "Tunniste"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Left": {
-      "forms": ["Vasemmalla", "Vasemmalle", "Vasen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Vasemmalla", "Vasemmalle"],
+      "reason": "position versus alignment — Vasemmalla (adessive, where something sits) in editor.imagePosition.left and slideType.title-slide.field.logoCorner.option.left.label, next to Keskellä; Vasemmalle (allative, where content is aligned to) in editor.layoutVariant.blockLeft and editor.textStyle.align.left."
     },
     "fi  Light": {
       "forms": ["Vaalea", "Vaaleat"],
@@ -428,7 +412,7 @@
     },
     "fi  Primary": {
       "forms": ["Ensisijainen", "Pääväri"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "colour name versus style option — Pääväri is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Ensisijainen is the adjective for the button style in editor.slideField.actions.item.style.option.primary."
     },
     "fi  Reset": {
       "forms": ["Nollaa", "Palauta"],
@@ -439,8 +423,8 @@
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Right": {
-      "forms": ["Oikea", "Oikealla", "Oikealle"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "forms": ["Oikealla", "Oikealle"],
+      "reason": "position versus alignment — Oikealla (adessive, where something sits) in editor.imagePosition.right and slideType.title-slide.field.logoCorner.option.right.label, next to Keskellä; Oikealle (allative, where text is aligned to) in editor.textStyle.align.right."
     },
     "fi  Search slides": {
       "forms": ["Hae dioista", "Hae dioja"],
@@ -460,10 +444,6 @@
     },
     "fi  Uploading…": {
       "forms": ["Ladataan…", "Lähetetään…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fi  Weight": {
-      "forms": ["Paksuus", "Vahvuus"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  All": {
@@ -526,7 +506,7 @@
     },
     "fr  Primary": {
       "forms": ["Couleur principale", "Principal"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "colour name versus style option — Couleur principale is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Principal agrees with bouton (masculine singular) as the button style in editor.slideField.actions.item.style.option.primary."
     },
     "fr  Published": {
       "forms": ["Publié", "Publiée"],
@@ -554,7 +534,7 @@
     },
     "fr  Soft": {
       "forms": ["Douce", "Doux"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Doux agrees with style (masculine singular) in editor.slideField.tableStyle.option.soft and arrondi (masculine singular) in settings.themes.config.radius.soft; Douce agrees with élévation (feminine singular) in settings.themes.config.shadow.soft, next to Marquée."
     },
     "fr  Someone": {
       "forms": ["Quelqu'un", "Quelqu’un"],
@@ -607,20 +587,12 @@
       "forms": ["Esporta", "Esportazione"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Fonts": {
-      "forms": ["Caratteri", "Font"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Image URL": {
       "forms": ["URL dell'immagine", "URL immagine"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Insert slide": {
       "forms": ["Inserisci la slide", "Inserisci una slide"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Left": {
-      "forms": ["A sinistra", "Sinistra"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Light": {
@@ -662,10 +634,6 @@
       "forms": ["Azzera", "Ripristina"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Right": {
-      "forms": ["A destra", "Destra"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Save changes": {
       "forms": ["Salva le modifiche", "Salva modifiche"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -696,7 +664,7 @@
     },
     "it  Soft": {
       "forms": ["Morbida", "Morbido"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Morbido agrees with stile (masculine singular) in editor.slideField.tableStyle.option.soft and arrotondamento (masculine singular) in settings.themes.config.radius.soft; Morbida agrees with elevazione (feminine singular) in settings.themes.config.shadow.soft, next to Marcata."
     },
     "it  Something went wrong. Please try again.": {
       "forms": [
@@ -707,10 +675,6 @@
     },
     "it  Unpublish": {
       "forms": ["Annulla la pubblicazione", "Annulla pubblicazione"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Weight": {
-      "forms": ["Peso", "Spessore"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  {count}d ago": {
@@ -878,10 +842,6 @@
       "forms": ["Deze hulp tonen", "Toon deze hulp"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Style": {
-      "forms": ["Stijl", "Type"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Unpublish": {
       "forms": ["Depubliceren", "Publicatie ongedaan maken"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1030,7 +990,7 @@
     },
     "pl  Default": {
       "forms": ["Domyślnie", "Domyślny"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Domyślnie is the adverb in settings.themes.config.default, the first segment of rows headed by nouns of three genders (Zaokrąglenie, Cień, Grubość); Domyślny agrees with motyw (masculine singular) in settings.themes.default, the badge on the default theme card."
     },
     "pl  Dismiss": {
       "forms": ["Odrzuć", "Zamknij"],
@@ -1048,10 +1008,6 @@
       "forms": ["Eksport", "Eksportuj"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Fonts": {
-      "forms": ["Czcionki", "Kroje pisma"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Image URL": {
       "forms": ["Adres URL obrazu", "URL obrazu"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1062,7 +1018,7 @@
     },
     "pl  Left": {
       "forms": ["Do lewej", "Lewo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "position versus alignment — Lewo names a position in editor.imagePosition.left and slideType.title-slide.field.logoCorner.option.left.label, next to Środek; Do lewej names an alignment direction in editor.layoutVariant.blockLeft and editor.textStyle.align.left, next to Wyśrodkowane."
     },
     "pl  Light": {
       "forms": ["Jasne", "Jasny"],
@@ -1094,7 +1050,7 @@
     },
     "pl  Normal": {
       "forms": ["Normalny", "Zwykły"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "two meanings — Zwykły is the upright typeface style in fonts.normal, next to Kursywa (the typographic convention); Normalny agrees with rozmiar (masculine singular) in settings.themes.config.textScale.normal, the middle text size next to Kompaktowy and Duży."
     },
     "pl  Off": {
       "forms": ["Wył", "Wyłączone"],
@@ -1102,10 +1058,6 @@
     },
     "pl  On": {
       "forms": ["Wł", "Włączone"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  Original": {
-      "forms": ["Oryginalny", "Oryginał"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Please enter a name.": {
@@ -1122,7 +1074,7 @@
     },
     "pl  Right": {
       "forms": ["Do prawej", "Prawo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "position versus alignment — Prawo names a position in editor.imagePosition.right and slideType.title-slide.field.logoCorner.option.right.label, next to Środek; Do prawej names an alignment direction in editor.textStyle.align.right."
     },
     "pl  Search slides": {
       "forms": ["Szukaj slajdów", "Szukaj w slajdach"],
@@ -1138,7 +1090,7 @@
     },
     "pl  Soft": {
       "forms": ["Miękki", "Miękkie"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+      "reason": "grammatical agreement — Miękki agrees with styl (masculine singular) in editor.slideField.tableStyle.option.soft and cień (masculine singular) in settings.themes.config.shadow.soft; Miękkie agrees with zaokrąglenie (neuter singular) in settings.themes.config.radius.soft, next to Okrągłe."
     },
     "pl  {count} presentations": {
       "forms": ["prezentacji: {count}", "{count} prezentacji"],
@@ -1167,10 +1119,6 @@
     "pt  Dark": {
       "forms": ["Escuro", "Escuros"],
       "reason": "grammatical agreement — Escuro agrees with modo, tom, fundo and texto (masculine singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Escuros agrees with gradientes (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
-    },
-    "pt  Default": {
-      "forms": ["Por omissão", "Predefinido"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  Display name": {
       "forms": ["Nome a apresentar", "Nome de exibição"],

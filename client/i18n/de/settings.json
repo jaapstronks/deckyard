@@ -632,7 +632,7 @@
   "settings.themes.config.default": "Standard",
   "settings.themes.config.extraBackgrounds": "Weitere Optionen",
   "settings.themes.config.headingTransform": "Groß-/Kleinschreibung",
-  "settings.themes.config.headingWeight": "Stärke",
+  "settings.themes.config.headingWeight": "Schriftstärke",
   "settings.themes.config.lock.background": "Folienhintergrund",
   "settings.themes.config.lock.logo": "Ecklogo",
   "settings.themes.config.locks": "Vom Theme festgelegt",
