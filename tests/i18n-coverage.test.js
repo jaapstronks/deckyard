@@ -738,7 +738,7 @@ describe('i18n anchor consistency', () => {
    * forces this constant to follow, so paid-down debt never turns into headroom
    * a later `--apply` could spend on new drift.
    */
-  const UNREVIEWED_BASELINE = 170;
+  const UNREVIEWED_BASELINE = 168;
 
   /** @returns {Promise<import('../scripts/lib/i18n-anchors.js').AnchorFinding[]>} */
   const found = async () => {

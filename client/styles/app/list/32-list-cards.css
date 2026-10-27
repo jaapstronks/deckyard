@@ -462,6 +462,7 @@
    ============================================================ */
 
 .bulk-action-bar {
+  flex-wrap: wrap;
   position: fixed;
   bottom: 24px;
   left: 50%;
@@ -492,13 +493,23 @@
   font-size: var(--ps-text-sm);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
 }
 
 .bulk-action-actions {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: var(--ps-space-2);
+}
+
+.bulk-action-actions .btn {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
 }
 
 .bulk-action-cancel {
@@ -529,6 +540,7 @@
 /* Mobile adjustments for bulk action bar */
 @media (max-width: 640px) {
   .bulk-action-bar {
+    padding-inline: var(--ps-space-3);
     left: 16px;
     right: 16px;
     transform: translateX(0) translateY(100px);
