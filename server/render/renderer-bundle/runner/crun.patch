@@ -1,0 +1,69 @@
+--- a/src/libcrun/linux.c
++++ b/src/libcrun/linux.c
+@@ -2183,9 +2183,6 @@
+ 
+ struct device_s needed_devs[] = { { "/dev/null", "c", 1, 3, 0666, 0, 0 },
+                                   { "/dev/zero", "c", 1, 5, 0666, 0, 0 },
+-                                  { "/dev/full", "c", 1, 7, 0666, 0, 0 },
+-                                  { "/dev/tty", "c", 5, 0, 0666, 0, 0 },
+-                                  { "/dev/random", "c", 1, 8, 0666, 0, 0 },
+                                   { "/dev/urandom", "c", 1, 9, 0666, 0, 0 },
+                                   {} };
+ 
+@@ -2413,8 +2410,6 @@
+                                        { "/proc/self/fd/0", "stdin", false },
+                                        { "/proc/self/fd/1", "stdout", false },
+                                        { "/proc/self/fd/2", "stderr", false },
+-                                       { "/proc/kcore", "core", false },
+-                                       { "pts/ptmx", "ptmx", true },
+                                        { NULL, NULL, false } };
+ 
+ static int
+@@ -6583,18 +6578,17 @@
+       clone3_args.cgroup = *cgroup_dirfd->dirfd;
+ 
+       pid = syscall_clone3 (&clone3_args);
+-      if (pid >= 0)
+-        cgroup_dirfd->joined = true;
+-
++      if (pid < 0)
++        {
++          int clone_error = errno;
++          close_and_reset (cgroup_dirfd->dirfd);
++          return crun_make_error (err, clone_error, "T1 requires clone3 CLONE_INTO_CGROUP");
++        }
++      cgroup_dirfd->joined = true;
+       close_and_reset (cgroup_dirfd->dirfd);
+     }
+-  /* fallback to clone() for any error.  */
+-  if (pid < 0)
+-    {
+-      pid = syscall_clone (first_clone_args | SIGCHLD, NULL);
+-      if (UNLIKELY (pid < 0))
+-        return crun_make_error (err, errno, "clone");
+-    }
++  else
++    return crun_make_error (err, ENOTSUP, "T1 requires a precreated cgroup fd");
+ 
+   if (pid)
+     {
+--- a/src/libcrun/container.c
++++ b/src/libcrun/container.c
+@@ -879,16 +879,7 @@
+         }
+     }
+ 
+-  if (getenv ("HOME") == NULL)
+-    {
+-      ret = set_home_env (container_uid);
+-      if (UNLIKELY (ret < 0))
+-        {
+-          libcrun_warning ("cannot detect HOME environment variable, setting default");
+-          if (UNLIKELY (setenv ("HOME", "/", 1) < 0))
+-            return crun_make_error (err, errno, "setenv HOME");
+-        }
+-    }
++  /* Deckyard T1: the environment is exactly process.env, no HOME injection. */
+ 
+   return 0;
+ }
