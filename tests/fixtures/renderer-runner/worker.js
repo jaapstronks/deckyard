@@ -134,8 +134,8 @@ else if (mode === 'network') {
     ...(options.canaries ?? []),
   ]) {
     try {
-      fs.readFileSync(p);
-      denied[p] = 'READ';
+      // A masked path reads as an empty /dev/null bind: report the length.
+      denied[p] = `READ:${fs.readFileSync(p).length}`;
     } catch (e) {
       denied[p] = e.code;
     }
