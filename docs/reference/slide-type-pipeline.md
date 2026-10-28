@@ -197,4 +197,4 @@ If the slide is an audience interaction:
 
 ## Image placeholders on import
 
-An `image` field may declare `importPlaceholder`, a nonempty image URL used when an imported value is missing, blank or not a string. `deckToPresentationParts()` applies it once, after composing the slide; this covers AI wizard output, append output and ordinary deck imports. Real URLs and configured type defaults win. Editor insertion keeps the type's ordinary defaults. The core image and image-text types declare `DEFAULT_IMAGE_PLACEHOLDER` from `shared/slide-types/image-placeholder.js`; types without the declaration keep their existing defaults.
+Imports and AI output never fill a missing picture with a stand-in. `deckToPresentationParts()` keeps an image that is missing, blank or not a string empty, so a slide whose `essential` picture is empty is incomplete ([essential fields](essential-fields.md)): the editor offers "Choose image" and every output leaves the slide out until the author picks one (B590). Real URLs and configured type defaults are kept as given.

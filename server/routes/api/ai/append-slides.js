@@ -14,6 +14,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
+import { attachBatchReviews } from '../../../utils/ai/slide-review.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
@@ -53,20 +54,17 @@ export async function handleAiAppendSlides({
   // The map the org's types were offered from is the one they are composed and
   // fixed in (B247).
   const slideTypes = await buildMergedSlideTypes(storageScope);
-  const {
-    slides: generatedSlides,
-    rationale,
-    review,
-  } = await generateSlidesToAppendFromRawContent(raw, {
-    existingDeck,
-    targetLang: lang,
-    vendor,
-    contentOnly,
-    verbatim,
-    ...slideTypeOffer,
-    priorSlides,
-    feedback,
-  });
+  const { slides: generatedSlides, rationale } =
+    await generateSlidesToAppendFromRawContent(raw, {
+      existingDeck,
+      targetLang: lang,
+      vendor,
+      contentOnly,
+      verbatim,
+      ...slideTypeOffer,
+      priorSlides,
+      feedback,
+    });
 
   // Normalize into internal slide format so validation is stable and ids exist.
   // Against the theme of the deck the slides are being appended to, so a
@@ -85,13 +83,11 @@ export async function handleAiAppendSlides({
   // Validate slides and log any issues (unknown fields, schema mismatches, etc.)
   slides = validateAndFixRefinedSlides(slides, { slideTypes });
 
-  // Re-attach per-slide review metadata (normalization strips unknown slide
-  // keys). Both arrays map 1:1 by index onto the generated batch.
-  slides.forEach((s, i) => {
-    const meta = review?.[i];
-    if (!meta || !s || typeof s !== 'object') return;
-    if (meta.why) s._aiReasoning = meta.why;
-    if (meta.alternatives?.length) s._aiAlternatives = meta.alternatives;
+  // Attach the per-slide review (normalization strips unknown slide keys).
+  // Both arrays map 1:1 by index onto the generated batch.
+  attachBatchReviews(slides, generatedSlides, {
+    slideTypes,
+    disabledSlideTypes: slideTypeOffer.disabledSlideTypes,
   });
 
   serveJson(res, 200, { slides, rationale });

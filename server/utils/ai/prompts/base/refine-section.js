@@ -9,6 +9,10 @@
  */
 
 import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
+import {
+  buildSlideReviewRules,
+  SLIDE_REVIEW_EXAMPLE_KEYS,
+} from './slide-review.js';
 
 const slideForPrompt = (s) => ({ type: s?.type, content: s?.content || {} });
 
@@ -33,15 +37,19 @@ export function buildSectionSystemPrompt({
     'You will receive: a summary of the whole deck, a few slides of context before and after the section, the selected section itself (full JSON), and user feedback about what to change.',
     '',
     'Output MUST be exactly:',
-    '{ "rationale": "...", "slides": [ { "type": "...", "content": { ... }, "why": "..." }, ... ] }',
+    JSON.stringify({
+      rationale: '...',
+      slides: [{ type: '...', content: {}, ...SLIDE_REVIEW_EXAMPLE_KEYS }],
+    }),
     '- "slides" is the FULL revised section. It REPLACES the selected slides, in order. You may change slide count, types, order, and content — whatever the feedback asks.',
     '- Do NOT return the context slides; only the revised section.',
     '- Do NOT include UUIDs or ids.',
     '- "rationale": 1-2 sentences addressed to the user summarizing what you changed.',
-    '- "why" (per slide): ONE short sentence explaining why this slide type fits.',
-    `- Write all slide text, the rationale, and the "why" lines in ${langLabel}.`,
+    `- Write all slide text, the rationale and the review keys in ${langLabel}.`,
     '- Stay coherent with the surrounding context slides (no duplicated content, keep the narrative flowing).',
     '- Apply the feedback fully, but keep material the feedback does not touch intact.',
+    '',
+    buildSlideReviewRules(langLabel),
     '',
     buildPhase2CatalogPrompt({ disabledSlideTypes, customSlideTypes }),
   ].join('\n');

@@ -30,6 +30,7 @@ import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides/index.js';
 import { resolveSourceImages } from './source-images.js';
 import { AI_REVIEW_KEYS } from '../public-output.js';
+import { attachSlideReview } from './slide-review.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
@@ -97,8 +98,8 @@ function resolveDeckLang(targetLang, outline) {
  * source images the slides use.
  *
  * Every slide comes back with what phase 2 produced (`originalIndex`,
- * `presenterNotes`, `reasoning`, `alternativeType`), structural slides
- * included, sorted on `originalIndex`. A run that fails is written to the
+ * `presenterNotes`, `reasoning`, `alternatives`, `imageSuggestionAfter`),
+ * structural slides included, sorted on `originalIndex`. A run that fails is written to the
  * session log as failed before the error propagates (not one the caller
  * cancelled); a run that succeeds is finalized by the caller, with the deck
  * it assembled.
@@ -336,17 +337,11 @@ export function assembleDeck(
       content: refined.content,
       notes: refined.presenterNotes || '',
     };
-    if (refined.reasoning) {
-      slide._aiReasoning = refined.reasoning;
-    }
-    if (refined.alternativeType) {
-      slide._aiAlternatives = [
-        {
-          type: refined.alternativeType,
-          reason: refined.alternativeReason || '',
-        },
-      ];
-    }
+    attachSlideReview(slide, {
+      why: refined.reasoning,
+      alternatives: refined.alternatives,
+      imageSuggestionAfter: refined.imageSuggestionAfter,
+    });
     if (refined._aiWarnings?.length) {
       slide._aiWarnings = refined._aiWarnings;
     }

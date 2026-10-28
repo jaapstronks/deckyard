@@ -17,6 +17,10 @@ import {
 import { customSlideTypeKey } from '../../../../../shared/slide-types/custom-type-runtime.js';
 import { allowedEnumValues } from '../../../../../shared/slide-types/field-types.js';
 import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
+import {
+  buildSlideReviewRules,
+  SLIDE_REVIEW_EXAMPLE_KEYS,
+} from './slide-review.js';
 
 const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
@@ -116,16 +120,15 @@ Return ONLY valid JSON:
       "type": "<slide-type-name>",
       "content": { <exact schema for this type> },
       "presenterNotes": "2-4 sentences for the presenter",
-      "reasoning": "The source describes how rising costs led to the new policy, so the arrow layout shows that cause and effect",
-      "alternativeType": "icon-card-grid-slide",
-      "alternativeReason": "Use if items are independent rather than causal"
+      ${JSON.stringify(SLIDE_REVIEW_EXAMPLE_KEYS).slice(1, -1)}
     }
   ]
 }
 
-PRESENTER NOTES AND REASONING:
+PRESENTER NOTES:
 - Each slide comes with the part of the source it draws on. The slide shows the WHAT; the notes give the WHY and HOW: background the slide leaves out, an example or figure to mention, a transition. Use only what the source context says.
-- "reasoning" is shown to the presenter in ${langLabel}: name what in the source made this type fit (sequence, comparison, figures, ...). No jargon about schemas or fields.
+
+${buildSlideReviewRules(langLabel)}
 
 CONTENT TIPS:
 - list-slide: items[] array, minimum 2 items, each with {title, text}
