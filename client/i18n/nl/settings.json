@@ -606,7 +606,7 @@
   "settings.notifications.emailEnabled": "E-mailnotificaties",
   "settings.notifications.hint": "Kies hoe je op de hoogte gehouden wilt worden over reacties op je presentaties.",
   "settings.notifications.slackEnabled": "Slack / Teams notificaties",
-  "settings.notifications.title": "Notificaties",
+  "settings.notifications.title": "Meldingen",
   "settings.organization.inheritDefault": "Installatiestandaard",
   "settings.organization.inheritThemeList": "Installatielijst voor thema’s gebruiken",
   "settings.organization.themeListCustom": "Deze organisatie kiest zelf de beschikbare thema’s.",
