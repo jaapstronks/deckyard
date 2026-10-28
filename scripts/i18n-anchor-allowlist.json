@@ -35,25 +35,9 @@
       "forms": ["Delt", "Delte"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
-    "da  {count}d ago": {
-      "forms": ["for {count} d siden", "{count}d siden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "da  {count}h ago": {
-      "forms": ["for {count} t siden", "{count}t siden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  Primary": {
       "forms": ["Primär", "Primärfarbe"],
       "reason": "colour name versus style option — Primärfarbe is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Primär is the adjective for the button style in editor.slideField.actions.item.style.option.primary, next to Sekundär."
-    },
-    "de  {count}d ago": {
-      "forms": ["vor {count} T", "vor {count} T."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  {count}h ago": {
-      "forms": ["vor {count} Std", "vor {count} Std."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  All": {
       "forms": ["Todas", "Todos"],
@@ -171,14 +155,6 @@
       "forms": ["Morbida", "Morbido"],
       "reason": "grammatical agreement — Morbido agrees with stile (masculine singular) in editor.slideField.tableStyle.option.soft and arrotondamento (masculine singular) in settings.themes.config.radius.soft; Morbida agrees with elevazione (feminine singular) in settings.themes.config.shadow.soft, next to Marcata."
     },
-    "it  {count}d ago": {
-      "forms": ["{count} g fa", "{count}g fa"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  {count}h ago": {
-      "forms": ["{count} h fa", "{count}h fa"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Appearance": {
       "forms": ["Uiterlijk", "Weergave"],
       "reason": "The local device appearance shortcut uses Uiterlijk; the existing visual display controls use Weergave in another context."
@@ -190,10 +166,6 @@
     "nl  Restore": {
       "forms": ["Herstel", "Herstellen"],
       "reason": "noun versus button — Herstel is the noun in editor.versions.reason.restore, the label that says why a version exists, next to Automatische snapshot and Backup (vóór herstel); Herstellen is the infinitive on the buttons editor.versions.restore, list.restore, list.bulk.restore and slideLibrary.action.restore."
-    },
-    "nl  {count}d ago": {
-      "forms": ["{count} d geleden", "{count} dagen geleden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Dark": {
       "forms": ["Mørk", "Mørke", "Mørkt"],
@@ -210,14 +182,6 @@
     "no  Shared": {
       "forms": ["Delt", "Delte"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "no  {count}d ago": {
-      "forms": ["for {count} d siden", "{count}d siden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  {count}h ago": {
-      "forms": ["for {count} t siden", "{count}t siden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Custom": {
       "forms": ["Niestandardowa", "Niestandardowe"],
@@ -302,14 +266,6 @@
     "sv  Shared": {
       "forms": ["Delad", "Delade"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "sv  {count}d ago": {
-      "forms": ["för {count} d sedan", "{count}d sedan"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  {count}h ago": {
-      "forms": ["för {count} tim sedan", "{count}h sedan"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     }
   }
 }

@@ -1,6 +1,7 @@
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { formatRelativeTime } from '../../../lib/format/format-time.js';
 import {
   commentAuthorName,
   createAnchoredComposer,
@@ -197,7 +198,7 @@ export function createPreviewLightbox({
       });
       const timeEl = h('span', {
         class: 'comment-detail-time',
-        text: formatTime(comment.createdAt),
+        text: formatRelativeTime(comment.createdAt),
       });
       const closeBtn = h(
         'button',
@@ -233,31 +234,6 @@ export function createPreviewLightbox({
 
       commentDetailPopup.append(headerEl, bodyEl, repliesEl);
       stage.appendChild(commentDetailPopup);
-    };
-
-    const formatTime = (isoString) => {
-      if (!isoString) return '';
-      try {
-        const date = new Date(isoString);
-        const now = new Date();
-        const diff = now - date;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-
-        if (minutes < 1) return t('comments.time.justNow', 'Just now');
-        if (minutes < 60)
-          return t('comments.time.minutesAgo', '{count}m ago', {
-            count: minutes,
-          });
-        if (hours < 24)
-          return t('comments.time.hoursAgo', '{count}h ago', { count: hours });
-        if (days < 7)
-          return t('comments.time.daysAgo', '{count}d ago', { count: days });
-        return date.toLocaleDateString();
-      } catch {
-        return '';
-      }
     };
 
     // Helper to hide popup

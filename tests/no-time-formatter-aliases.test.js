@@ -17,6 +17,14 @@
  * unrelated `formatDuration` (server/storage/analytics/weekly-summary.js,
  * shared/slide-timing.js) — a different concept boundary, out of this family.
  *
+ * Relative time is stricter still (B148 batch14): a same-named copy was only
+ * part of the drift. Three of four relative-time formatters had other names
+ * (`formatTimeAgo`, `formatRelativeDate`, an inline closure) and three key
+ * sets, so the locales spelled one concept up to three ways and never
+ * pluralized. `formatRelativeTime` now asks `Intl.RelativeTimeFormat`, and
+ * the two tests at the end pin that no other module builds relative time and
+ * no locale carries a key for it.
+ *
  * Run with: node --test tests/no-time-formatter-aliases.test.js
  */
 
@@ -103,5 +111,55 @@ test('the retired fmt* formatter spellings stay gone', () => {
     violations.length,
     0,
     `retired fmt* spelling reintroduced:\n  ${violations.join('\n  ')}`,
+  );
+});
+
+const RELATIVE_TIME_OWNER = OWNED.formatRelativeTime;
+
+// A UI key for relative time: `*Ago` (`list.time.daysAgo`) or `*.justNow`.
+const RELATIVE_TIME_KEY = /(?:Ago|\.justNow)$/;
+
+test('relative time is built in formatRelativeTime only, without translation keys', () => {
+  const violations = [];
+  const keyCall = /\bt\(\s*['"`]([^'"`]+)['"`]/g;
+  for (const file of clientFiles) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    if (rel === RELATIVE_TIME_OWNER) continue;
+    const src = fs.readFileSync(file, 'utf8');
+    if (/\bIntl\.RelativeTimeFormat\b/.test(src)) {
+      violations.push(
+        `${rel}: builds Intl.RelativeTimeFormat — call formatRelativeTime from ${RELATIVE_TIME_OWNER}`,
+      );
+    }
+    for (const [, key] of src.matchAll(keyCall)) {
+      if (RELATIVE_TIME_KEY.test(key)) {
+        violations.push(
+          `${rel}: t('${key}') — relative time comes from formatRelativeTime, not a key`,
+        );
+      }
+    }
+  }
+  assert.equal(
+    violations.length,
+    0,
+    `relative-time formatter drift:\n  ${violations.join('\n  ')}`,
+  );
+});
+
+test('no locale carries a relative-time key', () => {
+  const i18nDir = path.join(repoRoot, 'client', 'i18n');
+  const violations = [];
+  for (const file of walkFiles(i18nDir, { extensions: ['.json'] })) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
+    for (const key of Object.keys(data)) {
+      if (RELATIVE_TIME_KEY.test(key)) violations.push(`${rel}: ${key}`);
+    }
+  }
+  assert.equal(
+    violations.length,
+    0,
+    `relative-time keys in the locales (CLDR supplies the wording):\n  ${violations.join('\n  ')}`,
   );
 });
