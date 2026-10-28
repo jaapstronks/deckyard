@@ -64,7 +64,7 @@
   "share.guest.emailRequired": "O e-mail é obrigatório",
   "share.guest.emailSent": "Verifique o seu e-mail!",
   "share.guest.emailSentHelp": "Enviámos um link de verificação para <strong>{email}</strong>. Clique no link para começar a comentar.",
-  "share.guest.error.generic": "Algo correu mal. Por favor, tente novamente.",
+  "share.guest.error.generic": "Algo correu mal. Tente novamente.",
   "share.guest.error.invalidEmail": "Introduza um endereço de e-mail válido.",
   "share.guest.error.linkExpired": "Este link de partilha expirou.",
   "share.guest.error.linkNotFound": "Link de partilha não encontrado.",
