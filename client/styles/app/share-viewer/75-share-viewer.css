@@ -77,11 +77,6 @@
 /* The refusal of the password / guest-join form: the shared callout, at the
    surrounding text size. */
 .share-viewer-card > .inline-error.is-callout,
-.share-viewer-guest-modal h2 {
-  hyphens: auto;
-  overflow-wrap: break-word;
-}
-
 .share-viewer-guest-modal > .inline-error.is-callout {
   margin-top: var(--ps-space-3);
   font-size: var(--ps-text-base);
@@ -369,6 +364,12 @@
 }
 
 /* Guest form */
+/* A long single-word title must not widen the modal. */
+.share-viewer-guest-modal h2 {
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
 .share-viewer-guest-form {
   display: flex;
   flex-direction: column;
