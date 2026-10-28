@@ -29,3 +29,7 @@ capture
 .claude
 .scratch
 coverage
+
+# The image builds its own render bundle (Dockerfile, stage renderer-bundle);
+# a checkout's store must not become a second one.
+renderer-store
