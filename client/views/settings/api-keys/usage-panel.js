@@ -5,6 +5,7 @@
 import { h } from '../../../lib/dom/index.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { formatDate } from '../../../lib/format/analytics-format.js';
 import { fetchKeyUsage } from './actions.js';
 
 /**
@@ -121,7 +122,7 @@ export async function showUsagePanel(key) {
     for (const day of usage.history.slice(0, 7)) {
       tbody.append(
         h('tr', {}, [
-          h('td', { text: new Date(day.date).toLocaleDateString() }),
+          h('td', { text: formatDate(day.date) }),
           h('td', { text: String(day.requestCount || 0) }),
           h('td', { text: String(day.aiRequestCount || 0) }),
           h('td', { text: String(day.exportCount || 0) }),

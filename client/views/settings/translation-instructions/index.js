@@ -3,6 +3,7 @@ import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { formatCount } from '../../../lib/format/analytics-format.js';
 import {
   fetchAppSettings,
   fetchOrgSettings,
@@ -26,7 +27,7 @@ export function createTranslationInstructionsCard() {
     text: t(
       'settings.admin.translationInstructions.hint',
       'These instructions are sent with every AI translation. Use them for organization terminology and target-language style. Each field may contain up to {max} characters.',
-      { max: TRANSLATION_INSTRUCTION_MAX_LENGTH.toLocaleString() },
+      { max: formatCount(TRANSLATION_INSTRUCTION_MAX_LENGTH) },
     ),
   });
   const terminology = h('textarea', {

@@ -1,11 +1,13 @@
+import { getUiLocale } from '../ui-i18n.js';
+
 /**
- * Format an ISO timestamp as a full local date-and-time string.
+ * Format an ISO timestamp as a full date-and-time string in the UI locale.
  * @param {string} iso - ISO 8601 timestamp
  * @returns {string}
  */
 export function formatDateTime(iso) {
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString(getUiLocale());
   } catch {
     return iso;
   }

@@ -5,6 +5,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
+import { formatDateTime } from '../../lib/format/format.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom/index.js';
@@ -249,7 +250,7 @@ function createActivityItem(event) {
   const time = h('div', {
     class: 'activity-time',
     text: formatRelativeTime(event.createdAt),
-    title: new Date(event.createdAt).toLocaleString(),
+    title: formatDateTime(event.createdAt),
   });
 
   item.append(avatar, content, time);

@@ -22,8 +22,15 @@
  * (`formatTimeAgo`, `formatRelativeDate`, an inline closure) and three key
  * sets, so the locales spelled one concept up to three ways and never
  * pluralized. `formatRelativeTime` now asks `Intl.RelativeTimeFormat`, and
- * the two tests at the end pin that no other module builds relative time and
+ * the two tests after it pin that no other module builds relative time and
  * no locale carries a key for it.
+ *
+ * Absolute dates, times and counts follow the UI locale too (B868). A bare
+ * `toLocaleDateString()` speaks the browser's language, so a Dutch interface
+ * in an English browser showed English dates. The last test pins that only
+ * `lib/format/` calls `toLocale*String` or builds an `Intl.DateTimeFormat`,
+ * always with a locale, and that no `Intl` number formatter is built without
+ * one.
  *
  * Run with: node --test tests/no-time-formatter-aliases.test.js
  */
@@ -161,5 +168,58 @@ test('no locale carries a relative-time key', () => {
     violations.length,
     0,
     `relative-time keys in the locales (CLDR supplies the wording):\n  ${violations.join('\n  ')}`,
+  );
+});
+
+const FORMAT_DIR = 'client/lib/format/';
+
+// `.toLocaleString(`, `.toLocaleDateString(`, `.toLocaleTimeString(` and the
+// first argument up to the next comma or closing paren.
+const TO_LOCALE_CALL = /\.toLocale(?:Date|Time)?String\(\s*([^,)]*)/g;
+const INTL_CALL = /\bIntl\.(?:DateTimeFormat|NumberFormat)\(\s*([^,)]*)/g;
+// Dates have one formatter, so a view never builds its own date format.
+const INTL_DATE_CALL = /\bIntl\.DateTimeFormat\(/g;
+
+/** True when a captured first argument names no locale. */
+function namesNoLocale(arg) {
+  const a = arg.trim();
+  return a === '' || a === 'undefined' || a === '[]';
+}
+
+test('dates, times and counts are formatted in the UI locale, inside lib/format only', () => {
+  const violations = [];
+  for (const file of clientFiles) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    const src = fs.readFileSync(file, 'utf8');
+    for (const [call, arg] of src.matchAll(TO_LOCALE_CALL)) {
+      if (!rel.startsWith(FORMAT_DIR)) {
+        violations.push(
+          `${rel}: '${call.trim()}' — format through ${FORMAT_DIR} (formatDate, formatDateTime, formatCount)`,
+        );
+      } else if (namesNoLocale(arg)) {
+        violations.push(
+          `${rel}: '${call.trim()}' without a locale — pass getUiLocale()`,
+        );
+      }
+    }
+    for (const [call] of src.matchAll(INTL_DATE_CALL)) {
+      if (!rel.startsWith(FORMAT_DIR)) {
+        violations.push(
+          `${rel}: '${call.trim()}' — format through ${FORMAT_DIR} (formatDate, formatDateTime)`,
+        );
+      }
+    }
+    for (const [call, arg] of src.matchAll(INTL_CALL)) {
+      if (namesNoLocale(arg)) {
+        violations.push(
+          `${rel}: '${call.trim()}' without a locale — pass getUiLocale()`,
+        );
+      }
+    }
+  }
+  assert.equal(
+    violations.length,
+    0,
+    `locale-less date/number formatting (follows the browser, not the UI):\n  ${violations.join('\n  ')}`,
   );
 });

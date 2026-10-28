@@ -16,6 +16,7 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { formatDate } from '../../../lib/format/analytics-format.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import {
@@ -264,7 +265,7 @@ function renderMemberCard(member, currentUser, handlers, planRemoval) {
       class: 'admin-user-last-login',
       text: member.joinedAt
         ? t('organization.members.memberSince', 'Member since {date}', {
-            date: new Date(member.joinedAt).toLocaleDateString(),
+            date: formatDate(member.joinedAt),
           })
         : t(
             'organization.members.memberSinceUnknown',

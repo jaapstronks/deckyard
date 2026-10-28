@@ -3,7 +3,7 @@
  * Centralizes common formatting functions to avoid duplication.
  */
 
-import { t } from '../ui-i18n.js';
+import { getUiLocale, t } from '../ui-i18n.js';
 
 /**
  * Format duration in seconds to human readable format.
@@ -36,16 +36,18 @@ export function formatDuration(
 }
 
 /**
- * Format a date string for display. The single canonical date formatter.
+ * Format a date string for display in the UI locale. The single canonical
+ * date formatter.
  *
- * `short` renders the compact numeric "M/D" form. Any other
+ * `short` renders the compact numeric day-and-month form ("1/15" in English,
+ * "15-1" in Dutch). Any other
  * `Intl.DateTimeFormat` options are passed straight through to
  * `toLocaleDateString`, so views that need a weekday, month name or a time
  * component request it explicitly instead of defining their own formatter.
  *
  * @param {string} dateStr - ISO date string or date
  * @param {Object} [options] - Formatting options
- * @param {boolean} [options.short] - Use compact numeric format (e.g., "1/15"); takes precedence
+ * @param {boolean} [options.short] - Use compact numeric day and month; takes precedence
  * @param {...Intl.DateTimeFormatOptions} [options] - Passed through to toLocaleDateString
  * @returns {string} Formatted date
  */
@@ -53,25 +55,27 @@ export function formatDate(dateStr, { short = false, ...intlOptions } = {}) {
   try {
     const date = new Date(dateStr);
     if (Number.isNaN(date.getTime())) return String(dateStr || '');
+    const locale = getUiLocale();
     if (short) {
-      return `${date.getMonth() + 1}/${date.getDate()}`;
+      return date.toLocaleDateString(locale, {
+        month: 'numeric',
+        day: 'numeric',
+      });
     }
-    if (Object.keys(intlOptions).length) {
-      return date.toLocaleDateString(undefined, intlOptions);
-    }
-    return date.toLocaleDateString();
+    return date.toLocaleDateString(locale, intlOptions);
   } catch {
     return String(dateStr || '');
   }
 }
 
 /**
- * Format a whole-number count with thousands separators (e.g. "1,234").
+ * Format a whole-number count with the UI locale's thousands separators
+ * ("1,234" in English, "1.234" in Dutch).
  * @param {number} n - Number to format
  * @returns {string}
  */
 export function formatCount(n) {
-  return Number(n || 0).toLocaleString();
+  return Number(n || 0).toLocaleString(getUiLocale());
 }
 
 /**
