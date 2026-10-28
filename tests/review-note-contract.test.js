@@ -40,7 +40,7 @@ const { handlePresentations } =
 const { handleSlides } =
   await import('../server/routes/public-api/v1/slides.js');
 const { isAiReviewCurrent } = await import('../shared/ai-review.js');
-const { REVIEW_NOTE_MAX_LENGTH, reviewUrlFor } =
+const { REVIEW_NOTE_MAX_LENGTH, reviewNotesInDeck, reviewUrlFor } =
   await import('../server/utils/ai/review-note.js');
 
 /** @type {ReturnType<typeof createFakeDb>} */
@@ -407,4 +407,27 @@ test('v1 PUT with another reviewNote replaces only the explanation', async () =>
   assert.deepEqual(after._aiAlternatives, [
     { type: 'content-slide', reason: 'Plain text.' },
   ]);
+});
+
+test('a PUT lends each language version its own stored twin', () => {
+  // The same slide id in two language versions, each with its own stored
+  // explanation: a body without notes keeps each version's own.
+  const twin = (reasoning) => ({
+    id: 'shared-id',
+    type: 'content-slide',
+    content: {},
+    _aiReasoning: reasoning,
+    _aiReview: { kind: 'content', sourceExcerpt: null, fingerprint: 'f' },
+  });
+  const stored = {
+    slides: [twin('base')],
+    i18n: { versions: { de: { slides: [twin('deutsch')] } } },
+  };
+  const plain = { id: 'shared-id', type: 'content-slide', content: {} };
+  const out = reviewNotesInDeck(
+    { slides: [plain], i18n: { versions: { de: { slides: [plain] } } } },
+    stored,
+  );
+  assert.equal(out.slides[0]._aiReasoning, 'base');
+  assert.equal(out.i18n.versions.de.slides[0]._aiReasoning, 'deutsch');
 });
