@@ -41,6 +41,9 @@ test('the supervisor starts at boot; the broker never starts on its own', () => 
   const broker = sections(unit('deckyard-render-broker.service'));
   assert.equal(broker.Install, undefined);
   assert.ok(broker.Service.includes('Restart=no'));
+  // The supervisor relaunches a broker that dies before registration
+  // (runner/broker-launch.js); a start-rate limit would block that silently.
+  assert.ok(broker.Unit.includes('StartLimitIntervalSec=0'));
 });
 
 test('every relative import of the installed runner resolves inside the installation', () => {
