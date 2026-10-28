@@ -10,7 +10,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { openRendererBundle } from '../store.js';
 import { loadControl, PATHS, verifyHostLibraries } from './paths.js';
-import { OUTPUT_LIMIT, STDERR_LIMIT, validateOutput } from './protocol.js';
+import { OUTPUT_LIMIT, STDERR_LIMIT, validateOutput } from '../protocol.js';
 import { ociProfile } from './profile.js';
 
 // Exactly one producer operation is accepted by this joinable Worker. No

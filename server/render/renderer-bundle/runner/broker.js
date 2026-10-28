@@ -21,7 +21,7 @@ import {
   readFrame,
   refusalBytes,
   successParts,
-} from './protocol.js';
+} from '../protocol.js';
 import { lifecycleChannel } from './channel.js';
 import { SELF_TEST_RESULT } from './policy.js';
 

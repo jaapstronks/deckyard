@@ -23,6 +23,7 @@ export {
   openRendererBundle,
 } from './store.js';
 export {
+  RUNNER_REQUEST_LIMIT,
   RUNNER_SOCKET_ENV,
   renderEditionInBundle,
   runnerSocketPath,

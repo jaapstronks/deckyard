@@ -31,7 +31,7 @@ import {
   RESPONSE_SCHEMA,
   parseRequest,
   readFrame,
-} from '../server/render/renderer-bundle/runner/protocol.js';
+} from '../server/render/renderer-bundle/protocol.js';
 
 const HASH = 'e'.repeat(64);
 const RUNNER_ID = 'f'.repeat(64);

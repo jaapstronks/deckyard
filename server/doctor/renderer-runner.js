@@ -77,7 +77,7 @@ export const rendererRunnerCheck = {
       if (err?.code === RENDERER_BUNDLE_ERRORS.SANDBOX_UNAVAILABLE)
         return fail(
           `The runner at ${socket} is not available.`,
-          `On the runner host: systemctl status deckyard-render-supervisor.service deckyard-render-broker.service. In the container: is /run/deckyard-render mounted, and does the process run as the runner's caller uid (${RUNBOOK} § Production installation on a Coolify host)?`,
+          `On the runner host: systemctl status deckyard-render-supervisor.service deckyard-render-broker.service; the supervisor starts at boot once enabled (sudo systemctl enable --now deckyard-render-supervisor.service). In the container: is /run/deckyard-render mounted, and does the process run as the runner's caller uid (${RUNBOOK} § Production installation on a Coolify host)?`,
         );
       return fail(
         `The runner refused the probe: ${err?.code || err?.message || err}.`,
