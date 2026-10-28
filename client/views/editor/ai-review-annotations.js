@@ -28,7 +28,7 @@ export const SUGGESTED_PICTURE_TYPE = 'image-slide';
  * @param {Function} [options.pickImage] - (slide) => void, opens the picker
  *   for a slide's missing picture; without it no "Choose image" shows
  * @param {Function} [options.onSuggestion] - (slide, accepted: boolean) =>
- *   void, commits "Add image slot" (true) or "Dismiss" (false); without it no
+ *   void, commits "Add image slot" (true) or "Ignore" (false); without it no
  *   suggestion row shows
  * @returns {{ annotationFor: Function, suggestionAfter: Function }}
  */
