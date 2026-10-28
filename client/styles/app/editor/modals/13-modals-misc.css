@@ -685,6 +685,14 @@
   line-height: 1.4;
 }
 
+/* A small phone (xs): Cancel and Apply no longer fit one row and Cancel ran
+   out of the modal; whole buttons move to a next line instead. */
+@media (max-width: 480px) {
+  .change-theme-actions {
+    flex-wrap: wrap;
+  }
+}
+
 /* ============================================
    Follow-Invite Suggest Modal
    ============================================ */

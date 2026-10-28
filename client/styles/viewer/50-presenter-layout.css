@@ -347,6 +347,30 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   .presenter-actions > .presenter-projector-btn {
     display: none;
   }
+  /* The wrapped row puts Tools anywhere from the left edge, so a popover
+     hung from its right edge ran out of the screen: it hangs from the bar
+     instead, as wide as the bar. */
+  .presenter-tools {
+    position: static;
+  }
+  .presenter-tools-popover {
+    left: var(--ps-space-2);
+    right: var(--ps-space-2);
+    top: 100%;
+    min-width: 0;
+  }
+}
+
+/* A small phone (xs): the popover's two-button rows and badged titles no
+   longer fit side by side, so whole buttons and the badge move down. */
+@media (max-width: 480px) {
+  .presenter-tools-actions,
+  .presenter-tools-title {
+    flex-wrap: wrap;
+  }
+  .presenter-tools-actions .presenter-tools-item {
+    flex-basis: auto;
+  }
 }
 
 /* Highlighter toolbar buttons */
