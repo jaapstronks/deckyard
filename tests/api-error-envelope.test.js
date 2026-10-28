@@ -307,6 +307,15 @@ test('every registered code passes with exactly its keys', () => {
       count: 3,
     },
     incomplete_slides: { slides: [2, 5] },
+    unknown_field: {
+      field: 'heading',
+      errors: [
+        'Unknown field "heading": slide type end-slide does not declare it',
+      ],
+      slideId: 's1',
+      lang: 'nl',
+      index: 0,
+    },
   };
   assert.deepEqual(
     Object.keys(samples).sort(),
