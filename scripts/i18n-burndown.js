@@ -23,6 +23,16 @@
  * proven: the file has to be absent from the base's tree. A sidecar that
  * exists at the base but does not parse is an error, not a bootstrap.
  *
+ * A fork's merge round can cross upstream's bootstrap: its base (the fork's
+ * own main, on an upstream version from before the sidecar) has no file, and
+ * the branch merges a tag that has one. Bootstrapping against the fork's old
+ * English then reports every string upstream changed since, which says
+ * nothing about the fork. So when the base has no sidecar and `HEAD` merged in
+ * a commit that has one, that merged commit is the base instead
+ * (`mergedSidecarBase`): `HEAD` is judged against upstream's own last state,
+ * as strictly as any other change, and only a history with no such merge
+ * bootstraps.
+ *
  * Usage:
  *   node scripts/i18n-burndown.js [<base-ref>] [--json]
  */
@@ -103,6 +113,65 @@ export function stateAtCommit(commit, cwd) {
 }
 
 /**
+ * Whether `commit` is an ancestor of (or equal to) `of`.
+ * @param {string} commit
+ * @param {string} of
+ * @param {string} [cwd]
+ * @returns {boolean}
+ */
+function isAncestor(commit, of, cwd) {
+  try {
+    git(['merge-base', '--is-ancestor', commit, of], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The commit a merge brought the sidecar in with, for a base that has none:
+ * among the parents of the merges in `base..HEAD` that carry the file and come
+ * from another history (neither in the base nor built on it, so never the
+ * branch itself or the PR head a CI merge ref merges), the one every other
+ * such parent descends from (the merged upstream tag). `null` when `HEAD` merged no such commit, which leaves a real
+ * bootstrap. Two unrelated candidates are an error: which one `HEAD` should be
+ * held to is not for this script to guess.
+ * @param {string} base - a commit without the sidecar
+ * @param {string} [cwd]
+ * @returns {string|null}
+ */
+export function mergedSidecarBase(base, cwd) {
+  const candidates = [];
+  const merges = git(
+    ['rev-list', '--merges', '--parents', `${base}..HEAD`],
+    cwd,
+  )
+    .split('\n')
+    .filter(Boolean);
+  for (const line of merges) {
+    for (const parent of line.split(' ').slice(1)) {
+      if (
+        candidates.includes(parent) ||
+        isAncestor(parent, base, cwd) ||
+        isAncestor(base, parent, cwd)
+      )
+        continue;
+      if (stateAtCommit(parent, cwd) !== null) candidates.push(parent);
+    }
+  }
+  const roots = candidates.filter(
+    (c) => !candidates.some((o) => o !== c && isAncestor(o, c, cwd)),
+  );
+  if (roots.length > 1)
+    throw new Error(
+      `the base has no ${SOURCE_STATE_REL} and HEAD merged it in from ` +
+        `${roots.length} unrelated commits (${roots.map((r) => r.slice(0, 12)).join(', ')}); ` +
+        'pass the one to compare with as the base ref',
+    );
+  return roots[0] || null;
+}
+
+/**
  * Every locale's merged dictionary as the base commit holds it — what a
  * bootstrap's `unreviewed` hashes must fingerprint.
  * @param {string} commit
@@ -131,20 +200,39 @@ export function dictionariesAtCommit(commit) {
 }
 
 /**
+ * The commit to compare with and its sidecar: `commit` itself, or, when it
+ * has no sidecar and `HEAD` merged one in, the merged commit.
+ * @param {string} commit
+ * @param {string} [cwd]
+ * @returns {{base: string, state: import('./lib/i18n-source-state.js').SourceState|null, crossed: string|null}}
+ */
+export function resolveBaseState(commit, cwd) {
+  const state = stateAtCommit(commit, cwd);
+  if (state !== null) return { base: commit, state, crossed: null };
+  const merged = mergedSidecarBase(commit, cwd);
+  if (merged === null) return { base: commit, state: null, crossed: null };
+  return {
+    base: merged,
+    state: stateAtCommit(merged, cwd),
+    crossed: commit,
+  };
+}
+
+/**
  * Compare the working tree's sidecar with the one at `ref`.
  * @param {string} [ref] - defaults to the merge base with `origin/main`
- * @returns {Promise<ReturnType<typeof compareWithBase> & {base: string}>}
+ * @returns {Promise<ReturnType<typeof compareWithBase> & {base: string, crossed: string|null}>}
  */
 export async function runBurndown(ref) {
   const commit = ref ? resolveCommit(ref) : defaultBase();
-  const base = stateAtCommit(commit);
+  const { base: compared, state: base, crossed } = resolveBaseState(commit);
   const head = await readSourceState();
   const result = compareWithBase({
     base,
     head,
-    baseInput: base === null ? dictionariesAtCommit(commit) : undefined,
+    baseInput: base === null ? dictionariesAtCommit(compared) : undefined,
   });
-  return { base: commit, ...result };
+  return { base: compared, crossed, ...result };
 }
 
 const USAGE = 'node scripts/i18n-burndown.js [<base-ref>] [--json]';
@@ -168,6 +256,11 @@ async function main(argv = process.argv.slice(2)) {
     return failed ? 1 : 0;
   }
   const at = result.base.slice(0, 12);
+  if (result.crossed)
+    console.log(
+      `no ${SOURCE_STATE_REL} at ${result.crossed.slice(0, 12)}; ` +
+        `comparing with ${at}, the merged commit that brought it in.`,
+    );
   if (result.mode === 'bootstrap') {
     console.log(
       `i18n burndown — no ${SOURCE_STATE_REL} at ${at}: bootstrap. ` +

@@ -114,7 +114,10 @@ jobs:
       # The translation-review burndown needs the sidecar *as the base holds
       # it*, which a depth-1 checkout of the merge commit does not have. Fetch
       # exactly that commit; the script fails rather than skips when it cannot
-      # read it (docs/developer/i18n.md § Translation freshness).
+      # read it (docs/developer/i18n.md § Translation freshness). A base
+      # without the sidecar is a fork's merge round crossing upstream's
+      # bootstrap: the script then looks for the merged commit that brought
+      # the file in, which needs the history between base and HEAD.
       - name: Translation-review burndown against the base commit
         if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
         env:
@@ -122,6 +125,10 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 origin "$BASE"
+          if ! git cat-file -e "$BASE:scripts/i18n-source-state.json" 2>/dev/null \
+            && [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+            git fetch --no-tags --unshallow origin
+          fi
           node scripts/i18n-burndown.js "$BASE"
       - run: npm run lint
         if: needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true'
