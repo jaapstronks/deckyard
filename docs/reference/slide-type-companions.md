@@ -148,7 +148,11 @@ and never writes its own.
 
 `derived` is the third kind of declared key beside fields and `instanceKeys`
 (`DERIVED_SLIDE_CONTENT_KEYS`, `compose.js`): machine values no author writes,
-declared once next to the field they derive from. Stored decks were held to
+declared once next to the field they derive from. `provenance`
+(`PROVENANCE_SLIDE_CONTENT_KEYS`, `compose.js`) sits in the same column: the
+ImageKit file id an image pick leaves beside its URL (D162), on a type with
+a single-image field other than the background, whose picker writes the URL
+only. Stored decks were held to
 the write row by migration 102 (`server/db/migrations/102_strip_undeclared_content_keys.js`),
 which stripped every key the read funnel neither folds nor the type declares;
 there is no tolerant read path for a stray key (D360).
