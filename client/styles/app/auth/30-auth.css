@@ -140,7 +140,9 @@
   justify-content: center;
   width: 100%;
   min-height: 48px;
-  padding: var(--ps-space-2) var(--ps-space-5);
+  /* Room above and below a label that wraps at a narrow width; two lines
+     still fit the 48px, so a wider card keeps its button height. */
+  padding: var(--ps-space-1) var(--ps-space-5);
   font-family: inherit;
   font-size: var(--ps-text-base);
   font-weight: 600;
@@ -431,6 +433,9 @@
     max-width: 420px;
     padding: var(--ps-space-8);
     border-radius: var(--ps-radius-2xl);
+    /* The hyphenation is for the narrow card; at this width the words fit
+       and the help text keeps its whole words. */
+    hyphens: manual;
   }
 
   .auth-title {

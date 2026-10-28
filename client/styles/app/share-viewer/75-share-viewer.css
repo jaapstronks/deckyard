@@ -364,13 +364,6 @@
 }
 
 /* Guest form */
-/* At 320px/200% zoom the fixed padding left too little room for one long
-   word (de "Kommentieren" in the help line): fluid padding, hyphenation. */
-.share-viewer-guest-modal {
-  padding: clamp(var(--ps-space-4), 6vw, var(--ps-space-7));
-  hyphens: auto;
-}
-
 /* A long single-word title must not widen the modal. */
 .share-viewer-guest-modal h2 {
   hyphens: auto;
@@ -443,6 +436,11 @@
   }
   .share-viewer-guest-name {
     display: none;
+  }
+  /* At 320px/200% zoom one long word (de "Kommentieren" in the help line)
+     no longer fits the line; wider modals keep their unhyphenated text. */
+  .share-viewer-guest-modal {
+    hyphens: auto;
   }
 }
 
