@@ -2,7 +2,7 @@
  * An imported or AI-made slide never takes its pictures from the type's
  * insert defaults (B862). A gallery whose `images` the deck leaves out used to
  * compose the four demo photos, so stock imagery reached the presentation and
- * every export past the empty-picture rule of B590. Now the list keeps its
+ * every export past the empty-picture rule (B590). Now the list keeps its
  * default slots with the picture cleared: the slide is incomplete and the
  * author picks one. An editor insert (`newSlide()` without a patch) still gets
  * the demo photos.
