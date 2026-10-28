@@ -130,10 +130,10 @@ function isAncestor(commit, of, cwd) {
 
 /**
  * The commit a merge brought the sidecar in with, for a base that has none:
- * among the parents of the merges in `base..HEAD` that carry the file and are
- * not already in the base, the one every other such parent descends from (the
- * merged upstream tag, under the PR head and the merge commit that contain
- * it). `null` when `HEAD` merged no such commit, which leaves a real
+ * among the parents of the merges in `base..HEAD` that carry the file and come
+ * from another history (neither in the base nor built on it, so never the
+ * branch itself or the PR head a CI merge ref merges), the one every other
+ * such parent descends from (the merged upstream tag). `null` when `HEAD` merged no such commit, which leaves a real
  * bootstrap. Two unrelated candidates are an error: which one `HEAD` should be
  * held to is not for this script to guess.
  * @param {string} base - a commit without the sidecar
@@ -150,7 +150,11 @@ export function mergedSidecarBase(base, cwd) {
     .filter(Boolean);
   for (const line of merges) {
     for (const parent of line.split(' ').slice(1)) {
-      if (candidates.includes(parent) || isAncestor(parent, base, cwd))
+      if (
+        candidates.includes(parent) ||
+        isAncestor(parent, base, cwd) ||
+        isAncestor(base, parent, cwd)
+      )
         continue;
       if (stateAtCommit(parent, cwd) !== null) candidates.push(parent);
     }

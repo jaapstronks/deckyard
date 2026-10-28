@@ -510,15 +510,17 @@ describe('the burndown against a base', () => {
     it('a branch that adds the sidecar itself still bootstraps', async () => {
       git('switch', '-qc', 'first-bootstrap', forkMain);
       await commit(SOURCE_STATE_REL, serializeSourceState(base), 'bootstrap');
-      assert.deepEqual(resolveBaseState(forkMain, repo), {
-        base: forkMain,
-        state: null,
-        crossed: null,
-      });
+      const bootstrap = { base: forkMain, state: null, crossed: null };
+      assert.deepEqual(resolveBaseState(forkMain, repo), bootstrap);
+      // From the PR merge ref the PR head is a merged parent with the file;
+      // it descends from the base, so it is the branch, not a merged tag.
+      git('switch', '-q', '--detach', forkMain);
+      git('merge', '-q', '--no-ff', '-m', 'PR merge ref', 'first-bootstrap');
+      assert.deepEqual(resolveBaseState(forkMain, repo), bootstrap);
     });
 
     it('two unrelated commits that brought the sidecar in are an error', async () => {
-      git('switch', '-qc', 'other-upstream', forkMain);
+      git('switch', '-qc', 'other-upstream', `${forkMain}~1`);
       const other = await commit(
         SOURCE_STATE_REL,
         serializeSourceState(base),
