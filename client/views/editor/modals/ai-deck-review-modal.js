@@ -21,6 +21,7 @@ import {
   answerPictureSuggestion,
 } from '../ai-review-annotations.js';
 import { pickMissingPicture } from '../media/pick-missing-picture.js';
+import { convertSlideInOtherVersions } from '../convert-slide-action.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
 
@@ -90,6 +91,13 @@ export function openAiDeckReviewModal({
       );
       if (i < 0) return;
       pres.slides[i] = { ...next, id: pres.slides[i].id };
+      convertSlideInOtherVersions({
+        pres,
+        slideId: pres.slides[i].id,
+        toType: next.type,
+        SLIDE_TYPES,
+        theme,
+      });
       commit();
     },
     pickImage: getOpenImagePicker()

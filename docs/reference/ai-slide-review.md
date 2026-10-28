@@ -14,6 +14,11 @@ Interaction is configurable per consumer:
 
 - `annotationFor(slide, index)` — hook that renders extra content under a tile
   (the AI "why + alternatives" layer).
+- `layout: 'review'` — every slide becomes a row: the tile with its annotation
+  beside it, stacked below the `sm` rung (640px). The plain overview keeps the
+  grid.
+- `afterTile(slide, index)` — hook that renders a row of its own between this
+  slide and the next (the AI suggestion row).
 - `previewOnClick` — clicking a tile opens the peek lightbox (the AI-review
   default: preview is the common action). Keyboard on a focused tile: Enter →
   preview, Space → toggle selection. When off, a tile click picks/toggles and
@@ -41,9 +46,50 @@ Consumers:
   selects for section refine.
 
 Shared annotation layer: `ai-review-annotations.js` renders the per-slide "why
-this type" line + swappable alternative-type chips (via the existing
-`/api/ai/convert-slide`); only how a swapped slide is committed differs per
-modal (`replaceSlide`).
+this type" line, swappable alternative-type chips (via the existing
+`/api/ai/convert-slide`), "Choose image" on an incomplete slide and the
+suggestion row; only how a change is committed differs per modal
+(`replaceSlide`, `pickImage`, `onSuggestion`). Both review modals use the
+review layout.
+
+## One review shape for every prompt route
+
+Refine (the wizard and the file/Notion imports), append ("add slides", the
+editor route and MCP `append_slides`) and refine-section ("Adjust section")
+ask the model for the same keys per slide, with one prompt text
+(`server/utils/ai/prompts/base/slide-review.js`) and one parser
+(`parseSlideReview()` / `attachBatchReviews()` in
+`server/utils/ai/slide-review.js`):
+
+- `why` — one sentence, stored as `_aiReasoning`;
+- `alternatives` — at most three `{type, reason}`, each an offered type (a
+  reverse-DNS id folds to its registry key; a type the organization switched
+  off is dropped), never the slide's own type, never twice; stored as
+  `_aiAlternatives`;
+- `imageSuggestionAfter` — optional `{reason}`: a picture would help right
+  behind this slide; stored as `_aiSuggestAfter`.
+
+All three are members of `AI_REVIEW_KEYS` (`server/utils/public-output.js`),
+so every reader projection strips them. After an alternative is switched to,
+the list stays: the chosen type leaves it and the previous type joins it. A
+switch reaches the other language versions too
+(`convertSlideInOtherVersions()` in `client/views/editor/convert-slide-action.js`,
+also used by the editor's Convert…): through the convert seam where it knows
+the pair, else the other version keeps the keys the new type declares, so the
+save never carries the old type's text keys (`unknown_field`).
+
+## Suggestions between slides
+
+A slide with `_aiSuggestAfter` gets a row after it: the reason, "Add image
+slot" and "Ignore". Adding inserts one `image-slide` with the registry's
+defaults and an empty image through `insertSlideAfter()` (a child slide's
+suggestion stays in its parent's group, like the slide list's insert rows) and
+removes the suggestion; Ignore only removes it. The new slide is incomplete
+([incomplete-slides.md](incomplete-slides.md)): every output leaves it out
+until a picture is chosen, by "Choose image" in the review or any other
+route. A suggestion never inserts a complete slide or AI text (B590 product
+decision 2). In the batch review the same happens inside the batch before it
+is inserted.
 
 ## Add-slides batch review
 
@@ -61,17 +107,16 @@ After insertion: `ai-added-highlight.js` flashes the new slide-list rows
 (`is-ai-new`), scrolls the first into view, and fires an "Added N slides"
 toast whose Review action opens the deck overview.
 
-`/api/ai/append-slides` returns `{ slides, rationale }`; per-slide
-`why`/`alternatives` are re-attached after normalization as
-`_aiReasoning`/`_aiAlternatives` (normalization strips unknown slide keys;
-both arrays map 1:1 by index).
+`/api/ai/append-slides` returns `{ slides, rationale }`; the per-slide review
+is attached after normalization through `attachBatchReviews()` (normalization
+strips unknown slide keys; both arrays map 1:1 by index).
 
 ## Whole-deck review + section refine
 
 After AI deck generation the editor opens `ai-deck-review-modal.js`
 (`?aiReview=1`, stripped from the URL so refresh doesn't reopen it). Every
-generation path (wizard, MCP, file and Notion import) keeps
-`_aiReasoning`/`_aiAlternatives`/`_aiWarnings` on the saved slides
+generation path (wizard, MCP, file and Notion import) keeps the
+`AI_REVIEW_KEYS` on the saved slides
 (`generatedDeckToParts` in `server/utils/ai/generate-deck.js`), so the review
 grid can show them after the editor loads the deck.
 
@@ -108,4 +153,4 @@ The generation service checks outline excerpts against its real source input aft
 
 A shared fingerprint binds the explanation to slide type and content. It treats implicit logo-off/background-text-auto defaults like their explicit effective values and excludes only the declared derived contrast cache. Content/type changes display an earlier-version notice in both the grid and enlarged preview; save/reload does not refresh the binding. Undo to the original content restores it. Converting to another type records the new explanation without carrying the old source claim. Older explanations without source evidence explicitly say that no source passage was verified.
 
-Authors can reopen the review from the topbar More menu or from Slide overview when the deck carries AI review metadata. The normal overview remains available. Source passages render as text, never HTML. Suggestions, placeholders and public API review links are separate follow-up work.
+Authors can reopen the review from the topbar More menu or from Slide overview when the deck carries AI review metadata. The normal overview remains available. Source passages render as text, never HTML. Public API review links are separate follow-up work (B590 PR C).
