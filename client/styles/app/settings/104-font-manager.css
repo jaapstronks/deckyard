@@ -262,6 +262,11 @@
   background: hsl(var(--app-bg-sunken) / 0.3);
 }
 
+.font-discover-family .btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 .font-discover-family-info {
   flex: 1;
   min-width: 0;

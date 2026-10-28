@@ -29,13 +29,15 @@
   border-radius: var(--ps-radius-xl);
   border: 1px solid hsl(var(--app-border-subtle));
   box-shadow: var(--app-shadow-xl);
-  padding: var(--ps-space-8) var(--ps-space-10);
+  padding: var(--ps-space-8) clamp(var(--ps-space-4), 6vw, var(--ps-space-10));
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--ps-space-5);
-  min-width: 480px;
-  max-width: 640px;
+  box-sizing: border-box;
+  /* Never wider than the viewport: a long progress label wraps. */
+  min-width: min(480px, 100%);
+  max-width: min(640px, 100%);
   text-align: center;
   transform: scale(0.95);
   transition: transform 0.3s ease-out;

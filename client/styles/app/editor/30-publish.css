@@ -5,6 +5,12 @@
   overflow: auto;
 }
 
+/* A long single-word title (sv Förhandsgranskning) must not widen the modal. */
+.publish-modal h2,
+.publish-field-label {
+  hyphens: auto;
+}
+
 .publish-field-status {
   min-height: 18px;
 }
@@ -18,6 +24,7 @@
 
 .publish-field-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--ps-space-2-5);
@@ -34,6 +41,12 @@
   gap: var(--ps-space-2);
   align-items: center;
   flex-wrap: wrap;
+}
+
+.publish-field-actions .btn {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
 }
 
 .publish-field-status {

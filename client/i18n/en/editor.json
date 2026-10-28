@@ -124,7 +124,7 @@
   "editor.aiReview.chapterReason": "This divider introduces the next section of your source.",
   "editor.aiReview.closeConfirm": "Close the review and discard the generated slides? Nothing has been added to the deck yet.",
   "editor.aiReview.closingReason": "This closing brings the main message together.",
-  "editor.aiReview.convertFailed": "Conversion failed.",
+  "editor.aiReview.convertFailed": "Could not switch slide type.",
   "editor.aiReview.converting": "Switching slide type…",
   "editor.aiReview.discard": "Discard",
   "editor.aiReview.fallbackReason": "The suggested layout could not be completed. A simple slide preserves the proposed text for you to review.",

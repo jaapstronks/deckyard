@@ -115,7 +115,7 @@
   "editor.aiReview.adjusted.many": "Lot mis à jour ({count} diapositives)",
   "editor.aiReview.adjusting": "Ajustement du lot…",
   "editor.aiReview.closeConfirm": "Fermer la vérification et abandonner les diapositives générées ? Rien n'a encore été ajouté au deck.",
-  "editor.aiReview.convertFailed": "Échec de la conversion.",
+  "editor.aiReview.convertFailed": "Impossible de changer le type de diapositive.",
   "editor.aiReview.converting": "Changement de type de diapositive…",
   "editor.aiReview.discard": "Abandonner",
   "editor.aiReview.feedbackLabel": "Vous voulez autre chose ? Décrivez-le et ajustez le lot",

@@ -27,10 +27,6 @@
       "forms": ["Ændringer anvendt", "Ændringerne er anvendt"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Conversion failed.": {
-      "forms": ["Konvertering mislykkedes.", "Konverteringen mislykkedes."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Dark": {
       "forms": ["Mørk", "Mørke"],
       "reason": "grammatical agreement — Mørk agrees with tilstand, farve, baggrund and tekstfarve (common gender singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mørke agrees with gradienter (plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
@@ -55,10 +51,6 @@
       "forms": ["Lys", "Lyse"],
       "reason": "grammatical agreement — Lys agrees with tilstand and tekstfarve (common gender singular) in appearance.light and editor.slideField.slideBgText.option.light; Lyse agrees with gradienter (plural) in stockMedia.gradients.tone.light."
     },
-    "da  Reading file…": {
-      "forms": ["Læser filen…", "Læser fil…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Shared": {
       "forms": ["Delt", "Delte"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
@@ -79,14 +71,6 @@
       "forms": ["Anwenden", "Übernehmen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "de  Conversion failed.": {
-      "forms": ["Konvertierung fehlgeschlagen.", "Umwandlung fehlgeschlagen."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Generating…": {
-      "forms": ["Wird erstellt…", "Wird erzeugt…", "Wird generiert…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  Grid": {
       "forms": ["Raster", "Tabelle"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -95,17 +79,9 @@
       "forms": ["Beschriftung", "Bezeichnung"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "de  Loading…": {
-      "forms": ["Lädt…", "Wird geladen…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  Primary": {
       "forms": ["Primär", "Primärfarbe"],
       "reason": "colour name versus style option — Primärfarbe is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Primär is the adjective for the button style in editor.slideField.actions.item.style.option.primary, next to Sekundär."
-    },
-    "de  Something went wrong": {
-      "forms": ["Etwas ist schief gelaufen", "Etwas ist schiefgelaufen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Something went wrong. Please try again.": {
       "forms": [
@@ -166,17 +142,9 @@
       "forms": ["Publicada", "Publicado"],
       "reason": "Publicado bij dashboard.source.published (gepubliceerde inhoud, contenido, mannelijk) en settings.slideTypes.published (tipo, mannelijk); Publicada bij list.visibility.published (presentación, vrouwelijk enkelvoud)."
     },
-    "es  Reading file…": {
-      "forms": ["Leyendo archivo…", "Leyendo el archivo…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  Shared": {
       "forms": ["Compartidas", "Compartido"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "es  Something went wrong": {
-      "forms": ["Algo ha ido mal", "Algo salió mal"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Something went wrong. Please try again.": {
       "forms": [
@@ -249,10 +217,6 @@
       "forms": ["Jaettu", "Jaetut"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
-    "fi  Uploading…": {
-      "forms": ["Ladataan…", "Lähetetään…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  All": {
       "forms": ["Tous", "Toutes"],
       "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Tous agrees with commentaires, types, types de diapositive and dégradés (masculine plural) in comments.filter.all, comments.filter.allTypes, slideLibrary.filter.all and stockMedia.gradients.tone.all; Toutes agrees with catégories, étiquettes, présentations and notifications (feminine plural) in editor.iconPicker.allCategory, imageLibrary.tags.all, imagekit.tags.all, list.presentations.ownership.all and notifications.filter.all."
@@ -301,10 +265,6 @@
       "forms": ["Douce", "Doux"],
       "reason": "grammatical agreement — Doux agrees with style (masculine singular) in editor.slideField.tableStyle.option.soft and arrondi (masculine singular) in settings.themes.config.radius.soft; Douce agrees with élévation (feminine singular) in settings.themes.config.shadow.soft, next to Marquée."
     },
-    "fr  Something went wrong": {
-      "forms": ["Une erreur est survenue", "Une erreur s'est produite"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Something went wrong. Please try again.": {
       "forms": [
         "Une erreur est survenue. Veuillez réessayer.",
@@ -312,17 +272,9 @@
       ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fr  Uploading…": {
-      "forms": ["Envoi…", "Téléversement en cours…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  All": {
       "forms": ["Tutte", "Tutti"],
       "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Tutti agrees with commenti, tipi, tag, tipi di slide and gradienti (masculine plural) in comments.filter.all, comments.filter.allTypes, imageLibrary.tags.all, imagekit.tags.all, slideLibrary.filter.all and stockMedia.gradients.tone.all; Tutte agrees with categorie, presentazioni and notifiche (feminine plural) in editor.iconPicker.allCategory, list.presentations.ownership.all and notifications.filter.all."
-    },
-    "it  Conversion failed.": {
-      "forms": ["Conversione fallita.", "Conversione non riuscita."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Copied!": {
       "forms": ["Copiata!", "Copiato!"],
@@ -330,10 +282,6 @@
     },
     "it  Copy link": {
       "forms": ["Copia il link", "Copia link"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Creating…": {
-      "forms": ["Creazione in corso…", "Creazione…"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Dark": {
@@ -383,10 +331,6 @@
       "forms": ["Salvate", "Salvato"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "it  Sending…": {
-      "forms": ["Invio in corso…", "Invio…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Shared": {
       "forms": ["Condivise", "Condiviso"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
@@ -430,10 +374,6 @@
       "forms": ["Collectie", "Verzameling"],
       "reason": "two concepts: \"Collectie\" is the home page's deck collection; \"Verzameling\" is the picker's Media row of collection types (Gallery, Image cards, Logo wall), named by Jaap in D343."
     },
-    "nl  Conversion failed.": {
-      "forms": ["Converteren mislukt.", "Omzetten mislukt."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Copy": {
       "forms": ["Kopieer", "Kopiëren"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -450,20 +390,12 @@
       "forms": ["Negeren", "Sluiten"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Generating…": {
-      "forms": ["Bezig met genereren…", "Genereren…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Grid": {
       "forms": ["Raster", "Tabel"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Image focus (crop)": {
       "forms": ["Beeldfocus (crop)", "Beeldfocus (uitsnede)"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Import": {
-      "forms": ["Importeer", "Importeren"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Link \"{text}\" to:": {
@@ -485,17 +417,9 @@
       "forms": ["Meldingen", "Notificaties"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Reading file…": {
-      "forms": ["Bestand inlezen…", "Bestand lezen…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Restore": {
       "forms": ["Herstel", "Herstellen"],
       "reason": "noun versus button — Herstel is the noun in editor.versions.reason.restore, the label that says why a version exists, next to Automatische snapshot and Backup (vóór herstel); Herstellen is the infinitive on the buttons editor.versions.restore, list.restore, list.bulk.restore and slideLibrary.action.restore."
-    },
-    "nl  Sending…": {
-      "forms": ["Versturen…", "Verzenden…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  Untitled": {
       "forms": ["Naamloos", "Zonder titel"],
@@ -507,10 +431,6 @@
     },
     "no  Alt text": {
       "forms": ["Alt-tekst", "Alternativ tekst"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Conversion failed.": {
-      "forms": ["Konvertering mislyktes.", "Konverteringen mislyktes."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Copy link": {
@@ -529,10 +449,6 @@
       "forms": ["Eksport", "Eksporter"],
       "reason": "Eksporter is de imperatief op de drie editoracties; Eksport is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
-    "no  Generating…": {
-      "forms": ["Genererer…", "Lager…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Image URL": {
       "forms": ["Bilde-URL", "Bildets URL"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -540,14 +456,6 @@
     "no  Light": {
       "forms": ["Lys", "Lyse", "Lyst"],
       "reason": "grammatical agreement — Lyst agrees with utseende (neuter singular, the appearance.label group) in appearance.light; Lys agrees with tekstfarge (masculine/feminine singular) in editor.slideField.slideBgText.option.light; Lyse agrees with gradienter (plural) in stockMedia.gradients.tone.light."
-    },
-    "no  Loading…": {
-      "forms": ["Laster inn…", "Laster…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Reading file…": {
-      "forms": ["Leser filen…", "Leser fil…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Reset": {
       "forms": ["Nullstill", "Tilbakestill"],
@@ -689,10 +597,6 @@
       "forms": ["Publicada", "Publicado"],
       "reason": "Publicado bij dashboard.source.published (conteúdo, mannelijk) en settings.slideTypes.published (tipo, mannelijk); Publicada bij list.visibility.published (apresentação, vrouwelijk enkelvoud)."
     },
-    "pt  Reading file…": {
-      "forms": ["A ler ficheiro…", "A ler o ficheiro…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  Shared": {
       "forms": ["Partilhadas", "Partilhado"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
@@ -712,10 +616,6 @@
       "forms": ["Alt-text", "Alternativtext"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "sv  Conversion failed.": {
-      "forms": ["Konvertering misslyckades.", "Konverteringen misslyckades."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Copied!": {
       "forms": ["Kopierad!", "Kopierat!"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -732,10 +632,6 @@
       "forms": ["Avvisa", "Stäng"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "sv  Generating…": {
-      "forms": ["Genererar…", "Skapar…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Image URL": {
       "forms": ["Bild-URL", "Bildens URL"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -743,14 +639,6 @@
     "sv  Light": {
       "forms": ["Ljus", "Ljusa", "Ljust"],
       "reason": "grammatical agreement — Ljust agrees with utseende (neuter singular, the appearance.label group) in appearance.light; Ljus agrees with textfärg (common gender singular) in editor.slideField.slideBgText.option.light; Ljusa agrees with gradienter (plural) in stockMedia.gradients.tone.light."
-    },
-    "sv  Loading…": {
-      "forms": ["Laddar…", "Läser in…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Reading file…": {
-      "forms": ["Läser filen…", "Läser fil…"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Reset": {
       "forms": ["Nollställ", "Återställ"],

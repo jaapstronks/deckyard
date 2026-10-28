@@ -364,6 +364,12 @@
 }
 
 /* Guest form */
+/* A long single-word title must not widen the modal. */
+.share-viewer-guest-modal h2 {
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
 .share-viewer-guest-form {
   display: flex;
   flex-direction: column;
@@ -382,6 +388,7 @@
 
 .share-viewer-guest-form .btn-primary {
   margin-top: var(--ps-space-2);
+  min-height: 44px;
 }
 
 /* Success state */

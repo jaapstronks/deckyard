@@ -52,7 +52,7 @@ export function createAiReviewAnnotations({
       const converted = resp?.slide;
       if (!converted?.type) {
         throw new Error(
-          t('editor.aiReview.convertFailed', 'Conversion failed.'),
+          t('editor.aiReview.convertFailed', 'Could not switch slide type.'),
         );
       }
       setStatus('');

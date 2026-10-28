@@ -169,7 +169,7 @@
   "organization.members.invite.open": "Invita",
   "organization.members.invite.roleFixed": "Entra come membro. Solo il proprietario può invitare amministratori.",
   "organization.members.invite.roleLabel": "Ruolo",
-  "organization.members.invite.sending": "Invio in corso…",
+  "organization.members.invite.sending": "Invio…",
   "organization.members.invite.sent": "Invito inviato a {email}.",
   "organization.members.invite.submit": "Invia invito",
   "organization.members.invite.title": "Invita qualcuno",

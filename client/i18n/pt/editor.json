@@ -116,7 +116,7 @@
   "editor.aiReview.adjusted.many": "Lote atualizado ({count} diapositivos)",
   "editor.aiReview.adjusting": "A ajustar o lote…",
   "editor.aiReview.closeConfirm": "Fechar a revisão e descartar os diapositivos gerados? Ainda não foi adicionado nada ao deck.",
-  "editor.aiReview.convertFailed": "Falha na conversão.",
+  "editor.aiReview.convertFailed": "Não foi possível mudar o tipo de diapositivo.",
   "editor.aiReview.converting": "A mudar o tipo de diapositivo…",
   "editor.aiReview.discard": "Descartar",
   "editor.aiReview.feedbackLabel": "Quer outra coisa? Descreva-a e ajuste o lote",

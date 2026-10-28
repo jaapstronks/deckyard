@@ -80,7 +80,7 @@
   "analytics.viewsOverTime": "Vues dans le temps",
   "analytics.when": "Quand",
   "app.fatal.help": "L'application a rencontré une erreur lors du chargement. Si vous venez d'activer l'authentification, vérifiez que votre fichier `.env` du serveur contient `AUTH_SECRET` et une valeur `AUTH_ADMIN_EMAIL`.",
-  "app.fatal.title": "Une erreur s'est produite",
+  "app.fatal.title": "Une erreur est survenue",
   "appearance.dark": "Sombre",
   "appearance.label": "Apparence",
   "appearance.light": "Clair",

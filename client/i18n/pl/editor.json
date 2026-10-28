@@ -117,7 +117,7 @@
   "editor.aiReview.chapterReason": "Ten slajd wprowadza kolejną sekcję Twojego źródła.",
   "editor.aiReview.closeConfirm": "Zamknąć przegląd i odrzucić wygenerowane slajdy? Nic nie zostało jeszcze dodane do prezentacji.",
   "editor.aiReview.closingReason": "To zakończenie podsumowuje główny przekaz.",
-  "editor.aiReview.convertFailed": "Konwersja nie powiodła się.",
+  "editor.aiReview.convertFailed": "Nie udało się zmienić typu slajdu.",
   "editor.aiReview.converting": "Zmiana typu slajdu…",
   "editor.aiReview.discard": "Odrzuć",
   "editor.aiReview.fallbackReason": "Nie udało się ukończyć proponowanego układu. Prosty slajd zachowuje proponowany tekst do sprawdzenia.",
