@@ -82,7 +82,7 @@
   "analytics.viewsOverTime": "Vistas a lo largo del tiempo",
   "analytics.when": "Cuándo",
   "app.fatal.help": "La aplicación encontró un error al cargar. Si acaba de activar la autenticación, verifique que su archivo `.env` del servidor contenga `AUTH_SECRET` y un valor `AUTH_ADMIN_EMAIL`.",
-  "app.fatal.title": "Algo salió mal",
+  "app.fatal.title": "Algo ha ido mal",
   "appearance.dark": "Oscuro",
   "appearance.label": "Apariencia",
   "appearance.light": "Claro",

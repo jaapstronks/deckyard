@@ -115,7 +115,7 @@
   "list.fileConverter.converting": "Convirtiendo el archivo…",
   "list.fileConverter.convertingTitle": "Convirtiendo el archivo",
   "list.fileConverter.failed": "Error en la conversión.",
-  "list.fileConverter.reading": "Leyendo archivo…",
+  "list.fileConverter.reading": "Leyendo el archivo…",
   "list.fileConverter.selectFirst": "Primero seleccione un archivo.",
   "list.home.activityCount": "{count} novedades",
   "list.home.activityError": "No se pudo cargar la actividad.",

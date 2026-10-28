@@ -660,7 +660,7 @@
   "settings.themes.config.transform.none": "Tel que saisi",
   "settings.themes.config.transform.uppercase": "MAJUSCULES",
   "settings.themes.config.typography": "Typographie",
-  "settings.themes.config.uploading": "Envoi…",
+  "settings.themes.config.uploading": "Téléversement en cours…",
   "settings.themes.config.variantBadName": "Un nom doit contenir au moins une lettre ou un chiffre.",
   "settings.themes.config.variantColor": "Arrière-plan",
   "settings.themes.config.variantDuplicate": "Vous avez déjà une variante portant ce nom.",

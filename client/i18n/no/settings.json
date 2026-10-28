@@ -123,7 +123,7 @@
   "fonts.weight": "Vekt",
   "imagekit.alt.generate": "Lag ALT (AI)",
   "imagekit.alt.generated": "Laget.",
-  "imagekit.alt.generating": "Lager…",
+  "imagekit.alt.generating": "Genererer…",
   "imagekit.alt.help.disabled": "For å lagre ALT i ImageKit må IMAGEKIT_METADATA_FIELD_ALT_SEED være satt opp på serveren.",
   "imagekit.alt.missingConfirm": "ALT-utgangsteksten er tom. Vil du bruke bildet likevel?",
   "imagekit.alt.missingTitle": "Manglende ALT-tekst",

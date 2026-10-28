@@ -112,7 +112,7 @@
   "editor.aiReview.adjusted.many": "Sættet er opdateret ({count} slides)",
   "editor.aiReview.adjusting": "Justerer sættet…",
   "editor.aiReview.closeConfirm": "Vil du lukke gennemgangen og kassere de genererede slides? Der er endnu ikke føjet noget til præsentationen.",
-  "editor.aiReview.convertFailed": "Konverteringen mislykkedes.",
+  "editor.aiReview.convertFailed": "Kunne ikke skifte slidetype.",
   "editor.aiReview.converting": "Skifter slidetype…",
   "editor.aiReview.discard": "Kassér",
   "editor.aiReview.feedbackLabel": "Skal det være anderledes? Beskriv det, og justér sættet",

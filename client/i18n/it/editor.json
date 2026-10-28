@@ -115,7 +115,7 @@
   "editor.aiReview.adjusted.many": "Gruppo aggiornato ({count} slide)",
   "editor.aiReview.adjusting": "Modifica del gruppo…",
   "editor.aiReview.closeConfirm": "Chiudere la revisione e scartare le slide generate? Non è ancora stato aggiunto nulla alla presentazione.",
-  "editor.aiReview.convertFailed": "Conversione non riuscita.",
+  "editor.aiReview.convertFailed": "Impossibile cambiare il tipo di slide.",
   "editor.aiReview.converting": "Cambio del tipo di slide…",
   "editor.aiReview.discard": "Scarta",
   "editor.aiReview.feedbackLabel": "Vuoi qualcosa di diverso? Descrivilo e modifica il gruppo",
