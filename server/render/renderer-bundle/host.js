@@ -22,10 +22,13 @@ import {
   REQUEST_LIMIT,
   RESPONSE_SCHEMA,
   readFrame,
-} from './runner/protocol.js';
+} from './protocol.js';
 
 /** The one setting that connects this installation to a runner. */
 export const RUNNER_SOCKET_ENV = 'RENDERER_RUNNER_SOCKET';
+
+/** The largest request frame the runner accepts, envelope included. */
+export const RUNNER_REQUEST_LIMIT = REQUEST_LIMIT;
 
 /** Queue expiry (40 s), the whole active job (30 s) and the broker's 5 s
  * read and write deadlines, as one absolute bound on a call. */
@@ -56,7 +59,7 @@ const unavailable = (message) =>
  * @returns {string|null}
  */
 export function runnerSocketPath() {
-  const value = envStr('RENDERER_RUNNER_SOCKET');
+  const value = envStr(RUNNER_SOCKET_ENV);
   if (
     !value ||
     !path.isAbsolute(value) ||

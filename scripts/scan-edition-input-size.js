@@ -34,7 +34,7 @@ import { parseArgs } from 'node:util';
 import { isCli } from './lib/is-cli.js';
 import { loadDotEnv } from '../server/config/env.js';
 import { createMigrationDb } from '../server/db/migrate.js';
-import { REQUEST_LIMIT } from '../server/render/renderer-bundle/runner/protocol.js';
+import { RUNNER_REQUEST_LIMIT } from '../server/render/renderer-bundle/index.js';
 import { filterForPublished } from '../server/utils/public-output.js';
 import { resolveServedAssetPath } from '../server/utils/served-asset-path.js';
 import { collectServedAssetRefs } from '../shared/slide-types/deck-assets.js';
@@ -45,7 +45,7 @@ const REPO_ROOT = path.resolve(
 );
 
 /** The runner's request limit. */
-export const EDITION_REQUEST_LIMIT = REQUEST_LIMIT;
+export const EDITION_REQUEST_LIMIT = RUNNER_REQUEST_LIMIT;
 
 /**
  * The size estimate of one deck.

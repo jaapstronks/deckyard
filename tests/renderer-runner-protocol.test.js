@@ -10,7 +10,7 @@ import {
   refusalBytes,
   readFrame,
   OUTPUT_LIMIT,
-} from '../server/render/renderer-bundle/runner/protocol.js';
+} from '../server/render/renderer-bundle/protocol.js';
 
 const request = () => ({
   schema: 'deckyard.renderer-runner.request/1',

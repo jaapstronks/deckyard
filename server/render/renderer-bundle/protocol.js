@@ -1,7 +1,7 @@
 import { isUtf8 } from 'node:buffer';
-import { EDITION_INPUT_SCHEMA } from '../edition-input.js';
-import { isRendererHash } from '../manifest.js';
-import { RENDERER_BUNDLE_ERRORS } from '../errors.js';
+import { EDITION_INPUT_SCHEMA } from './edition-input.js';
+import { isRendererHash } from './manifest.js';
+import { RENDERER_BUNDLE_ERRORS } from './errors.js';
 
 export const REQUEST_LIMIT = 16 * 1024 * 1024;
 export const OUTPUT_LIMIT = 64 * 1024 * 1024;

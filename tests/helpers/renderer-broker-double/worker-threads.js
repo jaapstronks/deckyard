@@ -9,7 +9,7 @@
 
 import { EventEmitter } from 'node:events';
 
-import { validateOutput } from '../../../server/render/renderer-bundle/runner/protocol.js';
+import { validateOutput } from '../../../server/render/renderer-bundle/protocol.js';
 import { SELF_TEST_RESULT } from '../../../server/render/renderer-bundle/runner/policy.js';
 
 export class Worker extends EventEmitter {
