@@ -54,9 +54,13 @@ export function assertSlidesComplete(pres, slideTypes) {
     slides.length === 1
       ? `Slide ${slides[0]} still has an empty image`
       : `Slides ${slides.join(', ')} still have an empty image`;
+  // The code is set below, so the class default would name the payload; the
+  // register checks it under `incomplete_slides` at serialization, as it does
+  // `missing_alt`'s.
+  const details = { slides };
   const err = new UnprocessableError(
     `${which}. Choose an image or delete the slide before publishing.`,
-    { slides },
+    details,
   );
   err.code = 'incomplete_slides';
   throw err;

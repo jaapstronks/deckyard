@@ -4,7 +4,7 @@
  * a reader, in every language version, and from every reader channel; the
  * data formats keep it; the MCP previews mark it in place.
  *
- * The deck is the B769 reader-boundary fixture with one incomplete slide
+ * The deck is the reader-boundary fixture (B769) with one incomplete slide
  * appended to every language list, so the fixture's own jumps and counts keep
  * their meaning. Its draft and `hideInExport` slides double as the proof that
  * the rendered exports now honour export visibility for the author too.
