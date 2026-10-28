@@ -157,6 +157,7 @@ export async function handlePresentationCommentApply(
     presentationId: id,
     slideTypes,
     content: comment.proposedSlide.content,
+    demoPictures: false,
   });
 
   // Insert the new slide after the original slide, in its group (D325)

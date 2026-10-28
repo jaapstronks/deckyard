@@ -123,7 +123,11 @@ export default {
           label: 'Image URL',
           labelKey: 'editor.slideField.imageUrl.label',
           type: 'image',
-          required: true,
+          // An empty slot is storable: it is the gallery's "a picture goes
+          // here" (D211). The list is `essential`, so the slide reads as
+          // incomplete until the author fills it, the way an empty
+          // image-slide does (B866).
+          required: false,
         },
         // Focus is carried data here, not editor surface (`hidden`): the
         // canvas focus handle and the inspector's image card own it.

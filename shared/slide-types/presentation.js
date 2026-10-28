@@ -169,6 +169,8 @@ export function newPresentation({
  * 4. `applyInstanceKeyDefaults` — the keys the type declares as bound to this
  *    slide instance (`pollId`, `presentationId`). A declaration, so there is
  *    no branch on the type name here.
+ * 5. Without `demoPictures`, the pictures a list took from the defaults
+ *    rather than from `content` are cleared (`withoutDefaultPictures`).
  *
  * @param {Object} opts
  * @param {string} opts.type - slide type id
@@ -192,6 +194,12 @@ export function newPresentation({
  *   created too, and the editor passes the `/api/slide-types` metadata it
  *   already holds. `type` is a registry key here, not a spelling to resolve —
  *   callers fold spellings down with `resolveSlideTypeName()` first.
+ * @param {boolean} [opts.demoPictures=true] - keep the demo photos a type's
+ *   insert defaults put in its lists (the gallery's). They are the editor's:
+ *   an author inserting a gallery sees what it looks like. Every route where
+ *   an import or an agent composes the slide passes `false`, so a list it
+ *   left out keeps its slots but not their pictures, and the slide is
+ *   incomplete until the author picks them (B862, B866).
  */
 export function newSlide({
   type,
@@ -201,6 +209,7 @@ export function newSlide({
   content = null,
   presentationId = '',
   slideTypes,
+  demoPictures = true,
 }) {
   if (!slideTypes || typeof slideTypes !== 'object') {
     throw new TypeError(
@@ -225,7 +234,36 @@ export function newSlide({
     presentationId: presentationId || '',
     newId: cryptoUuid,
   });
+  if (!demoPictures) withoutDefaultPictures(slide.content, def, content);
   return slide;
+}
+
+/**
+ * Clear the pictures a new slide's lists took from its type's defaults rather
+ * than from the caller: the image sub-fields of an `items` list the patch
+ * leaves out (the gallery's demo photos). The list keeps its default items, so
+ * a gallery keeps its empty slots to fill. A top-level `image` field is not
+ * touched: core defaults leave it empty, and a default a type or installation
+ * configures there is a real picture (`tests/ai-params-image-placeholder.test.js`),
+ * as is the theme preset seeded into `slideBgImage`. Mutates `content` in place.
+ *
+ * @param {Object} content - the composed slide content
+ * @param {Object} def - the slide type
+ * @param {Object|null} patch - what the caller itself carried
+ */
+function withoutDefaultPictures(content, def, patch) {
+  const given = patch && typeof patch === 'object' ? patch : {};
+  for (const field of def.fields || []) {
+    if (field.type !== 'items' || field.key in given) continue;
+    const images = (field.itemFields || []).filter((f) => f?.type === 'image');
+    if (!images.length || !Array.isArray(content[field.key])) continue;
+    content[field.key] = content[field.key].map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+      const out = { ...item };
+      for (const sub of images) if (sub.key in out) out[sub.key] = '';
+      return out;
+    });
+  }
 }
 
 function clampPercent(value, fallback) {
