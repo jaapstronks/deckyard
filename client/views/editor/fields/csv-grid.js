@@ -478,7 +478,7 @@ export function createCsvGridEditor({
     outlined: true,
     ariaLabel: t('editor.chart.grid.viewLabel', 'Data editor view'),
     segments: [
-      { value: 'grid', label: t('editor.chart.grid.tabGrid', 'Grid') },
+      { value: 'grid', label: t('editor.chart.grid.tabGrid', 'Table') },
       { value: 'raw', label: t('editor.chart.grid.tabRaw', 'Raw CSV') },
     ],
     value: mode,

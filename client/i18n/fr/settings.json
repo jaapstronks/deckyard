@@ -247,7 +247,7 @@
   "settings.admin.emailTemplates.defaultLocaleSaved": "Langue par défaut mise à jour.",
   "settings.admin.emailTemplates.fieldCustomized": "Valeur personnalisée utilisée",
   "settings.admin.emailTemplates.fieldDefault": "Valeur par défaut utilisée (tapez pour personnaliser)",
-  "settings.admin.emailTemplates.fields.body": "Corps du message",
+  "settings.admin.emailTemplates.fields.body": "Corps",
   "settings.admin.emailTemplates.fields.buttonLabel": "Libellé du bouton",
   "settings.admin.emailTemplates.fields.footer": "Pied de page",
   "settings.admin.emailTemplates.fields.greeting": "Formule d'appel",
