@@ -8,7 +8,7 @@
   "admin.jsonDebug.menuItem": "JSON anzeigen (Debug)",
   "admin.jsonDebug.menuItemTitle": "Rohe JSON-Daten der Folie anzeigen und bearbeiten",
   "admin.jsonDebug.noSlideSelected": "Keine Folie ausgewählt",
-  "admin.jsonDebug.reset": "Zurücksetzen",
+  "admin.jsonDebug.reset": "Änderungen verwerfen",
   "admin.jsonDebug.save": "Änderungen übernehmen",
   "admin.jsonDebug.saved": "Änderungen übernommen",
   "admin.jsonDebug.schemaCopied": "Schema in die Zwischenablage kopiert",

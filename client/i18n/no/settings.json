@@ -8,7 +8,7 @@
   "admin.jsonDebug.menuItem": "Vis JSON (feilsøking)",
   "admin.jsonDebug.menuItemTitle": "Se og rediger lysbildets rå JSON-data",
   "admin.jsonDebug.noSlideSelected": "Ingen lysbilde valgt",
-  "admin.jsonDebug.reset": "Tilbakestill",
+  "admin.jsonDebug.reset": "Forkast endringene",
   "admin.jsonDebug.save": "Ta i bruk endringene",
   "admin.jsonDebug.saved": "Endringene er tatt i bruk",
   "admin.jsonDebug.schemaCopied": "Skjemaet er kopiert til utklippstavlen",

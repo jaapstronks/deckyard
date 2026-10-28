@@ -572,7 +572,7 @@
   "editor.slide.aiConvert.converting": "Konverterer med AI…",
   "editor.slide.aiConvert.failed": "Konverteringen mislykkedes: {error}",
   "editor.slide.aiConvert.title": "Brug AI til at konvertere denne slide til en anden type på en gennemtænkt måde.",
-  "editor.slide.aiIterate.applied": "Ændringer anvendt",
+  "editor.slide.aiIterate.applied": "Ændringerne er anvendt",
   "editor.slide.aiIterate.button": "Forfin",
   "editor.slide.aiIterate.cancel": "Annullér",
   "editor.slide.aiIterate.cancelled": "Forfiningen blev annulleret.",

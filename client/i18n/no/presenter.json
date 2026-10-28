@@ -55,7 +55,7 @@
   "notes.speakerNotes": "Talernotater",
   "notes.upNext": "Neste ut",
   "notes.upNextSlideOf": "Neste ut · Lysbilde {current} / {total}",
-  "notesJoin.copyLink": "Kopier lenke",
+  "notesJoin.copyLink": "Kopier lenken",
   "notesJoin.copyPrompt": "Kopier denne lenken:",
   "notesJoin.help": "Skann QR-koden med telefonen din for å åpne notat-companion.",
   "notesJoin.open": "Åpne companion",

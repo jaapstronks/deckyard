@@ -54,7 +54,7 @@
   "notes.speakerNotes": "Talaranteckningar",
   "notes.upNext": "Härnäst",
   "notes.upNextSlideOf": "Härnäst · Slide {current} / {total}",
-  "notesJoin.copyLink": "Kopiera länk",
+  "notesJoin.copyLink": "Kopiera länken",
   "notesJoin.copyPrompt": "Kopiera denna länk:",
   "notesJoin.help": "Skanna QR-koden med din telefon för att öppna antecknings-companion.",
   "notesJoin.open": "Öppna companion",

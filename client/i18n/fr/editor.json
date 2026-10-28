@@ -400,7 +400,7 @@
   "editor.inline.addScaleLabel": "Ajouter un libellé",
   "editor.inline.clearField": "Effacer {label}",
   "editor.inline.coach": "Cliquez sur n'importe quel texte de la diapositive pour le modifier",
-  "editor.inline.coachDismiss": "Ignorer",
+  "editor.inline.coachDismiss": "Fermer",
   "editor.inline.editingField": "Modification : {label}",
   "editor.inline.focus.hint": "Faites glisser ou utilisez les flèches pour définir le point de focus",
   "editor.inline.focusPoint": "Point de focus de l'image",

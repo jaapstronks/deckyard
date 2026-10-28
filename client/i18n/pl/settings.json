@@ -8,7 +8,7 @@
   "admin.jsonDebug.menuItem": "Pokaż JSON (debugowanie)",
   "admin.jsonDebug.menuItemTitle": "Podgląd i edycja surowych danych JSON slajdu",
   "admin.jsonDebug.noSlideSelected": "Nie zaznaczono slajdu",
-  "admin.jsonDebug.reset": "Przywróć",
+  "admin.jsonDebug.reset": "Odrzuć zmiany",
   "admin.jsonDebug.save": "Zastosuj zmiany",
   "admin.jsonDebug.saved": "Zmiany zastosowane",
   "admin.jsonDebug.schemaCopied": "Skopiowano schemat do schowka",
