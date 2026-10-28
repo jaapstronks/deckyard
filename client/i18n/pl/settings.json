@@ -491,7 +491,7 @@
   "settings.integrations.rss.feedDescription": "Opis",
   "settings.integrations.rss.feedTitle": "Tytuł",
   "settings.integrations.rss.language": "Język",
-  "settings.integrations.rss.maxItems": "Maksymalna liczba pozycji",
+  "settings.integrations.rss.maxItems": "Maksymalna liczba elementów",
   "settings.integrations.rss.title": "Kanał RSS",
   "settings.mcp.description": "Deckyard mówi w Model Context Protocol: skieruj Claude Desktop, Cursor albo zdalnego agenta na ten serwer, aby tworzyć i edytować prezentacje w języku naturalnym. Dostęp zdalny uwierzytelnia się jednym z powyższych kluczy API.",
   "settings.mcp.desktop.help": "Dodaj do claude_desktop_config.json. Lokalny tryb stdio nie wymaga klucza API; podaj adres e-mail właściciela, aby prezentacje były przypisywane do właściwego konta.",
