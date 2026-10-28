@@ -590,7 +590,12 @@ One release per round, on a branch, through your own PR:
    themes and slide types load. The doc gate and the prose guards skip what
    `custom/fork.json` owns (see _What the fork owns_), so a red doc test on a
    file of yours means the path is missing from `owned`, not that the file
-   needs a core patch.
+   needs a core patch. The translation-review burndown (part of `npm test`
+   and a CI step) needs nothing from you in a round that crosses the
+   introduction of `scripts/i18n-source-state.json` (v1.91.0): your `main`
+   has no sidecar yet, so it compares your branch with the tag you merged
+   instead, and stays green as long as the fork changes no translation. The
+   CI step then fetches the full history once, to find that tag.
 5. **Open the PR**, merge it after review, and deploy.
 
 ### Tag editor import migration (B671, unreleased)

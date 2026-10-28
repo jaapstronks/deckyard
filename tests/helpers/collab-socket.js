@@ -65,6 +65,7 @@ export async function createNotedDeck(scope, fields = {}) {
     content: { title },
     _aiReasoning: `Kept the claim "${NOTE}" from page 3`,
     _aiAlternatives: [{ type: 'quote-slide', reason: `${NOTE} as a quote` }],
+    _aiSuggestAfter: { reason: `A photo of ${NOTE}` },
     _aiWarnings: [`${NOTE} was shortened`],
   });
   return createPresentation(scope, {

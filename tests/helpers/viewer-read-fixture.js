@@ -55,6 +55,7 @@ export async function seedViewerReadFixture(repoRoot = process.cwd()) {
     notes: PRIVATE_MARKERS[0],
     _aiReasoning: PRIVATE_MARKERS[1],
     _aiAlternatives: [{ reason: PRIVATE_MARKERS[1] }],
+    _aiSuggestAfter: { reason: PRIVATE_MARKERS[1] },
     _aiWarnings: [PRIVATE_MARKERS[1]],
   });
   const slides = [

@@ -1,4 +1,3 @@
-import { DEFAULT_IMAGE_PLACEHOLDER } from '../../../shared/slide-types/image-placeholder.js';
 /**
  * Slide Types Prompt Builder (V1 generation + append)
  *
@@ -37,7 +36,7 @@ function jsonExample(v) {
 // matrix (tests/slide-type-companion-coverage.test.js), which fails if an
 // override outlives the type it overrides.
 export const MANUAL_EXAMPLES = {
-  'team-cards-slide': (placeholder) => ({
+  'team-cards-slide': () => ({
     type: 'team-cards-slide',
     content: {
       title: 'Team',
@@ -51,7 +50,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'logo-wall-slide': (placeholder) => ({
+  'logo-wall-slide': () => ({
     type: 'logo-wall-slide',
     content: {
       title: 'Partners',
@@ -67,7 +66,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'table-slide': (placeholder) => ({
+  'table-slide': () => ({
     type: 'table-slide',
     content: {
       title: 'Comparison',
@@ -83,19 +82,19 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'image-text-slide': (placeholder) => ({
+  'image-text-slide': () => ({
     type: 'image-text-slide',
     content: {
       title: 'Key message',
-      body: '- Point one\n- Point two\n- TODO: replace image',
-      image: placeholder,
+      body: '- Point one\n- Point two',
+      image: '',
       caption: '',
       imageSide: 'right',
       background: 'mist',
     },
   }),
 
-  'poll-slide': (placeholder) => ({
+  'poll-slide': () => ({
     type: 'poll-slide',
     content: {
       question: 'Which option fits best?',
@@ -108,7 +107,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'likert-slide': (placeholder) => ({
+  'likert-slide': () => ({
     type: 'likert-slide',
     content: {
       question: 'I found this session useful.',
@@ -123,7 +122,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'likert-slider-slide': (placeholder) => ({
+  'likert-slider-slide': () => ({
     type: 'likert-slider-slide',
     content: {
       question: 'Rate your confidence (1-10).',
@@ -133,7 +132,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'feedback-slide': (placeholder) => ({
+  'feedback-slide': () => ({
     type: 'feedback-slide',
     content: {
       question: 'What should we improve next?',
@@ -142,7 +141,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'chart-slide': (placeholder) => ({
+  'chart-slide': () => ({
     type: 'chart-slide',
     content: {
       title: 'Community engagement (index) and call traffic',
@@ -160,7 +159,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'funnel-slide': (placeholder) => ({
+  'funnel-slide': () => ({
     type: 'funnel-slide',
     content: {
       title: 'Sales Funnel',
@@ -175,7 +174,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'pyramid-slide': (placeholder) => ({
+  'pyramid-slide': () => ({
     type: 'pyramid-slide',
     content: {
       title: 'Priority Pyramid',
@@ -190,7 +189,7 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'cycle-slide': (placeholder) => ({
+  'cycle-slide': () => ({
     type: 'cycle-slide',
     content: {
       title: 'Continuous Improvement',
@@ -206,33 +205,17 @@ export const MANUAL_EXAMPLES = {
     },
   }),
 
-  'gallery-slide': (placeholder) => ({
+  'gallery-slide': () => ({
     type: 'gallery-slide',
     content: {
       title: 'Project Highlights',
       subheading: 'Recent work',
       layout: 'grid',
       images: [
-        {
-          src: placeholder,
-          caption: 'Project Alpha',
-          alt: 'The Project Alpha team at the kickoff',
-        },
-        {
-          src: placeholder,
-          caption: 'Project Beta',
-          alt: 'A prototype of Project Beta on a desk',
-        },
-        {
-          src: placeholder,
-          caption: 'Project Gamma',
-          alt: 'The Project Gamma dashboard on a laptop',
-        },
-        {
-          src: placeholder,
-          caption: 'Project Delta',
-          alt: 'Project Delta volunteers planting trees',
-        },
+        { src: '', caption: 'Project Alpha', alt: '' },
+        { src: '', caption: 'Project Beta', alt: '' },
+        { src: '', caption: 'Project Gamma', alt: '' },
+        { src: '', caption: 'Project Delta', alt: '' },
       ],
       background: 'mist',
     },
@@ -309,7 +292,6 @@ function compactAgentSchema(schema) {
 }
 
 export function buildSlideTypesPrompt({
-  preferredPlaceholderImage = DEFAULT_IMAGE_PLACEHOLDER,
   disabledSlideTypes = [],
   customSlideTypes = [],
 } = {}) {
@@ -323,7 +305,10 @@ export function buildSlideTypesPrompt({
     'SLIDE TYPE CATALOG (use exact "type" strings; content must match the schemas):',
   );
   lines.push(
-    'Fill every field marked "essential" (for a list: at least its first entry); without it the slide looks unfinished, even where the field is optional.',
+    'Fill every text field marked "essential" (for a list: at least its first entry); without it the slide looks unfinished, even where the field is optional.',
+  );
+  lines.push(
+    'Image fields are the exception: never invent an image URL. Leave an image field empty ("") unless the request gives you the image; the author picks the picture, and the slide stays out of the presentation until then.',
   );
   lines.push('');
 
@@ -357,7 +342,7 @@ export function buildSlideTypesPrompt({
     // JSON example: manual override > catalog examples > defaults
     if (MANUAL_EXAMPLES[type]) {
       lines.push('JSON example:');
-      lines.push(jsonExample(MANUAL_EXAMPLES[type](preferredPlaceholderImage)));
+      lines.push(jsonExample(MANUAL_EXAMPLES[type]()));
     } else {
       // Use catalog examples if available
       const examples = getSlideTypeExamples(type);

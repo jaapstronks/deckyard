@@ -756,6 +756,10 @@ export async function createEditorController({
       rerenderEditor: () => rerenderEditor(),
       rerenderPreview: () => rerenderPreview(),
       getSlideListEl: () => slideListEl,
+      // The picker seam is built further down (it awaits the stock-media
+      // status); a review opens only after boot, so it is read at call time.
+      getOpenImagePicker: () => openImagePicker,
+      normalizeLang,
     });
 
   // ============================================================
@@ -918,6 +922,7 @@ export async function createEditorController({
     },
     openAiAppendWizardModal,
     openDeckOverview,
+    getOpenImagePicker: () => openImagePicker,
     isSlidesCollapsed: () =>
       document.documentElement.classList.contains('is-slides-collapsed'),
     setSlidesCollapsed: (collapsed) => {

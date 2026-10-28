@@ -345,7 +345,7 @@ test('a pathname outside the AI surface is not handled', async () => {
 });
 
 for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
-  test(`POST ${pathname}: model output without images uses the declared import placeholders`, async (t) => {
+  test(`POST ${pathname}: model output without images keeps them empty`, async (t) => {
     await installDb();
     const savedFetch = globalThis.fetch;
     const savedModel = process.env.OPENAI_COMPAT_MODEL;
@@ -407,8 +407,6 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
       pathname.endsWith('wizard') ? 201 : 200,
       JSON.stringify(ctx.res.body),
     );
-    const { DEFAULT_IMAGE_PLACEHOLDER } =
-      await import('../shared/slide-types/image-placeholder.js');
     if (pathname.endsWith('wizard')) {
       const { getPresentation } =
         await import('../server/storage/presentations/index.js');
@@ -429,11 +427,11 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
       const [titleSlide, ...contentSlides] = pres.slides;
       assert.equal(titleSlide.type, 'title-slide');
       assert.equal(contentSlides.length, 2);
-      for (const slide of contentSlides)
-        assert.equal(slide.content.image, DEFAULT_IMAGE_PLACEHOLDER);
+      // A picture the model left empty stays empty: no stock photo (B590).
+      for (const slide of contentSlides) assert.equal(slide.content.image, '');
     } else {
       for (const slide of ctx.res.body.slides)
-        assert.equal(slide.content.image, DEFAULT_IMAGE_PLACEHOLDER);
+        assert.equal(slide.content.image, '');
     }
   });
 }

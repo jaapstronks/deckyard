@@ -83,7 +83,12 @@ function safeBytes(bytes) {
   const text = String(bytes);
   for (const marker of PRIVATE_MARKERS)
     assert.ok(!text.includes(marker), marker);
-  for (const field of ['_aiReasoning', '_aiAlternatives', '_aiWarnings'])
+  for (const field of [
+    '_aiReasoning',
+    '_aiAlternatives',
+    '_aiSuggestAfter',
+    '_aiWarnings',
+  ])
     assert.ok(!text.includes(field), field);
 }
 async function safePdf(bytes) {

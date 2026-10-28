@@ -1,4 +1,4 @@
-/** Shared AI parameters and the declarative image import funnel (B669). */
+/** Shared AI parameters, and missing images on import staying empty (B669, B590). */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -10,7 +10,6 @@ import {
   SLIDE_TYPES,
   newSlide,
 } from '../shared/slide-types.js';
-import { DEFAULT_IMAGE_PLACEHOLDER } from '../shared/slide-types/image-placeholder.js';
 import { validateAndFixRefinedSlides } from '../server/utils/ai/validate-slides/index.js';
 
 test('AI parameters discard non-string raw/vendor and non-object settings', () => {
@@ -41,7 +40,7 @@ test('AI parameters discard non-string raw/vendor and non-object settings', () =
 });
 
 for (const type of ['image-slide', 'image-text-slide']) {
-  test(`${type}: deck/array import and the AI fix pass agree on missing images`, () => {
+  test(`${type}: deck/array import and the AI fix pass leave a missing image empty`, () => {
     for (const image of [undefined, null, '', '   ', 42, {}]) {
       const raw = { type, content: { image } };
       const opts = { theme: null, lang: 'en-GB', slideTypes: SLIDE_TYPES };
@@ -49,7 +48,7 @@ for (const type of ['image-slide', 'image-text-slide']) {
       const fromAppend = deckToPresentationParts([raw], opts).slides;
       const fixed = validateAndFixRefinedSlides(fromAppend, opts);
       for (const slides of [fromDeck, fromAppend, fixed]) {
-        assert.equal(slides[0].content.image, DEFAULT_IMAGE_PLACEHOLDER);
+        assert.equal(slides[0].content.image, '');
       }
       assert.equal(raw.content.image, image, 'import never mutates input');
     }
@@ -70,30 +69,7 @@ for (const type of ['image-slide', 'image-text-slide']) {
   });
 }
 
-test('the import placeholder follows a field declaration rather than a type name', () => {
-  const def = {
-    ...SLIDE_TYPES['image-slide'],
-    fields: [
-      {
-        key: 'picture',
-        type: 'image',
-        importPlaceholder: '/custom/sample.jpg',
-      },
-    ],
-    defaults: { picture: '' },
-  };
-  const slides = deckToPresentationParts(
-    [{ type: 'custom-photo', content: {} }],
-    {
-      theme: null,
-      lang: 'en-GB',
-      slideTypes: { 'custom-photo': def },
-    },
-  ).slides;
-  assert.equal(slides[0].content.picture, '/custom/sample.jpg');
-});
-
-test('a configured image default wins over the import placeholder', () => {
+test('a configured image default fills a missing image', () => {
   const type = 'image-slide';
   const def = {
     ...SLIDE_TYPES[type],

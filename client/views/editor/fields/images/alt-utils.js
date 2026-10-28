@@ -11,6 +11,21 @@
  */
 
 /**
+ * The content key that holds an image field's alt text: the field's own
+ * `altFieldKey`, else derived from its key (`image` → `alt`, `fooImage` →
+ * `fooAlt`, `logo` → `logoAlt`).
+ * @param {Object} field - an `image` field definition
+ * @returns {string}
+ */
+export function imageAltKey(field) {
+  if (field?.altFieldKey) return field.altFieldKey;
+  const imageKey = field?.key;
+  if (!imageKey || typeof imageKey !== 'string') return 'alt';
+  if (imageKey.endsWith('Image')) return imageKey.slice(0, -5) + 'Alt';
+  return imageKey === 'image' ? 'alt' : `${imageKey}Alt`;
+}
+
+/**
  * Create an alt setter function for a specific slide field
  * @param {Object} options - Configuration options
  * @param {Object} options.slide - The slide object

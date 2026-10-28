@@ -782,20 +782,9 @@ function normalizeDeckSlide(
     slideTypes: { [localName]: def },
   });
 
-  // One import fallback, after composition so a configured type default is
-  // also a real image. Insertion keeps the ordinary defaults; imports and AI
-  // output fill only an image that is still empty, from its declaration.
-  for (const field of def.fields) {
-    if (
-      field.type === 'image' &&
-      field.importPlaceholder &&
-      (typeof slide.content[field.key] !== 'string' ||
-        !slide.content[field.key].trim())
-    ) {
-      slide.content[field.key] = field.importPlaceholder;
-    }
-  }
-
+  // No stand-in picture: an image the import or the model left empty stays
+  // empty, so the slide is incomplete (`shared/incomplete-slides.js`) and the
+  // author picks one, instead of a stock photo reaching every output (B590).
   return withSlideKeys(
     { id: slide.id, type: localName, content: slide.content },
     raw,

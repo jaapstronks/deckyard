@@ -26,6 +26,7 @@ import {
 } from './validate-slides/index.js';
 import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
 import { prompts } from './prompts/index.js';
+import { offeredTypeResolver, parseSlideReview } from './slide-review.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('refine-slides');
@@ -162,6 +163,11 @@ function normalizeRefinedSlide(
   // check: the per-type validator table that stood beside it restated
   // cardinality and per-item fields, and for funnel, cycle and process read a
   // key the types do not declare (B242).
+  const review = parseSlideReview(slide, {
+    type,
+    offeredType: offeredTypeResolver(slideTypes, disabledSlideTypes),
+  });
+
   const schemaResult = validateSlideContent(slideTypes[type], content);
   if (!schemaResult.valid && schemaResult.issues.length > 0) {
     log.warn(`Content schema issues for ${type}:`, {
@@ -176,9 +182,10 @@ function normalizeRefinedSlide(
     originalIndex: originalSlide.index,
     type,
     content,
-    reasoning: String(slide?.reasoning || '').trim(),
-    alternativeType: String(slide?.alternativeType || '').trim() || null,
-    alternativeReason: String(slide?.alternativeReason || '').trim() || null,
+    // The one review shape (B590): `why` is the slide's reasoning from here on.
+    reasoning: review.why,
+    alternatives: review.alternatives,
+    imageSuggestionAfter: review.imageSuggestionAfter,
     // Phase 2 writes the notes from the source context; an outline that still
     // carries notes (a revision merge) is the fallback.
     presenterNotes:

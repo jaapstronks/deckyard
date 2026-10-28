@@ -14,7 +14,8 @@
  *   - the stored deck has a language (`lang`), the title slide its
  *     `subheading`, a content slide the `notes` phase 2 wrote;
  *   - the stored content slide keeps the review metadata (`_aiReasoning`,
- *     `_aiAlternatives`) the editor's review grid reads.
+ *     `_aiAlternatives`, `_aiSuggestAfter`) the editor's review grid reads,
+ *     parsed through the one review shape (B590).
  *
  * The file and Notion imports ran a chain of their own (until B757): no theme
  * context, a hard `title-slide`, the notes and the review alternatives of
@@ -57,6 +58,8 @@ const SUBTITLE = 'Who we build with';
 const NOTES = 'Name the three partners and why each one matters.';
 const REASONING = 'Three short points read best as one content slide.';
 const ALTERNATIVE = 'list-slide';
+const ALTERNATIVES = [ALTERNATIVE, 'quote-slide', 'icon-card-grid-slide'];
+const SUGGESTION = 'A photo of the partners together.';
 /** Only the phase 2 system prompt has this header. */
 const PHASE2_MARKER = 'PRESENTATION CONTEXT';
 
@@ -127,9 +130,20 @@ const ANSWER = {
       type: 'content-slide',
       content: { title: 'Our partners', body: 'Three partners.' },
       presenterNotes: NOTES,
-      reasoning: REASONING,
-      alternativeType: ALTERNATIVE,
-      alternativeReason: 'Each partner as its own item.',
+      why: REASONING,
+      // One review shape (B590): up to three offered types; the slide's own
+      // type, a repeat and an unknown type are dropped, a reverse-DNS id
+      // folds to its registry key.
+      alternatives: [
+        { type: ALTERNATIVE, reason: 'Each partner as its own item.' },
+        { type: 'content-slide', reason: 'its own type' },
+        { type: ALTERNATIVE, reason: 'a repeat' },
+        { type: 'nonsense-slide', reason: 'not a type' },
+        { type: 'eu.deckyard.slide.quote', reason: 'One partner speaks.' },
+        { type: 'icon-card-grid-slide', reason: 'One card per partner.' },
+        { type: 'timeline-slide', reason: 'a fourth one' },
+      ],
+      imageSuggestionAfter: { reason: SUGGESTION },
     },
   ],
 };
@@ -242,9 +256,22 @@ function assertOnePipeline(prompts, label, { titleSlide = true } = {}) {
   );
   assert.deepEqual(
     content._aiAlternatives?.map((alt) => alt.type),
-    [ALTERNATIVE],
+    ALTERNATIVES,
     `${label}: _aiAlternatives`,
   );
+  assert.deepEqual(
+    content._aiSuggestAfter,
+    { reason: SUGGESTION },
+    `${label}: _aiSuggestAfter`,
+  );
+  for (const body of phase2) {
+    assert.match(body, /imageSuggestionAfter/, `${label}: review rules`);
+    assert.doesNotMatch(
+      body,
+      /TODO: replace image|demo-aurora/,
+      `${label}: no stand-in`,
+    );
+  }
 }
 
 test('the wizard stream runs the one pipeline', async (t) => {

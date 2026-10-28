@@ -15,6 +15,7 @@ import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { refineSectionWithAi } from '../../../utils/ai/refine-section.js';
+import { attachBatchReviews } from '../../../utils/ai/slide-review.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
@@ -64,21 +65,20 @@ export const handleAiRefineSection = withErrorHandler(
     // and fixed in (B247).
     const slideTypes = await buildMergedSlideTypes(storageScope);
 
-    const {
-      slides: revisedRaw,
-      rationale,
-      review,
-    } = await refineSectionWithAi(presentation, {
-      start,
-      end,
-      feedback,
-      targetLang: lang,
-      vendor,
-      ...slideTypeOffer,
-    });
+    const { slides: revisedRaw, rationale } = await refineSectionWithAi(
+      presentation,
+      {
+        start,
+        end,
+        feedback,
+        targetLang: lang,
+        vendor,
+        ...slideTypeOffer,
+      },
+    );
 
-    // Normalize so ids exist and content matches schemas, then re-attach the
-    // per-slide "why" (normalization strips unknown keys).
+    // Normalize so ids exist and content matches schemas, then attach the
+    // per-slide review (normalization strips unknown keys).
     // Against the theme of the deck being refined: a revised slide composes
     // like a newly inserted one of the same type.
     const parts = deckToPresentationParts(revisedRaw, {
@@ -88,8 +88,9 @@ export const handleAiRefineSection = withErrorHandler(
     });
     let slides = Array.isArray(parts?.slides) ? parts.slides : [];
     slides = validateAndFixRefinedSlides(slides, { slideTypes });
-    slides.forEach((s, i) => {
-      if (review?.[i]?.why) s._aiReasoning = review[i].why;
+    attachBatchReviews(slides, revisedRaw, {
+      slideTypes,
+      disabledSlideTypes: slideTypeOffer.disabledSlideTypes,
     });
 
     serveJson(res, 200, { slides, rationale, range: { start, end } });

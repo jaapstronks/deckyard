@@ -75,6 +75,7 @@ import {
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
+import { attachBatchReviews } from '../utils/ai/slide-review.js';
 import {
   loadDeckTheme,
   loadThemeAssets,
@@ -1251,6 +1252,7 @@ export function registerTools(
       const lang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
       const existingDeck = presentationToDeck(pres);
 
+      const slideTypeOffer = await sessionSlideTypeOffer(context);
       const { slides: newSlides } = await generateSlidesToAppendFromRawContent(
         content,
         {
@@ -1258,7 +1260,7 @@ export function registerTools(
           targetLang: lang,
           contentOnly: true,
           vendor: vendor || null,
-          ...(await sessionSlideTypeOffer(context)),
+          ...slideTypeOffer,
         },
       );
 
@@ -1283,6 +1285,12 @@ export function registerTools(
       const slidesToInsert = validateAndFixRefinedSlides(parts.slides || [], {
         slideTypes,
         theme,
+      });
+      // The same review the editor's "add slides" gets (B590): the author
+      // opens it from the deck afterwards.
+      attachBatchReviews(slidesToInsert, newSlides, {
+        slideTypes,
+        disabledSlideTypes: slideTypeOffer.disabledSlideTypes,
       });
 
       // Find insert position: before structural closing slides (payoff, end).

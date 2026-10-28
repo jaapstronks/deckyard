@@ -501,3 +501,74 @@
   max-width: 100%;
   white-space: normal;
 }
+
+/* ============================================
+   Review layout (B590): one row per slide, the tile with its annotation
+   beside it; stacked on a narrow screen. Suggestion rows sit between two
+   slides.
+   ============================================ */
+
+.deck-grid.is-review {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.deck-grid.is-review .deck-grid-tile {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+  gap: var(--ps-space-3);
+}
+
+.deck-grid.is-review .deck-grid-annotation {
+  margin-top: 0;
+  font-size: var(--ps-text-sm);
+}
+
+@media (max-width: 640px) {
+  .deck-grid.is-review .deck-grid-tile {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ps-space-2);
+  }
+}
+
+/* An action group in the review layer: whole buttons wrap to the next line
+   instead of shrinking; a long label wraps inside its own button at word
+   boundaries, never mid-word. */
+.deck-grid-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+}
+
+.deck-grid-actions > .btn {
+  min-height: 44px;
+  min-width: 44px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+
+.deck-grid-missing {
+  margin-top: var(--ps-space-2);
+}
+
+.deck-grid-suggestion {
+  padding: var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 1px dashed hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+.deck-grid-suggestion > p {
+  margin: 0 0 var(--ps-space-1);
+}
+
+.deck-grid-suggestion-title {
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
