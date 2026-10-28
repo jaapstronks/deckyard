@@ -412,6 +412,14 @@ paths:
                 properties:
                   presentation:
                     $ref: '#/components/schemas/Presentation'
+                  reviewUrl:
+                    type: string
+                    format: uri
+                    description: >-
+                      Present when a slide carried a `reviewNote` and this
+                      installation has AI on: the editor link that opens the
+                      deck review on top. Opening it needs edit rights on the
+                      deck, like the edit link.
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -468,7 +476,9 @@ paths:
         with 400 `invalid` and `details.field` naming the field. As on create,
         `themeId` and `language` are refused with a 400 naming `theme` and
         `lang`. The same save backs the editor, so the same refusals hold
-        there.
+        there. A slide keeps its stored review explanation, matched by `id`,
+        unless it sends a different `reviewNote`, so a GET-then-PUT keeps the
+        author's review material.
       parameters:
         - name: id
           in: path
@@ -644,6 +654,12 @@ paths:
                 notes:
                   type: string
                   description: Speaker notes
+                reviewNote:
+                  type: string
+                  maxLength: 500
+                  description: >-
+                    Why this slide looks the way it does, for the author (see
+                    `Slide.reviewNote`).
                 visibility:
                   type: object
                   description: Per-context visibility flags
@@ -2442,6 +2458,19 @@ components:
         notes:
           type: string
           description: Speaker notes
+        reviewNote:
+          type: string
+          maxLength: 500
+          description: >-
+            Why this slide looks the way it does, for the author: the editor
+            shows it beside the slide in the deck review and marks it outdated
+            once the slide changes. Never part of the deck's output. Sent on a
+            write, it becomes the slide's explanation (a longer or non-string
+            value is 400 `invalid`, `details.field` = `reviewNote`); answered
+            only to a key whose owner may edit the deck. A slide carrying a
+            raw `_ai*` key (`_aiReasoning`, `_aiReview`, …) is refused with 400
+            `invalid`, `details.field` naming that key: `reviewNote` is the one
+            public spelling.
         parentId:
           type: string
           format: uuid

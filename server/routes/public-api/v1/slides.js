@@ -16,6 +16,10 @@ import {
 } from '../../../services/slides.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
 import {
+  refuseRawReviewKeys,
+  reviewNoteOut,
+} from '../../../utils/ai/review-note.js';
+import {
   requirePermission,
   dispatchV1Routes,
   v1MethodNotAllowed,
@@ -33,16 +37,20 @@ import {
 } from '../../../utils/request-validators.js';
 
 /**
- * Sanitize a slide for API response.
+ * Sanitize a slide for API response. Who may edit the deck also gets the
+ * author's material: the speaker notes and the review explanation as
+ * `reviewNote` (B590).
  */
 function sanitizeSlide(slide, { includeNotes = true } = {}) {
   if (!slide) return null;
+  const reviewNote = includeNotes ? reviewNoteOut(slide).reviewNote : null;
   return {
     id: slide.id,
     // Published spelling (canonical id) on the wire; storage keeps the key.
     type: canonicalSlideType(slide.type),
     content: slide.content || {},
     ...(includeNotes ? { notes: slide.notes || '' } : {}),
+    ...(reviewNote ? { reviewNote } : {}),
     parentId: slide.parentId || null,
     visibility: slide.visibility || {},
   };
@@ -124,6 +132,7 @@ async function handleCreateSlide(ctx, presentationId) {
   if (!requirePermission(ctx, 'write')) return true;
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
+  refuseRawReviewKeys(body);
   const { slide, index, presentation } = await addSlide(
     ctx.storageScope,
     { actor: ctx.authedUser },
@@ -135,6 +144,7 @@ async function handleCreateSlide(ctx, presentationId) {
       visibility: getOptionalObject(body, 'visibility') ?? undefined,
       atIndex: getNonNegativeNumber(body, 'atIndex'),
       afterSlideId: body.afterSlideId,
+      reviewNote: body.reviewNote,
     },
   );
 

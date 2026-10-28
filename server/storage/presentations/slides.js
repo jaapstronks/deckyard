@@ -13,6 +13,7 @@ import {
 } from '../../../shared/slide-types/instance-keys.js';
 import { normalizeDataSource } from '../../../shared/data-source.js';
 import { textStyleRefusals } from '../../../shared/slide-types/text-styles.js';
+import { bindAiReview } from '../../../shared/ai-review.js';
 import { AppError, ValidationError } from '../../utils/errors.js';
 
 // An example canonical id for the error message, read from the registry so it
@@ -58,6 +59,9 @@ function refuseUnofferedTextStyles(textStyles, def, index) {
  * (docs/reference/versioning.md § The beta stance). A type no registry key
  * answers to is a 400 — which is what finally closes the whole-deck PUT that,
  * in Postgres mode, let arbitrary strings reach storage unvalidated.
+ *
+ * It binds an unbound AI review explanation (`_aiReview` without a
+ * fingerprint, as an agent's `reviewNote` arrives) to the normalized slide.
  *
  * It is also where a slide's **instance keys** are filled in: the content keys
  * a type declares as bound to one slide instance rather than to its text
@@ -161,6 +165,16 @@ export function normalizeSlides(
       s.dataSource.provider
     ) {
       normalized.dataSource = normalizeDataSource(s.dataSource);
+    }
+    // A review explanation that arrives unbound (an agent's `reviewNote`,
+    // `server/utils/ai/review-note.js`) is bound here, to the slide as it is
+    // stored, so it reads as current until the slide changes (B590).
+    if (
+      s?._aiReview &&
+      typeof s._aiReview === 'object' &&
+      !s._aiReview.fingerprint
+    ) {
+      bindAiReview(normalized, s._aiReview);
     }
     return normalized;
   });

@@ -255,6 +255,7 @@ When the caller is itself an LLM (or any agent that already has structured data)
 - `validation: "strict"` (default) throws `{ slideIndex, slideType, field, expected, got, message }` on the first issue — no partial write.
 - `validation: "fix"` applies structural auto-fixes (pad, layout switch); overlong text is refused and returns the repairs as `appliedFixes` in the response.
 - `auto_prepend_title: true` prepends the theme's default title-slide using `title` when the first slide isn't already one.
+- `reviewNote` (per slide, optional, at most 500 characters) is the explanation for the author the editor's deck review shows beside the slide; it never reaches the deck's output. With a note on any slide, and AI on, the answer carries `reviewUrl`, the editor link that opens that review. `add_slide` takes `reviewNote` too; `create_presentation` and `append_slides` always answer `reviewUrl` (contract: `docs/reference/ai-slide-review.md` § The public contract).
 
 Call `get_slide_types` first (it returns an `example` field per type) to see the exact content shape for each slide type.
 

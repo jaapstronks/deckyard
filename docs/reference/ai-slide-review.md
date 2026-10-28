@@ -127,11 +127,49 @@ grid can show them after the editor loads the deck.
   in full, the type catalog, and the feedback; the response replaces the range
   in place (slide count may change; editor undo covers revert).
 - **Discard deck** (post-generation only): create-then-review model — the deck
-  already exists, so discard moves it to the trash and navigates back.
+  already exists, so discard moves it to the trash and navigates back. The
+  URL flag does not offer it: `?aiReview=1` is also the link an agent gets
+  (`reviewUrl`, below), so it only opens the review. A generation flow hands
+  the fresh deck over in memory (`openGeneratedDeck()` in
+  `client/lib/state/generated-deck.js`) and the editor takes it once
+  (`takeGeneratedDeck()`); a reload, a shared link or a second tab opens the
+  review without it.
 - Real progress: `refineAllSlideGroups` reports per-group completion
   (`onGroupDone`), the wizard-v2 SSE stream emits phase `refine-progress`
   ("Wrote section 2 of 5…"), and the loading modal switches from rotating
   placeholder messages to real progress.
+
+## The public contract: `reviewNote` and `reviewUrl`
+
+An agent that builds a deck itself speaks one field for a slide's
+explanation, `reviewNote` (string, at most 500 characters), on MCP
+`create_presentation_from_slides` and `add_slide` and on v1
+`POST /presentations`, `PUT /presentations/{id}` and
+`POST /presentations/{id}/slides`, including `i18n.versions`. The mapping is
+`server/utils/ai/review-note.js`:
+
+- **In:** the note becomes `_aiReasoning` plus `_aiReview` with
+  `kind: 'content'`, `origin: 'agent'` and no source passage. `kind` keeps
+  its meaning (what sort of evidence); `origin` says who wrote it. The
+  review arrives unbound and the write seam (`normalizeSlides`) binds it to
+  the slide as stored, so a fresh agent deck reads as current and the first
+  edit makes it stale.
+- **Strict at the v1 boundary:** a slide carrying a raw `_ai*` key is 400
+  `invalid`, `details.field` naming the key. The storage factory still lets
+  the keys ride along, because the wizard, MCP generation and the imports
+  write them.
+- **Out:** v1 answers a writer `reviewNote` and never the raw keys, in every
+  language version and on a single slide; a reader gets neither (the reader
+  projection strips the keys first, B769).
+- **PUT:** a slide keeps its stored review keys, matched by id per language
+  version, unless it sends a different `reviewNote`; that replaces only the
+  explanation (alternatives and suggestion stay). A GET-then-PUT therefore
+  keeps the source passages of an AI deck.
+
+`reviewUrlFor()` (same module) gives the editor link with `?aiReview=1`, only
+with the `ai` cluster on and a configured base URL: MCP `create_presentation`
+and `append_slides` always, `create_presentation_from_slides` and v1 create
+when a slide carried a note. It opens nothing beyond what the edit link does.
 
 ## Model configuration (Claude vendor)
 

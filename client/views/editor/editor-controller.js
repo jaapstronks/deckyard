@@ -92,6 +92,7 @@ import { createDeckSettingsPane } from './deck-settings/index.js';
 import { attachDeckSettingsRoute } from './deck-settings/route.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
+import { takeGeneratedDeck } from '../../lib/state/generated-deck.js';
 import { createEditorDropdowns } from './editor-dropdowns.js';
 import { createEditorCleanupRegistry } from './editor-cleanup.js';
 import {
@@ -1941,14 +1942,20 @@ export async function createEditorController({
     });
   }
 
-  // Fresh AI-generated deck: open the whole-deck review grid on top of the
-  // editor. The flag is stripped from the URL so a refresh doesn't reopen it.
-  // Where AI is off no deck was AI-generated and the review's swap and refine
-  // routes are not mounted, so a stray flag opens nothing (D179).
+  // `?aiReview=1` opens the whole-deck review grid on top of the editor: a
+  // fresh generation lands here, and so does an agent's `reviewUrl`. The flag
+  // is stripped from the URL so a refresh doesn't reopen it. Only a deck this
+  // tab just generated is offered "Discard deck" (`generated-deck.js`), so a
+  // shared or old link can never throw one away (B590). Where AI is off the
+  // review's swap and refine routes are not mounted, so the flag opens
+  // nothing (D179).
+  const justGenerated = takeGeneratedDeck(pres?.id);
   if (queryParam('aiReview') === '1') {
     setQueryParams({ aiReview: null });
     if (featureEnabled('ai'))
-      requestAnimationFrame(() => openAiDeckReview({ postGeneration: true }));
+      requestAnimationFrame(() =>
+        openAiDeckReview({ postGeneration: justGenerated }),
+      );
   }
 
   updatePills();
