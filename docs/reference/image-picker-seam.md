@@ -87,8 +87,11 @@ A DAM is a place to _find_ an image, not a place a deck should depend on. So
 picking an ImageKit image copies it into this installation's own media first,
 and the slide gets a URL this install serves; the ImageKit file id stays on the
 slide as `imagekitFileId`, saying where the image came from, and is no longer a
-live image source. Nothing about a deck already stored changes — this is the
-write path only.
+live image source. A type with a single-image field other than the background
+declares that key (`PROVENANCE_SLIDE_CONTENT_KEYS` in `compose.js`), so a write
+accepts it and migration 102 keeps it; the background picker writes the URL
+only. Nothing about a deck already stored changes — this is the write path
+only.
 
 The copy lives in the **ImageKit adapter**, which is what makes it hold
 everywhere: the side-form fields, the collection images and the inline popover
