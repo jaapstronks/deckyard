@@ -29,11 +29,14 @@ import {
 import { lifecycleChannel } from './channel.js';
 import {
   brokerProperties,
+  brokerLaunchState,
+  brokerPeerRefusal,
   supervisorProperties,
   assertProducerPolicy,
   startBrokerService,
   stopBrokerService,
 } from './service-policy.js';
+import { brokerLauncher } from './broker-launch.js';
 import {
   populated,
   kill,
@@ -46,9 +49,9 @@ const CG = '/sys/fs/cgroup';
 const now = () => performance.now();
 const id = () => randomBytes(16).toString('hex');
 const pause = () => new Promise((resolve) => setTimeout(resolve, 25));
-const log = (job, phase) =>
+const log = (job, phase, detail = {}) =>
   process.stdout.write(
-    `${JSON.stringify({ jobId: job?.id ?? null, phase })}\n`,
+    `${JSON.stringify({ jobId: job?.id ?? null, phase, ...detail })}\n`,
   );
 /** Independent owner of the only slot. All mutation messages are serialized on
  * this loop; every active phase has one irreversible path to CLEANED. */
@@ -92,6 +95,12 @@ export async function startSupervisor() {
     cleaning = false,
     channel = null,
     retiring = false;
+  const launcher = brokerLauncher({
+    start: startBrokerService,
+    state: brokerLaunchState,
+    busy: () => Boolean(instance) || retiring,
+    log: (name, detail) => log(null, name, detail),
+  });
   function persist() {
     saveLedger(ledger);
   }
@@ -145,7 +154,7 @@ export async function startSupervisor() {
       previous?.close();
       if (retired) closeSync(retired.pidfd);
       stopBrokerService();
-      if (restart) startBrokerService();
+      if (restart) launcher.launch();
       else log(null, 'self_test_not_ready');
     } catch {
       log(null, 'instance_retirement_blocked');
@@ -324,23 +333,49 @@ export async function startSupervisor() {
       throw new Error('invalid lifecycle socket');
     unlinkSync(PATHS.supervisor);
   }
-  const server = net.createServer({ pauseOnConnect: true }, (socket) => {
-    let peer;
+  // Admits the broker unit's main process as the one lifecycle peer. The unit
+  // query is asynchronous: under boot load it may take seconds, and a refusal
+  // names the failed condition (pid and unit only, no other peer data).
+  async function admit(socket) {
+    let peer, condition;
     try {
       peer = native.peer(socket._handle.fd);
-      const current = brokerProperties();
-      if (
-        peer.uid !== 0 ||
-        instance ||
-        String(peer.pid) !== current.MainPID ||
-        !current.InvocationID ||
-        current.ControlGroup !==
-          '/system.slice/deckyard-render-broker.service' ||
-        readFileSync(`/proc/${peer.pid}/cgroup`, 'utf8').trim() !==
-          `0::${current.ControlGroup}` ||
-        native.exited(peer.pidfd)
-      )
+      const asked = now();
+      let current = null;
+      try {
+        current = await brokerLaunchState();
+      } catch {
+        condition = 'unit_state';
+      }
+      const propertiesMs = Math.round(now() - asked);
+      if (!condition) {
+        let procCgroup;
+        try {
+          procCgroup = readFileSync(`/proc/${peer.pid}/cgroup`, 'utf8').trim();
+        } catch {
+          // The peer is gone; brokerPeerRefusal names it `proc_cgroup`.
+          procCgroup = null;
+        }
+        condition =
+          (socket.destroyed && 'peer_closed') ||
+          (retiring && 'retiring') ||
+          brokerPeerRefusal(
+            peer,
+            current,
+            procCgroup,
+            native.exited(peer.pidfd),
+            Boolean(instance),
+          );
+      }
+      if (condition) {
+        log(null, 'broker_peer_refused', {
+          condition,
+          pid: peer.pid,
+          unit: 'deckyard-render-broker.service',
+          propertiesMs,
+        });
         throw new Error('invalid broker peer');
+      }
       instance = {
         id: id(),
         invocation: current.InvocationID,
@@ -445,11 +480,20 @@ export async function startSupervisor() {
         instance: instance.id,
         generation: ledger.generation,
       });
+      launcher.registered();
+      log(null, 'broker_registered', { pid: peer.pid, propertiesMs });
     } catch {
+      if (!condition)
+        log(null, 'broker_peer_refused', {
+          condition: peer ? 'registration' : 'peer_credentials',
+          ...(peer ? { pid: peer.pid } : {}),
+          unit: 'deckyard-render-broker.service',
+        });
       socket.destroy();
       if (peer && peer.pidfd !== instance?.pidfd) closeSync(peer.pidfd);
     }
-  });
+  }
+  const server = net.createServer({ pauseOnConnect: true }, admit);
   server.maxConnections = 1;
   await new Promise((resolve, reject) => {
     server.once('error', reject);
@@ -492,16 +536,28 @@ export async function startSupervisor() {
       log(active, 'supervisor_not_ready');
     }
   }, 50);
-  process.once('SIGTERM', () => {
+  process.once('SIGTERM', async () => {
     ready = false;
+    // No retirement or relaunch from here on; the channel loss below is ours.
+    retiring = true;
     clearInterval(ticker);
+    launcher.stop();
     if (active) revoke(active);
+    // When an operator stops both units, systemd has signalled the broker too:
+    // give it a moment to end with its own exit 0 before the cgroup kill. No
+    // stop is requested here, so a supervisor restart never waits on a broker
+    // stop job; a broker still alive after the wait is killed as before.
+    const until = now() + 500;
+    while (instance && !native.exited(instance.pidfd) && now() < until)
+      await pause();
     stopInstance();
     server.close();
-    process.exit(1);
+    // An operator stop is not a failure: the unit ends `inactive`, not `failed`.
+    process.exit(0);
   });
   // The only launcher. systemd's broker Restart is off; new brokers still wait
-  // for registration. This is after reconciliation and socket establishment.
-  startBrokerService();
+  // for registration, and one that ends before it registers is launched again
+  // with a bounded backoff. This is after reconciliation and socket setup.
   log(null, 'reconciled');
+  launcher.launch();
 }

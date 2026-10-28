@@ -27,7 +27,7 @@ import {
 } from './build.js';
 import { PATHS, loadInstallation, loadControl } from './paths.js';
 import { saveLedger } from './ledger.js';
-import { readFrame, OUTPUT_LIMIT, parseRequest } from './protocol.js';
+import { readFrame, OUTPUT_LIMIT, parseRequest } from '../protocol.js';
 
 const source = path.dirname(fileURLToPath(import.meta.url));
 function freeze(dir) {
@@ -146,6 +146,7 @@ export async function installRunner(build, callerUid, callerGid, subid) {
     'store.js',
     'edition-input.js',
     'errors.js',
+    'protocol.js',
   ])
     cpSync(`${source}/../${name}`, `${code}/${name}`);
   writeFileSync(`${PATHS.install}/package.json`, '{"type":"module"}\n');

@@ -25,3 +25,6 @@ SystemCallFilter=~io_setup io_submit io_getevents io_pgetevents io_cancel io_des
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

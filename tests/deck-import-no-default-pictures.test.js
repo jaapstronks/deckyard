@@ -13,7 +13,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { deckToPresentationParts } from '../shared/slide-types/deck.js';
-import { newSlide } from '../shared/slide-types/presentation.js';
+import {
+  newSlide,
+  validateSlideFields,
+} from '../shared/slide-types/presentation.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { isSlideIncomplete } from '../shared/incomplete-slides.js';
 
@@ -39,6 +42,11 @@ for (const lang of [null, 'nl', 'en-GB']) {
       'no picture comes from the defaults',
     );
     assert.equal(isSlideIncomplete(slide, SLIDE_TYPES), true);
+    // The empty slots are storable: the write seam runs this check (B866).
+    assert.deepEqual(
+      validateSlideFields(slide, { slideTypes: SLIDE_TYPES }),
+      [],
+    );
   });
 }
 

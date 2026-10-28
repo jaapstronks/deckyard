@@ -1,4 +1,4 @@
-import { parseJson } from './protocol.js';
+import { parseJson } from '../protocol.js';
 
 /** Bounded, sequenced lifecycle channel. The socket is already authenticated.
  * No JSON body or path from a render caller enters this channel. */

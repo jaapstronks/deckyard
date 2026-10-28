@@ -222,6 +222,9 @@ export async function addSlide(scope, identity, input) {
       theme: await loadDeckTheme(scope.repoRoot, pres.theme, scope),
       lang: pres.lang,
       presentationId,
+      // Both contracts are an agent's or a script's: a list it leaves out
+      // gets empty slots, not the editor's demo photos (B866).
+      demoPictures: false,
     });
   } catch (err) {
     throw new ValidationError(`Failed to create slide: ${err.message}`);

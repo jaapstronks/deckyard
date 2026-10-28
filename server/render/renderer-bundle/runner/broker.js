@@ -21,7 +21,7 @@ import {
   readFrame,
   refusalBytes,
   successParts,
-} from './protocol.js';
+} from '../protocol.js';
 import { lifecycleChannel } from './channel.js';
 import { SELF_TEST_RESULT } from './policy.js';
 
@@ -61,15 +61,24 @@ export async function startBroker() {
   const seenJobs = new Set();
   const connections = new Set(),
     queue = [];
-  function loseSupervisor() {
+  // Exit is deliberately not a claim of cleanup. Supervisor kills the whole
+  // broker cgroup (including workers/helpers) before releasing its slot.
+  function shutdown(code) {
     if (dead) return;
     dead = true;
     ready = false;
     server?.close();
     for (const token of connections) token.socket.destroy();
-    // Exit is deliberately not a claim of cleanup. Supervisor kills the whole
-    // broker cgroup (including workers/helpers) before releasing its slot.
-    process.exit(1);
+    process.exit(code);
+  }
+  // One journal line, so a broker that ends before or after registration is
+  // never silent (runner iteration 5). No peer or job data.
+  function loseSupervisor() {
+    if (dead) return;
+    process.stderr.write(
+      `renderer broker lost supervisor (${binding ? 'registered' : 'unregistered'})\n`,
+    );
+    shutdown(1);
   }
   function send(op, job = null) {
     if (!binding || dead) throw new Error('supervisor unavailable');
@@ -362,5 +371,6 @@ export async function startBroker() {
       chmodSync(PATHS.socket, 0o660);
     });
   }
-  process.once('SIGTERM', loseSupervisor);
+  // An operator or supervisor stop is not a failure: the unit ends `inactive`.
+  process.once('SIGTERM', () => shutdown(0));
 }

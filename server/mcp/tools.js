@@ -751,6 +751,8 @@ export function registerTools(
                   slideTypes,
                   theme: themeObj,
                   lang,
+                  // An agent's list without pictures stays incomplete (B866).
+                  demoPictures: false,
                 }),
                 notes: s.notes || '',
                 reviewNote: s.reviewNote,
