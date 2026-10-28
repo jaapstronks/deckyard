@@ -556,7 +556,7 @@
       "count": 1
     },
     "no-useless-assignment": {
-      "count": 2
+      "count": 1
     }
   },
   "client/views/list/views/sandbox-examples.js": {
