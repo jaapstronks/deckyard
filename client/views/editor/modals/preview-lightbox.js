@@ -1,12 +1,10 @@
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { formatRelativeTime } from '../../../lib/format/format-time.js';
 import {
-  commentAuthorName,
+  createAnchoredCommentDetail,
   createAnchoredComposer,
   createCommentMarkers,
-  renderCommentBodyNodes,
 } from '../../comments/index.js';
 import { h } from '../../../lib/dom/index.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
@@ -157,83 +155,23 @@ export function createPreviewLightbox({
           })
         : attachThumbScale(bigThumb, { virtualWidth: 1600 });
 
-    // Comment detail popup for viewing existing comments
+    // Card showing an existing anchored comment at its pin
     let commentDetailPopup = null;
 
     const hideCommentDetail = () => {
-      if (commentDetailPopup) {
-        commentDetailPopup.remove();
-        commentDetailPopup = null;
-      }
+      commentDetailPopup?.detach();
+      commentDetailPopup = null;
     };
 
     const showCommentDetail = (comment) => {
       hideCommentDetail();
       hidePopup();
-
-      // Calculate position based on comment's stored position
-      const thumbRect = bigThumb.getBoundingClientRect();
-      const stageRect = stage.getBoundingClientRect();
-      const x = comment.positionX;
-      const y = comment.positionY;
-      const pixelX =
-        thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
-      const pixelY =
-        thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
-
-      const positionClasses = ['comment-detail-popup'];
-      if (x > 50) positionClasses.push('anchor-right');
-      if (y > 60) positionClasses.push('anchor-bottom');
-
-      commentDetailPopup = h('div', {
-        class: positionClasses.join(' '),
-        style: `left: ${pixelX}px; top: ${pixelY}px;`,
+      commentDetailPopup = createAnchoredCommentDetail({
+        stageEl: stage,
+        thumbEl: bigThumb,
+        comment,
+        onClose: hideCommentDetail,
       });
-
-      // Header with author and time
-      const headerEl = h('div', { class: 'comment-detail-header' });
-      const authorEl = h('span', {
-        class: 'comment-detail-author',
-        text: commentAuthorName(comment),
-      });
-      const timeEl = h('span', {
-        class: 'comment-detail-time',
-        text: formatRelativeTime(comment.createdAt),
-      });
-      const closeBtn = h(
-        'button',
-        {
-          class: 'comment-detail-close',
-          type: 'button',
-          'aria-label': t('common.close', 'Close'),
-          onclick: () => hideCommentDetail(),
-        },
-        [icon('x', { size: 14 })],
-      );
-      headerEl.append(authorEl, timeEl, closeBtn);
-
-      // Body with comment text (mention markers render as chips)
-      const bodyEl = h('div', { class: 'comment-detail-body' });
-      bodyEl.append(...renderCommentBodyNodes(comment.body));
-
-      // Replies if any
-      const repliesEl = h('div', { class: 'comment-detail-replies' });
-      if (comment.replies && comment.replies.length > 0) {
-        for (const reply of comment.replies) {
-          const replyEl = h('div', { class: 'comment-detail-reply' });
-          const replyAuthor = h('span', {
-            class: 'comment-detail-reply-author',
-            text: commentAuthorName(reply),
-          });
-          const replyBody = h('span', { class: 'comment-detail-reply-body' });
-          replyBody.append(...renderCommentBodyNodes(reply.body));
-          replyEl.append(replyAuthor, replyBody);
-          repliesEl.append(replyEl);
-        }
-      }
-
-      commentDetailPopup.append(headerEl, bodyEl, repliesEl);
-      stage.appendChild(commentDetailPopup);
     };
 
     // Helper to hide popup
@@ -406,7 +344,7 @@ export function createPreviewLightbox({
       if (
         !bigThumb.contains(e.target) &&
         !positionedPopup?.el.contains(e.target) &&
-        !commentDetailPopup?.contains(e.target)
+        !commentDetailPopup?.el.contains(e.target)
       ) {
         close();
       }

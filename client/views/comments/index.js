@@ -10,6 +10,7 @@ export {
   isGuestCommentAuthor,
 } from './comment-authz.js';
 export { commentAuthorName, renderCommentBodyNodes } from './comment-body.js';
+export { createAnchoredCommentDetail } from './comment-anchor-card.js';
 export {
   createAnchoredComposer,
   createCommentComposer,
