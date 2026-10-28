@@ -18,6 +18,8 @@ Content fields take one word per meaning. **Table versus Grid**: Table is the da
 
 The analytics title names the same feature on the dashboard, in deck settings and in instance administration. The chart description is the accessible name of both views-over-time bar charts, whether rendered with CSS or SVG.
 
+**Relative time has no translation key.** "5 minutes ago", "yesterday" and "now" come from CLDR through `Intl.RelativeTimeFormat` in `formatRelativeTime` (`client/lib/format/format-time.js`), in the long style, with dates of a week or older in the UI locale. No locale table carries a word for it, and a translation must not add one: plurals and the word for yesterday are the platform's.
+
 ## en
 
 | English concept                         | Canonical text                          | Context and keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
