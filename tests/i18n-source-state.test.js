@@ -47,6 +47,7 @@ import {
 import { planSync } from '../scripts/i18n-sync.js';
 import {
   defaultBase,
+  resolveBaseState,
   runBurndown,
   stateAtCommit,
 } from '../scripts/i18n-burndown.js';
@@ -455,6 +456,94 @@ describe('the burndown against a base', () => {
       git('add', '.');
       git('commit', '-qm', 'sidecar');
       assert.deepEqual(stateAtCommit(git('rev-parse', 'HEAD'), repo), base);
+    });
+  });
+
+  // A fork's merge round across upstream's bootstrap (DY-771): the fork's main
+  // predates the sidecar, the branch merges a tag that has it. The base is the
+  // merged tag, not a bootstrap against the fork's old English.
+  describe('a fork merge round that crosses the bootstrap', () => {
+    let repo;
+    const git = (...args) =>
+      execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+    const commit = async (file, text, message) => {
+      await fs.mkdir(path.dirname(path.join(repo, file)), { recursive: true });
+      await fs.writeFile(path.join(repo, file), text);
+      git('add', '.');
+      git('commit', '-qm', message);
+      return git('rev-parse', 'HEAD');
+    };
+    let forkMain;
+    let tag;
+    before(async () => {
+      repo = await fs.mkdtemp(path.join(os.tmpdir(), 'i18n-fork-round-'));
+      git('init', '-q', '-b', 'main');
+      git('config', 'user.email', 'test@example.invalid');
+      git('config', 'user.name', 'test');
+      await commit('README', 'upstream v1\n', 'upstream before the sidecar');
+      git('switch', '-qc', 'upstream');
+      tag = await commit(
+        SOURCE_STATE_REL,
+        serializeSourceState(base),
+        'upstream bootstraps the sidecar',
+      );
+      git('switch', '-q', 'main');
+      forkMain = await commit('FORK', 'fork\n', 'fork main, no sidecar');
+    });
+    after(() => fs.rm(repo, { recursive: true, force: true }));
+
+    it('the merged tag is the base, from the branch and from the PR merge ref', async () => {
+      git('switch', '-qc', 'merge-round', forkMain);
+      git('merge', '-q', '--no-ff', '-m', 'merge upstream', tag);
+      await commit('FORK', 'fork, adapted\n', 'fork change, no i18n');
+      assert.deepEqual(resolveBaseState(forkMain, repo), {
+        base: tag,
+        state: base,
+        crossed: forkMain,
+      });
+      // CI checks out the PR's merge ref: base first, PR head second.
+      git('switch', '-q', '--detach', forkMain);
+      git('merge', '-q', '--no-ff', '-m', 'PR merge ref', 'merge-round');
+      assert.equal(resolveBaseState(forkMain, repo).base, tag);
+    });
+
+    it('a branch that adds the sidecar itself still bootstraps', async () => {
+      git('switch', '-qc', 'first-bootstrap', forkMain);
+      await commit(SOURCE_STATE_REL, serializeSourceState(base), 'bootstrap');
+      assert.deepEqual(resolveBaseState(forkMain, repo), {
+        base: forkMain,
+        state: null,
+        crossed: null,
+      });
+    });
+
+    it('two unrelated commits that brought the sidecar in are an error', async () => {
+      git('switch', '-qc', 'other-upstream', forkMain);
+      const other = await commit(
+        SOURCE_STATE_REL,
+        serializeSourceState(base),
+        'another sidecar',
+      );
+      git('switch', '-qc', 'two-sources', forkMain);
+      git('merge', '-q', '--no-ff', '-m', 'merge upstream', tag);
+      git('merge', '-q', '--no-ff', '-X', 'ours', '-m', 'merge other', other);
+      assert.throws(
+        () => resolveBaseState(forkMain, repo),
+        /2 unrelated commits/,
+      );
+    });
+
+    it('against the merged tag, a new unreviewed pair is still refused', () => {
+      const head = structuredClone(base);
+      head.entries.nl = { a: record('unreviewed', 'One', 'Een') };
+      git('switch', '-q', 'merge-round');
+      const { state } = resolveBaseState(forkMain, repo);
+      assert.deepEqual(
+        compareWithBase({ base: state, head }).violations.map(
+          (v) => `${v.locale} ${v.key} ${v.kind}`,
+        ),
+        ['nl a new-unreviewed'],
+      );
     });
   });
 });
