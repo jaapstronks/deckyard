@@ -483,7 +483,7 @@
   "editor.more.duplicateDeck": "Duplicera presentation…",
   "editor.more.duplicateDeck.confirm": "Duplicera \"{title}\"?",
   "editor.more.duplicateDeck.done": "Duplicerad. Öppnar kopia…",
-  "editor.more.duplicateDeck.thisPresentation": "denna presentation",
+  "editor.more.duplicateDeck.thisPresentation": "den här presentationen",
   "editor.more.duplicateDeck.title": "Skapa en privat kopia av denna presentation.",
   "editor.more.subscription": "Deck-aviseringar…",
   "editor.more.subscription.title": "Välj vilken kommentarsaktivitet på detta deck som aviserar dig.",

@@ -75,10 +75,6 @@
       "forms": ["Claro", "Claros"],
       "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with degradados (masculine plural) in stockMedia.gradients.tone.light."
     },
-    "es  Placeholder": {
-      "forms": ["Marcador de posición", "Texto de ejemplo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  Published": {
       "forms": ["Publicada", "Publicado"],
       "reason": "Publicado bij dashboard.source.published (gepubliceerde inhoud, contenido, mannelijk) en settings.slideTypes.published (tipo, mannelijk); Publicada bij list.visibility.published (presentación, vrouwelijk enkelvoud)."
@@ -107,10 +103,6 @@
       "forms": ["Vaalea", "Vaaleat"],
       "reason": "grammatical number — Vaalea is singular for tila and tekstin väri in appearance.light and editor.slideField.slideBgText.option.light; Vaaleat is plural for liukuvärit in stockMedia.gradients.tone.light."
     },
-    "fi  Placeholder": {
-      "forms": ["Ohjeteksti kentässä", "Paikkamerkki"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Primary": {
       "forms": ["Ensisijainen", "Pääväri"],
       "reason": "colour name versus style option — Pääväri is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Ensisijainen is the adjective for the button style in editor.slideField.actions.item.style.option.primary."
@@ -138,10 +130,6 @@
     "fr  Light": {
       "forms": ["Clair", "Clairs"],
       "reason": "grammatical agreement — Clair agrees with mode and texte (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Clairs agrees with dégradés (masculine plural) in stockMedia.gradients.tone.light."
-    },
-    "fr  Placeholder": {
-      "forms": ["Espace réservé", "Texte indicatif"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Primary": {
       "forms": ["Couleur principale", "Principal"],
@@ -175,14 +163,6 @@
       "forms": ["Chiari", "Chiaro"],
       "reason": "grammatical agreement — Chiaro agrees with tema and testo (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Chiari agrees with gradienti (masculine plural) in stockMedia.gradients.tone.light."
     },
-    "it  New": {
-      "forms": ["Nuova", "Nuovo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Placeholder": {
-      "forms": ["Segnaposto", "Testo segnaposto"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Shared": {
       "forms": ["Condivise", "Condiviso"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
@@ -207,21 +187,9 @@
       "forms": ["Collectie", "Verzameling"],
       "reason": "two concepts: \"Collectie\" is the home page's deck collection; \"Verzameling\" is the picker's Media row of collection types (Gallery, Image cards, Logo wall), named by Jaap in D343."
     },
-    "nl  New": {
-      "forms": ["Nieuw", "Nieuw maken"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Notifications": {
-      "forms": ["Meldingen", "Notificaties"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Restore": {
       "forms": ["Herstel", "Herstellen"],
       "reason": "noun versus button — Herstel is the noun in editor.versions.reason.restore, the label that says why a version exists, next to Automatische snapshot and Backup (vóór herstel); Herstellen is the infinitive on the buttons editor.versions.restore, list.restore, list.bulk.restore and slideLibrary.action.restore."
-    },
-    "nl  Untitled": {
-      "forms": ["Naamloos", "Zonder titel"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  {count}d ago": {
       "forms": ["{count} d geleden", "{count} dagen geleden"],
@@ -263,10 +231,6 @@
       "forms": ["Domyślnie", "Domyślny"],
       "reason": "grammatical agreement — Domyślnie is the adverb in settings.themes.config.default, the first segment of rows headed by nouns of three genders (Zaokrąglenie, Cień, Grubość); Domyślny agrees with motyw (masculine singular) in settings.themes.default, the badge on the default theme card."
     },
-    "pl  Draft": {
-      "forms": ["Szkic", "Wersja robocza"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Export": {
       "forms": ["Eksport", "Eksportuj"],
       "reason": "Eksportuj is de imperatief op de drie editoracties; Eksport is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
@@ -279,25 +243,9 @@
       "forms": ["Jasne", "Jasny"],
       "reason": "grammatical agreement — Jasny agrees with motyw and kolor tekstu (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Jasne agrees with gradienty (non-masculine-personal plural) in stockMedia.gradients.tone.light."
     },
-    "pl  Max items": {
-      "forms": ["Maksymalna liczba elementów", "Maksymalna liczba pozycji"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  New": {
-      "forms": ["Nowa", "Nowy"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Normal": {
       "forms": ["Normalny", "Zwykły"],
       "reason": "two meanings — Zwykły is the upright typeface style in fonts.normal, next to Kursywa (the typographic convention); Normalny agrees with rozmiar (masculine singular) in settings.themes.config.textScale.normal, the middle text size next to Kompaktowy and Duży."
-    },
-    "pl  Off": {
-      "forms": ["Wył", "Wyłączone"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  On": {
-      "forms": ["Wł", "Włączone"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Published": {
       "forms": ["Opublikowana", "Opublikowane", "Opublikowany"],
@@ -331,18 +279,6 @@
       "forms": ["Claro", "Claros"],
       "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with gradientes (masculine plural) in stockMedia.gradients.tone.light."
     },
-    "pt  Off": {
-      "forms": ["Desativado", "Desligado"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  On": {
-      "forms": ["Ativado", "Ligado"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pt  Placeholder": {
-      "forms": ["Marcador de posição", "Texto de exemplo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  Published": {
       "forms": ["Publicada", "Publicado"],
       "reason": "Publicado bij dashboard.source.published (conteúdo, mannelijk) en settings.slideTypes.published (tipo, mannelijk); Publicada bij list.visibility.published (apresentação, vrouwelijk enkelvoud)."
@@ -366,10 +302,6 @@
     "sv  Shared": {
       "forms": ["Delad", "Delade"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "sv  this presentation": {
-      "forms": ["den här presentationen", "denna presentation"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  {count}d ago": {
       "forms": ["för {count} d sedan", "{count}d sedan"],
