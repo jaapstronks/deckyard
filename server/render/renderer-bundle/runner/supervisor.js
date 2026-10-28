@@ -35,7 +35,6 @@ import {
   assertProducerPolicy,
   startBrokerService,
   stopBrokerService,
-  requestBrokerStop,
 } from './service-policy.js';
 import { brokerLauncher } from './broker-launch.js';
 import {
@@ -544,17 +543,13 @@ export async function startSupervisor() {
     clearInterval(ticker);
     launcher.stop();
     if (active) revoke(active);
-    // Let systemd stop the broker first, so it ends with its own exit 0 rather
-    // than the cgroup kill below; bounded well inside TimeoutStopSec.
-    if (instance && !native.exited(instance.pidfd)) {
-      try {
-        requestBrokerStop();
-        const until = now() + 2000;
-        while (!native.exited(instance.pidfd) && now() < until) await pause();
-      } catch {
-        log(null, 'broker_stop_not_requested');
-      }
-    }
+    // When an operator stops both units, systemd has signalled the broker too:
+    // give it a moment to end with its own exit 0 before the cgroup kill. No
+    // stop is requested here, so a supervisor restart never waits on a broker
+    // stop job; a broker still alive after the wait is killed as before.
+    const until = now() + 500;
+    while (instance && !native.exited(instance.pidfd) && now() < until)
+      await pause();
     stopInstance();
     server.close();
     // An operator stop is not a failure: the unit ends `inactive`, not `failed`.

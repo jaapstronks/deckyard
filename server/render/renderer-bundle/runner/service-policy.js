@@ -60,11 +60,6 @@ export function startBrokerService() {
 export function stopBrokerService() {
   systemctl('stop', UNIT);
 }
-/** Ask systemd to stop the broker without waiting: systemd signals the unit's
- * own main process, so the supervisor never signals a pid it may have lost. */
-export function requestBrokerStop() {
-  systemctl('stop', '--no-block', UNIT);
-}
 
 export function brokerProperties() {
   return properties(UNIT);
