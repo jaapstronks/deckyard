@@ -4,6 +4,36 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.92.0](https://github.com/jaapstronks/deckyard/compare/v1.91.1...v1.92.0) (2026-10-28)
+
+
+### Added
+
+* AI review layout with picture suggestions and one review shape (B590 PR B) ([#1879](https://github.com/jaapstronks/deckyard/issues/1879)) ([cb0835c](https://github.com/jaapstronks/deckyard/commit/cb0835c79c8e7042281cf90b3062fc9258fb5165))
+* ground AI slide review in verified source passages ([#1866](https://github.com/jaapstronks/deckyard/issues/1866)) ([2ae012e](https://github.com/jaapstronks/deckyard/commit/2ae012e9eb5ee50ec66300e8a585ae55bc0432d5))
+* one public review explanation (reviewNote) and a review URL (B590 PR C) ([#1885](https://github.com/jaapstronks/deckyard/issues/1885)) ([539e1f2](https://github.com/jaapstronks/deckyard/commit/539e1f27efe11c58e08a88e9258e916bbe3689d5))
+* **render:** connect host.js to the Linux renderer runner ([#1875](https://github.com/jaapstronks/deckyard/issues/1875)) ([6f60fa4](https://github.com/jaapstronks/deckyard/commit/6f60fa40bc94ec4fccd9360848d5673208c170a7))
+* **render:** Linux operator runner for frozen renderer bundles ([15f61d2](https://github.com/jaapstronks/deckyard/commit/15f61d2e12f5ed20ba92bc4c171d243164abb21d))
+* **themes:** add title background presets to four core themes ([#1863](https://github.com/jaapstronks/deckyard/issues/1863)) ([54e8fa5](https://github.com/jaapstronks/deckyard/commit/54e8fa54e36eaea1b4dcadfdf3bc33a4f737e404))
+
+
+### Fixed
+
+* accept the ImageKit provenance key where an image pick writes it ([#1881](https://github.com/jaapstronks/deckyard/issues/1881)) ([7f976cd](https://github.com/jaapstronks/deckyard/commit/7f976cdd58f664e15a68dcd5e0ee24a9bb1f4f91))
+* **i18n:** align presentation totals and explain selection agreement ([#1869](https://github.com/jaapstronks/deckyard/issues/1869)) ([cc5c7ab](https://github.com/jaapstronks/deckyard/commit/cc5c7abb97a5d3cc88b7032416e2916da2f65c8f))
+* **i18n:** align progress and error terms and split slide-type switch failure ([#1876](https://github.com/jaapstronks/deckyard/issues/1876)) ([39cef44](https://github.com/jaapstronks/deckyard/commit/39cef44135fb8c03806957dd3d3ed4ebcc3945a8))
+* **i18n:** align revocation and share-link lifetime terms ([#1867](https://github.com/jaapstronks/deckyard/issues/1867)) ([6ccbf77](https://github.com/jaapstronks/deckyard/commit/6ccbf77fa55fb0574db0f01089cbef4d41e0ca1e))
+* **i18n:** align the retry error with its heading and register ([#1878](https://github.com/jaapstronks/deckyard/issues/1878)) ([477cd68](https://github.com/jaapstronks/deckyard/commit/477cd68425da2bf72050daf395167d6dee3e2788))
+* **i18n:** clarify library actions and selection terminology ([#1868](https://github.com/jaapstronks/deckyard/issues/1868)) ([213c3e3](https://github.com/jaapstronks/deckyard/commit/213c3e3c06dcd00a337b41ba1c3f9bc5babfdd6c))
+* **i18n:** judge a fork merge round against the merged tag's sidecar ([#1882](https://github.com/jaapstronks/deckyard/issues/1882)) ([8885ad1](https://github.com/jaapstronks/deckyard/commit/8885ad13806872beee689745b9eea7eed387e852))
+* **i18n:** one word per copy, apply, save, reset and duplicate action ([#1880](https://github.com/jaapstronks/deckyard/issues/1880)) ([0b83228](https://github.com/jaapstronks/deckyard/commit/0b83228b6ea638f5e138d919e6143c6a45e69928))
+* **i18n:** split identity labels and align form and login terms ([#1871](https://github.com/jaapstronks/deckyard/issues/1871)) ([16c3cf1](https://github.com/jaapstronks/deckyard/commit/16c3cf14ad62da1b40a49e3f6df180adad4354d8))
+* **i18n:** split search and preview roles and align navigation terms ([#1870](https://github.com/jaapstronks/deckyard/issues/1870)) ([6c24597](https://github.com/jaapstronks/deckyard/commit/6c2459767b8fb6c387d6ed102214a4447c394c1a))
+* **i18n:** unify sharing and role terminology ([61f9a96](https://github.com/jaapstronks/deckyard/commit/61f9a9648f61a531eba338f1996cd75286700273))
+* leave slides with an empty essential image out of every output ([#1877](https://github.com/jaapstronks/deckyard/issues/1877)) ([1de42d6](https://github.com/jaapstronks/deckyard/commit/1de42d6fa6075d7abe8e043a4b9bfebd9d1952f8))
+* **render:** runner iteration 2 for activation conditions 1-3 ([#1873](https://github.com/jaapstronks/deckyard/issues/1873)) ([d4b4863](https://github.com/jaapstronks/deckyard/commit/d4b48639b7d544ce356e81c0f902bc404a124979))
+* **render:** runner iteration 3 for activation condition 4 and nits ([#1874](https://github.com/jaapstronks/deckyard/issues/1874)) ([51edb5c](https://github.com/jaapstronks/deckyard/commit/51edb5cba265cd9ee78ef277e01e0c12928c1f8c))
+
 ## [1.91.1](https://github.com/jaapstronks/deckyard/compare/v1.91.0...v1.91.1) (2026-10-27)
 
 
