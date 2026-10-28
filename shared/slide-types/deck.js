@@ -780,46 +780,17 @@ function normalizeDeckSlide(
     lang,
     content: patch,
     slideTypes: { [localName]: def },
+    // No stand-in picture: an image the import or the model left empty stays
+    // empty, so the slide is incomplete (`shared/incomplete-slides.js`) and
+    // the author picks one, instead of a stock photo reaching every output
+    // (B590). That holds for a list left out too: the insert defaults' demo
+    // photos are the editor's (B862).
+    demoPictures: false,
   });
-
-  // No stand-in picture: an image the import or the model left empty stays
-  // empty, so the slide is incomplete (`shared/incomplete-slides.js`) and the
-  // author picks one, instead of a stock photo reaching every output (B590).
-  // That holds for a list left out too: the insert defaults' demo photos are
-  // the editor's (B862).
-  withoutDefaultPictures(slide.content, def, patch);
   return withSlideKeys(
     { id: slide.id, type: localName, content: slide.content },
     raw,
   );
-}
-
-/**
- * Clear the pictures an imported slide's lists took from its type's defaults
- * rather than from the deck: the image sub-fields of an `items` list the patch
- * leaves out (the gallery's demo photos). The list keeps its default items, so
- * a gallery keeps its empty slots to fill. A top-level `image` field is not
- * touched: core defaults leave it empty, and a default a type or installation
- * configures there is a real picture (`tests/ai-params-image-placeholder.test.js`),
- * as is the theme preset `newSlide()` seeds into `slideBgImage`. Mutates
- * `content` in place.
- *
- * @param {Object} content - the composed slide content
- * @param {Object} def - the slide type
- * @param {Object} patch - what the import itself carried
- */
-function withoutDefaultPictures(content, def, patch) {
-  for (const field of def.fields || []) {
-    if (field.type !== 'items' || field.key in patch) continue;
-    const images = (field.itemFields || []).filter((f) => f?.type === 'image');
-    if (!images.length || !Array.isArray(content[field.key])) continue;
-    content[field.key] = content[field.key].map((item) => {
-      if (!isPlainObject(item)) return item;
-      const out = { ...item };
-      for (const sub of images) if (sub.key in out) out[sub.key] = '';
-      return out;
-    });
-  }
 }
 
 /**
