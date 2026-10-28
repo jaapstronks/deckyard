@@ -2,7 +2,7 @@
  * Diagnostic import filter for the trusted-fixture render proof, NOT a sandbox.
  * process.getBuiltinModule() bypasses resolution hooks and can open sockets.
  * Removing globals and scanning imports do not establish network isolation.
- * Production execution is refused by host.js pending an external boundary.
+ * Production execution goes only through the Linux operator runner (host.js).
  */
 
 import { registerHooks } from 'node:module';

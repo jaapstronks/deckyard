@@ -1,7 +1,8 @@
 /**
- * Content-addressed renderer bundles: building and verification are available.
- * Execution fails closed pending an OS-isolated runner. T1.1 remains blocked;
- * test-only trusted-fixture experiments establish reproducibility, not safety.
+ * Content-addressed renderer bundles: building, verification and execution
+ * through the Linux operator runner. Execution refuses unless
+ * `RENDERER_RUNNER_SOCKET` names the runner's broker socket; test-only
+ * trusted-fixture experiments establish reproducibility, not safety.
  * See docs/reference/renderer-bundle.md for evidence and the architecture gate.
  */
 
@@ -21,5 +22,13 @@ export {
   listRendererBundles,
   openRendererBundle,
 } from './store.js';
-export { renderEditionInBundle } from './host.js';
+export {
+  RUNNER_SOCKET_ENV,
+  renderEditionInBundle,
+  runnerSocketPath,
+} from './host.js';
+export {
+  CURRENT_RENDERER_STORE,
+  openCurrentRendererBundle,
+} from './current.js';
 export { EDITION_INPUT_SCHEMA } from './edition-input.js';

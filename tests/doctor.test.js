@@ -40,7 +40,12 @@ import {
   mailCheck,
   uploadsCheck,
 } from '../server/doctor/runtime.js';
+import { rendererRunnerCheck } from '../server/doctor/renderer-runner.js';
 import { LocalProvider } from '../server/media/local.js';
+import {
+  RENDERER_BUNDLE_ERRORS,
+  RendererBundleError,
+} from '../server/render/renderer-bundle/index.js';
 import { createCoreFixtureRoot } from './helpers/core-fixture-root.js';
 
 const repoRoot = path.resolve(
@@ -84,6 +89,7 @@ const BASE = Object.freeze({
   TRUST_PROXY: undefined,
   UPLOADS_DIR: undefined,
   DATA_DIR: undefined,
+  RENDERER_RUNNER_SOCKET: undefined,
 });
 
 const SSO = Object.freeze({
@@ -687,6 +693,82 @@ test('mail: SSO-only says sign-in is unaffected; auth off skips', async () => {
     AUTH_SECRET: undefined,
   });
   assert.equal(off.status, 'skip');
+});
+
+// ── renderer-runner ─────────────────────────────────────────────────────────
+
+const RUNNER = { RENDERER_RUNNER_SOCKET: '/run/deckyard-render/broker.sock' };
+const BUNDLE_HASH = '3'.repeat(64);
+const openBundle = async () => ({ rendererHash: BUNDLE_HASH });
+const refuse = (code) => async () => {
+  throw new RendererBundleError(code, 'refused');
+};
+
+test('renderer-runner: skipped without RENDERER_RUNNER_SOCKET', async () => {
+  const found = await run(
+    rendererRunnerCheck,
+    {},
+    {
+      openCurrent: () => assert.fail('must not open'),
+      render: () => assert.fail('must not probe'),
+    },
+  );
+  assert.equal(found.status, 'skip');
+});
+
+test('renderer-runner: red on a TCP spelling, without probing', async () => {
+  const red = await run(
+    rendererRunnerCheck,
+    { RENDERER_RUNNER_SOCKET: '127.0.0.1:4178' },
+    { openCurrent: openBundle, render: () => assert.fail('must not probe') },
+  );
+  assert.equal(red.status, 'fail');
+  assert.match(red.fix, /\/run\/deckyard-render\/broker\.sock/);
+});
+
+test('renderer-runner: red when the image carries no verifiable bundle', async () => {
+  const red = await run(rendererRunnerCheck, RUNNER, {
+    openCurrent: refuse(RENDERER_BUNDLE_ERRORS.UNKNOWN),
+    render: () => assert.fail('must not probe'),
+  });
+  assert.equal(red.status, 'fail');
+  assert.match(red.fix, /renderer-store/);
+});
+
+test('renderer-runner: an unregistered renderer is red apart from an unavailable runner', async () => {
+  const unknown = await run(rendererRunnerCheck, RUNNER, {
+    openCurrent: openBundle,
+    render: refuse(RENDERER_BUNDLE_ERRORS.UNKNOWN),
+  });
+  assert.equal(unknown.status, 'fail');
+  assert.ok(unknown.message.includes(BUNDLE_HASH));
+  assert.match(unknown.fix, /export-renderer-bundle\.sh/);
+  const down = await run(rendererRunnerCheck, RUNNER, {
+    openCurrent: openBundle,
+    render: refuse(RENDERER_BUNDLE_ERRORS.SANDBOX_UNAVAILABLE),
+  });
+  assert.equal(down.status, 'fail');
+  assert.match(down.message, /not available/);
+  assert.match(down.fix, /systemctl status/);
+});
+
+test('renderer-runner: green probes the current hash with an empty edition', async () => {
+  const calls = [];
+  const green = await run(rendererRunnerCheck, RUNNER, {
+    openCurrent: openBundle,
+    render: async (hash, input) => {
+      calls.push([hash, input]);
+      return { runnerId: '4'.repeat(64) };
+    },
+  });
+  assert.equal(green.status, 'ok');
+  assert.match(green.message, /runner 444444444444… renders 333333333333…/);
+  assert.deepEqual(calls, [
+    [
+      BUNDLE_HASH,
+      { schema: 'deckyard.edition-input/1', presentation: { slides: [] } },
+    ],
+  ]);
 });
 
 // ── runner, report, CLI ─────────────────────────────────────────────────────

@@ -1,7 +1,8 @@
 /**
  * Test-only runner for trusted renderer fixtures. NOT a sandbox.
  * Node permissions and import filtering do not prevent network access.
- * Keep reproduction evidence here until an OS-isolated runner is implemented.
+ * Reproduction evidence only; production executes through the operator runner
+ * (`server/render/renderer-bundle/host.js`), never through this helper.
  */
 
 import { spawn } from 'node:child_process';
