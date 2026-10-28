@@ -229,7 +229,7 @@ export async function registerBundle(sourceStore, hash) {
   mkdirSync(candidate, { mode: 0o700 });
   mkdirSync(`${candidate}/${hash}`, { mode: 0o700 });
   try {
-    loadControl().copy(`${sourceStore}/${hash}`, `${candidate}/${hash}`);
+    loadControl().copy(sourceStore, hash, `${candidate}/${hash}`);
     await openRendererBundle(candidate, hash);
     freeze(`${candidate}/${hash}`);
     renameSync(`${candidate}/${hash}`, `${PATHS.store}/${hash}`);

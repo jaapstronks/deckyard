@@ -10,7 +10,7 @@ Only Linux x86_64 with cgroup v2, cpu/memory/pids controllers, `clone3(CLONE_INT
 
 Choose one numerical webapp UID and a dedicated caller group. Reserve a free, separate 65,536-ID host UID/GID range. The installer checks `/etc/subuid`, `/etc/subgid`, `/etc/passwd` and `/etc/group`, and records `deckyard-render:<start>:65536` in both subordinate registries. Guest UID/GID 1000 maps into that range and never to host root or the caller. Rootful runtime operation does not depend on granting the caller sudo, runtime groups or mappings.
 
-The store, the job staging and the register under `/var/lib/deckyard-render`, and the directory a bundle is registered from, must all live on the root filesystem. The native copy resolves every path with `RESOLVE_NO_XDEV` from `/`, so a separate mount for `/var`, `/var/lib`, the state directory or the registration source makes every registration and every job refuse with `EXDEV`. Keep them on one filesystem until a reviewed runner iteration anchors the resolution at the store root.
+The store, the job staging and the register under `/var/lib/deckyard-render`, and the directory a bundle is registered from, may each live on their own mount. The native copy opens the store root (or the registration source) and the target as held directory descriptors, resolved from `/` without following any symlink, and applies `RESOLVE_NO_XDEV` only beneath them: a mount for `/var`, the state directory or the source works, while a symlink, bind or mount inside a bundle still refuses.
 
 ## Build and fresh installation
 
@@ -51,6 +51,8 @@ The root-only register is durable before reserve-ack and before any producer can
 Normal cleanup accepts only the correct instance/generation/job after external helper/guest groups are empty. Cancellation kills the full broker cgroup plus helper and guest subtrees, then waits for the held broker pidfd and all populated flags. Only then are runtime state, the per-job crun cache, mounts, private staging and cgroups removed. `CLEANED` is durable before success or slot release. No lazy unmount counts as cleanup. Late or duplicated lifecycle messages cannot reopen a phase or reuse a job ID.
 
 After supervisor loss, the replacement starts with admission closed, revokes existing generations, kills the fixed broker service group and registered helper/guest groups, waits for emptiness, then reconciles all exclusive prefixes. Its old pidfds died with the supervisor; the complete fixed service-cgroup stop covers old broker threads and descendants before any cleanup or new registration. Unknown objects, a missing/corrupt register, unfinished producer stop or a changed service policy leave it unavailable. Never replace the register with an empty file as recovery evidence.
+
+Each supervisor start, after that reconciliation has proved every `CLEANED` record's objects absent, drops those records before it mints the new generation and logs `ledger_compacted`; every other record is kept. The register therefore holds the jobs of the running generation, not every job the installation ever ran.
 
 Use the journal and durable register to inspect phases without logging input or guest HTML:
 

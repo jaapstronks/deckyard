@@ -35,7 +35,7 @@ async function execute() {
   mkdirSync(copyStore, { mode: 0o700 });
   mkdirSync(bundle, { mode: 0o700 });
   try {
-    loadControl().copy(`${PATHS.store}/${request.rendererHash}`, bundle);
+    loadControl().copy(PATHS.store, request.rendererHash, bundle);
     await openRendererBundle(copyStore, request.rendererHash);
     freeze(bundle);
   } catch {

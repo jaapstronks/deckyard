@@ -189,11 +189,12 @@ Two are argument-checked: `ioctl` only with `FIONBIO` (0x5421) or `FIONREAD` (0x
 Every object a job can leave behind has one creator, and each creator ends before `QUIESCENT` or is killed before cleanup:
 
 1. The supervisor durably records the reservation and creates both cgroups (limits verified, `cgroup.kill` opened) before it acknowledges.
-2. The broker starts one `node:worker_threads` Worker per job. Its synchronous `mkdir`, the native `openat2` copy and the freeze run on that thread; verification reads complete before it posts `prepared`; after the supervisor accepts `RUNNING` it spawns the launcher and awaits its `close` event. The Worker has no message handler for further work and exits after one result.
-3. The launcher joins all pipe I/O and `waitpid` before exiting; crun's guest lives only in the job cgroup.
+2. The broker starts one `node:worker_threads` Worker per job. Its synchronous `mkdir`, the native `openat2` copy and the freeze run on that thread. The copy holds the store root and the target as directory descriptors resolved from `/` without symlinks, then resolves the bundle beneath the store root with `RESOLVE_BENEATH|NO_SYMLINKS|NO_MAGICLINKS|NO_XDEV`, so a separate mount for the state directory works and a mount inside the bundle refuses; verification reads complete before it posts `prepared`; after the supervisor accepts `RUNNING` it spawns the launcher and awaits its `close` event. The Worker has no message handler for further work and exits after one result.
+3. The launcher joins all pipe I/O and `waitpid` before exiting; crun's guest lives only in the job cgroup. When the guest closes its stdin before reading all input (`EPIPE`), the launcher discards the unwritten input and keeps relaying output until it joins the guest, so the job ends with the guest's own exit status.
 4. Only the Worker's `exit` event lets the broker send `QUIESCENT`. The supervisor accepts it in `RUNNING`, before the deadline, with both job cgroups empty.
 5. Any cancellation, deadline, channel loss, late or malformed message instead kills the whole broker cgroup and both job subtrees and waits for the held broker pidfd and `populated 0` everywhere. A producer stuck in an uninterruptible syscall keeps the slot occupied and admission closed.
 6. Cleanup then runs `crun delete`, refuses while a mount remains (no lazy unmount), removes staging and runtime state, re-inventories, removes the cgroups and only then writes `CLEANED`. Only a `CLEANED` record releases the slot or a success response.
+7. A supervisor start reconciles first, then compacts: `CLEANED` records of the previous generation, whose objects that reconciliation proved absent, leave the register; every other record stays. Job IDs are 128-bit random values, also unique without the dropped tombstones.
 
 ## The edition input
 

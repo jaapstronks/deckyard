@@ -94,10 +94,13 @@ static napi_value producer_io(napi_env env, napi_callback_info info) {
   if (result) return fail(env);
   napi_value out; napi_get_boolean(env,true,&out); return out;
 }
-static int beneath(int parent, const char *path, int flags) {
+static int resolve(int parent, const char *path, int flags, uint64_t extra) {
   struct open_how h = {.flags=(uint64_t)(flags | O_CLOEXEC | O_NOFOLLOW),
-    .resolve=RESOLVE_BENEATH | RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS | RESOLVE_NO_XDEV};
+    .resolve=RESOLVE_BENEATH | RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS | extra};
   return syscall(SYS_openat2, parent, path, &h, sizeof(h));
+}
+static int beneath(int parent, const char *path, int flags) {
+  return resolve(parent, path, flags, RESOLVE_NO_XDEV);
 }
 static char *string(napi_env env, napi_value value) {
   size_t len = 0;
@@ -169,19 +172,29 @@ static int tree(int source, int target, unsigned depth, struct budget *b) {
   }
   int saved=errno; closedir(dir); errno=saved; return result;
 }
+/* copy(storeRoot, name, target). The store root and the target are held as
+ * directory descriptors resolved from / without symlinks but across mounts, so
+ * a separate mount for /var, the state directory or a registration source
+ * works. Everything beneath the held store root resolves with NO_XDEV: a
+ * mount, bind or symlink inside the bundle still refuses. */
 static napi_value copy(napi_env env, napi_callback_info info) {
-  size_t argc=2; napi_value args[2];
+  size_t argc=3; napi_value args[3];
   napi_get_cb_info(env,info,&argc,args,NULL,NULL);
-  if (argc!=2) { errno=EINVAL; return fail(env); }
-  char *source=string(env,args[0]), *target=string(env,args[1]);
-  int root=-1,src=-1,dst=-1,manifest=-1,out=-1,files=-1,tofiles=-1;
+  if (argc!=3) { errno=EINVAL; return fail(env); }
+  char *store=string(env,args[0]), *name=string(env,args[1]), *target=string(env,args[2]);
+  int root=-1,base=-1,src=-1,dst=-1,manifest=-1,out=-1,files=-1,tofiles=-1;
   int result=-1;
-  if (!source || !target || source[0]!='/' || target[0]!='/') { errno=EINVAL; goto done; }
+  if (!store || !name || !target || store[0]!='/' || target[0]!='/' ||
+      strchr(name,'/') || !strcmp(name,".") || !strcmp(name,"..") || strlen(name)>255) {
+    errno=EINVAL; goto done;
+  }
   root=open("/",O_RDONLY|O_DIRECTORY|O_CLOEXEC);
   if (root<0) goto done;
-  src=beneath(root,source+1,O_RDONLY|O_DIRECTORY);
-  dst=beneath(root,target+1,O_RDONLY|O_DIRECTORY);
-  if (src<0 || dst<0 || ordinary(src,1) || ordinary(dst,1)) goto done;
+  base=store[1] ? resolve(root,store+1,O_RDONLY|O_DIRECTORY,0) : dup(root);
+  dst=target[1] ? resolve(root,target+1,O_RDONLY|O_DIRECTORY,0) : -1;
+  if (base<0 || dst<0 || ordinary(base,1) || ordinary(dst,1)) goto done;
+  src=beneath(base,name,O_RDONLY|O_DIRECTORY);
+  if (src<0 || ordinary(src,1)) goto done;
   /* Fresh copies must not inherit access/default ACLs from staging. Mode bits
    * alone are not an inventory of named-user ACL entries. */
   const char *acl[]={"system.posix_acl_access","system.posix_acl_default"};
@@ -202,9 +215,9 @@ static napi_value copy(napi_env env, napi_callback_info info) {
   result=0;
 done:;
   int saved=errno;
-  int fds[]={tofiles,files,out,manifest,dst,src,root};
+  int fds[]={tofiles,files,out,manifest,dst,src,base,root};
   for (size_t i=0;i<sizeof(fds)/sizeof(fds[0]);i++) if (fds[i]>=0) close(fds[i]);
-  free(source); free(target); errno=saved;
+  free(store); free(name); free(target); errno=saved;
   if (result) return fail(env);
   napi_value value; napi_get_undefined(env,&value); return value;
 }
