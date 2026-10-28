@@ -18,7 +18,10 @@ import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import {
   createAiReviewAnnotations,
   aiReviewPreviewText,
+  answerPictureSuggestion,
 } from '../ai-review-annotations.js';
+import { pickMissingPicture } from '../media/pick-missing-picture.js';
+import { convertSlideInOtherVersions } from '../convert-slide-action.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
 
@@ -31,6 +34,9 @@ import { nav } from '../../../lib/state/router.js';
  * @param {Object} options.SLIDE_TYPES
  * @param {Object} options.editorState - dirtyRefreshAll() after mutations
  * @param {Function} [options.onJumpToSlide] - (slideId) => void
+ * @param {Function} [options.getOpenImagePicker] - () => the editor's image
+ *   picker seam, for "Choose image" on an incomplete slide
+ * @param {Function} [options.normalizeLang]
  * @param {boolean} [options.postGeneration] - Just-generated deck: offer
  *   "Discard deck" (delete + navigate back)
  */
@@ -42,6 +48,8 @@ export function openAiDeckReviewModal({
   SLIDE_TYPES,
   editorState,
   onJumpToSlide,
+  getOpenImagePicker = () => null,
+  normalizeLang,
   postGeneration = false,
 } = {}) {
   let grid = null;
@@ -63,7 +71,13 @@ export function openAiDeckReviewModal({
 
   const status = h('div', { class: 'help ui-status-line' });
 
-  const { annotationFor } = createAiReviewAnnotations({
+  // A change from the grid applies to the live deck (undo covers regret).
+  const commit = () => {
+    editorState?.dirtyRefreshAll?.();
+    grid.render();
+  };
+
+  const { annotationFor, suggestionAfter } = createAiReviewAnnotations({
     api,
     SLIDE_TYPES,
     lang,
@@ -77,8 +91,37 @@ export function openAiDeckReviewModal({
       );
       if (i < 0) return;
       pres.slides[i] = { ...next, id: pres.slides[i].id };
-      editorState?.dirtyRefreshAll?.();
-      grid.render();
+      convertSlideInOtherVersions({
+        pres,
+        slideId: pres.slides[i].id,
+        toType: next.type,
+        SLIDE_TYPES,
+        theme,
+      });
+      commit();
+    },
+    pickImage: getOpenImagePicker()
+      ? (slide) =>
+          pickMissingPicture({
+            openImagePicker: getOpenImagePicker(),
+            slide,
+            slideTypes: SLIDE_TYPES,
+            pres,
+            normalizeLang,
+            onPicked: commit,
+          })
+      : null,
+    onSuggestion: (slide, accepted) => {
+      answerPictureSuggestion({
+        slides: pres.slides,
+        slide,
+        accepted,
+        SLIDE_TYPES,
+        theme,
+        lang,
+        presentationId: pres?.id || '',
+      });
+      commit();
     },
   });
 
@@ -130,6 +173,8 @@ export function openAiDeckReviewModal({
     lang: resolveDeckLang(pres),
     getSlides: () => pres?.slides || [],
     annotationFor,
+    layout: 'review',
+    afterTile: suggestionAfter,
     selectable: true,
     previewOnClick: true,
     // The AI's per-slide rationale, shown inside the peek preview too.

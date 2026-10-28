@@ -11,6 +11,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { openAiBatchReviewModal } from './modals/ai-batch-review-modal.js';
 import { highlightAiInsertedSlides } from './ai-added-highlight.js';
+import { insertSlideAfter } from './slide-insert-position.js';
 import { h } from '../../lib/dom/index.js';
 import {
   DEFAULT_DECK_LANG,
@@ -30,6 +31,7 @@ export function openAiAppendWizard({
   // step is skipped and slides insert directly, as before).
   theme = null,
   SLIDE_TYPES = null,
+  getOpenImagePicker = () => null,
   onReviewInserted = null,
 } = {}) {
   const langMode = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
@@ -231,15 +233,16 @@ export function openAiAppendWizard({
       const insertBatch = (slides) => {
         const selected = getSelectedSlideId?.();
         const hasExplicitPosition = typeof afterSlideId !== 'undefined';
-        const anchorId = hasExplicitPosition ? afterSlideId : selected;
-        const idx = (pres.slides || []).findIndex((s) => s.id === anchorId);
-        const insertAt =
-          idx >= 0
-            ? idx + 1
-            : hasExplicitPosition
-              ? 0
-              : (pres.slides || []).length;
-        pres.slides.splice(insertAt, 0, ...slides);
+        // The editor's one insertion rule: behind the anchor, a null anchor
+        // at the front. Without an explicit position, a missing selection
+        // means the end of the deck.
+        let anchorId = hasExplicitPosition
+          ? afterSlideId
+          : (selected ?? pres.slides?.at(-1)?.id ?? null);
+        for (const slide of slides) {
+          insertSlideAfter(pres.slides, slide, anchorId);
+          anchorId = slide.id;
+        }
 
         setSelectedSlideId?.(slides[0]?.id || selected);
         editorState.dirtyRefreshAll();
@@ -262,6 +265,8 @@ export function openAiAppendWizard({
           SLIDE_TYPES,
           batch: { slides: newSlides, rationale: resp?.rationale || '' },
           request: requestBody,
+          openImagePicker: getOpenImagePicker(),
+          presentationId: pres?.id || '',
           onAccept: (slides) => insertBatch(slides),
         });
         return;

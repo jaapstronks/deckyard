@@ -275,16 +275,6 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
       describeFieldFinding(finding, where),
     );
   }
-  for (const field of fields) {
-    if (
-      field?.importPlaceholder !== undefined &&
-      (field.type !== 'image' || !isNonEmpty(field.importPlaceholder))
-    ) {
-      out.errors.push(
-        `${who}: importPlaceholder requires an image field and a nonempty URL`,
-      );
-    }
-  }
   const keys = fieldWalk.keys;
   const globals = new Set(globalFieldKeys);
   // key -> Set of its itemFields keys, for the `inline.cards` reference check.

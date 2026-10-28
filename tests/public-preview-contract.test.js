@@ -33,6 +33,7 @@ const slide = (id, visibility = {}) => ({
   _aiReasoning: 'PRIVATE_AI',
   _aiWarnings: ['PRIVATE_AI'],
   _aiAlternatives: ['PRIVATE_AI'],
+  _aiSuggestAfter: { reason: 'PRIVATE_AI' },
 });
 function deck() {
   const slides = [
@@ -107,6 +108,7 @@ test('preview channels choose distinct visibility flags and drop live-only openi
         'notes',
         '_aiReasoning',
         '_aiAlternatives',
+        '_aiSuggestAfter',
         '_aiWarnings',
       ])
         assert.ok(!Object.hasOwn(item, key), key);

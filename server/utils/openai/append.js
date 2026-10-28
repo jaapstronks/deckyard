@@ -1,4 +1,3 @@
-import { DEFAULT_IMAGE_PLACEHOLDER } from '../../../shared/slide-types/image-placeholder.js';
 import { ICON_NAMES } from '../../../shared/icon-names.js';
 import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
@@ -7,12 +6,15 @@ import { extractJsonObject } from './json.js';
 import { detectDeckLanguage, normalizeLang } from './lang.js';
 import { summarizeDeckForPrompt } from './prompt.js';
 import { buildSlideTypesPrompt } from './slide-types-prompt.js';
+import {
+  buildSlideReviewRules,
+  SLIDE_REVIEW_EXAMPLE_KEYS,
+} from '../ai/prompts/base/slide-review.js';
 
 export async function generateSlidesToAppendFromRawContent(
   rawContent,
   {
     existingDeck = null,
-    preferredPlaceholderImage = DEFAULT_IMAGE_PLACEHOLDER,
     targetLang = null,
     vendor = null,
     contentOnly = false,
@@ -79,16 +81,15 @@ export async function generateSlidesToAppendFromRawContent(
     '',
     'IMPORTANT: You are NOT creating a new deck. You are appending slides to an existing presentation.',
     '- Do NOT return "title", "theme", "format", or "version".',
-    '- Output MUST be exactly: { "rationale": "...", "slides": [ { "type": "...", "content": { ... }, "why": "...", "alternatives": [ { "type": "...", "reason": "..." } ] }, ... ] }',
+    `- Output MUST be exactly: ${JSON.stringify({ rationale: '...', slides: [{ type: '...', content: {}, ...SLIDE_REVIEW_EXAMPLE_KEYS }] })}`,
     '- "rationale": 1-3 sentences addressed to the user, summarizing what you added and the structure you chose (e.g. "Based on your prompt I added 4 slides: a chapter title, then..."). Written in the same language as the slides.',
-    '- "why" (per slide): ONE short sentence explaining why this slide type fits this content. Same language as the slides.',
-    '- "alternatives" (per slide): 0-2 other slide types that could also work, each with a one-line "reason". Use an empty array when nothing else genuinely fits. Only use type names from the catalog below.',
     '- Do NOT include UUIDs or ids.',
     '- Do NOT repeat existing slides; build logically on what already exists.',
     '- Do NOT add a new title-slide unless the user explicitly asks for it.',
     '',
+    buildSlideReviewRules('the same language as the slides'),
+    '',
     buildSlideTypesPrompt({
-      preferredPlaceholderImage,
       disabledSlideTypes,
       customSlideTypes,
     }),
@@ -116,9 +117,7 @@ export async function generateSlidesToAppendFromRawContent(
           '- For each NEW major topic/section you introduce, add a chapter-title-slide to announce the topic, THEN immediately follow it with ONE slide that elaborates on that topic.',
         ]),
     '- Quote slides are IMPORTANT for interviews and narrative source text.',
-    '- Images: If the user asks for a photo/image (or you choose to add an image slide), you MUST use a placeholder image URL from the app so the slide validates.',
-    `  - Use this placeholder URL: "${preferredPlaceholderImage}".`,
-    '  - Also add a clear TODO marker in the body (last bullet) so the user knows to replace the image, e.g. "- TODO: replace image".',
+    '- Images: when the user asks for a photo/image, use an image type and leave its image field empty (""); the author picks the picture. For a picture that would help between slides, use "imageSuggestionAfter" instead.',
     '- For content-slide.body and image-text-slide.body use a safe markdown subset: paragraphs, lists (- or 1.), **bold**, *italic*, links [text](https://...).',
     '- content-slide.layout selection:',
     '  - Use layout:"one-column" for light slides (short paragraph, or ~3–7 bullets). Do NOT default to two-column for tiny content.',
@@ -249,20 +248,8 @@ export async function generateSlidesToAppendFromRawContent(
   }
   const rationale =
     typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';
-  // Per-slide review metadata ("why this type" + alternative types), aligned
-  // with `slides` by index. Kept separate because deck normalization strips
-  // unknown slide keys; the route re-attaches these after normalization.
-  const review = slides.map((s) => ({
-    why: typeof s?.why === 'string' ? s.why.trim() : '',
-    alternatives: Array.isArray(s?.alternatives)
-      ? s.alternatives
-          .map((a) => ({
-            type: typeof a?.type === 'string' ? a.type.trim() : '',
-            reason: typeof a?.reason === 'string' ? a.reason.trim() : '',
-          }))
-          .filter((a) => a.type)
-          .slice(0, 2)
-      : [],
-  }));
-  return { slides, rationale, review };
+  // The per-slide review keys stay on `slides`: composition drops them, and
+  // the caller attaches them afterwards through `attachBatchReviews()`
+  // (server/utils/ai/slide-review.js), which reads these raw slides by index.
+  return { slides, rationale };
 }

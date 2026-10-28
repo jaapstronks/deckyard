@@ -1,5 +1,4 @@
 import { ALT_TEXT_CONSTRAINTS } from '../field-normalization.js';
-import { DEFAULT_IMAGE_PLACEHOLDER } from '../image-placeholder.js';
 import {
   escapeHtml,
   imagePlaceholderHtml,
@@ -55,7 +54,6 @@ export default {
       label: 'Image',
       labelKey: 'editor.slideField.image.label',
       type: 'image',
-      importPlaceholder: DEFAULT_IMAGE_PLACEHOLDER,
       // Allow creating a new image slide without selecting an image yet.
       // Rendering/export already handle missing images gracefully.
       required: false,
