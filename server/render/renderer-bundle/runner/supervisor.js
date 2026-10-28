@@ -20,7 +20,12 @@ import {
   trustedPath,
   SUPERVISOR_CGROUP,
 } from './paths.js';
-import { loadLedger, saveLedger, revokeRecord } from './ledger.js';
+import {
+  loadLedger,
+  saveLedger,
+  revokeRecord,
+  compactLedger,
+} from './ledger.js';
 import { lifecycleChannel } from './channel.js';
 import {
   brokerProperties,
@@ -195,7 +200,6 @@ export async function startSupervisor() {
     try {
       normal = normal && !job.cancelled;
       if (!(await stopped(job, normal))) return;
-      if (normal && job.cancelled) return;
       if (job.phase === 'TERMINATING') phase(job, 'PRODUCERS_STOPPED');
       if (job.phase === 'PRODUCERS_STOPPED') phase(job, 'CLEANING');
       cleanupObjects(job);
@@ -311,6 +315,7 @@ export async function startSupervisor() {
       }
     }
   }
+  if (compactLedger(ledger)) log(null, 'ledger_compacted');
   ledger.generation = id();
   ledger.instance = null;
   persist();

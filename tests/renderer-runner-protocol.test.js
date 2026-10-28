@@ -427,3 +427,33 @@ test('loaded producer policy must deny every AIO syscall before Node starts', as
   ])
     assert.throws(() => assertProducerPolicy({ ...properties, ...patch }));
 });
+
+test('startup compaction drops only proven CLEANED tombstones and keeps every other record', async () => {
+  const { compactLedger } =
+    await import('../server/render/renderer-bundle/runner/ledger.js');
+  const phases = [
+    'RESERVED',
+    'PREPARING',
+    'RUNNING',
+    'TERMINATING',
+    'PRODUCERS_STOPPED',
+    'CLEANING',
+  ];
+  const ledger = {
+    jobs: [
+      ...Array.from({ length: 378 }, (_, i) => ({
+        id: String(i),
+        phase: 'CLEANED',
+      })),
+      ...phases.map((phase) => ({ id: phase, phase })),
+    ],
+  };
+  assert.equal(compactLedger(ledger), 378);
+  assert.deepEqual(
+    ledger.jobs.map((job) => job.phase),
+    phases,
+  );
+  const size = JSON.stringify(ledger).length;
+  assert.equal(compactLedger(ledger), 0);
+  assert.equal(JSON.stringify(ledger).length, size);
+});

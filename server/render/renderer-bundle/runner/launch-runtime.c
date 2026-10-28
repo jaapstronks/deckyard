@@ -72,7 +72,9 @@ int main(int argc, char **argv) {
     pollfds[6]=(struct pollfd){.fd=exited ? -1 : pidfd,.events=POLLIN};
     if (poll(pollfds,7,-1)<0) { if (errno==EINTR) continue; return 126; }
     for (int i=0;i<3;i++) if (relay(&flows[i])) {
-      if (i==0 && errno==EPIPE) { close(flows[0].from);close(flows[0].to);flows[0].from=flows[0].to=-1;flows[0].eof=1; }
+      /* The guest closed its stdin: discard the unwritten input and keep
+       * relaying output until the guest's own exit is joined. */
+      if (i==0 && errno==EPIPE) { close(flows[0].from);close(flows[0].to);flows[0].from=flows[0].to=-1;flows[0].begin=flows[0].end=0;flows[0].eof=1; }
       else return 126;
     }
     if (!exited && pollfds[6].revents) {

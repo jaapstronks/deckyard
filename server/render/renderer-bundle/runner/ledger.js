@@ -88,3 +88,13 @@ export function revokeRecord(job, code, monotonicTime) {
     job.phase = 'TERMINATING';
   return true;
 }
+
+/** Startup compaction after reconciliation proved every CLEANED record's
+ * objects absent and every old producer stopped. Those tombstones belong to a
+ * previous generation and are dropped; any other record is kept. The register
+ * then grows with the jobs of one generation, not with every finished job. */
+export function compactLedger(ledger) {
+  const before = ledger.jobs.length;
+  ledger.jobs = ledger.jobs.filter((job) => job.phase !== 'CLEANED');
+  return before - ledger.jobs.length;
+}
