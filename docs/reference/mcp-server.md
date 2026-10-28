@@ -287,7 +287,8 @@ derived contrast keys every slide may carry (`slideBgAutoFor`,
 them next to `slideBgImage`, so a slide you read with `get_presentation` and
 write back as it is passes, and keeps its verdict without being measured again.
 Likewise `imagekitFileId`, the provenance an editor image pick leaves on the
-slide: declared on every type, so writing a slide back with it passes.
+slide: declared on the types whose image field takes that pick (`image-slide`,
+`image-text-slide`), so writing such a slide back with it passes.
 
 ## Which slide types an agent sees
 

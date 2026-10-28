@@ -1,18 +1,20 @@
 /**
- * An ImageKit pick in any single-image field saves (DY-770, D162).
+ * An ImageKit pick in a single-image field saves (DY-770, D162).
  *
  * The editor keeps the picked file's ImageKit id beside the URL as
- * provenance: `applyPickMeta` writes `content.imagekitFileId` for every
- * top-level single-image field, `slideBgImage` included, so on every type.
- * v1.91.0 (D359) refused every top-level key a type does not declare, and no
- * type declared this one, so the next save of a slide with a fresh pick was
- * refused with `unknown_field`. The key is now declared for every type
- * (`PROVENANCE_SLIDE_CONTENT_KEYS`), which also keeps migration 102 from
- * stripping it: that migration removes exactly what `undeclaredContentKeys`
+ * provenance: `applyPickMeta` writes `content.imagekitFileId` for a top-level
+ * single-image field that takes a library pick (`single-image.js`, and
+ * `pick-missing-picture.js` for the same fields). The background has its own
+ * picker (`title-bg-image.js`) that writes the URL only. v1.91.0 (D359)
+ * refused every top-level key a type does not declare, and no type declared
+ * this one, so the next save of a slide with a fresh pick was refused with
+ * `unknown_field`. The key is now declared on exactly the types with such a
+ * field (`nonFieldContentKeys`), which also keeps migration 102 from
+ * stripping it there: that migration removes what `undeclaredContentKeys`
  * returns.
  *
  * Pinned through the real write route: `applyPickMeta` mutates the content,
- * `assertValidSlideFields` judges it as the save does (`previousSlide` set).
+ * `validateSlideFields` judges it as the save does (`previousSlide` set).
  *
  * Run with: node --test tests/imagekit-pick-save.test.js
  */
@@ -27,26 +29,28 @@ import { applyPickMeta } from '../client/views/editor/media/apply-pick.js';
 
 const PICK = { url: '/media/own-copy.jpg', providerId: 'ik-file-1' };
 
-/** Every [type, key] whose top-level field is a single image. */
-function singleImageFields() {
+/** Every [type, key] whose top-level field takes a library image pick. */
+function pickFields() {
   const out = [];
   for (const [name, def] of Object.entries(SLIDE_TYPES)) {
     for (const field of def.fields || []) {
-      if (field?.type === 'image') out.push([name, field.key]);
+      if (field?.type === 'image' && field.presetSource !== 'backgrounds') {
+        out.push([name, field.key]);
+      }
     }
   }
   return out;
 }
 
-test('every type has at least one single-image field (slideBgImage)', () => {
-  const types = new Set(singleImageFields().map(([name]) => name));
-  for (const name of Object.keys(SLIDE_TYPES)) {
-    assert.ok(types.has(name), `${name} has a single-image field`);
-  }
+const PICK_TYPES = new Set(pickFields().map(([name]) => name));
+
+test('the image slides take a library pick', () => {
+  assert.ok(PICK_TYPES.has('image-slide'));
+  assert.ok(PICK_TYPES.has('image-text-slide'));
 });
 
-test('an ImageKit pick in each single-image field passes the save', () => {
-  for (const [name, key] of singleImageFields()) {
+test('an ImageKit pick in each pick field passes the save', () => {
+  for (const [name, key] of pickFields()) {
     const def = SLIDE_TYPES[name];
     const before = {
       id: 's1',
@@ -70,11 +74,11 @@ test('an ImageKit pick in each single-image field passes the save', () => {
   }
 });
 
-test('migration 102 keeps the provenance key on every type', () => {
+test('migration 102 keeps the provenance key where a pick writes it, and only there', () => {
   for (const [name, def] of Object.entries(SLIDE_TYPES)) {
     assert.deepEqual(
       undeclaredContentKeys(def, { imagekitFileId: 'ik-file-1' }),
-      [],
+      PICK_TYPES.has(name) ? [] : ['imagekitFileId'],
       name,
     );
   }
