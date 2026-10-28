@@ -44,8 +44,20 @@ test('B453: an essential list is marked for its first entry', () => {
   assert.ok(items?.endsWith('(essential: first entry)'), items);
 });
 
-test('B453: the prompt tells the generator to fill essential fields', () => {
-  assert.match(buildSlideTypesPrompt(), /Fill every field marked "essential"/);
+test('B453: the prompt tells the generator to fill essential text fields', () => {
+  assert.match(
+    buildSlideTypesPrompt(),
+    /Fill every text field marked "essential"/,
+  );
+});
+
+test('B590: an essential image stays empty rather than invented', () => {
+  // An empty essential picture is what makes a slide incomplete; a stock
+  // photo or an invented URL would hide that from the author.
+  assert.match(
+    buildSlideTypesPrompt(),
+    /Image fields are the exception: never invent an image URL/,
+  );
 });
 
 test('one-shot prompts use exactly the core types in the offered catalog', () => {

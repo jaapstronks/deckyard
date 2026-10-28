@@ -19,10 +19,10 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { EventEmitter } from 'node:events';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
+import { createMockReq, createMockRes } from './helpers/http-mocks.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.SANDBOX_MODE;
@@ -135,40 +135,14 @@ function stubModel(t) {
   return bodies;
 }
 
-function makeRes() {
-  const res = new EventEmitter();
-  res.statusCode = null;
-  res.body = null;
-  res.setHeader = () => {};
-  res.writeHead = (status) => {
-    res.statusCode = status;
-  };
-  res.end = (payload) => {
-    if (payload) res.body = JSON.parse(String(payload));
-  };
-  return res;
-}
-
-function makeReq(body) {
-  const raw = JSON.stringify(body);
-  return {
-    method: 'POST',
-    headers: { host: 'decks.example.test' },
-    socket: { remoteAddress: '203.0.113.9' },
-    async *[Symbol.asyncIterator]() {
-      yield Buffer.from(raw, 'utf8');
-    },
-  };
-}
-
 const AUTHED = { id: userIdFor(OWNER), email: OWNER, organizationId: ORG };
 
 function ctx(body) {
   return {
     repoRoot: process.cwd(),
     storageScope: createStorageScope(AUTHED, { repoRoot: process.cwd() }),
-    req: makeReq(body),
-    res: makeRes(),
+    req: createMockReq({ method: 'POST', body }),
+    res: createMockRes(),
     authedUser: AUTHED,
   };
 }
@@ -271,8 +245,8 @@ test('the internal append route returns the one review shape', async (t) => {
   const bodies = stubModel(t);
   const c = ctx({ raw: 'Partners', lang: 'en', deck: existingDeck() });
   await handleAiAppendSlides(c);
-  assert.equal(c.res.statusCode, 200, JSON.stringify(c.res.body));
-  assertReview(c.res.body.slides[0], 'append');
+  assert.equal(c.res.statusCode, 200, String(c.res.body));
+  assertReview(c.res.json().slides[0], 'append');
   assertPrompt(bodies[0], 'append');
 });
 
@@ -286,8 +260,8 @@ test('refine-section returns the one review shape', async (t) => {
     lang: 'en',
   });
   await handleAiRefineSection(c);
-  assert.equal(c.res.statusCode, 200, JSON.stringify(c.res.body));
-  assertReview(c.res.body.slides[0], 'refine-section');
+  assert.equal(c.res.statusCode, 200, String(c.res.body));
+  assertReview(c.res.json().slides[0], 'refine-section');
   assertPrompt(bodies[0], 'refine-section');
 });
 

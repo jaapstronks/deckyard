@@ -26,6 +26,8 @@ import { openAiDeckReviewModal } from './modals/ai-deck-review-modal.js';
  * @param {Function} ctx.rerenderEditor - repaint the editor form (late-bound indirection)
  * @param {Function} ctx.rerenderPreview - repaint the preview (late-bound indirection)
  * @param {Function} ctx.getSlideListEl - read the slide-list element (late-bound indirection)
+ * @param {Function} [ctx.getOpenImagePicker] - read the image picker seam (late-bound indirection: built after this factory runs)
+ * @param {Function} [ctx.normalizeLang] - language normalizer for picked alt text
  * @returns {{ jumpToSlide: Function, openDeckOverview: Function, openAiDeckReview: Function }}
  */
 export function createDeckReviewOpeners({
@@ -40,6 +42,8 @@ export function createDeckReviewOpeners({
   rerenderEditor,
   rerenderPreview,
   getSlideListEl,
+  getOpenImagePicker = () => null,
+  normalizeLang,
 }) {
   // Jump used by the overview grid and the AI deck review. slideListEl is read
   // lazily (mounted further down, before any click can happen).
@@ -84,6 +88,8 @@ export function createDeckReviewOpeners({
       SLIDE_TYPES,
       editorState,
       onJumpToSlide: jumpToSlide,
+      getOpenImagePicker,
+      normalizeLang,
       postGeneration,
     });
   };
