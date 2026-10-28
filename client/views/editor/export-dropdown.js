@@ -8,6 +8,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { openExportModal } from './export-modal.js';
+import { confirmIncompleteSlides } from './incomplete-slides-notice.js';
 import { h } from '../../lib/dom/index.js';
 
 /**
@@ -17,8 +18,16 @@ import { h } from '../../lib/dom/index.js';
  * @param {HTMLElement} [opts.root] - element to append the modal to
  * @param {Function} [opts.openPublic] - opens the Share dialog on its Public
  *   tab; the HTML row's hint links there
+ * @param {Record<string, Object>} [opts.slideTypes] - the editor's registry,
+ *   to name the incomplete slides an export leaves out (B590)
  */
-export function setupExportDropdown({ pres, id, root, openPublic } = {}) {
+export function setupExportDropdown({
+  pres,
+  id,
+  root,
+  openPublic,
+  slideTypes,
+} = {}) {
   let modal = null;
 
   /**
@@ -26,7 +35,14 @@ export function setupExportDropdown({ pres, id, root, openPublic } = {}) {
    * same action at widths where the bar folds this button away, without a
    * second copy of the wiring (B354).
    */
-  const openExport = () => {
+  const openExport = async () => {
+    const mount = root || document.body;
+    const go = await confirmIncompleteSlides(mount, {
+      pres,
+      slideTypes,
+      context: 'export',
+    });
+    if (!go) return;
     modal = openExportModal({
       pres,
       id,

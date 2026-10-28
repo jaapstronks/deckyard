@@ -192,6 +192,18 @@
   margin-top: 10px;
 }
 
+/* The built header (title + close button): the close button keeps its whole
+   label. The title asks for 10rem beside it and takes what is left; where
+   even that does not fit (320 px at 200% zoom) the button wraps under the
+   title instead of being pushed past the modal's edge. */
+.modal-header {
+  flex-wrap: wrap;
+}
+.modal-header > h2 {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
 /* Modal content helpers (used outside the editor too; keep conservative) */
 .modal-field-narrow {
   max-width: 320px;

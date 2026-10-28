@@ -131,6 +131,7 @@ nothing is discoverable only by `ls`.
 | [`editor-inspector.md`](reference/editor-inspector.md)                 | The inspector rail, panes and toolbar zones                                |
 | [`wysiwyg-inline-editing.md`](reference/wysiwyg-inline-editing.md)     | Inline editing on the slide canvas                                         |
 | [`essential-fields.md`](reference/essential-fields.md)                 | Which fields of each core type are `essential`, and why                    |
+| [`incomplete-slides.md`](reference/incomplete-slides.md)               | Which slides count as incomplete, and how every output leaves them out     |
 | [`editor-responsive-fields.md`](reference/editor-responsive-fields.md) | Size-intent field rows                                                     |
 | [`image-property-ownership.md`](reference/image-property-ownership.md) | Where each image property lives                                            |
 | [`image-picker-seam.md`](reference/image-picker-seam.md)               | The shared image-picker seam                                               |

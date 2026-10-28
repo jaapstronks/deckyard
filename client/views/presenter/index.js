@@ -30,6 +30,7 @@ import { createEdgeHint } from './edge-hint.js';
 import { createSessionStatePoster } from './session-state.js';
 import {
   createPresenterDeckController,
+  loadPresentSlideTypes,
   normalizeNotesStrings,
 } from './deck-controller.js';
 import { attachPresenterKeys } from './keys.js';
@@ -74,7 +75,10 @@ export async function renderPresenter(root, id) {
   const { activeLang, langQs } = readDeckLangFromUrl();
   let pres = await api(`/api/presentations/${id}${langQs}`);
   setDocumentTitle(pres?.title);
-  const theme = await loadThemeById(pres?.theme);
+  const [theme, slideTypes] = await Promise.all([
+    loadThemeById(pres?.theme),
+    loadPresentSlideTypes(api),
+  ]);
   const modeLang =
     activeLang ||
     normalizeLang(pres?.i18n?.active) ||
@@ -366,6 +370,7 @@ export async function renderPresenter(root, id) {
     langQs,
     stage,
     theme,
+    slideTypes,
     renderSlideElement,
     cleanupSlideRuntimes,
     animator,

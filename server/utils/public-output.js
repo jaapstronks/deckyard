@@ -54,20 +54,28 @@ export function firstPublicSlide(pres, { channel, slideTypes } = {}) {
 }
 
 /**
- * Filter presentation for export context (PDF, standalone HTML, etc.).
- * Removes live-only slides and slides with hideInExport visibility.
+ * Filter presentation for export context (PDF, PNG, PPTX, print, standalone
+ * HTML, the handoff ZIP, the reader export): drops live-only slides, slides
+ * with `hideInExport` and incomplete slides (B590) from every slide list the
+ * deck carries, its language versions included (B698). Positional jumps are
+ * pinned against each original list first, so `#N` keeps naming the slide it
+ * named in the stored order.
  * @param {Object} pres - Presentation object
- * @returns {Object} Filtered presentation
+ * @param {Object} [options]
+ * @param {Object} [options.slideTypes] - The deck organization's registry
+ * @returns {Object} Filtered presentation, unchanged when nothing was dropped
  */
-export function filterForExport(pres) {
-  if (!pres || typeof pres !== 'object') return pres;
-  // First strip live-only slides
-  pres = stripLiveOnlySlidesFromPresentation(pres);
-  // Then apply visibility filter for export context
-  const slides = Array.isArray(pres.slides) ? pres.slides : [];
-  const filtered = filterSlidesForContext(slides, 'export');
-  if (filtered.length === slides.length) return pres;
-  return { ...pres, slides: filtered };
+export function filterForExport(pres, { slideTypes } = {}) {
+  slideTypes = slideTypes || undefined;
+  const exported = (slide) =>
+    !!slide &&
+    typeof slide === 'object' &&
+    !isLiveOnlySlideType(slide.type, slideTypes) &&
+    isSlideVisibleIn(slide, 'export', { slideTypes });
+  return mapDeckSlideLists(pres, (slides) => {
+    if (slides.every(exported)) return slides;
+    return pinSlideJumps(slides, slideTypes).filter(exported);
+  });
 }
 
 /**
@@ -208,16 +216,19 @@ export function projectPresentationForAudience(
     );
     const visible =
       channel === 'published'
-        ? filterSlidesForContext(pinned, 'published')
+        ? filterSlidesForContext(pinned, 'published', { slideTypes })
         : channel === 'follow'
           ? pinned.filter(
               (slide) =>
-                isSlideVisibleIn(slide, 'viewer', { userPermission: 'read' }) &&
-                isSlideVisibleIn(slide, 'presentation'),
+                isSlideVisibleIn(slide, 'viewer', {
+                  userPermission: 'read',
+                  slideTypes,
+                }) && isSlideVisibleIn(slide, 'presentation', { slideTypes }),
             )
           : filterSlidesForContext(pinned, 'viewer', {
               userPermission: 'read',
               markDrafts: true,
+              slideTypes,
             });
     return visible
       .filter(

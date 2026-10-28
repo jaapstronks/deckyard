@@ -344,3 +344,99 @@ test('v1: POST /publish fires the presentation.published webhook', async () => {
   // Sanity: the deck is actually published too.
   assert.ok(storedDeck(db, DECK_ID).published?.id);
 });
+
+// ---------------------------------------------------------------------------
+// Incomplete slides (B590): an empty essential picture refuses the publish
+// ---------------------------------------------------------------------------
+
+const { handlePublish: handleInternalPublish } =
+  await import('../server/routes/api/publish.js');
+const { createMockRes } = await import('./helpers/http-mocks.js');
+
+/** POST /api/presentations/:id/publish as the editor sends it. */
+async function internalPublish(deckId) {
+  const req = Readable.from([]);
+  req.method = 'POST';
+  req.headers = { host: 'decks.example.test' };
+  const res = createMockRes();
+  await handleInternalPublish({
+    repoRoot: REPO_ROOT,
+    storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
+    req,
+    res,
+    url: new URL(`http://localhost/api/presentations/${deckId}/publish`),
+    authedUser: { id: userIdFor(KEY_OWNER), email: KEY_OWNER },
+  });
+  return res;
+}
+
+function addEmptyImageSlide(db) {
+  storedDeck(db, DECK_ID).slides.push({
+    id: 'slide-2',
+    type: 'image-slide',
+    content: { title: 'Beeld volgt', image: '' },
+    parentId: null,
+  });
+}
+
+test('core: an empty essential picture is refused with 422 incomplete_slides before anything is written', async () => {
+  const db = await installDb();
+  addEmptyImageSlide(db);
+  await assert.rejects(
+    publishPresentation({
+      repoRoot: REPO_ROOT,
+      storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
+      req: { headers: {} },
+      pres: storedDeck(db, DECK_ID),
+      actor: { email: KEY_OWNER },
+    }),
+    (err) => {
+      assert.equal(getStatusCode(err), 422);
+      assert.equal(err.code, 'incomplete_slides');
+      assert.deepEqual(err.toJSON().details, { slides: [2] });
+      assert.match(err.message, /Slide 2 still has an empty image/);
+      return true;
+    },
+  );
+  assert.equal(db.__tables.published_presentations.length, 0);
+  assert.equal(storedDeck(db, DECK_ID).published, null);
+});
+
+test('internal and v1 routes refuse incomplete_slides; a chosen picture then meets the alt check, and with alt it publishes', async () => {
+  const db = await installDb();
+  addEmptyImageSlide(db);
+
+  const internal = await internalPublish(DECK_ID);
+  assert.equal(internal.statusCode, 422);
+  assert.equal(internal.json().error, 'incomplete_slides');
+  assert.deepEqual(internal.json().details, { slides: [2] });
+
+  const refused = makeV1Ctx('POST', DECK_ID);
+  assert.equal(await handlePublishing(refused), true);
+  assert.equal(refused.res.statusCode, 422);
+  assert.equal(refused.res.body.error, 'incomplete_slides');
+  assert.deepEqual(refused.res.body.details, { slides: [2] });
+  assert.equal(db.__tables.published_presentations.length, 0);
+
+  // A picture chosen without alt text: rightly the next refusal.
+  storedDeck(db, DECK_ID).slides[1].content.image = '/media/second.jpg';
+  const unnamed = makeV1Ctx('POST', DECK_ID);
+  await handlePublishing(unnamed);
+  assert.equal(unnamed.res.statusCode, 422);
+  assert.equal(unnamed.res.body.error, 'missing_alt');
+  assert.equal(unnamed.res.body.details.slideIndex, 1);
+
+  storedDeck(db, DECK_ID).slides[1].content.alt = 'The quay at noon';
+  const done = await internalPublish(DECK_ID);
+  assert.equal(done.statusCode, 200, JSON.stringify(done.json()));
+  assert.ok(storedDeck(db, DECK_ID).published?.id);
+});
+
+test('a slide the published page never shows does not block the publish', async () => {
+  const db = await installDb();
+  addEmptyImageSlide(db);
+  storedDeck(db, DECK_ID).slides[1].visibility = { hideInPublished: true };
+  const ctx = makeV1Ctx('POST', DECK_ID);
+  await handlePublishing(ctx);
+  assert.equal(ctx.res.statusCode, 200, JSON.stringify(ctx.res.body));
+});

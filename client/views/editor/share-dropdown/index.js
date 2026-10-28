@@ -14,6 +14,7 @@ import { doPublish } from '../publish-export/publish.js';
 import { openShareModal } from '../modals/share-modal/index.js';
 import { openDescriptionModal } from '../modals/description-modal.js';
 import { openExportModal } from '../export-modal.js';
+import { confirmIncompleteSlides } from '../incomplete-slides-notice.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { handleNotionPublish } from './share-actions.js';
 import { h } from '../../../lib/dom/index.js';
@@ -81,13 +82,21 @@ export function setupShareDropdown({
   const doPublishBound = () =>
     doPublish({ root, api, toast, pres, id, requestSave });
 
-  const openExport = () =>
+  const openExport = async () => {
+    const mount = root || document.body;
+    const go = await confirmIncompleteSlides(mount, {
+      pres,
+      slideTypes,
+      context: 'export',
+    });
+    if (!go) return;
     openExportModal({
       pres,
       id,
-      root: root || document.body,
+      root: mount,
       openPublic: () => openShare({ initialTab: 'public' }),
     });
+  };
 
   /**
    * Open the Share dialog, on the Team tab unless another is asked for.

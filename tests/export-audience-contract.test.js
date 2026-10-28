@@ -384,9 +384,11 @@ test('real streamed PNG uses the reader projection and rechecks revocation at do
   const { downloadUrl } = JSON.parse(complete[1]);
   const id = downloadUrl.match(/export-(.+)\/download/)[1];
   const zip = await JSZip.loadAsync(getExportResult(id).buffer);
+  // Six reader slides, less the two the export context drops: the draft and
+  // the `hideInExport` slide (B590 closed that leak in the PNG ZIP).
   assert.equal(
     Object.keys(zip.files).filter((n) => /\.png$/.test(n)).length,
-    6,
+    4,
   );
   await removeCollaborator(fixture.scope, fixture.deckId, READ_EMAILS.view);
   const download = context(downloadUrl, 'view');
@@ -421,12 +423,13 @@ test('real PPTX/handoff, PDF/print and PNG omit hidden slides; nested notes/XML 
         }
       }
       await scan(zip);
+      // Not the draft or the `hideInExport` slide either (B590).
       if (endpoint.startsWith('pptx'))
         assert.equal(
           Object.keys(zip.files).filter((n) =>
             /^ppt\/slides\/slide\d+\.xml$/.test(n),
           ).length,
-          6,
+          4,
         );
     } else if (endpoint === 'pdf') {
       safeBytes(res.body);

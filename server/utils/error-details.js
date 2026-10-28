@@ -23,7 +23,9 @@
  *   returns (`active`, `reason`, `retryAfter`); `sandbox_quota_exceeded` the
  *   quota that was hit (`resource`, `limit`, `used`); `missing_alt` the first
  *   picture publishing refused (`lang`, `slideIndex`, `slideId`, `field`,
- *   `itemIndex`, `itemField`) and how many there are (`count`); `in_use` the
+ *   `itemIndex`, `itemField`) and how many there are (`count`);
+ *   `incomplete_slides` the numbers of the slides it would leave out
+ *   (`slides`); `in_use` the
  *   count of what still uses a custom slide type being deleted (`usage`);
  *   `field_in_use` the removed fields stored content still carries and where
  *   (`usage`);
@@ -106,6 +108,9 @@ export const PAYLOAD_KEYS = Object.freeze({
     'itemField',
     'count',
   ]),
+  // The 1-based numbers of the slides a publish would leave out for an empty
+  // essential picture (`assertSlidesComplete`, B590).
+  incomplete_slides: Object.freeze(['slides']),
 });
 
 /** @returns {boolean} Whether a register violation should throw. */

@@ -29,6 +29,8 @@ import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
 import { featureEnabled } from '../../../lib/state/features.js';
+import { confirmIncompleteSlides } from '../incomplete-slides-notice.js';
+import { isSlideVisibleIn } from '../../../../shared/slide-visibility.js';
 
 export function createEditorTopbar({
   api,
@@ -38,6 +40,7 @@ export function createEditorTopbar({
   theme,
   id,
   user,
+  slideTypes,
   requestSave,
   isDirty,
   getSelectedSlideId,
@@ -383,9 +386,28 @@ export function createEditorTopbar({
         }
       }
 
+      // Name the slides the presentation will skip for an empty essential
+      // image (B590) before the window opens; the skipping itself is the
+      // presenter's visibility filter.
+      const go = await confirmIncompleteSlides(root || document.body, {
+        pres,
+        slideTypes,
+        context: 'presentation',
+      });
+      if (!go) return;
+
+      // Start on the selected slide, or the first one after it the
+      // presentation shows: a skipped slide would send it back to slide 1.
       const sid = getSelectedSlideId?.();
-      const idx = (pres.slides || []).findIndex((s) => s.id === sid);
-      const slideId = idx >= 0 ? pres.slides[idx].id : null;
+      const slides = pres.slides || [];
+      const idx = slides.findIndex((s) => s.id === sid);
+      const start =
+        idx >= 0
+          ? slides
+              .slice(idx)
+              .find((s) => isSlideVisibleIn(s, 'presentation', { slideTypes }))
+          : null;
+      const slideId = start?.id || null;
       const u = new URL(`/present/${id}`, location.origin);
       if (slideId) u.searchParams.set('slideId', slideId);
       const deckLang = normalizeLang(pres?.i18n?.active);

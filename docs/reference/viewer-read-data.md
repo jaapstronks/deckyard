@@ -4,7 +4,7 @@ Internal `GET /api/presentations/:id` (including `?lang=`), public v1 `GET /api/
 
 MCP `validate_presentation` and `analyze_presentation` also consume this projection, so validation and AI suggestions cannot inspect slides outside the reader audience.
 
-A reader without deck-write rights receives no slides with `visibility.hideFromViewers`. Each delivered slide omits `notes`, `_aiReasoning`, `_aiAlternatives` and `_aiWarnings`. This applies to the main `slides` list and every slide list in `i18n.versions`, including languages other than the active language. Draft slides remain visible and carry `_isDraft: true`; the separate `hideInPresentation`, `hideInPublished` and `hideInExport` flags do not hide a collaborator slide.
+A reader without deck-write rights receives no slides with `visibility.hideFromViewers`. Each delivered slide omits `notes`, `_aiReasoning`, `_aiAlternatives` and `_aiWarnings`. This applies to the main `slides` list and every slide list in `i18n.versions`, including languages other than the active language. Draft slides remain visible and carry `_isDraft: true`; the separate `hideInPresentation`, `hideInPublished` and `hideInExport` flags do not hide a collaborator slide. An incomplete slide (an empty essential picture) is not delivered to a reader in any channel ([incomplete-slides.md](incomplete-slides.md)).
 
 The server determines the audience from the actor's deck rights. Owners and edit collaborators retain author data, including when their API key has only `read` permission. The key still limits which operations they can perform. Trusted local MCP sessions retain their existing author access. Storage, author loaders and collaboration documents are not projected or modified.
 
@@ -18,7 +18,7 @@ Follow responses, including Q&A state and both SSE streams, omit the live-sessio
 
 ## Exports
 
-Internal and public v1 deck exports apply the same actor-based reader projection before any builder receives `pres` or `filteredPres`. It covers every carried language list, including portable JSON and `.deck`. Format-specific live-only and export visibility choices remain in the existing builders. Owners and edit collaborators keep the author input; portable v1 preserves notes, visibility and its supported translations, while AI working metadata is not part of that portable format.
+Internal and public v1 deck exports apply the same actor-based reader projection before any builder receives `pres` or `filteredPres`. It covers every carried language list, including portable JSON and `.deck`. Every rendered format then builds from `filteredPres`: the projection without live-only, `hideInExport` and incomplete slides, for the author and a reader alike ([incomplete-slides.md](incomplete-slides.md)). The portable formats build from `pres` and keep every slide. Owners and edit collaborators keep the author input; portable v1 preserves notes, visibility and its supported translations, while AI working metadata is not part of that portable format.
 
 Notes-only Markdown and Word downloads require deck-write rights and return 403 for view/comment readers. Other reader exports, including handoff packages, contain no author notes or AI fields and no `hideFromViewers` slide content.
 

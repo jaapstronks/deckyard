@@ -9,7 +9,17 @@ import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
 import { debugLog } from '../../lib/state/debug.js';
 
-export function filterPresentSlides(presentation) {
+/**
+ * The slides a presentation shows, in order: not hidden from presenting, not
+ * incomplete (an empty essential picture, B590), and no invite its author
+ * switched off.
+ *
+ * @param {Object} presentation
+ * @param {Record<string, Object>} [slideTypes] - the deck organization's
+ *   registry (`/api/slide-types`); core when omitted
+ * @returns {Object[]}
+ */
+export function filterPresentSlides(presentation, slideTypes) {
   return (presentation?.slides || []).filter((s) => {
     // Skip an invite its author switched off in place (`content.enabled` is
     // the one content key the invite's own form owns).
@@ -21,9 +31,22 @@ export function filterPresentSlides(presentation) {
     ) {
       return false;
     }
-    // Skip slides hidden in presentation mode
-    return isSlideVisibleIn(s, 'presentation');
+    // Skip slides hidden in presentation mode, and incomplete ones
+    return isSlideVisibleIn(s, 'presentation', { slideTypes });
   });
+}
+
+/**
+ * The registry the presenter filters against ({@link filterPresentSlides}):
+ * the server's `/api/slide-types`, which carries the organization's own
+ * types. A failed load presents against core, which still knows every core
+ * type's essential pictures.
+ *
+ * @param {Function} api
+ * @returns {Promise<Record<string, Object>|undefined>}
+ */
+export function loadPresentSlideTypes(api) {
+  return api('/api/slide-types').catch(() => undefined);
 }
 
 export function normalizeNotesStrings(presentation) {
@@ -40,6 +63,7 @@ export function createPresenterDeckController({
   langQs = '',
   stage,
   theme,
+  slideTypes,
   renderSlideElement,
   cleanupSlideRuntimes,
   animator,
@@ -552,7 +576,7 @@ export function createPresenterDeckController({
   const setPresentation = (nextPres, { keepCurrentSlideId = '' } = {}) => {
     pres = nextPres;
     normalizeNotesStrings(pres);
-    presentSlides = filterPresentSlides(pres);
+    presentSlides = filterPresentSlides(pres, slideTypes);
     mountSlides();
     const nextIdx = keepCurrentSlideId
       ? presentSlides.findIndex((s) => s?.id === keepCurrentSlideId)
@@ -569,7 +593,7 @@ export function createPresenterDeckController({
       );
       normalizeNotesStrings(nextPres);
       pres = nextPres;
-      presentSlides = filterPresentSlides(pres);
+      presentSlides = filterPresentSlides(pres, slideTypes);
       mountSlides();
       const nextIdx = currentId
         ? presentSlides.findIndex((s) => s?.id === currentId)

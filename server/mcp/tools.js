@@ -49,6 +49,7 @@ import {
   VISIBILITY_PRESETS,
   validateVisibility,
 } from '../../shared/slide-visibility.js';
+import { isSlideIncomplete } from '../../shared/incomplete-slides.js';
 import {
   AppError,
   UnauthorizedError,
@@ -1608,7 +1609,7 @@ export function registerTools(
 
   server.tool(
     'preview_slide',
-    'Render a single slide as self-contained HTML. Returns an HTML document — display it as an artifact to show a visual preview. The HTML includes all CSS and embedded images.',
+    'Render a single slide as self-contained HTML. Returns an HTML document — display it as an artifact to show a visual preview. The HTML includes all CSS and embedded images. A slide whose essential image is still empty is marked incomplete (`data-incomplete`): presenting, exports and publishing leave it out until an image is chosen.',
     {
       type: 'object',
       properties: {
@@ -1641,6 +1642,7 @@ export function registerTools(
         theme,
         lang: resolveDeckLang(pres),
         docLang: resolveDocLangFromPresentation(pres),
+        incomplete: isSlideIncomplete(slide, await sessionSlideTypes(context)),
       });
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
@@ -1653,7 +1655,7 @@ export function registerTools(
 
   server.tool(
     'preview_presentation',
-    'Render slides as self-contained HTML. Returns an HTML document — display it as an artifact to show a visual slide gallery. Supports optional slide range.',
+    'Render slides as self-contained HTML. Returns an HTML document — display it as an artifact to show a visual slide gallery. Supports optional slide range. Every slide is shown and keeps its index; one whose essential image is still empty is marked incomplete (`data-incomplete`), since presenting, exports and publishing leave it out.',
     {
       type: 'object',
       properties: {
@@ -1694,12 +1696,14 @@ export function registerTools(
         }
       }
 
+      const slideTypes = await sessionSlideTypes(context);
       const html = await buildSlidePreviewHtml(slides, {
         theme,
         title: pres.title,
         startIndex,
         lang: resolveDeckLang(pres),
         docLang: resolveDocLangFromPresentation(pres),
+        isIncomplete: (slide) => isSlideIncomplete(slide, slideTypes),
       });
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact

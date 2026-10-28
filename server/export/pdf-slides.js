@@ -320,7 +320,7 @@ export async function buildSlidesPdfHtml(
   pres,
   { theme = null, watermark = null, slideTypes = null } = {},
 ) {
-  pres = filterForExport(pres);
+  pres = filterForExport(pres, { slideTypes });
   const docLang = resolveDocLangFromPresentation(pres);
   // Public base URL for the video-slide "watch online" deep-link (empty when no
   // APP_URL/DOMAIN is configured; the resolver then falls back to provider URLs).

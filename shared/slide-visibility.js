@@ -8,7 +8,14 @@
  * - hideFromViewers: true = hide from view-only collaborators
  *
  * Missing `visibility` or missing flags default to false (visible everywhere).
+ *
+ * Beside the flags, one derived rule: an incomplete slide (an empty essential
+ * picture, `shared/incomplete-slides.js`, B590) is left out of presentation,
+ * export, published and every read-only viewer, whatever its flags say. Only
+ * the editor and those who may edit the deck see it.
  */
+
+import { isSlideIncomplete } from './incomplete-slides.js';
 
 /**
  * Visibility presets with their flag configurations.
@@ -95,10 +102,18 @@ export function getVisibilityPreset(slide) {
 
 /**
  * Check if a slide is visible in a given context.
+ *
+ * The context's own flag decides first; then an incomplete slide is left out
+ * of every context but an editor's `viewer` (B590). That second rule needs the
+ * slide's type declaration, so a caller passes the deck organization's
+ * registry as `slideTypes`; core is used when it is omitted, which knows no
+ * organization's own types.
+ *
  * @param {Object} slide - The slide object
  * @param {string} context - One of: 'presentation', 'export', 'published', 'viewer'
  * @param {Object} options - Additional options
  * @param {string} options.userPermission - User's permission level (e.g., 'read', 'write')
+ * @param {Record<string, Object>} [options.slideTypes] - The merged registry
  * @returns {boolean} True if the slide should be shown in this context
  */
 export function isSlideVisibleIn(slide, context, options = {}) {
@@ -106,22 +121,27 @@ export function isSlideVisibleIn(slide, context, options = {}) {
 
   switch (context) {
     case 'presentation':
-      return !v.hideInPresentation;
+      if (v.hideInPresentation) return false;
+      break;
     case 'export':
-      return !v.hideInExport;
+      if (v.hideInExport) return false;
+      break;
     case 'published':
-      return !v.hideInPublished;
+      if (v.hideInPublished) return false;
+      break;
     case 'viewer':
       // View-only users: hide slides with hideFromViewers
       // Note: 'read' permission means view-only
-      if (options.userPermission === 'read') {
-        return !v.hideFromViewers;
+      if (options.userPermission !== 'read') {
+        // Editors and above see everything
+        return true;
       }
-      // Editors and above see everything
-      return true;
+      if (v.hideFromViewers) return false;
+      break;
     default:
       return true;
   }
+  return !isSlideIncomplete(slide, options.slideTypes);
 }
 
 /**
@@ -139,6 +159,8 @@ export function isDraftSlide(slide) {
  * @param {string} context - One of: 'presentation', 'export', 'published', 'viewer'
  * @param {Object} options - Additional options
  * @param {string} options.userPermission - User's permission level
+ * @param {Record<string, Object>} [options.slideTypes] - The merged registry
+ *   ({@link isSlideVisibleIn})
  * @param {boolean} options.markDrafts - If true, adds _isDraft flag to draft slides (for viewer context)
  * @returns {Array} Filtered array of slides
  */

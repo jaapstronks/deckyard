@@ -53,6 +53,18 @@ const SINGLE_SCALE_SCRIPT = `<script>
   window.addEventListener('resize', scaleStage);
 </script>`;
 
+/**
+ * The mark an incomplete slide carries in a preview (B590). A preview shows
+ * every slide, so `preview_slide` can keep addressing slides by their stored
+ * index; the mark says which ones every output leaves out, and why, in words
+ * an agent reads from the HTML as well as a person sees.
+ */
+const INCOMPLETE_NOTE =
+  'Incomplete: an essential image is empty. Presenting, exports and publishing leave this slide out until an image is chosen.';
+
+const incompleteMark = (className) =>
+  `<p class="${className}" data-incomplete="true">${escapeHtml(INCOMPLETE_NOTE)}</p>`;
+
 /** repoRoot -> minimal CSS text. Keyed so a test can point at a fixture root. */
 const _slidesCssCache = new Map();
 
@@ -119,6 +131,16 @@ const PREVIEW_CHROME_CSS = `
       margin-bottom: 6px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
+    .preview-incomplete,
+    .incomplete-note {
+      font-size: 13px;
+      color: #8a3b00;
+      background: #fff4e5;
+      border-left: 3px solid #d97706;
+      padding: 6px 10px;
+      margin: 0 0 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
     .preview-frame {
       border-radius: 8px;
       overflow: hidden;
@@ -149,6 +171,15 @@ const PREVIEW_CHROME_CSS = `
 const SINGLE_PREVIEW_CHROME_CSS = `
     * { box-sizing: border-box; }
     body { margin: 0; background: #f5f5f5; }
+    .incomplete-note {
+      font-size: 13px;
+      color: #8a3b00;
+      background: #fff4e5;
+      border-left: 3px solid #d97706;
+      padding: 6px 10px;
+      margin: 0 0 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
     .frame {
       position: relative;
       width: 100%;
@@ -187,6 +218,8 @@ const SINGLE_PREVIEW_CHROME_CSS = `
  * @param {string} [options.docLang] - Document language for `<html lang>`, from
  *   `resolveDocLangFromPresentation(pres)`. Falls back to resolving it from the
  *   slides alone, which cannot see a deck-level `pres.lang`.
+ * @param {(slide: Object) => boolean} [options.isIncomplete] - Marks the
+ *   slides every output leaves out (B590); they are still shown
  * @param {string} [options.repoRoot] - Repository root (override for tests)
  * @returns {Promise<string>} Self-contained HTML string
  */
@@ -198,6 +231,7 @@ export async function buildSlidePreviewHtml(
     startIndex = 0,
     lang = null,
     docLang = '',
+    isIncomplete = () => false,
     repoRoot = defaultRepoRoot,
   } = {},
 ) {
@@ -215,9 +249,13 @@ export async function buildSlidePreviewHtml(
       lang,
     });
     const num = startIndex + i + 1;
+    const mark = isIncomplete(slides[i])
+      ? incompleteMark('preview-incomplete')
+      : '';
     return `
       <div class="preview-item">
         <div class="preview-label">${num}. ${escapeHtml(slide.type)}</div>
+        ${mark}
         <div class="preview-frame">
           <div class="preview-stage ps-theme">${html}</div>
         </div>
@@ -276,12 +314,20 @@ export async function buildSlidePreviewHtml(
  * @param {string} [options.docLang] - Document language for `<html lang>`, from
  *   `resolveDocLangFromPresentation(pres)`. Falls back to resolving it from the
  *   slide alone, which cannot see a deck-level `pres.lang`.
+ * @param {boolean} [options.incomplete] - Marks a slide every output leaves
+ *   out (B590)
  * @param {string} [options.repoRoot] - Repository root (override for tests)
  * @returns {Promise<string>} Self-contained HTML string
  */
 export async function buildSingleSlidePreviewHtml(
   slide,
-  { theme = null, lang = null, docLang = '', repoRoot = defaultRepoRoot } = {},
+  {
+    theme = null,
+    lang = null,
+    docLang = '',
+    incomplete = false,
+    repoRoot = defaultRepoRoot,
+  } = {},
 ) {
   const baseCss = await getMinimalCss(repoRoot);
   const themeVars = theme ? themeVarsCssText(theme) : '';
@@ -314,6 +360,7 @@ export async function buildSingleSlidePreviewHtml(
     ],
   })}
   <body>
+    ${incomplete ? incompleteMark('incomplete-note') : ''}
     <div class="frame">
       <div class="stage ps-theme">${html}</div>
     </div>
