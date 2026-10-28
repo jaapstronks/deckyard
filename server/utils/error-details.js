@@ -24,6 +24,8 @@
  *   quota that was hit (`resource`, `limit`, `used`); `missing_alt` the first
  *   picture publishing refused (`lang`, `slideIndex`, `slideId`, `field`,
  *   `itemIndex`, `itemField`) and how many there are (`count`);
+ *   `unknown_field` the undeclared key and where (`field`, `errors`,
+ *   `slideId`, `lang`, `index`);
  *   `incomplete_slides` the numbers of the slides it would leave out
  *   (`slides`); `in_use` the
  *   count of what still uses a custom slide type being deleted (`usage`);
@@ -82,6 +84,9 @@ export const PAYLOAD_KEYS = Object.freeze({
   // A storage reason too (field, index, …); `use` names the field a retired
   // spelling became (B446, B521).
   invalid: Object.freeze(['use', 'slideId', 'lang', 'errors']),
+  // A key the slide's type does not declare (D359): the same location a
+  // declared-field `invalid` names, without the retired-spelling `use` (B863).
+  unknown_field: Object.freeze(['field', 'errors', 'slideId', 'lang', 'index']),
   held: Object.freeze(['lock']),
   conflict: Object.freeze([
     'id',

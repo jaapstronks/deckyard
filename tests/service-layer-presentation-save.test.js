@@ -577,6 +577,39 @@ for (const contract of ['editor', 'v1', 'mcp']) {
   }
 }
 
+// B863: an undeclared key is a 400 `unknown_field` envelope naming the key on
+// every contract, not a 500 from an unregistered `details` payload.
+for (const contract of ['editor', 'v1', 'mcp']) {
+  test(`${contract}: refuses an undeclared content key as unknown_field naming it`, async () => {
+    const db = await installDb();
+    storedDeck(db).slides[0] = {
+      id: 'slide-1',
+      type: 'end-slide',
+      content: { title: 'Contact' },
+    };
+    const before = structuredClone(storedDeck(db));
+    const content = { title: 'Contact', heading: 'Oud' };
+    let body;
+    if (contract === 'mcp') {
+      await assert.rejects(writeContact(contract, content, db), (err) => {
+        assert.equal(err.statusCode, 400);
+        // `toolError()` puts this on the wire; it must pass the register.
+        body = err.toJSON();
+        return true;
+      });
+    } else {
+      const res = await writeContact(contract, content, db);
+      assert.equal(res.statusCode, 400, JSON.stringify(res.json()));
+      body = res.json();
+    }
+    assert.equal(body.error, 'unknown_field');
+    assert.equal(body.details.field, 'heading');
+    assert.equal(body.details.slideId, 'slide-1');
+    assert.ok(body.details.errors.length);
+    assert.deepEqual(storedDeck(db).slides, before.slides);
+  });
+}
+
 test('editor: legacy invalid slide loads, survives metadata/other-slide saves, refuses its own edit, and can be fixed', async () => {
   const db = await installDb();
   storedDeck(db).slides[0] = {
