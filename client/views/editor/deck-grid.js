@@ -42,7 +42,12 @@ function slideTileLabel(slide, SLIDE_TYPES) {
  *   so interactive tiles show their built-in copy in the deck's language
  * @param {Function} options.getSlides - () => slide[] (re-read on every render)
  * @param {Function} [options.annotationFor] - (slide, index) => Node|string|null,
- *   rendered under the tile label (the AI layer hook)
+ *   rendered under the tile label, or beside the tile in the review layout
+ *   (the AI layer hook)
+ * @param {'grid'|'review'} [options.layout] - `review` lays every slide out as
+ *   a row: the tile with its annotation beside it, stacked on a narrow screen
+ * @param {Function} [options.afterTile] - (slide, index) => Node|null, a
+ *   row of its own between this slide and the next (the AI suggestion hook)
  * @param {boolean} [options.selectable] - Multi-select mode: selection via a
  *   corner checkbox (hover-revealed, stays while checked)
  * @param {boolean} [options.previewOnClick] - Clicking a tile opens the large
@@ -64,6 +69,8 @@ export function createDeckGridView({
   lang = null,
   getSlides,
   annotationFor = null,
+  layout = 'grid',
+  afterTile = null,
   selectable = false,
   previewOnClick = false,
   peekNoteFor = null,
@@ -71,7 +78,9 @@ export function createDeckGridView({
   onTilePick = null,
   tilePickLabel = '',
 } = {}) {
-  const el = h('div', { class: 'deck-grid' });
+  const el = h('div', {
+    class: layout === 'review' ? 'deck-grid is-review' : 'deck-grid',
+  });
 
   let observers = [];
   let closePeek = null;
@@ -458,7 +467,8 @@ export function createDeckGridView({
       setTileSelected(tile, true);
     }
 
-    // AI layer hook: rationale/alternatives etc. rendered under the label.
+    // AI layer hook: rationale/alternatives etc. rendered under the label
+    // (beside the tile in the review layout, by CSS).
     if (typeof annotationFor === 'function') {
       const note = annotationFor(slide, index);
       if (note) {
@@ -512,6 +522,9 @@ export function createDeckGridView({
 
     slides.forEach((slide, index) => {
       el.append(buildTile(slide, index, intersectionObserver, resizeObserver));
+      const between =
+        typeof afterTile === 'function' ? afterTile(slide, index) : null;
+      if (between) el.append(between);
     });
 
     if (selectionChanged) emitSelection();

@@ -15,7 +15,9 @@ import { createDeckGridView } from '../deck-grid.js';
 import {
   createAiReviewAnnotations,
   aiReviewPreviewText,
+  answerPictureSuggestion,
 } from '../ai-review-annotations.js';
+import { pickMissingPicture } from '../media/pick-missing-picture.js';
 import { h } from '../../../lib/dom/index.js';
 
 /**
@@ -27,6 +29,9 @@ import { h } from '../../../lib/dom/index.js';
  * @param {Object} options.batch - { slides, rationale } from /api/ai/append-slides
  * @param {Object} options.request - The original request body (raw, lang,
  *   contentOnly, verbatim, vendor, deck) used to re-run generation on Adjust
+ * @param {Function} [options.openImagePicker] - the editor's image picker
+ *   seam, for "Choose image" on a slide that lacks its picture
+ * @param {string} [options.presentationId] - the deck the batch is for
  * @param {Function} options.onAccept - (slides) => void, inserts the batch
  * @param {Function} [options.onDiscard] - () => void
  */
@@ -37,6 +42,8 @@ export function openAiBatchReviewModal({
   SLIDE_TYPES,
   batch,
   request,
+  openImagePicker = null,
+  presentationId = '',
   onAccept,
   onDiscard,
 } = {}) {
@@ -78,7 +85,13 @@ export function openAiBatchReviewModal({
 
   // AI layer under each tile (why + swappable alternatives), shared with the
   // whole-deck review. A swap replaces the slide in the local batch only.
-  const { annotationFor } = createAiReviewAnnotations({
+  // Changes from the grid stay in the local batch until it is accepted.
+  const changed = () => {
+    syncAcceptLabel();
+    grid.render();
+  };
+
+  const { annotationFor, suggestionAfter } = createAiReviewAnnotations({
     api,
     SLIDE_TYPES,
     lang: request?.lang,
@@ -93,6 +106,28 @@ export function openAiBatchReviewModal({
       if (i >= 0) slides[i] = next;
       grid.render();
     },
+    pickImage: openImagePicker
+      ? (slide) =>
+          pickMissingPicture({
+            openImagePicker,
+            slide,
+            slideTypes: SLIDE_TYPES,
+            lang: request?.lang || null,
+            onPicked: changed,
+          })
+      : null,
+    onSuggestion: (slide, accepted) => {
+      answerPictureSuggestion({
+        slides,
+        slide,
+        accepted,
+        SLIDE_TYPES,
+        theme,
+        lang: request?.lang || null,
+        presentationId,
+      });
+      changed();
+    },
   });
 
   grid = createDeckGridView({
@@ -100,6 +135,8 @@ export function openAiBatchReviewModal({
     SLIDE_TYPES,
     getSlides: () => slides,
     annotationFor,
+    layout: 'review',
+    afterTile: suggestionAfter,
     previewOnClick: true,
     // The AI's per-slide rationale, shown inside the peek preview too.
     peekNoteFor: (slide) => aiReviewPreviewText(slide),

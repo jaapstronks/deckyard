@@ -66,6 +66,7 @@ export function createSlidesPanel({
   clearMultiSelection,
   openAiAppendWizardModal,
   openDeckOverview,
+  getOpenImagePicker = () => null,
   isSlidesCollapsed,
   setSlidesCollapsed,
   isAuthor,
@@ -524,6 +525,7 @@ export function createSlidesPanel({
           // (truthful previews) before anything is inserted.
           theme,
           SLIDE_TYPES,
+          getOpenImagePicker,
           onReviewInserted: () => openDeckOverview?.(),
         });
 

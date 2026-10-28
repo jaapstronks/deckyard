@@ -128,12 +128,14 @@ export function mapDeckSlideLists(pres, fn) {
 /**
  * The per-slide review notes the AI generation writes for the author: the
  * reasoning the editor's slide notes show, the alternative types the review
- * grid offers, the validation warnings. They can quote the source the deck was
- * made from, so they are the author's working material, not deck content.
+ * grid offers, the suggestion to put a picture behind the slide, the
+ * validation warnings. They can quote the source the deck was made from, so
+ * they are the author's working material, not deck content.
  */
 export const AI_REVIEW_KEYS = Object.freeze([
   '_aiReasoning',
   '_aiAlternatives',
+  '_aiSuggestAfter',
   '_aiWarnings',
   '_aiReview',
 ]);

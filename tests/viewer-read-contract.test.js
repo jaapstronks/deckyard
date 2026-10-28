@@ -45,6 +45,7 @@ function assertReader(deck, bytes = JSON.stringify(deck)) {
         'notes',
         '_aiReasoning',
         '_aiAlternatives',
+        '_aiSuggestAfter',
         '_aiWarnings',
       ])
         assert.ok(!(key in slide), key);

@@ -109,8 +109,7 @@ export async function refineSectionWithAi(
 
   const rationale =
     typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';
-  const review = revised.map((s) => ({
-    why: typeof s?.why === 'string' ? s.why.trim() : '',
-  }));
-  return { slides: revised, rationale, review };
+  // The review keys ride on the raw slides; the route attaches them after
+  // composition (`attachBatchReviews()`, server/utils/ai/slide-review.js).
+  return { slides: revised, rationale };
 }

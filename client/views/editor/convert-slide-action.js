@@ -17,6 +17,7 @@ import {
   getConvertibleSlideTypes,
   getConversionLossyKeys,
 } from '../../../shared/slide-types.js';
+import { declaredContentKeys } from '../../../shared/slide-types/declared-keys.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -46,6 +47,61 @@ export function canConvertSlideTo(slide, toType, SLIDE_TYPES) {
   return getConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES }).includes(
     String(toType || ''),
   );
+}
+
+/**
+ * Give the slide with `slideId` its new type in every language version other
+ * than the one being edited.
+ *
+ * The save mirrors the active version's structure into the others, type
+ * included, but keeps each version's own prose: also a string the new type
+ * does not declare (D79). A conversion therefore left the old type's text
+ * keys behind in every other version (`body` on a list slide), and the
+ * server refuses such a deck as `unknown_field` on every save after it. So
+ * each other version converts with the slide: through the convert seam where
+ * it knows the pair, else by keeping the keys the new type declares (the
+ * title survives; what does not fit becomes a translation gap, not a stale
+ * key).
+ *
+ * @param {Object} opts
+ * @param {Object} opts.pres
+ * @param {string} opts.slideId
+ * @param {string} opts.toType
+ * @param {Object} opts.SLIDE_TYPES
+ * @param {Object|null} [opts.theme]
+ */
+export function convertSlideInOtherVersions({
+  pres,
+  slideId,
+  toType,
+  SLIDE_TYPES,
+  theme = null,
+}) {
+  const versions = pres?.i18n?.versions;
+  if (!slideId || !versions || typeof versions !== 'object') return;
+  const active = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
+  const def = SLIDE_TYPES?.[toType];
+  for (const [lang, version] of Object.entries(versions)) {
+    if (normalizeLang(lang) === active || version?.slides === pres.slides)
+      continue;
+    const other = (version?.slides || []).find((s) => s?.id === slideId);
+    if (!other || other.type === toType) continue;
+    if (canConvertSlideTo(other, toType, SLIDE_TYPES)) {
+      const next = convertSlideToType(other, toType, {
+        slideTypes: SLIDE_TYPES,
+        lang,
+        theme,
+      });
+      other.type = next.type;
+      other.content = next.content;
+      continue;
+    }
+    const declared = declaredContentKeys(def);
+    other.type = toType;
+    other.content = Object.fromEntries(
+      Object.entries(other.content || {}).filter(([key]) => declared.has(key)),
+    );
+  }
 }
 
 /**
@@ -108,6 +164,13 @@ export async function convertSlideWithConfirm({
     });
     slide.type = next.type;
     slide.content = next.content;
+    convertSlideInOtherVersions({
+      pres,
+      slideId: slide.id,
+      toType: next.type,
+      SLIDE_TYPES,
+      theme,
+    });
     editorState.dirtyRefreshWithItem();
     return true;
   } catch (e) {

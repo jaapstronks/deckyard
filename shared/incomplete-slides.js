@@ -61,13 +61,49 @@ function pictureOf(field) {
 }
 
 /**
- * Whether `slide` still has an empty essential picture: an `image` field
- * declared `essential` that is empty, or an essential list of pictures whose
- * first entry is missing or empty (for a list, `essential` means its first
- * entry, D211). Fields the slide does not draw do not count.
+ * Where `slide` still lacks its essential picture: an `image` field declared
+ * `essential` that is empty, or an essential list of pictures whose first
+ * entry is missing or empty (for a list, `essential` means its first entry,
+ * D211). Fields the slide does not draw do not count. The first such field
+ * answers; it is what "Choose image" fills.
  *
- * A type that does not resolve in `slideTypes` is never incomplete: there is
- * no declaration to ask.
+ * A type that does not resolve in `slideTypes` has no missing picture: there
+ * is no declaration to ask.
+ *
+ * @param {Object} slide
+ * @param {Record<string, Object>} [slideTypes] - the deck organization's
+ *   merged registry; core when omitted
+ * @returns {{ field: Object, picture: Object|null }|null} the field, and for
+ *   a list the image sub-field of its first item (`null` for an image field)
+ */
+export function missingPicture(slide, slideTypes) {
+  if (!slide || typeof slide !== 'object') return null;
+  const def = getSlideType(slide.type, slideTypes || undefined);
+  if (!def || !Array.isArray(def.fields)) return null;
+  const content =
+    slide.content && typeof slide.content === 'object' ? slide.content : {};
+  const defaults =
+    def.defaults && typeof def.defaults === 'object' ? def.defaults : {};
+  for (const field of def.fields) {
+    if (!field?.essential || !drawn(field, content, defaults)) continue;
+    if (field.type === 'image') {
+      if (!filled(content[field.key])) return { field, picture: null };
+      continue;
+    }
+    if (field.type !== 'items') continue;
+    const picture = pictureOf(field);
+    if (!picture) continue;
+    const first = Array.isArray(content[field.key])
+      ? content[field.key][0]
+      : null;
+    if (!filled(first?.[picture.key])) return { field, picture };
+  }
+  return null;
+}
+
+/**
+ * Whether `slide` still has an empty essential picture
+ * ({@link missingPicture}).
  *
  * @param {Object} slide
  * @param {Record<string, Object>} [slideTypes] - the deck organization's
@@ -75,24 +111,7 @@ function pictureOf(field) {
  * @returns {boolean}
  */
 export function isSlideIncomplete(slide, slideTypes) {
-  if (!slide || typeof slide !== 'object') return false;
-  const def = getSlideType(slide.type, slideTypes || undefined);
-  if (!def || !Array.isArray(def.fields)) return false;
-  const content =
-    slide.content && typeof slide.content === 'object' ? slide.content : {};
-  const defaults =
-    def.defaults && typeof def.defaults === 'object' ? def.defaults : {};
-  return def.fields.some((field) => {
-    if (!field?.essential || !drawn(field, content, defaults)) return false;
-    if (field.type === 'image') return !filled(content[field.key]);
-    if (field.type !== 'items') return false;
-    const picture = pictureOf(field);
-    if (!picture) return false;
-    const first = Array.isArray(content[field.key])
-      ? content[field.key][0]
-      : null;
-    return !filled(first?.[picture.key]);
-  });
+  return missingPicture(slide, slideTypes) !== null;
 }
 
 /**

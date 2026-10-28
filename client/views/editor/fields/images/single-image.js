@@ -2,7 +2,7 @@
  * Single image field renderer
  */
 import { t } from '../../../../lib/ui-i18n.js';
-import { createAltSetter } from './alt-utils.js';
+import { createAltSetter, imageAltKey } from './alt-utils.js';
 import { createImagePickerButtons } from './picker-buttons.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom/index.js';
@@ -38,16 +38,6 @@ export function createFieldImage(ctx) {
   const normalizeUrlList = (arr) =>
     (Array.isArray(arr) ? arr : []).map(normalizeUrl).filter(Boolean);
 
-  // Derive the alt field key from the image field key
-  // e.g., 'image' → 'alt', 'fooImage' → 'fooAlt'
-  const deriveAltKey = (imageKey) => {
-    if (!imageKey || typeof imageKey !== 'string') return 'alt';
-    // If key ends with 'Image', replace with 'Alt'
-    if (imageKey.endsWith('Image')) return imageKey.slice(0, -5) + 'Alt';
-    // Otherwise just append 'Alt' or use 'alt' for simple cases
-    return imageKey === 'image' ? 'alt' : `${imageKey}Alt`;
-  };
-
   return function fieldImage(slide, field, onUploadedUrl) {
     const wrap = h('div', { class: 'stack is-field' });
     wrap.append(
@@ -59,8 +49,7 @@ export function createFieldImage(ctx) {
       }),
     );
 
-    // Use explicit altFieldKey from field config, or derive from image key
-    const altFieldKey = field?.altFieldKey || deriveAltKey(field?.key);
+    const altFieldKey = imageAltKey(field);
 
     const preview = h('div', { class: 'help' });
     const current = slide.content?.[field.key];
