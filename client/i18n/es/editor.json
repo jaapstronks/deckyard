@@ -654,7 +654,7 @@
   "editor.slideField.imageRole.option.content.title": "Esta imagen transmite información y debería tener texto alternativo.",
   "editor.slideField.imageRole.option.decorative.label": "Decorativo",
   "editor.slideField.imageRole.option.decorative.title": "Esta imagen es decorativa; se ocultará de los lectores de pantalla.",
-  "editor.slideField.imageUrl.label": "URL de imagen",
+  "editor.slideField.imageUrl.label": "URL de la imagen",
   "editor.slideField.images.label": "Imágenes",
   "editor.slideField.layout.label": "Diseño",
   "editor.slideField.layout.option.one-column": "Una columna",

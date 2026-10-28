@@ -193,7 +193,7 @@
   "list.permission.view": "Może wyświetlać",
   "list.present": "Prezentuj",
   "list.present.title": "Rozpocznij prezentację",
-  "list.presentations.empty": "Brak prezentacji.",
+  "list.presentations.empty": "Brak jeszcze prezentacji.",
   "list.presentations.loadError": "Nie udało się załadować prezentacji.",
   "list.presentations.noMatch": "Żadna prezentacja nie pasuje do wybranych filtrów.",
   "list.presentations.ownership.all": "Wszystkie",
