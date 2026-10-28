@@ -56,6 +56,26 @@ function withoutInstanceIds(content) {
   return rest;
 }
 
+/**
+ * What an import of a bare slide composes: the insert's content with the
+ * pictures of its `items` lists cleared, since an import never takes its demo
+ * photos from the defaults (B862).
+ */
+function withoutListPictures(content, def) {
+  const out = { ...content };
+  for (const field of def.fields || []) {
+    const images = (field.itemFields || []).filter((f) => f.type === 'image');
+    if (field.type !== 'items' || !images.length) continue;
+    if (!Array.isArray(out[field.key])) continue;
+    out[field.key] = out[field.key].map((item) => {
+      const cleared = { ...item };
+      for (const sub of images) if (sub.key in cleared) cleared[sub.key] = '';
+      return cleared;
+    });
+  }
+  return out;
+}
+
 // ── the routes agree ────────────────────────────────────────────────────────
 
 test('import composes defaults through the slide factory', () => {
@@ -71,18 +91,23 @@ test('import composes defaults through the slide factory', () => {
   // the funnel first, which seeds a shape for the legacy-collection types
   // (`text-blocks-slide` gets an empty `rows` skeleton), so the import genuinely
   // *was* given those keys. That is the funnel's contract, not the factory's.
+  // The one deliberate difference: an import clears the pictures in a list's
+  // default items (B862), so the insert is compared with those cleared.
   for (const [type, lang] of Object.keys(SLIDE_TYPES).flatMap((t) => [
     [t, null],
     [t, 'nl'],
   ])) {
-    const created = withoutInstanceIds(
-      newSlide({
-        type,
-        slideTypes: SLIDE_TYPES,
-        theme: THEME,
-        lang,
-        presentationId: 'deck-1',
-      }).content,
+    const created = withoutListPictures(
+      withoutInstanceIds(
+        newSlide({
+          type,
+          slideTypes: SLIDE_TYPES,
+          theme: THEME,
+          lang,
+          presentationId: 'deck-1',
+        }).content,
+      ),
+      SLIDE_TYPES[type],
     );
     const [importedSlide] = deckToPresentationParts(
       { slides: [{ type, content: {} }] },
