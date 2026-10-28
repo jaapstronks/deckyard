@@ -116,8 +116,11 @@
 .activity-time {
   font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-disabled));
-  white-space: nowrap;
-  flex-shrink: 0;
+  /* Keeps its natural width while the row has room (the content column has
+     basis 0); on a narrow screen the long relative time ("for 59 minutter
+     siden") wraps at a space instead of running out of the card. */
+  min-width: 0;
+  text-align: end;
 }
 
 /* Activity event type icons */
