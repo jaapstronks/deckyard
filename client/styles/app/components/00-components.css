@@ -576,6 +576,10 @@ table.csv-grid {
   background: hsl(var(--app-bg-sunken));
 }
 
+.table-editor-import .btn {
+  min-height: 44px;
+}
+
 .table-editor-import summary {
   cursor: pointer;
   user-select: none;

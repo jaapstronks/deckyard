@@ -569,6 +569,10 @@
   width: min(520px, 100%);
 }
 
+.analytics-report-modal .btn {
+  min-height: 44px;
+}
+
 .analytics-report-range {
   padding: var(--ps-space-2) var(--ps-space-3);
   background: hsl(var(--app-bg-base));

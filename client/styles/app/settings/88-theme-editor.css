@@ -57,7 +57,8 @@
 }
 
 @media (max-width: 480px) {
-  .themes-list-header {
+  .themes-list-header,
+  .themes-list-header > .row {
     flex-wrap: wrap;
     gap: var(--ps-space-2);
   }

@@ -88,7 +88,7 @@ function renderFatal(root, err) {
   }
   root.innerHTML = `
     <div class="app-shell">
-      <div class="panel" style="max-width:820px; margin: 60px auto;">
+      <div class="panel" style="max-width:820px; margin: 60px auto; overflow-wrap:anywhere;">
         <h2>${escapeHtml(t('app.fatal.title', 'Something went wrong'))}</h2>
         <div class="help">
           ${escapeHtml(
