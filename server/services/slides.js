@@ -23,6 +23,7 @@ import {
 import { assertValidSlideFields } from './slide-field-validation.js';
 import { dominantSlidesBody } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
+import { applyReviewNote, readReviewNote } from '../utils/ai/review-note.js';
 
 async function writeOptions({ actor }) {
   if (actor?.unrestricted) return { bypassLockCheck: true };
@@ -187,7 +188,11 @@ export function insertAfterAnchor(slides, slide, anchorIndex) {
   return anchorIndex + 1;
 }
 
-/** Add one factory-composed slide, with the same final validation on both contracts. */
+/**
+ * Add one factory-composed slide, with the same final validation on both
+ * contracts. A `reviewNote` becomes the slide's explanation for the author
+ * (`server/utils/ai/review-note.js`, B590).
+ */
 export async function addSlide(scope, identity, input) {
   const {
     presentationId,
@@ -198,7 +203,9 @@ export async function addSlide(scope, identity, input) {
     atIndex,
     afterSlideId,
     position,
+    reviewNote,
   } = input;
+  const note = readReviewNote(reviewNote);
   const pres = await loadPresentationForActor(scope, identity, presentationId, {
     access: 'write',
   });
@@ -221,6 +228,7 @@ export async function addSlide(scope, identity, input) {
   }
   if (notes !== undefined) slide.notes = notes;
   if (visibility !== undefined) slide.visibility = visibility;
+  if (note) applyReviewNote(slide, note);
   assertValidSlide(slide, slideTypes);
 
   const slides = [...(pres.slides || [])];

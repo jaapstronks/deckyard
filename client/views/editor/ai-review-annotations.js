@@ -157,7 +157,7 @@ export function createAiReviewAnnotations({
         }),
         h('blockquote', { class: 'deck-grid-source', text: excerpt }),
       );
-    } else {
+    } else if (readsFromSource(slide)) {
       parts.push(
         h('p', {
           class: 'deck-grid-review-status',
@@ -327,13 +327,25 @@ export function aiReviewPreviewText(slide) {
         'This slide has changed. The explanation and source below describe the earlier version.',
       ),
     );
-  parts.push(
-    slide?._aiReview?.sourceExcerpt
-      ? `${t('editor.aiReview.source', 'From your source')}: “${slide._aiReview.sourceExcerpt}”`
-      : t(
-          'editor.aiReview.noSource',
-          'No source passage could be verified for this explanation.',
-        ),
-  );
+  if (slide?._aiReview?.sourceExcerpt)
+    parts.push(
+      `${t('editor.aiReview.source', 'From your source')}: “${slide._aiReview.sourceExcerpt}”`,
+    );
+  else if (readsFromSource(slide))
+    parts.push(
+      t(
+        'editor.aiReview.noSource',
+        'No source passage could be verified for this explanation.',
+      ),
+    );
   return parts.filter(Boolean).join('\n\n');
+}
+
+/**
+ * Whether an explanation is meant to rest on the deck's source, so a missing
+ * passage is worth saying. An agent's `reviewNote` (`origin: 'agent'`) never
+ * cites one (B590).
+ */
+function readsFromSource(slide) {
+  return slide?._aiReview?.origin !== 'agent';
 }

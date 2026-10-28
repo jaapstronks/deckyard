@@ -11,6 +11,7 @@ import { createMessageRotator } from '../../../../lib/dom/status-message-rotator
 import { processSSEStream } from '../../../../lib/net/sse.js';
 import { readFileAsDataUrl } from '../../../../lib/net/file.js';
 import { nav } from '../../../../lib/state/router.js';
+import { openGeneratedDeck } from '../../../../lib/state/generated-deck.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -266,8 +267,8 @@ export async function handlePasteText({
     await new Promise((r) => setTimeout(r, 500));
     loadingModal.close();
     close();
-    // aiReview=1 opens the whole-deck review grid on top of the editor.
-    nav(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
+    // The whole-deck review opens on top of the editor, with discard offered.
+    openGeneratedDeck(created.id, langMode);
   } catch (e) {
     // A failed stream is shown, never retried on another generator (B759):
     // the deck the user gets is the one the pipeline made, or none.
@@ -339,9 +340,7 @@ export async function handleConvertFile({
     await new Promise((r) => setTimeout(r, 500));
     loadingModal.close();
     close();
-    nav(
-      `/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}&aiReview=1`,
-    );
+    openGeneratedDeck(result.presentation.id, lang);
   } catch (e) {
     rotator.stop();
     loadingModal.close();
@@ -599,9 +598,7 @@ export async function handleNotion({
     await new Promise((r) => setTimeout(r, 500));
     loadingModal.close();
     close();
-    nav(
-      `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}&aiReview=1`,
-    );
+    openGeneratedDeck(result.presentation.id, detectedLang);
   } catch (e) {
     rotator.stop();
     loadingModal.close();

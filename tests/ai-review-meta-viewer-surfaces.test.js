@@ -91,6 +91,18 @@ function aiKeysIn(deck) {
     .flatMap((s) => Object.keys(s || {}).filter((k) => k.startsWith('_ai')));
 }
 
+/** Every `reviewNote` on any slide of any slide list in `deck`. */
+function reviewNotesIn(deck) {
+  const lists = [deck?.slides || []];
+  for (const v of Object.values(deck?.i18n?.versions || {})) {
+    lists.push(v?.slides || []);
+  }
+  return lists
+    .flat()
+    .map((s) => s?.reviewNote)
+    .filter((n) => n !== undefined);
+}
+
 let db;
 let deckId;
 
@@ -394,19 +406,19 @@ describe('GET /api/v1/presentations/:id', () => {
     assert.deepEqual(aiKeysIn(body.presentation), []);
   });
 
-  it('the owner keeps them, so a GET-then-PUT does not drop them', async () => {
-    const body = await v1Get(OWNER);
-    assert.equal(
-      aiKeysIn(body.presentation).length,
-      AI_REVIEW_KEYS.length * 2 * 3,
-    );
-  });
-
-  it('an edit collaborator keeps them, so their GET-then-PUT does not drop them', async () => {
-    const body = await v1Get(EDITOR);
-    assert.equal(
-      aiKeysIn(body.presentation).length,
-      AI_REVIEW_KEYS.length * 2 * 3,
-    );
-  });
+  // A writer reads the explanation as `reviewNote`, never the raw keys; the
+  // PUT keeps the stored keys by slide id (B590, review-note.js).
+  for (const [who, email] of [
+    ['the owner', OWNER],
+    ['an edit collaborator', EDITOR],
+  ]) {
+    it(`${who} reads the explanation as reviewNote, in every version`, async () => {
+      const body = await v1Get(email);
+      assert.deepEqual(aiKeysIn(body.presentation), []);
+      assert.equal(reviewNotesIn(body.presentation).length, 2 * 3);
+      for (const note of reviewNotesIn(body.presentation)) {
+        assert.equal(note, `Kept the claim "${NOTE}" from page 3`);
+      }
+    });
+  }
 });
