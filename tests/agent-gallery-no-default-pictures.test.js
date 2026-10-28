@@ -1,7 +1,7 @@
 /**
  * A gallery an agent creates without `images` gets empty slots, not the
- * editor's demo photos (B866). B862 made that the rule for import and the AI
- * wizard, which compose through `deckToPresentationParts`; MCP
+ * editor's demo photos (B866). Import and the AI wizard already followed that
+ * rule, since they compose through `deckToPresentationParts` (B862); MCP
  * `create_presentation_from_slides`/`add_slide` and v1 `POST …/slides` call
  * `newSlide()` directly and kept the demo photos. They now pass
  * `demoPictures: false`, so the slide is incomplete until the author picks a
