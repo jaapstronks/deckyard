@@ -26,7 +26,13 @@ if (mode === 'spin')
   } // Deliberately exceeds the supervisor deadline.
 else if (mode === 'sleep')
   await new Promise((resolve) => setTimeout(resolve, 25000));
-else if (mode === 'oom') {
+else if (mode === 'slow-refusal') {
+  // A well-formed refusal that holds the slot long enough to queue behind it.
+  await new Promise((resolve) => setTimeout(resolve, options.ms ?? 1500));
+  process.stdout.write(
+    '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":null}',
+  );
+} else if (mode === 'oom') {
   const held = [];
   for (;;) held.push(Buffer.alloc(8 * 1024 * 1024, 1));
 } else if (mode === 'stdout' || mode === 'stderr') {
@@ -262,5 +268,37 @@ else if (mode === 'crash-partial') {
   process.stdout.write(
     '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":null}',
   );
-else finish({ healthy: true, oldScratch: fs.existsSync('/tmp/private') });
+// Refusal variants (D364): one well-formed with details, the rest malformed or
+// ending with a non-zero exit, which must still stop the instance.
+else if (mode === 'refusal-details')
+  process.stdout.write(
+    '{"ok":false,"code":"renderer_edition_input_unsealable","message":"private canary","details":{"slide":"private canary"}}',
+  );
+else if (mode === 'refusal-extra')
+  process.stdout.write(
+    '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":null,"sealed":{}}',
+  );
+else if (mode === 'refusal-details-array')
+  process.stdout.write(
+    '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":[]}',
+  );
+else if (mode === 'refusal-message-number')
+  process.stdout.write(
+    '{"ok":false,"code":"renderer_bundle_worker_failed","message":1,"details":null}',
+  );
+else if (mode === 'refusal-ok-null')
+  process.stdout.write(
+    '{"ok":null,"code":"renderer_bundle_worker_failed","message":"private canary","details":null}',
+  );
+else if (mode === 'refusal-trailing')
+  process.stdout.write(
+    '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":null} {}',
+  );
+else if (mode === 'refusal-exit') {
+  fs.writeSync(
+    1,
+    '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":null}',
+  );
+  process.exit(3);
+} else finish({ healthy: true, oldScratch: fs.existsSync('/tmp/private') });
 if (mode === 'sleep') finish({ healthy: true });

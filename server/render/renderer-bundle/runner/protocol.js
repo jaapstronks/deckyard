@@ -1,6 +1,7 @@
 import { isUtf8 } from 'node:buffer';
 import { EDITION_INPUT_SCHEMA } from '../edition-input.js';
 import { isRendererHash } from '../manifest.js';
+import { RENDERER_BUNDLE_ERRORS } from '../errors.js';
 
 export const REQUEST_LIMIT = 16 * 1024 * 1024;
 export const OUTPUT_LIMIT = 64 * 1024 * 1024;
@@ -18,6 +19,7 @@ export const CODES = Object.freeze([
   'worker_failed',
   'output_limit',
 ]);
+const REFUSAL_CODES = new Set(Object.values(RENDERER_BUNDLE_ERRORS));
 const WHITESPACE = new Set([0x20, 0x09, 0x0a, 0x0d]);
 const ESCAPES = new Set([0x22, 0x5c, 0x2f, 0x62, 0x66, 0x6e, 0x72, 0x74]);
 const HEX = /^[0-9a-fA-F]{4}$/;
@@ -205,7 +207,9 @@ const OUTPUT_MEMBERS = Object.freeze({
  * tokens in `bytes`. The strict scan proved those tokens complete JSON strings,
  * so the broker can send them as views on the guest output, without a decoded
  * or framed copy of up to 64 MiB, and nothing else of the guest reaches the
- * caller. Returns `{code}` when the response would exceed the 64 MiB limit. */
+ * caller. Returns `{code}` when the response would exceed the 64 MiB limit,
+ * and `{code:'worker_failed'}` for exactly one well-formed historical refusal
+ * (D364); every other shape throws. */
 export function validateOutput(bytes, request, runnerId) {
   let root;
   try {
@@ -247,8 +251,21 @@ export function validateOutput(bytes, request, runnerId) {
       length,
     };
   }
-  // A well-formed historical refusal is still only a worker failure; its
-  // message and details never cross the caller interface.
+  // A well-formed historical refusal ends the producer normally; it is framed
+  // as worker_failed, and its code, message and details stay in the broker.
+  const [code, message, details] = ['code', 'message', 'details'].map((k) =>
+    m.get(k),
+  );
+  if (
+    ok &&
+    text(ok) === 'false' &&
+    kind(code) === '"' &&
+    REFUSAL_CODES.has(JSON.parse(text(code))) &&
+    kind(message) === '"' &&
+    details &&
+    (kind(details) === '{' || text(details) === 'null')
+  )
+    return { code: 'worker_failed' };
   throw new Error('worker_failed');
 }
 const READER = ',"reader":';
