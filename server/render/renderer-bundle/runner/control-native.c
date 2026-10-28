@@ -184,14 +184,15 @@ static napi_value copy(napi_env env, napi_callback_info info) {
   char *store=string(env,args[0]), *name=string(env,args[1]), *target=string(env,args[2]);
   int root=-1,base=-1,src=-1,dst=-1,manifest=-1,out=-1,files=-1,tofiles=-1;
   int result=-1;
-  if (!store || !name || !target || store[0]!='/' || target[0]!='/' ||
+  /* The target is a fresh job directory, never / itself. */
+  if (!store || !name || !target || store[0]!='/' || target[0]!='/' || !target[1] ||
       strchr(name,'/') || !strcmp(name,".") || !strcmp(name,"..") || strlen(name)>255) {
     errno=EINVAL; goto done;
   }
   root=open("/",O_RDONLY|O_DIRECTORY|O_CLOEXEC);
   if (root<0) goto done;
   base=store[1] ? resolve(root,store+1,O_RDONLY|O_DIRECTORY,0) : dup(root);
-  dst=target[1] ? resolve(root,target+1,O_RDONLY|O_DIRECTORY,0) : -1;
+  dst=resolve(root,target+1,O_RDONLY|O_DIRECTORY,0);
   if (base<0 || dst<0 || ordinary(base,1) || ordinary(dst,1)) goto done;
   src=beneath(base,name,O_RDONLY|O_DIRECTORY);
   if (src<0 || ordinary(src,1)) goto done;

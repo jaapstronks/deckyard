@@ -2,6 +2,7 @@ import net from 'node:net';
 import {
   closeSync,
   existsSync,
+  lstatSync,
   unlinkSync,
   chmodSync,
   chownSync,
@@ -23,6 +24,17 @@ import {
 } from './protocol.js';
 import { lifecycleChannel } from './channel.js';
 import { SELF_TEST_RESULT } from './policy.js';
+
+// Admission refuses a hash the operator never registered without a job (D364).
+// The root-owned store is not caller-writable; a registration racing this
+// check is harmless, because the job copy verifies the hash again.
+function registered(hash) {
+  try {
+    return lstatSync(`${PATHS.store}/${hash}`).isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 // The fixed capability job answers exactly its own marker in both documents.
 function selfTestPassed(result) {
@@ -322,6 +334,10 @@ export async function startBroker() {
               return;
             }
             token.validatedAt = performance.now();
+            if (!registered(token.request.rendererHash)) {
+              answer(token, { code: 'bundle_refused' });
+              return;
+            }
             if (queue.length >= 4) {
               answer(token, { code: 'busy' });
               return;

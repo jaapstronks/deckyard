@@ -191,19 +191,73 @@ test('guest metadata has no authority: valid lies disappear, invalid output is r
     Buffer.from('{"ok":true,"canvas":"x","reader":"","sealed":{}'),
   ])
     assert.throws(() => validateOutput(raw, request(), 'b'), /worker_failed/);
-  for (const refusal of [
-    {
-      ok: false,
-      code: 'renderer_bundle_worker_failed',
-      message: 'private input',
-      details: null,
-    },
-    { ok: false, code: 'invented', message: 'private input', details: {} },
+});
+
+test('a well-formed guest refusal is a closed worker_failed result; every other refusal shape throws', () => {
+  const refusal = {
+    ok: false,
+    code: 'renderer_edition_input_unsealable',
+    message: 'private input',
+    details: { slide: 'private' },
+  };
+  for (const v of [
+    refusal,
+    { ...refusal, details: null },
+    { ...refusal, code: 'renderer_bundle_worker_failed', details: {} },
+  ])
+    // Only the code crosses; the guest's own code, message and details do not.
+    assert.deepEqual(validateOutput(bytes(v), request(), 'b'), {
+      code: 'worker_failed',
+    });
+  assert.deepEqual(
+    validateOutput(
+      Buffer.from(
+        '{"details":null,"message":"","code":"renderer_bundle_unknown","ok":false}',
+      ),
+      request(),
+      'b',
+    ),
+    { code: 'worker_failed' },
+  );
+  for (const patch of [
+    { ok: 0 },
+    { ok: null },
+    { ok: 'false' },
+    { code: 'invented' },
+    { code: 'worker_failed' },
+    { code: 1 },
+    { code: null },
+    { message: 1 },
+    { message: null },
+    { details: [] },
+    { details: 'x' },
+    { details: false },
+    { runnerId: 'lie' },
+    { sealed: {} },
   ])
     assert.throws(
-      () => validateOutput(bytes(refusal), request(), 'b'),
+      () => validateOutput(bytes({ ...refusal, ...patch }), request(), 'b'),
       /worker_failed/,
     );
+  for (const key of Object.keys(refusal)) {
+    const v = { ...refusal };
+    delete v[key];
+    assert.throws(() => validateOutput(bytes(v), request(), 'b'));
+  }
+  for (const raw of [
+    Buffer.concat([bytes(refusal), Buffer.from(' {}')]),
+    Buffer.from(
+      '{"ok":false,"code":"renderer_bundle_unknown","message":"x","details":null,"ok":false}',
+    ),
+    Buffer.from(
+      '{"ok":false,"code":"renderer_bundle_unknown","message":"x","details":{"a":1,"a":2}}',
+    ),
+    Buffer.from('{"ok":false,"code":"renderer_bundle_unknown","message":"x"'),
+    Buffer.from(
+      '{"ok":false,"code":"renderer_bundle_unknown","canvas":"x","details":null}',
+    ),
+  ])
+    assert.throws(() => validateOutput(raw, request(), 'b'), /worker_failed/);
 });
 
 test('the success frame copies validated string tokens without re-encoding drift', () => {

@@ -102,6 +102,8 @@ async function execute() {
   try {
     const answer = output.subarray(0, length);
     const result = validateOutput(answer, request, config.runnerId);
+    // A `{code}` result (a well-formed guest refusal or the response limit)
+    // is a normal end: the broker frames it after QUIESCENT and CLEANED.
     return result.code ? result : { ...result, output: answer };
   } catch {
     throw new Error('worker_failed');
