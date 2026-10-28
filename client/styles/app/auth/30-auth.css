@@ -30,7 +30,14 @@
   border-radius: var(--ps-radius-xl);
   border: 1px solid hsl(var(--app-border-default));
   box-shadow: var(--app-shadow-lg);
-  padding: var(--ps-space-5);
+  /* Fluid down to a narrow phone at 200% zoom, where the fixed padding left
+     too little room for one long word. */
+  padding: clamp(var(--ps-space-3), 6vw, var(--ps-space-5));
+  /* Long words (de "Zurücksetzen", "schiefgelaufen") hyphenate instead of
+     running out of the button, the callout or the card; an unbreakable token
+     such as a masked address still wraps. */
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 
 /* The refused sign-in (`createInlineError({ callout: true })`) opens the card;
@@ -132,11 +139,12 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 48px;
-  padding: 0 var(--ps-space-5);
+  min-height: 48px;
+  padding: var(--ps-space-2) var(--ps-space-5);
   font-family: inherit;
   font-size: var(--ps-text-base);
   font-weight: 600;
+  text-align: center;
   color: hsl(var(--app-text-on-solid));
   background: linear-gradient(
     135deg,
