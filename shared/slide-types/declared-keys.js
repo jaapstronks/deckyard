@@ -17,6 +17,8 @@
  *   (`text-styles.js`).
  * - `DERIVED_SLIDE_CONTENT_KEYS` — the contrast verdict stored next to
  *   `slideBgImage`, on every type (`compose.js`, B628).
+ * - `PROVENANCE_SLIDE_CONTENT_KEYS` — the ImageKit file id an image pick
+ *   leaves beside its URL, on every type (`compose.js`, D162).
  *
  * Before this module the predicate lived inline in strict validation
  * (`server/utils/ai/schemas/content-schema.js`), while the deck import let every
@@ -46,6 +48,7 @@
 import {
   DERIVED_SLIDE_CONTENT_KEYS,
   GLOBAL_SLIDE_FIELD_KEYS,
+  PROVENANCE_SLIDE_CONTENT_KEYS,
 } from './compose.js';
 import { slideInstanceKeys } from './instance-keys.js';
 import { textStyleOffers } from './text-styles.js';
@@ -54,15 +57,15 @@ const CACHE = new WeakMap();
 
 /**
  * The content keys a slide may carry that no field of the type declares:
- * its `instanceKeys`, its `textStyles` map when it offers text styling, and
- * the derived background-contrast keys every slide may carry. All three are
- * machine values, one per deck: nothing but code writes them, and none is
- * prose.
+ * its `instanceKeys`, its `textStyles` map when it offers text styling, the
+ * derived background-contrast keys and the image-provenance key every slide
+ * may carry. All four are machine values: nothing but code writes them, and
+ * none is prose.
  *
  * The part of `declaredContentKeys` that a field walk cannot see, exported so
  * the text-field spec declares the same keys rather than a copy of the list
  * (`text-fields.js`, B818). A missing definition (an unknown type) still
- * yields the derived keys: the contrast verdict is written on any slide with
+ * yields the derived and provenance keys: both are written on any slide with
  * a background image, whatever its type.
  *
  * @param {Object|null|undefined} def - a slide-type definition
@@ -74,7 +77,7 @@ export function nonFieldContentKeys(def) {
     keys.push(...Object.keys(slideInstanceKeys(def)));
     if (textStyleOffers(def).size) keys.push('textStyles');
   }
-  keys.push(...DERIVED_SLIDE_CONTENT_KEYS);
+  keys.push(...DERIVED_SLIDE_CONTENT_KEYS, ...PROVENANCE_SLIDE_CONTENT_KEYS);
   return keys;
 }
 

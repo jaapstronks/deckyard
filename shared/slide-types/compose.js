@@ -51,6 +51,13 @@ export const DERIVED_SLIDE_CONTENT_KEYS = [
   'slideBgNeedsScrim',
 ];
 
+// Content keys every slide may carry that record where a picked image came
+// from (D162): the ImageKit file id, written by the editor beside whichever
+// single-image field took a DAM pick (`applyPickMeta`). Every type carries
+// one such field, `slideBgImage`, so every type declares it. Provenance only:
+// the image itself is copied into own media and nothing renders from the id.
+export const PROVENANCE_SLIDE_CONTENT_KEYS = ['imagekitFileId'];
+
 // Both a11y fields share the placeholder text "Optional" — same text, same key.
 const OPTIONAL_PLACEHOLDER_KEY = 'editor.slideField.optionalPlaceholder';
 
