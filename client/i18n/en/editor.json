@@ -214,7 +214,7 @@
   "editor.chart.grid.removeRow": "Remove row",
   "editor.chart.grid.removeRowN": "Remove row {n}",
   "editor.chart.grid.removeSeries": "Remove series",
-  "editor.chart.grid.tabGrid": "Grid",
+  "editor.chart.grid.tabGrid": "Table",
   "editor.chart.grid.tabRaw": "Raw CSV",
   "editor.chart.grid.viewLabel": "Data editor view",
   "editor.chart.importCsv": "Import CSV",

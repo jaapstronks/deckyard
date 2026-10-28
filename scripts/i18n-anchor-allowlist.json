@@ -19,10 +19,6 @@
     "rewritten)."
   ],
   "anchors": {
-    "da  Alt text": {
-      "forms": ["Alt-tekst", "Alternativ tekst"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Dark": {
       "forms": ["Mørk", "Mørke"],
       "reason": "grammatical agreement — Mørk agrees with tilstand, farve, baggrund and tekstfarve (common gender singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mørke agrees with gradienter (plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
@@ -30,10 +26,6 @@
     "da  Export": {
       "forms": ["Eksport", "Eksportér"],
       "reason": "Eksportér is de imperatief op editor.export.button, editor.export.exportAction, editor.versions.export; Eksport is de naam van de machtiging in settings.apiKeys.permissions.export."
-    },
-    "da  Image URL": {
-      "forms": ["Billed-URL", "Billedets URL"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "da  Light": {
       "forms": ["Lys", "Lyse"],
@@ -49,18 +41,6 @@
     },
     "da  {count}h ago": {
       "forms": ["for {count} t siden", "{count}t siden"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Alt text": {
-      "forms": ["Alt-Text", "Alternativtext"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Grid": {
-      "forms": ["Raster", "Tabelle"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Label": {
-      "forms": ["Beschriftung", "Bezeichnung"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Primary": {
@@ -91,14 +71,6 @@
       "forms": ["Exportación", "Exportar"],
       "reason": "Exportar is het werkwoord op de drie editoracties; Exportación is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
-    "es  Grid": {
-      "forms": ["Cuadrícula", "Tabla"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Image URL": {
-      "forms": ["URL de imagen", "URL de la imagen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "es  Light": {
       "forms": ["Claro", "Claros"],
       "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with degradados (masculine plural) in stockMedia.gradients.tone.light."
@@ -115,10 +87,6 @@
       "forms": ["Compartidas", "Compartido"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
-    "fi  Body": {
-      "forms": ["Leipäteksti", "Sisältö"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Dark": {
       "forms": ["Tumma", "Tummat"],
       "reason": "grammatical number — Tumma is singular for tila, väri, tausta and tekstin väri in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Tummat is plural for liukuvärit in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
@@ -127,17 +95,9 @@
       "forms": ["Vie", "Vienti"],
       "reason": "Vie is de imperatief op de drie editoracties; Vienti is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
-    "fi  Image URL": {
-      "forms": ["Kuvan URL", "Kuvan URL-osoite"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Italic": {
       "forms": ["Kursiivi", "Kursivointi"],
       "reason": "grammatical role — Kursivointi is the action noun in editor.markdown.italic, the formatting button next to Lihavointi (bold); Kursiivi names the typeface style in fonts.italic, the font editor column next to Normaali."
-    },
-    "fi  Label": {
-      "forms": ["Selite", "Tunniste"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Left": {
       "forms": ["Vasemmalla", "Vasemmalle"],
@@ -167,10 +127,6 @@
       "forms": ["Tous", "Toutes"],
       "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Tous agrees with commentaires, types, types de diapositive and dégradés (masculine plural) in comments.filter.all, comments.filter.allTypes, slideLibrary.filter.all and stockMedia.gradients.tone.all; Toutes agrees with catégories, étiquettes, présentations and notifications (feminine plural) in editor.iconPicker.allCategory, imageLibrary.tags.all, imagekit.tags.all, list.presentations.ownership.all and notifications.filter.all."
     },
-    "fr  Body": {
-      "forms": ["Corps", "Corps du message"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Custom": {
       "forms": ["Personnalisé", "Personnalisée"],
       "reason": "Personnalisé agrees with préréglage (masculine singular) in editor.deckSettings.autoAdvance.presetCustom and parcours (masculine singular) in slideType.image-slide.field.zoomSteps.option.custom.label; Personnalisée agrees with visibilité (feminine singular) in visibility.custom."
@@ -178,10 +134,6 @@
     "fr  Dark": {
       "forms": ["Sombre", "Sombres"],
       "reason": "grammatical agreement — Sombre agrees with mode, couleur, fond and texte (singular) in appearance.dark, editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Sombres agrees with dégradés (masculine plural) in stockMedia.gradients.tone.dark, the tone chip row that filters gradients."
-    },
-    "fr  Grid": {
-      "forms": ["Grille", "Tableau"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fr  Light": {
       "forms": ["Clair", "Clairs"],
@@ -219,23 +171,12 @@
       "forms": ["Esporta", "Esportazione"],
       "reason": "Esporta is de imperatief op de drie editoracties; Esportazione is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
-    "it  Image URL": {
-      "forms": ["URL dell'immagine", "URL immagine"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  Light": {
       "forms": ["Chiari", "Chiaro"],
       "reason": "grammatical agreement — Chiaro agrees with tema and testo (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Chiari agrees with gradienti (masculine plural) in stockMedia.gradients.tone.light."
     },
     "it  New": {
       "forms": ["Nuova", "Nuovo"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  No presentations yet.": {
-      "forms": [
-        "Ancora nessuna presentazione.",
-        "Nessuna presentazione ancora."
-      ],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Placeholder": {
@@ -258,52 +199,13 @@
       "forms": ["{count} h fa", "{count}h fa"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Alt text": {
-      "forms": ["Alt-tekst", "Alt-tekst (optioneel)"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Appearance": {
       "forms": ["Uiterlijk", "Weergave"],
       "reason": "The local device appearance shortcut uses Uiterlijk; the existing visual display controls use Weergave in another context."
     },
-    "nl  Body": {
-      "forms": ["Inhoud", "Tekst"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Caption": {
-      "forms": ["Bijschrift", "Onderschrift"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Collection": {
       "forms": ["Collectie", "Verzameling"],
       "reason": "two concepts: \"Collectie\" is the home page's deck collection; \"Verzameling\" is the picker's Media row of collection types (Gallery, Image cards, Logo wall), named by Jaap in D343."
-    },
-    "nl  Corner image": {
-      "forms": ["Hoekafbeelding", "Hoekbeeld"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Description": {
-      "forms": ["Beschrijving", "Omschrijving"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Grid": {
-      "forms": ["Raster", "Tabel"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Image focus (crop)": {
-      "forms": ["Beeldfocus (crop)", "Beeldfocus (uitsnede)"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Link \"{text}\" to:": {
-      "forms": [
-        "\"{text}\" linken naar:",
-        "Maak van \"{text}\" een link naar:"
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "nl  Logos": {
-      "forms": ["Logo's", "Logo’s"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "nl  New": {
       "forms": ["Nieuw", "Nieuw maken"],
@@ -325,10 +227,6 @@
       "forms": ["{count} d geleden", "{count} dagen geleden"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "no  Alt text": {
-      "forms": ["Alt-tekst", "Alternativ tekst"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "no  Dark": {
       "forms": ["Mørk", "Mørke", "Mørkt"],
       "reason": "grammatical agreement — Mørkt agrees with utseende (neuter singular, the appearance.label group) in appearance.dark; Mørk agrees with farge, bakgrunn and tekstfarge (masculine/feminine singular) in editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mørke agrees with gradienter (plural) in stockMedia.gradients.tone.dark."
@@ -336,10 +234,6 @@
     "no  Export": {
       "forms": ["Eksport", "Eksporter"],
       "reason": "Eksporter is de imperatief op de drie editoracties; Eksport is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
-    },
-    "no  Image URL": {
-      "forms": ["Bilde-URL", "Bildets URL"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Light": {
       "forms": ["Lys", "Lyse", "Lyst"],
@@ -377,10 +271,6 @@
       "forms": ["Eksport", "Eksportuj"],
       "reason": "Eksportuj is de imperatief op de drie editoracties; Eksport is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
-    "pl  Image URL": {
-      "forms": ["Adres URL obrazu", "URL obrazu"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Left": {
       "forms": ["Do lewej", "Lewo"],
       "reason": "position versus alignment — Lewo names a position in editor.imagePosition.left and slideType.title-slide.field.logoCorner.option.left.label, next to Środek; Do lewej names an alignment direction in editor.layoutVariant.blockLeft and editor.textStyle.align.left, next to Wyśrodkowane."
@@ -395,10 +285,6 @@
     },
     "pl  New": {
       "forms": ["Nowa", "Nowy"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "pl  No presentations yet.": {
-      "forms": ["Brak jeszcze prezentacji.", "Brak prezentacji."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Normal": {
@@ -441,10 +327,6 @@
       "forms": ["Exportar", "Exportação"],
       "reason": "Exportar is het werkwoord op de drie editoracties; Exportação is het naamwoord voor de machtiging in settings.apiKeys.permissions.export."
     },
-    "pt  Grid": {
-      "forms": ["Grade", "Tabela"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  Light": {
       "forms": ["Claro", "Claros"],
       "reason": "grammatical agreement — Claro agrees with modo and texto (masculine singular) in appearance.light and editor.slideField.slideBgText.option.light; Claros agrees with gradientes (masculine plural) in stockMedia.gradients.tone.light."
@@ -473,17 +355,9 @@
       "forms": ["{count} selecionadas", "{count} selecionados"],
       "reason": "Agreement: list.bulk.selected uses {count} selecionadas for selected apresentações (feminine plural); slideLibrary.selection.count uses {count} selecionados for selected diapositivos (masculine plural). Same selection-count concept, with adjective gender required by the selected object; both keep {count}."
     },
-    "sv  Alt text": {
-      "forms": ["Alt-text", "Alternativtext"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "sv  Dark": {
       "forms": ["Mörk", "Mörka", "Mörkt"],
       "reason": "grammatical agreement — Mörkt agrees with utseende (neuter singular, the appearance.label group) in appearance.dark; Mörk agrees with färg, bakgrund and textfärg (common gender singular) in editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mörka agrees with gradienter (plural) in stockMedia.gradients.tone.dark."
-    },
-    "sv  Image URL": {
-      "forms": ["Bild-URL", "Bildens URL"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Light": {
       "forms": ["Ljus", "Ljusa", "Ljust"],

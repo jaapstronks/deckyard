@@ -377,7 +377,7 @@
   "slideLibrary.collections.created": "Collectie aangemaakt.",
   "slideLibrary.collections.delete.confirm": "\"{name}\" verwijderen? De slides zelf worden niet verwijderd.",
   "slideLibrary.collections.delete.title": "Collectie verwijderen",
-  "slideLibrary.collections.descriptionLabel": "Omschrijving",
+  "slideLibrary.collections.descriptionLabel": "Beschrijving",
   "slideLibrary.collections.descriptionPlaceholder": "Waar is deze collectie voor? (optioneel)",
   "slideLibrary.collections.edit.title": "Collectie bewerken",
   "slideLibrary.collections.empty": "Bundel herbruikbare slides in een benoemde, geordende collectie om decks mee te starten.",

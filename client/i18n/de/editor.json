@@ -378,7 +378,7 @@
   "editor.imagePosition.widerThanBox": "Das Bild ist breiter als der Rahmen: Wählen Sie oben/Mitte/unten.",
   "editor.imageSlide.bleed": "Randlos",
   "editor.imageText.addImage": "+ Bild hinzufügen",
-  "editor.imageText.altText": "Alternativtext",
+  "editor.imageText.altText": "Alt-Text",
   "editor.imageText.collectionHelp": "Klicken Sie auf ein Bild auf der Folie, um Alternativtext, Einpassung und Fokus zu bearbeiten.",
   "editor.imageText.fitContain": "Einpassen",
   "editor.imageText.fitCover": "Ausfüllen",
