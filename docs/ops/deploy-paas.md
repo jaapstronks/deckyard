@@ -6,7 +6,7 @@ A PaaS builds the repo's `Dockerfile`, runs the container behind its own TLS pro
 
 | Fact        | Value                                                                                                                                                                                  |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build       | The `Dockerfile` in the repo root (two stages; no build arguments). Choose "Dockerfile", not a buildpack.                                                                              |
+| Build       | The `Dockerfile` in the repo root (three stages, one of which freezes the image's renderer into `/app/renderer-store`; no build arguments). Choose "Dockerfile", not a buildpack.      |
 | Port        | `4177` (`PORT`, set in the image). The server listens on `0.0.0.0` (`HOST`, set in the image).                                                                                         |
 | Health      | `GET /health` answers `200` with no auth and no database. The image carries its own `HEALTHCHECK` on it, so the platform needs no health-check configuration.                          |
 | Migrations  | The entrypoint (`scripts/docker-entrypoint.sh`) applies pending migrations before the server starts, retrying while the database comes up. No release command, no manual `db:migrate`. |
@@ -38,6 +38,8 @@ The two production instances we run are on Coolify. In the project:
 5. **Storage.** Add two persistent volumes, with destination paths `/app/server/uploads` and `/app/server/data` (skip both with S3). A volume Coolify creates takes the image's owner and is writable as is; if you bind a host directory instead, `chown 1000:1000` it on the host.
 6. **Deploy**, wait for the container to turn healthy (the image's own `HEALTHCHECK`, or Coolify's own check when health checks are enabled on the application; either is fine), then open the application's **Terminal** and run `node scripts/doctor.js`.
 7. **Auto deploy.** With the GitHub App, enable automatic deployment on push to the branch you deploy. A fork usually deploys a release tag rather than `main`: see [fork-setup.md](../reference/fork-setup.md).
+
+Frozen-edition rendering is optional and lives outside the container: a Linux renderer runner as a systemd service on the same host, reached through a bind-mounted socket and `RENDERER_RUNNER_SOCKET`. Without it the app runs as before and frozen-edition renders refuse. Installing it changes the container's user and group: [renderer-runner.md](renderer-runner.md) § Production installation on a Coolify host.
 
 Back-ups of that database: [backup-restore.md](backup-restore.md) § Coolify.
 

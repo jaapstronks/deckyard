@@ -36,6 +36,10 @@ assets/fonts/google/
 # Local tool output (theme:preview contact sheets and the like)
 tmp/
 
+# A checkout's own render bundle (the image builds one; see
+# server/render/renderer-bundle/current.js)
+renderer-store/
+
 # Fork-fixture scratch: tests/custom-slide-type-validity.test.js copies the fork
 # fixtures two levels below the repo root so their `../../shared/...` imports
 # resolve. It removes the directory in a finally; this is the crashed-run net.

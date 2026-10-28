@@ -340,6 +340,16 @@ Upstream's maintainer steps around a release, moved out of `docs/developer/maint
   (open an example deck from the sandbox Home). Host, key and file names live
   in the private runbook, `deckyard-website` `internal/ops/hetzner-sandbox-vps.md`
   § Updates; they do not belong in this public repo.
+- **Release → register the renderer on every runner host.** An installation
+  with `RENDERER_RUNNER_SOCKET` set renders frozen editions only with a
+  renderer its runner has registered, and nearly every release builds a new
+  one into its image. Whoever deploys a release to such an installation runs,
+  on the runner host, `scripts/export-renderer-bundle.sh <container> <dir>`,
+  then the register command it prints, then `node scripts/doctor.js` in the
+  container until `renderer-runner` is green. Until then, publication with the
+  new release refuses with `renderer_bundle_unknown`. Keep older registrations:
+  editions name the renderer they were published with. Steps and the reasons:
+  `docs/ops/renderer-runner.md` § Registering a release.
 - **Long-running feature tracks** (integration-branch history) use an integration branch: sub-PRs target
   that branch (not `main`), which gets one umbrella PR to `main` when the
   whole track is accepted. **No integration branch is active right now** —

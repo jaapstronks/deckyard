@@ -7,7 +7,7 @@ Its purpose is a single property: a published edition that names a bundle keeps
 rendering the way it rendered on the day it was published, whatever the
 installation does afterwards.
 
-**Status 2026-10-27: production execution remains disabled (T1.1).** The original trusted-fixture import filter permits real TCP connections through `process.getBuiltinModule('net')`; that counterexample is retained. An experimental Linux operator runner now lives under `server/render/renderer-bundle/runner/`, with separate broker/supervisor services, verified private copies and a native syscall boundary. The full external Linux acceptance (P1-P16) passed on code SHA `2483554d` on 2026-10-27, the independent code review approved the exact PR head `34183b53`, and the runner merged as `15f61d2e`; activation remains a separate, separately reviewed change. Production `renderEditionInBundle()` refuses with `renderer_bundle_sandbox_unavailable` before inspecting or executing a bundle, without an environment switch or fallback. The operator entry has no publication, v1 or MCP caller. Installation and recovery are described in the [operator runbook](../ops/renderer-runner.md).
+**Status 2026-10-28: production execution goes through the Linux operator runner, or refuses.** The original trusted-fixture import filter permits real TCP connections through `process.getBuiltinModule('net')`; that counterexample is retained. The operator runner under `server/render/renderer-bundle/runner/` (separate broker/supervisor services, verified private copies, a native syscall boundary) passed the full external Linux acceptance (P1-P16) for each of its three iterations, the last on code SHA `0dd7d8ea` (runnerId `7ae4568f…`), each with an independent code review. Production `renderEditionInBundle()` is the broker's client: without `RENDERER_RUNNER_SOCKET` it refuses with `renderer_bundle_sandbox_unavailable` before inspecting a bundle or its input; with it, it speaks only to that Unix socket, without retry or fallback (§ Execution gate). No publication, v1 or MCP route calls it yet (T1.2-T1.7). Installation, registration and recovery are in the [operator runbook](../ops/renderer-runner.md).
 
 ## Why a version number was not enough
 
@@ -142,21 +142,23 @@ with every reason it found, not the first:
 
 ## Execution gate and architecture question
 
-The production entry always refuses with `renderer_bundle_sandbox_unavailable`. There is no flag, environment switch or fallback that enables the test runner. The old process launcher lives under `tests/helpers/renderer-bundle-process.js` to keep reproducibility measurements available for trusted fixtures.
+`server/render/renderer-bundle/host.js` is the production entry, and it executes nothing itself: it is the client of the operator runner's broker socket. `RENDERER_RUNNER_SOCKET` must name that socket by an absolute path; unset, relative or a `host:port`/URL spelling is no configuration, and the entry refuses with `renderer_bundle_sandbox_unavailable` before reading its arguments. Configured, it sends one request frame (`deckyard.renderer-runner.request/1`, at most 16 MiB, refused before connecting with `renderer_edition_input_unsealable` when larger) and accepts exactly one response frame for that request, within 80 seconds. It returns `{canvas, reader, rendererHash, runnerId}`; the runner's refusals map onto the closed set in [the runbook](../ops/renderer-runner.md#connecting-the-webapp). There is no retry, no TCP form, and no fallback to the current renderer or to the test runner. The old process launcher lives under `tests/helpers/renderer-bundle-process.js` to keep reproducibility measurements available for trusted fixtures; nothing in `server/` imports it.
+
+The installation's own renderer is built into the image (`Dockerfile`, stage `renderer-bundle`, into `/app/renderer-store/<hash>`); `openCurrentRendererBundle()` (`current.js`) opens and verifies it, the doctor probes the runner with its hash, and an operator exports and registers it after each release.
 
 The [Node 22 permission model](https://nodejs.org/docs/latest-v22.x/api/permissions.html) restricts selected APIs but is explicitly not a security boundary against malicious code. It has no network permission. The `bundle/net-guard.js` resolve hook rejects imports and removes globals; `process.getBuiltinModule('net')` bypasses it. The closure scanner also accepts that code because it has no import to inspect. Blocking this one spelling would leave the same architectural problem.
 
-`tests/renderer-bundle-isolation.test.js` starts a local ephemeral TCP listener, launches a filtered probe with the proof runner's exact flags and scrubbed environment, and checks both receipt of `local-proof` and the listener's connection count. This is a retained counterexample, not a passing isolation claim. It also checks that the production entry refuses before reading bundle paths.
+`tests/renderer-bundle-isolation.test.js` starts a local ephemeral TCP listener, launches a filtered probe with the proof runner's exact flags and scrubbed environment, and checks both receipt of `local-proof` and the listener's connection count. This is a retained counterexample, not a passing isolation claim. It also checks that the unconfigured production entry refuses before reading bundle paths; `tests/renderer-bundle-host.test.js` pins the client (mapping, refused shapes, no TCP) and `tests/renderer-runner-admission.test.js` runs the shipped broker against it, so the admission refusal of an unregistered hash (D364) has a node test beside its Linux evidence.
 
 The test runner retains Node filesystem/process permission checks, a scrubbed environment, heap limit, wall-clock timeout and output cap. These bound the trusted experiment; they do not protect the host from hostile historical code. Input uses stdin and output uses stdout. HTTP policy, access control, revocation and caching remain outside frozen code.
 
 **Deployment decision:** historical edition rendering may require a separately managed Linux worker with a pinned image, private namespaces, a read-only bundle, no host secrets/sockets or capabilities, resource bounds and an independently enforced syscall boundary. The webapp receives only the broker socket, never a Docker socket or general runtime access. The first implementation is rootful crun on Linux x86_64; other architectures and missing kernel features refuse readiness.
 
-The operator runner is a separate execution contract from the old trusted-fixture process helper. A successful hash/rebuild/screenshot experiment proves reproducibility only. The full external boundary gate and its independent code review must pass before merge, and a separately reviewed activation change must pass before production or downstream publication rollout can use it.
+The operator runner is a separate execution contract from the old trusted-fixture process helper. A successful hash/rebuild/screenshot experiment proves reproducibility only. Every runner change passes the full external boundary gate and an independent code review before merge; the activation change has its own gates (P16 as redefined, P17) in the [acceptance record](../ops/renderer-runner.md#external-linux-acceptance-record).
 
 ## Operator runner: boundary contract
 
-This section is the reviewable contract of the experimental operator runner under `server/render/renderer-bundle/runner/`. It describes what the code enforces, not an activation: production still refuses (see above). Installation, recovery and the operator procedure are in the [runbook](../ops/renderer-runner.md).
+This section is the reviewable contract of the operator runner under `server/render/renderer-bundle/runner/`. It describes what the runner enforces; how the webapp calls it is in § Execution gate above. Installation, recovery and the operator procedure are in the [runbook](../ops/renderer-runner.md).
 
 ### Components and identities
 
@@ -215,16 +217,16 @@ The render entry refuses rather than renders when it cannot derive the document
 from the input alone. A fallback to the current renderer would serve different
 content under a citation, which is the thing the whole design prevents.
 
-| Code                                  | When                                                                                |
-| ------------------------------------- | ----------------------------------------------------------------------------------- |
-| `renderer_edition_input_invalid`      | Unknown input schema, or no presentation.                                           |
-| `renderer_edition_input_unsealable`   | A slide type the bundle does not carry, or author markup in a `markup: true` field. |
-| `renderer_bundle_unknown`             | No bundle with that hash in the store.                                              |
-| `renderer_bundle_malformed_hash`      | Not a 64-character lowercase hex digest.                                            |
-| `renderer_bundle_corrupt`             | The manifest or a file does not match its digest, or the manifest is not canonical. |
-| `renderer_bundle_incomplete`          | A named file is missing, or an unnamed file is present.                             |
-| `renderer_bundle_sandbox_unavailable` | Production execution remains disabled pending runner acceptance and activation.     |
-| `renderer_bundle_worker_failed`       | The worker crashed, timed out, or wrote something unreadable.                       |
+| Code                                  | When                                                                                                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `renderer_edition_input_invalid`      | Unknown input schema, or no presentation.                                                                                                                    |
+| `renderer_edition_input_unsealable`   | A slide type the bundle does not carry, author markup in a `markup: true` field, or a request larger than the runner's 16 MiB limit (refused by the client). |
+| `renderer_bundle_unknown`             | No bundle with that hash in the store; from the runner, `bundle_refused`.                                                                                    |
+| `renderer_bundle_malformed_hash`      | Not a 64-character lowercase hex digest.                                                                                                                     |
+| `renderer_bundle_corrupt`             | The manifest or a file does not match its digest, or the manifest is not canonical.                                                                          |
+| `renderer_bundle_incomplete`          | A named file is missing, or an unnamed file is present.                                                                                                      |
+| `renderer_bundle_sandbox_unavailable` | No runner is configured, or it is busy, expired the queue, closed the connection or did not answer.                                                          |
+| `renderer_bundle_worker_failed`       | The worker crashed, timed out, refused, or its answer exceeded the response limit.                                                                           |
 
 ## The open question
 

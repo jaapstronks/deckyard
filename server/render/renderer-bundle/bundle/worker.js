@@ -1,9 +1,10 @@
 /**
  * The render worker: the process a published edition is rendered in.
  *
- * Only the trusted-fixture test helper starts this worker today. Production
- * execution is refused until an external isolation boundary exists. The import
- * filter below is diagnostic: it does not prevent access to socket APIs.
+ * In production the Linux operator runner starts it inside its sandbox
+ * (`runner/`, through `host.js`); the trusted-fixture test helper starts it for
+ * reproducibility proofs. The import filter below is diagnostic: it does not
+ * prevent access to socket APIs.
  *
  * Protocol, deliberately the simplest thing that cannot be half-successful:
  * the edition input arrives as JSON on stdin, one JSON object leaves on stdout.

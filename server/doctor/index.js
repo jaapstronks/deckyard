@@ -29,6 +29,7 @@ import {
   mailCheck,
   uploadsCheck,
 } from './runtime.js';
+import { rendererRunnerCheck } from './renderer-runner.js';
 
 /**
  * Every check, in the order it runs. A check may read the findings of the ones
@@ -51,6 +52,7 @@ export const DOCTOR_CHECKS = Object.freeze([
   uploadsCheck,
   localWriteCheck,
   mailCheck,
+  rendererRunnerCheck,
 ]);
 
 /**

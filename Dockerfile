@@ -25,6 +25,17 @@ RUN npm ci --omit=dev \
   && mkdir -p /app/server/data /app/server/uploads \
   && chmod +x /app/scripts/docker-entrypoint.sh
 
+# The renderer this image publishes with, frozen into one content-addressed
+# bundle (docs/reference/renderer-bundle.md). Built on top of `deps`, so the
+# vendored highlighter bytes it hashes are the ones the image serves. The
+# closure scanner is a dev dependency: this stage installs the locked tree
+# with it, and only the finished store reaches the runtime stage. An operator
+# exports it to the runner host and registers it after every release
+# (scripts/export-renderer-bundle.sh, docs/ops/renderer-runner.md).
+FROM deps AS renderer-bundle
+RUN npm ci --ignore-scripts --no-audit --no-fund \
+  && node scripts/build-renderer-bundle.js --store /renderer-store
+
 FROM node:22-alpine
 
 # PNG/PDF export (server-side): install chromium runtime for puppeteer-core.
@@ -47,6 +58,9 @@ RUN apk add --no-cache \
 # The COPY creates /app itself, so the directory is `node`'s too; a WORKDIR
 # before it would leave /app owned by root.
 COPY --from=deps --chown=node:node /app /app
+# Root-owned and read-only for the server: the doctor reads its hash, nothing
+# writes it (`server/render/renderer-bundle/current.js`).
+COPY --from=renderer-bundle /renderer-store /app/renderer-store
 WORKDIR /app
 
 ENV NODE_ENV=production
