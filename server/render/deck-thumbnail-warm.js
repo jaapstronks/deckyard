@@ -19,6 +19,7 @@ import { loadThemeAssets } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import {
   firstSlideSignature,
+  thumbnailSlide,
   requestThumbnailGeneration,
 } from './deck-thumbnail.js';
 import {
@@ -49,10 +50,10 @@ const log = createLogger('deck-thumbnail-warm');
 export async function warmDeckThumbnail(scope, pres) {
   if (!warmOnSaveEnabled()) return;
   try {
-    const slide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
-    if (!slide || typeof slide !== 'object') return;
-    const theme = await loadThemeAssets(scope.repoRoot, pres?.theme, scope);
     const slideTypes = await buildMergedSlideTypes(scope);
+    const slide = thumbnailSlide(pres, slideTypes);
+    if (!slide) return;
+    const theme = await loadThemeAssets(scope.repoRoot, pres?.theme, scope);
     await requestThumbnailGeneration(
       scope.repoRoot,
       pres,
@@ -93,6 +94,9 @@ export async function warmDeckThumbnail(scope, pres) {
 export function scheduleDeckThumbnailWarm({ scope, before, after } = {}) {
   const id = after?.id;
   if (!id) return false;
+  // Against core: the save path has no organization registry at hand, and a
+  // missed warm only costs the card its head start (the route renders on
+  // demand with the deck's own types).
   if (firstSlideSignature(before) === firstSlideSignature(after)) return false;
   return scheduleThumbnailWarm(String(id), () =>
     warmDeckThumbnail(scope, after),

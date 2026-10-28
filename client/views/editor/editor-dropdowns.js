@@ -19,7 +19,8 @@ import { isOrganizationAdmin } from '../../../shared/organization-role.js';
  * @param {object} options.editorState - Editor state updater
  * @param {object} options.user - Current user
  * @param {Record<string, object>} options.slideTypes - The editor's slide-type
- *   registry (names a refused publish's field by its label)
+ *   registry (names a refused publish's field by its label, and the
+ *   incomplete slides an export leaves out)
  * @param {Function} [options.onShareStateChange] - Called whenever the deck's
  *   share state may have changed (publish, unpublish, slug, a share link
  *   created or revoked)
@@ -70,6 +71,7 @@ export function createEditorDropdowns({
     id,
     root,
     openPublic: () => openShare({ initialTab: 'public' }),
+    slideTypes,
   });
 
   const detach = () => {

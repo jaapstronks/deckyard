@@ -157,6 +157,8 @@ so the new scope applies from the next call.
 
 `export_presentation` returns a URL the user opens in a browser signed in to Deckyard; the server renders the file on demand (PDF/PPTX/PNG take a few seconds for large decks). Use `preview_presentation` instead when you want an inline visual preview rather than a downloadable file.
 
+Both previews show every slide, so `preview_slide` addresses slides by their stored index; a slide whose essential image is still empty carries an "Incomplete" note (`data-incomplete="true"`), because presenting, every export and publishing leave it out ([incomplete-slides.md](incomplete-slides.md)).
+
 Use `format: "pptx"` for pixel-perfect PowerPoint (slides as images, videos playable), or `format: "pptx-editable"` for editable text and pictures where the slide type supports them. The editable result includes `imageSlides`, an array of 1-based slide numbers in the exported file that remain whole-slide images (`[]` when none do). This describes the deck at the time of the tool call, after language projection and removal of live-only slides; downloading the URL uses the current deck and the same builder as the v1 editable export. The optional `lang` applies to both the download and the reported slide numbers. Without a configured `APP_URL` or `DOMAIN`, the tool returns a configuration note instead of a download URL or image-slide report.
 
 ### Deleting

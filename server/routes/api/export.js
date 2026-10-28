@@ -80,7 +80,7 @@ const PPTX = {
   extension: '.pptx',
   exportType: 'pptx',
   buildContent: async (ctx, { repoRoot, url, onProgress, signal }) => {
-    const result = await buildPptxBuffer(repoRoot, ctx.pres, {
+    const result = await buildPptxBuffer(repoRoot, ctx.filteredPres, {
       scale: parseScaleParam(url),
       theme: ctx.theme,
       slideTypes: ctx.slideTypes,
@@ -104,7 +104,7 @@ const PPTX_EDITABLE = {
   exportType: 'pptx-editable',
   jobOptions: (url) => ({ compose: parseComposeParam(url) }),
   buildContent: async (ctx, { repoRoot, url, onProgress, signal }) => {
-    const result = await buildEditablePptxBuffer(repoRoot, ctx.pres, {
+    const result = await buildEditablePptxBuffer(repoRoot, ctx.filteredPres, {
       scale: parseScaleParam(url),
       theme: ctx.theme,
       slideTypes: ctx.slideTypes,
@@ -126,7 +126,7 @@ const HANDOFF = {
   extension: '-handoff.zip',
   exportType: 'handoff-zip',
   buildContent: async (ctx, { repoRoot, url, onProgress, signal }) =>
-    buildHandoffZipBuffer(repoRoot, ctx.pres, {
+    buildHandoffZipBuffer(repoRoot, ctx.filteredPres, {
       scale: parseScaleParam(url),
       theme: ctx.theme,
       lang: ctx.exportLang || '',
@@ -185,7 +185,7 @@ const exportRoutes = [
     format: 'pdf',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf$/,
     buildHtml: async (ctx, { repoRoot }) =>
-      buildPrintHtml(repoRoot, ctx.pres, {
+      buildPrintHtml(repoRoot, ctx.filteredPres, {
         theme: ctx.theme,
         slideTypes: ctx.slideTypes,
       }),

@@ -154,6 +154,27 @@ export function missingAltMessage(err, { pres, slideTypes } = {}) {
 }
 
 /**
+ * The sentence for a publish refused because slides still have an empty
+ * essential image (`incomplete_slides`, B590), in the UI language, naming the
+ * slides by number. Without numbers in `details`, the server's own sentence.
+ *
+ * @param {{message?: string, details?: Object}} err - the refused request
+ * @returns {string}
+ */
+export function incompleteSlidesMessage(err) {
+  const slides = Array.isArray(err?.details?.slides) ? err.details.slides : [];
+  if (!slides.length) return String(err?.message || '');
+  return t(
+    'editor.publish.incomplete',
+    {
+      one: 'Slide {n} still has an empty image. Choose an image or delete the slide, then publish again.',
+      many: 'Slides {list} still have an empty image. Choose an image or delete those slides, then publish again.',
+    },
+    { n: slides[0], list: slides.join(', '), count: slides.length },
+  );
+}
+
+/**
  * Publish the deck, or republish it when it already is. A first publish asks
  * for a description (when missing) and a confirmation; `null` means the author
  * backed out. The caller renders the resulting links itself
@@ -207,9 +228,10 @@ export async function doPublish({
   if (!first)
     throw new Error(t('editor.publish.noSlides', 'No slides to publish'));
 
-  // Alt text is not checked here: the server refuses a picture without a
-  // name on every publish surface (`missing_alt`, D137), and the caller shows
-  // that refusal beside its Publish button ({@link missingAltMessage}).
+  // Alt text and incomplete slides are not checked here: the server refuses
+  // both on every publish surface (`missing_alt`, D137; `incomplete_slides`,
+  // B590), and the caller shows that refusal beside its Publish button
+  // ({@link missingAltMessage}, {@link incompleteSlidesMessage}).
 
   const pub = await api(`/api/presentations/${id}/publish`, {
     method: 'POST',

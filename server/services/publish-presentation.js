@@ -66,6 +66,7 @@ import {
 import { loadPresentationForActor } from './presentations.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { assertImagesNamed } from './publish-alt-check.js';
+import { assertSlidesComplete } from './publish-complete-check.js';
 import { createLogger } from '../utils/logger.js';
 import { getOgImageUrl } from '../config/branding.js';
 
@@ -326,7 +327,8 @@ export async function withdrawReplacedPreview(pres, nextUrl) {
  *   is the actor on the write and the webhook.
  * @returns {Promise<{publishId: string, slug: string, path: string, ogImageUrl: string}>}
  * @throws {ForbiddenError} When publishing is disabled (sandbox mode).
- * @throws {import('../utils/errors.js').UnprocessableError} `missing_alt`, when
+ * @throws {import('../utils/errors.js').UnprocessableError} `incomplete_slides`,
+ *   when a slide's essential picture is still empty (B590); `missing_alt`, when
  *   a picture that is not decorative has no alt text.
  */
 export async function publishPresentation({
@@ -342,11 +344,13 @@ export async function publishPresentation({
 
   // Before anything is written: a refused publish leaves no entry, no preview
   // and no webhook behind. The deck's own organisation types are checked by
-  // their own declarations.
-  assertImagesNamed(
-    pres,
-    await buildMergedSlideTypes({ organizationId: pres?.organizationId }),
-  );
+  // their own declarations. An incomplete slide first: a picture that is not
+  // there yet has no alt text to ask for.
+  const slideTypes = await buildMergedSlideTypes({
+    organizationId: pres?.organizationId,
+  });
+  assertSlidesComplete(pres, slideTypes);
+  assertImagesNamed(pres, slideTypes);
 
   const actorEmail = actor?.email || null;
 

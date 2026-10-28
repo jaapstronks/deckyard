@@ -38,7 +38,7 @@ export function buildReaderHtml(
   const filtered =
     context === 'published'
       ? filterForPublished(pres, { slideTypes })
-      : filterForExport(pres);
+      : filterForExport(pres, { slideTypes });
   return renderReaderDocument(repoRoot, filtered, {
     storedSlides: Array.isArray(pres?.slides) ? pres.slides : null,
     slideTypes,

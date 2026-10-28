@@ -310,12 +310,13 @@ test('createModal default DOM shape is the pre-split shape', () => {
   );
   // `data-overlay-open` is the one addition to the pre-split shape: the marker
   // that lets Escape find the topmost overlay (A7.34). It is set only while the
-  // overlay is open and carries no styling.
+  // overlay is open and carries no styling. `modal-header` is the other: it
+  // lets the close button wrap under the title at 320 px and 200% zoom (B590).
   assert.equal(
     html,
     '<div class="modal-backdrop" data-overlay-open="">' +
       '<div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="modal-X-title">' +
-      '<div class="row spread"><h2 id="modal-X-title">Share deck</h2>' +
+      '<div class="row spread modal-header"><h2 id="modal-X-title">Share deck</h2>' +
       '<button class="btn btn-secondary">Close</button></div>' +
       '<div class="help modal-hint">Anyone with the link can view.</div>' +
       '<div class="modal-content"><button class="btn btn-primary">Copy link</button></div>' +

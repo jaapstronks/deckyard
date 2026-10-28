@@ -414,7 +414,7 @@ export function createModal(options = {}) {
   let title = null;
   let closeBtn = null;
   if (builtHeader) {
-    header = h('div', { class: 'row spread' });
+    header = h('div', { class: 'row spread modal-header' });
     title = h('h2', { id: `${modalId}-title`, text: titleText || '' });
     if (closeButton === 'icon') {
       closeBtn = h(

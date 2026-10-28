@@ -20,6 +20,7 @@ import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { getLangDisplayName } from '../../../../../shared/i18n-utils.js';
 import {
   buildPublishedLinks,
+  incompleteSlidesMessage,
   missingAltMessage,
 } from '../../publish-export/publish.js';
 
@@ -87,6 +88,8 @@ export function createPublishSection({
     } catch (e) {
       if (e?.code === 'missing_alt') {
         publishError.show(missingAltMessage(e, { pres, slideTypes }));
+      } else if (e?.code === 'incomplete_slides') {
+        publishError.show(incompleteSlidesMessage(e));
       } else {
         toast?.error?.(e, { durationMs: 3000 });
       }

@@ -6,6 +6,8 @@ A field can be `essential` (D211): when it is empty, the editor shows it without
 
 **Not listed**: enum, number and boolean fields (layout, variant, background, colour, timing), the accessibility fields (`a11yTitle`, `a11ySummary`), `alt` and focus fields, and the slide-background family (`slideBg*`, `slideLogo`). These are settings with a working default, or descriptions of other content. An empty one never makes a slide look broken, so none of them is essential.
 
+**Outside the editor**: an empty essential _picture_ makes the slide incomplete, and every output (presenting, exports, publishing, every reader) leaves it out; publishing is refused until it is filled. See [`incomplete-slides.md`](incomplete-slides.md).
+
 ## What an empty essential field shows
 
 The editor picks the affordance from the field's kind and from what the renderer draws. There is no per-type code:

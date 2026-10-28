@@ -22,12 +22,12 @@ const assetBytes = async (ref) => sizes[ref] ?? null;
 test('an asset counts once, base64-encoded; a hidden slide and its asset do not count', async () => {
   const deck = {
     slides: [
-      { id: 's1', type: 'image', content: { src: '/uploads/a.png' } },
-      { id: 's2', type: 'image', content: { src: '/uploads/a.png' } },
+      { id: 's1', type: 'image', content: { image: '/uploads/a.png' } },
+      { id: 's2', type: 'image', content: { image: '/uploads/a.png' } },
       {
         id: 's3',
         type: 'image',
-        content: { src: '/uploads/b.png' },
+        content: { image: '/uploads/b.png' },
         visibility: { hideInPublished: true },
       },
     ],
@@ -46,8 +46,12 @@ test('assets in a language version count, and unreadable refs are reported', asy
       versions: {
         nl: {
           slides: [
-            { id: 's1', type: 'image', content: { src: '/uploads/b.png' } },
-            { id: 's2', type: 'image', content: { src: '/uploads/gone.png' } },
+            { id: 's1', type: 'image', content: { image: '/uploads/b.png' } },
+            {
+              id: 's2',
+              type: 'image',
+              content: { image: '/uploads/gone.png' },
+            },
           ],
         },
       },

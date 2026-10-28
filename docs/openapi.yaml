@@ -1081,9 +1081,12 @@ paths:
       summary: Publish presentation
       description: >-
         Makes the presentation publicly accessible via a share link. Refused
-        with 422 `missing_alt` while a picture that is not decorative has no
-        alt text (in any language version, on any slide the published page
-        shows); `details` names the first one and `count` how many there are.
+        with 422 `incomplete_slides` while a slide the published page would
+        show still has an empty essential image (in any language version);
+        `details.slides` lists their 1-based numbers. Refused with 422
+        `missing_alt` while a picture that is not decorative has no alt text
+        (in any language version, on any slide the published page shows);
+        `details` names the first one and `count` how many there are.
       parameters:
         - name: id
           in: path
@@ -1116,9 +1119,11 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           description: >-
-            `missing_alt`: a picture has no alt text. `details` carries
-            `lang`, `slideIndex`, `slideId`, `field`, `itemIndex` and
-            `itemField` (for a picture in an item) and `count`.
+            `incomplete_slides`: a slide still has an empty essential image;
+            `details.slides` lists the slide numbers. `missing_alt`: a picture
+            has no alt text. `details` carries `lang`, `slideIndex`,
+            `slideId`, `field`, `itemIndex` and `itemField` (for a picture in
+            an item) and `count`.
           content:
             application/json:
               schema:

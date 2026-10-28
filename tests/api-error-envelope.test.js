@@ -306,6 +306,7 @@ test('every registered code passes with exactly its keys', () => {
       itemField: 'image',
       count: 3,
     },
+    incomplete_slides: { slides: [2, 5] },
   };
   assert.deepEqual(
     Object.keys(samples).sort(),

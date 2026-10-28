@@ -15,6 +15,7 @@ import { attachStageScale } from './stage-scale.js';
 import { createPresenterFullscreenController } from './fullscreen.js';
 import {
   createPresenterDeckController,
+  loadPresentSlideTypes,
   normalizeNotesStrings,
 } from './deck-controller.js';
 import { STEP_DEPS } from '../../lib/slide-runtime/step.js';
@@ -38,7 +39,10 @@ import { readDeckLangFromUrl } from './present-lang.js';
 export async function renderPresentWindow(root, id) {
   const { langQs } = readDeckLangFromUrl();
   const pres = await api(`/api/presentations/${id}${langQs}`);
-  const theme = await loadThemeById(pres?.theme);
+  const [theme, slideTypes] = await Promise.all([
+    loadThemeById(pres?.theme),
+    loadPresentSlideTypes(api),
+  ]);
   normalizeNotesStrings(pres);
 
   const shell = h('div', { class: 'present-window' });
@@ -73,6 +77,7 @@ export async function renderPresentWindow(root, id) {
     langQs,
     stage,
     theme,
+    slideTypes,
     renderSlideElement,
     cleanupSlideRuntimes,
     animator,

@@ -71,7 +71,7 @@ export async function buildStandaloneHtml(
   pres =
     context === 'published'
       ? filterForPublished(pres, { slideTypes })
-      : filterForExport(pres);
+      : filterForExport(pres, { slideTypes });
   const docLang = resolveDocLangFromPresentation(pres);
   // The deck's own language, for slide types that render built-in copy. Not
   // the same value as docLang: that one always answers (falling back to nl for

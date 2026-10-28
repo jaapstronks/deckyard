@@ -770,6 +770,7 @@ export async function createEditorController({
     theme,
     id,
     user,
+    slideTypes: SLIDE_TYPES,
     requestSave,
     isDirty: saveManager.isDirty,
     getSelectedSlideId: () => selectedSlideId,

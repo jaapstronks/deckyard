@@ -31,6 +31,7 @@ import { loadThemeAssets } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   thumbCacheKey,
+  thumbnailSlide,
   readCachedThumbnail,
   readStaleThumbnail,
   requestThumbnailGeneration,
@@ -70,10 +71,12 @@ export async function handlePresentationThumbnail(
   });
   if (!pres) return true;
   const mayEdit = await mayOnPresentation(pres, { actor: authedUser }, 'write');
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   if (!mayEdit) {
     pres = projectPresentationForAudience(pres, {
       audience: 'reader',
       channel: 'viewer',
+      slideTypes,
     });
     // Readers never share an author's cached raster, including pre-contract files.
     pres = { ...pres, id: `${pres.id}-reader-v2` };
@@ -96,7 +99,7 @@ export async function handlePresentationThumbnail(
       `The deck's theme cannot be loaded: ${err?.message || err}`,
     );
   }
-  const { filename, prefix } = thumbCacheKey(pres, theme);
+  const { filename, prefix } = thumbCacheKey(pres, theme, slideTypes);
 
   /**
    * Send a raster, tagged with the cache file it came from. A conditional
@@ -120,13 +123,12 @@ export async function handlePresentationThumbnail(
   const cached = await readCachedThumbnail(repoRoot, filename);
   if (cached) return sendImage(cached, filename);
 
-  // Cache miss: rasterize slide 1 in the background (deduped + throttled), never
-  // on the request thread. A key whose last attempt failed is not retried until
-  // the failure expires (deck-thumbnail.js).
-  const firstSlide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
-  const hasSlide = Boolean(firstSlide && typeof firstSlide === 'object');
+  // Cache miss: rasterize the first presentable slide in the background
+  // (deduped + throttled), never on the request thread. A key whose last
+  // attempt failed is not retried until the failure expires (deck-thumbnail.js).
+  const firstSlide = thumbnailSlide(pres, slideTypes);
+  const hasSlide = Boolean(firstSlide);
   if (hasSlide) {
-    const slideTypes = await buildMergedSlideTypes(storageScope);
     requestThumbnailGeneration(repoRoot, pres, firstSlide, theme, slideTypes);
   }
 
@@ -146,7 +148,9 @@ export async function handlePresentationThumbnail(
       res,
       404,
       'thumbnail_unavailable',
-      'This deck has no slides.',
+      pres?.slides?.length
+        ? 'No slide of this deck is ready to show yet.'
+        : 'This deck has no slides.',
     );
   }
   const failure = thumbnailFailure(filename);

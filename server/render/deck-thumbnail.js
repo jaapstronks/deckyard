@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { deckThumbsDir } from '../config/storage-paths.js';
 import { renderSlideToPngBuffer } from './png.js';
 import { createLogger } from '../utils/logger.js';
+import { isSlideVisibleIn } from '../../shared/slide-visibility.js';
 
 const log = createLogger('deck-thumbnail');
 
@@ -74,18 +75,39 @@ function hashOf(value, fallback) {
 }
 
 /**
- * Signature of the slide the thumbnail is made of (slide 1), for cheap
- * "did the raster's input change?" checks on the save path — comparing two
- * signatures costs a hash, not a theme load or a render.
+ * The slide a deck's thumbnail is made of: its first slide a presentation
+ * shows. A slide hidden from presenting, or one still incomplete (an empty
+ * essential picture, B590), would put a frame on the card that no audience
+ * ever sees.
  *
  * @param {object} presentation - Full presentation (needs `slides`).
+ * @param {Record<string, object>} [slideTypes] - The deck organization's
+ *   registry; core when omitted.
+ * @returns {object|null} null when no slide is ready to show
+ */
+export function thumbnailSlide(presentation, slideTypes) {
+  const slides = Array.isArray(presentation?.slides) ? presentation.slides : [];
+  return (
+    slides.find(
+      (slide) =>
+        slide &&
+        typeof slide === 'object' &&
+        isSlideVisibleIn(slide, 'presentation', { slideTypes }),
+    ) || null
+  );
+}
+
+/**
+ * Signature of the slide the thumbnail is made of ({@link thumbnailSlide}),
+ * for cheap "did the raster's input change?" checks on the save path —
+ * comparing two signatures costs a hash, not a theme load or a render.
+ *
+ * @param {object} presentation - Full presentation (needs `slides`).
+ * @param {Record<string, object>} [slideTypes] - As {@link thumbnailSlide}.
  * @returns {string}
  */
-export function firstSlideSignature(presentation) {
-  const firstSlide = Array.isArray(presentation?.slides)
-    ? presentation.slides[0]
-    : null;
-  return hashOf(firstSlide, 'noslide');
+export function firstSlideSignature(presentation, slideTypes) {
+  return hashOf(thumbnailSlide(presentation, slideTypes), 'noslide');
 }
 
 /**
@@ -99,11 +121,12 @@ export function firstSlideSignature(presentation) {
  * @param {object} presentation - Full presentation (needs `id`, `slides`, `theme`).
  * @param {object|null} theme - Resolved theme object, folded into the signature so
  *   a theme edit invalidates too.
+ * @param {Record<string, object>} [slideTypes] - As {@link thumbnailSlide}.
  * @returns {{ id: string, sig: string, prefix: string, filename: string }}
  */
-export function thumbCacheKey(presentation, theme) {
+export function thumbCacheKey(presentation, theme, slideTypes) {
   const id = String(presentation?.id || '');
-  const slideSig = firstSlideSignature(presentation);
+  const slideSig = firstSlideSignature(presentation, slideTypes);
   const themeSig = hashOf(
     theme ?? presentation?.theme ?? null,
     String(presentation?.theme || 'default'),
@@ -369,7 +392,7 @@ async function generateAndCache(
  *
  * @param {string} repoRoot
  * @param {object} presentation
- * @param {object} slide - The slide to rasterize (slide 1).
+ * @param {object} slide - The slide to rasterize ({@link thumbnailSlide}).
  * @param {object|null} theme
  * @param {object|null} slideTypes
  * @param {object} [options]
@@ -384,7 +407,7 @@ export function requestThumbnailGeneration(
   slideTypes,
   { render = renderSlideToPngBuffer } = {},
 ) {
-  const { filename } = thumbCacheKey(presentation, theme);
+  const { filename } = thumbCacheKey(presentation, theme, slideTypes);
   if (inFlight.has(filename)) return inFlight.get(filename);
   if (thumbnailFailure(filename)) return Promise.resolve(false);
 

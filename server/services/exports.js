@@ -45,7 +45,7 @@ import { countInstanceHealth } from '../storage/instance-health.js';
 import { repoRootOf } from '../storage/scope.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import {
-  stripLiveOnlySlidesFromPresentation,
+  filterForExport,
   projectPresentationForAudience,
 } from '../utils/public-output.js';
 import { loadThemeAssets } from '../utils/themes.js';
@@ -63,13 +63,14 @@ import { normalizeEmail } from '../../shared/email.js';
  * What every export builds from.
  *
  * @typedef {Object} ExportContext
- * @property {Object} pres - The deck, projected onto `exportLang` (live-only
- *   slides kept).
- * @property {Object} filteredPres - `pres` without its live-only slides when
- *   the export strips them, otherwise `pres` itself.
- *   A builder that translates a slide jump (print, PPTX) takes `pres`
- *   instead and leaves the live-only slides out itself: `#N` counts the
- *   stored deck.
+ * @property {Object} pres - The deck, projected onto `exportLang`, every
+ *   slide kept: what the data formats (JSON, the portable `.deck`) carry.
+ * @property {Object} filteredPres - What every rendered format builds from:
+ *   `pres` through {@link filterForExport} (no live-only, `hideInExport` or
+ *   incomplete slide, in any language version; jumps pinned first, so `#N`
+ *   still names the stored slide), for the author and a reader alike (B590).
+ *   `pres` itself when the export strips nothing (`stripLiveOnly: false`, the
+ *   data formats).
  * @property {Object|null} theme - The deck's resolved theme assets.
  * @property {Record<string, Object>} slideTypes - Core plus the deck
  *   organization's published custom slide types.
@@ -118,7 +119,7 @@ export async function buildExportContext(
     ? projectPresentationForLang(safe, exportLang)
     : safe;
   const filteredPres = stripLiveOnly
-    ? stripLiveOnlySlidesFromPresentation(projected)
+    ? filterForExport(projected, { slideTypes })
     : projected;
   return {
     pres: projected,
@@ -145,8 +146,8 @@ export async function buildExportContext(
  * @param {boolean} [input.allLanguages=false] - Skip the projection, for a
  *   format that carries every language version itself (the portable deck,
  *   D89): projecting first is what used to drop the other versions.
- * @param {boolean} [input.stripLiveOnly=true] - Drop the live-only slides
- *   from `filteredPres`.
+ * @param {boolean} [input.stripLiveOnly=true] - Filter `filteredPres` for
+ *   export; `false` only for the data formats, which build from `pres`.
  * @returns {Promise<ExportContext>}
  * @throws {NotFoundError} No deck with this id in this scope.
  * @throws {ForbiddenError} The deck is there, the read right is not.
