@@ -222,3 +222,11 @@
     min-height: 200px;
   }
 }
+
+/* A small phone (xs): the four actions no longer fit one row and the first
+   ran out of the modal; whole buttons move to a next line instead. */
+@media (max-width: 480px) {
+  .json-debug-actions {
+    flex-wrap: wrap;
+  }
+}

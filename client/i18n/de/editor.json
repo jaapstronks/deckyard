@@ -421,7 +421,7 @@
   "editor.inline.addScaleLabel": "Beschriftung hinzufügen",
   "editor.inline.clearField": "{label} leeren",
   "editor.inline.coach": "Klicken Sie auf einen Text auf der Folie, um ihn zu bearbeiten",
-  "editor.inline.coachDismiss": "Verwerfen",
+  "editor.inline.coachDismiss": "Schließen",
   "editor.inline.editingField": "Bearbeitung: {label}",
   "editor.inline.focus.hint": "Ziehen Sie oder nutzen Sie die Pfeiltasten, um den Bildfokus zu setzen",
   "editor.inline.focusPoint": "Bildfokuspunkt",

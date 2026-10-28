@@ -75,7 +75,7 @@ export function createInlineCoachMark({ stage } = {}) {
         {
           class: 'ie-coach-dismiss',
           type: 'button',
-          'aria-label': t('editor.inline.coachDismiss', 'Dismiss'),
+          'aria-label': t('editor.inline.coachDismiss', 'Close'),
           onclick: () => remove(),
         },
         [icon('x', { size: 14 })],

@@ -411,7 +411,7 @@
   "editor.inline.addScaleLabel": "Adicionar etiqueta",
   "editor.inline.clearField": "Limpar {label}",
   "editor.inline.coach": "Clique em qualquer texto do diapositivo para o editar",
-  "editor.inline.coachDismiss": "Dispensar",
+  "editor.inline.coachDismiss": "Fechar",
   "editor.inline.editingField": "A editar: {label}",
   "editor.inline.focus.hint": "Arraste ou use as setas para definir o ponto de foco",
   "editor.inline.focusPoint": "Ponto de foco da imagem",
