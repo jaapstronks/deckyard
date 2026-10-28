@@ -311,6 +311,8 @@ test('the answers describe the stored deck', async (t) => {
     insertedAt: 3,
     totalSlides: 4,
     newSlides: [{ type: 'content-slide', title: 'Vier' }],
+    // The review the appended slides carry opens from here (B590).
+    reviewUrl: `https://deck.example/app/${DECK_ID}?aiReview=1`,
   });
 
   await installDb();

@@ -77,6 +77,11 @@ import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
 import { attachBatchReviews } from '../utils/ai/slide-review.js';
 import {
+  REVIEW_NOTE_MAX_LENGTH,
+  reviewNoteIn,
+  reviewUrlFor,
+} from '../utils/ai/review-note.js';
+import {
   loadDeckTheme,
   loadThemeAssets,
   loadAiThemeContext,
@@ -116,7 +121,14 @@ const SLIDE_CONTENT_DESCRIPTION =
   "and values the type's get_slide_types entry lists in `textStyles`; a type " +
   'without that entry offers no text styling. Anything else (another key, a ' +
   'single list item such as `quotes.1.quote`, `color`, a value not listed) ' +
-  'is refused, and the error names the key and why.';
+  'is refused, and the error names the key and why. An explanation for the ' +
+  "author goes in the slide's `reviewNote`, not in content.";
+
+const REVIEW_NOTE_DESCRIPTION =
+  `Optional, at most ${REVIEW_NOTE_MAX_LENGTH} characters: why this slide ` +
+  'looks the way it does, for the author. The editor shows it beside the ' +
+  "slide in the deck review (`reviewUrl`); it is never part of the deck's " +
+  'output and marks itself outdated once the slide changes.';
 
 /**
  * Build a presentation URL (edit or present mode). Edit links go to the
@@ -561,6 +573,8 @@ export function registerTools(
       const presentUrl = presentationUrl(created.id, 'present');
       if (editUrl) result.editUrl = editUrl;
       if (presentUrl) result.presentUrl = presentUrl;
+      const reviewUrl = reviewUrlFor(created.id);
+      if (reviewUrl) result.reviewUrl = reviewUrl;
       return result;
     },
     { permission: 'ai', feature: 'ai' },
@@ -581,7 +595,7 @@ export function registerTools(
         slides: {
           type: 'array',
           description:
-            'Slide array. Each item: { type, content, notes? }. See get_slide_types for valid types and example content.',
+            'Slide array. Each item: { type, content, notes?, reviewNote? }. See get_slide_types for valid types and example content.',
           items: {
             type: 'object',
             properties: {
@@ -597,6 +611,11 @@ export function registerTools(
               notes: {
                 type: 'string',
                 description: 'Speaker notes (optional)',
+              },
+              reviewNote: {
+                type: 'string',
+                maxLength: REVIEW_NOTE_MAX_LENGTH,
+                description: REVIEW_NOTE_DESCRIPTION,
               },
             },
             required: ['type', 'content'],
@@ -642,11 +661,13 @@ export function registerTools(
       }
       assertCreatableDeckInput(args);
 
-      // Strip incoming `id` fields so storage assigns fresh UUIDs; preserve type/content/notes.
+      // Strip incoming `id` fields so storage assigns fresh UUIDs; preserve
+      // type/content/notes and the review note.
       let inputSlides = slides.map((s) => ({
         type: s?.type,
         content: s?.content,
         notes: typeof s?.notes === 'string' ? s.notes : '',
+        ...(s?.reviewNote !== undefined ? { reviewNote: s.reviewNote } : {}),
       }));
 
       const { themeId: theme, theme: themeObj } = await settleNewDeckTheme(
@@ -686,6 +707,7 @@ export function registerTools(
           type: s.type,
           content: s.content,
           notes: inputSlides[i]?.notes || '',
+          reviewNote: inputSlides[i]?.reviewNote,
         }));
       } else {
         try {
@@ -718,16 +740,24 @@ export function registerTools(
           title,
           theme,
           lang,
-          slides: validatedSlides.map((s) => ({
-            ...newSlide({
-              type: s.type,
-              content: s.content,
-              slideTypes,
-              theme: themeObj,
-              lang,
-            }),
-            notes: s.notes || '',
-          })),
+          // The note becomes the stored explanation; the write seam binds
+          // it to the slide as stored.
+          slides: validatedSlides.map((s, index) =>
+            reviewNoteIn(
+              {
+                ...newSlide({
+                  type: s.type,
+                  content: s.content,
+                  slideTypes,
+                  theme: themeObj,
+                  lang,
+                }),
+                notes: s.notes || '',
+                reviewNote: s.reviewNote,
+              },
+              { index },
+            ),
+          ),
         },
       );
 
@@ -749,6 +779,10 @@ export function registerTools(
       const presentUrl = presentationUrl(created.id, 'present');
       if (editUrl) result.editUrl = editUrl;
       if (presentUrl) result.presentUrl = presentUrl;
+      if (validatedSlides.some((s) => s.reviewNote)) {
+        const reviewUrl = reviewUrlFor(created.id);
+        if (reviewUrl) result.reviewUrl = reviewUrl;
+      }
       if (validation === 'fix') result.appliedFixes = appliedFixes;
       return result;
     },
@@ -857,10 +891,18 @@ export function registerTools(
           type: 'number',
           description: 'Insert position (0-based). If omitted, appends at end.',
         },
+        reviewNote: {
+          type: 'string',
+          maxLength: REVIEW_NOTE_MAX_LENGTH,
+          description: REVIEW_NOTE_DESCRIPTION,
+        },
       },
       required: ['presentationId', 'type', 'content'],
     },
-    async ({ presentationId, type, content, position }, context) => {
+    async (
+      { presentationId, type, content, position, reviewNote },
+      context,
+    ) => {
       await getCheckedPresentation(presentationId, context, {
         access: 'write',
       });
@@ -880,6 +922,7 @@ export function registerTools(
           type,
           content,
           position,
+          reviewNote,
         },
       );
 
@@ -1316,7 +1359,7 @@ export function registerTools(
         { presentationId, slides },
       );
 
-      return {
+      const result = {
         appended: slidesToInsert.length,
         insertedAt: insertAt,
         totalSlides: presentation.slides.length,
@@ -1325,6 +1368,9 @@ export function registerTools(
           title: slideTitle(s, getSlideType(s.type, slideTypes), { lang }),
         })),
       };
+      const reviewUrl = reviewUrlFor(presentationId);
+      if (reviewUrl) result.reviewUrl = reviewUrl;
+      return result;
     },
     { permission: 'ai', feature: 'ai' },
   );

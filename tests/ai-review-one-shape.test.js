@@ -272,16 +272,22 @@ test('MCP append_slides stores the review on the slides it appends', async (t) =
   const session = { ownerEmail: OWNER, organizationId: ORG };
   const call = (name, args) => server.tools.get(name).handler(args, session);
   stubModel(t);
-  const { id } = await call('create_presentation', {
+  process.env.APP_URL = 'https://slides.example';
+  t.after(() => delete process.env.APP_URL);
+  const created = await call('create_presentation', {
     content: 'The partners we work with',
     lang: 'en',
   });
+  const { id } = created;
+  const reviewUrl = `https://slides.example/app/${id}?aiReview=1`;
+  assert.equal(created.reviewUrl, reviewUrl, 'create_presentation');
   const bodies = stubModel(t);
   const result = await call('append_slides', {
     presentationId: id,
     content: 'More partners',
   });
   assert.equal(result.appended, 1);
+  assert.equal(result.reviewUrl, reviewUrl, 'append_slides');
   assertPrompt(bodies[0], 'MCP append_slides');
   const stored = db.__tables.presentations.find((p) => p.id === id);
   const appended = stored.slides.filter((s) => s._aiReasoning === WHY);

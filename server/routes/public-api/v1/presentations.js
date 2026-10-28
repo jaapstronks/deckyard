@@ -30,6 +30,11 @@ import {
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
 import { projectReaderPresentation } from '../../../utils/reader-presentation.js';
+import {
+  reviewNotesInDeck,
+  reviewNotesOutDeck,
+  reviewUrlFor,
+} from '../../../utils/ai/review-note.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -44,6 +49,9 @@ import { projectReaderPresentation } from '../../../utils/reader-presentation.js
  */
 export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
   if (!pres) return null;
+  // The review explanation is published as `reviewNote` and nothing else; a
+  // reader projection has already dropped it (B590, B769).
+  pres = reviewNotesOutDeck(pres);
 
   const owner = pres.ownerEmail || null;
   // Only expose the owner's raw email to the owner themselves; redact it for
@@ -90,6 +98,16 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     ...publicDeckTimestamps(pres),
     tags,
   };
+}
+
+/** Whether a create body names a review note on any slide. */
+function hasReviewNote(body) {
+  return (
+    Array.isArray(body?.slides) &&
+    body.slides.some(
+      (s) => typeof s?.reviewNote === 'string' && s.reviewNote.trim(),
+    )
+  );
 }
 
 /**
@@ -166,16 +184,19 @@ async function handleCreate(ctx) {
   if (!bodyOk) return true;
 
   // The key owner creates the deck; a refusal is answered in the v1 envelope
-  // by the mount-level withV1ErrorHandler wrap.
+  // by the mount-level withV1ErrorHandler wrap. A slide's `reviewNote`
+  // becomes its explanation for the author; raw `_ai*` keys are refused.
   const created = await createPresentation(
     storageScope,
     { actor: ctx.authedUser },
-    body,
+    reviewNotesInDeck(body),
   );
 
   const tags = await getTagsForPresentation(storageScope, created.id);
+  const reviewUrl = hasReviewNote(body) ? reviewUrlFor(created.id) : null;
   await apiCreated(ctx, {
     presentation: sanitizePresentation(created, tags, apiKey.ownerEmail),
+    ...(reviewUrl ? { reviewUrl } : {}),
   });
   return true;
 }
@@ -218,13 +239,21 @@ async function handleUpdate(ctx, id) {
   });
   if (!bodyOk) return true;
 
+  // A slide keeps its stored review keys (matched by id) unless the body
+  // sends another `reviewNote`, so GET-then-PUT keeps the author's review
+  // material (B769, B590); raw `_ai*` keys are refused.
+  const { ok, pres } = await getPresentationWithAccess(ctx, id, {
+    access: 'write',
+  });
+  if (!ok) return true;
+
   // Loading, the refusals (owner, creator, lang, retired names), a theme
   // switch and the storage result are the save service's (B608); a refusal
   // is answered in the v1 envelope by the mount-level withV1ErrorHandler wrap.
   const updated = await savePresentation(
     ctx.storageScope,
     { actor: ctx.authedUser },
-    { presentationId: id, changes: body },
+    { presentationId: id, changes: reviewNotesInDeck(body, pres) },
   );
 
   const tags = await getTagsForPresentation(ctx.storageScope, id);
