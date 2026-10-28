@@ -1570,8 +1570,9 @@ export function createInlineEditor({
         );
       }
       target.member[target.imageField] = url;
-      // Raw uploads carry no provider metadata, so clear any stale ImageKit id
-      // and leave alt empty for the user to fill or AI-generate.
+      // A raw upload carries no metadata: leave alt empty for the user to fill
+      // or AI-generate, and drop the ImageKit id an older editor stored for
+      // the previous image (DY-770).
       delete target.member.imagekitFileId;
       markDirty?.();
       requestSave?.();
@@ -1678,9 +1679,10 @@ export function createInlineEditor({
       },
       onPick: (picked) => {
         member[imageField] = picked?.url || '';
-        // Keep the provider id in lock-step with the URL (see applyPickMeta).
-        if (picked?.providerId) member.imagekitFileId = picked.providerId;
-        else delete member.imagekitFileId;
+        // The pick was copied into this install's media, so where it came
+        // from is not stored; an ImageKit id an older editor stored described
+        // the previous image (DY-770).
+        delete member.imagekitFileId;
         // Seed alt from the pick's active-language metadata (or single seed),
         // but never clobber an alt the user already wrote.
         const alts =

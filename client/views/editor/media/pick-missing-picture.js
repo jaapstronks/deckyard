@@ -15,7 +15,7 @@ import {
   translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
 import { createAltSetter, imageAltKey } from '../fields/images/alt-utils.js';
-import { applyAltFromPick, applyPickMeta } from './apply-pick.js';
+import { applyAltFromPick } from './apply-pick.js';
 
 /**
  * The alt text a pick carries for one language: its per-language map wins,
@@ -106,11 +106,6 @@ export function pickMissingPicture({
             activeLang,
             fieldKey: imageAltKey(field),
           }),
-        });
-        applyPickMeta({
-          picked,
-          content: slide.content,
-          providerIdKey: 'imagekitFileId',
         });
       }
       onPicked?.();

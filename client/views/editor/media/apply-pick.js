@@ -11,7 +11,9 @@
  * URL placement is intentionally NOT handled here: single-image fields store a
  * string at `content[key]`, multi-image fields push into an array, and the
  * inline popover mutates an item object. Each call site owns its URL write and
- * delegates the rest (alt buffers, caption, provider id) to this helper.
+ * delegates the rest (alt buffers, caption) to this helper. The pick's
+ * `providerId` is not stored: the image is copied into this install's media
+ * on pick, so nothing reads where it came from (DY-770).
  */
 
 import { getSupportedLangs } from '../../../lib/format/i18n.js';
@@ -75,30 +77,15 @@ export function applyAltFromPick({
 
 /**
  * Apply the non-alt metadata of a normalized pick onto a plain content object:
- * an opaque provider file id (under a caller-chosen key) and, when the field
- * opted into it, a resolved caption/credit string.
+ * a resolved caption/credit string, when the field opted into it.
  *
  * @param {Object} opts
  * @param {PickedImage} opts.picked
  * @param {Object} opts.content - the object to mutate (e.g. `slide.content` or an item)
- * @param {string} [opts.providerIdKey] - where to store `picked.providerId` (e.g. 'imagekitFileId')
  * @param {boolean} [opts.allowCaption] - whether this field accepts a caption/credit
  */
-export function applyPickMeta({
-  picked,
-  content,
-  providerIdKey,
-  allowCaption = false,
-} = {}) {
+export function applyPickMeta({ picked, content, allowCaption = false } = {}) {
   if (!picked || !content || typeof content !== 'object') return;
-
-  // Keep the opaque provider id in lock-step with the URL: a provider that
-  // supplies one (ImageKit) sets it; any other pick (native library, S3) clears
-  // it, so a native URL never carries a dangling ImageKit file id.
-  if (providerIdKey) {
-    if (picked.providerId) content[providerIdKey] = picked.providerId;
-    else delete content[providerIdKey];
-  }
 
   if (
     allowCaption &&

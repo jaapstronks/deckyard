@@ -108,7 +108,6 @@ export function createFieldImage(ctx) {
           applyPickMeta({
             picked,
             content: slide.content,
-            providerIdKey: 'imagekitFileId',
             allowCaption: 'caption' in slide.content,
           });
           markDirty?.();

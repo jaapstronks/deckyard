@@ -77,17 +77,21 @@ array, the inline popover mutates an item — and delegate the rest:
 - `applyAltFromPick(...)` — seeds alt buffers. An `alts` map wins (active +
   other language); otherwise a single `alt` seed fills active + English + other.
 - `applyPickMeta(...)` — writes the caption/credit (only when the field opted in
-  and its caption is empty) and keeps the provider id in lock-step with the URL:
-  a provider that supplies one sets it, any other pick clears it (so a native
-  URL never carries a dangling ImageKit `imagekitFileId`).
+  and its caption is empty).
+
+The pick's `providerId` is not stored anywhere. Strict validation (D359)
+refuses a content key the type does not declare, and an ImageKit file id is
+read by nothing once the image is copied (below), so no call site writes
+`imagekitFileId` (DY-770). Migration 102 stripped the top-level ones stored
+decks still carried; the inline team-card popover drops the one an older
+editor left on a member when it replaces that member's image.
 
 ## Copy-on-pick (ImageKit)
 
 A DAM is a place to _find_ an image, not a place a deck should depend on. So
 picking an ImageKit image copies it into this installation's own media first,
-and the slide gets a URL this install serves; the ImageKit file id stays on the
-slide as `imagekitFileId`, saying where the image came from, and is no longer a
-live image source. Nothing about a deck already stored changes — this is the
+and the slide gets a URL this install serves. The ImageKit file id is not kept:
+the copy is the image now. Nothing about a deck already stored changes — this is the
 write path only.
 
 The copy lives in the **ImageKit adapter**, which is what makes it hold
