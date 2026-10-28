@@ -17,6 +17,9 @@ import { createLogger } from './logger.js';
 
 const log = createLogger('fire-and-forget');
 
+/** Guarded tasks that have not settled yet, for {@link __settleBackgroundTasks}. */
+const pending = new Set();
+
 /**
  * Attach a rejection guard to a background promise.
  * @param {Promise<unknown>} promise - The un-awaited task to guard. A non-thenable is ignored.
@@ -25,9 +28,28 @@ const log = createLogger('fire-and-forget');
  */
 export function fireAndForget(promise, label = 'background task') {
   if (!promise || typeof promise.then !== 'function') return;
-  promise.catch((err) => {
+  const guarded = promise.catch((err) => {
     log.error(`${label} rejected:`, err);
   });
+  pending.add(guarded);
+  guarded.then(() => pending.delete(guarded));
+}
+
+/**
+ * Wait until every task handed to {@link fireAndForget} has settled, including
+ * tasks those tasks start on their way.
+ *
+ * Test-only: production code must never call this. A test that resets shared
+ * state (the PostgreSQL suite's `truncate()`) calls it first, so a background
+ * read the previous test released cannot hold a table lock the reset needs
+ * (B857).
+ *
+ * @returns {Promise<void>}
+ */
+export async function __settleBackgroundTasks() {
+  while (pending.size) {
+    await Promise.all(pending);
+  }
 }
 
 /**
