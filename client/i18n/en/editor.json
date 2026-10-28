@@ -534,7 +534,7 @@
   "editor.inline.addScaleLabel": "Add label",
   "editor.inline.clearField": "Clear {label}",
   "editor.inline.coach": "Click any text on the slide to edit it",
-  "editor.inline.coachDismiss": "Dismiss",
+  "editor.inline.coachDismiss": "Close",
   "editor.inline.editingField": "Editing: {label}",
   "editor.inline.focus.hint": "Drag or use arrow keys to set image focus",
   "editor.inline.focusPoint": "Image focus point",

@@ -56,7 +56,7 @@
   "notes.speakerNotes": "Notas do apresentador",
   "notes.upNext": "A seguir",
   "notes.upNextSlideOf": "A seguir · Diapositivo {current} / {total}",
-  "notesJoin.copyLink": "Copiar ligação",
+  "notesJoin.copyLink": "Copiar o link",
   "notesJoin.copyPrompt": "Copie esta ligação:",
   "notesJoin.help": "Digitalize o código QR com o seu telemóvel para abrir o Companion de notas.",
   "notesJoin.open": "Abrir Companion",

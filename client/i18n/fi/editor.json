@@ -634,7 +634,7 @@
   "editor.slide.customType.basedOn": "Pohjana: {base}",
   "editor.slide.delete": "Poista",
   "editor.slide.deleteConfirm": "Poistetaanko tämä dia?",
-  "editor.slide.duplicate": "Kopioi",
+  "editor.slide.duplicate": "Monista",
   "editor.slide.duration.help": "Tyhjänä käytetään esityksen oletusta ({default} s). Koskee vain tätä diaa.",
   "editor.slide.duration.label": "Dian kesto (sekuntia)",
   "editor.slide.lock": "Lukitse dia",

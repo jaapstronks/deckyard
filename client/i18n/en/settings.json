@@ -8,7 +8,7 @@
   "admin.jsonDebug.menuItem": "View JSON (Debug)",
   "admin.jsonDebug.menuItemTitle": "View and edit raw slide JSON data",
   "admin.jsonDebug.noSlideSelected": "No slide selected",
-  "admin.jsonDebug.reset": "Reset",
+  "admin.jsonDebug.reset": "Discard changes",
   "admin.jsonDebug.save": "Apply Changes",
   "admin.jsonDebug.saved": "Changes applied",
   "admin.jsonDebug.schemaCopied": "Schema copied to clipboard",

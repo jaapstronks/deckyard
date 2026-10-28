@@ -177,7 +177,7 @@ function openChangeThemeModal({
   }
 
   // Buttons
-  const btnRow = h('div', { class: 'row is-end is-mt-8' });
+  const btnRow = h('div', { class: 'row is-end is-mt-8 change-theme-actions' });
 
   const btnCancel = h('button', {
     class: 'btn btn-secondary',

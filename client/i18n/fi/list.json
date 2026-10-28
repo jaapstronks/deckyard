@@ -106,7 +106,7 @@
   "list.deleteConfirm": "Siirretäänkö ”{title}” roskakoriin?",
   "list.deletePermanently": "Poista pysyvästi",
   "list.deletePermanentlyConfirm": "Poistetaanko ”{title}” pysyvästi? Tätä ei voi kumota.",
-  "list.duplicate": "Kopioi",
+  "list.duplicate": "Monista",
   "list.empty.browseTemplates": "Aloita mallista",
   "list.empty.create": "Luo ensimmäinen esitys",
   "list.empty.message": "Luo ensimmäinen esitys — tyhjästä, muistiinpanoista tai mallista.",

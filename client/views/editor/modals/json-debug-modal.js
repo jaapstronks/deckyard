@@ -275,7 +275,7 @@ export function openJsonDebugModal({
   const resetBtn = h('button', {
     class: 'btn btn-secondary',
     type: 'button',
-    text: t('admin.jsonDebug.reset', 'Reset'),
+    text: t('admin.jsonDebug.reset', 'Discard changes'),
   });
   resetBtn.onclick = () => {
     jsonTextarea.value = JSON.stringify(slide, null, 2);

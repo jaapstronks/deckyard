@@ -410,7 +410,7 @@
   "editor.inline.addScaleLabel": "Añadir etiqueta",
   "editor.inline.clearField": "Borrar {label}",
   "editor.inline.coach": "Haga clic en cualquier texto de la diapositiva para editarlo",
-  "editor.inline.coachDismiss": "Descartar",
+  "editor.inline.coachDismiss": "Cerrar",
   "editor.inline.editingField": "Editando: {label}",
   "editor.inline.focus.hint": "Arrastre o use las flechas para fijar el punto de enfoque",
   "editor.inline.focusPoint": "Punto de enfoque de la imagen",
