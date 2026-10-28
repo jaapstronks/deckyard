@@ -26,7 +26,13 @@ if (mode === 'spin')
   } // Deliberately exceeds the supervisor deadline.
 else if (mode === 'sleep')
   await new Promise((resolve) => setTimeout(resolve, 25000));
-else if (mode === 'oom') {
+else if (mode === 'slow-refusal') {
+  // A well-formed refusal that holds the slot long enough to queue behind it.
+  await new Promise((resolve) => setTimeout(resolve, options.ms ?? 1500));
+  process.stdout.write(
+    '{"ok":false,"code":"renderer_bundle_worker_failed","message":"private canary","details":null}',
+  );
+} else if (mode === 'oom') {
   const held = [];
   for (;;) held.push(Buffer.alloc(8 * 1024 * 1024, 1));
 } else if (mode === 'stdout' || mode === 'stderr') {
