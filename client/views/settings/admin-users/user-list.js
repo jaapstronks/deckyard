@@ -4,6 +4,8 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { formatDate } from '../../../lib/format/analytics-format.js';
+import { formatDateTime } from '../../../lib/format/format.js';
 import { confirmDelete, resendInvitation } from './actions.js';
 import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 
@@ -80,7 +82,7 @@ function renderUserCard(u, currentUser, onEdit, onRefresh, planRemoval) {
     class: 'admin-user-status-item',
     title: hasLoggedIn
       ? t('admin.users.status.loggedInOn', 'Has logged in: {date}', {
-          date: new Date(u.lastLoginAt).toLocaleDateString(),
+          date: formatDate(u.lastLoginAt),
         })
       : t('admin.users.status.neverLoggedIn', 'Never logged in'),
   });
@@ -127,7 +129,7 @@ function renderUserCard(u, currentUser, onEdit, onRefresh, planRemoval) {
     class: 'admin-user-last-login',
     text: hasLoggedIn
       ? t('admin.users.lastLoginAt', 'Last login: {date}', {
-          date: new Date(u.lastLoginAt).toLocaleString(),
+          date: formatDateTime(u.lastLoginAt),
         })
       : t('admin.users.neverLoggedIn', 'Never logged in'),
   });
