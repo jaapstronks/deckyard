@@ -63,7 +63,7 @@
   "share.guest.emailRequired": "El correo electrónico es obligatorio",
   "share.guest.emailSent": "¡Revise su correo!",
   "share.guest.emailSentHelp": "Enviamos un enlace de verificación a <strong>{email}</strong>. Haga clic en el enlace para comenzar a comentar.",
-  "share.guest.error.generic": "Algo salió mal. Por favor, inténtalo de nuevo.",
+  "share.guest.error.generic": "Algo ha ido mal. Inténtelo de nuevo.",
   "share.guest.error.invalidEmail": "Introduzca una dirección de correo electrónico válida.",
   "share.guest.error.linkExpired": "Este enlace compartido ha caducado.",
   "share.guest.error.linkNotFound": "Enlace compartido no encontrado.",

@@ -83,13 +83,6 @@
       "forms": ["Primär", "Primärfarbe"],
       "reason": "colour name versus style option — Primärfarbe is the noun a colour picker names in settings.themes.primaryColor, as settings.themes.colorsHint does; Primär is the adjective for the button style in editor.slideField.actions.item.style.option.primary, next to Sekundär."
     },
-    "de  Something went wrong. Please try again.": {
-      "forms": [
-        "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
-        "Etwas ist schiefgelaufen. Bitte erneut versuchen."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "de  {count}d ago": {
       "forms": ["vor {count} T", "vor {count} T."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -145,13 +138,6 @@
     "es  Shared": {
       "forms": ["Compartidas", "Compartido"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "es  Something went wrong. Please try again.": {
-      "forms": [
-        "Algo ha ido mal. Inténtelo de nuevo.",
-        "Algo salió mal. Por favor, inténtalo de nuevo."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "fi  Apply": {
       "forms": ["Käytä", "Ota käyttöön"],
@@ -265,13 +251,6 @@
       "forms": ["Douce", "Doux"],
       "reason": "grammatical agreement — Doux agrees with style (masculine singular) in editor.slideField.tableStyle.option.soft and arrondi (masculine singular) in settings.themes.config.radius.soft; Douce agrees with élévation (feminine singular) in settings.themes.config.shadow.soft, next to Marquée."
     },
-    "fr  Something went wrong. Please try again.": {
-      "forms": [
-        "Une erreur est survenue. Veuillez réessayer.",
-        "Une erreur s'est produite. Veuillez réessayer."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "it  All": {
       "forms": ["Tutte", "Tutti"],
       "reason": "grammatical agreement — a filter chip agrees with the noun of the list it filters. Tutti agrees with commenti, tipi, tag, tipi di slide and gradienti (masculine plural) in comments.filter.all, comments.filter.allTypes, imageLibrary.tags.all, imagekit.tags.all, slideLibrary.filter.all and stockMedia.gradients.tone.all; Tutte agrees with categorie, presentazioni and notifiche (feminine plural) in editor.iconPicker.allCategory, list.presentations.ownership.all and notifications.filter.all."
@@ -338,13 +317,6 @@
     "it  Soft": {
       "forms": ["Morbida", "Morbido"],
       "reason": "grammatical agreement — Morbido agrees with stile (masculine singular) in editor.slideField.tableStyle.option.soft and arrotondamento (masculine singular) in settings.themes.config.radius.soft; Morbida agrees with elevazione (feminine singular) in settings.themes.config.shadow.soft, next to Marcata."
-    },
-    "it  Something went wrong. Please try again.": {
-      "forms": [
-        "Qualcosa è andato storto. Riprova.",
-        "Si è verificato un errore. Riprova."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  {count}d ago": {
       "forms": ["{count} g fa", "{count}g fa"],
@@ -600,13 +572,6 @@
     "pt  Shared": {
       "forms": ["Partilhadas", "Partilhado"],
       "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
-    },
-    "pt  Something went wrong. Please try again.": {
-      "forms": [
-        "Algo correu mal. Por favor, tente novamente.",
-        "Algo correu mal. Tente novamente."
-      ],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pt  {count} selected": {
       "forms": ["{count} selecionadas", "{count} selecionados"],

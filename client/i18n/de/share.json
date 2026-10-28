@@ -64,7 +64,7 @@
   "share.guest.emailRequired": "E-Mail ist erforderlich",
   "share.guest.emailSent": "Überprüfen Sie Ihre E-Mail!",
   "share.guest.emailSentHelp": "Wir haben einen Bestätigungslink an <strong>{email}</strong> gesendet. Klicken Sie auf den Link, um mit dem Kommentieren zu beginnen.",
-  "share.guest.error.generic": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
+  "share.guest.error.generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   "share.guest.error.invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
   "share.guest.error.linkExpired": "Dieser Freigabelink ist abgelaufen.",
   "share.guest.error.linkNotFound": "Freigabelink nicht gefunden.",
