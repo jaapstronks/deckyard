@@ -1,4 +1,4 @@
-import { getUiLocale, t } from '../../../lib/ui-i18n.js';
+import { t } from '../../../lib/ui-i18n.js';
 import { getFeatures, sharingEnabled } from '../../../lib/state/features.js';
 import { buildSectionHeader } from './section-header.js';
 import {
@@ -8,6 +8,7 @@ import {
 import { createSandboxExamplesSection } from './sandbox-examples.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/format/user-format.js';
+import { formatDate } from '../../../lib/format/analytics-format.js';
 import { createCollectionsApi } from '../collections/index.js';
 import {
   createLibraryThemeResolver,
@@ -676,18 +677,13 @@ function buildHomeHeader({ user }) {
     ? t('list.home.greeting', 'Welcome back, {name}', { name: firstName })
     : t('list.home.greetingGuest', 'Welcome back');
 
-  let dateLabel = '';
-  try {
-    // The interface language, not the browser's: a Dutch Home said
-    // "Wednesday 7 October" on an English browser (B617).
-    dateLabel = new Intl.DateTimeFormat(getUiLocale(), {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    }).format(new Date());
-  } catch {
-    dateLabel = '';
-  }
+  // The interface language, not the browser's: a Dutch Home said
+  // "Wednesday 7 October" on an English browser (B617).
+  const dateLabel = formatDate(new Date(), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
 
   return h('header', { class: 'home-header' }, [
     h('h1', { class: 'home-header-title', text: greeting }),

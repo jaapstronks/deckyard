@@ -28,8 +28,9 @@
  * Absolute dates, times and counts follow the UI locale too (B868). A bare
  * `toLocaleDateString()` speaks the browser's language, so a Dutch interface
  * in an English browser showed English dates. The last test pins that only
- * `lib/format/` calls `toLocale*String`, always with a locale, and that no
- * `Intl` date or number formatter is built without one.
+ * `lib/format/` calls `toLocale*String` or builds an `Intl.DateTimeFormat`,
+ * always with a locale, and that no `Intl` number formatter is built without
+ * one.
  *
  * Run with: node --test tests/no-time-formatter-aliases.test.js
  */
@@ -176,6 +177,8 @@ const FORMAT_DIR = 'client/lib/format/';
 // first argument up to the next comma or closing paren.
 const TO_LOCALE_CALL = /\.toLocale(?:Date|Time)?String\(\s*([^,)]*)/g;
 const INTL_CALL = /\bIntl\.(?:DateTimeFormat|NumberFormat)\(\s*([^,)]*)/g;
+// Dates have one formatter, so a view never builds its own date format.
+const INTL_DATE_CALL = /\bIntl\.DateTimeFormat\(/g;
 
 /** True when a captured first argument names no locale. */
 function namesNoLocale(arg) {
@@ -196,6 +199,13 @@ test('dates, times and counts are formatted in the UI locale, inside lib/format 
       } else if (namesNoLocale(arg)) {
         violations.push(
           `${rel}: '${call.trim()}' without a locale — pass getUiLocale()`,
+        );
+      }
+    }
+    for (const [call] of src.matchAll(INTL_DATE_CALL)) {
+      if (!rel.startsWith(FORMAT_DIR)) {
+        violations.push(
+          `${rel}: '${call.trim()}' — format through ${FORMAT_DIR} (formatDate, formatDateTime)`,
         );
       }
     }
