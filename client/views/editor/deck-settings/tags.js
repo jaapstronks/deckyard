@@ -1,3 +1,4 @@
+import { serverSentence } from '../../../lib/api.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createTagEditor } from '../../tags/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
@@ -56,7 +57,7 @@ export function buildTagsSection({ pres, api }) {
             instance?.setTags(saved.map((tag) => tag.name));
           } catch (err) {
             saveError.show(
-              err?.message ||
+              serverSentence(err) ??
                 t(
                   'editor.deckSettings.tags.saveFailed',
                   'The tags were not saved.',

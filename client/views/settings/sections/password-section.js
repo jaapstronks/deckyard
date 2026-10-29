@@ -3,7 +3,7 @@
  * Allows users to change their account password.
  */
 
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
@@ -143,8 +143,8 @@ export function createPasswordSection() {
               'settings.changePassword.incorrectCurrent',
               'Current password is incorrect.',
             )
-          : failure.message ||
-              t('settings.changePassword.error', 'Failed to change password.'),
+          : (serverSentence(failure) ??
+              t('settings.changePassword.error', 'Failed to change password.')),
         { control: controlsByField[failure.details?.field] ?? null },
       );
     }

@@ -89,11 +89,8 @@ export function createCommentComposer({
       await onSubmit(body);
       input.clear();
     } catch (err) {
-      error.show(
-        err?.message ||
-          t('comments.error.postFailed', 'Failed to post comment'),
-        { control: input.el },
-      );
+      // `onSubmit` throws the sentence to show (see the JSDoc above).
+      error.show(err.message, { control: input.el });
     } finally {
       busy = false;
       submitBtn.disabled = false;

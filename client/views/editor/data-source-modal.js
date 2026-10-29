@@ -5,6 +5,7 @@
  * configure bindings, and preview fetched data.
  */
 
+import { serverSentence } from '../../lib/api.js';
 import { createModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
@@ -340,7 +341,7 @@ export function openDataSourceConfigModal({
     } catch (err) {
       statusEl.textContent = '';
       refusal.show(
-        err.message ||
+        serverSentence(err) ??
           t('editor.dataSource.fetchFailed', 'Failed to fetch data'),
       );
     } finally {

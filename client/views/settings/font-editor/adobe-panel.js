@@ -5,7 +5,7 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 
@@ -141,7 +141,8 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
             if (onImport) onImport(imported);
           } catch (err) {
             toast.error(
-              err.message || t('fonts.importError', 'Failed to import font.'),
+              serverSentence(err) ??
+                t('fonts.importError', 'Failed to import font.'),
             );
             importBtn.disabled = false;
             importBtn.textContent = t('fonts.import', 'Import');
@@ -153,7 +154,8 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
       }
     } catch (err) {
       toast.error(
-        err.message || t('fonts.discoverError', 'Failed to discover fonts.'),
+        serverSentence(err) ??
+          t('fonts.discoverError', 'Failed to discover fonts.'),
       );
     } finally {
       discoverBtn.disabled = false;

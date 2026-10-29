@@ -157,7 +157,10 @@ test('theme logo keeps its previous URL and never calls onChange on missing obje
     await new Promise((resolve) => setTimeout(resolve, 0));
   assert.deepEqual(changes, []);
   assert.equal(el.querySelector('img').getAttribute('src'), '/existing.svg');
-  assert.match(el.textContent, /Upload confirmation failed/);
+  // The transport's own English stays out of the panel: the server sent no
+  // sentence, so the uploader shows its copy.
+  assert.match(el.textContent, /Upload failed/);
+  assert.doesNotMatch(el.textContent, /Upload confirmation failed/);
 });
 
 test('client media upload endpoints have one owner', async () => {

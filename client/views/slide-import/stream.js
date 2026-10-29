@@ -42,7 +42,9 @@ function progressOf({ stage, current, total }) {
  * @param {string} opts.title - Title of the loading modal.
  * @param {HTMLElement} [opts.root] - Where the loading modal mounts.
  * @returns {Promise<object|null>} The `complete` event's data, or null when
- *   the user cancelled. A refusal throws an Error carrying the message to show.
+ *   the user cancelled. A failure throws an Error that carries the server's
+ *   sentence in `err.body.message` when there is one, as `api()` does, so the
+ *   caller shows `serverSentence(err) ?? <its own copy>` (B880).
  */
 export async function importDeckFiles({
   url,
@@ -90,7 +92,10 @@ export async function importDeckFiles({
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorText(errorData, `HTTP ${response.status}`));
+      throw Object.assign(
+        new Error(errorText(errorData, `HTTP ${response.status}`)),
+        { body: errorData },
+      );
     }
 
     let result = null;
@@ -100,8 +105,11 @@ export async function importDeckFiles({
         if (data.message) modal.update(data.message, { immediate: true });
       },
       onError: (data) => {
-        throw new Error(
-          data?.message || t('editor.import.failed', 'Import failed'),
+        throw Object.assign(
+          new Error(
+            data?.message || t('editor.import.failed', 'Import failed'),
+          ),
+          { body: data },
         );
       },
       onComplete: (data) => {

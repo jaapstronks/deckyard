@@ -11,7 +11,7 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { createSegmented } from '../../../lib/dom/segmented.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
@@ -358,7 +358,7 @@ export function createHealthTab() {
       if (seq !== requestSeq) return;
       usage.replaceChildren();
       loadError.show(
-        err?.message ||
+        serverSentence(err) ??
           t('settings.health.loadFailed', 'Could not load instance health.'),
         { focus: false },
       );

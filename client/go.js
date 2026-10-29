@@ -7,7 +7,7 @@
  * English that shows before this script runs.
  */
 
-import { api } from './lib/api.js';
+import { api, serverSentence } from './lib/api.js';
 import { applyViewerUiLocale, t } from './lib/ui-i18n.js';
 import { debugLog } from './lib/state/debug.js';
 
@@ -85,7 +85,8 @@ form?.addEventListener('submit', async (e) => {
     // without one the request itself failed (network).
     if (err?.statusCode)
       setError(
-        err.message || t('go.codeNotFound', 'Code not found or expired.'),
+        serverSentence(err) ??
+          t('go.codeNotFound', 'Code not found or expired.'),
       );
     else setError(t('go.networkError', 'Network error. Please try again.'));
   } finally {

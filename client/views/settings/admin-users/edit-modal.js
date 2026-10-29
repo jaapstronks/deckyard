@@ -8,7 +8,7 @@ import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import {
   createAvatar,
@@ -101,7 +101,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
       }
     } catch (err) {
       imageStatus.textContent = String(
-        err?.message || t('admin.users.uploadFailed', 'Upload failed'),
+        serverSentence(err) ?? t('admin.users.uploadFailed', 'Upload failed'),
       );
     } finally {
       uploadBtn.disabled = false;
@@ -126,7 +126,8 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
       invalidateProfile(targetUser.id);
     } catch (err) {
       imageStatus.textContent = String(
-        err?.message || t('admin.users.removeFailed', 'Failed to remove'),
+        serverSentence(err) ??
+          t('admin.users.removeFailed', 'Failed to remove'),
       );
     } finally {
       removeBtn.disabled = false;

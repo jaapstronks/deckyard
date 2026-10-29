@@ -227,6 +227,7 @@ test('an API refusal reaches the screen instead of being swallowed', async () =>
   const err = new Error('A slide type with this slug already exists.');
   err.statusCode = 400;
   err.code = 'slug_exists';
+  err.body = { ok: false, error: 'slug_exists', message: err.message };
 
   const view = mount({
     slideType: definition([{ key: 'title', type: 'string', label: 'Title' }]),
@@ -252,6 +253,7 @@ test('an API refusal with details.field points at that control', async () => {
   const err = new Error('Invalid slug.');
   err.statusCode = 400;
   err.code = 'invalid';
+  err.body = { ok: false, error: 'invalid', message: err.message };
   err.details = { field: 'slug' };
 
   const view = mount({
@@ -274,6 +276,7 @@ test('an API refusal that locates a row opens and marks that row', async () => {
   const err = new Error('"Rows" › "Kind" is a dropdown with no options.');
   err.statusCode = 400;
   err.code = 'invalid';
+  err.body = { ok: false, error: 'invalid', message: err.message };
   err.details = {
     field: 'fields',
     index: 1,

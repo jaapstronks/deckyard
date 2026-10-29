@@ -5,7 +5,7 @@
 import { h } from '../../lib/dom/index.js';
 import { icon } from '../../lib/dom/icons.js';
 import { spinner } from '../../lib/dom/spinner.js';
-import { api } from '../../lib/api.js';
+import { api, serverSentence } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createDashboardCards } from './dashboard-cards.js';
 import { createDashboardChart } from './dashboard-chart.js';
@@ -76,7 +76,7 @@ export async function renderDashboard(root) {
       dashboardData = await api(`/api/analytics/dashboard?period=${period}`);
     } catch (err) {
       loadError =
-        err?.message || t('dashboard.error', 'Failed to load insights');
+        serverSentence(err) ?? t('dashboard.error', 'Failed to load insights');
       dashboardData = {
         summary: {
           totalViews: 0,

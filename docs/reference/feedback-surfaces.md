@@ -43,7 +43,7 @@ vocabulary next to it. From `api()`:
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `err.code`                        | Branch on it. It decides the _kind_ (a `forbidden` on a form is a refusal; a `not_found` on a card is an action failure). |
 | `err.message`                     | The sentence to show. Safe to display as-is.                                                                              |
-| `serverSentence(err)`             | The envelope `message`, else `null`: a form with translated copy of its own shows that copy on `null` (B859).             |
+| `serverSentence(err)`             | The envelope `message`, else `null`: show `serverSentence(err) ?? t(…)`, never `err.message \|\| t(…)` (B859, B880).      |
 | `err.details.field`               | Which input was refused. The inline helper marks that control.                                                            |
 | `err.details.index`, `.itemIndex` | Where in a list-valued input. The form opens and marks that row.                                                          |
 | `err.details.reason`              | A snake_case sub-code for translated copy. Fall back to `message` when the client has no copy for it.                     |

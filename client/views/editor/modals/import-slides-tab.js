@@ -1,3 +1,4 @@
+import { serverSentence } from '../../../lib/api.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
@@ -88,7 +89,9 @@ export function createImportSlidesTab({
       }
     } catch (err) {
       console.error('[import-slides] Error:', err);
-      refusal.show(err.message || t('editor.import.failed', 'Import failed'));
+      refusal.show(
+        serverSentence(err) ?? t('editor.import.failed', 'Import failed'),
+      );
       onError?.(err);
     } finally {
       importing = false;

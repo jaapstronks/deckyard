@@ -2,7 +2,7 @@
  * Public shared report view.
  */
 
-import { api } from '../../lib/api.js';
+import { api, serverSentence } from '../../lib/api.js';
 import { h } from '../../lib/dom/index.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { createPageUnavailable } from '../../lib/dom/page-unavailable.js';
@@ -49,11 +49,11 @@ export async function renderSharedReport(root, token) {
               'analytics.reportUnavailable.failed',
               'The report could not be loaded.',
             )
-          : err.message ||
+          : (serverSentence(err) ??
             t(
               'analytics.reportUnavailable.generic',
               'This report may have expired or been removed.',
-            );
+            ));
     shell.replaceChildren();
     shell.append(
       createPageUnavailable({

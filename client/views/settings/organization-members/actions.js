@@ -9,7 +9,7 @@
  * list, rather than a generic "something went wrong" on top of a stale screen.
  */
 
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 
@@ -122,7 +122,7 @@ async function mutateMember({ run, success, failure }) {
       toast.error(
         t('organization.members.notAllowed', 'Not allowed: {reason}', {
           reason:
-            err?.message ||
+            serverSentence(err) ??
             t(
               'organization.members.notAllowedGeneric',
               'you do not have permission for this.',

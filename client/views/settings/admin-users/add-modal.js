@@ -2,7 +2,7 @@
  * Add user modal.
  */
 
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
@@ -165,7 +165,8 @@ export function showAddModal(onSuccess) {
         );
       } else {
         refusal.show(
-          e.message || t('admin.users.addModal.error', 'Failed to add user.'),
+          serverSentence(e) ??
+            t('admin.users.addModal.error', 'Failed to add user.'),
         );
       }
     }

@@ -3,6 +3,7 @@
  * Lightbox and use-slide modal for the slide library picker
  */
 
+import { serverSentence } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { toast } from '../../lib/dom/toast.js';
 import {
@@ -188,7 +189,7 @@ export function createSlideLibraryModals({
       else
         metaFailure.show(
           String(
-            result.error?.message ||
+            serverSentence(result.error) ??
               t(
                 'slideLibrary.descriptionSaveError',
                 'Failed to save description',
@@ -219,7 +220,7 @@ export function createSlideLibraryModals({
         else
           metaFailure.show(
             String(
-              result.error?.message ||
+              serverSentence(result.error) ??
                 t('slideLibrary.tagsSaveError', 'Failed to save tags'),
             ),
             { focus: false },

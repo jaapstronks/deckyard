@@ -8,6 +8,7 @@
  * - Proceed anyway
  */
 
+import { serverSentence } from '../../../lib/api.js';
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { downloadBlob } from '../../../lib/dom/download.js';
@@ -241,7 +242,8 @@ function openChangeThemeModal({
       }
     } catch (err) {
       applyError.show(
-        err?.message || t('editor.changeTheme.error', 'Failed to change theme'),
+        serverSentence(err) ??
+          t('editor.changeTheme.error', 'Failed to change theme'),
       );
       isApplying = false;
       btnApply.disabled = false;
