@@ -8,7 +8,7 @@
   "activity.action.permissionChanged": "ha modificato gli accessi a",
   "activity.action.reopenedCommentOn": "ha riaperto un commento su",
   "activity.action.resolvedCommentOn": "ha risolto un commento su",
-  "activity.action.sharedToOrganization": "condiviso nel workspace",
+  "activity.action.sharedToOrganization": "condiviso con l'organizzazione",
   "activity.action.sharedWith": "ha condiviso",
   "activity.action.unshared": "ha revocato la condivisione di",
   "activity.action.updated": "ha aggiornato",

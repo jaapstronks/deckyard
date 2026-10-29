@@ -20,7 +20,7 @@
   "share.collaborators.removed": "Mitwirkender entfernt",
   "share.collaborators.searchUsers": "Benutzer zum Einladen suchen…",
   "share.collaborators.selectUserError": "Bitte wählen Sie mindestens einen Benutzer aus",
-  "share.collaborators.title": "Workspace-Benutzer einladen",
+  "share.collaborators.title": "Benutzer der Organisation einladen",
   "share.collaborators.transferOwnership": "Übertragen",
   "share.collaborators.transferOwnershipConfirm": "Eigentum dieser Präsentation an {email} übertragen?\n\nSie werden Mitwirkender mit Bearbeitungszugriff.",
   "share.collaborators.transferOwnershipPlaceholder": "name@beispiel.de",
@@ -163,10 +163,10 @@
   "share.tab.public": "Öffentlich",
   "share.unlock": "Entsperren",
   "share.verifying": "Wird geprüft…",
-  "share.visibility.everyoneDesc": "Erscheint im gemeinsamen Workspace für alle Mitglieder.",
-  "share.visibility.everyoneTitle": "Alle in Ihrem Workspace",
+  "share.visibility.everyoneDesc": "Erscheint für alle Mitglieder der Organisation.",
+  "share.visibility.everyoneTitle": "Alle in Ihrer Organisation",
   "share.visibility.privateDesc": "Bleibt privat; nur Sie und die unten eingeladenen Personen sehen sie.",
-  "share.visibility.privateLocked": "Nur ein Admin kann dies aus dem Workspace herausnehmen.",
+  "share.visibility.privateLocked": "Nur ein Admin kann dies aus der Organisation herausnehmen.",
   "share.visibility.privateTitle": "Nur Personen, die Sie einladen",
-  "share.visibility.title": "Wer kann das in Ihrem Workspace finden?"
+  "share.visibility.title": "Wer kann das in Ihrer Organisation finden?"
 }

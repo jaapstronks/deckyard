@@ -20,7 +20,7 @@
   "share.collaborators.removed": "Collaborateur supprimé",
   "share.collaborators.searchUsers": "Rechercher des utilisateurs à inviter…",
   "share.collaborators.selectUserError": "Veuillez sélectionner au moins un utilisateur",
-  "share.collaborators.title": "Inviter des utilisateurs de l'espace de travail",
+  "share.collaborators.title": "Inviter des utilisateurs de l'organisation",
   "share.collaborators.transferOwnership": "Transférer",
   "share.collaborators.transferOwnershipConfirm": "Transférer la propriété de cette présentation à {email} ?\n\nVous deviendrez collaborateur avec accès en modification.",
   "share.collaborators.transferOwnershipPlaceholder": "nom@exemple.fr",
@@ -166,10 +166,10 @@
   "share.tab.organization": "Équipe",
   "share.unlock": "Déverrouiller",
   "share.verifying": "Vérification en cours…",
-  "share.visibility.everyoneDesc": "Apparaît dans l'espace de travail partagé pour tous les membres.",
-  "share.visibility.everyoneTitle": "Tout le monde dans votre espace de travail",
+  "share.visibility.everyoneDesc": "Apparaît pour tous les membres de l'organisation.",
+  "share.visibility.everyoneTitle": "Tout le monde dans votre organisation",
   "share.visibility.privateDesc": "Reste privée ; seuls vous et les personnes que vous invitez ci-dessous peuvent la voir.",
-  "share.visibility.privateLocked": "Seul un admin peut la sortir de l'espace de travail.",
+  "share.visibility.privateLocked": "Seul un admin peut la sortir de l'organisation.",
   "share.visibility.privateTitle": "Uniquement les personnes que vous invitez",
-  "share.visibility.title": "Qui peut la trouver dans votre espace de travail ?"
+  "share.visibility.title": "Qui peut la trouver dans votre organisation ?"
 }

@@ -33,7 +33,7 @@ function themeListUrl(currentTheme) {
 
 /**
  * Label for the `default` choice: names the theme it resolves to, so the
- * picker says *which* theme a deck on "Workspace default" gets (B584).
+ * picker says *which* theme a deck on "Organization default" gets (B584).
  *
  * The workspace default is the theme `GET /api/themes` marks `isDefault`;
  * without one (the list has not loaded, or is empty) the bare label stands.
@@ -45,8 +45,8 @@ function defaultThemeLabel(themes = []) {
   const record = themes.find((theme) => theme?.isDefault);
   const name = String(record?.label || record?.id || '').trim();
   return name
-    ? t('common.themeDefaultNamed', 'Workspace default ({name})', { name })
-    : t('common.themeDefault', 'Workspace default');
+    ? t('common.themeDefaultNamed', 'Organization default ({name})', { name })
+    : t('common.themeDefault', 'Organization default');
 }
 
 /**
@@ -188,7 +188,7 @@ export function createAndPopulateThemeSelect({
  * One card per theme `GET /api/themes` offers, each showing the real title
  * slide a new deck in that theme starts with (`theme-card.js`, the card Home's
  * "Start something new" row renders too). The workspace default's card carries
- * a "Workspace default" badge and writes `default` (D232); there is no second
+ * an "Organization default" badge and writes `default` (D232); there is no second
  * card for it. The grid shows exactly what the response offers: the
  * `enabledThemes` allowlist is enforced server-side, so there is nothing
  * withheld for a toggle to reveal.

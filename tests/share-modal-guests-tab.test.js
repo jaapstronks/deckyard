@@ -210,7 +210,7 @@ test('the status counts working links and leaves out what it does not know', () 
       activeLinks: 1,
       published: true,
     }),
-    ['In your workspace', '1 guest link', 'Published'],
+    ['In your organization', '1 guest link', 'Published'],
   );
   assert.deepEqual(
     describeShareStatus({

@@ -29,7 +29,7 @@
  * apply to every list.
  *
  * Two narrowing filters ride on any ownership, also in the query (B821):
- * `visibility` (the Workspace chip on Home) and `tags`, which keeps a deck
+ * `visibility` (the Organization chip on Home) and `tags`, which keeps a deck
  * carrying at least one of the named tags, compared on `lower(name)` as the
  * tag identity is (migration 018, server/storage/tags.js).
  *

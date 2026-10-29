@@ -14,10 +14,11 @@
  *   - the old event spellings    presentation.moved_to_workspace,
  *                                presentationMovedToWorkspaceUrl
  *
- * Deliberately NOT forbidden ("workspace" as prose): user-visible label
- * strings — i18n JSON values and capitalized "Workspace" fallbacks in `t()`
- * calls — are exactly where D11 says the word lives, and unquoted prose in
- * comments may cite the label. `server/db/migrations` is excluded as the
+ * **UI text (D365).** The UI says organization too: no i18n value in any
+ * locale and no English `t()` fallback names the tenant with the word for
+ * workspace, in English or in the locale's own language. Key names that
+ * predate the rule (`list.visibility.workspace`) are identifiers and stay.
+ * Unquoted prose in comments is not scanned. `server/db/migrations` is excluded as the
  * historical record (it owns the rename migrations and describes the old
  * names). `scope` itself is not a needle: it legitimately remains the
  * storage-scope concept and a handful of filter/shelf axes listed in
@@ -28,8 +29,8 @@
  * Two exemptions: `vocabulary.md` is the register and must name the loser
  * spelling to forbid it; `notion-import.md`
  * describes *Notion's* workspace, a third-party product's own concept rather
- * than ours. Capitalized "Workspace" as the UI label stays legal in prose,
- * exactly as it does in code.
+ * than ours. Since D365 the needle ignores case: there is no UI label left to
+ * cite.
  *
  * Run with: node --test tests/organization-vocabulary.test.js
  */
@@ -40,6 +41,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { collectFallbackSites } from '../scripts/lib/i18n-keys.js';
+import { CLIENT_DIR, I18N_DIR, loadLocale } from '../scripts/lib/i18n-fs.js';
+import { LOCALE_IDS, REFERENCE_LOCALE } from '../scripts/lib/i18n-locales.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
@@ -158,6 +163,60 @@ test('the public contract carries visibility, not scope-as-visibility', () => {
   );
 });
 
+// ─── UI text (D365) ─────────────────────────────────────────────────────────
+
+// Each locale's word for workspace, the loser of D365. The English needle
+// runs in every locale too: an untranslated or borrowed "workspace" is as
+// wrong in nl as in en.
+const UI_LOSER = {
+  da: /arbejdsområde/i,
+  de: /arbeitsbereich/i,
+  es: /espacio de trabajo/i,
+  fi: /työtil/i,
+  fr: /espace de travail/i,
+  it: /spazio di lavoro|area di lavoro/i,
+  nl: /werkruimte/i,
+  no: /arbeidsområde/i,
+  pl: /przestrze[nń]\S* robocz|obszar\S* robocz/i,
+  pt: /espaço de trabalho|área de trabalho/i,
+  sv: /arbetsyt/i,
+};
+const UI_ENGLISH = new RegExp(W, 'i');
+
+test('organization vocabulary: every locale names the tenant organization in the UI (D365)', async () => {
+  const violations = [];
+  for (const locale of LOCALE_IDS) {
+    const strings = await loadLocale(I18N_DIR, locale);
+    for (const [key, value] of Object.entries(strings)) {
+      if (typeof value !== 'string') continue;
+      if (UI_ENGLISH.test(value) || UI_LOSER[locale]?.test(value))
+        violations.push(`${locale}  ${key}  ${value}`);
+    }
+  }
+  for (const site of await collectFallbackSites(CLIENT_DIR)) {
+    if (UI_ENGLISH.test(site.fallback)) {
+      const rel = path.relative(repoRoot, site.file).split(path.sep).join('/');
+      violations.push(`${rel}:${site.line}  ${site.key}  ${site.fallback}`);
+    }
+  }
+  assert.equal(
+    violations.length,
+    0,
+    `The UI says organization (D365, docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
+  );
+});
+
+test('the UI needles cover every locale but the reference', () => {
+  const uncovered = LOCALE_IDS.filter(
+    (id) => id !== REFERENCE_LOCALE && !UI_LOSER[id],
+  );
+  assert.deepEqual(
+    uncovered,
+    [],
+    'add the locale word for workspace to UI_LOSER',
+  );
+});
+
 // ─── doc prose (B88) ────────────────────────────────────────────────────────
 
 const DOC_DIR = path.join('docs', 'reference');
@@ -168,13 +227,12 @@ const DOC_EXEMPT = new Set([
   'notion-import.md',
 ]);
 
-// Lower-case `workspace` naming *our* tenant. The capitalized "Workspace" is
-// the sanctioned UI label (D11), so it stays legal in prose the way it is in
-// code; this needle only fires on the lower-case noun.
+// `workspace` naming *our* tenant, in any case: since D365 the UI no longer
+// carries a "Workspace" label that prose could cite.
 const DOC_FORBIDDEN = [
   {
-    label: `${W} as the tenant entity in prose (use organization; "Workspace" is the UI label only)`,
-    re: new RegExp(`\\b${W}\\b`),
+    label: `${W} as the tenant entity in prose (use organization)`,
+    re: new RegExp(`\\b${W}\\b`, 'i'),
   },
 ];
 

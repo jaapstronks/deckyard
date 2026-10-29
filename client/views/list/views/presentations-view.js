@@ -23,7 +23,7 @@ const OWNERSHIP_FILTERS = Object.freeze({
  * Unified "Presentations" view — one filterable surface that replaces the
  * separate Recent / Workspace / My presentations / Shared with me tabs.
  *
- * Ownership chips (All · Mine · Workspace · Shared) pick the source and a tag
+ * Ownership chips (All · Mine · Organization · Shared) pick the source and a tag
  * filter narrows it; both go to the server, which answers the decks newest
  * change first, one page at a time, with "Load more" below the grid.
  *
@@ -108,7 +108,7 @@ export function createPresentationsView({ api, renderCard, onCreate }) {
         mine: t('list.presentations.ownership.mine', 'Mine'),
         organization: t(
           'list.presentations.ownership.organization',
-          'Workspace',
+          'Organization',
         ),
         shared: t('list.presentations.ownership.shared', 'Shared'),
       }[key] || key

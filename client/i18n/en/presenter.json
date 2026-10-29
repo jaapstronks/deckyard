@@ -9,7 +9,7 @@
   "activity.action.permissionChanged": "changed access on",
   "activity.action.reopenedCommentOn": "reopened a comment on",
   "activity.action.resolvedCommentOn": "resolved a comment on",
-  "activity.action.sharedToOrganization": "shared to workspace",
+  "activity.action.sharedToOrganization": "shared with the organization",
   "activity.action.sharedWith": "shared",
   "activity.action.unshared": "removed sharing on",
   "activity.action.updated": "updated",

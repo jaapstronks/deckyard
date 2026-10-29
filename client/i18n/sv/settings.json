@@ -303,7 +303,7 @@
   "settings.admin.webhooks.likertClosed.hint": "Händelse: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "När en Likert-skala stängs",
   "settings.admin.webhooks.movedToOrganization.hint": "Händelse: presentation.moved_to_organization",
-  "settings.admin.webhooks.movedToOrganization.title": "När en presentation delas till arbetsytan",
+  "settings.admin.webhooks.movedToOrganization.title": "När en presentation delas med organisationen",
   "settings.admin.webhooks.pollClosed.hint": "Händelse: interaction.poll_closed",
   "settings.admin.webhooks.pollClosed.title": "När en omröstning stängs",
   "settings.admin.webhooks.published.hint": "Händelse: presentation.published",

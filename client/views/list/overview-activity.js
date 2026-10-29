@@ -46,7 +46,7 @@ function getActionText(eventType) {
     'presentation.deleted': t('activity.action.deleted', 'deleted'),
     'presentation.moved_to_organization': t(
       'activity.action.sharedToOrganization',
-      'shared to workspace',
+      'shared with the organization',
     ),
     'collaborator.added': t('activity.action.sharedWith', 'shared'),
     'collaborator.removed': t('activity.action.unshared', 'removed sharing on'),

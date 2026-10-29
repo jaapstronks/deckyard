@@ -15,7 +15,7 @@ const WEBHOOK_CONFIGS = [
     key: 'movedToOrganization',
     settingsKey: 'presentationMovedToOrganizationUrl',
     titleKey: 'settings.admin.webhooks.movedToOrganization.title',
-    title: 'When a presentation is shared to the workspace',
+    title: 'When a presentation is shared with the organization',
     hintKey: 'settings.admin.webhooks.movedToOrganization.hint',
     hint: 'Event: presentation.moved_to_organization',
   },

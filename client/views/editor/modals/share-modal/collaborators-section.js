@@ -50,7 +50,7 @@ export function createCollaboratorsSection({
   const section = h('div', { class: 'share-collaborators-section' });
   const title = h('div', {
     class: 'share-section-title',
-    text: t('share.collaborators.title', 'Invite Workspace Users'),
+    text: t('share.collaborators.title', 'Invite Organization Users'),
   });
 
   const helpText = h('div', {

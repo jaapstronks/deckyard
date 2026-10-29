@@ -167,11 +167,14 @@ test('the deck-settings select drops a theme the workspace withdrew', async () =
   );
 });
 
-test('the deck-settings select names the theme "Workspace default" resolves to (B584)', async () => {
+test('the deck-settings select names the theme "Organization default" resolves to (B584)', async () => {
   const { api } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
   const selector = createAndPopulateThemeSelect({ api, initialTheme: BRAND });
   await selector.populated;
-  assert.equal(selector.select.options[0].text, 'Workspace default (Forest)');
+  assert.equal(
+    selector.select.options[0].text,
+    'Organization default (Forest)',
+  );
 });
 
 test('the default theme is one card, badged, and writes `default` (D353, D232)', async () => {
@@ -184,7 +187,7 @@ test('the default theme is one card, badged, and writes `default` (D353, D232)',
   await picker.populated;
 
   const cards = [...picker.wrap.querySelectorAll('.theme-picker-item')];
-  assert.equal(cards.length, 2, 'no separate "Workspace default" card');
+  assert.equal(cards.length, 2, 'no separate "Organization default" card');
   const badged = cards.filter((card) =>
     card.querySelector('.theme-picker-badge'),
   );
@@ -195,7 +198,7 @@ test('the default theme is one card, badged, and writes `default` (D353, D232)',
   );
   assert.equal(
     badged[0].querySelector('.theme-picker-badge').textContent,
-    'Workspace default',
+    'Organization default',
   );
   assert.equal(picker.getTheme(), 'default');
   assert.ok(badged[0].classList.contains('is-selected'));
@@ -223,7 +226,7 @@ test('without a marked default the select keeps the bare label', async () => {
   });
   const selector = createAndPopulateThemeSelect({ api, initialTheme: BRAND });
   await selector.populated;
-  assert.equal(selector.select.options[0].text, 'Workspace default');
+  assert.equal(selector.select.options[0].text, 'Organization default');
 });
 
 test('the deck-settings section reads the deck theme under its real name', async () => {

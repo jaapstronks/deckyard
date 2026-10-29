@@ -424,7 +424,7 @@ test('internal: Home, search and shared-with-me for owner, collaborator and outs
   assert.deepEqual(await home(COLLAB), [ORG_DECK]);
   assert.deepEqual(await home(OUTSIDER), [ORG_DECK]);
 
-  // Home's chips are the service's filters (B821): All, Mine, Workspace,
+  // Home's chips are the service's filters (B821): All, Mine, Organization,
   // Shared, each a page of its own.
   assert.deepEqual(await home(COLLAB, '?ownership=all'), [SHARED, ORG_DECK]);
   assert.deepEqual(await home(OWNER, '?ownership=owned'), [OWN]);

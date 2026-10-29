@@ -20,7 +20,7 @@
   "share.collaborators.removed": "Collaboratore rimosso",
   "share.collaborators.searchUsers": "Cerca utenti da invitare…",
   "share.collaborators.selectUserError": "Seleziona almeno un utente",
-  "share.collaborators.title": "Invita utenti del workspace",
+  "share.collaborators.title": "Invita utenti dell'organizzazione",
   "share.collaborators.transferOwnership": "Trasferisci",
   "share.collaborators.transferOwnershipConfirm": "Trasferire la proprietà di questa presentazione a {email}?\n\nDiventerà un collaboratore con accesso in modifica.",
   "share.collaborators.transferOwnershipPlaceholder": "nome@esempio.it",
@@ -164,10 +164,10 @@
   "share.tab.public": "Pubblico",
   "share.unlock": "Sblocca",
   "share.verifying": "Verifica…",
-  "share.visibility.everyoneDesc": "Compare nello spazio di lavoro condiviso per tutti i membri.",
-  "share.visibility.everyoneTitle": "Tutti nel tuo spazio di lavoro",
+  "share.visibility.everyoneDesc": "Compare per tutti i membri dell'organizzazione.",
+  "share.visibility.everyoneTitle": "Tutti nella tua organizzazione",
   "share.visibility.privateDesc": "Resta privata; possono vederla solo tu e le persone che inviti qui sotto.",
-  "share.visibility.privateLocked": "Solo un amministratore può spostarla fuori dallo spazio di lavoro.",
+  "share.visibility.privateLocked": "Solo un amministratore può spostarla fuori dall'organizzazione.",
   "share.visibility.privateTitle": "Solo le persone che invita",
-  "share.visibility.title": "Chi può trovarla nel tuo spazio di lavoro?"
+  "share.visibility.title": "Chi può trovarla nella tua organizzazione?"
 }

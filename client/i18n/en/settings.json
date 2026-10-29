@@ -357,7 +357,7 @@
   "settings.admin.webhooks.likertClosed.hint": "Event: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "When a Likert scale is closed",
   "settings.admin.webhooks.movedToOrganization.hint": "Event: presentation.moved_to_organization",
-  "settings.admin.webhooks.movedToOrganization.title": "When a presentation is shared to the workspace",
+  "settings.admin.webhooks.movedToOrganization.title": "When a presentation is shared with the organization",
   "settings.admin.webhooks.pollClosed.hint": "Event: interaction.poll_closed",
   "settings.admin.webhooks.pollClosed.title": "When a poll is closed",
   "settings.admin.webhooks.published.hint": "Event: presentation.published",

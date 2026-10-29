@@ -561,7 +561,7 @@ export function createCardRenderer({
  * Get the visibility indicator element for a presentation.
  * Shows different icons based on the presentation's visibility:
  * - Published (globe icon)
- * - Workspace shared (people icon)
+ * - Organization shared (people icon)
  * - Shared with collaborators (link icon)
  * - Private (lock icon)
  */
@@ -588,7 +588,7 @@ function getVisibilityIndicator(p, t) {
     return indicator(
       'organization',
       'users',
-      t('list.visibility.workspace', 'Shared with workspace'),
+      t('list.visibility.workspace', 'Shared with organization'),
     );
   }
   if (p.collaboratorCount > 0) {

@@ -8,7 +8,7 @@
   "activity.action.permissionChanged": "muutti käyttöoikeuksia esityksessä",
   "activity.action.reopenedCommentOn": "avasi kommentin uudelleen esityksessä",
   "activity.action.resolvedCommentOn": "ratkaisi kommentin esityksessä",
-  "activity.action.sharedToOrganization": "jaettu työtilaan",
+  "activity.action.sharedToOrganization": "jaettu organisaatioon",
   "activity.action.sharedWith": "jakoi esityksen",
   "activity.action.unshared": "poisti jaon esityksestä",
   "activity.action.updated": "päivitti esityksen",

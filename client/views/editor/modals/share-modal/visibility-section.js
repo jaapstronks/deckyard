@@ -1,5 +1,5 @@
 /**
- * Workspace visibility section for the unified Share dialog.
+ * Organization visibility section for the unified Share dialog.
  *
  * Merges what used to be three separate menu items ("Share to workspace",
  * "Move to private", and the workspace-share options modal) into one control:
@@ -14,7 +14,7 @@ import { ifMatchRevision } from '../../if-match-revision.js';
 import { h } from '../../../../lib/dom/index.js';
 
 /**
- * Create the visibility section (private vs organization-wide; the UI says "Workspace").
+ * Create the visibility section (private vs organization-wide).
  * @param {Object} options
  * @param {Function} options.api - API call function
  * @param {Object} options.pres - Presentation object
@@ -45,7 +45,10 @@ export function createVisibilitySection({
   const section = h('div', { class: 'share-visibility-section' });
   const title = h('div', {
     class: 'share-section-title',
-    text: t('share.visibility.title', 'Who can find this in your workspace?'),
+    text: t(
+      'share.visibility.title',
+      'Who can find this in your organization?',
+    ),
   });
   const optionsWrap = h('div', { class: 'share-options' });
   section.append(title, optionsWrap);
@@ -103,7 +106,11 @@ export function createVisibilitySection({
         msg = t('editor.share.private.done', 'Moved to private.');
       else if (isViewOnly)
         msg = t('editor.share.visibility.doneViewOnly', 'Shared as view only.');
-      else msg = t('editor.share.visibility.done', 'Shared to workspace.');
+      else
+        msg = t(
+          'editor.share.visibility.done',
+          'Shared with the organization.',
+        );
       toast?.success?.(msg, { id: 'share-visibility', durationMs: 2200 });
       syncShareUi?.();
       editorState?.refreshAll?.();
@@ -151,7 +158,7 @@ export function createVisibilitySection({
       title: t('editor.share.private', 'Move to private'),
       message: t(
         'editor.share.private.confirm',
-        'Move "{title}" to private? It will no longer be visible to other workspace members.',
+        'Move "{title}" to private? It will no longer be visible to other organization members.',
         {
           title:
             pres?.title ||
@@ -214,7 +221,7 @@ export function createVisibilitySection({
         descText: lockPrivate
           ? t(
               'share.visibility.privateLocked',
-              'Only an admin can move this out of the workspace.',
+              'Only an admin can move this out of the organization.',
             )
           : t(
               'share.visibility.privateDesc',
@@ -229,11 +236,11 @@ export function createVisibilitySection({
       checked: isOrganization,
       titleText: t(
         'share.visibility.everyoneTitle',
-        'Everyone in your workspace',
+        'Everyone in your organization',
       ),
       descText: t(
         'share.visibility.everyoneDesc',
-        'Appears in the shared workspace for all members.',
+        'Appears for all members of the organization.',
       ),
       onSelect: () => shareToOrganization(isViewOnly),
     });
