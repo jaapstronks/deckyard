@@ -157,7 +157,7 @@ export async function startSupervisor() {
     } catch {
       // A retirement already running when systemd stops the supervisor is cut
       // short by the stop itself; that is not an operator signal.
-      if (!launcher.stopped) log(null, 'instance_retirement_blocked');
+      launcher.alarm('instance_retirement_blocked');
     } finally {
       retiring = false;
     }

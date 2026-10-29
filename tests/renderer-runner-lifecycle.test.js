@@ -250,6 +250,37 @@ test('a retirement during a supervisor stop touches no unit and reports nothing'
   assert.deepEqual(calls, []);
 });
 
+test('a start refused just before the supervisor stop is not reported', async () => {
+  // Seen in the iteration-6 pass: systemd refuses the broker start while it
+  // stops the supervisor, and SIGTERM is handled only after the blocking
+  // systemctl call returns, so the stop comes right after the failed start.
+  const logs = [];
+  const launcher = brokerLauncher({
+    start() {
+      throw new Error('transaction is destructive');
+    },
+    state: async () => ({ ActiveState: 'failed', Job: '' }),
+    busy: () => false,
+    log: (phase) => logs.push(phase),
+    poll: 2,
+  });
+  launcher.launch();
+  launcher.stop();
+  await tick(30);
+  assert.deepEqual(logs, []);
+});
+
+test('an alarm is reported one poll later unless the supervisor stops', async () => {
+  const { launcher, calls } = retirement();
+  launcher.alarm('instance_retirement_blocked');
+  await until(() => calls.length === 1);
+  assert.deepEqual(calls, ['instance_retirement_blocked']);
+  launcher.alarm('instance_retirement_blocked');
+  launcher.stop();
+  await tick(30);
+  assert.deepEqual(calls, ['instance_retirement_blocked']);
+});
+
 test('a broker that stays active without registering is reported once', async (t) => {
   const logs = [];
   let calls = 0;

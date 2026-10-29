@@ -47,6 +47,14 @@ export function brokerLauncher({
     stopped = false,
     activeSince = null,
     reported = false;
+  /** An alarm a supervisor stop can cause: systemd refuses broker jobs while
+   * it stops the supervisor, and SIGTERM is handled only after a blocking
+   * `systemctl` call returns. Reported one poll later, unless stopped by then. */
+  function alarm(phase) {
+    setTimeout(() => {
+      if (!stopped) log(phase);
+    }, poll);
+  }
   function schedule(fn, ms) {
     clearTimeout(timer);
     timer = stopped ? null : setTimeout(fn, ms);
@@ -105,7 +113,7 @@ export function brokerLauncher({
     } catch {
       // Not enqueued: the unit stays failed or inactive and the watch counts
       // it as an unregistered launch.
-      log('broker_start_failed');
+      alarm('broker_start_failed');
     }
     schedule(check, poll);
   }
@@ -129,7 +137,8 @@ export function brokerLauncher({
       if (restart) launch();
       else log('self_test_not_ready');
     },
-    /** Supervisor shutdown: no further launch, query or unit job. */
+    alarm,
+    /** Supervisor shutdown: no further launch, query, unit job or alarm. */
     stop() {
       stopped = true;
       watching = false;
