@@ -56,6 +56,7 @@ import pg from 'pg';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 
 import { __setTestDb } from '../../../server/db/client.js';
+import { __settleBackgroundTasks } from '../../../server/utils/fire-and-forget.js';
 import { initializeStorage } from '../../../server/db/lifecycle.js';
 
 const { Pool } = pg;
@@ -160,6 +161,11 @@ export async function installFacadeStorage() {
  * starts from a known-empty state. CASCADE follows foreign keys, so passing a
  * parent table also clears its children.
  *
+ * Background work the previous test released (a save's live-session refresh,
+ * an audit write) settles first: a read still in flight holds a lock the
+ * truncate wants while waiting on one the truncate holds, and Postgres breaks
+ * that cycle with a deadlock (B857).
+ *
  * Table names are hard-coded test constants, never user input, so raw
  * interpolation is safe here (and TRUNCATE takes no bound parameters).
  *
@@ -169,6 +175,7 @@ export async function installFacadeStorage() {
  */
 export async function truncate(db, ...tables) {
   if (!tables.length) return;
+  await __settleBackgroundTasks();
   const list = tables.map((t) => `"${t}"`).join(', ');
   await sql.raw(`TRUNCATE ${list} RESTART IDENTITY CASCADE`).execute(db);
 }

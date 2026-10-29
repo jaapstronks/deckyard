@@ -339,7 +339,8 @@ export async function updatePresentation(scope, id, body, opts) {
  * (a custom slide type's field removal, B849). The rewrite already dropped the
  * cold collab binary; this drops the cached read, carries the change into an
  * open collab doc (or its next store writes the old content back) and
- * refreshes live presenting clients.
+ * refreshes live presenting clients. Every step is awaited, so nothing of
+ * the settle still reads the database once it resolves.
  *
  * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
@@ -369,12 +370,19 @@ export async function settleRewrittenPresentation(
       );
     }
   }
-  fireAndForget(
-    import('../live-sessions/index.js').then((m) =>
-      m.notifyDeckUpdatedForPresentation(scope, id),
-    ),
-    'live-session deck refresh after rewrite',
-  );
+  // Awaited, not fire-and-forget: the caller awaits this settle, and a lookup
+  // still running after it returns reads `presentations` after the request
+  // (or a test's teardown) believes the rewrite finished (B857).
+  try {
+    const { notifyDeckUpdatedForPresentation } =
+      await import('../live-sessions/index.js');
+    await notifyDeckUpdatedForPresentation(scope, id);
+  } catch (err) {
+    log.error(
+      `[live] refreshing presenting clients of ${id} after rewrite failed:`,
+      err?.message || err,
+    );
+  }
 }
 
 /**
