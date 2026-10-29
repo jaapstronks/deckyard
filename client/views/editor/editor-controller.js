@@ -734,6 +734,20 @@ export async function createEditorController({
       syncPublishedAltWarning();
       syncAnalyticsAvailability();
     },
+    // The export modal's "current slide" and "selection" (B871), numbered as
+    // the slide list numbers them.
+    selectedSlideNumbers: () => {
+      const slides = pres.slides || [];
+      const numberOf = (slideId) =>
+        slides.findIndex((s) => s?.id === slideId) + 1;
+      return {
+        current: numberOf(selectedSlideId) || null,
+        selected: [...selectedSlideIds]
+          .map(numberOf)
+          .filter(Boolean)
+          .sort((a, b) => a - b),
+      };
+    },
   });
   cleanup.register('dropdowns', dropdowns.detach);
 

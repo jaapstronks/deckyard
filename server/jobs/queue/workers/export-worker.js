@@ -50,11 +50,11 @@ export async function processExportJob(job) {
 
   // The request admitted and counted this export when it queued it; the
   // worker rechecks current rights within the enqueue audience.
-  const { presentationId, format, lang, stripLiveOnly, exportAccess } =
+  const { presentationId, format, lang, slides, stripLiveOnly, exportAccess } =
     job.data;
   const ctx = await prepareQueuedExportContext(
     jobScope(job.data, 'export job'),
-    { presentationId, format, lang, stripLiveOnly, exportAccess },
+    { presentationId, format, lang, slides, stripLiveOnly, exportAccess },
   );
   await job.updateProgress(30);
 
@@ -179,7 +179,7 @@ export async function processExportJob(job) {
     buffer,
     contentType,
     extension,
-    filename: ctx.filteredPres.title || 'presentation',
+    filename: ctx.title,
     langSuffix: ctx.langSuffix,
     ownerEmail: job.data.ownerEmail || null,
     exportAccess: ctx.exportAccess,

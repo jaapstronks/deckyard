@@ -21,6 +21,9 @@ import { isOrganizationAdmin } from '../../../shared/organization-role.js';
  * @param {Record<string, object>} options.slideTypes - The editor's slide-type
  *   registry (names a refused publish's field by its label, and the
  *   incomplete slides an export leaves out)
+ * @param {() => { current: number|null, selected: number[] }} [options.selectedSlideNumbers]
+ *   - The selected slides as the editor numbers them, for the export modal's
+ *   "current slide" and "selection" (B871)
  * @param {Function} [options.onShareStateChange] - Called whenever the deck's
  *   share state may have changed (publish, unpublish, slug, a share link
  *   created or revoked)
@@ -37,6 +40,7 @@ export function createEditorDropdowns({
   user,
   slideTypes,
   onShareStateChange,
+  selectedSlideNumbers,
 }) {
   // Share dropdown (sharing + publishing)
   const {
@@ -59,6 +63,7 @@ export function createEditorDropdowns({
     isAdmin: isOrganizationAdmin(user),
     slideTypes,
     onShareStateChange,
+    selectedSlideNumbers,
   });
 
   // Export dropdown (file downloads)
@@ -72,6 +77,7 @@ export function createEditorDropdowns({
     root,
     openPublic: () => openShare({ initialTab: 'public' }),
     slideTypes,
+    selectedSlideNumbers,
   });
 
   const detach = () => {

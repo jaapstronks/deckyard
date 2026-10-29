@@ -20,6 +20,8 @@ import { h } from '../../lib/dom/index.js';
  *   tab; the HTML row's hint links there
  * @param {Record<string, Object>} [opts.slideTypes] - the editor's registry,
  *   to name the incomplete slides an export leaves out (B590)
+ * @param {() => { current: number|null, selected: number[] }} [opts.selectedSlideNumbers]
+ *   - the editor's selected slides, for the modal's slide choice (B871)
  */
 export function setupExportDropdown({
   pres,
@@ -27,6 +29,7 @@ export function setupExportDropdown({
   root,
   openPublic,
   slideTypes,
+  selectedSlideNumbers,
 } = {}) {
   let modal = null;
 
@@ -48,6 +51,7 @@ export function setupExportDropdown({
       id,
       root: root || document.body,
       openPublic,
+      selectedSlideNumbers,
     });
   };
 
