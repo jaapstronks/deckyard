@@ -190,7 +190,7 @@
   "slideType.text-blocks-slide.field.rows.item.color.option.yellow.label": "Keltainen",
   "slideType.text-blocks-slide.field.rows.item.title.label": "Rivin otsikko",
   "slideType.text-blocks-slide.label": "Tekstilohkot",
-  "slideType.timeline-slide.field.items.item.date.label": "Päivämäärä / selite",
+  "slideType.timeline-slide.field.items.item.date.label": "Päivämäärä / tunniste",
   "slideType.timeline-slide.field.items.label": "Aikajanan kohdat",
   "slideType.timeline-slide.label": "Aikajana",
   "slideType.title-slide.field.logoCorner.label": "Logon kulma",

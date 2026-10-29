@@ -375,7 +375,7 @@
   "editor.imageSlide.bleed": "Randlos",
   "editor.imageText.addImage": "+ Bild hinzufügen",
   "editor.imageText.altText": "Alt-Text",
-  "editor.imageText.collectionHelp": "Klicken Sie auf ein Bild auf der Folie, um Alternativtext, Einpassung und Fokus zu bearbeiten.",
+  "editor.imageText.collectionHelp": "Klicken Sie auf ein Bild auf der Folie, um Alt-Text, Einpassung und Fokus zu bearbeiten.",
   "editor.imageText.fitContain": "Einpassen",
   "editor.imageText.fitCover": "Ausfüllen",
   "editor.imageText.imageFit": "Bildeinpassung",

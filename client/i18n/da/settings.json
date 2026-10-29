@@ -207,7 +207,7 @@
   "organization.profile.displayNameLabel": "Visningsnavn",
   "organization.profile.help": "Sådan hedder denne organisation overalt i appen, for alle i den.",
   "organization.profile.loadFailed": "Organisationen kunne ikke indlæses.",
-  "organization.profile.logoLabel": "Logoets URL",
+  "organization.profile.logoLabel": "Logo-URL",
   "organization.profile.nameHelp": "Sådan omtales organisationen, når der ikke er et visningsnavn.",
   "organization.profile.nameLabel": "Navn",
   "organization.profile.nameTooShort": "Navnet skal have mindst to tegn.",
