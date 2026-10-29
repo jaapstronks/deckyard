@@ -150,7 +150,7 @@
   "editor.analyzeModal.analyzing.one": "1 slide analyseren…",
   "editor.analyzeModal.complete.many": "Analyse klaar! {count} suggesties toegevoegd als reacties.",
   "editor.analyzeModal.complete.one": "Analyse klaar! 1 suggestie toegevoegd als reactie.",
-  "editor.analyzeModal.connected": "Verbonden, bezig met analyseren…",
+  "editor.analyzeModal.connected": "Verbonden, analyseren…",
   "editor.analyzeModal.creating": "Suggesties aanmaken…",
   "editor.analyzeModal.creatingN": "Suggestie {n} van {total} aanmaken…",
   "editor.analyzeModal.error": "Analyse mislukt: {message}",
