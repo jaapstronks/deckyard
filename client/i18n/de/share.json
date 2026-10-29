@@ -36,7 +36,7 @@
   "share.erase.confirmOk": "Mich vergessen",
   "share.erase.confirmTitle": "Dieses Gerät vergessen?",
   "share.erase.done": "Ihr Aufrufverlauf auf diesem Gerät wurde gelöscht.",
-  "share.erase.failed": "Ihre Daten konnten nicht gelöscht werden. Bitte erneut versuchen.",
+  "share.erase.failed": "Ihre Daten konnten nicht gelöscht werden. Bitte versuchen Sie es erneut.",
   "share.erase.tooltip": "Den für dieses Gerät aufgezeichneten Aufrufverlauf löschen",
   "share.error.expired": "Link abgelaufen",
   "share.error.expiredHelp": "Dieser Freigabelink ist abgelaufen.",
