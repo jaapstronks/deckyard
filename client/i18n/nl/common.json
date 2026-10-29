@@ -233,7 +233,7 @@
   "sandbox.home.title": "Welkom in de Deckyard-sandbox",
   "sandbox.settings.digest": "De weekly digest staat uit in de sandbox — er is geen account om te mailen. In je eigen Deckyard krijg je een wekelijkse samenvatting van hoe je decks presteren.",
   "sandbox.settings.export": "Data-export staat uit in de sandbox — je werk hier is tijdelijk. In je eigen Deckyard download je een volledige back-up van je presentaties en bibliotheek.",
-  "sandbox.settings.notifications": "Notificaties staan uit in de sandbox — een gast heeft geen account om te notificeren. In je eigen Deckyard krijg je e-mail- of Slack/Teams-meldingen bij reacties.",
+  "sandbox.settings.notifications": "Meldingen staan uit in de sandbox — een gast heeft geen account om meldingen naar te sturen. In je eigen Deckyard krijg je e-mail- of Slack/Teams-meldingen bij reacties.",
   "sandbox.settings.password": "Een gast heeft geen wachtwoord om te wijzigen. In je eigen Deckyard log je in met je eigen account.",
   "sandbox.settings.profilePhoto": "Een gast heeft geen account, dus ook geen profielfoto. In je eigen Deckyard log je in met je eigen account.",
   "sandbox.settings.unavailable": "Niet beschikbaar in de sandbox.",
