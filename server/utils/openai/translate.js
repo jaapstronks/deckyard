@@ -9,6 +9,8 @@ import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { ValidationError } from '../errors.js';
+import { slideTextRows } from '../../../shared/i18n-progress.js';
+import { isNonEmptyString } from '../../../shared/i18n-utils.js';
 import { extractJsonObject } from './json.js';
 import { labelForLang, normalizeLang } from './lang.js';
 import { translationReferenceLines } from './translation-instructions.js';
@@ -315,6 +317,7 @@ export async function translateFieldMap(
     '',
     'Rules:',
     '- Translate each value string.',
+    '- Each value stands alone: translate only that value, never move text between keys.',
     '- Preserve meaning and tone.',
     '- Preserve markdown formatting if present (lists, links).',
     '',
@@ -353,8 +356,70 @@ export async function translateFieldMap(
   return mapped;
 }
 
+/** Source characters per fill-missing model call; a large deck is split. */
+const FILL_BATCH_CHARS = 6000;
+
+/**
+ * Split a field map into batches of at most {@link FILL_BATCH_CHARS} source
+ * characters (a single longer field gets a batch of its own).
+ * @param {Record<string, string>} fields
+ * @returns {Array<Record<string, string>>}
+ */
+function fieldBatches(fields) {
+  const batches = [];
+  let batch = {};
+  let size = 0;
+  for (const [key, value] of Object.entries(fields)) {
+    if (size && size + value.length > FILL_BATCH_CHARS) {
+      batches.push(batch);
+      batch = {};
+      size = 0;
+    }
+    batch[key] = value;
+    size += value.length;
+  }
+  if (size) batches.push(batch);
+  return batches;
+}
+
+/**
+ * Write `value` at `path` inside `root`, creating the containers on the way
+ * (an array where the next step is an index).
+ * @param {Object} root
+ * @param {Array<string|number>} path
+ * @param {string} value
+ */
+function setAtPath(root, path, value) {
+  let node = root;
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const step = path[i];
+    if (!node[step] || typeof node[step] !== 'object')
+      node[step] = typeof path[i + 1] === 'number' ? [] : {};
+    node = node[step];
+  }
+  node[path.at(-1)] = value;
+}
+
+/**
+ * Fill the empty texts of a target version from the source, one path at a
+ * time: every gap gets the translation of the source value on the *same*
+ * path, and nothing else.
+ *
+ * The model sees only the gaps' source strings, as an isolated field map,
+ * never the two versions. A whole-deck prompt left it room to carry text from
+ * one item into another: it filled an empty timeline entry with the texts of
+ * three different items, one of which then blocked every save (DY-773). The
+ * gaps are the rows `computeMissingTranslation` reports, so the fill
+ * and the count agree about what is missing.
+ *
+ * @param {Object} args
+ * @param {{title?: string, slides?: Object[]}} args.sourcePresentation - the version read from
+ * @param {{title?: string, slides?: Object[]}} args.targetPresentation - the version written to
+ * @param {Object} opts - `{ from, to, vendor, organizationId }`
+ * @returns {Promise<{title: string, slides: Object[]}>} The target with its gaps filled
+ */
 export async function translatePresentationStringsFillMissing(
-  { sourcePresentation, targetPresentation, missing = [] } = {},
+  { sourcePresentation, targetPresentation } = {},
   { from, to, vendor = null, organizationId = null } = {},
 ) {
   const fromLang = normalizeLang(from);
@@ -365,179 +430,50 @@ export async function translatePresentationStringsFillMissing(
 
   const src = sourcePresentation || {};
   const tgt = targetPresentation || {};
-  const srcTitle = typeof src?.title === 'string' ? src.title : '';
-  const srcSlides = Array.isArray(src?.slides) ? src.slides : [];
-  const tgtTitle = typeof tgt?.title === 'string' ? tgt.title : '';
-  const tgtSlides = Array.isArray(tgt?.slides) ? tgt.slides : [];
+  const out = {
+    title: typeof tgt.title === 'string' ? tgt.title : '',
+    slides: structuredClone(Array.isArray(tgt.slides) ? tgt.slides : []),
+  };
 
-  const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
-
-  const tgtById = new Map(
-    tgtSlides
-      .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
-      .map((s) => [s.id, s]),
+  const gaps = slideTextRows(src, tgt).filter(
+    (row) => isNonEmptyString(row.source) && !isNonEmptyString(row.target),
   );
+  if (!gaps.length) return out;
 
-  const slideMeta = srcSlides.map((s) => ({
-    id: typeof s?.id === 'string' ? s.id : '',
-    type: typeof s?.type === 'string' ? s.type : '',
-    translateKeys: translateKeysForSlide(s, tgtById.get(s?.id)),
-    itemsFields: itemsFieldsForSlide(s, tgtById.get(s?.id)),
-  }));
-
-  const system = [
-    'You are a careful, professional translation engine for a slide editor.',
-    'Return ONLY valid JSON. No markdown fences, no commentary.',
-    '',
-    `SOURCE LANGUAGE: ${labelForLang(fromLang)}.`,
-    `TARGET LANGUAGE: ${labelForLang(toLang)}.`,
-    '',
-    'CRITICAL RULES:',
-    '- Keep slide count, order, ids, and types EXACTLY the same as the TARGET presentation.',
-    '- Only fill in MISSING/EMPTY target strings for the requested fields. Do NOT overwrite any non-empty target strings.',
-    '- Do NOT change any non-text values: URLs, icon names, enums like layout/background/imageSide, booleans, numbers.',
-    '- For array fields listed in slideMeta.itemsFields, translate only the specified itemKeys within each array item; an entry may carry its own itemsFields for a nested array, which follows the same rule at that level.',
-    '- Preserve markdown structure in body fields (lists, headings, links).',
-    '- Keep array item count and order EXACTLY the same.',
-    '',
-    ...(await translationReferenceLines(organizationId, toLang)),
-    'You will receive:',
-    '- SOURCE presentation JSON (truth)',
-    '- TARGET presentation JSON (some fields may be blank and need filling)',
-    '- A list of missing fields to fill (missing[])',
-    '- Slide meta indicating which keys are translatable for each slide type',
-    '',
-    'Output format MUST be exactly:',
-    '{',
-    '  "title": "...",',
-    '  "slides": [',
-    '    { "id": "...", "type": "...", "content": { ... } },',
-    '    ...',
-    '  ]',
-    '}',
-  ].join('\n');
-
-  const user = [
-    'SOURCE PRESENTATION JSON:',
-    JSON.stringify(
-      {
-        title: srcTitle,
-        slides: srcSlides.map((s) => ({
-          id: s?.id,
-          type: s?.type,
-          content: s?.content && typeof s.content === 'object' ? s.content : {},
-        })),
-      },
-      null,
-      2,
-    ),
-    '',
-    'TARGET PRESENTATION JSON (fill missing fields only):',
-    JSON.stringify(
-      {
-        title: tgtTitle,
-        slides: tgtSlides.map((s) => ({
-          id: s?.id,
-          type: s?.type,
-          content: s?.content && typeof s.content === 'object' ? s.content : {},
-        })),
-      },
-      null,
-      2,
-    ),
-    '',
-    'MISSING FIELDS (fill these only):',
-    JSON.stringify(Array.isArray(missing) ? missing : [], null, 2),
-    '',
-    'SLIDE META (translate keys per slide id):',
-    JSON.stringify(slideMeta, null, 2),
-  ].join('\n');
-
-  const content = await requestChatCompletionContent({
-    vendor: resolvedVendor,
-    apiKey,
-    model,
-    temperature: 0.1,
-    responseFormat: { type: 'json_object' },
-    maxTokens: 8192,
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: user },
-    ],
-  });
-
-  const obj = extractJsonObject(content);
-  if (!obj || typeof obj !== 'object') {
-    // The raw response rides along as a field for logging, never the envelope.
-    throw new LlmError(
-      `${resolvedVendor} did not return valid translation JSON.`,
-      {
-        statusCode: 502,
-        vendor: resolvedVendor,
-        response: content,
-        phase: 'translate',
-      },
+  const fields = Object.fromEntries(gaps.map((g, i) => [`f${i}`, g.source]));
+  const translations = {};
+  for (const batch of fieldBatches(fields)) {
+    Object.assign(
+      translations,
+      await translateFieldMap(batch, {
+        from: fromLang,
+        to: toLang,
+        vendor,
+        organizationId,
+      }),
     );
   }
 
-  const outTitle = typeof obj.title === 'string' ? obj.title : tgtTitle;
-  const outSlides = Array.isArray(obj.slides) ? obj.slides : [];
   const outById = new Map(
-    outSlides
+    out.slides
       .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
       .map((s) => [s.id, s]),
   );
-
-  const mergedSlides = tgtSlides.map((tSlide, idx) => {
-    const out = outById.get(tSlide?.id) || outSlides[idx] || null;
-    const srcSlide =
-      srcSlides.find((s) => s?.id === tSlide?.id) || srcSlides[idx] || null;
-    const tgtContent =
-      tSlide?.content && typeof tSlide.content === 'object'
-        ? tSlide.content
-        : {};
-    const srcContent =
-      srcSlide?.content && typeof srcSlide.content === 'object'
-        ? srcSlide.content
-        : {};
-    const nextContent = { ...tgtContent };
-    const keys = translateKeysForSlide(tSlide, srcSlide);
-    const spec = textFieldSpecForType(tSlide?.type);
-    const outContent =
-      out?.content && typeof out.content === 'object' ? out.content : null;
-
-    // Handle top-level string/markdown fields
-    for (const k of keys) {
-      const cur = nextContent[k];
-      if (typeof cur === 'string' && cur.trim()) continue; // don't overwrite
-      const v = outContent?.[k];
-      if (typeof v === 'string') nextContent[k] = v;
+  gaps.forEach((gap, i) => {
+    const value = translations[`f${i}`];
+    if (!isNonEmptyString(value)) return;
+    if (gap.kind === 'deck') {
+      out.title = value;
+      return;
     }
-
-    // Handle items arrays and their nested items arrays. The target array is
-    // the base here (this pass fills blanks, it does not restructure), while
-    // item count and order still follow the source.
-    for (const [arrKey, itemSpec] of spec.items) {
-      if (!Array.isArray(srcContent?.[arrKey])) continue;
-      nextContent[arrKey] = mapItemTexts(srcContent[arrKey], itemSpec, {
-        path: [arrKey],
-        base: Array.isArray(tgtContent?.[arrKey]) ? tgtContent[arrKey] : [],
-        resolve: (path) => {
-          const cur = valueAtPath(tgtContent, path);
-          if (typeof cur === 'string' && cur.trim()) return undefined; // don't overwrite
-          const v = valueAtPath(outContent, path);
-          return typeof v === 'string' ? v : undefined;
-        },
-      });
-    }
-
-    return {
-      ...tSlide,
-      id: tSlide?.id,
-      type: tSlide?.type,
-      content: nextContent,
-    };
+    // The slide `slideTextRows` read the gap's target off: by id, else at
+    // the same index.
+    const slide =
+      (gap.slideId && outById.get(gap.slideId)) || out.slides[gap.slideIndex];
+    if (!slide || typeof slide !== 'object') return;
+    if (!slide.content || typeof slide.content !== 'object') slide.content = {};
+    setAtPath(slide.content, gap.path, value);
   });
 
-  return { title: outTitle, slides: mergedSlides };
+  return out;
 }

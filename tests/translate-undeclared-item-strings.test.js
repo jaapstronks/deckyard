@@ -153,19 +153,17 @@ test('the scan reports the remnants, and the fill job closes them', async () => 
     'the premise: the scan reports both undeclared strings',
   );
 
-  aiResponse = reply(deck('en-GB'));
+  aiResponse = JSON.stringify({ translations: { f0: 'First', f1: 'Aside' } });
   const filled = await translatePresentationStringsFillMissing(
-    { sourcePresentation: source, targetPresentation: target, missing },
+    { sourcePresentation: source, targetPresentation: target },
     { from: 'nl', to: 'en-GB' },
   );
 
-  const rows = promptMeta()[0].itemsFields[0];
-  assert.ok(rows.itemKeys.includes('kicker'), 'the prompt offers rows.kicker');
-  assert.ok(
-    rows.itemsFields[0].itemKeys.includes('aside'),
-    'the prompt offers rows.blocks.aside',
+  assert.deepEqual(
+    JSON.parse(lastUserMessage),
+    { fields: { f0: 'Eerst', f1: 'Terzijde' } },
+    'the prompt offers both remnants, and no number',
   );
-  assert.ok(!rows.itemKeys.includes('weight'), 'a number is not prose');
 
   assert.equal(RESULT_ROWS(filled)[0].kicker, 'First');
   assert.equal(RESULT_ROWS(filled)[1].blocks[0].aside, 'Aside');
