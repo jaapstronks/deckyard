@@ -150,3 +150,46 @@ test('retained old prose is saved with a review notice, not a save failure', () 
   assert.equal(status.el.hidden, true);
   status.detach();
 });
+
+test('a failure interrupts as an alert; a review notice waits as a status (B875)', () => {
+  const status = createSaveStatus({ pres: pres(), slideTypes, onReveal() {} });
+  status.setStatus('error', 'Refused.');
+  assert.equal(status.el.getAttribute('role'), 'alert');
+  assert.equal(status.el.getAttribute('aria-live'), 'assertive');
+  status.setStatus('saved');
+  assert.equal(status.el.getAttribute('role'), 'status');
+  assert.equal(status.el.getAttribute('aria-live'), 'polite');
+  status.setStatus('disconnected');
+  assert.equal(status.el.getAttribute('role'), 'alert');
+  status.detach();
+});
+
+test('a shortened description stays noted across later saves until reviewed (B875)', () => {
+  const deck = pres();
+  deck.i18n.versions['en-GB'].slides[0].content.title = 'Good';
+  const reveals = [];
+  const status = createSaveStatus({
+    pres: deck,
+    slideTypes,
+    onReveal: (target) => reveals.push(target),
+  });
+  // The form shortened the active version when it rendered; the save that
+  // stored it, and an autosave after it, found nothing left to shorten.
+  status.addNormalized([{ slideId: 's1', lang: 'nl', field: 'title' }]);
+  status.addNormalized([{ slideId: 's1', lang: 'nl', field: 'title' }]);
+  status.addNormalized([]);
+  status.setStatus('saved');
+  status.addNormalized([]);
+  status.setStatus('saved');
+  assert.equal(status.el.hidden, false);
+  assert.match(status.el.textContent, /description was shortened/);
+
+  const go = [...status.el.querySelectorAll('button')].find(
+    (b) => b.textContent === 'Go to field',
+  );
+  go.click();
+  assert.deepEqual(reveals, [{ slideId: 's1', lang: 'nl', field: 'title' }]);
+  status.setStatus('saved');
+  assert.equal(status.el.hidden, true, 'reviewed: the notice is gone');
+  status.detach();
+});

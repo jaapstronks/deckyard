@@ -26,8 +26,38 @@ import { valueAtPath } from '../../../shared/slide-types/text-fields.js';
 /**
  * @typedef {{kind: 'remove', index: number}
  *   | {kind: 'move', from: number, to: number}
- *   | {kind: 'swap', a: number, b: number}} CollectionOp
+ *   | {kind: 'swap', a: number, b: number}
+ *   | {kind: 'removeColumn', column: number}} CollectionOp
+ *
+ * `removeColumn` is the tabular case (shared/slide-types/tabular.js): the
+ * collection is a row array of flat `c1…cN` cells, and column `column`
+ * (1-based) leaves every row, the cells after it shifting one to the left.
  */
+
+/**
+ * A copy of one tabular row without cell `c{col}`: every later cell moves one
+ * key to the left. A row that is not an object is returned as is.
+ * @param {*} row
+ * @param {number} col - 1-based
+ * @returns {*}
+ */
+function shiftCellsLeft(row, col) {
+  if (!row || typeof row !== 'object') return row;
+  const out = { ...row };
+  let last = 0;
+  for (const k of Object.keys(row)) {
+    const m = /^c(\d+)$/.exec(k);
+    if (m) last = Math.max(last, Number(m[1]));
+  }
+  if (last < col) return out;
+  for (let c = col; c < last; c += 1) {
+    const v = row[`c${c + 1}`];
+    if (v === undefined) delete out[`c${c}`];
+    else out[`c${c}`] = v;
+  }
+  delete out[`c${last}`];
+  return out;
+}
 
 /**
  * Apply one structural collection edit to a copy of `arr`.
@@ -57,6 +87,11 @@ function applyOp(arr, op) {
     if (to >= len) return null;
     next.splice(to, 0, {});
     return next;
+  }
+  if (op.kind === 'removeColumn') {
+    const col = Number(op.column);
+    if (!Number.isInteger(col) || col < 1) return null;
+    return next.map((row) => shiftCellsLeft(row, col));
   }
   if (op.kind === 'swap') {
     const { a, b } = op;

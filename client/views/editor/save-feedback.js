@@ -51,7 +51,10 @@ export function createSaveFeedback({
     class: 'btn btn-secondary',
     text: t('editor.save.goToIssue', 'Go to field'),
     onclick: () => {
-      if (target) onReveal?.(target);
+      if (!target) return;
+      // Going to a shortened field is the review the notice asks for.
+      normalized = normalized.filter((n) => n !== target);
+      onReveal?.(target);
     },
   });
   const reportLabel = t('editor.save.bugReport', 'Bug report');
@@ -112,8 +115,23 @@ export function createSaveFeedback({
 
   return {
     el,
-    setNormalized(issues) {
-      normalized = issues;
+    /**
+     * Fields whose stored value was shortened to fit (an image description
+     * past its limit). They stay listed until "Go to field" takes the author
+     * to one: an autosave per edit reports `[]` a moment later, and the form
+     * shortens the active version when it renders, before any save (B875).
+     * @param {Array<{slideId: string, lang: string, field: string}>} issues
+     */
+    addNormalized(issues) {
+      for (const issue of issues || []) {
+        const known = normalized.some(
+          (n) =>
+            n.slideId === issue.slideId &&
+            n.lang === issue.lang &&
+            n.field === issue.field,
+        );
+        if (!known) normalized.push(issue);
+      }
     },
     setError(next) {
       error = next;

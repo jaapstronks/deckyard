@@ -16,6 +16,7 @@ import {
 import { renderTextElementCard } from './text-element-card.js';
 import { fieldFormRows } from '../../../../shared/slide-types/form-layout.js';
 import { normalizeSlideContent } from '../../../../shared/slide-types/normalize-content.js';
+import { normalizeFieldContent } from '../../../../shared/slide-types/field-normalization.js';
 import {
   describeUnresolvedType,
   unresolvedNotes,
@@ -82,6 +83,9 @@ export function createRerenderEditor({
   // rerenders from inside). The Fields view uses it to place the title in
   // its slide head.
   onRendered = null,
+  // ([{slideId, lang, field}]) => void: the fields this render shortened to
+  // fit (an image description past its limit), for the save notice.
+  onFieldsNormalized = null,
 } = {}) {
   const caps = surfaceCapabilities(surface);
   const {
@@ -301,6 +305,22 @@ export function createRerenderEditor({
     // widget reads content (shared/slide-types/normalize-content.js). Used to
     // happen inside the per-type forms, which tied the migration's survival to
     // the form's; both surfaces now get canonical values whatever renders.
+    //
+    // That fold also shortens a value past its declared limit. The save that
+    // stores it then finds nothing left to shorten, so the shortening is
+    // reported here, where it happens (B875).
+    const folded = normalizeFieldContent(def?.fields, slide.content);
+    if (folded !== slide.content) {
+      onFieldsNormalized?.(
+        Object.keys(folded)
+          .filter((field) => folded[field] !== slide.content[field])
+          .map((field) => ({
+            slideId: slide.id,
+            lang: pres?.i18n?.active,
+            field,
+          })),
+      );
+    }
     normalizeSlideContent(slide.type, def, slide.content);
     const form = h('div', { class: 'stack editor-form' });
     const fieldByKey = new Map((def?.fields || []).map((f) => [f.key, f]));

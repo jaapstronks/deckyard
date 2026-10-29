@@ -39,6 +39,8 @@ export function createSaveStatus(options = {}) {
     savingTimer = 0;
     el.classList.remove('is-failure');
     message.textContent = t('editor.save.saving', 'Saving changes…');
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
     message.hidden = false;
     el.hidden = false;
   };
@@ -56,6 +58,10 @@ export function createSaveStatus(options = {}) {
     const failed = status === 'error' || status === 'disconnected';
     const hasFeedback = feedback.sync(status);
     el.classList.toggle('is-failure', failed);
+    // A refusal or a lost connection interrupts; a slow save or a review
+    // notice waits its turn (B875).
+    el.setAttribute('role', failed ? 'alert' : 'status');
+    el.setAttribute('aria-live', failed ? 'assertive' : 'polite');
     el.classList.toggle('is-quality-warning', !failed && hasFeedback);
     el.hidden = !failed && !hasFeedback;
     message.hidden = !failed;
@@ -81,7 +87,7 @@ export function createSaveStatus(options = {}) {
     el,
     setStatus,
     setError: feedback.setError,
-    setNormalized: feedback.setNormalized,
+    addNormalized: feedback.addNormalized,
     detach() {
       clearSavingTimer();
       feedback.detach();

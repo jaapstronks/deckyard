@@ -288,3 +288,48 @@ test('a swap is mirrored like the image-set arrows make it', () => {
     ['Jan', 'Mar', 'Feb'],
   );
 });
+
+test('the keyboard moves an item slot by slot, keeping the focus and EN with it (B875)', async () => {
+  const pres = bilingualDeck();
+  const mgr = makeManager(pres);
+  const slide = pres.slides[0];
+  const field = SLIDE_TYPES['timeline-slide'].fields.find(
+    (f) => f.key === 'items',
+  );
+  const editor = createCollectionEditor({
+    slide,
+    def: SLIDE_TYPES['timeline-slide'],
+    field,
+    fieldRenderers: {},
+    pres,
+    markDirty: () => {},
+  });
+  document.body.append(editor);
+
+  const handles = () => editor.querySelectorAll('.item-drag-handle');
+  assert.equal(
+    handles()[0].getAttribute('aria-keyshortcuts'),
+    'ArrowUp ArrowDown',
+  );
+  handles()[0].focus();
+  for (let n = 0; n < 2; n += 1) {
+    document.activeElement.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+    );
+  }
+  assert.equal(
+    document.activeElement,
+    handles()[2],
+    'the focus followed "Jan" to its third slot',
+  );
+  await save(mgr);
+
+  assert.deepEqual(
+    items(pres, 'nl')
+      .map((it) => it.date)
+      .slice(0, 4),
+    ['Feb', 'Mrt', 'Jan', 'Apr'],
+  );
+  assertPairedPerItem(pres);
+  editor.remove();
+});

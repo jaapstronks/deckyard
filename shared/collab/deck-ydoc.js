@@ -103,6 +103,69 @@ export function patchYText(ytext, next) {
 }
 
 /**
+ * Name the one structural edit that turns `oldArr` into `newArr`, if there
+ * is one: a single item removed, inserted or moved, everything else equal.
+ *
+ * Items have no ids, so a diff that matches them by position reads a move
+ * as every item in between changing, and a mid-list remove as the items
+ * after it changing. In a language-per-item doc that is the DY-773 loss:
+ * the edit lands in one language, the other languages' texts stay at the
+ * index they were on and end up next to another item. Naming the edit lets
+ * the caller move or remove the item itself, every language with it.
+ * Shared by the client binder and the server-side apply differ.
+ *
+ * @param {Array} oldArr
+ * @param {Array} newArr
+ * @returns {{kind: 'remove', index: number}
+ *   | {kind: 'insert', index: number}
+ *   | {kind: 'move', from: number, to: number}
+ *   | null} null when the arrays are equal or differ in more than one edit
+ */
+export function itemsShift(oldArr, newArr) {
+  const o = oldArr.length;
+  const n = newArr.length;
+  let start = 0;
+  while (start < Math.min(o, n) && jsonEq(oldArr[start], newArr[start])) {
+    start += 1;
+  }
+  // `oldArr[a + k]` equals `newArr[b + k]` for every k below `len`.
+  const sameRun = (a, b, len) => {
+    for (let k = 0; k < len; k += 1) {
+      if (!jsonEq(oldArr[a + k], newArr[b + k])) return false;
+    }
+    return true;
+  };
+  if (n === o - 1) {
+    return sameRun(start + 1, start, n - start)
+      ? { kind: 'remove', index: start }
+      : null;
+  }
+  if (n === o + 1) {
+    return sameRun(start, start + 1, o - start)
+      ? { kind: 'insert', index: start }
+      : null;
+  }
+  if (n !== o) return null;
+  let end = o;
+  while (end > start && jsonEq(oldArr[end - 1], newArr[end - 1])) end -= 1;
+  if (end - start < 2) return null;
+  const last = end - 1;
+  if (
+    jsonEq(oldArr[start], newArr[last]) &&
+    sameRun(start + 1, start, last - start)
+  ) {
+    return { kind: 'move', from: start, to: last };
+  }
+  if (
+    jsonEq(oldArr[last], newArr[start]) &&
+    sameRun(start, start + 1, last - start)
+  ) {
+    return { kind: 'move', from: last, to: start };
+  }
+  return null;
+}
+
+/**
  * Resolve a legacy presentation's language versions: which languages exist,
  * which one is dominant, and a normalized `{title, slides}` per language.
  * Decks without an i18n block become a single-language world keyed by
@@ -698,19 +761,50 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
    * the caller's base are skipped entirely; changed items diff in place so
    * concurrent edits on untouched fields merge. The array length only
    * changes when the caller changed it vs the base (an item a client added
-   * concurrently survives a text-only server edit). A mid-list insert
-   * rewrites the shifted items — accepted for server writes.
+   * concurrently survives a text-only server edit).
+   *
+   * One exception to position as identity: in three-way mode a single
+   * remove, insert or move against the base (`itemsShift`) is applied to
+   * the Y.Array as that edit first, so the item keeps every language with
+   * it (DY-773). Without a base, or when the doc's array no longer has the
+   * base's length (a concurrent structural edit), the diff stays by index.
    */
   function applyItemsArray(yarr, arr, key, spec, ctx) {
     const { incByLang, baseByLang, dominant } = ctx;
     const incAt = (i) => itemViewByLangAt(incByLang, key, i);
-    const baseAt = baseByLang
-      ? (i) => itemViewByLangAt(baseByLang, key, i)
-      : null;
     const buildAt = (i) =>
       buildItem(arr[i], peersFromByLang(incAt(i), dominant), spec);
 
     const n = arr.length;
+    const baseRef = baseByLang ? baseByLang[dominant] : undefined;
+    const baseArr = isPlainObject(baseRef) ? baseRef[key] : undefined;
+    // The base's per-language item views, realigned below when the caller's
+    // edit is one structural step.
+    const baseViews =
+      baseByLang && Array.isArray(baseArr)
+        ? baseArr.map((_, i) => itemViewByLangAt(baseByLang, key, i))
+        : null;
+    if (baseViews && yarr.length === baseViews.length) {
+      const incViews = arr.map((_, i) => incAt(i));
+      const shift = itemsShift(baseViews, incViews);
+      if (shift?.kind === 'remove') {
+        yarr.delete(shift.index, 1);
+        baseViews.splice(shift.index, 1);
+      } else if (shift?.kind === 'insert') {
+        yarr.insert(shift.index, [buildAt(shift.index)]);
+        baseViews.splice(shift.index, 0, incViews[shift.index]);
+      } else if (shift?.kind === 'move') {
+        const clone = cloneYValue(yarr.get(shift.from));
+        yarr.delete(shift.from, 1);
+        yarr.insert(shift.to, [clone]);
+        const [moved] = baseViews.splice(shift.from, 1);
+        baseViews.splice(shift.to, 0, moved);
+      }
+    }
+    const baseAt = baseByLang
+      ? (i) => (baseViews ? baseViews[i] : itemViewByLangAt(baseByLang, key, i))
+      : null;
+
     const common = Math.min(yarr.length, n);
     for (let i = 0; i < common; i += 1) {
       const itemView = incAt(i);
@@ -736,10 +830,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       }
     }
 
-    const baseRef = baseByLang ? baseByLang[dominant] : undefined;
-    const baseArr = isPlainObject(baseRef) ? baseRef[key] : undefined;
-    const lengthTouched =
-      !baseAt || !Array.isArray(baseArr) || baseArr.length !== n;
+    const lengthTouched = !baseViews || baseViews.length !== n;
     if (!lengthTouched) return;
     if (yarr.length > n) yarr.delete(n, yarr.length - n);
     else if (yarr.length < n) {
