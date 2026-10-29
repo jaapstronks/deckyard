@@ -4,34 +4,19 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { formatRelativeTime } from '../../../lib/format/format-time.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
 import { permissionOptions } from './permission-options.js';
 
 /**
- * Format a date as relative time (e.g., "2 days ago").
- * @param {string|Date} date - Date to format
+ * A key's created / last-used moment as relative time, or "Never" for a key
+ * that has not been used yet.
+ * @param {string|Date|null} date
  * @returns {string}
  */
-function formatRelativeDate(date) {
+function keyDateLabel(date) {
   if (!date) return t('settings.apiKeys.never', 'Never');
-
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now - d;
-  const diffSecs = Math.floor(diffMs / 1000);
-  const diffMins = Math.floor(diffSecs / 60);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffSecs < 60) return t('settings.apiKeys.justNow', 'Just now');
-  if (diffMins < 60)
-    return t('settings.apiKeys.minutesAgo', '{n} min ago', { n: diffMins });
-  if (diffHours < 24)
-    return t('settings.apiKeys.hoursAgo', '{n}h ago', { n: diffHours });
-  if (diffDays < 30)
-    return t('settings.apiKeys.daysAgo', '{n}d ago', { n: diffDays });
-
-  return d.toLocaleDateString();
+  return formatRelativeTime(date);
 }
 
 /**
@@ -145,14 +130,14 @@ function renderKeyRow(key, { onRevoke, onViewUsage, onEditPermissions }) {
         class: 'api-key-date-label',
         text: t('settings.apiKeys.created', 'Created:'),
       }),
-      h('span', { text: formatRelativeDate(key.createdAt) }),
+      h('span', { text: keyDateLabel(key.createdAt) }),
     ]),
     h('div', { class: 'api-key-date' }, [
       h('span', {
         class: 'api-key-date-label',
         text: t('settings.apiKeys.lastUsed', 'Last used:'),
       }),
-      h('span', { text: formatRelativeDate(key.lastUsedAt) }),
+      h('span', { text: keyDateLabel(key.lastUsedAt) }),
     ]),
   );
 

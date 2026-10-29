@@ -6,6 +6,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
+import { formatDate } from '../../lib/format/analytics-format.js';
 import {
   REFRESH_MODES,
   BINDABLE_SLIDE_TYPES,
@@ -61,9 +62,7 @@ export function buildDataSourceIndicator({
       class: 'data-source-status',
       text: isFrozen
         ? t('dataSource.snapshot', 'Snapshot from {date}', {
-            date: ds.lastSync
-              ? new Date(ds.lastSync).toLocaleDateString()
-              : '—',
+            date: ds.lastSync ? formatDate(ds.lastSync) : '—',
           })
         : t('dataSource.connected', 'Connected to {provider}', {
             provider: providerLabel,

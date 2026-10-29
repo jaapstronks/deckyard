@@ -10,6 +10,7 @@ import {
   LONG_LIVED_STREAM,
 } from '../../lib/net/sse-connection.js';
 import { t } from '../../lib/ui-i18n.js';
+import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { createAvatar } from './avatar.js';
 import { getUserProfile, prefetchProfiles } from './user-profiles.js';
 import { nav } from '../../lib/state/router.js';
@@ -265,7 +266,7 @@ export function createNotificationBell({ api }) {
       }
 
       // Timestamp
-      const timeAgo = formatTimeAgo(notif.createdAt);
+      const timeAgo = formatRelativeTime(notif.createdAt);
       const time = h('div', {
         class: 'notification-bell-item-time',
         text: timeAgo,
@@ -315,27 +316,6 @@ export function createNotificationBell({ api }) {
         : t('notifications.loadMore', 'Load more');
       listContainer.append(loadMoreBtn);
     }
-  }
-
-  function formatTimeAgo(dateStr) {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-
-    if (diffSec < 60) return t('list.time.justNow', 'just now');
-    if (diffMin < 60)
-      return t('list.time.minutesAgo', '{count} min ago', { count: diffMin });
-    if (diffHour < 24)
-      return t('list.time.hoursAgo', '{count}h ago', { count: diffHour });
-    if (diffDay < 7)
-      return t('list.time.daysAgo', '{count}d ago', { count: diffDay });
-
-    return date.toLocaleDateString();
   }
 
   function openDropdown() {
