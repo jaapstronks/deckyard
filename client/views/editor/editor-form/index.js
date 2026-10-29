@@ -4,6 +4,7 @@ import { buildDeckSlideOptions } from '../fields/card-link-field.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast as defaultToast } from '../../../lib/dom/toast.js';
 import { isOrgDisabledSlideType } from '../../../../shared/slide-types/policy.js';
+import { isLiveOnlySlideType } from '../../../../shared/slide-types/live-session.js';
 import { needsNativeComposition } from '../../../../shared/slide-types/fidelity.js';
 import { buildDataSourceIndicator } from '../data-source-panel.js';
 import { icon } from '../../../lib/dom/icons.js';
@@ -415,6 +416,12 @@ export function createRerenderEditor({
           })
         : null;
 
+    // A live-only slide (the follow-along invite) never reaches an export or
+    // a published view, so its a11y overrides have no reader and its "no
+    // heading" status would nag about an announcement that never happens
+    // (B884). It gets no Accessibility section, like a surface without one.
+    const a11yApplies = caps.a11y && !isLiveOnlySlideType(slide?.type);
+
     // Accessibility fields (global) are tucked behind a toggle. a11yTitle/
     // a11ySummary are OVERRIDES, not the primary a11y mechanism: export/present
     // announce a slide by its own heading and only fall back to a11yTitle when
@@ -557,7 +564,7 @@ export function createRerenderEditor({
         return;
       }
       // A surface without the Accessibility section renders a11y keys nowhere.
-      if (!caps.a11y && isA11yFieldKey(key)) {
+      if (!a11yApplies && isA11yFieldKey(key)) {
         used.add(key);
         return;
       }
@@ -722,7 +729,7 @@ export function createRerenderEditor({
     if (background.imageSection) form.append(background.imageSection);
 
     // Append accessibility toggle if it has content
-    if (caps.a11y && a11yBody.childNodes?.length) form.append(a11yDetails);
+    if (a11yApplies && a11yBody.childNodes?.length) form.append(a11yDetails);
 
     // What the editable PowerPoint does with this slide, read from the type's
     // `fidelity` facet on the slide-types response, never from its name: a
