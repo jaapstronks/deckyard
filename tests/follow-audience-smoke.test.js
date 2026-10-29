@@ -1097,7 +1097,7 @@ test('an anonymous viewer is tracked, and is given the control to erase it', asy
   );
   assert.equal(
     shell.querySelector('.follow-erase-slot button').textContent.trim(),
-    'Vergeet mij',
+    'Mij vergeten',
     'in the deck language, beside the tracking it undoes',
   );
 

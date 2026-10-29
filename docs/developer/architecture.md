@@ -497,11 +497,26 @@ The full rule behind `AGENTS.md` § _Module layout: one folder = one seam_.
   client: `lib/<area>/` and `views/editor/` are _groups_ whose members are
   imported by path, and there is no duty to add an `index.js` barrel to a
   folder that is not a seam.
-- **`client/lib/` is a layer, `client/views/` is a feature** (D263). A
+- **`client/lib/` is a layer, `client/views/` is a feature** (D263, D264).
+  `client/lib/` holds what owns no product feature: the DOM primitives and
+  shared widgets (`dom/`, with `h()`), transport and file reading (`net/`,
+  `api.js`), state and routing (`state/`, `storage.js`), formatting and i18n
+  (`format/`, `ui-i18n.js`), the theme runtime (`theme/`), the slide pipeline
+  (`slide-runtime/`, `slide-authoring/`) and a client-side service layer
+  without DOM (`qa/`: model, feed and mutations; the views render).
+  `permission-labels.js` is the remaining root-level pure label seam; the
+  test pins this closed list. A
   module that fetches a feature's records and renders them is a view,
-  however many pages use it; feature UI shared by two or more views gets
-  its own `views/<feature>/` with an `index.js` seam (`views/comments/`,
-  `views/slide-library/`, `views/user/`). `tests/client-layer-direction.test.js`
+  however many pages use it. One owner: it lives inside that view; two or
+  more: its own `views/<feature>/` with an `index.js` seam and no route
+  (`views/comments/`, `views/slide-library/`, `views/user/`). The direction
+  is one way: `lib/` never imports from `views/`. Across feature boundaries,
+  import only `views/<feature>/index.js`; within a feature, concern modules
+  may address each other directly. The test checks static imports,
+  re-exports and literal dynamic imports of all non-vendor client modules
+  without an allowlist (B671). Feature-less shared UI (banners, empty
+  states, a field wrapper) has one address, `lib/dom/`: no `views/shared/`,
+  no components folder, no third place. `tests/client-layer-direction.test.js`
   pins both measurable halves at zero, no allowlist: no import under
   `client/lib/` lands in `client/views/`, and no module under `client/lib/`
   outside `dom/` and `slide-runtime/` imports both the `h()` seam

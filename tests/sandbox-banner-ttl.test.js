@@ -174,7 +174,7 @@ test('the banner carries the self-host and the hosted exit (A4)', async () => {
   await setUiLocale('nl', { persist: false });
   syncSandboxBanner('edit');
   assert.equal(selfHost.isConnected, true, 'same node, not rebuilt');
-  assert.equal(selfHost.textContent, 'Installeer Deckyard zelf');
+  assert.equal(selfHost.textContent, 'Deckyard zelf installeren');
   assert.equal(hosted.textContent, 'Of laat ons het voor je hosten');
 
   // The audience screens carry neither exit.
