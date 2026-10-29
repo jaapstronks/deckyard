@@ -96,6 +96,13 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // shared/slide-types/fidelity.js.
       fidelity: resolvedFidelities(def),
       themeOnly: def.themeOnly === true || undefined,
+      // The live-session facets: `liveOnly` (left out of every export and
+      // published view) and `liveInvite` (the audience's way into the
+      // session). The editor asks them of this response, so a fork type
+      // declaring either is only heard if the flag travels (B885). See
+      // shared/slide-types/live-session.js.
+      liveOnly: def.liveOnly === true || undefined,
+      liveInvite: def.liveInvite === true || undefined,
       // Whether a new slide of this type takes the theme's first background
       // preset (shared/theme-background-presets.js). Same seam half as
       // `inspectorKeeps`: the editor's insert path, its Background section and

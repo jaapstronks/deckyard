@@ -36,6 +36,11 @@ import {
   MARKETING_THEME_SLUG,
   seedBilingualDeck,
 } from '../lib/marketing.js';
+import {
+  emptyTextFieldSpec,
+  mapItemTexts,
+  textFieldSpecForType,
+} from '../../shared/slide-types/text-fields.js';
 
 /**
  * Title prefix for the marketing sample deck, in the dominant (Dutch)
@@ -552,6 +557,28 @@ export async function clearMarketingDecks(api) {
 }
 
 /**
+ * A slide with every per-language field and item text emptied: the version a
+ * translator has not reached yet. Which keys are prose is the type's answer
+ * (`shared/slide-types/text-fields.js`), not a list kept here.
+ * @param {{type: string, content: object}} slide
+ * @returns {object}
+ */
+function withoutProse(slide) {
+  const spec = textFieldSpecForType(slide.type);
+  const content = structuredClone(slide.content);
+  for (const key of spec.textKeys) {
+    if (typeof content[key] === 'string') content[key] = '';
+  }
+  for (const [key, sub] of spec.items) {
+    if (!Array.isArray(content[key])) continue;
+    content[key] = mapItemTexts(content[key], sub || emptyTextFieldSpec(), {
+      resolve: () => '',
+    });
+  }
+  return { ...slide, content };
+}
+
+/**
  * Seed the bilingual sample deck, idempotently, with the UI locale set for the
  * shot's language.
  *
@@ -560,22 +587,42 @@ export async function clearMarketingDecks(api) {
  * direction both follow the *dominant* language rather than the viewed one, so
  * their English halves seed a deck whose dominant is `en-GB`.
  *
+ * `untranslated` names slides (keys of `slideIds`) whose words exist only in
+ * the dominant language: every other version of them is stored with its prose
+ * empty, so a translation shot has something left to suggest. The returned
+ * `deck` still holds the full translation, which is what such a shot's stub
+ * answers with.
+ *
  * @param {import('../lib/api.js').ApiClient} api
  * @param {'nl'|'en'} lang
- * @param {{dominant?: 'nl'|'en-GB'}} [opts]
+ * @param {{dominant?: 'nl'|'en-GB', untranslated?: string[]}} [opts]
  * @returns {Promise<{deckId: string, deck: ReturnType<typeof marketingDeckVersions>}>}
  */
-export async function seedMarketingDeck(api, lang, { dominant } = {}) {
+export async function seedMarketingDeck(
+  api,
+  lang,
+  { dominant, untranslated = [] } = {},
+) {
   await clearMarketingDecks(api);
   await setUiLocale(api, MARKETING_LANGS[lang].uiLocale);
   await setDisplayName(api, CAPTURE_ACCOUNT_NAME);
   const deck = marketingDeckVersions();
+  const source = dominant || deck.dominant;
+  const blank = new Set(untranslated.map((key) => deck.slideIds[key]));
+  const versions = Object.fromEntries(
+    Object.entries(deck.versions).map(([vLang, slides]) => [
+      vLang,
+      vLang === source
+        ? slides
+        : slides.map((s) => (blank.has(s.id) ? withoutProse(s) : s)),
+    ]),
+  );
   const deckId = await seedBilingualDeck(api, {
     title: MARKETING_DECK_TITLE,
     themeSlug: MARKETING_THEME_SLUG,
-    dominant: dominant || deck.dominant,
+    dominant: source,
     titles: deck.titles,
-    versions: deck.versions,
+    versions,
   });
   return { deckId, deck };
 }

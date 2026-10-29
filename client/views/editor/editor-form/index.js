@@ -420,7 +420,9 @@ export function createRerenderEditor({
     // a published view, so its a11y overrides have no reader and its "no
     // heading" status would nag about an announcement that never happens
     // (B884). It gets no Accessibility section, like a surface without one.
-    const a11yApplies = caps.a11y && !isLiveOnlySlideType(slide?.type);
+    // Asked of the editor's registry, which carries the facet (B885).
+    const a11yApplies =
+      caps.a11y && !isLiveOnlySlideType(slide?.type, SLIDE_TYPES);
 
     // Accessibility fields (global) are tucked behind a toggle. a11yTitle/
     // a11ySummary are OVERRIDES, not the primary a11y mechanism: export/present
