@@ -1,4 +1,3 @@
-import net from 'node:net';
 import { randomBytes } from 'node:crypto';
 import {
   mkdirSync,
@@ -26,7 +25,7 @@ import {
   revokeRecord,
   compactLedger,
 } from './ledger.js';
-import { lifecycleChannel } from './channel.js';
+import { lifecycleChannel, lifecycleServer } from './channel.js';
 import {
   brokerProperties,
   brokerLaunchState,
@@ -97,6 +96,7 @@ export async function startSupervisor() {
     retiring = false;
   const launcher = brokerLauncher({
     start: startBrokerService,
+    stopUnit: stopBrokerService,
     state: brokerLaunchState,
     busy: () => Boolean(instance) || retiring,
     log: (name, detail) => log(null, name, detail),
@@ -132,7 +132,7 @@ export async function startSupervisor() {
       for (const p of roots(j)) kill(p);
   }
   async function retireInstance(restart = instance?.healthReady === true) {
-    if (retiring) return;
+    if (retiring || launcher.stopped) return;
     retiring = true;
     ready = false;
     const retired = instance;
@@ -153,11 +153,11 @@ export async function startSupervisor() {
       persist();
       previous?.close();
       if (retired) closeSync(retired.pidfd);
-      stopBrokerService();
-      if (restart) launcher.launch();
-      else log(null, 'self_test_not_ready');
+      launcher.retired(restart);
     } catch {
-      log(null, 'instance_retirement_blocked');
+      // A retirement already running when systemd stops the supervisor is cut
+      // short by the stop itself; that is not an operator signal.
+      launcher.alarm('instance_retirement_blocked');
     } finally {
       retiring = false;
     }
@@ -358,7 +358,7 @@ export async function startSupervisor() {
         }
         condition =
           (socket.destroyed && 'peer_closed') ||
-          (retiring && 'retiring') ||
+          ((retiring || launcher.stopped) && 'retiring') ||
           brokerPeerRefusal(
             peer,
             current,
@@ -489,12 +489,22 @@ export async function startSupervisor() {
           ...(peer ? { pid: peer.pid } : {}),
           unit: 'deckyard-render-broker.service',
         });
+      // Registration failed after the instance was bound: unbind it before
+      // the socket closes, so no half instance is left for the ticker to
+      // retire without a successor, and launch the next broker.
+      const half = Boolean(peer) && instance?.pidfd === peer.pidfd;
+      if (half) {
+        ready = false;
+        instance = null;
+        channel = null;
+        ledger.instance = null;
+      }
       socket.destroy();
-      if (peer && peer.pidfd !== instance?.pidfd) closeSync(peer.pidfd);
+      if (peer) closeSync(peer.pidfd);
+      if (half) launcher.launch();
     }
   }
-  const server = net.createServer({ pauseOnConnect: true }, admit);
-  server.maxConnections = 1;
+  const server = lifecycleServer(admit, (name) => log(null, name));
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(PATHS.supervisor, resolve);
@@ -538,10 +548,10 @@ export async function startSupervisor() {
   }, 50);
   process.once('SIGTERM', async () => {
     ready = false;
-    // No retirement or relaunch from here on; the channel loss below is ours.
-    retiring = true;
-    clearInterval(ticker);
+    // No retirement, registration or broker job from here on: the stopped
+    // launcher gates all three, and the channel loss below is ours.
     launcher.stop();
+    clearInterval(ticker);
     if (active) revoke(active);
     // When an operator stops both units, systemd has signalled the broker too:
     // give it a moment to end with its own exit 0 before the cgroup kill. No
