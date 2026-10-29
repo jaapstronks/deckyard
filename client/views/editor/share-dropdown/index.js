@@ -34,6 +34,7 @@ export function setupShareDropdown({
   isAdmin,
   slideTypes,
   onShareStateChange,
+  selectedSlideNumbers,
 } = {}) {
   let notionAvailable = false;
   let dialog = null;
@@ -95,6 +96,7 @@ export function setupShareDropdown({
       id,
       root: mount,
       openPublic: () => openShare({ initialTab: 'public' }),
+      selectedSlideNumbers,
     });
   };
 

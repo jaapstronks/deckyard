@@ -46,12 +46,15 @@ import { repoRootOf } from '../storage/scope.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import {
   filterForExport,
+  mapDeckSlideLists,
   projectPresentationForAudience,
 } from '../utils/public-output.js';
+import { pinSlideJumps } from '../../shared/slide-types.js';
+import { spellSlideSelection } from '../../shared/slide-selection.js';
 import { loadThemeAssets } from '../utils/themes.js';
 import { buildThemeTemplateBuffer } from '../export/pptx-theme.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
-import { ForbiddenError } from '../utils/errors.js';
+import { AppError, ForbiddenError } from '../utils/errors.js';
 import { normalizeEmail } from '../../shared/email.js';
 
 /**
@@ -77,8 +80,88 @@ import { normalizeEmail } from '../../shared/email.js';
  * @property {string|null} exportLang - The language projected onto, or `null`
  *   for a format that carries every language version.
  * @property {string} langSuffix - The filename suffix for `exportLang`.
- * @property {string} title - The projected title, for the filename.
+ * @property {string} title - The projected title, for the filename; with a
+ *   slide selection, followed by the slides it names.
+ * @property {number[]|null} slideSelection - The slides `?slides=` named, as
+ *   sorted 1-based positions in the stored deck, or `null` for every slide.
  */
+
+/**
+ * The formats that render a slide selection (B871): the slide PDF (its file,
+ * stream and browser-print preview share the format id) and the PNG ZIP.
+ */
+const SLIDE_SELECTION_FORMATS = new Set(['pdf-slides', 'png-zip']);
+
+/** Refuse a `slides` selection as the canonical 400 `invalid`. */
+function invalidSelection(message) {
+  return new AppError(message, 400, { field: 'slides' }, 'invalid');
+}
+
+/**
+ * Parse a slide selection: comma-separated slide numbers and ranges, 1-based
+ * as the editor numbers its slides (`1,3-5`). The one reader of the spelling,
+ * for every export route and the queued worker.
+ *
+ * @param {string|null|undefined} raw - The `slides` parameter; absent means
+ *   the whole deck.
+ * @returns {number[]|null} Sorted, de-duplicated slide numbers, or `null`.
+ * @throws {AppError} 400 `invalid` with `details.field = 'slides'`.
+ */
+export function parseSlideSelection(raw) {
+  if (raw === null || raw === undefined) return null;
+  const numbers = new Set();
+  for (const part of String(raw).split(',')) {
+    const match = /^\s*(\d{1,4})(?:\s*-\s*(\d{1,4}))?\s*$/.exec(part);
+    const from = Number(match?.[1]);
+    const to = match?.[2] === undefined ? from : Number(match[2]);
+    if (!match || from < 1 || to < from) {
+      throw invalidSelection(
+        `Unknown slide selection '${raw}': use slide numbers and ranges, such as 1,3-5.`,
+      );
+    }
+    for (let n = from; n <= to; n += 1) numbers.add(n);
+  }
+  return [...numbers].sort((a, b) => a - b);
+}
+
+/**
+ * Keep the selected slides of every slide list the deck carries, by the ids
+ * at those positions of `slides`. Jumps are pinned against the whole deck
+ * first, so `#N` on a kept slide still names the stored slide N.
+ *
+ * @param {Object} pres - The projected deck.
+ * @param {number[]} selection - From {@link parseSlideSelection}.
+ * @param {Record<string, Object>} slideTypes
+ * @returns {Object}
+ * @throws {AppError} 400 `invalid` when a number is past the last slide.
+ */
+function selectSlides(pres, selection, slideTypes) {
+  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+  const last = selection[selection.length - 1];
+  if (last > slides.length) {
+    throw invalidSelection(
+      `Slide ${last} does not exist: this deck has ${slides.length} slides.`,
+    );
+  }
+  const ids = new Set(selection.map((n) => slides[n - 1]?.id));
+  return mapDeckSlideLists(pres, (list) =>
+    pinSlideJumps(list, slideTypes).filter((slide) => ids.has(slide?.id)),
+  );
+}
+
+/**
+ * The filename part a selection adds: `-slide-03` for one slide (as the
+ * single PNG names it), `-slides-1_3-5` for more.
+ *
+ * @param {number[]} selection
+ * @returns {string}
+ */
+function selectionTitleSuffix(selection) {
+  if (selection.length === 1) {
+    return `-slide-${String(selection[0]).padStart(2, '0')}`;
+  }
+  return `-slides-${spellSlideSelection(selection, '_')}`;
+}
 
 /**
  * The filename suffix for an export language.
@@ -98,13 +181,13 @@ function langSuffixFor(exportLang) {
  *
  * @param {StorageScope} scope
  * @param {Object} pres
- * @param {{ exportLang: string|null, stripLiveOnly: boolean, audience: 'author'|'reader' }} options
+ * @param {{ exportLang: string|null, stripLiveOnly: boolean, audience: 'author'|'reader', slideSelection?: number[]|null }} options
  * @returns {Promise<ExportContext>}
  */
 export async function buildExportContext(
   scope,
   pres,
-  { exportLang, stripLiveOnly, audience },
+  { exportLang, stripLiveOnly, audience, slideSelection = null },
 ) {
   const [theme, slideTypes] = await Promise.all([
     loadThemeAssets(repoRootOf(scope), pres.theme, scope),
@@ -118,9 +201,18 @@ export async function buildExportContext(
   const projected = exportLang
     ? projectPresentationForLang(safe, exportLang)
     : safe;
-  const filteredPres = stripLiveOnly
-    ? filterForExport(projected, { slideTypes })
+  const selected = slideSelection
+    ? selectSlides(projected, slideSelection, slideTypes)
     : projected;
+  const filteredPres = stripLiveOnly
+    ? filterForExport(selected, { slideTypes })
+    : selected;
+  if (slideSelection && !filteredPres.slides?.length) {
+    throw invalidSelection(
+      'None of the selected slides is exported: they are hidden in exports or live-only.',
+    );
+  }
+  const title = projected.title || 'presentation';
   return {
     pres: projected,
     filteredPres,
@@ -128,8 +220,29 @@ export async function buildExportContext(
     slideTypes,
     exportLang,
     langSuffix: langSuffixFor(exportLang),
-    title: projected.title || 'presentation',
+    title: slideSelection
+      ? title + selectionTitleSuffix(slideSelection)
+      : title,
+    slideSelection,
   };
+}
+
+/**
+ * Read a request's slide selection for its format: a format that renders
+ * the whole deck by nature refuses one rather than ignoring it.
+ *
+ * @param {string} format
+ * @param {string|null|undefined} slides
+ * @returns {number[]|null}
+ */
+function slideSelectionFor(format, slides) {
+  const selection = parseSlideSelection(slides);
+  if (selection && !SLIDE_SELECTION_FORMATS.has(format)) {
+    throw invalidSelection(
+      `The ${format} export has no slide selection: it is the whole deck.`,
+    );
+  }
+  return selection;
 }
 
 /**
@@ -148,15 +261,27 @@ export async function buildExportContext(
  *   D89): projecting first is what used to drop the other versions.
  * @param {boolean} [input.stripLiveOnly=true] - Filter `filteredPres` for
  *   export; `false` only for the data formats, which build from `pres`.
+ * @param {string|null} [input.slides] - A slide selection
+ *   ({@link parseSlideSelection}); absent means every slide.
  * @returns {Promise<ExportContext>}
  * @throws {NotFoundError} No deck with this id in this scope.
  * @throws {ForbiddenError} The deck is there, the read right is not.
+ * @throws {AppError} 400 `invalid` naming `slides`: an unreadable selection,
+ *   one on a format without selections, or one that leaves nothing to render.
  */
 export async function prepareExportContext(
   scope,
   identity,
-  { presentationId, format, lang, allLanguages = false, stripLiveOnly = true },
+  {
+    presentationId,
+    format,
+    lang,
+    allLanguages = false,
+    stripLiveOnly = true,
+    slides = null,
+  },
 ) {
+  const slideSelection = slideSelectionFor(format, slides);
   const pres = await loadPresentationForActor(scope, identity, presentationId);
   const audience = await exportAudience(pres, identity, format);
   const actor = identity.actor;
@@ -172,15 +297,15 @@ export async function prepareExportContext(
       ...(actor.unrestricted === true ? { unrestricted: true } : {}),
     },
   };
+  const ctx = await buildExportContext(scope, pres, {
+    exportLang: allLanguages ? null : normalizeLang(lang),
+    stripLiveOnly,
+    audience,
+    slideSelection,
+  });
+  // After the context: a selection it refuses was not an export either.
   countInstanceHealth([{ axis: 'export', key: format }]);
-  return {
-    ...(await buildExportContext(scope, pres, {
-      exportLang: allLanguages ? null : normalizeLang(lang),
-      stripLiveOnly,
-      audience,
-    })),
-    exportAccess,
-  };
+  return { ...ctx, exportAccess };
 }
 
 /** The current deck right, independent of an API key's action permissions. */
@@ -217,9 +342,17 @@ function requireExportAccess(access) {
  */
 export async function prepareQueuedExportContext(
   scope,
-  { presentationId, format, lang, stripLiveOnly = true, exportAccess },
+  {
+    presentationId,
+    format,
+    lang,
+    stripLiveOnly = true,
+    slides = null,
+    exportAccess,
+  },
 ) {
   requireExportAccess(exportAccess);
+  const slideSelection = slideSelectionFor(format, slides);
   if (
     exportAccess.presentationId !== presentationId ||
     exportAccess.format !== format
@@ -239,6 +372,7 @@ export async function prepareQueuedExportContext(
       exportLang: normalizeLang(lang),
       stripLiveOnly,
       audience,
+      slideSelection,
     })),
     exportAccess: { ...exportAccess, audience },
   };
