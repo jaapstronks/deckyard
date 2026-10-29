@@ -7,7 +7,11 @@ import {
   setDisplayName,
   setUiLocale,
 } from '../lib/api.js';
-import { sampleDeckSlides, SAMPLE_DECK_TITLE } from './_sample-content.js';
+import {
+  launchDeckSlides,
+  sampleDeckSlides,
+  SAMPLE_DECK_TITLE,
+} from './_sample-content.js';
 
 const SECOND_DECK_TITLE = 'Product launch overview';
 
@@ -18,7 +22,7 @@ export async function seedCreationView(api) {
   await deleteDecksByPrefix(api, SAMPLE_DECK_TITLE);
   await deleteDecksByPrefix(api, SECOND_DECK_TITLE);
   await seedDeck(api, { title: SAMPLE_DECK_TITLE, slides: sampleDeckSlides() });
-  await seedDeck(api, { title: SECOND_DECK_TITLE, slides: sampleDeckSlides() });
+  await seedDeck(api, { title: SECOND_DECK_TITLE, slides: launchDeckSlides() });
   return {};
 }
 
