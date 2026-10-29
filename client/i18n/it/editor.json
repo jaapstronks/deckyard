@@ -127,7 +127,7 @@
   "editor.analyzeModal.analyze": "Analizza",
   "editor.analyzeModal.analyzing.many": "Analisi di {count} slide…",
   "editor.analyzeModal.complete.many": "Analisi completata! {count} suggerimenti aggiunti come commenti.",
-  "editor.analyzeModal.connected": "Connesso, analisi in corso…",
+  "editor.analyzeModal.connected": "Connesso, analisi…",
   "editor.analyzeModal.creating": "Creazione dei suggerimenti…",
   "editor.analyzeModal.creatingN": "Creazione del suggerimento {n} di {total}…",
   "editor.analyzeModal.error": "Analisi non riuscita: {message}",
