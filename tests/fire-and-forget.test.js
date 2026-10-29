@@ -13,6 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  __settleBackgroundTasks,
   fireAndForget,
   ignoreRejection,
 } from '../server/utils/fire-and-forget.js';
@@ -89,4 +90,28 @@ test('ignoreRejection swallows a rejection silently and without logging', async 
   }
   assert.deepEqual(seen, [], 'no unhandled rejection escaped');
   assert.deepEqual(logged, [], 'the deliberate swallow logs nothing');
+});
+
+test('__settleBackgroundTasks waits for released tasks and the tasks they start', async () => {
+  const done = [];
+  const later = (ms, fn) =>
+    new Promise((resolve) => setTimeout(resolve, ms)).then(fn);
+  fireAndForget(
+    later(5, () => {
+      done.push('first');
+      fireAndForget(
+        later(5, () => done.push('second')),
+        'nested task',
+      );
+    }),
+    'outer task',
+  );
+  await withSilencedErrors(async () => {
+    fireAndForget(
+      later(1, () => Promise.reject(new Error('boom'))),
+      'failing',
+    );
+    await __settleBackgroundTasks();
+  });
+  assert.deepEqual(done, ['first', 'second']);
 });
