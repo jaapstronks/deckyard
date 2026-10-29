@@ -286,7 +286,7 @@
   },
   "client/styles/app/user/98-user-autocomplete.css": {
     "tokenisable-spacing": {
-      "count": 9
+      "count": 8
     }
   },
   "client/styles/app/user/99-notification-bell.css": {

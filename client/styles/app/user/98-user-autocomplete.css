@@ -2,8 +2,6 @@
 
 .user-autocomplete {
   position: relative;
-  flex: 1;
-  min-width: 200px;
 }
 
 .user-autocomplete-chips {
@@ -156,20 +154,4 @@
 .user-autocomplete-item-email {
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
-}
-
-/* Share modal integration */
-.share-collaborator-form-row.has-autocomplete {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-start;
-}
-
-.share-collaborator-form-row.has-autocomplete .user-autocomplete {
-  flex: 1;
-}
-
-.share-collaborator-form-row.has-autocomplete .share-collaborator-permission {
-  width: auto;
-  flex-shrink: 0;
 }
