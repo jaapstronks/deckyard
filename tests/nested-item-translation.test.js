@@ -231,19 +231,24 @@ test('a blank target blanks nested item texts, not their structure', () => {
   assert.equal(rows[1].blocks.length, 1, 'item counts follow the source');
 });
 
-test('fillMissing fills only the empty nested text', async () => {
+test('fillMissing fills only the empty nested text, from its own source path', async () => {
   const source = deck('nl');
   const target = deck('en-GB');
   target.slides[0].content.rows[0].blocks[1].body = '';
-  // The model answers with everything; only the blank may be taken.
-  const answer = deck('en-GB');
-  answer.slides[0].content.rows[0].blocks[0].body = 'DO NOT TAKE';
-  answer.slides[0].content.rows[0].blocks[1].body = 'Text B';
-  aiResponse = reply(answer);
+  // The model sees the one gap's source value; a key it was not asked for
+  // is never taken.
+  aiResponse = JSON.stringify({
+    translations: { f0: 'Text B', f1: 'DO NOT TAKE' },
+  });
 
   const filled = await translatePresentationStringsFillMissing(
-    { sourcePresentation: source, targetPresentation: target, missing: [] },
+    { sourcePresentation: source, targetPresentation: target },
     { from: 'nl', to: 'en-GB' },
+  );
+  assert.deepEqual(
+    JSON.parse(lastUserMessage),
+    { fields: { f0: 'Tekst B' } },
+    'only the source value on the gap path reaches the model',
   );
   const rows = rowsOf(filled);
   assert.equal(rows[0].blocks[1].body, 'Text B', 'the blank is filled');

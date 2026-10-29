@@ -71,6 +71,7 @@ import { slideRendered } from '../../../lib/slide-runtime/slide-render.js';
 import { debugLog } from '../../../lib/state/debug.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
+import { mirrorCollectionOp } from '../../../lib/slide-authoring/collection-mirror.js';
 
 /**
  * @param {Object} opts
@@ -1300,6 +1301,7 @@ export function createInlineEditor({
     const arr = slide ? getByPath(slide.content, path) : null;
     if (!Array.isArray(arr)) return;
     arr.splice(idx, 1);
+    mirrorCollectionOp(pres, slide.id, path, { kind: 'remove', index: idx });
     afterStructuralChange();
   }
 
@@ -1310,6 +1312,7 @@ export function createInlineEditor({
     if (!arr[from] || to < 0 || to >= arr.length) return;
     const [item] = arr.splice(from, 1);
     arr.splice(to, 0, item);
+    mirrorCollectionOp(pres, slide.id, path, { kind: 'move', from, to });
     afterStructuralChange();
   }
 

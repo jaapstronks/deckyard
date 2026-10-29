@@ -11,6 +11,7 @@ import {
   fieldFormRows,
 } from '../../../../shared/slide-types/form-layout.js';
 import { h } from '../../../lib/dom/index.js';
+import { mirrorCollectionOp } from '../../../lib/slide-authoring/collection-mirror.js';
 import { isSettingsField } from '../../../../shared/slide-types/settings-fields.js';
 import {
   imageCollectionSpec,
@@ -79,6 +80,10 @@ const collapsedState = createCollapsedState('collection');
  *   module's own recursion for a nested `items` field (text-blocks rows →
  *   blocks), which reads/writes through the parent item; no external caller
  *   uses it.
+ * @param {Array<string|number>} [o.path] - the collection's path in slide
+ *   content; defaults to `[field.key]`. The nested level passes its own
+ *   (`['rows', 2, 'blocks']`), so a remove or move reaches the same
+ *   collection in the other language versions (DY-773).
  * @param {Object} [o.labels] - { addLabelKey, addLabel } overrides (used by the
  *   nested level, resolved from the descriptor's `cards.child`)
  * @param {string|null} [o.lang] - deck language (`resolveDeckLang(pres)`);
@@ -98,6 +103,7 @@ export function createCollectionEditor({
   markDirty,
   scheduleUiRefresh,
   model = null,
+  path = null,
   labels = null,
   lang = null,
   depth = 0,
@@ -107,6 +113,11 @@ export function createCollectionEditor({
   getSelectedSlideId = () => slide?.id,
 } = {}) {
   const { fieldGrid } = fieldRenderers || {};
+  const collectionPath = Array.isArray(path) ? path : [field.key];
+  // A remove or move shifts items; the other language versions follow it
+  // per item, not per position (collection-mirror.js).
+  const mirror = (op) =>
+    mirrorCollectionOp(pres, slide?.id, collectionPath, op);
 
   const minItems = Math.max(0, Number(field?.minItems || 0) || 0);
   const maxItems = Math.max(minItems, Number(field?.maxItems || 99) || 99);
@@ -223,6 +234,7 @@ export function createCollectionEditor({
     const next = current.slice();
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
+    mirror({ kind: 'move', from, to });
     commit(next);
   };
 
@@ -327,6 +339,7 @@ export function createCollectionEditor({
               if (now.length <= removeFloor) return;
               const next = now.slice();
               next.splice(i, 1);
+              mirror({ kind: 'remove', index: i });
               commit(next);
             },
           },
@@ -380,6 +393,8 @@ export function createCollectionEditor({
               lang,
               depth: depth + 1,
               omitSettings,
+              pres,
+              path: [...collectionPath, i, k],
               model: {
                 read: () => {
                   const parent = readArr()[i];
