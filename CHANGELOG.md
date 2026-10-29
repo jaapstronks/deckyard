@@ -4,6 +4,28 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.93.0](https://github.com/jaapstronks/deckyard/compare/v1.92.1...v1.93.0) (2026-10-29)
+
+
+### Added
+
+* **capture:** a recipe for the follow-along invite shot (B883) ([#1915](https://github.com/jaapstronks/deckyard/issues/1915)) ([efcb7c4](https://github.com/jaapstronks/deckyard/commit/efcb7c43c43ad28691aa029466d8ff1f94f46aa1))
+* **export:** export one slide or a selection as PDF or PNG ZIP (B871) ([#1916](https://github.com/jaapstronks/deckyard/issues/1916)) ([014f098](https://github.com/jaapstronks/deckyard/commit/014f0986f51b27eb877372d90de7618131507ae7))
+
+
+### Fixed
+
+* **auth:** the password forms show their translated error when the server sent no sentence (B859) ([#1910](https://github.com/jaapstronks/deckyard/issues/1910)) ([3a4c1d8](https://github.com/jaapstronks/deckyard/commit/3a4c1d8fbc3ddede25ff303bd22e68264cdedb57))
+* **capture:** advanced-import-dialog opens the .deck sub-tab (B882) ([#1914](https://github.com/jaapstronks/deckyard/issues/1914)) ([1f72d6d](https://github.com/jaapstronks/deckyard/commit/1f72d6d08b7e3128c8a3dfd6fe56c9c7aba340be))
+* **capture:** AI-fill and dashboard recipes seed their own state (B886) ([#1919](https://github.com/jaapstronks/deckyard/issues/1919)) ([e06bdb6](https://github.com/jaapstronks/deckyard/commit/e06bdb63e506d6bcf85d3a954b45290ae5ea7034))
+* **comments:** the card on a spot posts only through the comments pane (B881) ([#1913](https://github.com/jaapstronks/deckyard/issues/1913)) ([b8c97dc](https://github.com/jaapstronks/deckyard/commit/b8c97dcbe75d1e1a31ca03ffb49aaf5e1432d101))
+* **editor:** a live-only slide gets no Accessibility section (B884) ([#1917](https://github.com/jaapstronks/deckyard/issues/1917)) ([946e238](https://github.com/jaapstronks/deckyard/commit/946e2388d1fcf183bbee50ec16562972950e660c))
+* **editor:** a refused shared link names the active language (B879) ([#1911](https://github.com/jaapstronks/deckyard/issues/1911)) ([67fffc8](https://github.com/jaapstronks/deckyard/commit/67fffc8da996dae10db693240369aef76e54bd92))
+* **editor:** the live-session facets travel on /api/slide-types (B885) ([#1918](https://github.com/jaapstronks/deckyard/issues/1918)) ([b8d16b9](https://github.com/jaapstronks/deckyard/commit/b8d16b92f260e59c6f28f1ab11222a39a89e346d))
+* **i18n:** failed requests show each form's translated copy when the server sent no sentence (B880) ([#1912](https://github.com/jaapstronks/deckyard/issues/1912)) ([6d94f70](https://github.com/jaapstronks/deckyard/commit/6d94f700d4d23f398a41d0ac0ca87de15b12d9cc))
+* **i18n:** Polish counts 2-4 in their own case, "3 linki" (B878) ([#1907](https://github.com/jaapstronks/deckyard/issues/1907)) ([eeccf34](https://github.com/jaapstronks/deckyard/commit/eeccf34e450d57552f69611b3743019a80264045))
+* **i18n:** tables and live edits follow every language per item; four editor follow-ups (B875) ([#1909](https://github.com/jaapstronks/deckyard/issues/1909)) ([7428d9b](https://github.com/jaapstronks/deckyard/commit/7428d9bc32c2a54f9fbf48ed3c991a1b1612b006))
+
 ## [1.92.1](https://github.com/jaapstronks/deckyard/compare/v1.92.0...v1.92.1) (2026-10-29)
 
 
