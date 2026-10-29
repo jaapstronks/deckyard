@@ -714,7 +714,7 @@ export async function runMissingTranslation(
   await writeTranslatedDeck(scope, identity.actor, pres);
 
   const filled = await translatePresentationStringsFillMissing(
-    { sourcePresentation: source, targetPresentation: target, missing },
+    { sourcePresentation: source, targetPresentation: target },
     { from, to, vendor, organizationId: scope.organizationId },
   );
 
