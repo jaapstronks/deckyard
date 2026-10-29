@@ -53,6 +53,8 @@ import {
   classifyFreshness,
   hashText,
   readSourceState,
+  referenceEnglish,
+  referenceKey,
   writeSourceState,
 } from './lib/i18n-source-state.js';
 import { translationValueProblems } from './lib/i18n-values.js';
@@ -299,10 +301,11 @@ export async function reviewReportFor(
 
   const entries = {};
   for (const key of [...why.keys()].sort()) {
+    const source = referenceEnglish(reference, key);
     entries[key] = {
       status: why.get(key).join(','),
-      source: reference[key],
-      sourceHash: hashText(reference[key]),
+      source,
+      sourceHash: hashText(source),
       previousTranslationHash: hashText(dict[key]),
       value: dict[key],
     };
@@ -419,7 +422,7 @@ export async function applyReviewPackage(
       problems.push(`${key}: unknown field(s) ${unknown.join(', ')}`);
     for (const f of ['sourceHash', 'previousTranslationHash', 'value'])
       if (!(f in entry)) problems.push(`${key}: missing "${f}"`);
-    const english = reference[key];
+    const english = referenceEnglish(reference, key);
     if (typeof english !== 'string') {
       problems.push(
         `${key}: not a key of ${REFERENCE_LOCALE}/ — nothing to translate`,
@@ -447,7 +450,7 @@ export async function applyReviewPackage(
   if (problems.length) throw new ReviewPackageError(problems.sort());
 
   // Validated: route each key to the file that holds it now, or for a new key
-  // to where en/ files it.
+  // to where en/ files the key it translates.
   const localeDir = path.join(dir, locale);
   /** @type {Map<string, Record<string, string>>} */
   const byFile = new Map();
@@ -468,7 +471,7 @@ export async function applyReviewPackage(
   const enIndex = await enFileIndex(dir);
   const touched = new Set();
   for (const [key, entry] of Object.entries(pkg.entries)) {
-    const comp = home.get(key) || fileFor(key, enIndex);
+    const comp = home.get(key) || fileFor(referenceKey(key), enIndex);
     if (!byFile.has(comp)) byFile.set(comp, {});
     byFile.get(comp)[key] = entry.value;
     touched.add(comp);

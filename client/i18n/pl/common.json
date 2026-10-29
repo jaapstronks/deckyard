@@ -33,6 +33,7 @@
   "analytics.generating": "Generowanie…",
   "analytics.heatmap.avgTime": "śr. {time}",
   "analytics.heatmap.views": "wyświetleń: {views}",
+  "analytics.heatmapAriaLabel.few": "Mapa zaangażowania obejmująca {count} slajdy",
   "analytics.heatmapAriaLabel.many": "Mapa zaangażowania obejmująca {count} slajdów",
   "analytics.highEngagement": "Wysokie",
   "analytics.last30Days": "Ostatnie 30 dni",
