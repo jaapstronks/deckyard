@@ -34,7 +34,7 @@ export function savedQualityIssues(pres, slideTypes) {
  * Context captured at failure time, including the full API diagnostics. No
  * deck body, authentication headers or user credentials enter the report.
  * @param {Object} opts
- * @returns {{el: HTMLElement, setError: Function, setNormalized: Function, sync: Function, detach: Function}}
+ * @returns {{el: HTMLElement, setError: Function, addNormalized: Function, sync: Function, detach: Function}}
  */
 export function createSaveFeedback({
   pres,
