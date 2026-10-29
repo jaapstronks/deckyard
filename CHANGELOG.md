@@ -4,6 +4,33 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.92.1](https://github.com/jaapstronks/deckyard/compare/v1.92.0...v1.92.1) (2026-10-29)
+
+
+### Fixed
+
+* an agent-made gallery without images gets no demo photos (B866) ([#1893](https://github.com/jaapstronks/deckyard/issues/1893)) ([a9c7c37](https://github.com/jaapstronks/deckyard/commit/a9c7c37a7d8c12cd09306f30bb301caab4e51d84))
+* an imported or AI gallery without images gets no demo photos (B862) ([#1889](https://github.com/jaapstronks/deckyard/issues/1889)) ([038eedf](https://github.com/jaapstronks/deckyard/commit/038eedf2bd85764bfa3b0a7d3a6f416b203fb22c))
+* **i18n:** collection removes and reorders follow every language per item; missing-fill translates per path (DY-773) ([#1900](https://github.com/jaapstronks/deckyard/issues/1900)) ([9854b8c](https://github.com/jaapstronks/deckyard/commit/9854b8c04e07600d30d9c3e5d440b27e4602f052))
+* **i18n:** dates, times and counts follow the UI locale (B868) ([#1894](https://github.com/jaapstronks/deckyard/issues/1894)) ([ce55433](https://github.com/jaapstronks/deckyard/commit/ce55433b8d6732a72d1f1c388434b6f2fc0f7345))
+* **i18n:** one relative-time formatter on Intl.RelativeTimeFormat (B148 batch14) ([#1891](https://github.com/jaapstronks/deckyard/issues/1891)) ([3059464](https://github.com/jaapstronks/deckyard/commit/3059464c01895ef6ca54d3908585e4ccce951cc3))
+* **i18n:** one word per content field and object name; Table split from Grid ([#1884](https://github.com/jaapstronks/deckyard/issues/1884)) ([df0638c](https://github.com/jaapstronks/deckyard/commit/df0638c58b04458e13da015dfc7586eb23ae2cd2))
+* **i18n:** one word per field, status and on/off label (B148 batch13b) ([#1888](https://github.com/jaapstronks/deckyard/issues/1888)) ([1cb856d](https://github.com/jaapstronks/deckyard/commit/1cb856db94b7ca09ccdc5f141e9c73d84361ed3c))
+* **i18n:** the invite modal's invalid-email message matches the other validation messages (B853) ([#1897](https://github.com/jaapstronks/deckyard/issues/1897)) ([887fd6f](https://github.com/jaapstronks/deckyard/commit/887fd6ff5ff33dd7ebff14cbf6ca2e051530553f))
+* **i18n:** the Polish share dialog writes its diacritics and says "Więcej opcji" (B877) ([#1905](https://github.com/jaapstronks/deckyard/issues/1905)) ([0d4ad76](https://github.com/jaapstronks/deckyard/commit/0d4ad763444dbb503e56c7318523339d3e811217))
+* **i18n:** the share dialog's status line speaks every locale (B873) ([#1904](https://github.com/jaapstronks/deckyard/issues/1904)) ([0ded36a](https://github.com/jaapstronks/deckyard/commit/0ded36a907e8ade9295802243dee18ea72a08285))
+* **i18n:** the UI names the shared tenant organization, never workspace (B869) ([#1898](https://github.com/jaapstronks/deckyard/issues/1898)) ([e72efaf](https://github.com/jaapstronks/deckyard/commit/e72efafe7b4f4a984c79addda25aa9e38b4ad36e))
+* no released background read deadlocks the PostgreSQL suite's truncate (B857) ([#1896](https://github.com/jaapstronks/deckyard/issues/1896)) ([dd1c053](https://github.com/jaapstronks/deckyard/commit/dd1c0535f95b1dd07fff579ed0a2af1cb1d2e722))
+* register unknown_field details so an undeclared key is a 400 (B863) ([#1886](https://github.com/jaapstronks/deckyard/issues/1886)) ([00c1087](https://github.com/jaapstronks/deckyard/commit/00c1087342ecf237c15714cde7fd8de0bf5e49c5))
+* **share:** the collaborator list keeps every row whole inside the Team panel at 320 px (B876) ([#1906](https://github.com/jaapstronks/deckyard/issues/1906)) ([6813bf9](https://github.com/jaapstronks/deckyard/commit/6813bf9b0d957410e1405c69bbc19438291cf4cd))
+* **share:** the invite row keeps search, role and Invite inside the Team panel at 320 px (B872) ([#1902](https://github.com/jaapstronks/deckyard/issues/1902)) ([e3517dc](https://github.com/jaapstronks/deckyard/commit/e3517dcc34583eda321e85c8cd6a77c3ea9fc887))
+* **share:** the visibility options stay inside their card at 320 px and 200 % zoom (B870) ([#1899](https://github.com/jaapstronks/deckyard/issues/1899)) ([cdc82cf](https://github.com/jaapstronks/deckyard/commit/cdc82cfda770d7952515b562c60d506f5f22c269))
+* the lightbox comment card is laid out like a thread (B867) ([#1895](https://github.com/jaapstronks/deckyard/issues/1895)) ([dd77d62](https://github.com/jaapstronks/deckyard/commit/dd77d62dcb6ff55d428ea2264972674b28e51143))
+* the notification bell's header actions wrap inside the panel (B850) ([#1901](https://github.com/jaapstronks/deckyard/issues/1901)) ([f928a82](https://github.com/jaapstronks/deckyard/commit/f928a82f3b2a6092d48d516d357481d50a9cab15))
+* the ownership filter chips wrap inside the Presentations header (B852) ([#1903](https://github.com/jaapstronks/deckyard/issues/1903)) ([ac7ab9c](https://github.com/jaapstronks/deckyard/commit/ac7ab9c25224fa8c9a883f5c239c071e74c255f6))
+* the render supervisor starts at boot; protocol.js is the shared wire contract ([7e37665](https://github.com/jaapstronks/deckyard/commit/7e376654ce681cfeaf88bdc4b5bc4742a89d3693))
+* the supervisor relaunches a broker that dies before registration ([#1892](https://github.com/jaapstronks/deckyard/issues/1892)) ([c6856bc](https://github.com/jaapstronks/deckyard/commit/c6856bc1511c8ffc8bf7164d564a37e5e240e785))
+
 ## [1.92.0](https://github.com/jaapstronks/deckyard/compare/v1.91.1...v1.92.0) (2026-10-28)
 
 
