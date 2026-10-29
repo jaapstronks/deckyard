@@ -469,7 +469,7 @@ export async function listPresentationsForActor(
  * @param {'collection'|'owned'|'shared'|'all'} [input.ownership='collection']
  * @param {boolean} [input.viewOnly]
  * @param {'private'|'organization'} [input.visibility] - Only decks with this
- *   visibility (Home's Workspace chip).
+ *   visibility (Home's Organization chip).
  * @param {string[]} [input.tags] - Only decks carrying one of these tag names.
  * @param {number|string} [input.limit] - 1..100, default 50.
  * @param {string} [input.cursor] - `nextCursor` of the previous page, made

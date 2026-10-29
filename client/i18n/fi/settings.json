@@ -312,7 +312,7 @@
   "settings.admin.webhooks.likertClosed.hint": "Tapahtuma: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Kun Likert-asteikko suljetaan",
   "settings.admin.webhooks.movedToOrganization.hint": "Tapahtuma: presentation.moved_to_organization",
-  "settings.admin.webhooks.movedToOrganization.title": "Kun esitys jaetaan työtilaan",
+  "settings.admin.webhooks.movedToOrganization.title": "Kun esitys jaetaan organisaatioon",
   "settings.admin.webhooks.pollClosed.hint": "Tapahtuma: interaction.poll_closed",
   "settings.admin.webhooks.pollClosed.title": "Kun kysely suljetaan",
   "settings.admin.webhooks.published.hint": "Tapahtuma: presentation.published",

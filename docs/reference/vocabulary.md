@@ -12,8 +12,7 @@ zero so they cannot creep back.
 
 | Concept                                                                        | The word                                                                                                                    | Never                                                                          |
 | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| The tenant entity (who owns decks, members, settings)                          | **`organization`** — code, DB, API, docs                                                                                    | `workspace` in any identifier, field, value, or column                         |
-| What the UI calls an organization                                              | **"Workspace"** — user-visible label strings only (i18n values, `t()` fallbacks)                                            | leaking the label into code                                                    |
+| The tenant entity (who owns decks, members, settings)                          | **`organization`** — code, DB, API, docs and UI                                                                             | `workspace` in any identifier, field, value, column or UI string               |
 | Who can see a deck besides owner/creator/collaborators                         | **`visibility`**, values **`'private' \| 'organization'`**                                                                  | `scope` as a field name; `'workspace'` as a value                              |
 | The org+actor context a storage call runs under                                | **`storageScope`** (type `StorageScope`, `server/storage/scope.js`)                                                         | a bare `scope` variable in mixed contexts                                      |
 | Which decks a listing includes by source (`collection`/`owned`/`shared`/`all`) | **`ownership`** — `listPresentationsForActor` (B607), MCP list filters, the client presentations view                       | `scope` (that's storage-scope); `visibility` (that's deck audience)            |
@@ -23,17 +22,17 @@ zero so they cannot creep back.
 | The presenter/audience live domain                                             | **`live-session`**                                                                                                          | `present-session`                                                              |
 | The multi-tenant feature flag                                                  | **`MULTI_ORG_ENABLED`** (`isMultiOrgEnabled()`)                                                                             | `MULTI_WORKSPACE_ENABLED`                                                      |
 
-## The organization / "Workspace" rule
+## The organization rule
 
-The entity is an `organization` everywhere a machine reads the word:
-identifiers, file names, DB columns and values, API fields and values, event
-names (`presentation.moved_to_organization`), env vars. **"Workspace" survives
-exclusively as the UI label** — the text a human sees on screen. That means
-i18n JSON values and the English fallback strings inside `t()` calls may say
-"workspace"; nothing else may. When code needs to mention the label, it says
-so explicitly (e.g. "the UI labels an organization \"workspace\"").
+The entity is an `organization` everywhere the word appears: identifiers, file
+names, DB columns and values, API fields and values, event names
+(`presentation.moved_to_organization`), env vars, and the text a human sees on
+screen. Every locale names it with its own word for organization (nl
+organisatie, de Organisation, fr organisation, …); no locale says workspace or
+its local equivalent. Key names such as `list.visibility.workspace` are
+identifiers that predate the rule and stay as they are.
 
-Decided 2026-08-06 and executed in one rename (D10, D11, B41-a). The public
+Decided 2026-08-06 and executed in one rename (D10, D11, B41-a). The "Workspace" UI label that rename kept was retired on 2026-10-29 (D365). The public
 API break (`scope` → `visibility`, `'workspace'` → `'organization'`) shipped as a
 breaking MINOR with a stored-data migration (074) — no accepts-both reading.
 
@@ -41,7 +40,8 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
 
 - **Enforced**: `tests/organization-vocabulary.test.js` pins `'workspace'`
   as a quoted value, the workspace-flag spellings, and the old scope-as-
-  visibility API names to zero in code; `tests/live-session-vocabulary.test.js`
+  visibility API names to zero in code, and the tenant word for workspace to
+  zero in every locale's i18n values and in the `t()` fallbacks; `tests/live-session-vocabulary.test.js`
   does the same for the live-session domain;
   `tests/listing-filter-vocabulary.test.js` pins the deck-source listing
   filter to `ownership` (never `scope`/`visibility`);

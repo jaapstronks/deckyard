@@ -357,7 +357,7 @@
   "settings.admin.webhooks.likertClosed.hint": "Event: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Wanneer een Likert-schaal is gesloten",
   "settings.admin.webhooks.movedToOrganization.hint": "Event: presentation.moved_to_organization",
-  "settings.admin.webhooks.movedToOrganization.title": "Wanneer een presentatie is gedeeld naar de workspace",
+  "settings.admin.webhooks.movedToOrganization.title": "Wanneer een presentatie is gedeeld met de organisatie",
   "settings.admin.webhooks.pollClosed.hint": "Event: interaction.poll_closed",
   "settings.admin.webhooks.pollClosed.title": "Wanneer een poll is gesloten",
   "settings.admin.webhooks.published.hint": "Event: presentation.published",

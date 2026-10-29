@@ -36,7 +36,7 @@ export function countActiveLinks(links, now = new Date()) {
 export function describeShareStatus({ visibility, activeLinks, published }) {
   const parts = [
     visibility === 'organization'
-      ? t('share.status.workspace', 'In your workspace')
+      ? t('share.status.workspace', 'In your organization')
       : t('share.status.private', 'Private'),
   ];
   if (typeof activeLinks === 'number') {

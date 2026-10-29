@@ -20,7 +20,7 @@
   "share.collaborators.removed": "Medarbetare borttagen",
   "share.collaborators.searchUsers": "Sök användare att bjuda in…",
   "share.collaborators.selectUserError": "Välj minst en användare",
-  "share.collaborators.title": "Bjud in arbetsyteanvändare",
+  "share.collaborators.title": "Bjud in användare i organisationen",
   "share.collaborators.transferOwnership": "Överför",
   "share.collaborators.transferOwnershipConfirm": "Överför ägarskapet för denna presentation till {email}?\n\nDu blir medarbetare med redigeringsbehörighet.",
   "share.collaborators.transferOwnershipPlaceholder": "namn@exempel.se",
@@ -167,10 +167,10 @@
   "share.tab.public": "Offentlig",
   "share.unlock": "Lås upp",
   "share.verifying": "Verifierar…",
-  "share.visibility.everyoneDesc": "Visas i den delade arbetsytan för alla medlemmar.",
-  "share.visibility.everyoneTitle": "Alla i din arbetsyta",
+  "share.visibility.everyoneDesc": "Visas för alla medlemmar i organisationen.",
+  "share.visibility.everyoneTitle": "Alla i din organisation",
   "share.visibility.privateDesc": "Förblir privat; bara du och de personer du bjuder in nedan kan se den.",
-  "share.visibility.privateLocked": "Bara en administratör kan flytta den ut ur arbetsytan.",
+  "share.visibility.privateLocked": "Bara en administratör kan flytta den ut ur organisationen.",
   "share.visibility.privateTitle": "Bara personer du bjuder in",
-  "share.visibility.title": "Vem kan hitta den i din arbetsyta?"
+  "share.visibility.title": "Vem kan hitta den i din organisation?"
 }

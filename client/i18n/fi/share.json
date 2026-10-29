@@ -20,7 +20,7 @@
   "share.collaborators.removed": "Yhteistyökumppani poistettu",
   "share.collaborators.searchUsers": "Etsi kutsuttavia käyttäjiä…",
   "share.collaborators.selectUserError": "Valitse vähintään yksi käyttäjä",
-  "share.collaborators.title": "Kutsu työtilan käyttäjiä",
+  "share.collaborators.title": "Kutsu organisaation käyttäjiä",
   "share.collaborators.transferOwnership": "Siirra",
   "share.collaborators.transferOwnershipConfirm": "Siirretäänkö tämän esityksen omistajuus käyttäjälle {email}?\n\nNykyisestä omistajasta tulee yhteistyökumppani, jolla on muokkausoikeus.",
   "share.collaborators.transferOwnershipPlaceholder": "nimi@esimerkki.fi",
@@ -168,10 +168,10 @@
   "share.tab.public": "Julkinen",
   "share.unlock": "Avaa",
   "share.verifying": "Vahvistetaan…",
-  "share.visibility.everyoneDesc": "Näkyy jaetussa työtilassa kaikille jäsenille.",
-  "share.visibility.everyoneTitle": "Kaikki työtilassa",
+  "share.visibility.everyoneDesc": "Näkyy kaikille organisaation jäsenille.",
+  "share.visibility.everyoneTitle": "Kaikki organisaatiossa",
   "share.visibility.privateDesc": "Pysyy yksityisenä; sen näkevät vain omistaja ja alle kutsutut henkilöt.",
-  "share.visibility.privateLocked": "Vain järjestelmänvalvoja voi siirtää tämän pois työtilasta.",
+  "share.visibility.privateLocked": "Vain järjestelmänvalvoja voi siirtää tämän pois organisaatiosta.",
   "share.visibility.privateTitle": "Vain kutsutut henkilöt",
-  "share.visibility.title": "Kuka löytää tämän työtilasta?"
+  "share.visibility.title": "Kuka löytää tämän organisaatiosta?"
 }

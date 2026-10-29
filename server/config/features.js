@@ -54,7 +54,7 @@ function envEnabledWithLegacy(name, defaultValue) {
 
 /**
  * Multi-organization mode.
- * When enabled, an instance can hold several organizations that users switch between (the UI labels an organization "Workspace"); who may create one is `isMultiOrgUserCreateEnabled()`.
+ * When enabled, an instance can hold several organizations that users switch between; who may create one is `isMultiOrgUserCreateEnabled()`.
  * When disabled (default), the system operates in single-organization mode using the default organization.
  * @returns {boolean}
  */

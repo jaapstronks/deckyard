@@ -220,7 +220,7 @@ export async function renderDashboard(root) {
       },
       {
         key: 'follow',
-        label: t('dashboard.source.follow', 'Workspace'),
+        label: t('dashboard.source.follow', 'Organization'),
         value: breakdown.follow || 0,
       },
       {

@@ -20,7 +20,7 @@
   "share.collaborators.removed": "Samarbejdspartner fjernet",
   "share.collaborators.searchUsers": "Søg efter brugere at invitere…",
   "share.collaborators.selectUserError": "Vælg mindst én bruger",
-  "share.collaborators.title": "Inviter arbejdsområde-brugere",
+  "share.collaborators.title": "Inviter brugere i organisationen",
   "share.collaborators.transferOwnership": "Overfør",
   "share.collaborators.transferOwnershipConfirm": "Overfør ejerskab af denne præsentation til {email}?\n\nDu bliver samarbejdspartner med redigeringsadgang.",
   "share.collaborators.transferOwnershipPlaceholder": "navn@eksempel.dk",
@@ -165,10 +165,10 @@
   "share.tab.public": "Offentlig",
   "share.unlock": "Lås op",
   "share.verifying": "Bekræfter…",
-  "share.visibility.everyoneDesc": "Vises i det delte arbejdsområde for alle medlemmer.",
-  "share.visibility.everyoneTitle": "Alle i dit arbejdsområde",
+  "share.visibility.everyoneDesc": "Vises for alle medlemmer af organisationen.",
+  "share.visibility.everyoneTitle": "Alle i din organisation",
   "share.visibility.privateDesc": "Forbliver privat; kun du og de personer, du inviterer nedenfor, kan se den.",
-  "share.visibility.privateLocked": "Kun en administrator kan flytte den ud af arbejdsområdet.",
+  "share.visibility.privateLocked": "Kun en administrator kan flytte den ud af organisationen.",
   "share.visibility.privateTitle": "Kun personer, du inviterer",
-  "share.visibility.title": "Hvem kan finde den i dit arbejdsområde?"
+  "share.visibility.title": "Hvem kan finde den i din organisation?"
 }

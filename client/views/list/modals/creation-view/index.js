@@ -287,7 +287,7 @@ export function openCreationView({
     class: 'help creation-theme-hint is-hidden',
     text: t(
       'list.creationView.themeOptionalHint',
-      'Keeps the workspace theme unless you pick another.',
+      'Keeps the organization theme unless you pick another.',
     ),
   });
   setupWrap.append(langSelect.wrap, themeDisclosure, themeHint);

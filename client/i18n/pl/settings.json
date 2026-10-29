@@ -310,7 +310,7 @@
   "settings.admin.webhooks.likertClosed.hint": "Zdarzenie: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Gdy skala Likerta zostanie zamknięta",
   "settings.admin.webhooks.movedToOrganization.hint": "Zdarzenie: presentation.moved_to_organization",
-  "settings.admin.webhooks.movedToOrganization.title": "Gdy prezentacja zostanie udostępniona w przestrzeni roboczej",
+  "settings.admin.webhooks.movedToOrganization.title": "Gdy prezentacja zostanie udostępniona w organizacji",
   "settings.admin.webhooks.pollClosed.hint": "Zdarzenie: interaction.poll_closed",
   "settings.admin.webhooks.pollClosed.title": "Gdy ankieta zostanie zamknięta",
   "settings.admin.webhooks.published.hint": "Zdarzenie: presentation.published",

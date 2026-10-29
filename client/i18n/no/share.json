@@ -20,7 +20,7 @@
   "share.collaborators.removed": "Samarbeidspartner fjernet",
   "share.collaborators.searchUsers": "Søk etter brukere å invitere…",
   "share.collaborators.selectUserError": "Velg minst én bruker",
-  "share.collaborators.title": "Inviter brukere i arbeidsområdet",
+  "share.collaborators.title": "Inviter brukere i organisasjonen",
   "share.collaborators.transferOwnership": "Overfør",
   "share.collaborators.transferOwnershipConfirm": "Overføre eierskap av denne presentasjonen til {email}?\n\nDu blir samarbeidspartner med redigeringstilgang.",
   "share.collaborators.transferOwnershipPlaceholder": "navn@eksempel.no",
@@ -166,10 +166,10 @@
   "share.tab.public": "Offentlig",
   "share.unlock": "Lås opp",
   "share.verifying": "Bekrefter…",
-  "share.visibility.everyoneDesc": "Vises i det delte arbeidsområdet for alle medlemmer.",
-  "share.visibility.everyoneTitle": "Alle i arbeidsområdet ditt",
+  "share.visibility.everyoneDesc": "Vises for alle medlemmer av organisasjonen.",
+  "share.visibility.everyoneTitle": "Alle i organisasjonen din",
   "share.visibility.privateDesc": "Forblir privat; bare du og de du inviterer nedenfor, kan se den.",
-  "share.visibility.privateLocked": "Bare en administrator kan flytte den ut av arbeidsområdet.",
+  "share.visibility.privateLocked": "Bare en administrator kan flytte den ut av organisasjonen.",
   "share.visibility.privateTitle": "Bare personer du inviterer",
-  "share.visibility.title": "Hvem kan finne den i arbeidsområdet ditt?"
+  "share.visibility.title": "Hvem kan finne den i organisasjonen din?"
 }

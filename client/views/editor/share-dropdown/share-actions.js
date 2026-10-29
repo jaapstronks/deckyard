@@ -1,8 +1,8 @@
 /**
  * Share actions — handler for adding a published deck's embed to Notion.
  *
- * Workspace scope changes (share-to-workspace / move-to-private) now live inline
- * in the Share dialog's Workspace tab (`modals/share-modal/visibility-section.js`).
+ * Organization scope changes (share-to-workspace / move-to-private) now live inline
+ * in the Share dialog's Organization tab (`modals/share-modal/visibility-section.js`).
  */
 
 import { normalizeLang } from '../../../lib/format/i18n.js';

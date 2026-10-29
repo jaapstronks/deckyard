@@ -44,7 +44,7 @@ test('installed and existing definitions are a success, named by label', () => {
   assert.deepEqual(outcome.sentences, [
     'Theme “Brand” installed.',
     'Slide types installed: “KPI”.',
-    'Slide types already in your workspace: “Quote X”.',
+    'Slide types already in your organization: “Quote X”.',
   ]);
 });
 
@@ -72,7 +72,7 @@ test('not installed is a warning that says who can install it', () => {
   });
   assert.equal(notPermitted.type, 'warning');
   assert.match(notPermitted.sentences[0], /placeholders: “kpi”\./);
-  assert.match(notPermitted.sentences[1], /A designer in your workspace/);
+  assert.match(notPermitted.sentences[1], /A designer in your organization/);
 });
 
 test('missing fonts and failed assets are reported', () => {
@@ -174,7 +174,7 @@ test('what was left out stays in the dialog with a next step, not a toast', asyn
   assert.equal(navUrl, '/app/p1?lang=nl');
   assert.equal(warnings.length, 2);
   assert.match(warnings[0], /Theme “Brand” is in the file but not installed/);
-  assert.match(warnings[1], /A designer in your workspace/);
+  assert.match(warnings[1], /A designer in your organization/);
 });
 
 test('a refused bundle is an inline error at the file input, cleared on retry', async () => {

@@ -81,7 +81,7 @@ export function deckImportOutcome(created) {
       sentences.push(
         t(
           'list.deckImport.themeExisting',
-          'Uses theme {name}, already in your workspace.',
+          'Uses theme {name}, already in your organization.',
           { name },
         ),
       );
@@ -120,7 +120,7 @@ export function deckImportOutcome(created) {
     sentences.push(
       t(
         'list.deckImport.typesExisting',
-        'Slide types already in your workspace: {names}.',
+        'Slide types already in your organization: {names}.',
         { names: existing },
       ),
     );
@@ -147,7 +147,7 @@ export function deckImportOutcome(created) {
     sentences.push(
       t(
         'list.deckImport.askDesigner',
-        'A designer in your workspace can install them by importing the file again.',
+        'A designer in your organization can install them by importing the file again.',
       ),
     );
   } else if (notRequested) {
@@ -240,7 +240,7 @@ export function createDeckImportPanel({ canInstall }) {
       id: `deck-install-hint-${++seq}`,
       text: t(
         'list.deckImport.installHint',
-        'Adds them to your workspace for everyone. Nothing already there is overwritten.',
+        'Adds them to your organization for everyone. Nothing already there is overwritten.',
       ),
     });
     installBox = h('input', { type: 'checkbox', 'aria-describedby': hint.id });

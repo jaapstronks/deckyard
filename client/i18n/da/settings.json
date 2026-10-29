@@ -299,7 +299,7 @@
   "settings.admin.webhooks.likertClosed.hint": "Hændelse: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Når en Likert-skala lukkes",
   "settings.admin.webhooks.movedToOrganization.hint": "Hændelse: presentation.moved_to_organization",
-  "settings.admin.webhooks.movedToOrganization.title": "Når en præsentation deles med arbejdsområdet",
+  "settings.admin.webhooks.movedToOrganization.title": "Når en præsentation deles med organisationen",
   "settings.admin.webhooks.pollClosed.hint": "Hændelse: interaction.poll_closed",
   "settings.admin.webhooks.pollClosed.title": "Når en afstemning lukkes",
   "settings.admin.webhooks.published.hint": "Hændelse: presentation.published",

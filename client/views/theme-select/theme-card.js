@@ -88,7 +88,7 @@ export function createThemeCard({ record, slideTypes, onSelect, inView }) {
     caption.append(
       h('span', {
         class: 'theme-picker-badge',
-        text: t('common.themeDefault', 'Workspace default'),
+        text: t('common.themeDefault', 'Organization default'),
       }),
     );
   }
