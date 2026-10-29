@@ -146,20 +146,21 @@ nothing is discoverable only by `ls`.
 
 **Theming & styling**
 
-| Doc                                                                      | What it covers                                              |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| [`theme-config.md`](reference/theme-config.md)                           | Database themes                                             |
-| [`theme-slide-backgrounds.md`](reference/theme-slide-backgrounds.md)     | Theme-defined background variants                           |
-| [`slide-background-contrast.md`](reference/slide-background-contrast.md) | Background images, contrast and overlays                    |
-| [`contrast.md`](reference/contrast.md)                                   | The one contrast implementation                             |
-| [`nested-surfaces.md`](reference/nested-surfaces.md)                     | Text on a panel, bar or card that paints its own background |
-| [`css-tokens.md`](reference/css-tokens.md)                               | CSS design tokens (app chrome)                              |
-| [`css-ownership.md`](reference/css-ownership.md)                         | App CSS ownership gate and fork path migrations             |
-| [`slide-roles.md`](reference/slide-roles.md)                             | The role-token vocabulary for slide CSS, and the theme seam |
-| [`css-breakpoints.md`](reference/css-breakpoints.md)                     | The shared breakpoint ladder                                |
-| [`css-important.md`](reference/css-important.md)                         | Every `!important`, by-design vs cascade-patch              |
-| [`slide-type-css-contract.md`](reference/slide-type-css-contract.md)     | The class names a slide type emits are a public contract    |
-| [`font-management.md`](reference/font-management.md)                     | Font management                                             |
+| Doc                                                                      | What it covers                                                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| [`theme-config.md`](reference/theme-config.md)                           | Database themes                                               |
+| [`theme-slide-backgrounds.md`](reference/theme-slide-backgrounds.md)     | Theme-defined background variants                             |
+| [`slide-background-contrast.md`](reference/slide-background-contrast.md) | Background images, contrast and overlays                      |
+| [`contrast.md`](reference/contrast.md)                                   | The one contrast implementation                               |
+| [`nested-surfaces.md`](reference/nested-surfaces.md)                     | Text on a panel, bar or card that paints its own background   |
+| [`css-layers.md`](reference/css-layers.md)                               | Slide vs app CSS layers, load order and generated aggregators |
+| [`css-tokens.md`](reference/css-tokens.md)                               | CSS design tokens (app chrome)                                |
+| [`css-ownership.md`](reference/css-ownership.md)                         | App CSS ownership gate and fork path migrations               |
+| [`slide-roles.md`](reference/slide-roles.md)                             | The role-token vocabulary for slide CSS, and the theme seam   |
+| [`css-breakpoints.md`](reference/css-breakpoints.md)                     | The shared breakpoint ladder                                  |
+| [`css-important.md`](reference/css-important.md)                         | Every `!important`, by-design vs cascade-patch                |
+| [`slide-type-css-contract.md`](reference/slide-type-css-contract.md)     | The class names a slide type emits are a public contract      |
+| [`font-management.md`](reference/font-management.md)                     | Font management                                               |
 
 **Agents, AI & API**
 
