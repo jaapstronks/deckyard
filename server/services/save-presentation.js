@@ -73,7 +73,7 @@ const log = createLogger('save-presentation');
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
  */
 
-/** Check only new or changed submitted slides, in each submitted language. */
+/** Check only new or changed submitted slides, in each submitted language, the active one first. */
 async function assertChangedSlideFields(scope, pres, changes) {
   const versions = changes.i18n?.versions || {};
   refuseNonCanonicalVersionKeys(versions);
@@ -96,6 +96,9 @@ async function assertChangedSlideFields(scope, pres, changes) {
     });
   }
   if (!buffers.some(({ slides }) => Array.isArray(slides))) return;
+  // The author reads the version on screen: a value every version shares (a
+  // link) is refused there, not in the first version that carries it (B879).
+  buffers.sort((a, b) => (b.lang === active) - (a.lang === active));
   const slideTypes = await buildMergedSlideTypes(scope);
   for (const { slides, before, lang } of buffers) {
     const stored = new Map((before || []).map((s) => [s.id, s]));

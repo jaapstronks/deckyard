@@ -764,6 +764,68 @@ test('editor save-manager persists empty translation prose when adding a languag
   );
 });
 
+test('editor: a link every version shares is refused in the active language, so the notice and "Go to field" stay there (B879)', async () => {
+  const db = await installDb();
+  const slide = (title) => ({
+    id: 'contact-1',
+    type: 'end-slide',
+    content: { title, contactUrl: 'https://example.com' },
+  });
+  storedDeck(db).slides = [slide('Contact')];
+  storedDeck(db).i18n = {
+    dominant: 'nl',
+    active: 'en-GB',
+    versions: {
+      nl: { title: 'NL', slides: [slide('Contact')] },
+      'en-GB': { title: 'EN', slides: [slide('Contact us')] },
+    },
+  };
+  const pres = (await editorRead(OWNER)).json();
+  const failures = [];
+  const mgr = createSaveManager({
+    api: async (_path, opts) => {
+      const response = await editorSave(OWNER, opts.body, {
+        revision: Number(opts.headers['If-Match']),
+      });
+      if (response.statusCode !== 200) {
+        const error = Object.assign(
+          new Error(response.json().message),
+          response.json(),
+        );
+        failures.push(error);
+        throw error;
+      }
+      return response.json();
+    },
+    toast: { info() {}, success() {}, error() {} },
+    pres,
+    id: pres.id,
+    SLIDE_TYPES: {
+      'end-slide': {
+        fields: [
+          { key: 'title', type: 'string', required: true },
+          { key: 'contactUrl', type: 'url' },
+        ],
+      },
+    },
+    normalizeLang,
+    getSelectedSlideId: () => 'contact-1',
+  });
+
+  pres.slides[0].content.contactUrl = 'javascript:alert(1)';
+  mgr.markDirty({ slideId: 'contact-1' });
+  await mgr.requestSave().catch(() => {});
+  mgr.cancelAutosave();
+  assert.equal(failures.length, 1);
+  assert.equal(
+    pres.i18n.versions.nl.slides[0].content.contactUrl,
+    'javascript:alert(1)',
+    'the save carries the shared link into the other version too',
+  );
+  assert.equal(failures[0].details.field, 'contactUrl');
+  assert.equal(failures[0].details.lang, 'en-GB');
+});
+
 test('translation field validation permits nested prose gaps while keeping structural and URL checks', () => {
   const slideTypes = {
     custom: {
