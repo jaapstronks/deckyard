@@ -196,10 +196,11 @@ test('read-only markers show pins but never enter add mode', () => {
 });
 
 function makePreview({ support } = {}) {
-  const posted = [];
+  // The card posts only through the pane's support, which owns the refusal
+  // sentence (B881); the transport is never its second route.
   const commentsApi = {
     listSlideComments: async () => [],
-    createComment: async (c) => posted.push(c),
+    createComment: async () => assert.fail('the card posted past the pane'),
   };
   const panel = createPreviewPanel({
     root: document.body,
@@ -213,7 +214,7 @@ function makePreview({ support } = {}) {
     getAnchoredComposerSupport: () => support,
   });
   document.body.append(panel.previewEl);
-  return { panel, posted };
+  return { panel };
 }
 
 test('the keyboard places a pin in the middle and opens the rich composer; Escape cancels', async () => {
@@ -280,6 +281,50 @@ test('a refused anchored post shows inline in the card and keeps it open', async
   assert.match(card.textContent, /This slide is not saved yet\./);
   assert.ok(panel.previewEl.querySelector('.positioned-comment-popup'));
   panel.previewEl.remove();
+});
+
+test('a failed post from the card shows the pane’s copy, or the server sentence (B881)', async () => {
+  let failure;
+  const api = async (path, opts = {}) => {
+    if (opts.method === 'POST') throw failure;
+    if (String(path).includes('/comments/counts')) return { counts: {} };
+    if (String(path).includes('/comments'))
+      return { comments: [], openCount: 0 };
+    return {};
+  };
+  const pane = await openPanel([], {
+    api,
+    commentsApi: createCommentsApi({ api, presentationId: 'p1' }),
+  });
+  const { panel } = makePreview({ support: pane.anchoredComposerSupport });
+
+  const post = async () => {
+    panel.startPinMode({ keyboard: true });
+    const card = panel.previewEl.querySelector('.positioned-comment-popup');
+    card.querySelector('.comment-rich-input').textContent = 'Hello';
+    [...card.querySelectorAll('button')]
+      .find((b) => b.textContent === 'Post')
+      .click();
+    await tick();
+    await tick();
+    return card.querySelector('.inline-error').textContent;
+  };
+
+  // What `api()` throws for a 500 without a sentence and for a network error.
+  failure = Object.assign(new Error('Request failed (500)'), {
+    statusCode: 500,
+    body: { ok: false, error: 'internal' },
+  });
+  assert.equal(await post(), 'Failed to post comment');
+  failure = new TypeError('Failed to fetch');
+  assert.equal(await post(), 'Failed to post comment');
+  failure = Object.assign(new Error('Comments are closed'), {
+    statusCode: 403,
+    body: { ok: false, error: 'forbidden', message: 'Comments are closed' },
+  });
+  assert.equal(await post(), 'Comments are closed');
+  panel.previewEl.remove();
+  pane.panelEl.remove();
 });
 
 test('the in-app viewer shows the slide’s pins read-only', async () => {
