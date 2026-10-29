@@ -29,6 +29,7 @@ import tableSlideEditor from './table-slide-editor.js';
 import kpiSlideEditor from './kpi-slide-editor.js';
 import likertSlideEditor from './likert-slide-editor.js';
 import processSlideEditor from './process-slide-editor.js';
+import followInviteSlide from './follow-invite-slide.js';
 
 // Marketing shots — deckyard-website public/images/marketing/, one pair per
 // shot. See capture/README.md § Marketing shots for how they differ from the
@@ -80,6 +81,7 @@ export const RECIPES = [
   kpiSlideEditor,
   likertSlideEditor,
   processSlideEditor,
+  followInviteSlide,
   editorFormNl,
   editorFormEn,
   editorCanvasNl,

@@ -19,7 +19,8 @@ export function createPreviewPanel({
   // Slide comments support
   commentsApi,
   // The comments pane's posting and mention lookup, read at open time (the
-  // pane is built after this panel): the card on a spot posts like the pane.
+  // pane is built after this panel): the card on a spot posts only through
+  // the pane, which owns the refusal sentence (B881).
   getAnchoredComposerSupport,
   // Positioned-marker click: opens the comments pane on this comment (the
   // under-slide thread list folded into the inspector rail, fase 4).
@@ -188,23 +189,16 @@ export function createPreviewPanel({
   function showPositionedCommentPopup(x, y) {
     hidePositionedCommentPopup();
     if (pinModeHint) pinModeHint.hidden = true;
-    const support = getAnchoredComposerSupport?.();
+    const support = getAnchoredComposerSupport();
     positionedCommentPopup = createAnchoredComposer({
       // In previewStage (not thumb) to avoid overflow clipping.
       stageEl: previewStage,
       thumbEl: thumb,
       x,
       y,
-      attachMentions: support?.attachMentions,
+      attachMentions: support.attachMentions,
       onSubmit: async (body) => {
-        const position = { positionX: x, positionY: y };
-        if (support) await support.onSubmit(body, position);
-        else
-          await commentsApi.createComment({
-            body,
-            slideId: getSelectedSlideId?.() || null,
-            ...position,
-          });
+        await support.onSubmit(body, { positionX: x, positionY: y });
         leaveAddMode();
         // Refresh to show the new marker
         refreshCommentMarkers();

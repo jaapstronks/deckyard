@@ -190,22 +190,15 @@ export function createPreviewLightbox({
     // The same card as on the editor canvas (one composer, D355).
     const showPopup = (x, y) => {
       hidePopup();
-      const support = getAnchoredComposerSupport?.();
+      const support = getAnchoredComposerSupport();
       positionedPopup = createAnchoredComposer({
         stageEl: stage,
         thumbEl: bigThumb,
         x,
         y,
-        attachMentions: support?.attachMentions,
+        attachMentions: support.attachMentions,
         onSubmit: async (body) => {
-          const position = { positionX: x, positionY: y };
-          if (support) await support.onSubmit(body, position);
-          else
-            await commentsApi.createComment({
-              body,
-              slideId: getSelectedSlideId?.() || null,
-              ...position,
-            });
+          await support.onSubmit(body, { positionX: x, positionY: y });
           leaveAddMode();
           refreshMarkers();
           onCommentAdded?.();
