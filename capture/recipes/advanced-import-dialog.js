@@ -13,9 +13,6 @@ import {
   showCreationMethod,
 } from './_creation-view-shots.js';
 
-/** Position of `.deck` in the import panel's sub-tabs (`import-compose.js`). */
-const DECK_SUBTAB_INDEX = 1;
-
 /** @type {import('../lib/recipe.js').Recipe} */
 export default {
   id: 'advanced-import-dialog',
@@ -29,13 +26,7 @@ export default {
   async action(page) {
     await showCreationMethod(page, 'import');
     const panel = '.creation-panel[data-method="import"]';
-    await page.evaluate(
-      (sel, index) => {
-        document.querySelectorAll(`${sel} .sb-segmented-btn`)[index].click();
-      },
-      panel,
-      DECK_SUBTAB_INDEX,
-    );
+    await page.click(`${panel} .sb-segmented-btn[data-value="deck"]`);
     // The `.deck` file input is the one sign this sub-panel, and not the
     // PowerPoint/PDF one, is on screen.
     await page.waitForSelector(`${panel} input[type="file"][accept^=".deck"]`, {

@@ -62,29 +62,36 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     class: 'creation-panel is-hidden',
     'data-method': 'import',
   });
+  // `data-value` is the sub-tab key, as `createSegmented()` stamps it: labels
+  // are translated and the order moves, the key does not.
   const importSubtabs = h('div', { class: 'sb-segmented' });
   const btnImpPptxPdf = h('button', {
     type: 'button',
+    'data-value': 'pptx-pdf',
     class: 'sb-segmented-btn is-active',
     text: t('list.creationView.importImages.tab', 'PowerPoint or PDF'),
   });
   const btnImpDeck = h('button', {
     type: 'button',
+    'data-value': 'deck',
     class: 'sb-segmented-btn',
     text: t('list.newPresentation.mode.importDeck', 'Import .deck'),
   });
   const btnImpJson = h('button', {
     type: 'button',
+    'data-value': 'json',
     class: 'sb-segmented-btn',
     text: t('list.newPresentation.mode.importJson', 'Import JSON'),
   });
   const btnImpMd = h('button', {
     type: 'button',
+    'data-value': 'import-md',
     class: 'sb-segmented-btn',
     text: t('list.newPresentation.mode.importMarkdown', 'Import Markdown'),
   });
   const btnImpPasteMd = h('button', {
     type: 'button',
+    'data-value': 'paste-md',
     class: 'sb-segmented-btn',
     text: t('list.newPresentation.mode.pasteMarkdown', 'Paste Markdown'),
   });
