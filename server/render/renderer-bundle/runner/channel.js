@@ -1,3 +1,4 @@
+import net from 'node:net';
 import { parseJson } from '../protocol.js';
 
 /** Bounded, sequenced lifecycle channel. The socket is already authenticated.
@@ -52,4 +53,15 @@ export function lifecycleChannel(socket, onMessage, onFailure) {
     },
     close: fail,
   };
+}
+
+/** The supervisor's lifecycle listener: one connection at a time, each paused
+ * until `admit` has checked the peer. A connection beyond that limit is closed
+ * by the server without reaching `admit`; `lifecycle_connection_dropped` names
+ * it, so it is not left to the dropped broker's own journal alone. */
+export function lifecycleServer(admit, log) {
+  const server = net.createServer({ pauseOnConnect: true }, admit);
+  server.maxConnections = 1;
+  server.on('drop', () => log('lifecycle_connection_dropped'));
+  return server;
 }
