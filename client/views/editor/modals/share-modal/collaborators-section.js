@@ -91,11 +91,11 @@ export function createCollaboratorsSection({
   // Progress indicator for batch invites
   const progressEl = h('div', { class: 'share-collaborator-progress' });
 
-  const formRow = h(
-    'div',
-    { class: 'share-collaborator-form-row has-autocomplete' },
-    [autocomplete.el, permissionSelect, addBtn],
-  );
+  const formRow = h('div', { class: 'share-collaborator-form-row' }, [
+    autocomplete.el,
+    permissionSelect,
+    addBtn,
+  ]);
 
   // Every refusal of the invite form lands here, beside the Invite button, and
   // is cleared at the next attempt (feedback-surfaces.md, second kind).

@@ -513,11 +513,6 @@
     "single-slide-editor-toolbar"
   ],
   "user/05-avatar.css": ["avatar--lg", "avatar--xl", "avatar--xs"],
-  "user/98-user-autocomplete.css": [
-    "has-autocomplete",
-    "share-collaborator-form-row",
-    "share-collaborator-permission"
-  ],
   "viewer/95-viewer-mode.css": [
     "comments-panel",
     "is-open",
