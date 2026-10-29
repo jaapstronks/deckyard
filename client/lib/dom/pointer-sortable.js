@@ -19,7 +19,10 @@ import { takeEscape } from './escape.js';
  * so a row-level sortable never reacts to a block-level handle inside it.
  *
  * Keyboard: the handle is a real <button>; ArrowUp/ArrowDown move the item
- * one slot, which the HTML5 implementation this replaces never offered.
+ * one slot, which the HTML5 implementation this replaces never offered. The
+ * editors re-render the list on commit, so afterwards the focus goes to the
+ * moved item's handle again: without that the first arrow press dropped the
+ * focus and a keyboard user could move an item one slot only (B875).
  *
  * @param {Object} o
  * @param {HTMLElement} o.container - the list element holding the items
@@ -254,6 +257,9 @@ export function attachPointerSortable({
     if (from < 0 || to < 0 || to >= list.length) return;
     e.preventDefault();
     onReorder?.(from, to);
+    // The callers re-render synchronously; follow the item to its new slot.
+    const moved = items()[to]?.querySelector(handleSelector);
+    if (moved && moved !== document.activeElement) moved.focus();
   };
 
   // Mark the container so nested instances can tell whose handle is whose.

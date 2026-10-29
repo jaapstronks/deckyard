@@ -132,6 +132,7 @@ export function createRenderField({
     if (editor === 'table-grid') {
       return createTableGridEditor({
         slide,
+        pres,
         markDirty,
         rerenderEditor,
         scheduleUiRefresh,

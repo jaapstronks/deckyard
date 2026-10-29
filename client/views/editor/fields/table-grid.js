@@ -16,6 +16,7 @@ import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal, createTextArea } from '../../../lib/dom/modal.js';
 import { h } from '../../../lib/dom/index.js';
 import { icon } from '../../../lib/dom/icons.js';
+import { mirrorCollectionOp } from '../../../lib/slide-authoring/collection-mirror.js';
 
 /**
  * The `table-grid` widget of the field-editor vocabulary
@@ -113,9 +114,16 @@ function addColumn(slide) {
   return addTabularColumn(slide.content, TABLE_COLUMN_KEYS);
 }
 
-function deleteRow(slide, rIdx) {
+// A row or column delete shifts cells; the other language versions follow it
+// per cell, not per position (collection-mirror.js, DY-773).
+
+function deleteRow(slide, rIdx, pres) {
   if ((slide.content.rows || []).length <= 1) return false;
   slide.content.rows.splice(rIdx, 1);
+  mirrorCollectionOp(pres, slide.id, [TABLE_COLUMN_KEYS.rowsKey], {
+    kind: 'remove',
+    index: rIdx,
+  });
   return true;
 }
 
@@ -124,8 +132,14 @@ function deleteRow(slide, rIdx) {
  * removing a middle column keeps the remaining content (the old "− Column"
  * button could only drop the last column).
  */
-function deleteColumn(slide, cIdx) {
-  return deleteTabularColumn(slide.content, cIdx, TABLE_COLUMN_KEYS);
+function deleteColumn(slide, cIdx, pres) {
+  if (!deleteTabularColumn(slide.content, cIdx, TABLE_COLUMN_KEYS))
+    return false;
+  mirrorCollectionOp(pres, slide.id, [TABLE_COLUMN_KEYS.rowsKey], {
+    kind: 'removeColumn',
+    column: cIdx,
+  });
+  return true;
 }
 
 // ─── grid ────────────────────────────────────────────────────────────────────
@@ -145,6 +159,7 @@ function deleteColumn(slide, cIdx) {
  */
 function buildTableGrid({
   slide,
+  pres,
   variant = 'compact',
   markDirty,
   scheduleUiRefresh,
@@ -182,7 +197,7 @@ function buildTableGrid({
               col: colLabel(c),
             }),
             onclick: () => {
-              if (deleteColumn(slide, c)) onStructure?.();
+              if (deleteColumn(slide, c, pres)) onStructure?.();
             },
           },
           [icon('x', { size: 14 })],
@@ -262,7 +277,7 @@ function buildTableGrid({
             }),
             disabled: rows.length <= 1,
             onclick: () => {
-              if (deleteRow(slide, rIdx)) onStructure?.();
+              if (deleteRow(slide, rIdx, pres)) onStructure?.();
             },
           },
           [icon('x', { size: 14 })],
@@ -311,6 +326,7 @@ function buildTableGrid({
 
 function openTableEditorModal({
   slide,
+  pres,
   markDirty,
   rerenderEditor,
   scheduleUiRefresh,
@@ -331,6 +347,7 @@ function openTableEditorModal({
     gridHost.append(
       buildTableGrid({
         slide,
+        pres,
         variant: 'roomy',
         markDirty,
         scheduleUiRefresh,
@@ -358,6 +375,8 @@ function openTableEditorModal({
  *
  * @param {Object} deps
  * @param {Object} deps.slide - the slide being edited (content is mutated)
+ * @param {Object} [deps.pres] - the presentation, so a row or column delete
+ *   reaches the other language versions
  * @param {Function} [deps.markDirty]
  * @param {Function} [deps.rerenderEditor] - structure changes rebuild the form
  * @param {Function} [deps.scheduleUiRefresh]
@@ -365,6 +384,7 @@ function openTableEditorModal({
  */
 export function createTableGridEditor({
   slide,
+  pres,
   markDirty,
   rerenderEditor,
   scheduleUiRefresh,
@@ -386,6 +406,7 @@ export function createTableGridEditor({
       onclick: () =>
         openTableEditorModal({
           slide,
+          pres,
           markDirty,
           rerenderEditor,
           scheduleUiRefresh,
@@ -397,6 +418,7 @@ export function createTableGridEditor({
   wrap.append(
     buildTableGrid({
       slide,
+      pres,
       variant: 'compact',
       markDirty,
       scheduleUiRefresh,

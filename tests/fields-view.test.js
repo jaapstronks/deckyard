@@ -9,6 +9,8 @@
  *   under the user's caret on the slide they are typing in.
  * - A locked slide reads but takes no input (the state-driven lock seam).
  * - A click on the preview goes back to the canvas at the clicked field.
+ * - An edit in the form re-renders the inspector beside it once typing
+ *   pauses, but not under a caret in the inspector (B875).
  *
  * Run with: node --test tests/fields-view.test.js
  */
@@ -41,7 +43,7 @@ globalThis.ResizeObserver =
     disconnect() {}
   };
 
-const { createFieldsView, FIELDS_CONTEXTS } =
+const { createFieldsView, createInspectorFollower, FIELDS_CONTEXTS } =
   await import('../client/views/editor/fields-view.js');
 const { FORM_SURFACES } =
   await import('../client/views/editor/editor-form/surfaces.js');
@@ -281,4 +283,45 @@ test('an unknown context throws instead of rendering a form nobody declared', ()
     () => createFieldsView({ context: 'bulk', pres: { slides: [] } }),
     /Unknown Fields context/,
   );
+});
+
+test('an edit in the form re-renders the inspector, not under its caret (B875)', async () => {
+  const inspectorEl = document.createElement('div');
+  const inspectorInput = document.createElement('input');
+  inspectorEl.append(inspectorInput);
+  const outside = document.createElement('input');
+  document.body.append(inspectorEl, outside);
+  let renders = 0;
+  const follower = createInspectorFollower({
+    inspectorEl,
+    rerender: () => {
+      renders += 1;
+    },
+    delayMs: 5,
+  });
+  const pause = () => new Promise((r) => setTimeout(r, 20));
+
+  // Three keystrokes in the Fields form: one render after the pause.
+  outside.focus();
+  follower.schedule();
+  follower.schedule();
+  follower.schedule();
+  assert.equal(renders, 0, 'nothing while typing');
+  await pause();
+  assert.equal(renders, 1, 'the inspector follows once typing pauses');
+
+  // The caret is in the inspector: it is not rebuilt under it.
+  inspectorInput.focus();
+  follower.schedule();
+  await pause();
+  assert.equal(renders, 1);
+
+  // A pending render dies with the editor.
+  outside.focus();
+  follower.schedule();
+  follower.detach();
+  await pause();
+  assert.equal(renders, 1);
+  inspectorEl.remove();
+  outside.remove();
 });
