@@ -51,6 +51,10 @@
   overflow-y: auto;
 }
 
+.share-tab-panel {
+  container: share-panel / inline-size;
+}
+
 .share-tab-panel[hidden] {
   display: none;
 }
@@ -586,15 +590,39 @@
   margin-bottom: var(--ps-space-3);
 }
 
+/* Search, role and Invite share a row while the role select keeps the width
+   of its longest option; below that the search takes its own line and the
+   role and button wrap under it, each whole (B872). */
 .share-collaborator-form-row {
   display: flex;
-  gap: var(--ps-space-2);
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ps-space-2);
+}
+
+/* The user search (the autocomplete from `views/user/`) is the row's first
+   child. */
+.share-collaborator-form-row > :first-child {
+  flex: 999 1 12rem;
+  min-width: 0;
 }
 
 .share-collaborator-permission {
-  flex: 1;
-  min-width: 120px;
+  flex: 1 0 auto;
+  width: auto;
+  max-width: 100%;
+}
+
+.share-collaborator-form-row .btn {
+  flex: 0 0 auto;
+}
+
+/* At 320 px and 200 % zoom the section keeps the 8 px inset of the
+   visibility cards, so the Invite button fits whole on its own line (B872). */
+@container share-panel (max-width: 200px) {
+  .share-collaborators-section {
+    padding: var(--ps-space-2);
+  }
 }
 
 .share-collaborators-list {
@@ -690,16 +718,6 @@
 
 .share-collaborator-progress.is-visible {
   display: block;
-}
-
-/* Autocomplete row in form */
-.share-collaborator-form-row.has-autocomplete {
-  flex-wrap: nowrap;
-}
-
-.share-collaborator-form-row.has-autocomplete > :first-child {
-  flex: 2;
-  min-width: 200px;
 }
 
 /* Sharing off (D181, sandbox): the sharing controls stay visible but dimmed
