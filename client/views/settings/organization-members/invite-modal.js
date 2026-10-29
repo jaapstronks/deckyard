@@ -311,7 +311,7 @@ export function showInviteModal({
       refusal.show(
         t(
           'organization.members.invite.invalidEmail',
-          'Enter a valid email address.',
+          'Please enter a valid email address.',
         ),
         { control: emailInput },
       );

@@ -164,7 +164,7 @@
   "organization.members.invite.emailPlaceholder": "nombre@ejemplo.com",
   "organization.members.invite.failed": "No se pudo enviar la invitación.",
   "organization.members.invite.hint": "La persona se une a esta organización de inmediato. Para una cuenta nueva, intentamos enviar un enlace de acceso; el resultado indica si se envió.",
-  "organization.members.invite.invalidEmail": "Introduzca una dirección de correo válida.",
+  "organization.members.invite.invalidEmail": "Introduzca una dirección de correo electrónico válida.",
   "organization.members.invite.nameHelp": "Se usa para dirigirse a la persona en el correo de invitación. Se ignora si ya tiene cuenta.",
   "organization.members.invite.nameLabel": "Nombre completo",
   "organization.members.invite.namePlaceholder": "Opcional",
