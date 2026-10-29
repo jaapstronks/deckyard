@@ -174,8 +174,13 @@ const titles = (version) => version.slides.map((s) => s.content.title);
 
 // --- The model ----------------------------------------------------------------
 
-/** One translation, whichever prompt asks: the deck's ids, French titles. */
+/**
+ * One translation, whichever prompt asks: the deck's ids, French titles, and
+ * the per-path field map translate/missing asks for (its one gap is slide-2's
+ * title, `f0`).
+ */
 const MODEL_ANSWER = JSON.stringify({
+  translations: { f0: 'Deux' },
   title: 'Feuille de route',
   slides: [
     { id: 'slide-1', type: 'title-slide', content: { title: 'Bonjour' } },
@@ -693,7 +698,11 @@ test('translate/missing preserves a translation accepted while the model is runn
       ],
     },
   });
-  const model = stubDelayedModel(t);
+  // Two gaps, so two fields: slide-1's title (`f0`), slide-2's (`f1`).
+  const model = stubDelayedModel(
+    t,
+    JSON.stringify({ translations: { f0: 'Bonjour', f1: 'Deux' } }),
+  );
 
   const translating = editorPost(
     OWNER,
@@ -771,19 +780,8 @@ test('translate/missing does not restore an item removed during the model call',
   row.title = source.title;
   row.slides = structuredClone(source.slides);
   row.i18n.versions.nl = source;
-  const answer = JSON.stringify({
-    title: 'Fahrplan',
-    slides: [
-      {
-        id: 'nested',
-        type: 'text-blocks-slide',
-        content: {
-          title: 'Plan',
-          rows: [{ title: 'Rij', blocks: [{ title: 'Block', body: 'Tekst' }] }],
-        },
-      },
-    ],
-  });
+  // The one gap, `rows[0].blocks[0].title`, is field `f0`.
+  const answer = JSON.stringify({ translations: { f0: 'Block' } });
   const model = stubDelayedModel(t, answer);
   const translating = editorPost(
     OWNER,

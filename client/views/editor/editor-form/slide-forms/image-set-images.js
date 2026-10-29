@@ -37,11 +37,16 @@ import { h } from '../../../../lib/dom/index.js';
 import { icon } from '../../../../lib/dom/icons.js';
 import { resolveDeckLang } from '../../../../../shared/i18n-utils.js';
 import { startBatchCollectionUpload } from '../../media/batch-collection.js';
+import { mirrorCollectionOp } from '../../../../lib/slide-authoring/collection-mirror.js';
 
 /**
- * Reorder/add/remove wiring for the images collection.
+ * Reorder/add/remove wiring for the images collection. A swap or remove is
+ * mirrored into the other language versions, so each image keeps its own
+ * alt text there (DY-773).
  */
 function collectionActions({
+  slide,
+  pres,
   content,
   markDirty,
   rerenderEditor,
@@ -59,6 +64,7 @@ function collectionActions({
       const tmp = images[a];
       images[a] = images[b];
       images[b] = tmp;
+      mirrorCollectionOp(pres, slide?.id, ['images'], { kind: 'swap', a, b });
       refresh();
     },
     addImage: () => {
@@ -67,6 +73,10 @@ function collectionActions({
     },
     removeImage: (i) => {
       images.splice(i, 1);
+      mirrorCollectionOp(pres, slide?.id, ['images'], {
+        kind: 'remove',
+        index: i,
+      });
       ensureImageSetImages(content);
       refresh();
     },
@@ -159,6 +169,8 @@ function renderImageSetCollectionSection({
   const canRemove = images.length > IMAGE_SET_MIN_IMAGES;
 
   const actions = collectionActions({
+    slide,
+    pres,
     content,
     markDirty,
     rerenderEditor,
