@@ -505,7 +505,7 @@
 }
 
 /* ============================================
-   Workspace Share Modal
+   Share dialog visibility options
    ============================================ */
 
 .share-options {
@@ -517,6 +517,7 @@
 
 .share-option {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--ps-space-3);
   padding: var(--ps-space-4);
@@ -543,10 +544,16 @@
   flex-shrink: 0;
 }
 
+/* The text takes the row beside the radio while it has room for a line;
+   below that the radio wraps above it and the text gets the card's full
+   width (B870). */
 .share-option-content {
   display: flex;
+  flex: 1 1 8rem;
   flex-direction: column;
   gap: var(--ps-space-1);
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .share-option-title {
