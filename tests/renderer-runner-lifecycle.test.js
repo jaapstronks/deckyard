@@ -12,6 +12,11 @@
  * - the shipped broker writes one stderr line when it loses the supervisor
  *   and exits 0 on SIGTERM (the broker double, as in the admission test).
  *
+ * Runner iteration 6 adds the launcher's retirement tail (no unit job and no
+ * alarm during a supervisor stop), the overdue line for a broker that stays
+ * active without connecting, and the journal line for a dropped second
+ * lifecycle connection.
+ *
  * The real boot stays evidence of the Linux acceptance (docs/ops/renderer-runner.md).
  *
  * Run with: node --test tests/renderer-runner-lifecycle.test.js
@@ -20,6 +25,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import net from 'node:net';
 import { tmpdir } from 'node:os';
@@ -28,7 +34,10 @@ import { fileURLToPath } from 'node:url';
 
 import { brokerLauncher } from '../server/render/renderer-bundle/runner/broker-launch.js';
 import { brokerPeerRefusal } from '../server/render/renderer-bundle/runner/service-policy.js';
-import { lifecycleChannel } from '../server/render/renderer-bundle/runner/channel.js';
+import {
+  lifecycleChannel,
+  lifecycleServer,
+} from '../server/render/renderer-bundle/runner/channel.js';
 
 const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 /** Wait until `check()` is true, or fail after `ms`. */
@@ -205,6 +214,142 @@ test('a stopped launcher neither queries nor launches', async () => {
   assert.equal(starts(), 1);
 });
 
+/** A launcher whose unit stop and start are counted, for retirements. */
+function retirement() {
+  const calls = [];
+  const launcher = brokerLauncher({
+    start: () => calls.push('start'),
+    stopUnit: () => calls.push('stop'),
+    state: async () => ({ ActiveState: 'active', Job: '' }),
+    busy: () => true,
+    log: (phase) => calls.push(phase),
+    poll: 2,
+  });
+  return { launcher, calls };
+}
+
+test('a retirement stops the old unit, then launches or reports the self-test', (t) => {
+  const healthy = retirement();
+  t.after(() => healthy.launcher.stop());
+  healthy.launcher.retired(true);
+  assert.deepEqual(healthy.calls, ['stop', 'start']);
+  healthy.launcher.stop();
+  const unready = retirement();
+  unready.launcher.retired(false);
+  assert.deepEqual(unready.calls, ['stop', 'self_test_not_ready']);
+});
+
+test('a retirement during a supervisor stop touches no unit and reports nothing', () => {
+  // Iteration 5 logged broker_start_failed or instance_retirement_blocked here:
+  // systemd refuses broker jobs while it stops the supervisor.
+  const { launcher, calls } = retirement();
+  launcher.stop();
+  assert.equal(launcher.stopped, true);
+  launcher.retired(true);
+  launcher.retired(false);
+  assert.deepEqual(calls, []);
+});
+
+test('a broker that stays active without registering is reported once', async (t) => {
+  const logs = [];
+  let calls = 0;
+  const launcher = brokerLauncher({
+    start() {},
+    state: async () => {
+      calls++;
+      return { ActiveState: 'active', Job: '' };
+    },
+    busy: () => false,
+    log: (phase, detail) => logs.push({ phase, ...detail }),
+    poll: 2,
+    overdue: 20,
+  });
+  t.after(() => launcher.stop());
+  launcher.launch();
+  await until(() => logs.length > 0);
+  const seen = calls;
+  await until(() => calls >= seen + 10);
+  assert.deepEqual(
+    logs.map((l) => l.phase),
+    ['broker_registration_overdue'],
+  );
+  assert.ok(logs[0].activeMs >= 20);
+  launcher.stop();
+});
+
+test('a relaunch reports its own overdue broker again', async (t) => {
+  const logs = [];
+  const launcher = brokerLauncher({
+    start() {},
+    state: async () => ({ ActiveState: 'active', Job: '' }),
+    busy: () => false,
+    log: (phase) => logs.push(phase),
+    poll: 2,
+    overdue: 10,
+  });
+  t.after(() => launcher.stop());
+  launcher.launch();
+  await until(() => logs.length === 1);
+  launcher.launch();
+  await until(() => logs.length === 2);
+  assert.deepEqual(logs, [
+    'broker_registration_overdue',
+    'broker_registration_overdue',
+  ]);
+  launcher.stop();
+});
+
+test('an activating unit or a queued job is not overdue', async (t) => {
+  const logs = [];
+  let calls = 0;
+  const launcher = brokerLauncher({
+    start() {},
+    state: async () => {
+      calls++;
+      return calls % 2
+        ? { ActiveState: 'activating', Job: '' }
+        : { ActiveState: 'active', Job: '8 start' };
+    },
+    busy: () => false,
+    log: (phase) => logs.push(phase),
+    poll: 2,
+    overdue: 5,
+  });
+  t.after(() => launcher.stop());
+  launcher.launch();
+  await until(() => calls >= 30);
+  assert.deepEqual(logs, []);
+  launcher.stop();
+});
+
+test('a second lifecycle connection is dropped with a journal line', async (t) => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'deckyard-lifecycle-'));
+  const sock = path.join(dir, 'supervisor.sock');
+  const logs = [];
+  const held = [];
+  const server = lifecycleServer(
+    (socket) => held.push(socket),
+    (phase) => logs.push(phase),
+  );
+  await new Promise((resolve) => server.listen(sock, resolve));
+  t.after(async () => {
+    for (const socket of held) socket.destroy();
+    await new Promise((resolve) => server.close(resolve));
+    await rm(dir, { recursive: true, force: true });
+  });
+  const first = net.connect(sock);
+  await until(() => held.length === 1);
+  const second = net.connect(sock);
+  const closed = new Promise((resolve) => second.once('close', resolve));
+  second.on('error', () => {});
+  await closed;
+  await until(() => logs.length === 1);
+  assert.deepEqual(logs, ['lifecycle_connection_dropped']);
+  assert.equal(held.length, 1, 'the second connection is never admitted');
+  assert.equal(held[0].isPaused(), true, 'admission starts paused');
+  first.destroy();
+});
+
 const BROKER = '/system.slice/deckyard-render-broker.service';
 const unitState = {
   MainPID: '42',
@@ -243,6 +388,30 @@ test('each failed peer condition has its own name', () => {
 });
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+test('every test file a runner module names exists', () => {
+  const runner = path.join(
+    here,
+    '..',
+    'server',
+    'render',
+    'renderer-bundle',
+    'runner',
+  );
+  const named = readdirSync(runner)
+    .filter((name) => name.endsWith('.js'))
+    .flatMap((name) =>
+      [
+        ...readFileSync(path.join(runner, name), 'utf8').matchAll(
+          /tests\/[\w./-]+\.test\.js/g,
+        ),
+      ].map((match) => [name, match[0]]),
+    );
+  assert.ok(named.length > 0);
+  for (const [name, file] of named)
+    assert.ok(existsSync(path.join(here, '..', file)), `${name} names ${file}`);
+});
+
 const START = path.join(here, 'helpers', 'renderer-broker-double', 'start.js');
 
 /** Start a broker double against a supervisor that does `onConnect`. */
