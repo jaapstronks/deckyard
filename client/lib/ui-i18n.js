@@ -340,17 +340,12 @@ function interpolate(str, vars) {
 const pluralRulesCache = new Map();
 
 /**
- * The plural form a count takes in a locale, folded onto the two suffixes the
- * dictionaries carry: `one` where the language's rules say so, `many` for
- * every other category (`other`, `few`, `zero`, …). Two forms are what the
- * Tier-1 locales need; a language with more keeps its richer `many` wording
- * until a third suffix earns its place.
- *
+ * The `Intl.PluralRules` for a locale, built once; an unknown tag reads as
+ * English.
  * @param {string} locale
- * @param {number} count
- * @returns {'one'|'many'}
+ * @returns {Intl.PluralRules}
  */
-export function pluralForm(locale, count) {
+function pluralRules(locale) {
   let rules = pluralRulesCache.get(locale);
   if (!rules) {
     try {
@@ -360,7 +355,22 @@ export function pluralForm(locale, count) {
     }
     pluralRulesCache.set(locale, rules);
   }
-  return rules.select(Number(count)) === 'one' ? 'one' : 'many';
+  return rules;
+}
+
+/**
+ * The plural form a count takes in a locale, folded onto the two suffixes
+ * every dictionary carries: `one` where the language's rules say so, `many`
+ * for every other category (`other`, `few`, `zero`, …). English has two
+ * forms, so the call site's fallback has two; a language with a `few` form
+ * adds it as an optional third suffix that `t()` prefers (B878).
+ *
+ * @param {string} locale
+ * @param {number} count
+ * @returns {'one'|'many'}
+ */
+export function pluralForm(locale, count) {
+  return pluralRules(locale).select(Number(count)) === 'one' ? 'one' : 'many';
 }
 
 /**
@@ -370,6 +380,8 @@ export function pluralForm(locale, count) {
  * the key (D73: an untranslated key is absent). A **plural** key passes it as
  * `{ one, many }` and a numeric `vars.count`: the form is chosen with
  * `pluralForm()` on the UI locale and looked up as `<key>.one` / `<key>.many`.
+ * Where the locale's rules say `few` (Polish 2–4) and the dictionary has
+ * `<key>.few`, that form wins; without it the locale's `many` stands (B878).
  * A locale without that form gets the English of the same form, never the
  * other form of its own — Swedish `1 presentation` is absent from `sv/`
  * because it equals the English (B617, D73), and its `many` would render
@@ -385,7 +397,11 @@ export function t(key, fallback, vars) {
   if (!k) return '';
   if (fallback && typeof fallback === 'object') {
     const form = pluralForm(currentLocale, vars?.count);
-    const value = dict[`${k}.${form}`];
+    const few =
+      pluralRules(currentLocale).select(Number(vars?.count)) === 'few'
+        ? dict[`${k}.few`]
+        : undefined;
+    const value = typeof few === 'string' ? few : dict[`${k}.${form}`];
     const raw = typeof value === 'string' ? value : fallback[form];
     return interpolate(typeof raw === 'string' ? raw : `${k}.${form}`, vars);
   }

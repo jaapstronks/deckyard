@@ -20,6 +20,8 @@ The analytics title names the same feature on the dashboard, in deck settings an
 
 **Relative time has no translation key.** "5 minutes ago", "yesterday" and "now" come from CLDR through `Intl.RelativeTimeFormat` in `formatRelativeTime` (`client/lib/format/format-time.js`), in the long style, with dates of a week or older in the UI locale. No locale table carries a word for it, and a translation must not add one: plurals and the word for yesterday are the platform's.
 
+**A counted noun takes the language's own plural forms.** A plural key carries `<key>.one` and `<key>.many`, because English has two forms. A language whose rules have a `few` form (Polish 2–4, 22–24, …) adds `<key>.few` where that form reads differently from `many` (pl "3 linki" against "5 linków"), and `t()` prefers it; without one, `many` stands. A phrasing that sidesteps the inflection, such as pl "slajdów: {count}", needs no `few`. The tooling binds a `few` to the English of its `many` (B878).
+
 ## en
 
 | English concept                         | Canonical text                          | Context and keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |

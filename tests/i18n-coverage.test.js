@@ -45,6 +45,7 @@ import {
   collectFallbackSites,
 } from '../scripts/lib/i18n-keys.js';
 import { loadLocale } from '../scripts/lib/i18n-fs.js';
+import { referenceEnglish } from '../scripts/lib/i18n-source-state.js';
 import { placeholderNames } from '../scripts/lib/i18n-values.js';
 import {
   LOCALE_IDS,
@@ -220,9 +221,10 @@ describe('i18n coverage', () => {
       const reference = await loadLocale(i18nDir, REFERENCE_LOCALE);
       const dict = await loadLocale(i18nDir, locale);
       const mismatched = [];
-      for (const key of Object.keys(reference)) {
-        if (typeof dict[key] !== 'string') continue;
-        const a = placeholderNames(reference[key]);
+      for (const key of Object.keys(dict)) {
+        const english = referenceEnglish(reference, key);
+        if (english === undefined || typeof dict[key] !== 'string') continue;
+        const a = placeholderNames(english);
         const b = placeholderNames(dict[key]);
         if (a.join(',') !== b.join(',')) {
           mismatched.push(
@@ -332,7 +334,9 @@ describe('i18n coverage', () => {
     // English is missing a string it owns, or the key is dead and the locale is
     // carrying a translation of nothing. `i18n-fill.js en` closes the first case
     // (it seeds from the registry for the runtime-built families); the second
-    // has to be deleted by hand, which is what this failure asks for.
+    // has to be deleted by hand, which is what this failure asks for. A
+    // `<key>.few` is the one key en/ never holds: it translates en/'s
+    // `<key>.many` (B878).
     const locales = (await fs.readdir(i18nDir, { withFileTypes: true }))
       .filter((e) => e.isDirectory())
       .map((e) => e.name)
@@ -341,7 +345,8 @@ describe('i18n coverage', () => {
     const extra = [];
     for (const locale of locales) {
       for (const key of Object.keys(await loadLocale(i18nDir, locale))) {
-        if (!(key in en)) extra.push(`client/i18n/${locale}/  ${key}`);
+        if (referenceEnglish(en, key) === undefined)
+          extra.push(`client/i18n/${locale}/  ${key}`);
       }
     }
     assert.deepStrictEqual(

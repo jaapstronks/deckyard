@@ -237,6 +237,32 @@ describe('drift in every translated locale', () => {
     assert.equal(result.totals.unreviewed, TRANSLATED.length);
   });
 
+  it('a few form drifts when the English many it translates changes (B878)', () => {
+    const reference = { 'c.count.many': '{count} items' };
+    const pl = { 'c.count.few': '{count} rzeczy' };
+    const state = emptySourceState();
+    state.entries.pl = {
+      'c.count.few': record('reviewed', '{count} items', '{count} rzeczy'),
+    };
+    const current = classifyFreshness({
+      reference,
+      translations: { pl },
+      state,
+    });
+    assert.equal(current.failed, false);
+    assert.equal(current.totals.reviewedCurrent, 1);
+    const drifted = classifyFreshness({
+      reference: { 'c.count.many': '{count} entries' },
+      translations: { pl },
+      state,
+    });
+    assert.equal(drifted.failed, true);
+    assert.deepEqual(
+      drifted.findings.map((f) => [f.key, f.kind]),
+      [['c.count.few', 'source-changed']],
+    );
+  });
+
   it('an English edit fails both pairs in all eleven locales, nl included', () => {
     const edited = { 'a.title': 'Media Library', 'b.open': 'Unresolved' };
     const result = classifyFreshness({
@@ -555,7 +581,11 @@ describe('the reviewed import', () => {
   let statePath;
   const en = {
     common: { 'common.save': 'Save {name}', 'common.open': 'Open' },
-    list: { 'list.title': 'Media Library', 'list.new': 'New' },
+    list: {
+      'list.title': 'Media Library',
+      'list.new': 'New',
+      'list.count.many': '{count} items',
+    },
   };
   const de = {
     common: { 'common.save': 'Speichern {name}', 'common.open': 'Offen' },
@@ -679,6 +709,36 @@ describe('the reviewed import', () => {
     assert.equal(list['list.new'], 'Neu');
     const state = parseSourceState(await fs.readFile(statePath, 'utf8'));
     assert.equal(state.entries.de['list.new'].status, 'reviewed');
+  });
+
+  it('a few form binds to the English many and lands beside it (B878)', async () => {
+    await reset();
+    const fewPkg = (key) => ({
+      schema: 1,
+      locale: 'de',
+      entries: {
+        [key]: {
+          sourceHash: hashText('{count} items'),
+          previousTranslationHash: null,
+          value: '{count} Dinge',
+        },
+      },
+    });
+    await applyReviewPackage(fewPkg('list.count.few'), opts());
+    const list = JSON.parse(
+      await fs.readFile(path.join(dir, 'i18n', 'de', 'list.json'), 'utf8'),
+    );
+    assert.equal(list['list.count.few'], '{count} Dinge');
+    const state = parseSourceState(await fs.readFile(statePath, 'utf8'));
+    assert.deepEqual(
+      state.entries.de['list.count.few'],
+      record('reviewed', '{count} items', '{count} Dinge'),
+    );
+    // A few with no many beside it in en/ translates nothing.
+    const snapshot = fingerprint(dir);
+    await assertUntouched(snapshot, () =>
+      applyReviewPackage(fewPkg('list.title.few'), opts()),
+    );
   });
 
   it('a package exported before an English edit is refused whole, across modules', async () => {
