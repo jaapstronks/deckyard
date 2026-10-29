@@ -262,10 +262,17 @@
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
 
+  /* The box is held to the screen: as tall as the backdrop, never taller. The
+     header (and hint) keep their height and `.modal-content` takes the rest
+     and scrolls, so a long dialog keeps its title on screen instead of
+     outgrowing the centred backdrop (B887). */
   .modal {
     width: 100%;
     max-width: 100%;
     min-height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
     border-radius: 0;
     padding: var(--ps-space-4);
   }
@@ -301,7 +308,8 @@
      `createModal`'s own structure, not any one feature's. */
   .modal-content {
     max-height: none;
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }

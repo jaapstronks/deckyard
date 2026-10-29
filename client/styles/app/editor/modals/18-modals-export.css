@@ -7,21 +7,6 @@
   width: min(560px, 100%);
 }
 
-/* On a phone the base layer makes a modal full-screen (min-height: 100%) and
-   lifts the 70vh cap on its content, but gives the box no height limit, so a
-   list this long outgrew the centred backdrop and its top (title, language,
-   slide choice) sat above the screen. Hold the box to the screen: the header
-   row keeps its height and the content row, which already scrolls on a phone,
-   takes the rest (B871). The base-layer fix for every long modal (B887)
-   makes this rule redundant; remove it there. */
-@media (max-width: 640px) {
-  .modal.export-modal {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    max-height: 100%;
-  }
-}
-
 .export-lang-row {
   display: flex;
   align-items: center;
