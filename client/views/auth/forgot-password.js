@@ -1,4 +1,4 @@
-import { api } from '../../lib/api.js';
+import { api, serverSentence } from '../../lib/api.js';
 import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createBusyManager } from '../../lib/dom/busy.js';
@@ -87,7 +87,7 @@ export async function renderForgotPassword(root) {
     } catch (err) {
       status.textContent = '';
       formError.show(
-        err.message ||
+        serverSentence(err) ??
           t('forgotPassword.error', 'Something went wrong. Please try again.'),
       );
       busyManager.setBusy(false);

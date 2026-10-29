@@ -19,6 +19,11 @@
  *                    reads route-specific fields (e.g. the share viewer's
  *                    `presentationTitle` on a revoked link)
  *
+ * `err.message` is never empty, so on a failure without a server sentence it
+ * is the transport's English ("Request failed (500)", "Failed to fetch"). A
+ * caller with translated copy of its own asks `serverSentence(err)` instead
+ * and shows its copy when that is null (B859).
+ *
  * Callers show failures as `catch (e) { toast.error(e, opts) }` — toast
  * coerces an Error to its message (client/lib/dom/toast.js). There is
  * deliberately no `apiWithToast`/`withErrorToast` wrapper: transport and
@@ -55,6 +60,21 @@ export function errorText(obj, fallback = '') {
     if (human) return human;
   }
   return fallback;
+}
+
+/**
+ * The sentence the server sent with a failed `api()` call: the envelope's
+ * `message`, or `null` when there is none — an HTTP failure without one, a
+ * non-JSON body, a network error. A form that has translated copy for its
+ * own failure shows that copy on `null` instead of the transport's English
+ * in `err.message` (B859, `docs/reference/feedback-surfaces.md`).
+ *
+ * @param {unknown} err - what the `catch` caught.
+ * @returns {string|null}
+ */
+export function serverSentence(err) {
+  const message = err?.body?.message;
+  return typeof message === 'string' && message.trim() ? message : null;
 }
 
 /**
