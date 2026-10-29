@@ -71,7 +71,7 @@
   "share.guest.error.linkRevoked": "Este link de partilha foi revogado.",
   "share.guest.error.notInvited": "Esta apresentação exige convite. Contacte o autor para pedir acesso.",
   "share.guest.error.permissionDenied": "Este link de partilha não permite comentários.",
-  "share.guest.error.rateLimited": "Demasiados pedidos. Por favor, tente novamente mais tarde.",
+  "share.guest.error.rateLimited": "Demasiados pedidos. Tente novamente mais tarde.",
   "share.guest.help": "Introduza o seu e-mail para verificar a sua identidade e começar a comentar.",
   "share.guest.join": "Participar na discussão",
   "share.guest.name": "Nome (opcional)",

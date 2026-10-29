@@ -195,7 +195,7 @@
   "qr.alt": "QR-Code",
   "sandbox.banner.text": "Temporäre Deckyard-Sandbox – Ihre Arbeit wird nach {hours} Stunden gelöscht.",
   "sandbox.examples.count.many": "{count} Folien",
-  "sandbox.examples.error": "Dieses Beispiel konnte nicht geöffnet werden. Bitte erneut versuchen.",
+  "sandbox.examples.error": "Dieses Beispiel konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
   "sandbox.examples.hint": "Öffnen Sie ein fertiges Deck und legen Sie los – der schnellste Weg, Deckyard kennenzulernen.",
   "sandbox.examples.loadError": "Beispiele konnten nicht geladen werden.",
   "sandbox.examples.loading": "Beispiele werden geladen…",

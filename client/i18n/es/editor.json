@@ -101,7 +101,7 @@
   "editor.aiAppend.generateAdd": "Generar y agregar",
   "editor.aiAppend.generating": "Generando…",
   "editor.aiAppend.help": "Describa lo que desea agregar. Puede solicitar una o múltiples diapositivas a la vez. La IA también ve la presentación existente e intenta encajar lógicamente. Si pide una foto/imagen, se usará una imagen de fondo existente como marcador de posición (que puede reemplazar después).",
-  "editor.aiAppend.noneReceived": "No se recibieron diapositivas (por favor intente de nuevo).",
+  "editor.aiAppend.noneReceived": "No se recibieron diapositivas (inténtelo de nuevo).",
   "editor.aiAppend.placeholder": "Ej.\n- Agregar 2 diapositivas sobre enfoque y planificación\n- Agregar una diapositiva con una foto (marcador de posición) y 4 viñetas con mensajes clave\n- Agregar una diapositiva de «lista» con 6 consejos (viñetas)\n- Agregar una diapositiva de gráfico con un diagrama de barras basado en estos números: …\n",
   "editor.aiAppend.required": "Primero describa lo que desea agregar.",
   "editor.aiAppend.review": "Revisar",
