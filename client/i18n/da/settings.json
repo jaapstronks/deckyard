@@ -533,7 +533,7 @@
   "settings.slideTypes.description": "Opret brugerdefinerede slidetyper, og bestem hvilke typer der er tilgængelige i slidevælgeren.",
   "settings.slideTypes.draft": "Kladde",
   "settings.slideTypes.duplicate": "Duplikér",
-  "settings.slideTypes.duplicateAsCustom": "Dublér som brugerdefineret type",
+  "settings.slideTypes.duplicateAsCustom": "Duplikér som brugerdefineret type",
   "settings.slideTypes.editType": "Redigér slidetype",
   "settings.slideTypes.enabledInPicker": "Slået til i vælgeren",
   "settings.slideTypes.errorFieldsRequired": "Mindst ét felt er påkrævet.",
