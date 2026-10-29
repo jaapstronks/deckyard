@@ -201,12 +201,55 @@ async function waitForPollTotal(
  * from "the stage rendered and the tally stayed at zero", which is the whole
  * question, and it was all the unattended run of 2026-09-06 left behind.
  *
+ * "Stayed at zero" was still not enough: the run of 2026-10-04 failed four
+ * shots on `Total: 0` with the seed confirmed server-side, and nothing left
+ * behind could say whether the server had lost the votes, the stage polled
+ * another slide, or the poll response never reached the page (B654). So a
+ * timeout also reports the server's tally at that moment, which slide the
+ * stage shows, and what the live session and the console did during the
+ * wait.
+ *
  * @param {import('puppeteer-core').Page} page
  * @param {number} expected Total votes seeded, already confirmed server-side.
- * @param {number} [timeoutMs]
+ * @param {{deckId: string, slideId: string, timeoutMs?: number}} spec The
+ *   poll the votes went to, so a timeout can ask the server about it.
  * @returns {Promise<void>}
  */
-export async function waitForStageTally(page, expected, timeoutMs = 20_000) {
+export async function waitForStageTally(
+  page,
+  expected,
+  { deckId, slideId, timeoutMs = 20_000 },
+) {
+  // The presenter's stream opened before this wait, so what shows up here is
+  // a reconnect or a failure, which is the signal worth having. Resource
+  // timing cannot stand in: the module graph fills its buffer before the
+  // first API call.
+  const events = [];
+  const isLive = (url) => /\/api\/(live-sessions|follow)\b/.test(url);
+  const onResponse = (res) => {
+    if (isLive(res.url())) {
+      events.push(`${res.status()} ${new URL(res.url()).pathname}`);
+    }
+  };
+  const onRequestFailed = (req) => {
+    if (isLive(req.url())) {
+      const why = req.failure()?.errorText ?? 'failed';
+      events.push(`${why} ${new URL(req.url()).pathname}`);
+    }
+  };
+  const onConsole = (msg) => {
+    if (msg.type() !== 'error' && msg.type() !== 'warn') return;
+    events.push(`console.${msg.type()}: ${msg.text()}`);
+  };
+  const onPageError = (err) => events.push(`pageerror: ${err.message}`);
+  const listeners = {
+    response: onResponse,
+    requestfailed: onRequestFailed,
+    console: onConsole,
+    pageerror: onPageError,
+  };
+  for (const [event, fn] of Object.entries(listeners)) page.on(event, fn);
+
   const read = () =>
     page.evaluate(() => {
       const el = document.querySelector('.deck-stage-inner [data-poll-total]');
@@ -215,20 +258,87 @@ export async function waitForStageTally(page, expected, timeoutMs = 20_000) {
     });
   const deadline = Date.now() + timeoutMs;
   let seen = null;
-  while (Date.now() < deadline) {
-    seen = await read().catch(() => null);
-    if (seen != null) {
-      const n = Number(seen.replace(/\D+/g, ''));
-      if (n === expected) return;
+  try {
+    while (Date.now() < deadline) {
+      seen = await read().catch(() => null);
+      if (seen != null) {
+        const n = Number(seen.replace(/\D+/g, ''));
+        if (n === expected) return;
+      }
+      await new Promise((r) => setTimeout(r, 200));
     }
-    await new Promise((r) => setTimeout(r, 200));
+  } finally {
+    for (const [event, fn] of Object.entries(listeners)) page.off(event, fn);
   }
+  const digest = await describeStageTally(page, { deckId, slideId, events });
   throw new Error(
     `Stage tally never reached ${expected} within ${timeoutMs}ms — ` +
       (seen == null
         ? 'the [data-poll-total] element never rendered on the stage'
-        : `last read "${seen.trim()}"`),
+        : `last read "${seen.trim()}"`) +
+      `\n${digest}`,
   );
+}
+
+/**
+ * What the server and the stage held when `waitForStageTally()` gave up.
+ *
+ * Each line answers one of the questions the 2026-10-04 failure left open:
+ * did the server still count the votes, is the polled slide the one on stage,
+ * and did the live session misbehave meanwhile. Read failures become part of
+ * the digest instead of masking the timeout it explains.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {{deckId: string, slideId: string, events: string[]}} spec
+ * @returns {Promise<string>}
+ */
+async function describeStageTally(page, { deckId, slideId, events }) {
+  const lines = [`  page: ${page.url()}`];
+  try {
+    const base = new URL(page.url()).origin;
+    const res = await fetch(
+      `${base}/api/follow/${deckId}/interactions/${slideId}/state`,
+    );
+    const body = await res.json().catch(() => null);
+    const state = body?.interactionState;
+    lines.push(
+      `  server: ${res.status} total=${state?.total ?? '?'} ` +
+        `slide=${state?.slideId ?? '?'} status=${state?.status ?? '?'}`,
+    );
+  } catch (e) {
+    lines.push(`  server: unreadable (${e.message})`);
+  }
+  const stage = await page
+    .evaluate(() => ({
+      active:
+        document.querySelector('.deck-stage-inner .deck-slide.is-active')
+          ?.dataset.slideId ?? null,
+      totals: [
+        ...document.querySelectorAll('.deck-stage-inner [data-poll-total]'),
+      ].map(
+        (el) =>
+          `${el.closest('.deck-slide')?.dataset.slideId ?? '?'}="${String(
+            el.textContent || '',
+          ).trim()}"`,
+      ),
+    }))
+    .catch((e) => ({ error: e.message }));
+  lines.push(
+    stage.error
+      ? `  stage: unreadable (${stage.error})`
+      : `  stage: seeded slide=${slideId} active=${stage.active ?? 'none'} ` +
+          `totals=[${stage.totals.join(', ')}]`,
+  );
+  lines.push(
+    events.length
+      ? `  during wait (${events.length}):\n` +
+          events
+            .slice(-12)
+            .map((e) => `    ${e}`)
+            .join('\n')
+      : '  during wait: no live-session traffic, no console errors',
+  );
+  return lines.join('\n');
 }
 
 /**

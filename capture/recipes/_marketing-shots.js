@@ -215,7 +215,7 @@ export function pollLiveShot(lang) {
       `/present/${ctx.deckId}?slideId=${ctx.slideId}&lang=${deckLang}`,
     waitFor: '.presenter-start-curtain',
 
-    async action(page) {
+    async action(page, ctx) {
       await dismissPresenterStartGate(page);
       // Results arrive over the interaction poll after the stage renders, so
       // wait for the tally itself rather than for the slide element: shooting
@@ -223,6 +223,7 @@ export function pollLiveShot(lang) {
       await waitForStageTally(
         page,
         MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0),
+        ctx,
       );
       // The scan card beside the bars prints the session's two follow codes,
       // minted per run. Pinned last, so nothing renders over them.
