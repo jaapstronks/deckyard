@@ -55,8 +55,9 @@
   display: none;
 }
 
-/* ---- Workspace visibility section ---- */
+/* ---- Organization visibility section ---- */
 .share-visibility-section {
+  container: share-visibility / inline-size;
   padding: var(--ps-space-4);
   background: hsl(var(--app-bg-sunken));
   border-radius: var(--ps-radius-lg);
@@ -65,6 +66,21 @@
 
 .share-visibility-section .share-options {
   margin: var(--ps-space-3) 0 0;
+}
+
+/* At 320 px and 200 % zoom the option card keeps a tight inset, so its text
+   column is not eaten by two layers of padding, and a word longer than its
+   line is hyphenated in the UI language (`<html lang>`) instead of cut
+   (B870). */
+@container share-visibility (max-width: 200px) {
+  .share-visibility-section .share-option {
+    padding: var(--ps-space-2);
+  }
+
+  .share-visibility-section .share-section-title,
+  .share-visibility-section .share-option-content {
+    hyphens: auto;
+  }
 }
 
 .share-option.is-disabled {
@@ -212,6 +228,7 @@
   font-size: var(--ps-text-base);
   margin-bottom: var(--ps-space-3);
   color: hsl(var(--app-text-primary));
+  overflow-wrap: break-word;
 }
 
 .share-links-wrapper {
