@@ -324,6 +324,24 @@ test('the fields surface renders a11y keys nowhere', () => {
   assert.ok(!names.includes('a11yTitle') && !names.includes('a11ySummary'));
 });
 
+// A live-only slide never reaches an export or a published view, so the
+// Accessibility section (overrides plus a "no heading" status) has no reader
+// there; a headingless type that does export keeps the nudge (B884).
+test('the inspector gives a live-only slide no Accessibility section', () => {
+  const invite = renderTypeWithSpies('follow-invite-slide', 'inspector');
+  assert.equal(invite.editorMount.querySelector('.editor-a11y-section'), null);
+  const names = [
+    ...invite.editorMount.querySelectorAll('[name], [data-key]'),
+  ].map((el) => el.getAttribute('name') || el.getAttribute('data-key'));
+  assert.ok(!names.includes('a11yTitle') && !names.includes('a11ySummary'));
+
+  const quote = renderTypeWithSpies('quote-slide', 'inspector');
+  assert.ok(
+    quote.editorMount.querySelector('.editor-a11y-section .is-no-heading'),
+    'a headingless exported type keeps the no-heading status',
+  );
+});
+
 test('the surface table declares every capability on every row', () => {
   const keys = [
     'fields',
