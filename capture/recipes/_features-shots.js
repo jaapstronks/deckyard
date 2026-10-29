@@ -437,7 +437,9 @@ export function shareLinkRulesShot(lang) {
 
 /**
  * The current translation workspace, with deterministic field suggestions for
- * the selected funnel slide. No live model is called and nothing is applied.
+ * the selected funnel slide, whose target fields are still empty. The stub
+ * answers with the deck's own translation; no live model is called and
+ * nothing is applied.
  * @param {'nl'|'en'} lang
  * @returns {import('../lib/recipe.js').Recipe}
  */
@@ -455,8 +457,11 @@ export function aiFillsFieldsShot(lang) {
 
     async state(api) {
       // The workspace opens from the dominant source into the target language.
+      // The photographed slide is not translated yet, so the suggestion fills
+      // empty fields instead of repeating what the target already says (B886).
       const { deckId, deck } = await seedMarketingDeck(api, lang, {
         dominant: sourceLang,
+        untranslated: ['funnel'],
       });
       const slideId = deck.slideIds.funnel;
       const target = deck.versions[deckLang].find((s) => s.id === slideId);

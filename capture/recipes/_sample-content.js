@@ -15,7 +15,7 @@ import { randomUUID } from 'node:crypto';
 export const SAMPLE_DECK_TITLE = 'Quarterly product review';
 
 /**
- * @param {{title: string, body?: string, subheading?: string, layout?: string}} spec
+ * @param {{title: string, body?: string, subheading?: string, layout?: string, background?: string}} spec
  * @returns {{id: string, type: string, content: object, notes: string, visibility: object}}
  */
 function contentSlide({
@@ -23,6 +23,7 @@ function contentSlide({
   body = '',
   subheading = '',
   layout = 'one-column',
+  background = 'mist',
 }) {
   return {
     id: randomUUID(),
@@ -33,7 +34,7 @@ function contentSlide({
       layout,
       density: 'auto',
       body,
-      background: 'mist',
+      background,
       actions: [],
     },
     notes: '',
@@ -70,6 +71,33 @@ export function sampleDeckSlides() {
         '- Pick the theme for the launch deck\n' +
         '- Confirm the demo dataset\n' +
         '- Lock the ship date',
+    }),
+  ];
+}
+
+/**
+ * A second deck for a view that lists several (the dashboard's recent cards):
+ * its own opener on the other background, so no two cards share a thumbnail.
+ * @returns {Array<object>}
+ */
+export function launchDeckSlides() {
+  return [
+    contentSlide({
+      title: 'Product launch overview',
+      subheading: 'Go-to-market plan — sample deck',
+      body:
+        '- Who the launch is for\n' +
+        '- What we announce, and where\n' +
+        '- The week-by-week plan',
+      background: 'lime',
+    }),
+    contentSlide({
+      title: 'Launch week',
+      body:
+        '- Monday: press preview\n' +
+        '- Wednesday: public release\n' +
+        '- Friday: first customer webinar',
+      background: 'lime',
     }),
   ];
 }
