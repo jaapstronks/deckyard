@@ -636,10 +636,14 @@
   padding: var(--ps-space-3);
 }
 
+/* Who, role and action share a row while they fit; below that the person
+   takes its own line and the role and button wrap under it, each whole
+   (B876). */
 .share-collaborator-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--ps-space-3);
+  gap: var(--ps-space-2) var(--ps-space-3);
   padding: var(--ps-space-2) var(--ps-space-3);
   background: hsl(var(--app-bg-elevated));
   border-radius: var(--ps-radius-md);
@@ -647,8 +651,24 @@
 }
 
 .share-collaborator-info {
-  flex: 1;
+  flex: 999 1 10rem;
   min-width: 0;
+}
+
+.share-collaborator-item > .btn {
+  flex: 0 0 auto;
+}
+
+/* Below 200 px the rows and their buttons take a tighter inset, so Transfer
+   and Remove stay whole in every locale (nl "Verwijderen", B876). */
+@container share-panel (max-width: 200px) {
+  .share-collaborator-item {
+    padding: var(--ps-space-1-5);
+  }
+
+  .share-collaborator-item > .btn {
+    padding-inline: var(--ps-space-2);
+  }
 }
 
 .share-collaborator-name {
@@ -668,8 +688,16 @@
 }
 
 .share-collaborator-perm-select {
-  width: 130px;
-  flex-shrink: 0;
+  flex: 1 0 auto;
+  width: auto;
+  max-width: 100%;
+}
+
+/* The empty note is one word in some locales ("współpracowników"); at 200 %
+   zoom it breaks inside that word rather than leave the list. */
+.share-collaborators-list > .empty-note {
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 /* Share Links Wrapper */
@@ -697,6 +725,7 @@
 
 .share-owner-badge {
   display: inline-block;
+  max-width: 100%;
   padding: 2px 8px;
   font-size: var(--ps-text-xs);
   font-weight: 600;
