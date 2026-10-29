@@ -3,7 +3,7 @@
  *
  * A counted noun passes both English forms, `t(key, { one, many }, { count })`,
  * and the seam picks the form with `Intl.PluralRules` on the UI locale, looked
- * up as `<key>.one` / `<key>.many`. Three things are pinned here against the
+ * up as `<key>.one` / `<key>.many`. Five things are pinned here against the
  * copy that ships:
  *
  *   1. **en and nl pick by the count**: 1 is `one`, 0 and 2 are `many`.
@@ -15,6 +15,8 @@
  *      the item.
  *   4. **Screen-reader text counts too** (B626): the analytics heatmap label
  *      and the timeline chart description read "1 slide" / "1 data point".
+ *   5. **Polish takes its `few` form at 2–4** (B878): "3 linki", "5 linków",
+ *      where the dictionary carries `<key>.few`; without one, `many` stands.
  *
  * Run with: node --test tests/ui-i18n-plural.test.js
  */
@@ -58,7 +60,8 @@ test('pluralForm folds every non-one category onto many', () => {
   assert.equal(pluralForm('en', 1), 'one');
   assert.equal(pluralForm('en', 0), 'many');
   assert.equal(pluralForm('en', 2), 'many');
-  // Polish has `few` (2–4) and `many` (5+): both read the one `many` form.
+  // Polish has `few` (2–4) and `many` (5+): the fold says `many` for both;
+  // `t()` prefers a `.few` the dictionary carries (B878).
   assert.equal(pluralForm('pl', 3), 'many');
   assert.equal(pluralForm('pl', 5), 'many');
   // French counts 0 as `one`.
@@ -76,6 +79,29 @@ test('nl picks the form by the count', async () => {
   await setUiLocale('nl', { persist: false });
   assert.equal(greeting(1), '1 presentatie');
   assert.equal(greeting(3), '3 presentaties');
+});
+
+test('pl picks few for 2–4 and many for 5+ where the dictionary has both (B878)', async () => {
+  await setUiLocale('pl', { persist: false });
+  const links = (count) =>
+    t(
+      'share.status.links',
+      { one: '1 guest link', many: '{count} guest links' },
+      { count },
+    );
+  assert.equal(links(2), '2 linki dla gości');
+  assert.equal(links(3), '3 linki dla gości');
+  assert.equal(links(5), '5 linków dla gości');
+  assert.equal(links(12), '12 linków dla gości');
+  assert.equal(links(22), '22 linki dla gości');
+  // A key without a `.few` keeps its `many` at 3: the form is optional.
+  const slides = (count) =>
+    t(
+      'presenter.start.slides',
+      { one: '1 slide', many: '{count} slides' },
+      { count },
+    );
+  assert.equal(slides(3), 'slajdów: 3');
 });
 
 test('sv without a one form falls back to the English one, not its own many', async () => {

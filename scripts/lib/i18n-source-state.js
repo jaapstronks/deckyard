@@ -86,6 +86,31 @@ export function hashText(value) {
 }
 
 /**
+ * The en/ key a key translates. Mostly itself; a `<key>.few` has no English
+ * of its own, because English has no `few` form, and translates
+ * `<key>.many` — the optional third plural suffix `t()` prefers where the
+ * locale's rules say `few` (B878).
+ *
+ * @param {string} key
+ * @returns {string}
+ */
+export function referenceKey(key) {
+  return key.endsWith('.few') ? `${key.slice(0, -'.few'.length)}.many` : key;
+}
+
+/**
+ * The English a key translates (see `referenceKey()`).
+ *
+ * @param {Record<string, unknown>} reference - the en/ dictionary
+ * @param {string} key
+ * @returns {string|undefined}
+ */
+export function referenceEnglish(reference, key) {
+  const value = reference[referenceKey(key)];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/**
  * @typedef {object} SourceRecord
  * @property {'unreviewed'|'reviewed'} status
  * @property {string} sourceHash       fingerprint of the English it was seen with
@@ -370,7 +395,7 @@ export function classifyFreshness({ reference, translations, state }) {
     for (const [key, value] of Object.entries(dict)) {
       if (typeof value !== 'string') continue; // coverage owns the shape
       const record = records[key];
-      const english = reference[key];
+      const english = referenceEnglish(reference, key);
       const actualTranslationHash = hashText(value);
       if (typeof english !== 'string') {
         counts.sourceMissing++;
@@ -405,9 +430,9 @@ export function classifyFreshness({ reference, translations, state }) {
     for (const [key, record] of Object.entries(records)) {
       if (typeof dict[key] === 'string') continue;
       counts.dangling++;
+      const english = referenceEnglish(reference, key);
       find(key, 'dangling', record, {
-        actualSourceHash:
-          typeof reference[key] === 'string' ? hashText(reference[key]) : null,
+        actualSourceHash: english === undefined ? null : hashText(english),
       });
     }
 
@@ -491,7 +516,7 @@ export function compareWithBase({ base, head, baseInput }) {
       throw new Error('a bootstrap comparison needs the base dictionaries');
     for (const [id, r] of headUnreviewed) {
       const [locale, key] = id.split('\u0000');
-      const english = baseInput.reference[key];
+      const english = referenceEnglish(baseInput.reference, key);
       const value = baseInput.translations[locale]?.[key];
       if (typeof english !== 'string' || typeof value !== 'string') {
         violations.push({
