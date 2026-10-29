@@ -144,7 +144,7 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
 
   // An invite its author switched off in place stays in the list, greyed out.
   const isDisabled =
-    isLiveInviteSlideType(s?.type) &&
+    isLiveInviteSlideType(s?.type, SLIDE_TYPES) &&
     s?.content &&
     typeof s.content === 'object' &&
     s.content.enabled === false;

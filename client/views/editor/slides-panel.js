@@ -43,10 +43,11 @@ function isInteractiveSlideType(type) {
 // not named (`liveInvite: true`, shared/slide-types/live-session.js); an
 // installation without an invite type has nothing to suggest, so it counts as
 // provided for.
-function hasFollowInviteSlide(slides) {
-  if (!liveInviteSlideType()) return true;
+function hasFollowInviteSlide(slides, slideTypes) {
+  if (!liveInviteSlideType(slideTypes)) return true;
   return (
-    Array.isArray(slides) && slides.some((s) => isLiveInviteSlideType(s?.type))
+    Array.isArray(slides) &&
+    slides.some((s) => isLiveInviteSlideType(s?.type, slideTypes))
   );
 }
 
@@ -283,7 +284,7 @@ export function createSlidesPanel({
 
   // Helper to insert a follow-invite slide at a specific position
   const insertFollowInviteSlide = (afterSlideId) => {
-    const s = insertedSlide(liveInviteSlideType());
+    const s = insertedSlide(liveInviteSlideType(SLIDE_TYPES));
     // No language on the content: the invite renders in the language of the
     // version it sits in, derived from the render context.
     insertSlideObject(s, { afterSlideId });
@@ -346,7 +347,10 @@ export function createSlidesPanel({
 
     // An interactive slide needs an invite for the audience to join through:
     // if the deck has none, ask where it should go before inserting either.
-    if (isInteractiveSlideType(type) && !hasFollowInviteSlide(pres?.slides)) {
+    if (
+      isInteractiveSlideType(type) &&
+      !hasFollowInviteSlide(pres?.slides, SLIDE_TYPES)
+    ) {
       suggestFollowInvite({ pendingSlide: s, afterSlideId, parentId });
       return;
     }
@@ -421,7 +425,10 @@ export function createSlidesPanel({
 
     // Same suggestion as the type picker: a library copy of an interactive
     // slide still needs an invite in the deck.
-    if (isInteractiveSlideType(type) && !hasFollowInviteSlide(pres?.slides)) {
+    if (
+      isInteractiveSlideType(type) &&
+      !hasFollowInviteSlide(pres?.slides, SLIDE_TYPES)
+    ) {
       suggestFollowInvite({ pendingSlide: s, afterSlideId });
       return;
     }
