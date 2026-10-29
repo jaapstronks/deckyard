@@ -205,7 +205,7 @@ export function presenterViewShot(lang) {
       `/present/${ctx.deckId}?slideId=${ctx.slideId}&lang=${deckLang}`,
     waitFor: '.presenter-start-curtain',
 
-    async action(page) {
+    async action(page, ctx) {
       await dismissPresenterStartGate(page);
       // The console fills in after the deck resolves: notes come from the
       // slide, the thumbnail is rendered by the slide runtime. Waiting for
@@ -227,6 +227,7 @@ export function presenterViewShot(lang) {
       await waitForStageTally(
         page,
         MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0),
+        ctx,
       );
       // Stop the stopwatch the presentation started, then zero it: reset alone
       // restarts a running timer (see console-timer.js), and a running clock
