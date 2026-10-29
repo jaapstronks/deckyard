@@ -12,7 +12,8 @@
    list this long outgrew the centred backdrop and its top (title, language,
    slide choice) sat above the screen. Hold the box to the screen: the header
    row keeps its height and the content row, which already scrolls on a phone,
-   takes the rest (B871). */
+   takes the rest (B871). The base-layer fix for every long modal (B887)
+   makes this rule redundant; remove it there. */
 @media (max-width: 640px) {
   .modal.export-modal {
     display: grid;

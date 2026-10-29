@@ -49,6 +49,7 @@ import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { getLangShortLabel } from '../../lib/dom/lang-selector.js';
 import { getFeatures } from '../../lib/state/features.js';
 import { IMAGE_SLIDES_HEADER } from '../../../shared/export-headers.js';
+import { spellSlideSelection } from '../../../shared/slide-selection.js';
 
 const LUCIDE = (name) => `/client/vendor/lucide-icons/${name}.svg`;
 
@@ -265,23 +266,6 @@ function isSlidesRefusal(err) {
 }
 
 /**
- * Spell slide numbers as a selection, runs as ranges: `[1, 3, 4, 5]` is
- * `1,3-5`.
- *
- * @param {number[]} numbers - sorted
- * @returns {string}
- */
-function selectionSpelling(numbers) {
-  const runs = [];
-  for (const n of numbers) {
-    const run = runs[runs.length - 1];
-    if (run && n === run[1] + 1) run[1] = n;
-    else runs.push([n, n]);
-  }
-  return runs.map(([a, b]) => (a === b ? `${a}` : `${a}-${b}`)).join(',');
-}
-
-/**
  * The slide choice for the slide PDF and the PNG ZIP (B871): all slides, the
  * current one or a typed selection, prefilled with the slides selected in the
  * slide list. The server reads the selection; its refusal shows here.
@@ -298,7 +282,7 @@ function createSlideChoice({ current, selected }) {
     inputmode: 'numeric',
     placeholder: '1,3-5',
     'aria-label': t('editor.export.slidesInput', 'Slide numbers'),
-    value: selectionSpelling(
+    value: spellSlideSelection(
       selected.length > 1 ? selected : current ? [current] : [],
     ),
     hidden: true,

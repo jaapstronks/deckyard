@@ -20,6 +20,7 @@ import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import { healthKeys } from './helpers/instance-health.js';
 import { createMockReq, createMockRes } from './helpers/http-mocks.js';
+import { spellSlideSelection } from '../shared/slide-selection.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -108,6 +109,17 @@ test('the parser reads numbers and ranges, sorted and de-duplicated', () => {
   assert.deepEqual(parseSlideSelection('1,3-5'), [1, 3, 4, 5]);
   assert.deepEqual(parseSlideSelection('5, 1 , 2-3,3'), [1, 2, 3, 5]);
   assert.deepEqual(parseSlideSelection('4-4'), [4]);
+});
+
+test('one spelling of runs for the modal and the filename', () => {
+  assert.equal(spellSlideSelection([1, 3, 4, 5]), '1,3-5');
+  assert.equal(spellSlideSelection([1, 3, 4, 5], '_'), '1_3-5');
+  assert.equal(spellSlideSelection([2]), '2');
+  assert.equal(spellSlideSelection([]), '');
+  assert.deepEqual(
+    parseSlideSelection(spellSlideSelection([1, 2, 4, 7, 8, 9])),
+    [1, 2, 4, 7, 8, 9],
+  );
 });
 
 test('the parser refuses what is not a selection', () => {

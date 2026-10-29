@@ -44,8 +44,9 @@ function buildExportHeaders({
 
 /**
  * The export context for a request on the internal contract: the session user
- * asks, `?lang=` names the language and `?slides=` the slides (B871). A refusal throws (D255); the route's
- * catch answers it through {@link handleExportError}.
+ * asks, `?lang=` names the language and `?slides=` the slides (B871). A
+ * refusal throws (D255); the route's catch answers it through
+ * {@link handleExportError}.
  *
  * @param {{ storageScope: Object, authedUser: Object, url: URL }} reqCtx
  * @param {string} presentationId

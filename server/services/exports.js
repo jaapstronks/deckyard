@@ -50,6 +50,7 @@ import {
   projectPresentationForAudience,
 } from '../utils/public-output.js';
 import { pinSlideJumps } from '../../shared/slide-types.js';
+import { spellSlideSelection } from '../../shared/slide-selection.js';
 import { loadThemeAssets } from '../utils/themes.js';
 import { buildThemeTemplateBuffer } from '../export/pptx-theme.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
@@ -159,13 +160,7 @@ function selectionTitleSuffix(selection) {
   if (selection.length === 1) {
     return `-slide-${String(selection[0]).padStart(2, '0')}`;
   }
-  const runs = [];
-  for (const n of selection) {
-    const run = runs[runs.length - 1];
-    if (run && n === run[1] + 1) run[1] = n;
-    else runs.push([n, n]);
-  }
-  return `-slides-${runs.map(([a, b]) => (a === b ? a : `${a}-${b}`)).join('_')}`;
+  return `-slides-${spellSlideSelection(selection, '_')}`;
 }
 
 /**
