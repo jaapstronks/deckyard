@@ -362,7 +362,7 @@
   "editor.imageSlide.bleed": "Kant till kant",
   "editor.imageText.addImage": "+ Lägg till bild",
   "editor.imageText.altText": "Alt-text",
-  "editor.imageText.collectionHelp": "Klicka på en bild på sliden för att redigera dess alternativtext, anpassning och fokus.",
+  "editor.imageText.collectionHelp": "Klicka på en bild på sliden för att redigera dess alt-text, anpassning och fokus.",
   "editor.imageText.fitContain": "Anpassa",
   "editor.imageText.fitCover": "Fyll",
   "editor.imageText.imageFit": "Bildanpassning",

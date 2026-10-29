@@ -909,6 +909,8 @@ Validation messages use the imperative: Anna nimi.
 
 Progress labels are the passive with an ellipsis: Ladataan…, Lähetetään….
 
+Selite is the chart legend only (Legend, and the series label that feeds it); a short text that names something is Tunniste, also in running text and placeholders: Kentän tunniste, Lisää tunniste, X-tunniste.
+
 ## fr
 
 | English concept                         | Canonical text                                               | Context and keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -1198,6 +1200,8 @@ Personnalisé agrees with préréglage (masculine singular) in editor.deckSettin
 Validation messages use the infinitive: Inserire un nome.
 
 Progress labels are a bare noun with an ellipsis, without "in corso": Caricamento…, Invio….
+
+An empty state puts ancora first, as in Ancora nessuna presentazione.: Ancora nessun commento., Ancora nessuna versione. A parenthesised "(yet)" in the source keeps its parenthesis: Nessuna domanda (ancora).
 
 ## no
 

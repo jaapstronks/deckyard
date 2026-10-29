@@ -250,7 +250,7 @@
   "stockMedia.gradients.count.many": "{count} gradiënten",
   "stockMedia.gradients.count.one": "1 gradiënt",
   "stockMedia.gradients.empty": "Geen gradiënten beschikbaar.",
-  "stockMedia.gradients.hint": "Abstracte achtergronden, gegenereerd uit de ingebouwde thema’s. Naamsvermelding is niet nodig.",
+  "stockMedia.gradients.hint": "Abstracte achtergronden, gegenereerd uit de ingebouwde thema's. Naamsvermelding is niet nodig.",
   "stockMedia.gradients.loadFailed": "Kon de gradiëntenbibliotheek niet laden.",
   "stockMedia.gradients.loading": "Gradiënten laden…",
   "stockMedia.gradients.title": "Gradiënten",

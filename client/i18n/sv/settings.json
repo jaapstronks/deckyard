@@ -211,7 +211,7 @@
   "organization.profile.displayNameLabel": "Visningsnamn",
   "organization.profile.help": "Så heter den här organisationen överallt i appen, för alla i den.",
   "organization.profile.loadFailed": "Det gick inte att läsa in organisationen.",
-  "organization.profile.logoLabel": "Logotypens URL",
+  "organization.profile.logoLabel": "Logotyp-URL",
   "organization.profile.nameHelp": "Så omtalas organisationen när det inte finns något visningsnamn.",
   "organization.profile.nameLabel": "Namn",
   "organization.profile.nameTooShort": "Namnet behöver minst två tecken.",

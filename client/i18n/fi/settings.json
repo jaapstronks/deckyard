@@ -564,7 +564,7 @@
   "settings.slideTypes.fields.itemFields": "Kohteen kentät",
   "settings.slideTypes.fields.key": "Avain",
   "settings.slideTypes.fields.label": "Tunniste",
-  "settings.slideTypes.fields.labelPlaceholder": "Kentän selite",
+  "settings.slideTypes.fields.labelPlaceholder": "Kentän tunniste",
   "settings.slideTypes.fields.maxItems": "Kohteiden enimmäismäärä",
   "settings.slideTypes.fields.maxLength": "Enimmäispituus",
   "settings.slideTypes.fields.minItems": "Kohteiden vähimmäismäärä",
