@@ -155,7 +155,7 @@
   "organization.members.invite.emailPlaceholder": "name@beispiel.de",
   "organization.members.invite.failed": "Die Einladung konnte nicht gesendet werden.",
   "organization.members.invite.hint": "Die Person wird sofort Mitglied dieser Organisation. Für ein neues Konto versuchen wir, einen Anmeldelink zu mailen; das Ergebnis zeigt, ob er gesendet wurde.",
-  "organization.members.invite.invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein.",
+  "organization.members.invite.invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
   "organization.members.invite.nameHelp": "Wird für die Anrede in der Einladungs-E-Mail verwendet. Wird ignoriert, wenn bereits ein Konto besteht.",
   "organization.members.invite.open": "Einladen",
   "organization.members.invite.roleFixed": "Die Person tritt als Mitglied bei. Nur die Eigentümerin oder der Eigentümer kann Admins einladen.",

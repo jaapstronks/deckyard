@@ -160,7 +160,7 @@
   "organization.members.invite.emailPlaceholder": "nom@exemple.fr",
   "organization.members.invite.failed": "Impossible d'envoyer l'invitation.",
   "organization.members.invite.hint": "La personne rejoint immédiatement cette organisation. Pour un nouveau compte, nous essayons d’envoyer un lien de connexion ; le résultat indique s’il a été envoyé.",
-  "organization.members.invite.invalidEmail": "Saisissez une adresse e-mail valide.",
+  "organization.members.invite.invalidEmail": "Veuillez saisir une adresse e-mail valide.",
   "organization.members.invite.nameHelp": "Sert à s'adresser à la personne dans l'e-mail d'invitation. Ignoré si elle a déjà un compte.",
   "organization.members.invite.nameLabel": "Nom complet",
   "organization.members.invite.namePlaceholder": "Facultatif",

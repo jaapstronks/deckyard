@@ -192,7 +192,7 @@
   "organization.members.invite.emailPlaceholder": "name@example.com",
   "organization.members.invite.failed": "Could not send the invitation.",
   "organization.members.invite.hint": "They join this organization right away. For a new account, we try to email a sign-in link; the result tells you whether it was sent.",
-  "organization.members.invite.invalidEmail": "Enter a valid email address.",
+  "organization.members.invite.invalidEmail": "Please enter a valid email address.",
   "organization.members.invite.nameHelp": "Used to address them in the invitation email. Ignored if they already have an account.",
   "organization.members.invite.nameLabel": "Full name",
   "organization.members.invite.namePlaceholder": "Optional",
