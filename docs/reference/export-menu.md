@@ -54,6 +54,36 @@ complete.
 The PNG ZIP (`png.zip`, every slide as PNG in one ZIP, `?scale=` supported)
 has a menu row (B716): the PNG row's **ZIP** action, a long task.
 
+## All slides, the current one or a selection
+
+The slide PDF and the PNG ZIP export a part of the deck as well. Above the
+format list, for a deck with more than one slide, the modal offers **All
+slides**, **Current slide (n)** and **Selection**; the selection is a text
+field prefilled with the slides selected in the slide list (or the current
+one), in the spelling the server reads: `1,3-5`. Every other row exports the
+whole deck, which the help line under the choice says.
+
+- The choice adds `?slides=` to the PDF and PNG ZIP URLs (file route, its
+  streamed twin and the browser-print fallback). The routes without the
+  parameter export every slide, as before.
+- Numbers are the editor's: positions in the stored deck, 1-based. The
+  service layer reads them (`parseSlideSelection` in
+  `server/services/exports.js`, the one parser) and keeps the selected slides
+  in deck order before the export filter drops what every export drops
+  (live-only, `hideInExport`, incomplete). Jumps are pinned against the whole
+  deck first, so `#5` on a kept slide still names stored slide 5.
+- The filename names the part: `-slide-03` for one slide, `-slides-1_3-5` for
+  more.
+- A selection that cannot be read, names a slide past the end, leaves nothing
+  to render, or comes with a format that has no selection (`pptx`, `png`, …)
+  is the 400 `invalid` with `details.field = "slides"`. The modal shows it
+  under the slide choice, not under the row and not as the PDF fallback.
+- A queued export carries the selection in its job data, and the worker
+  reads it through the same parser (`prepareQueuedExportContext`).
+
+`tests/export-slide-selection.test.js` pins the parser, the context and the
+route.
+
 ## The single PDF entry
 
 There is one **PDF** row, not two. It downloads the deterministic

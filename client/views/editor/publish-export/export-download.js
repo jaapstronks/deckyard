@@ -30,9 +30,13 @@ function filenameFromDisposition(cd, fallback) {
 
 /** Read the error envelope's sentence off a failed response. */
 async function failureOf(res) {
-  // The error envelope's sentence when the server sent one.
+  // The error envelope's sentence when the server sent one, with its code and
+  // details, so a caller can place a refusal that names a field.
   const body = await res.json().catch(() => null);
-  return new Error(body?.message || `HTTP ${res.status}`);
+  return Object.assign(new Error(body?.message || `HTTP ${res.status}`), {
+    code: body?.error || null,
+    details: body?.details || null,
+  });
 }
 
 /**

@@ -25,6 +25,11 @@
  * slide counter and a Cancel that stops the server
  * (`publish-export/export-download.js`). The quick files (HTML, notes, .deck,
  * JSON) keep the busy button.
+ *
+ * The slide PDF and the PNG ZIP export all slides, the current one or a
+ * selection (B871): the choice above the list adds `?slides=` to those two
+ * rows' URLs, the server reads it, and a selection it refuses is shown under
+ * the choice, the field it names.
  */
 
 import { h } from '../../lib/dom/index.js';
@@ -63,7 +68,8 @@ const PDF_FETCH_TIMEOUT_MS = 90_000;
  * each with the same fields.
  * `allLanguages` marks a format that carries every language version itself
  * (the portable deck, D89): its URL takes no `?lang=`, since the route ignores
- * one. PDF is special-cased in the row builder.
+ * one. `selectable` marks an export that takes the slide choice (B871). PDF is
+ * special-cased in the row builder.
  * @returns {Array<{key:string,title:string,formats:Array<object>}>}
  */
 function exportGroups() {
@@ -78,6 +84,7 @@ function exportGroups() {
           desc: t('editor.export.descPdf', 'One slide per page (16:9)'),
           icon: 'file-text',
           color: 'red',
+          selectable: true,
         },
         {
           key: 'png',
@@ -96,6 +103,7 @@ function exportGroups() {
               path: 'png.zip',
               file: '-png.zip',
               stream: true,
+              selectable: true,
             },
           ],
         },
@@ -234,13 +242,131 @@ function openPreview(id, path, lang) {
  * with the file rather than a `202` job hand-off nobody here polls; a route
  * without a queue ignores it.
  */
-function downloadUrl(id, path, lang) {
-  return buildExportUrl(`/api/presentations/${id}/export/${path}?sync=1`, lang);
+function downloadUrl(id, path, lang, slides) {
+  return buildExportUrl(
+    `/api/presentations/${id}/export/${path}?sync=1`,
+    lang,
+    { slides },
+  );
 }
 
 /** The streamed twin of a Chrome export route (B716). */
-function streamUrl(id, path, lang) {
-  return buildExportUrl(`/api/presentations/${id}/export/${path}/stream`, lang);
+function streamUrl(id, path, lang, slides) {
+  return buildExportUrl(
+    `/api/presentations/${id}/export/${path}/stream`,
+    lang,
+    { slides },
+  );
+}
+
+/** A refusal of the slide selection: it belongs under the slide choice. */
+function isSlidesRefusal(err) {
+  return err?.code === 'invalid' && err?.details?.field === 'slides';
+}
+
+/**
+ * Spell slide numbers as a selection, runs as ranges: `[1, 3, 4, 5]` is
+ * `1,3-5`.
+ *
+ * @param {number[]} numbers - sorted
+ * @returns {string}
+ */
+function selectionSpelling(numbers) {
+  const runs = [];
+  for (const n of numbers) {
+    const run = runs[runs.length - 1];
+    if (run && n === run[1] + 1) run[1] = n;
+    else runs.push([n, n]);
+  }
+  return runs.map(([a, b]) => (a === b ? `${a}` : `${a}-${b}`)).join(',');
+}
+
+/**
+ * The slide choice for the slide PDF and the PNG ZIP (B871): all slides, the
+ * current one or a typed selection, prefilled with the slides selected in the
+ * slide list. The server reads the selection; its refusal shows here.
+ *
+ * @param {{ current: number|null, selected: number[] }} numbers
+ * @returns {{ el: HTMLElement, getSlides: () => (string|null),
+ *   showRefusal: (err: Error) => void }}
+ */
+function createSlideChoice({ current, selected }) {
+  const label = t('editor.export.slidesLabel', 'Which slides');
+  const input = h('input', {
+    type: 'text',
+    class: 'form-input form-input-sm export-slides-input',
+    inputmode: 'numeric',
+    placeholder: '1,3-5',
+    'aria-label': t('editor.export.slidesInput', 'Slide numbers'),
+    value: selectionSpelling(
+      selected.length > 1 ? selected : current ? [current] : [],
+    ),
+    hidden: true,
+  });
+  const help = h('p', {
+    class: 'help export-slides-help',
+    text: t(
+      'editor.export.slidesHelp',
+      'For PDF and the PNG ZIP. Type slide numbers and ranges, such as 1,3-5.',
+    ),
+    hidden: true,
+  });
+  const error = createInlineError();
+  let choice = 'all';
+  const seg = createSegmented({
+    ariaLabel: label,
+    value: choice,
+    segments: [
+      { value: 'all', label: t('editor.export.slidesAll', 'All slides') },
+      ...(current
+        ? [
+            {
+              value: 'current',
+              label: t('editor.export.slidesCurrent', 'Current slide ({n})', {
+                n: String(current),
+              }),
+            },
+          ]
+        : []),
+      {
+        value: 'selection',
+        label: t('editor.export.slidesSelection', 'Selection'),
+      },
+    ],
+    onSelect: (val) => {
+      choice = val;
+      input.hidden = val !== 'selection';
+      help.hidden = val === 'all';
+      error.clear();
+      if (val === 'selection') input.focus();
+    },
+  });
+  input.addEventListener('input', () => error.clear());
+
+  const el = h('div', { class: 'export-slides' }, [
+    h('div', { class: 'export-lang-row export-slides-row' }, [
+      h('span', { class: 'field-label', text: label }),
+      seg.el,
+      input,
+    ]),
+    help,
+    error.el,
+  ]);
+
+  return {
+    el,
+    getSlides: () => {
+      error.clear();
+      if (choice === 'current') return String(current);
+      if (choice === 'selection') return input.value.trim();
+      return null;
+    },
+    showRefusal: (err) => {
+      error.show(err.message, {
+        control: choice === 'selection' ? input : null,
+      });
+    },
+  };
 }
 
 /**
@@ -289,6 +415,10 @@ function announceImageSlides(headers) {
  * @param {HTMLButtonElement} opts.button
  * @param {{ clear: Function, show: Function }} opts.error - the row's inline error
  * @param {(headers: Headers) => void} [opts.afterDownload]
+ * @param {string|null} [opts.slides] - the slide selection, for a
+ *   `selectable` download
+ * @param {(err: Error) => void} [opts.onSlidesRefusal] - shows a refused
+ *   selection under the slide choice
  */
 async function exportDownload({
   id,
@@ -299,6 +429,8 @@ async function exportDownload({
   button,
   error,
   afterDownload,
+  slides = null,
+  onSlidesRefusal,
 }) {
   error.clear();
   const originalLabel = button.textContent;
@@ -309,17 +441,18 @@ async function exportDownload({
   try {
     const headers = download.stream
       ? await streamExport({
-          url: streamUrl(id, download.path, lang),
+          url: streamUrl(id, download.path, lang, slides),
           title,
           fallbackName,
         })
       : await downloadExport(
-          downloadUrl(id, download.path, lang),
+          downloadUrl(id, download.path, lang, slides),
           fallbackName,
         );
     if (headers) afterDownload?.(headers);
   } catch (err) {
-    error.show(err.message, { focus: false });
+    if (isSlidesRefusal(err) && onSlidesRefusal) onSlidesRefusal(err);
+    else error.show(err.message, { focus: false });
   } finally {
     button.disabled = false;
     button.textContent = originalLabel;
@@ -329,16 +462,26 @@ async function exportDownload({
 /**
  * The PDF flow: the server-rendered PDF as a long task (one Chrome document,
  * so its bar creeps), downloaded when it completes; only on a failure or a
- * timeout does the browser-print fallback appear. A cancel is neither.
+ * timeout does the browser-print fallback appear. A cancel is neither, and
+ * neither is a refused slide selection: that shows under the slide choice.
  */
-async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
+async function exportPdf({
+  id,
+  getLang,
+  getSlides,
+  onSlidesRefusal,
+  title,
+  button,
+  fallbackWrap,
+}) {
   button.disabled = true;
   fallbackWrap.hidden = true;
   fallbackWrap.replaceChildren();
+  const slides = getSlides();
 
   try {
     await streamExport({
-      url: streamUrl(id, 'pdf-slides.pdf', getLang()),
+      url: streamUrl(id, 'pdf-slides.pdf', getLang(), slides),
       title: t('editor.export.progressTitle', 'Exporting {format}', {
         format: 'PDF',
       }),
@@ -346,11 +489,16 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
       timeoutMs: PDF_FETCH_TIMEOUT_MS,
     });
   } catch (err) {
+    if (isSlidesRefusal(err)) {
+      onSlidesRefusal(err);
+      return;
+    }
     // Reveal the browser-print fallback: open the printable slide page in a new
     // tab, where the user does Cmd/Ctrl-P → Save as PDF.
     const printUrl = buildExportUrl(
       `/api/presentations/${id}/export/pdf-slides`,
       getLang(),
+      { slides },
     );
     const fallbackBtn = h('button', {
       class: 'btn btn-secondary btn-sm',
@@ -379,7 +527,10 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
 }
 
 /** Build one format row (icon + meta + action button(s)). */
-function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
+function buildFormatRow(
+  fmt,
+  { id, getLang, getSlides, onSlidesRefusal, title, openPublic },
+) {
   const icon = h('span', {
     class: 'export-format-icon',
     'data-color': fmt.color,
@@ -415,7 +566,15 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
       type: 'button',
       text: t('editor.export.exportAction', 'Export'),
       onclick: () =>
-        exportPdf({ id, getLang, title, button: btn, fallbackWrap }),
+        exportPdf({
+          id,
+          getLang,
+          getSlides,
+          onSlidesRefusal,
+          title,
+          button: btn,
+          fallbackWrap,
+        }),
     });
     actions.append(btn);
     makeClickable(() => btn.click());
@@ -456,6 +615,8 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
               button: btn,
               error,
               afterDownload: fmt.afterDownload,
+              slides: download.selectable ? getSlides() : null,
+              onSlidesRefusal,
             }),
     });
     actions.append(btn);
@@ -498,9 +659,18 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
  * @param {Function} [opts.openPublic] - Opens the Share dialog on its Public
  *   tab. Without it (or in sandbox mode, which has no publishing) the HTML row
  *   carries no hint.
+ * @param {() => { current: number|null, selected: number[] }} [opts.selectedSlideNumbers]
+ *   - The editor's selected slides; with more than one slide in the deck the
+ *   modal offers all slides, the current one or a selection (B871).
  * @returns {Object} Modal API
  */
-export function openExportModal({ pres, id, root, openPublic }) {
+export function openExportModal({
+  pres,
+  id,
+  root,
+  openPublic,
+  selectedSlideNumbers,
+}) {
   const activeLang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
   // Every other version this deck actually has, not "the other one": a deck
   // with `nl`, `de` and `fr` offered exactly one of them for export before.
@@ -540,6 +710,18 @@ export function openExportModal({ pres, id, root, openPublic }) {
     modal.append(langRow);
   }
 
+  // The slide choice, for a deck with more than one slide.
+  const slideChoice =
+    (pres?.slides?.length || 0) > 1
+      ? createSlideChoice(
+          selectedSlideNumbers?.() || { current: null, selected: [] },
+        )
+      : null;
+  if (slideChoice) modal.append(slideChoice.el);
+  const getSlides = () => slideChoice?.getSlides() ?? null;
+  const onSlidesRefusal = (err) =>
+    slideChoice ? slideChoice.showRefusal(err) : toast.error(err);
+
   const publicAvailable = !!openPublic && !getFeatures()?.sandboxMode;
   const list = h('div', { class: 'export-format-list' });
   for (const group of exportGroups()) {
@@ -549,6 +731,8 @@ export function openExportModal({ pres, id, root, openPublic }) {
         buildFormatRow(fmt, {
           id,
           getLang,
+          getSlides,
+          onSlidesRefusal,
           title,
           openPublic: publicAvailable
             ? () => {

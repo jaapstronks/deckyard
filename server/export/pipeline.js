@@ -44,7 +44,7 @@ function buildExportHeaders({
 
 /**
  * The export context for a request on the internal contract: the session user
- * asks, `?lang=` names the language. A refusal throws (D255); the route's
+ * asks, `?lang=` names the language and `?slides=` the slides (B871). A refusal throws (D255); the route's
  * catch answers it through {@link handleExportError}.
  *
  * @param {{ storageScope: Object, authedUser: Object, url: URL }} reqCtx
@@ -64,6 +64,7 @@ export function exportContextFor(
       presentationId,
       format,
       lang: url?.searchParams?.get('lang'),
+      slides: url?.searchParams?.get('slides'),
       allLanguages,
       stripLiveOnly,
     },
@@ -356,6 +357,7 @@ export function createAsyncExportRoute(config) {
               format,
               exportAccess: ctx.exportAccess,
               lang: ctx.exportLang,
+              slides: url.searchParams.get('slides'),
               stripLiveOnly,
               scale: parseScaleParam(url),
               options,
