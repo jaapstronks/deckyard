@@ -55,6 +55,43 @@ export const FIELDS_CONTEXTS = Object.freeze({
 });
 
 /**
+ * Keep the inspector in step with edits made in the Fields form beside it.
+ *
+ * A field can stand in both forms: the inspector keeps a type's URL fields
+ * (the Website of an end slide) while the Fields form carries all content.
+ * The inspector is a rendered form, so an edit in the Fields form left it
+ * showing the value from before the edit (B875). `schedule()` re-renders it
+ * once typing pauses, unless the inspector holds the focus - the same rule
+ * {@link createFieldsView}'s `sync()` applies the other way round.
+ *
+ * @param {Object} opts
+ * @param {HTMLElement} opts.inspectorEl - the inspector's form mount
+ * @param {() => void} opts.rerender - re-renders the inspector form
+ * @param {number} [opts.delayMs] - the typing pause to wait for
+ * @returns {{ schedule: () => void, detach: () => void }}
+ */
+export function createInspectorFollower({
+  inspectorEl,
+  rerender,
+  delayMs = 120,
+}) {
+  let timer = null;
+  const schedule = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      if (inspectorEl.contains(document.activeElement)) return;
+      rerender();
+    }, delayMs);
+  };
+  const detach = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+  return { schedule, detach };
+}
+
+/**
  * @param {Object} opts
  * @param {'deck'|'library'} [opts.context] - where the form runs
  * @param {Object} opts.pres - the presentation model (live reference)

@@ -632,3 +632,55 @@ test('the image role sits in the image card, under the alt text (D347)', () => {
     );
   }
 });
+
+test('a value the form shortens when it renders is reported for the save notice (B875)', () => {
+  const editorMount = document.createElement('div');
+  document.body.append(editorMount);
+  const longAlt = 'word '.repeat(80).trim();
+  const slide = {
+    id: 's1',
+    type: 'image-slide',
+    content: {
+      ...structuredClone(SLIDE_TYPES['image-slide'].defaults),
+      imageRole: 'content',
+      alt: longAlt,
+    },
+  };
+  const pres = {
+    id: 'p1',
+    slides: [slide],
+    settings: {},
+    i18n: { active: 'nl' },
+  };
+  const noop = () => {};
+  const deps = {
+    pres,
+    user: {},
+    markDirty: noop,
+    scheduleUiRefresh: noop,
+    rerenderEditor: noop,
+    updateSelectedSlideListItem: noop,
+    normalizeLang: (l) => l,
+  };
+  const reported = [];
+  createRerenderEditor({
+    ...deps,
+    editorMount,
+    SLIDE_TYPES,
+    api: null,
+    getSelectedSlideId: () => 's1',
+    setSelectedSlideId: noop,
+    editorState: {},
+    requestSave: noop,
+    rerenderSlideList: noop,
+    rerenderPreview: noop,
+    fieldRenderers: createFieldRenderers(deps),
+    surface: 'fields',
+    onFieldsNormalized: (fields) => reported.push(...fields),
+  }).rerender();
+
+  assert.ok(slide.content.alt.length <= 180, 'the buffer holds the short alt');
+  assert.ok(slide.content.alt.endsWith('…'));
+  assert.deepEqual(reported, [{ slideId: 's1', lang: 'nl', field: 'alt' }]);
+  editorMount.remove();
+});

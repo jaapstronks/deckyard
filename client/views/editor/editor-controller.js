@@ -34,7 +34,7 @@ import { createFieldRenderers } from './fields/index.js';
 import { setupSlideList } from './slide-list/index.js';
 import { createRerenderEditor } from './editor-form/index.js';
 import { closeAllOverlays } from '../../lib/dom/modal.js';
-import { createFieldsView } from './fields-view.js';
+import { createFieldsView, createInspectorFollower } from './fields-view.js';
 import { storage } from '../../lib/storage.js';
 import { createNotesStrip } from './notes-strip.js';
 import { createPreviewPanel } from './preview-panel.js';
@@ -399,7 +399,7 @@ export async function createEditorController({
   // Bridges save failures to the banner created after the topbar.
   let setSaveStatus = () => {};
   let setSaveError = () => {};
-  let setNormalizedFields = () => {};
+  let addNormalizedFields = () => {};
   // Re-reads the published-alt warning (B331). Reassigned once it exists; a
   // save transition or a publish/unpublish may change what it says.
   let syncPublishedAltWarning = () => {};
@@ -416,7 +416,7 @@ export async function createEditorController({
       saveRefusal.set(err);
     },
     onSaveError: (err) => setSaveError(err),
-    onFieldsNormalized: (fields) => setNormalizedFields(fields),
+    onFieldsNormalized: (fields) => addNormalizedFields(fields),
     api,
     toast,
     pres,
@@ -881,7 +881,7 @@ export async function createEditorController({
   shell.append(saveStatus.el);
   setSaveStatus = saveStatus.setStatus;
   setSaveError = saveStatus.setError;
-  setNormalizedFields = saveStatus.setNormalized;
+  addNormalizedFields = saveStatus.addNormalized;
   setSaveStatus(saveManager.getStatus(), saveManager.getLastError());
 
   // Let the undo manager drive the topbar undo/redo button states, and set the
@@ -1638,6 +1638,7 @@ export async function createEditorController({
   // createRerenderEditor instance on the `fields` surface on its own mount).
   const editorFormDeps = {
     saveRefusal,
+    onFieldsNormalized: (fields) => addNormalizedFields(fields),
     editorMount,
     pres,
     SLIDE_TYPES,
@@ -1669,8 +1670,15 @@ export async function createEditorController({
 
   // Fields: the content form in the canvas column (D335). A second
   // createRerenderEditor instance on the surface of the view's `deck` context
-  // (`fields`: content only, no settings) on the view's own mount; the
-  // inspector beside it is untouched.
+  // (`fields`: content only, no settings) on the view's own mount.
+  //
+  // A field can stand in both forms (the inspector keeps a type's URL
+  // fields), so an edit in the Fields form re-renders the inspector too.
+  const inspectorFollower = createInspectorFollower({
+    inspectorEl: editorMount,
+    rerender: () => editorForm.rerender(),
+  });
+  cleanup.register('inspectorFollower', inspectorFollower.detach);
   const fieldsView = createFieldsView({
     context: 'deck',
     pres,
@@ -1688,10 +1696,12 @@ export async function createEditorController({
         editorMount: formMount,
         surface,
         onRendered,
-        // Keep the slide list live too, and repaint the view's preview.
+        // Keep the slide list and the inspector live too, and repaint the
+        // view's preview.
         scheduleUiRefresh: () => {
           scheduleUiRefresh();
           refreshPreview();
+          inspectorFollower.schedule();
         },
         rerenderPreview: () => {
           rerenderPreview();

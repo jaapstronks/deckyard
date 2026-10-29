@@ -293,6 +293,8 @@ export function createCollectionEditor({
         class: 'item-drag-handle',
         title: t('editor.slideList.dragToReorder', 'Drag to reorder'),
         'aria-label': t('editor.slideList.dragToReorder', 'Drag to reorder'),
+        // pointer-sortable.js moves the item a slot per arrow key.
+        'aria-keyshortcuts': 'ArrowUp ArrowDown',
       });
       handle.appendChild(icon('grip-vertical', { size: 12 }));
       headerLeft.append(handle);

@@ -42,7 +42,7 @@
  * so tests can run this against the vendored bundle in Node.
  */
 
-import { patchYText } from '../../../../shared/collab/deck-ydoc.js';
+import { itemsShift, patchYText } from '../../../../shared/collab/deck-ydoc.js';
 import { isPerLanguageKey } from '../../../../shared/slide-types/text-fields.js';
 import { debugLog } from '../../../lib/state/debug.js';
 
@@ -237,7 +237,8 @@ export function createLiveDocBinder({
 
   /**
    * Splice diff for an items Y.Array: unchanged prefix/suffix items keep
-   * their Y identity (so concurrent edits on other items merge); an
+   * their Y identity (so concurrent edits on other items merge); a single
+   * moved item moves as itself, every language with it (DY-773); any other
    * equal-length middle diffs item-by-item in place; an unequal middle is
    * replaced wholesale (single-language build — deleted items take their
    * translations with them, which is what deletion means).
@@ -251,6 +252,15 @@ export function createLiveDocBinder({
         0,
         newArr.map((it) => codec.buildItemForLang(it, spec, lang)),
       );
+      return;
+    }
+    const shift = itemsShift(oldArr, newArr);
+    if (shift?.kind === 'move') {
+      // Diffing the shifted items in place would rewrite them in this
+      // language only and leave the others at their old index.
+      const clone = codec.cloneYValue(yarr.get(shift.from));
+      yarr.delete(shift.from, 1);
+      yarr.insert(shift.to, [clone]);
       return;
     }
     let start = 0;
