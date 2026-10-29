@@ -195,6 +195,7 @@
   "list.presentations.noMatch": "Keine Präsentationen passen zu den gewählten Filtern.",
   "list.presentations.ownership.all": "Alle",
   "list.presentations.ownership.mine": "Meine",
+  "list.presentations.ownership.organization": "Organisation",
   "list.presentations.ownership.shared": "Geteilt",
   "list.presentations.ownershipLabel": "Präsentationen nach Herkunft filtern",
   "list.presentations.title": "Präsentationen",
