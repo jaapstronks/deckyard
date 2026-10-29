@@ -680,6 +680,26 @@
   margin-right: auto;
 }
 
+/* The card of an existing anchored comment: the pane's thread layout
+   (.comment-item, .comment-reply) inside the composer's frame, with the close
+   button at the end of the first header. */
+.comment-detail-popup {
+  gap: var(--ps-space-1);
+}
+
+.comment-detail-popup .comment-item-header {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.comment-detail-popup .comment-author {
+  overflow-wrap: anywhere;
+}
+
+.comment-detail-close {
+  margin-left: auto;
+}
+
 /* ============================================================
    AI SUGGESTIONS STYLES
    ============================================================ */

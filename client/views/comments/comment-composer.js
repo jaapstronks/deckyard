@@ -10,6 +10,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom/index.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 import { takeEscape } from '../../lib/dom/escape.js';
+import { createAnchorCardFrame } from './comment-anchor-card.js';
 import { createRichCommentInput } from './comment-rich-input.js';
 import { createCommentLinkButton } from './comment-toolbar.js';
 
@@ -137,20 +138,7 @@ export function createAnchoredComposer({
   onCancel,
   attachMentions,
 }) {
-  const thumbRect = thumbEl.getBoundingClientRect();
-  const stageRect = stageEl.getBoundingClientRect();
-  const pixelX = thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
-  const pixelY = thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
-
-  // Smart positioning: avoid edge clipping
-  const classes = ['positioned-comment-popup'];
-  if (x > 50) classes.push('anchor-right');
-  if (y > 60) classes.push('anchor-bottom');
-  const el = h('div', {
-    class: classes.join(' '),
-    style: `left: ${pixelX}px; top: ${pixelY}px;`,
-  });
-  el.append(h('div', { class: 'positioned-comment-marker' }));
+  const el = createAnchorCardFrame({ stageEl, thumbEl, x, y });
 
   const composer = createCommentComposer({
     host: el,
@@ -160,8 +148,6 @@ export function createAnchoredComposer({
     attachMentions,
   });
 
-  stageEl.style.position = 'relative';
-  stageEl.appendChild(el);
   composer.focus();
 
   return {
