@@ -77,11 +77,16 @@
   display: flex;
 }
 
+/* The title and the two header actions share one row while every label
+   fits. Otherwise whole buttons wrap to the next line, and a label longer
+   than the panel (Polish at 200% zoom) breaks on word boundaries inside its
+   own button (B850, ui-action-layout). */
 .notification-bell-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--ps-space-2);
+  justify-content: flex-end;
+  gap: var(--ps-space-1) var(--ps-space-2);
   padding: var(--ps-space-3) var(--ps-space-4);
   border-bottom: 1px solid hsl(var(--app-border-subtle));
   background: hsl(var(--app-bg-sunken));
@@ -103,12 +108,20 @@
   font-weight: 500;
   cursor: pointer;
   border-radius: var(--ps-radius-sm);
-  white-space: nowrap;
+  max-width: 100%;
+  text-align: start;
   transition: background var(--ps-transition-fast);
 }
 
 .notification-bell-mark-all:hover {
   background: hsl(var(--app-accent-soft));
+}
+
+/* A finger needs a 44px target; the header actions grow to it. */
+@media (pointer: coarse) {
+  .notification-bell-mark-all {
+    min-height: 44px;
+  }
 }
 
 /* Filter chips (events-inbox lenses: All / Mentions / Unread / Archived) */
