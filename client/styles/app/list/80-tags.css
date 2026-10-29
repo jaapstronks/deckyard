@@ -341,25 +341,33 @@
    OWNERSHIP FILTER (segmented source chips for the Presentations view)
    The primary source filter that replaced the Recent/Workspace/Shared tabs,
    so — unlike the old visibility filter — it stays visible on every viewport.
+   The chips share one row while every label fits; otherwise whole chips wrap
+   to the next line inside the header, never past it (B852, ui-action-layout).
+   The dividers are the 1px gap over a border-coloured background, and the
+   chips grow to fill their row, so a wrapped group keeps clean lines.
    ============================================================ */
 
 .ownership-filter {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: stretch;
+  gap: 1px;
+  max-width: 100%;
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
   overflow: hidden;
-  background: hsl(var(--app-bg-elevated));
+  background: hsl(var(--app-border-default));
 }
 
 .ownership-filter-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--ps-space-1);
+  flex: 1 1 auto;
+  justify-content: center;
   padding: var(--ps-space-1) var(--ps-space-3);
   border: none;
-  border-right: 1px solid hsl(var(--app-border-default));
-  background: transparent;
+  background: hsl(var(--app-bg-elevated));
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   cursor: pointer;
@@ -367,8 +375,12 @@
   white-space: nowrap;
 }
 
-.ownership-filter-btn:last-child {
-  border-right: none;
+/* A finger needs a 44px target; the chips grow to it. */
+@media (pointer: coarse) {
+  .ownership-filter-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 .ownership-filter-btn:hover {
@@ -388,20 +400,13 @@
 }
 
 /* The Presentations header carries more controls than a single tag filter, so
-   let it wrap instead of overflowing, and let the filter row scroll on very
-   narrow screens rather than squashing the chips. */
+   it wraps instead of overflowing: the filters move to their own line, and on
+   a narrow screen the ownership chips and the tag filter stack. */
 .view-header-with-filter.is-presentations {
   flex-wrap: wrap;
 }
 
 .view-header-with-filter.is-presentations .view-filters {
   flex-wrap: wrap;
-}
-
-@media (max-width: 640px) {
-  .view-header-with-filter.is-presentations .view-filters {
-    width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
+  max-width: 100%;
 }
