@@ -100,7 +100,7 @@
   "editor.aiAppend.generateAdd": "Gerar e adicionar",
   "editor.aiAppend.generating": "A gerar…",
   "editor.aiAppend.help": "Descreva o que deseja adicionar. Pode solicitar um ou múltiplos diapositivos de uma vez. A IA também vê a apresentação existente e tenta encaixar logicamente. Se pedir uma foto/imagem, será usada uma imagem de fundo existente como marcador de posição (que pode substituir depois).",
-  "editor.aiAppend.noneReceived": "Nenhum diapositivo recebido (por favor tente novamente).",
+  "editor.aiAppend.noneReceived": "Nenhum diapositivo recebido (tente novamente).",
   "editor.aiAppend.placeholder": "Ex.\n- Adicionar 2 diapositivos sobre abordagem e planeamento\n- Adicionar um diapositivo com uma foto (marcador de posição) e 4 pontos com mensagens-chave\n- Adicionar um diapositivo de «lista» com 6 dicas (pontos)\n- Adicionar um diapositivo de gráfico com um diagrama de barras baseado nestes números: …\n",
   "editor.aiAppend.required": "Primeiro descreva o que deseja adicionar.",
   "editor.aiAppend.review": "Rever",

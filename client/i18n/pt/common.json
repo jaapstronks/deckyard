@@ -3,7 +3,7 @@
   "access.denied.message": "Não tem permissão para ver esta apresentação. Se acha que deveria ter acesso, contacte o proprietário.",
   "access.denied.title": "Acesso negado",
   "access.notFound.backToHome": "Voltar ao início",
-  "access.notFound.message": "Esta apresentação não existe ou foi eliminada. Por favor, verifique o link.",
+  "access.notFound.message": "Esta apresentação não existe ou foi eliminada. Verifique o link.",
   "access.notFound.title": "Apresentação não encontrada",
   "ai.generationFailed": "Falha na geração",
   "ai.streamIncomplete": "O fluxo terminou sem se concluir",

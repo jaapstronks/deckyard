@@ -70,7 +70,7 @@
   "share.guest.error.linkRevoked": "Este enlace compartido ha sido revocado.",
   "share.guest.error.notInvited": "Esta presentación requiere invitación. Póngase en contacto con el autor para pedir acceso.",
   "share.guest.error.permissionDenied": "Este enlace compartido no permite comentarios.",
-  "share.guest.error.rateLimited": "Demasiadas solicitudes. Por favor, inténtalo más tarde.",
+  "share.guest.error.rateLimited": "Demasiadas solicitudes. Inténtelo de nuevo más tarde.",
   "share.guest.help": "Ingrese su correo electrónico para verificar su identidad y comenzar a comentar.",
   "share.guest.join": "Unirse a la discusión",
   "share.guest.name": "Nombre (opcional)",
