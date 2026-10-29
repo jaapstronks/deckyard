@@ -5,7 +5,7 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -171,7 +171,8 @@ export function createUploadPanel({
         if (onVariantChange) onVariantChange(currentVariants);
       } catch (err) {
         toast.error(
-          err.message || t('fonts.uploadError', 'Failed to upload font file.'),
+          serverSentence(err) ??
+            t('fonts.uploadError', 'Failed to upload font file.'),
         );
       }
     };
@@ -189,7 +190,8 @@ export function createUploadPanel({
       if (onVariantChange) onVariantChange(currentVariants);
     } catch (err) {
       toast.error(
-        err.message || t('fonts.removeError', 'Failed to remove variant.'),
+        serverSentence(err) ??
+          t('fonts.removeError', 'Failed to remove variant.'),
       );
     }
   }

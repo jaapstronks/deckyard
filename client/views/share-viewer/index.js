@@ -10,7 +10,7 @@
 import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
 import { spinner } from '../../lib/dom/spinner.js';
-import { api } from '../../lib/api.js';
+import { api, serverSentence } from '../../lib/api.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import {
@@ -123,7 +123,8 @@ export async function renderShareViewer(root, token) {
   } catch (err) {
     renderError(
       shell,
-      err.message || t('share.error.loadLink', 'Failed to load share link'),
+      serverSentence(err) ??
+        t('share.error.loadLink', 'Failed to load share link'),
     );
   }
 
@@ -184,13 +185,14 @@ export async function renderShareViewer(root, token) {
     ]);
     shell.append(loading);
 
+    presentation = deck || null;
+    if (!presentation) {
+      shell.replaceChildren();
+      renderError(shell, t('share.error.notFound', 'Link Not Found'));
+      return;
+    }
+
     try {
-      presentation = deck || null;
-
-      if (!presentation) {
-        throw new Error(t('share.error.notFound', 'Link Not Found'));
-      }
-
       // The theme rides on the same verified payload as the deck because the
       // record API requires login and the share viewer is anonymous.
       theme = await loadThemeById(presentation.theme, {
@@ -218,7 +220,7 @@ export async function renderShareViewer(root, token) {
       shell.replaceChildren();
       renderError(
         shell,
-        err.message ||
+        serverSentence(err) ??
           t('share.error.loadPresentation', 'Failed to load presentation'),
       );
     }

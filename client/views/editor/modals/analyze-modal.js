@@ -11,6 +11,7 @@
  * suggestions that were added.
  */
 
+import { serverSentence } from '../../../lib/api.js';
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { showLoadingModal } from '../../../lib/dom/loading-modal.js';
 import { processSSEStream } from '../../../lib/net/sse.js';
@@ -134,7 +135,8 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
       console.error('[analyze] Error:', error);
       showResult(
         t('editor.analyzeModal.error', 'Analysis failed: {message}', {
-          message: error?.message || t('common.unknownError', 'Unknown error'),
+          message:
+            serverSentence(error) ?? t('common.unknownError', 'Unknown error'),
         }),
       );
     } finally {

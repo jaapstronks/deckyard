@@ -17,6 +17,7 @@
  * helpers, so the focus trap and aria wiring are unchanged.
  */
 
+import { serverSentence } from '../../../lib/api.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -134,7 +135,7 @@ export function showDeleteOrganizationModal({
       // deleted" — and both are rules this dialog cannot restate better.
       status.textContent = '';
       refusal.show(
-        err?.message ||
+        serverSentence(err) ??
           t(
             'organization.profile.delete.failed',
             'Could not delete the organization.',

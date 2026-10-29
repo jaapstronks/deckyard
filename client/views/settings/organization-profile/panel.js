@@ -23,6 +23,7 @@
  *     identifier it is.
  */
 
+import { serverSentence } from '../../../lib/api.js';
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -356,7 +357,7 @@ export function renderOrganizationProfilePanel({
       // required"), which beats anything this form could reconstruct from a
       // status code.
       status.textContent =
-        err?.message ||
+        serverSentence(err) ??
         t('organization.profile.saveFailed', 'Could not save the changes.');
     } finally {
       setBusy(false);

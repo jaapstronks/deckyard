@@ -12,7 +12,7 @@ import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { featureEnabled } from '../../../lib/state/features.js';
 import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { uploadFile } from '../../../lib/net/image-upload.js';
 
 /**
@@ -173,7 +173,8 @@ export function createLogoUploader({ value, onChange }) {
       onChange?.(result.url);
     } catch (err) {
       uploadError = String(
-        err?.message || t('settings.themes.logo.uploadFailed', 'Upload failed'),
+        serverSentence(err) ??
+          t('settings.themes.logo.uploadFailed', 'Upload failed'),
       );
     } finally {
       uploading = false;

@@ -4,6 +4,7 @@
  * Follows the theme-editor layout pattern.
  */
 
+import { serverSentence } from '../../../lib/api.js';
 import { generateSlug, isValidSlug } from '../../../../shared/slug.js';
 
 import { h } from '../../../lib/dom/index.js';
@@ -609,7 +610,7 @@ export function createSlideTypeEditor({
       // `itemIndex`), so the answer points at the control rather than at the
       // whole form (docs/reference/api-error-format.md § details).
       const message =
-        err?.message ||
+        serverSentence(err) ??
         t(
           'settings.slideTypes.errorSaveFailed',
           'Could not save this slide type.',

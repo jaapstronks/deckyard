@@ -2,7 +2,7 @@
  * Admin user actions - API calls and confirmations.
  */
 
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -78,7 +78,7 @@ export async function resendInvitation(targetUser, btn) {
     }
   } catch (e) {
     toast.error(
-      e.message ||
+      serverSentence(e) ??
         t('admin.users.invitationError', 'Failed to send invitation.'),
     );
   } finally {

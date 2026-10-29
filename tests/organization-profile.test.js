@@ -346,8 +346,10 @@ test('a name shorter than the route accepts never leaves the form', async () => 
 test("a refusal shows the server's own sentence, on the form", async () => {
   const panel = await renderPanel(viewer('admin'), {
     save: async () => {
-      const err = new Error('Admin or owner access required');
+      const message = 'Admin or owner access required';
+      const err = new Error(message);
       err.statusCode = 403;
+      err.body = { ok: false, error: 'forbidden', message };
       throw err;
     },
   });
@@ -485,8 +487,10 @@ test('deleting reports it and hands over to the caller', async () => {
 test('a refused delete stays in the dialog with the server sentence', async () => {
   const dialog = openDeleteDialog({
     remove: async () => {
-      const err = new Error('The default organization cannot be deleted');
+      const message = 'The default organization cannot be deleted';
+      const err = new Error(message);
       err.statusCode = 403;
+      err.body = { ok: false, error: 'forbidden', message };
       throw err;
     },
     onDeleted: () => assert.fail('nothing was deleted'),

@@ -3,6 +3,7 @@
  * Displays slide comments and allows users to add, reply, and resolve.
  */
 
+import { serverSentence } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { icon, makeDropdownCaret } from '../../lib/dom/icons.js';
 import { createDropdown } from '../../lib/dom/dropdown.js';
@@ -335,7 +336,7 @@ export function createCommentsPanel({
         'This slide is not saved yet. Wait a moment and post again.',
       );
     }
-    return err?.message || fallback;
+    return serverSentence(err) ?? fallback;
   }
 
   /**

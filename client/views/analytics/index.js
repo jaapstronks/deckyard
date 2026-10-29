@@ -11,7 +11,7 @@ export { createAnalyticsTracker, isAnalyticsEnabled } from './tracker.js';
 export { createEraseMyDataButton } from './erase-button.js';
 
 import { h } from '../../lib/dom/index.js';
-import { api } from '../../lib/api.js';
+import { api, serverSentence } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createOverviewPanel } from './overview-panel.js';
 import { createTimelineChart } from './timeline-chart.js';
@@ -102,7 +102,7 @@ export async function renderAnalytics(root, presentationId) {
         icon: 'chart-column',
         title: t('analytics.unavailable.title', 'Analytics Not Available'),
         message:
-          err.message ||
+          serverSentence(err) ??
           t(
             'analytics.unavailable.message',
             'This presentation could not be loaded.',

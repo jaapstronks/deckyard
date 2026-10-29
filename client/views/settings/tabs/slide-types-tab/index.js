@@ -5,7 +5,7 @@
 
 import { h } from '../../../../lib/dom/index.js';
 import { t } from '../../../../lib/ui-i18n.js';
-import { api } from '../../../../lib/api.js';
+import { api, serverSentence } from '../../../../lib/api.js';
 import { toast } from '../../../../lib/dom/toast.js';
 import { downloadBlob } from '../../../../lib/dom/download.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
@@ -802,7 +802,7 @@ export function createSlideTypesTab({ user } = {}) {
       );
     } catch (err) {
       curationError.show(
-        err?.message ||
+        serverSentence(err) ??
           t('settings.slideTypes.saveError', 'Failed to save settings.'),
       );
     } finally {

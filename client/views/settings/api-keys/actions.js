@@ -2,7 +2,7 @@
  * API Key actions - fetch helpers for API key management.
  */
 
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**
@@ -21,7 +21,7 @@ export async function fetchApiKeys({ includeRevoked = false } = {}) {
   } catch (e) {
     return {
       error:
-        e.message ||
+        serverSentence(e) ??
         t('settings.apiKeys.fetchError', 'Failed to fetch API keys'),
     };
   }
@@ -44,7 +44,7 @@ export async function createApiKey({ name, permissions }) {
   } catch (e) {
     return {
       error:
-        e.message ||
+        serverSentence(e) ??
         t('settings.apiKeys.createError', 'Failed to create API key'),
     };
   }
@@ -62,7 +62,7 @@ export async function revokeApiKey(id) {
   } catch (e) {
     return {
       error:
-        e.message ||
+        serverSentence(e) ??
         t('settings.apiKeys.revokeError', 'Failed to revoke API key'),
     };
   }
@@ -81,7 +81,7 @@ export async function fetchKeyUsage(id, days = 30) {
   } catch (e) {
     return {
       error:
-        e.message ||
+        serverSentence(e) ??
         t('settings.apiKeys.usageError', 'Failed to fetch usage stats'),
     };
   }
@@ -103,7 +103,7 @@ export async function updateApiKeyPermissions(id, permissions) {
   } catch (e) {
     return {
       error:
-        e.message ||
+        serverSentence(e) ??
         t(
           'settings.apiKeys.editModal.error',
           'Failed to update the permissions.',

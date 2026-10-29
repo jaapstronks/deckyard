@@ -5,7 +5,7 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -137,7 +137,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
           if (onDelete) onDelete();
         } catch (err) {
           toast.error(
-            err.message ||
+            serverSentence(err) ??
               t('fonts.deleteError', 'Failed to delete font family.'),
           );
         }
@@ -419,7 +419,8 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
       // state of this form, and `/api/font-families` names the input it
       // refused in `details.field` (docs/reference/api-error-format.md).
       saveError.show(
-        err.message || t('fonts.saveError', 'Failed to save font family.'),
+        serverSentence(err) ??
+          t('fonts.saveError', 'Failed to save font family.'),
         { control: controlFor[err?.details?.field] || null },
       );
     } finally {

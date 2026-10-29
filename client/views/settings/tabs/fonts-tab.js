@@ -5,7 +5,7 @@
 
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
+import { api, serverSentence } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { planRowRemoval } from '../../../lib/dom/row-removal.js';
@@ -222,7 +222,8 @@ export function createFontsTab({ user } = {}) {
       showEditor(family);
     } catch (err) {
       toast.error(
-        err.message || t('fonts.loadError', 'Failed to load font family.'),
+        serverSentence(err) ??
+          t('fonts.loadError', 'Failed to load font family.'),
       );
     }
   }
@@ -258,7 +259,8 @@ export function createFontsTab({ user } = {}) {
       land(t('common.rowRemoved', '{label} removed.', { label: family.name }));
     } catch (err) {
       toast.error(
-        err.message || t('fonts.deleteError', 'Failed to delete font family.'),
+        serverSentence(err) ??
+          t('fonts.deleteError', 'Failed to delete font family.'),
       );
     }
   }
