@@ -57,6 +57,7 @@ const {
 } = await import('../server/render/renderer-bundle/index.js');
 const { sha256Hex, RUNNER_REQUEST_LIMIT } =
   await import('../server/render/renderer-bundle/index.js');
+const { normalizeTheme } = await import('../shared/theme-normalize.js');
 const { renderEdition } =
   await import('../server/render/renderer-bundle/bundle/entry.js');
 
@@ -522,4 +523,38 @@ test('the render entry renders the sealed input, canvas and reader', async () =>
   assert.ok(reader.includes('Public title'));
   assert.ok(!canvas.includes('/uploads/'));
   assert.ok(!canvas.includes(SECRET.hidden));
+});
+
+test('the sealed theme keeps the title layout and the background lock', async () => {
+  seed();
+  // The effective record from `loadThemeAssets` is normalized; so is this one.
+  const theme = normalizeTheme({
+    ...THEME,
+    titleLayout: 'center',
+    defaultBackground: 'lime',
+    locks: { background: 'locked' },
+  });
+  const branded = {
+    ...deck(),
+    slides: [
+      { id: 't1', type: 'title-slide', content: { title: 'Centered' } },
+      {
+        id: 'c1',
+        type: 'content-slide',
+        content: { title: 'Own ground', body: 'Body', background: 'dark' },
+      },
+    ],
+    i18n: { active: 'en', dominant: 'en', versions: {} },
+  };
+  const { inputBytes } = await prepareEditionInput(repoRoot, branded, {
+    scope: scope(),
+    theme,
+  });
+  const { canvas } = await renderEdition(repoRoot, JSON.parse(inputBytes));
+  // Class attributes only: the inlined stylesheet names every variant.
+  const classes = [...canvas.matchAll(/class="([^"]*)"/g)].map((m) => m[1]);
+  const has = (name) => classes.some((c) => c.split(/\s+/).includes(name));
+  assert.ok(has('tsu-layout-center'), 'title layout dropped');
+  assert.ok(!has('slide-bg-dark'), 'background lock dropped');
+  assert.ok(has('slide-bg-lime'));
 });

@@ -72,6 +72,8 @@ const THEME_KEYS = Object.freeze([
   'defaultBackground',
   'defaultTitleSlide',
   'slideTypes',
+  'titleLayout',
+  'locks',
 ]);
 
 /** The keys of a language version a reader is given. */
