@@ -51,6 +51,9 @@ import { t } from '../../../lib/ui-i18n.js';
  * @param {Function} [opts.onVersionsChanged] - a language buffer changed from
  *   the doc (a peer, undo/redo, in any language), or the doc became ready to
  *   write into (B763)
+ * @param {Function} [opts.onDocApplied] - right after a doc-driven change was
+ *   projected into `pres`, before the debounced re-render reads the editor's
+ *   state (the selected element follows its item, B894)
  * @returns {Object} live-edits handle for the controller
  */
 export function initEditorLiveEdits({
@@ -70,6 +73,7 @@ export function initEditorLiveEdits({
   onTitleChanged,
   onUndoStateChanged,
   onVersionsChanged,
+  onDocApplied,
 } = {}) {
   const provider = session?._provider;
   const doc = provider?.document;
@@ -236,7 +240,10 @@ export function initEditorLiveEdits({
     codec,
     pres,
     getActiveLang: () => normalizeLang?.(pres?.i18n?.active) || null,
-    onRemoteApplied: queueRemoteRender,
+    onRemoteApplied: (change) => {
+      tryCall(onDocApplied);
+      queueRemoteRender(change);
+    },
     onUndoStateChanged: () => {
       try {
         onUndoStateChanged?.();
