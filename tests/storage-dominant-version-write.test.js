@@ -205,3 +205,57 @@ test('a write that carries i18n is stored as sent', async () => {
   assert.deepEqual(titles(row.i18n.versions.nl.slides), ['Hoi', 'Twee']);
   assert.deepEqual(titles(row.slides), ['Hoi', 'Twee']);
 });
+
+// A write that carries `i18n` but no top-level buffer (B895). The versions it
+// sends are the deck; an absent `title`/`slides` is not an empty buffer.
+
+test('a write with only i18n keeps the title and slides of every version', async () => {
+  const db = await installDb();
+  await updatePresentation(scope(), DECK_ID, {
+    i18n: structuredClone(storedDeck(db).i18n),
+  });
+
+  const row = storedDeck(db);
+  assert.equal(row.i18n.versions.nl.title, 'Roadmap');
+  assert.deepEqual(titles(row.i18n.versions.nl.slides), ['Hoi', 'Twee']);
+  assert.equal(row.title, 'Roadmap');
+  assert.deepEqual(titles(row.slides), ['Hoi', 'Twee']);
+  assertOtherVersionKept(row);
+});
+
+test('a write with only i18n stores the edit it carries in the active version', async () => {
+  const db = await installDb();
+  const i18n = structuredClone(storedDeck(db).i18n);
+  i18n.versions.de.title = 'Kurs';
+  i18n.versions.de.slides[1].content.title = 'Zwei!';
+  await updatePresentation(scope(), DECK_ID, { i18n });
+
+  const row = storedDeck(db);
+  assert.equal(row.i18n.versions.de.title, 'Kurs');
+  assert.deepEqual(titles(row.i18n.versions.de.slides), ['Hallo', 'Zwei!']);
+  assert.equal(row.title, 'Roadmap', 'the top level stays the dominant one');
+});
+
+test('a write with i18n and a title renames the active version and keeps its slides', async () => {
+  const db = await installDb();
+  await updatePresentation(scope(), DECK_ID, {
+    title: 'Kurs',
+    i18n: structuredClone(storedDeck(db).i18n),
+  });
+
+  const row = storedDeck(db);
+  assert.equal(row.i18n.versions.de.title, 'Kurs');
+  assert.deepEqual(titles(row.i18n.versions.de.slides), ['Hallo', 'Zwei']);
+  assert.equal(row.i18n.versions.nl.title, 'Roadmap');
+});
+
+test('a write with only i18n on a deck without active keeps the dominant version', async () => {
+  const db = await installDb();
+  const i18n = structuredClone(storedDeck(db).i18n);
+  delete i18n.active;
+  await updatePresentation(scope(), DECK_ID, { i18n });
+
+  const row = storedDeck(db);
+  assert.equal(row.i18n.versions.nl.title, 'Roadmap');
+  assert.deepEqual(titles(row.i18n.versions.nl.slides), ['Hoi', 'Twee']);
+});

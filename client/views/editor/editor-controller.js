@@ -52,6 +52,7 @@ import { createPaneTabs } from './pane-tabs.js';
 import { createCanvasTabs } from './canvas-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveRefusal } from './editor-form/save-refusal.js';
+import { createElementAnchor } from './editor-form/element-anchor.js';
 import { createSaveManager } from './save-manager.js';
 import { createSaveStatus } from './save-status.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
@@ -235,7 +236,12 @@ export async function createEditorController({
   // Selection-aware inspector: the canvas element ({kind:'image'|'card', idx})
   // whose settings the inspector's element tab shows, or null for slide-only.
   // Cleared on slide change; set by canvas interactions via setSelectedElement.
-  let selectedElement = null;
+  // Anchored to its item, so a collaborator's move does not hand the
+  // selection to the row that took its place (B894).
+  const elementAnchor = createElementAnchor({
+    getSlide: () => pres.slides.find((s) => s.id === selectedSlideId) || null,
+    slideTypes: SLIDE_TYPES,
+  });
   let uiRefreshTimer = null;
   let commentsPanel = null;
   let setCommentsBadgeFn = () => {};
@@ -362,7 +368,7 @@ export async function createEditorController({
     selectedSlideId = v;
     // A different slide means a different element context; drop any selection
     // so the new slide opens on its slide-only inspector (no stale element tab).
-    selectedElement = null;
+    elementAnchor.set(null);
     syncSlideIdInUrl(v);
     presenceHandle?.setViewSlide?.(v);
     // Check for author lock on the newly selected slide
@@ -540,6 +546,7 @@ export async function createEditorController({
    * Returns false when a slide lock refused the edit.
    */
   const markDirty = (opts = {}) => {
+    elementAnchor.refresh();
     if (liveEditsActive) {
       // Live-edit mode: the mutation is already in pres; push it into the
       // shared doc. No snapshot undo (Y.UndoManager) and no autosave (the
@@ -1173,6 +1180,7 @@ export async function createEditorController({
               onTitleChanged: showTitle,
               onUndoStateChanged: () => syncTopbarUndo(),
               onVersionsChanged: versionTextSignal.emit,
+              onDocApplied: () => elementAnchor.follow(),
             });
             cleanup.register('liveEdits', () => {
               liveEdits?.detach();
@@ -1742,7 +1750,8 @@ export async function createEditorController({
   const editorForm = createRerenderEditor({
     ...editorFormDeps,
     surface: 'inspector',
-    getSelectedElement: () => selectedElement,
+    getSelectedElement: () => elementAnchor.get(),
+    getSelectedElementKey: () => elementAnchor.key(),
     // Chart inspector's "Edit data…" entry point opens the chart-data modal
     // (grid + live preview, editing-surfaces §4.3).
     onEditChartData: (fieldKey) => openChartData({ fieldKey }),
@@ -1762,7 +1771,7 @@ export async function createEditorController({
   // the inspector. Kept non-intrusive: it does not open a dismissed rail (the
   // element tab just becomes the active view when the pane is next shown).
   const setSelectedElement = (el) => {
-    selectedElement = el || null;
+    elementAnchor.set(el);
     rerenderEditor();
   };
 
@@ -1821,7 +1830,7 @@ export async function createEditorController({
     // "Settings" button is the deliberate doorway: it also opens the pane on
     // the element tab. The canvas mirrors the selection (getSelectedElement).
     onSelectElement: (el) => setSelectedElement(el),
-    getSelectedElement: () => selectedElement,
+    getSelectedElement: () => elementAnchor.get(),
     onOpenElementSettings: (el) => {
       setSelectedElement(el);
       inspectorPanes.open('inspector');

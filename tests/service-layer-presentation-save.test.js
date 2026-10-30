@@ -253,6 +253,55 @@ test('v1 and editor: the owner and an edit collaborator save, an outsider is ref
   }
 });
 
+test('v1 and editor: a save of only the i18n block a read returned erases no version (B895)', async () => {
+  for (const contract of ['v1', 'editor']) {
+    const db = await installDb();
+    const nl = {
+      title: 'Roadmap',
+      slides: structuredClone(storedDeck(db).slides),
+    };
+    const de = {
+      title: 'Fahrplan',
+      slides: [
+        slide('slide-1', 'Hallo', 'title-slide'),
+        slide('slide-2', 'Zwei'),
+      ],
+    };
+    storedDeck(db).i18n = {
+      dominant: 'nl',
+      active: 'de',
+      versions: { nl, de },
+    };
+    const { i18n } = structuredClone(storedDeck(db));
+
+    const res =
+      contract === 'v1'
+        ? await v1Save(OWNER, { i18n })
+        : await editorSave(
+            OWNER,
+            { i18n },
+            { revision: storedDeck(db).revision },
+          );
+    assert.equal(res.statusCode, 200, contract);
+
+    const row = storedDeck(db);
+    for (const [lang, version] of Object.entries({ nl, de })) {
+      assert.equal(
+        row.i18n.versions[lang].title,
+        version.title,
+        `${contract}: ${lang} title`,
+      );
+      assert.equal(
+        row.i18n.versions[lang].slides.length,
+        2,
+        `${contract}: ${lang} slides`,
+      );
+    }
+    assert.equal(row.title, 'Roadmap', contract);
+    assert.equal(row.slides.length, 2, contract);
+  }
+});
+
 // =============================================================================
 // What a save may not carry: refused with the field, on both contracts
 // =============================================================================
