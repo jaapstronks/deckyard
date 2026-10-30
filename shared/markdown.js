@@ -23,6 +23,13 @@ const INLINE_MATH_PLACEHOLDER = '\x00IM\x00';
 // underscores) and so an escaped marker like \* never triggers emphasis.
 const LINK_PLACEHOLDER = '\x00LK\x00';
 const ESCAPE_PLACEHOLDER = '\x00ES\x00';
+// The placeholders that restore to markup; none may land in an attribute.
+const MARKUP_PLACEHOLDERS = [
+  CODE_BLOCK_PLACEHOLDER,
+  INLINE_CODE_PLACEHOLDER,
+  MATH_BLOCK_PLACEHOLDER,
+  INLINE_MATH_PLACEHOLDER,
+];
 
 // CommonMark backslash escapes: a backslash before any ASCII punctuation
 // (backslash itself included) yields that literal punctuation character.
@@ -164,9 +171,37 @@ function restoreInlineMath(html, maths) {
   });
 }
 
+/**
+ * Restore a code block or math block that did not land on a line of its own
+ * (a fence mid-paragraph, `$$…$$` inside a sentence, list item or table cell)
+ * as its inline form, so no placeholder ever reaches the output.
+ */
+function restoreStrayBlocks(html, codeBlocks, mathBlocks) {
+  const code = restorePlaceholders(
+    html,
+    CODE_BLOCK_PLACEHOLDER,
+    codeBlocks,
+    (block) =>
+      `<code class="md-code-inline">${escapeHtml(block.code.replace(/\n/g, ' '))}</code>`,
+  );
+  return restorePlaceholders(
+    code,
+    MATH_BLOCK_PLACEHOLDER,
+    mathBlocks,
+    (math) =>
+      `<span class="md-math-inline" data-math="${escapeHtml(math)}">${escapeHtml(math)}</span>`,
+  );
+}
+
 function inlineFormat(
   s,
-  { inlineCodes = [], inlineMaths = [], escapes = [] } = {},
+  {
+    inlineCodes = [],
+    inlineMaths = [],
+    escapes = [],
+    codeBlocks = [],
+    mathBlocks = [],
+  } = {},
 ) {
   // `s` already carries escape placeholders (extracted after code/math so an
   // escaped marker like \* never triggers emphasis); they are restored as
@@ -181,13 +216,13 @@ function inlineFormat(
   // `javascript:` or `data:` target stays text. Text and href are already
   // escaped (`out` is), so they go in as they are. A code span or math inside
   // the target wins over the link, as in CommonMark: its placeholder would
-  // restore markup into the attribute.
+  // restore markup into the attribute. The same holds for a stray code or
+  // math block.
   const links = [];
   out = out.replace(
     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
     (m, text, href) => {
-      if (href.includes(INLINE_CODE_PLACEHOLDER)) return m;
-      if (href.includes(INLINE_MATH_PLACEHOLDER)) return m;
+      if (MARKUP_PLACEHOLDERS.some((p) => href.includes(p))) return m;
       links.push(
         `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`,
       );
@@ -212,6 +247,7 @@ function inlineFormat(
   out = restorePlaceholders(out, LINK_PLACEHOLDER, links, (link) => link);
   out = restoreInlineCode(out, inlineCodes);
   out = restoreInlineMath(out, inlineMaths);
+  out = restoreStrayBlocks(out, codeBlocks, mathBlocks);
   // Literal escaped characters last (after every marker pass has run).
   out = restorePlaceholders(out, ESCAPE_PLACEHOLDER, escapes, (ch) =>
     escapeHtml(ch),
@@ -338,7 +374,12 @@ function buildList(itemLines, inlineOpts) {
   const stack = []; // { indent, tag } for each currently-open list level
   const top = () => stack[stack.length - 1];
   const open = (it, tag) => {
-    const start = it.ordered && it.number !== 1 ? ` start="${it.number}"` : '';
+    // An ordinal past the safe-integer range would print as `1e+21`; such a
+    // list simply starts at 1.
+    const start =
+      it.ordered && it.number !== 1 && Number.isSafeInteger(it.number)
+        ? ` start="${it.number}"`
+        : '';
     html += `<${tag} dir="auto"${start}><li dir="auto">${inlineFormat(it.content, inlineOpts)}`;
     stack.push({ indent: it.indent, tag });
   };
@@ -386,7 +427,13 @@ export function markdownToSafeHtml(markdown) {
   // 4. Extract backslash escapes LAST (prose only, so literal backslashes
   //    inside code/math survive). Shared inline options for every inlineFormat.
   const { text: t5, escapes } = extractBackslashEscapes(t4);
-  const inlineOpts = { inlineCodes, inlineMaths, escapes };
+  const inlineOpts = {
+    inlineCodes,
+    inlineMaths,
+    escapes,
+    codeBlocks,
+    mathBlocks,
+  };
 
   const lines = t5.split('\n');
 
