@@ -118,6 +118,33 @@ export function refuseNonCanonicalVersionKeys(
 }
 
 /**
+ * A language version rebuilt from the write body's top-level buffer.
+ *
+ * A top-level `title` or `slides` the body does not carry is not an empty
+ * buffer: the version keeps its own (B895). A client that read a deck and sends
+ * back only its `i18n` block used to have the version it edits stored with
+ * title `''` and no slides, because the absent fields were read as `''`/`[]`.
+ * The versions it sent are the deck; with no buffer beside them there is
+ * nothing to project. A version the body does not carry yet starts from the
+ * buffer, empty where the buffer is absent.
+ *
+ * @param {object} pres - the write body
+ * @param {object} [version] - the version as the body carries it
+ * @returns {{ title: string, slides: Array, translationSources?: unknown }}
+ */
+function bufferedVersion(pres, version) {
+  const title = pres.title === undefined ? version?.title : pres.title;
+  const slides = pres.slides === undefined ? version?.slides : pres.slides;
+  return {
+    ...(version?.translationSources
+      ? { translationSources: version.translationSources }
+      : {}),
+    title: typeof title === 'string' ? title : '',
+    slides: Array.isArray(slides) ? slides : [],
+  };
+}
+
+/**
  * Normalize a deck's i18n block in place: fill in the dominant version and keep
  * every language version's slides through the write seam.
  *
@@ -176,13 +203,7 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
   // This lets the editor POST/PUT the "currently edited" language in pres.title/slides
   // while the server keeps top-level synced with the dominant language for compatibility.
   if (active) {
-    i18n.versions[active] = {
-      ...(i18n.versions[active]?.translationSources
-        ? { translationSources: i18n.versions[active].translationSources }
-        : {}),
-      title: typeof pres.title === 'string' ? pres.title : '',
-      slides: Array.isArray(pres.slides) ? pres.slides : [],
-    };
+    i18n.versions[active] = bufferedVersion(pres, i18n.versions[active]);
   }
 
   // Update the dominant version from top-level slides when:
@@ -193,13 +214,7 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
   // While a different language is being edited the dominant version is left
   // alone; the repair above guarantees it exists.
   if (!active || active === dominant) {
-    i18n.versions[dominant] = {
-      ...(i18n.versions[dominant]?.translationSources
-        ? { translationSources: i18n.versions[dominant].translationSources }
-        : {}),
-      title: typeof pres.title === 'string' ? pres.title : '',
-      slides: Array.isArray(pres.slides) ? pres.slides : [],
-    };
+    i18n.versions[dominant] = bufferedVersion(pres, i18n.versions[dominant]);
   }
 
   // Normalize every language version the deck carries.
