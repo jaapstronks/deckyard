@@ -16,6 +16,7 @@ import { logout } from '../../../lib/state/auth.js';
 import { createEditorTopbarMoreMenu } from './more-menu.js';
 import { openSubscriptionModal } from '../modals/subscription-modal.js';
 import { createLanguageMode } from './language-mode.js';
+import { createTopbarTitleButton } from './title-button.js';
 import { t, withSessionLocaleParam } from '../../../lib/ui-i18n.js';
 import {
   createAvatar,
@@ -127,16 +128,10 @@ export function createEditorTopbar({
   // TITLE
   // ============================================================
 
-  const topbarTitleEl = h('button', {
-    class: 'topbar-pres-title',
-    type: 'button',
+  const topbarTitleEl = createTopbarTitleButton({
     title: pres.title,
     onclick: () => openTitleModal?.({ mode: 'edit' }),
   });
-  topbarTitleEl.append(
-    h('span', { class: 'topbar-pres-title-text', text: pres.title }),
-    icon('pencil', { size: 12, className: 'topbar-title-pencil' }),
-  );
 
   // ============================================================
   // LANGUAGE MODE

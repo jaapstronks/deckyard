@@ -190,6 +190,13 @@ Design decisions, deliberate and load-bearing:
   (collapsing the pending debounce) so the binary is persisted right away,
   and `onStoreDocument` skips the JSON write when the doc projection equals
   the stored deck — a server write settles at exactly one revision bump.
+- **A deck title is per language, also live.** A title-only write
+  (`{ title }`, the public API's rename) renames the dominant language
+  version and leaves the translated titles alone. Live-apply carries it into
+  `meta.title[dominant]`; an editor open on the dominant language shows the
+  new title at once, an editor open on another language keeps that
+  language's title. Not a stale doc: the other title was never changed.
+  Pinned by `tests/collab-remote-title-per-language.test.js`.
 - Divergent language versions normalize to the dominant with the same loud
   warnings as bootstrap; a language version the caller dropped is removed
   (loudly), including its per-field texts.

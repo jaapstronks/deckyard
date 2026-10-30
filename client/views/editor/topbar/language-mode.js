@@ -41,6 +41,7 @@ import {
   translationProgress,
 } from '../../../../shared/i18n-progress.js';
 import { setQueryParams } from '../../../lib/state/router.js';
+import { setTopbarTitleText } from './title-button.js';
 
 /**
  * Create the language menu component.
@@ -458,10 +459,7 @@ export function createLanguageMode({
     pres.i18n.active = next;
     pres.i18n.versions[next].title = pres.title;
     pres.i18n.versions[next].slides = pres.slides;
-    if (topbarTitleEl) {
-      topbarTitleEl.textContent = pres.title;
-      topbarTitleEl.title = pres.title;
-    }
+    setTopbarTitleText(topbarTitleEl, pres.title);
 
     const sameSlideExists = prevSelectedSlideId
       ? (pres.slides || []).some((s) => s?.id === prevSelectedSlideId)
