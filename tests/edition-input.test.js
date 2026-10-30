@@ -555,6 +555,7 @@ test('the sealed theme keeps the title layout and the background lock', async ()
   const classes = [...canvas.matchAll(/class="([^"]*)"/g)].map((m) => m[1]);
   const has = (name) => classes.some((c) => c.split(/\s+/).includes(name));
   assert.ok(has('tsu-layout-center'), 'title layout dropped');
+  const content = classes.find((c) => c.split(/\s+/).includes('slide-content'));
   assert.ok(!has('slide-bg-dark'), 'background lock dropped');
-  assert.ok(has('slide-bg-lime'));
+  assert.ok(content.split(/\s+/).includes('slide-bg-lime'));
 });
