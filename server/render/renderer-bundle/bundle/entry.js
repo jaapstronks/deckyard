@@ -32,28 +32,18 @@ import { readCssWithImports } from '../../../utils/read-css-with-imports.js';
 import { themeVarsCssText } from '../../../utils/theme-vars-css.js';
 import { resolveDocLangFromPresentation } from '../../../utils/doc-lang.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
-import {
-  SLIDE_TYPES,
-  getSlideType,
-} from '../../../../shared/slide-types/registry.js';
+import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { renderCanvasDocument } from '../../../export/canvas-document.js';
 import { renderReaderDocument } from '../../../export/reader-document.js';
 import { RENDERER_BUNDLE_ERRORS, RendererBundleError } from '../errors.js';
 import { EDITION_INPUT_SCHEMA } from '../edition-input.js';
+import { findUnsealableSlides } from '../sealable.js';
 
 /**
  * Refuse an input whose render would need something the bundle does not carry.
  *
- * Two refusals, both about the same missing dependency - the HTML sanitizer,
- * whose `jsdom`/`dompurify` are outside every bundle:
- *
- *   1. A slide type this bundle does not know. In practice that is a
- *      database-backed type, whose template sanitises its interpolated output
- *      on every render. Rendering it from the *current* registry instead would
- *      make the edition mutable, which is the thing being prevented.
- *   2. Author markup in a `markup: true` field, which the live canvas
- *      sanitises. Rendering it here would escape it instead: the same deck,
- *      quietly different.
+ * The rule itself is `../sealable.js`, shared with the edition-input builder;
+ * here the first unsealable slide is a refusal.
  *
  * Exported so the two refusals can be read against a registry of their own:
  * the fork-type half is unreachable in a checkout without `custom/slide-types/`,
@@ -63,28 +53,15 @@ import { EDITION_INPUT_SCHEMA } from '../edition-input.js';
  * @param {Record<string, object>} [registry] - Defaults to the bundle's own
  */
 export function assertSealableEdition(presentation, registry = SLIDE_TYPES) {
-  const slides = Array.isArray(presentation?.slides) ? presentation.slides : [];
-  for (const [index, slide] of slides.entries()) {
-    const def = getSlideType(slide?.type, registry);
-    if (!def) {
-      throw new RendererBundleError(
-        RENDERER_BUNDLE_ERRORS.UNSEALABLE_INPUT,
-        `slide ${index + 1} has type "${slide?.type}", which this render bundle does not carry; a database-backed slide type cannot be frozen into an edition (docs/reference/renderer-bundle.md)`,
-        { index, type: slide?.type ?? null },
-      );
-    }
-    for (const field of Array.isArray(def.fields) ? def.fields : []) {
-      if (field?.markup !== true) continue;
-      const value = slide?.content?.[field.key];
-      if (typeof value === 'string' && value.trim()) {
-        throw new RendererBundleError(
-          RENDERER_BUNDLE_ERRORS.UNSEALABLE_INPUT,
-          `slide ${index + 1} (${slide.type}) carries author markup in "${field.key}", which needs the HTML sanitizer; that dependency is not in the render bundle`,
-          { index, type: slide.type, field: field.key },
-        );
-      }
-    }
-  }
+  const [first] = findUnsealableSlides(presentation?.slides, registry);
+  if (!first) return;
+  throw new RendererBundleError(
+    RENDERER_BUNDLE_ERRORS.UNSEALABLE_INPUT,
+    first.message,
+    first.field
+      ? { index: first.index, type: first.type, field: first.field }
+      : { index: first.index, type: first.type },
+  );
 }
 
 /**
