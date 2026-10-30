@@ -2405,7 +2405,10 @@ components:
                 version per key, and each key is a canonical deck language
                 (`nl`, `en-GB`, `de`, …). A write with any other key — the
                 alias `en` included — is refused with 400 `invalid` and
-                `details.field` = `i18n.versions`.
+                `details.field` = `i18n.versions`. A top-level `title` or
+                `slides` in the same write is the buffer of `i18n.active`
+                (without `active`, of the dominant version); a write that
+                leaves one out keeps that version's own.
             revision:
               type: integer
 
