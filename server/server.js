@@ -343,7 +343,7 @@ async function main() {
     if (themeErr) log.warn(`THEMES: ${themeErr}`);
   }
   await initializeMediaProvider(repoRoot);
-  await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
+  await initSanitizer(); // Enable sync HTML sanitization for author HTML (database-backed types)
   // A fork type may declare a PPTX fidelity this build cannot honour. Said
   // once, here, where the operator who wrote the declaration is looking.
   warnUnbackedFidelityClaims();

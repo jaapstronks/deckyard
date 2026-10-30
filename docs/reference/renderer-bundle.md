@@ -77,10 +77,21 @@ Those packages are not in a bundle and cannot be: `jsdom` is a DOM
 implementation. The edge is recorded in every manifest rather than hidden,
 because it is honest and because it changes the hash.
 
-It is unreachable rather than merely untaken. The loader is `initSanitizer()`,
-which only the server and the MCP entrypoint call; the proof worker calls neither.
-And the render entry refuses the two inputs that would reach a sanitizer anyway
-(see _Refusals_ below).
+The loader is `initSanitizer()`, which only the server and the MCP entrypoint
+call; the proof worker calls neither. That made the edge untaken, not
+unreachable: until the markdown generator stopped using it, every markdown
+field called the sync sanitizer, found no DOMPurify, and fell back to escaping,
+so an edition showed its code blocks, bold and lists as visible HTML text.
+
+Markdown now needs no sanitizer. `shared/markdown.js` escapes by construction
+(every input character through `escapeHtml()`, every tag and attribute a
+literal, only `http(s)` link targets) and no longer imports `shared/sanitize.js`,
+so the bundle renders markdown exactly as the live page does
+(`tests/renderer-bundle-edition-views.test.js` compares the two;
+`tests/markdown-escaped-by-construction.test.js` is the safety proof). What
+still reaches a sanitizer is author markup: a database-backed type's template
+and a `markup: true` field. The render entry refuses both (see _Refusals_
+below), so on an edition the sanitizer is now unreachable in fact.
 
 ## How a bundle is built
 

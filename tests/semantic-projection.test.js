@@ -1417,7 +1417,7 @@ describe('mediaRef — a reference projects as a stand-in, never as an id (D82)'
     const transcript = html.indexOf('data-field="transcript"');
     assert.ok(link >= 0, html);
     assert.ok(transcript > link, html);
-    assert.ok(html.includes('<p>We open on the harbour.</p>'), html);
+    assert.ok(html.includes('<p dir="auto">We open on the harbour.</p>'), html);
     assert.ok(html.includes('<strong>crew</strong>'), html);
   });
 
@@ -1601,7 +1601,7 @@ describe('role — the projection reads what a text field is (D128)', () => {
     );
     assert.match(
       html,
-      /^<blockquote data-field="said"><p>One\.<\/p>\s*<p>Two\.<\/p>\s*<\/blockquote>$/,
+      /^<blockquote data-field="said"><p dir="auto">One\.<\/p>\s*<p dir="auto">Two\.<\/p>\s*<\/blockquote>$/,
     );
   });
 });
@@ -1949,7 +1949,7 @@ describe('pairs stay pairs (D131)', () => {
     );
     assert.ok(
       html.includes(
-        '<h3 data-field="leftTitle">Build</h3>\n<div data-field="leftBody"><p>Own it</p></div>',
+        '<h3 data-field="leftTitle">Build</h3>\n<div data-field="leftBody"><p dir="auto">Own it</p></div>',
       ),
       html,
     );

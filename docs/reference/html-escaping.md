@@ -15,9 +15,14 @@ the **sanitizer** — never interpolated raw into an HTML sink (`innerHTML`,
 - **`escapeXml()`** — `shared/xml.js`. The same job for XML sinks, which need
   `&apos;` where HTML uses `&#039;`: PPTX note parts (`server/export/notes.js`)
   and the author-overlay SVG (`server/utils/author-overlay.js`).
-- **`markdownToSafeHtml()`** — `shared/markdown.js`. Renders markdown and runs
-  the result through `sanitizeHtmlSync()` (`shared/sanitize.js`). This is the
-  only sanctioned path for rich text.
+- **`markdownToSafeHtml()`** — `shared/markdown.js`. Renders markdown, safe by
+  construction: every character of the input passes through `escapeHtml()`,
+  every tag and attribute name is a literal of the generator, and a link
+  target becomes an `href` only when it is `http(s)`. There is no sanitizer
+  pass behind it, so it renders the same with or without DOMPurify, in the
+  frozen renderer bundle too. `tests/markdown-escaped-by-construction.test.js`
+  holds it to that (named injections plus a seeded fuzz, each checked against
+  DOMPurify). This is the only sanctioned path for rich text.
 - **`h()`** — `client/lib/dom/index.js`. Builds DOM from data; text passed as
   `{ text }` or children becomes text nodes, never markup. Prefer this over an
   `innerHTML` template when the content is data-driven.
@@ -40,7 +45,8 @@ a quote. Those values are **charset-validated** instead — see
 ### The precondition: a DOMPurify instance must exist
 
 The sync sanitizers (`sanitizeHtmlSync`, `sanitizeSlideHtmlSync`,
-`sanitizeInlineSync`) cannot load DOMPurify themselves — loading it is async. In
+`sanitizeInlineSync`; on the render path that is author HTML of a
+database-backed slide type, not markdown) cannot load DOMPurify themselves — loading it is async. In
 the browser the page loads the vendored bundle (`client/index.html` →
 `client/app.js`). **In Node every process that can reach a render path must call
 `initSanitizer()` at boot** — `server/server.js` and `server/mcp/index.js` both
@@ -68,7 +74,7 @@ write is safe only if it falls into one of them.
 | Comparisons (`=== ''`)             | Reads, not writes                                                                                                                   | Not a sink                                                                                                      |
 | Static SVG / entity strings        | Icon markup, `&larr;`, `&#8942;` — string **literals** in source                                                                    | No runtime data; author-controlled constants                                                                    |
 | `escapeHtml`-guarded interpolation | e.g. `app.js` fatal screen, `share-viewer/guest-join.js` email confirmation                                                         | Every interpolated value passes through `escapeHtml()` first                                                    |
-| `markdownToSafeHtml` output        | `notes/notes-editor.js`, `presenter/console.js` speaker notes                                                                       | Sanitized by the sanctioned renderer                                                                            |
+| `markdownToSafeHtml` output        | `notes/notes-editor.js`, `presenter/console.js` speaker notes                                                                       | Escaped by construction in the sanctioned renderer                                                              |
 | Round-trip / parse buffers         | `inline-edit/inline-editor.js` restore (`el.innerHTML` captured then restored), `slide-authoring/markdown-serialize.js` scratch div | Restores the element's own prior trusted DOM, or parses into a **detached** node never attached to the page     |
 | Slide-render contract boundary     | `lib/slide-runtime/slide-render.js` parsing `renderSlideHtml()` output                                                              | Per **`AGENTS.md`**, escaping is the slide-type's responsibility at render time; this is the sanctioned handoff |
 | Self-escaping renderer             | `modals/json-debug-modal.js` `renderSchemaAsHtml()`                                                                                 | Escapes `& < >` before applying its mini-markdown transforms                                                    |

@@ -117,9 +117,9 @@ async function main() {
 
   // Enable sync HTML sanitization, exactly as the HTTP server does
   // (server/server.js). This process renders slide HTML too — preview tools,
-  // exports — and every markdown field on that path goes through
-  // sanitizeHtmlSync(). Without a DOMPurify instance that call falls back to
-  // escaping, so the rendered slide shows its own markup as visible text.
+  // exports — and a database-backed slide type sanitizes its template output
+  // through sanitizeSlideHtmlSync(). Without a DOMPurify instance that call
+  // falls back to escaping, so the slide shows its own markup as visible text.
   // Any Node entrypoint that can reach a render path owes this call; when one
   // forgets, shared/sanitize.js now warns once on the fallback instead of
   // degrading silently.

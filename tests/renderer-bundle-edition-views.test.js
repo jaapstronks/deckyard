@@ -98,6 +98,54 @@ test('carries Prism inline instead of linking the installation', async () => {
   assert.ok(/Prism/.test(canvas), 'the Prism bytes are in the document');
 });
 
+test('renders markdown as markup, the same as the live page, and injection as text', async () => {
+  const body = [
+    'Plain **bold** text.',
+    '',
+    '- one',
+    '- two',
+    '',
+    '```js',
+    'if (a < b) {}',
+    '```',
+    '',
+    '<script>alert(1)</script> <img src=x onerror=alert(1)>',
+    '[x](javascript:alert(1)) [y](https://a.test/" onmouseover="alert(1))',
+  ].join('\n');
+  const slide = {
+    id: 'md',
+    type: 'content-slide',
+    content: { title: 'M', body },
+  };
+  const pres = { title: 'Deck', lang: 'en', slides: [slide] };
+  const { canvas, reader } = await renderEdition(repoRoot, {
+    ...input(),
+    presentation: pres,
+  });
+
+  // The live page renders the slide in a process that initialised DOMPurify;
+  // the edition renders it without one. Both must be the same markup.
+  const { initSanitizer } = await import('../shared/sanitize.js');
+  await initSanitizer();
+  const { markdownToSafeHtml } = await import('../shared/markdown.js');
+  const { renderSlideHtml } = await import('../shared/slide-types.js');
+  const markup = markdownToSafeHtml(body);
+  assert.ok(renderSlideHtml(slide, {}).includes(markup), 'live carries it');
+  assert.ok(canvas.includes(markup), 'the edition carries the same markup');
+
+  for (const html of [canvas, reader]) {
+    assert.match(html, /<strong>bold<\/strong>/);
+    assert.match(html, /<ul dir="auto"><li dir="auto">one<\/li>/);
+    assert.match(html, /<pre class="md-code-block" data-lang="js"/);
+    assert.ok(html.includes('if (a &lt; b) {}'));
+    assert.ok(!html.includes('&lt;pre'), 'no markup shown as text');
+    assert.ok(!html.includes('<script>alert'), 'no script element');
+    assert.ok(!/<img[^>]*onerror/.test(html), 'no handler attribute');
+    assert.ok(!html.includes('href="javascript:'), 'no script URL');
+    assert.ok(!/<a [^>]*onmouseover/.test(html), 'no attribute breakout');
+  }
+});
+
 test('refuses an unsealable slide in any language list, naming the list', () => {
   const pres = input().presentation;
   pres.i18n.versions['en-GB'].slides.push({ id: 'x', type: 'db-only-type' });

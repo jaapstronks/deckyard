@@ -271,7 +271,7 @@ describe('the reader projects the inset as an <aside> that names its kind (B299)
         aside,
         '<aside data-field="asideText" data-kind="warning">' +
           `<p class="reader-label">${SLIDE_COPY['en-GB'].admonitionWarning}</p>` +
-          '<p>Mind <strong>this</strong>.</p></aside>',
+          '<p dir="auto">Mind <strong>this</strong>.</p></aside>',
       );
     });
 

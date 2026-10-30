@@ -7,7 +7,9 @@
  * raw HTML" report. It was invisible in the codebase because the escape was
  * silent and because only one of the two Node entrypoints (server/server.js)
  * called initSanitizer(); the MCP server process (server/mcp/index.js) renders
- * slides too and did not.
+ * slides too and did not. Markdown no longer takes that path: its generator
+ * escapes by construction, so the matrix sample renders the same with or
+ * without DOMPurify. Author HTML (database-backed types) still does.
  *
  * This file therefore must NOT initialize the sanitizer at import time — it is
  * the only test that exercises the uninitialized path. node --test runs each
@@ -22,6 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { SLIDE_TYPES, renderSlideHtml } from '../shared/slide-types.js';
+import { sanitizeSlideHtmlSync } from '../shared/sanitize.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -48,21 +51,26 @@ function captureWarnings(fn) {
   return warnings;
 }
 
-test('without DOMPurify, markdown fields render escaped and the fallback warns once', () => {
+test('without DOMPurify, markdown fields still render real markup', () => {
+  // The markdown generator escapes by construction and has no sanitizer pass
+  // (tests/markdown-escaped-by-construction.test.js), so a process without
+  // DOMPurify, like the frozen renderer bundle, renders the same list the
+  // live page does. This used to be the escaped-markup symptom.
   let html;
   const warnings = captureWarnings(() => {
     html = renderSlideHtml(matrixSlide(), {});
   });
+  assert.match(html, /<ul dir="auto">/, 'a real list, dir included');
+  assert.doesNotMatch(html, /&lt;ul/, 'no escaped list markup');
+  assert.deepEqual(warnings, [], 'markdown never reaches the fallback');
+});
 
-  // The bug as reported: the list markup arrives as visible text, including the
-  // dir="auto" attribute the real sanitizer would have stripped.
-  assert.match(
-    html,
-    /&lt;ul/,
-    'expected escaped list markup on the fallback path',
-  );
-  assert.doesNotMatch(html, /<ul[ >]/, 'no real list markup without DOMPurify');
-
+test('without DOMPurify, author HTML renders escaped and the fallback warns once', () => {
+  let html;
+  const warnings = captureWarnings(() => {
+    html = sanitizeSlideHtmlSync('<ul><li>a</li></ul>');
+  });
+  assert.equal(html, '&lt;ul&gt;&lt;li&gt;a&lt;/li&gt;&lt;/ul&gt;');
   assert.equal(
     warnings.length,
     1,
@@ -74,38 +82,25 @@ test('without DOMPurify, markdown fields render escaped and the fallback warns o
 
 test('the fallback warning does not repeat on later renders', () => {
   const warnings = captureWarnings(() => {
-    renderSlideHtml(matrixSlide(), {});
-    renderSlideHtml(matrixSlide(), {});
+    sanitizeSlideHtmlSync('<b>x</b>');
+    sanitizeSlideHtmlSync('<b>y</b>');
   });
   assert.deepEqual(warnings, [], 'one warning per process, not one per render');
 });
 
-test('after initSanitizer() the same slide renders real markup', async () => {
+test('after initSanitizer() author HTML renders real markup', async () => {
   const { initSanitizer } = await import('../shared/sanitize.js');
   await initSanitizer();
-
-  const html = renderSlideHtml(matrixSlide(), {});
-  assert.match(html, /<ul[ >]/, 'expected a rendered list');
-  assert.doesNotMatch(
-    html,
-    /&lt;ul/,
-    'no escaped markup once DOMPurify is available',
-  );
-  // The markdown pipeline emits <ul dir="auto">; the sanitizer's allowed-attribute
-  // list drops dir, so its presence in the output means the string never met
-  // DOMPurify. (Slide templates add dir="auto" themselves outside the sanitized
-  // markdown, so this asserts on the list element specifically.)
-  assert.doesNotMatch(
-    html,
-    /<ul dir=/,
-    'the sanitizer strips dir from markdown output',
+  assert.equal(
+    sanitizeSlideHtmlSync('<ul><li>a</li></ul>'),
+    '<ul><li>a</li></ul>',
   );
 });
 
 test('the MCP server process initializes the sanitizer at boot', async () => {
   // server/mcp/index.js is the second Node entrypoint that renders slide HTML
-  // (preview tools, exports). Dropping this call reintroduces the escaped-markup
-  // bug for every markdown field of every slide type in that process.
+  // (preview tools, exports). Dropping this call makes every database-backed
+  // slide type render its template as escaped text in that process.
   const src = await fs.readFile(
     path.join(repoRoot, 'server/mcp/index.js'),
     'utf8',
