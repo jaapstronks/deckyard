@@ -134,6 +134,7 @@ export function createFieldsView({
 
   let shown = false;
   let renderedSlideId = null;
+  let renderOwed = false;
   let previewRaf = 0;
   let detachScale = null;
 
@@ -266,6 +267,7 @@ export function createFieldsView({
   });
 
   function render() {
+    renderOwed = false;
     const slide = currentSlide();
     renderedSlideId = slide?.id || null;
     if (!slide) {
@@ -306,14 +308,28 @@ export function createFieldsView({
    * Catch up with the editor after it rerendered its own form: a different
    * slide always renders; the same slide renders unless the user is typing in
    * this form (their keystrokes are the latest truth, and a rebuild would
-   * take the caret away).
+   * take the caret away). A skipped render is owed, not dropped: it runs once
+   * the focus leaves the form, or a remote reorder would stay on screen in
+   * the old order for good (DY-781).
    */
   function sync() {
     if (!shown) return;
     const typingHere = el.contains(document.activeElement);
-    if (getSelectedSlideId?.() !== renderedSlideId || !typingHere) render();
-    else refreshPreview();
+    if (getSelectedSlideId?.() !== renderedSlideId || !typingHere) {
+      render();
+    } else {
+      renderOwed = true;
+      refreshPreview();
+    }
   }
+
+  // Focus may just be moving between fields inside the form.
+  el.addEventListener('focusout', () => {
+    if (!renderOwed) return;
+    setTimeout(() => {
+      if (shown && renderOwed && !el.contains(document.activeElement)) render();
+    }, 0);
+  });
 
   function show() {
     if (shown) return;
