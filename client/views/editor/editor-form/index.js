@@ -75,6 +75,10 @@ export function createRerenderEditor({
   // fieldKey} | null. When an
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
+  // () => the selection's identity, which a collaborator's move leaves alone
+  // (B894); a change resets the inspector to the element's tab. Optional: the
+  // element's `kind:idx` otherwise.
+  getSelectedElementKey,
   saveRefusal,
   // (fieldKey) => opens the chart-data editor for the selected slide
   // (editing-surfaces §4.3, D338). Every surface passes it: the form shows
@@ -361,7 +365,8 @@ export function createRerenderEditor({
       slideTypes: SLIDE_TYPES,
     });
     const elemKey = elementActive
-      ? `${selectedElement.kind}:${selectedElement.idx}`
+      ? getSelectedElementKey?.() ||
+        `${selectedElement.kind}:${selectedElement.idx}`
       : null;
     if (elemKey !== lastElementKey) {
       // A fresh selection (or a deselect) resets to the element's own tab.
