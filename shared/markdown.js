@@ -1,7 +1,19 @@
 import { escapeHtml } from './slide-types/helpers.js';
-import { sanitizeHtmlSync, sanitizeInlineSync } from './sanitize.js';
 
-// Placeholder tokens for code/math content that should not be processed
+// The output of this module is safe by construction, not by a second pass:
+// every character of the input reaches the output through escapeHtml(), and
+// every tag and attribute name is a literal of this file. There is no
+// sanitizer behind it, because the frozen renderer bundle has no DOM to run
+// one on (docs/reference/renderer-bundle.md § The one unsealed edge), and the
+// live page must render the same string as an edition.
+// tests/markdown-escaped-by-construction.test.js holds the generator to that.
+
+// Placeholder tokens for code/math content that should not be processed.
+// They are delimited by NUL, which stripNul() removes from the input first, so
+// the only placeholders in a string are the ones this module put there. A
+// later extraction never captures an earlier placeholder (a code block inside
+// `$$…$$`, a code span inside `$…$`): the earlier construct wins and the
+// later one stays text, so no placeholder is restored inside an attribute.
 const CODE_BLOCK_PLACEHOLDER = '\x00CB\x00';
 const INLINE_CODE_PLACEHOLDER = '\x00IC\x00';
 const MATH_BLOCK_PLACEHOLDER = '\x00MB\x00';
@@ -15,6 +27,16 @@ const ESCAPE_PLACEHOLDER = '\x00ES\x00';
 // CommonMark backslash escapes: a backslash before any ASCII punctuation
 // (backslash itself included) yields that literal punctuation character.
 const BACKSLASH_ESCAPE_RE = /\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g;
+
+/**
+ * Remove NUL from author text. An HTML parser replaces it anyway, and without
+ * it an author cannot spell one of the placeholders below.
+ * @param {unknown} value
+ * @returns {string}
+ */
+function stripNul(value) {
+  return String(value || '').replace(/\x00/g, '');
+}
 
 /**
  * Pull CommonMark backslash escapes out of `text` into placeholders so an
@@ -58,7 +80,8 @@ function extractCodeBlocks(text) {
 function extractInlineCode(text) {
   const codes = [];
   // An escaped backtick is a backtick, never a delimiter.
-  const result = text.replace(/(?<!\\)`([^`\n]+)`/g, (_match, code) => {
+  const result = text.replace(/(?<!\\)`([^`\n]+)`/g, (match, code) => {
+    if (code.includes('\x00')) return match;
     codes.push(code);
     return `${INLINE_CODE_PLACEHOLDER}${codes.length - 1}${INLINE_CODE_PLACEHOLDER}`;
   });
@@ -71,7 +94,8 @@ function extractInlineCode(text) {
  */
 function extractMathBlocks(text) {
   const blocks = [];
-  const result = text.replace(/\$\$([\s\S]*?)\$\$/g, (_match, math) => {
+  const result = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+    if (math.includes('\x00')) return match;
     blocks.push(math.trim());
     return `${MATH_BLOCK_PLACEHOLDER}${blocks.length - 1}${MATH_BLOCK_PLACEHOLDER}`;
   });
@@ -94,6 +118,7 @@ function extractInlineMath(text) {
       if (!math) return _match;
       // Skip if it looks like currency (just digits/punctuation)
       if (/^[\d.,]+$/.test(math)) return _match;
+      if (math.includes('\x00')) return _match;
       maths.push(math);
       return `${INLINE_MATH_PLACEHOLDER}${maths.length - 1}${INLINE_MATH_PLACEHOLDER}`;
     },
@@ -152,14 +177,19 @@ function inlineFormat(
 
   // Links: [text](https://example.com). Parked as placeholders so the emphasis
   // passes below can't mangle an <a> whose href/text contains * or _.
+  // The pattern is the scheme allowlist: only http(s) becomes an href, so a
+  // `javascript:` or `data:` target stays text. Text and href are already
+  // escaped (`out` is), so they go in as they are. A code span or math inside
+  // the target wins over the link, as in CommonMark: its placeholder would
+  // restore markup into the attribute.
   const links = [];
   out = out.replace(
     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-    (_m, text, href) => {
-      const safeText = escapeHtml(text);
-      const safeHref = escapeHtml(href);
+    (m, text, href) => {
+      if (href.includes(INLINE_CODE_PLACEHOLDER)) return m;
+      if (href.includes(INLINE_MATH_PLACEHOLDER)) return m;
       links.push(
-        `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeText}</a>`,
+        `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`,
       );
       return `${LINK_PLACEHOLDER}${links.length - 1}${LINK_PLACEHOLDER}`;
     },
@@ -191,9 +221,8 @@ function inlineFormat(
 }
 
 // Exported so slide types / editor UIs can reuse the exact same safe inline formatting.
-// Defense-in-depth: applies DOMPurify sanitization as final step.
 export function inlineMarkdownToSafeHtml(s) {
-  let text = String(s || '');
+  const text = stripNul(s);
 
   // Extract inline code and math first, then backslash escapes on the prose
   // that remains (so a literal backslash inside code/math survives).
@@ -201,9 +230,7 @@ export function inlineMarkdownToSafeHtml(s) {
   const { text: t2, maths: inlineMaths } = extractInlineMath(t1);
   const { text: t3, escapes } = extractBackslashEscapes(t2);
 
-  const result = inlineFormat(t3, { inlineCodes, inlineMaths, escapes });
-  // Apply DOMPurify as defense-in-depth (strips any tags that shouldn't be inline)
-  return sanitizeInlineSync(result);
+  return inlineFormat(t3, { inlineCodes, inlineMaths, escapes });
 }
 
 function splitTableRow(line) {
@@ -344,7 +371,7 @@ function buildList(itemLines, inlineOpts) {
 }
 
 export function markdownToSafeHtml(markdown) {
-  let text = String(markdown || '').replace(/\r\n/g, '\n');
+  const text = stripNul(markdown).replace(/\r\n/g, '\n');
 
   // 1. Extract code blocks FIRST (before any other processing)
   const { text: t1, blocks: codeBlocks } = extractCodeBlocks(text);
@@ -566,9 +593,7 @@ export function markdownToSafeHtml(markdown) {
     }
   }
 
-  const result = blocks.join('\n');
-  // Defense-in-depth: apply DOMPurify sanitization as final step
-  return sanitizeHtmlSync(result);
+  return blocks.join('\n');
 }
 
 export function parseMarkdownTable(markdown) {

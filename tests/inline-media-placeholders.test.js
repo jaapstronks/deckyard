@@ -172,7 +172,7 @@ test('team-cards: a block carries an optional markdown description under its cap
   });
   assert.match(
     html,
-    /team-card-byline[^>]*>Creative Director, Stichting SKLNE<\/div><div class="team-card-body" data-inline-field="members\.0\.body" dir="auto"><p>SKLNE \(pronounced <em>skyline<\/em>\) is a platform\.<\/p>\s*<p>Second paragraph\.<\/p>/,
+    /team-card-byline[^>]*>Creative Director, Stichting SKLNE<\/div><div class="team-card-body" data-inline-field="members\.0\.body" dir="auto"><p dir="auto">SKLNE \(pronounced <em>skyline<\/em>\) is a platform\.<\/p>\s*<p dir="auto">Second paragraph\.<\/p>/,
   );
   // A block without a description renders no empty wrapper.
   assert.equal(html.match(/team-card-body/g).length, 1);
