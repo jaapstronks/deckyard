@@ -16,6 +16,7 @@
  * file outside its own directory.
  */
 import { renderItemFieldWidget } from './item-field-widget.js';
+import { locateItem } from './collection-editor.js';
 import { slideTypeElementTab } from '../../../../shared/slide-types/inline-edit-companions.js';
 
 /**
@@ -59,9 +60,24 @@ export function renderItemElementCard({
     (listField?.itemFields || []).map((f) => [String(f.key), f]),
   );
   const item = items[idx];
+  // The list as this card shows it. A remote change replaces `slide.content`
+  // (the live-doc binder projects into the slide in place), so a write reads
+  // the list as it stands and finds this item there by the collection
+  // editor's identity rule (B892).
+  const rows = items.map((it, at) => ({ at, shown: structuredClone(it) }));
 
   const setItemKey = (k, v) => {
-    item[k] = v;
+    const now = slide.content?.[card.list];
+    const at = Array.isArray(now) ? locateItem(now, rows, idx) : -1;
+    if (at < 0) {
+      rerenderEditor?.();
+      return;
+    }
+    const next = now.slice();
+    next[at] = { ...next[at], [k]: v };
+    slide.content[card.list] = next;
+    rows[idx].at = at;
+    rows[idx].shown = structuredClone(next[at]);
     markDirty?.();
     rerenderPreview?.();
     scheduleUiRefresh?.();
