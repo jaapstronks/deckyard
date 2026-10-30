@@ -41,14 +41,17 @@ const RENDER_CACHE_ENTRIES = 64;
 const RENDER_CACHE_BYTES = 64 * 1024 * 1024;
 /** Per-edition facts read from the input once (languages, preview image). */
 const META_CACHE_ENTRIES = 256;
+/** And at most this many preview-image bytes across them, as for renders. */
+const META_CACHE_BYTES = 64 * 1024 * 1024;
 
 /** @type {Map<string, {canvas: string, reader: string, size: number, editionId: string}>} */
 const renders = new Map();
 let renderBytes = 0;
 /** @type {Map<string, Promise<{canvas: string, reader: string}>>} */
 const inflight = new Map();
-/** @type {Map<string, {langs: string[], defaultLang: string|null, ogImage: {mediaType: string, bytes: Buffer}|null}>} */
+/** @type {Map<string, {langs: string[], defaultLang: string|null, ogImage: {mediaType: string, bytes: Buffer}|null, size: number}>} */
 const metas = new Map();
+let metaBytes = 0;
 
 let renderer = renderEditionInBundle;
 
@@ -69,6 +72,14 @@ export function clearEditionCaches() {
   renderBytes = 0;
   inflight.clear();
   metas.clear();
+  metaBytes = 0;
+}
+
+function dropMeta(editionId) {
+  const entry = metas.get(editionId);
+  if (!entry) return;
+  metas.delete(editionId);
+  metaBytes -= entry.size;
 }
 
 /** Drop what is cached for one edition (on revocation). */
@@ -79,7 +90,7 @@ export function forgetEdition(editionId) {
       renderBytes -= entry.size;
     }
   }
-  metas.delete(editionId);
+  dropMeta(editionId);
 }
 
 /** The scope a public edition read runs in: the public id is the authorization. */
@@ -158,15 +169,21 @@ function firstImage(presentation) {
 /** Remember a small fact set per edition, read from its input once. */
 function remember(editionId, input) {
   const presentation = input?.presentation || {};
+  const ogImage = firstImage(presentation);
   const meta = {
     langs: existingVersionLangs(presentation),
     defaultLang: normalizeLang(resolveLangModeFromPresOrUrl(presentation)),
-    ogImage: firstImage(presentation),
+    ogImage,
+    size: ogImage ? ogImage.bytes.length : 0,
   };
-  if (metas.size >= META_CACHE_ENTRIES) {
-    metas.delete(metas.keys().next().value);
-  }
+  // An image larger than the whole budget is answered, not kept.
+  if (meta.size > META_CACHE_BYTES) return meta;
+  dropMeta(editionId);
   metas.set(editionId, meta);
+  metaBytes += meta.size;
+  while (metas.size > META_CACHE_ENTRIES || metaBytes > META_CACHE_BYTES) {
+    dropMeta(metas.keys().next().value);
+  }
   return meta;
 }
 

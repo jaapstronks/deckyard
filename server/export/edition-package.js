@@ -45,7 +45,7 @@ const INPUT_NAME = 'input.json';
 /** A base64 data URL inside CSS text. */
 const DATA_URL = /data:([a-z0-9.+/-]+);base64,([A-Za-z0-9+/=]+)/gi;
 /** The reference a withheld font face leaves behind. */
-const WITHHELD = /deckyard-withheld:([a-z0-9.+/-]+);sha256,([0-9a-f]{64})/g;
+const WITHHELD = /deckyard-withheld:([A-Za-z0-9.+/-]+);sha256,([0-9a-f]{64})/g;
 
 /**
  * The edition record a package carries, in canonical form.
@@ -93,9 +93,9 @@ export function withholdFonts(inputBytes) {
       );
     }
     const sha256 = sha256Hex(bytes);
-    const mt = mediaType.toLowerCase();
-    withheld.set(`${sha256} ${mt}`, { sha256, mediaType: mt });
-    return `deckyard-withheld:${mt};sha256,${sha256}`;
+    // Verbatim, never normalized: the rebuild writes back exactly this text.
+    withheld.set(`${sha256} ${mediaType}`, { sha256, mediaType });
+    return `deckyard-withheld:${mediaType};sha256,${sha256}`;
   });
   return {
     bytes: canonicalJsonBytes({

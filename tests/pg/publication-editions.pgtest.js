@@ -358,6 +358,38 @@ pgDescribe('publication editions (PostgreSQL)', () => {
     assert.equal(await count('publication_editions'), 1);
   });
 
+  it('orders the same key on two decks by the unique index, and drops the loser staging', async () => {
+    const otherDeck = await seedPresentation(db, {
+      title: 'Deck A3',
+      slides: slides(),
+    });
+    const first = await stage();
+    const second = await stage(scopeA, otherDeck);
+    const gate = pauseCommit();
+    const winner = commitEdition(scopeA, commitArgs(first.stagingId, 'race'));
+    const pid = await gate.entered;
+    // Another series lock, so only the unique key index makes it wait.
+    const loser = caught(
+      commitEdition(scopeA, {
+        ...commitArgs(second.stagingId, 'race'),
+        presentationId: otherDeck,
+        requestHash: editionRequestHash({
+          presentationId: otherDeck,
+          expectedRevision: 1,
+        }),
+      }),
+    );
+    await waitingOn(pid);
+    gate.release();
+    assert.equal((await winner).edition.version, 1);
+    const { error } = await loser;
+    assert.equal(error?.code, 'idempotency_key_reused');
+    __setTestDb(db);
+
+    assert.equal(await count('publication_editions'), 1);
+    assert.equal(await count('publication_staging'), 0, 'loser staging gone');
+  });
+
   it('refuses a stale revision before preparing anything', async () => {
     const rev = await revisionOf(deckA);
     await updatePresentation(scopeA, deckA, { title: 'Moved on' }, {});

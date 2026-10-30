@@ -3,6 +3,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { getRequestOrigin } from '../../utils/request-url.js';
 import { getOgImageUrl } from '../../config/branding.js';
+import { getAppBaseUrl } from '../../config/utils.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
   RENDERER_BUNDLE_ERRORS,
@@ -25,6 +26,21 @@ const log = createLogger('edition');
  * server may keep a copy (`docs/reference/publication-editions.md` § Caching).
  */
 const NO_STORE = 'no-store';
+
+/**
+ * A preview image is served with the media type its data URL names; only a
+ * plain image type is ever put in a header.
+ */
+const IMAGE_MEDIA_TYPE = /^image\/[a-z0-9.+-]+$/;
+
+/**
+ * The origin an edition's address is built on: the configured public URL,
+ * else the request's. Canonical link, card and render cache key then do not
+ * depend on the Host header a visitor sends (as `server/collab/origin.js`).
+ */
+function editionOrigin(req) {
+  return getAppBaseUrl() || getRequestOrigin(req) || 'http://localhost';
+}
 
 /** The tombstone of a revoked edition: no title, no author, no content. */
 const TOMBSTONE_HTML =
@@ -106,7 +122,7 @@ function viewHandler(view) {
     let views;
     try {
       views = await renderEditionViews(ctx.repoRoot, edition, {
-        origin: getRequestOrigin(ctx.req) || 'http://localhost',
+        origin: editionOrigin(ctx.req),
         lang: ctx.url.searchParams.get('lang'),
       });
     } catch (err) {
@@ -145,9 +161,9 @@ async function serveOgImage(ctx, publicationId, versionText) {
   if (!edition) return true;
   const og = await editionOgImage(ctx.repoRoot, edition);
   if (!og) return sendTombstone(ctx.res);
-  if (!og.image) {
-    // The edition shows no image: the installation's own card, which says
-    // nothing about the deck and so cannot drift from it.
+  if (!og.image || !IMAGE_MEDIA_TYPE.test(og.image.mediaType)) {
+    // The edition shows no (servable) image: the installation's own card,
+    // which says nothing about the deck and so cannot drift from it.
     ctx.res.writeHead(302, {
       Location: getOgImageUrl(),
       'Cache-Control': NO_STORE,

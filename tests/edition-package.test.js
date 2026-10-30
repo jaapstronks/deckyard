@@ -113,6 +113,28 @@ test('fonts leave the package as hashes, and come back byte for byte', async () 
   assert.equal(wrongFont.packages[0].inputHashChecked, false, 'unmatched font');
 });
 
+test('a font media type is withheld verbatim, so the rebuild is exact', async () => {
+  const bytes = canonicalJsonBytes({
+    ...JSON.parse(inputBytes().toString('utf8')),
+    css: {
+      fontCss: `@font-face{src:url("data:Font/WOFF2;base64,${FONT.toString('base64')}")}`,
+    },
+  });
+  const manifestBytes = canonicalJsonBytes(buildEditionManifest(bytes));
+  const ed = {
+    ...edition(1),
+    inputBytes: bytes,
+    manifestBytes,
+    manifestHash: sha256Hex(manifestBytes),
+  };
+  assert.deepEqual(withholdFonts(bytes).withheld, [
+    { sha256: sha256Hex(FONT), mediaType: 'Font/WOFF2' },
+  ]);
+  const full = verifyEditionPackages([await packageOf(ed)], { fonts: [FONT] });
+  assert.equal(full.ok, true);
+  assert.equal(full.packages[0].inputHashChecked, true);
+});
+
 test('an input without fonts ships unchanged', () => {
   const plain = canonicalJsonBytes({
     schema: EDITION_INPUT_SCHEMA,

@@ -372,7 +372,16 @@ export async function commitEdition(
     // unique index is what orders those two, and the loser is answered here.
     if (err?.code === '23505' && err?.constraint === IDEMPOTENCY_CONSTRAINT) {
       const prior = await editionByKey(getDb(), orgId, key);
-      if (prior) return replayOrRefuse(prior, requestHash);
+      if (prior) {
+        // The loser's prepared bytes will never commit: drop them now rather
+        // than leave them to the staging sweep.
+        await getDb()
+          .deleteFrom('publication_staging')
+          .where('id', '=', stagingId)
+          .where('organization_id', '=', orgId)
+          .execute();
+        return replayOrRefuse(prior, requestHash);
+      }
     }
     throw err;
   }

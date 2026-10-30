@@ -99,8 +99,8 @@ const i18n = () => ({
   },
 });
 
-/** Drive one GET through the edition routes. */
-async function get(pathname) {
+/** Drive one GET through the edition routes, with an optional Host header. */
+async function get(pathname, { host } = {}) {
   const res = {
     statusCode: null,
     headers: {},
@@ -124,7 +124,7 @@ async function get(pathname) {
     repoRoot,
     req: {
       method: 'GET',
-      headers: { host: url.host, 'x-forwarded-proto': 'https' },
+      headers: { host: host || url.host, 'x-forwarded-proto': 'https' },
     },
     res,
     url,
@@ -334,6 +334,31 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
       await get(`/p/${v1.publicationId}/1/reader`)
     ).body.toString();
     assert.ok(reader.includes(`href="${base}?lang=nl"`));
+  });
+
+  it('builds the address on the configured URL, whatever Host is sent', async () => {
+    const v1 = (await publish('host')).edition;
+    const base = `${ORIGIN}/p/${v1.publicationId}/1`;
+    const before = process.env.APP_URL;
+    process.env.APP_URL = ORIGIN;
+    try {
+      const start = renders;
+      const own = (await get(`/p/${v1.publicationId}/1`)).body.toString();
+      const forged = (
+        await get(`/p/${v1.publicationId}/1`, { host: 'evil.example.test' })
+      ).body.toString();
+      assert.ok(forged.includes(`<link rel="canonical" href="${base}`));
+      assert.ok(!forged.includes('evil.example.test'));
+      assert.equal(forged, own);
+      assert.equal(
+        renders - start,
+        1,
+        'a foreign Host is the same cache entry',
+      );
+    } finally {
+      if (before === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = before;
+    }
   });
 
   it('answers an unknown edition with 404 and never with the deck', async () => {

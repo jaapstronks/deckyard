@@ -41,7 +41,7 @@ Restore versions (`presentation_versions`) are unrelated: an edition is never de
 2. Looks the idempotency key up again under the lock: the check that counts. A replay drops its staging row.
 3. Takes `last_version + 1`, copies the staged bytes into the edition inside the database (`INSERT … SELECT`, so the lock is held only for that copy), inserts the asset references, the audit row and the `local` delivery (`delivered`, receipt `{editionId, manifestHash}`), and deletes the staging row.
 
-A failure anywhere rolls back all of it, including a series created in the same transaction: no edition, no consumed number, the staging row kept. The same key used concurrently on two different decks is ordered by the unique index `(organization_id, idempotency_key)`; the loser is answered as a replay or a refusal, never a 500.
+A failure anywhere rolls back all of it, including a series created in the same transaction: no edition, no consumed number, the staging row kept. The same key used concurrently on two different decks is ordered by the unique index `(organization_id, idempotency_key)`; the loser is answered as a replay or a refusal, never a 500, and its staging row is deleted on the spot.
 
 There is no write addressed by publication id. Organization B can only reach a series through a deck of B, so it cannot append to a series of A; every storage function takes a storage scope, and only the staging sweep may run cross-organization.
 
@@ -59,11 +59,11 @@ An edition is public at `/p/{publicationId}/{version}`, served by `server/routes
 
 What each view reads, and what it never reads:
 
-- **Bytes and record only.** The canvas and reader are one call of `renderEditionInBundle(rendererHash, input)`: the stored input, plus two request values that are not stored. `canonicalUrl` is built from the edition record (`origin/p/{publicationId}/{version}`), never taken from the input, which leaves it empty because the number exists only once the edition is committed. `lang` is the version on screen, accepted only when the edition has that version (any other `?lang=` falls back to the edition's own language, so a crafted query cannot make the runner render views that do not exist). The deck, the theme store, the installation default, the slide-type registry and the upload store are not consulted.
+- **Bytes and record only.** The canvas and reader are one call of `renderEditionInBundle(rendererHash, input)`: the stored input, plus two request values that are not stored. `canonicalUrl` is built from the edition record (`origin/p/{publicationId}/{version}`, with the origin from `APP_URL`/`DOMAIN` when set and the request's only otherwise, so a forged `Host` header changes neither the address nor the cache entry), never taken from the input, which leaves it empty because the number exists only once the edition is committed. `lang` is the version on screen, accepted only when the edition has that version (any other `?lang=` falls back to the edition's own language, so a crafted query cannot make the runner render views that do not exist). The deck, the theme store, the installation default, the slide-type registry and the upload store are not consulted.
 - **The chrome is frozen too.** Canonical and alternate links, the Open Graph and Twitter card, the JSON-LD block, the language switch and the reader link are written by the render entry (`server/render/renderer-bundle/bundle/edition-chrome.js`) from the edition's title, description and address, with labels from the frozen slide copy. Prism and KaTeX are carried inline from the bundle rather than linked from the installation's `/client/vendor/`. The serving installation adds HTTP headers and nothing else; the one remaining reference to it is the icon SVGs the renderer itself emits ([renderer-bundle.md § Limits](renderer-bundle.md#limits)).
 - **No fallback.** An unknown `(publicationId, version)` is a 404, also when the id happens to be a deck's. A render the runner refuses or cannot do is an error (503 when unavailable, 500 otherwise), never the current renderer.
 
-Rendered HTML is a disposable derivative: an in-memory cache (64 views, 64 MiB) keyed by edition, language and canvas address, rebuilt from the same bytes when it is gone. Every response carries `Cache-Control: no-store`, so nothing in front of the server keeps a copy that revocation could not reach.
+Rendered HTML is a disposable derivative: an in-memory cache (64 views, 64 MiB) keyed by edition, language and canvas address, rebuilt from the same bytes when it is gone. The per-edition facts read from the input (languages, preview image) have their own cache, bounded the same way (256 editions, 64 MiB of image bytes). `/og` serves an image only under a plain `image/…` media type; anything else gets the installation's card. Every response carries `Cache-Control: no-store`, so nothing in front of the server keeps a copy that revocation could not reach.
 
 ## Revocation
 
@@ -77,7 +77,7 @@ From then on every subresource of that edition answers 410 with a content-free t
 
 - `edition.json` - the edition record in canonical JSON (`deckyard.edition-record/1`): series, version, publication time, renderer hash, manifest hash and `previousManifestHash`, the manifest hash of version − 1 (null for version 1).
 - `manifest.json` - the stored manifest, byte for byte.
-- `input.json` - the stored input, byte for byte, except that every font face in `css.fontCss` is replaced by `deckyard-withheld:<media type>;sha256,<hex>`. Fonts are licensed bytes; a package anyone can download names them by hash, while the edition keeps them. Images stay: every reader of the edition already receives them.
+- `input.json` - the stored input, byte for byte, except that every font face in `css.fontCss` is replaced by `deckyard-withheld:<media type>;sha256,<hex>`, the media type verbatim so the rebuild is exact. Fonts are licensed bytes; a package anyone can download names them by hash, while the edition keeps them. Images stay: every reader of the edition already receives them.
 
 `node scripts/verify-edition.js <package.zip>… [--font <file>]…` checks packages offline, with no database, network or installation, and reports three things apart:
 
