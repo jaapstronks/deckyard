@@ -33,3 +33,11 @@ export {
   openCurrentRendererBundle,
 } from './current.js';
 export { EDITION_INPUT_SCHEMA } from './edition-input.js';
+export {
+  EDITION_MANIFEST_SCHEMA,
+  buildEditionManifest,
+  canonicalJson,
+  canonicalJsonBytes,
+  verifyEditionInput,
+} from './edition-manifest.js';
+export { findUnsealableSlides } from './sealable.js';

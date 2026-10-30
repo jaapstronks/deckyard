@@ -67,7 +67,24 @@ async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
   return null;
 }
 
-export async function buildEmbeddedFontCss(repoRoot, theme = null) {
+/**
+ * The `@font-face` block for a theme's `embedFonts`, every source inlined as a
+ * data URL.
+ *
+ * @param {string} repoRoot
+ * @param {object|null} [theme]
+ * @param {object} [options]
+ * @param {(face: {family: string, weight: *, style: string}) => void} [options.onUnresolved]
+ *   Told about each face whose bytes could not be read. An export skips such a
+ *   face and keeps the token's fallback stack; a frozen edition must refuse
+ *   instead, and this is how it learns there was something to refuse.
+ * @returns {Promise<string>}
+ */
+export async function buildEmbeddedFontCss(
+  repoRoot,
+  theme = null,
+  { onUnresolved = null } = {},
+) {
   // These will be inlined into export HTML so opening the exported file via
   // `file://` still works (no network, no local-path requests).
   // Themes declare which fonts to embed via embedFonts (theme-builder
@@ -126,7 +143,15 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
   const identified = [];
   for (const face of faces) {
     const dataUrl = dataUrls.get(face.sourceKey);
-    if (!dataUrl) continue; // unreadable — skip, the token keeps its fallback
+    if (!dataUrl) {
+      // Unreadable: skip, the token keeps its fallback.
+      onUnresolved?.({
+        family: face.family,
+        weight: face.weight,
+        style: face.style,
+      });
+      continue;
+    }
     identified.push({ ...face, identity: dataUrl });
   }
 

@@ -205,12 +205,38 @@ Everything that varies per installation or per day is in the input; everything
 else is in the bundle. `server/render/renderer-bundle/edition-input.js` is the
 contract: the public projection of the deck with every asset reference already an
 inline data URL, the effective theme record with the dynamic `default` resolved,
-the frozen font CSS, the meta description and the canvas address. Producing one
-is the next step's work, not this one's.
+the frozen font CSS, the meta description and the canvas address.
 
 There is deliberately **no slide-type registry field**. The renderer's registry
 is the one frozen in its own bundle, which is exactly what keeps a core slide
 type's later render changes away from a published edition.
+
+### Preparing an edition input
+
+`prepareEditionInput()` in `server/export/edition-input.js` is the one producer. It takes a deck, the effective theme record (required: without one the renderer falls back to the installation's own default logo, which no input carries) and the deck organization's storage scope, and returns **bytes**: the canonical input, and the manifest derived from it. Nothing is stored; keeping the bytes is the edition record's job (T1.3). In order:
+
+1. **Snapshot.** Deck and theme are cloned before the first `await`, so a write to the source after the call starts cannot reach the input.
+2. **Public projection.** `filterForPublished()` from `server/utils/public-output.js` over every language version (no second projection), then an allowlist. Deck: `title`, `description`, `lang`, `settings.autoAdvance`, `slides`, and per language version `title`, `description`, `slides` plus `i18n.active`/`dominant`. Theme: the keys a renderer reads (`label`, `cssVars`, `assets`, `slideBackgrounds`, `backgroundPresets`, `defaultBackground`, `defaultTitleSlide`, `slideTypes`). Deck and theme ids, organization, collaborators, the publication descriptor and translation sources stay out.
+3. **Closed assets.** Every served ref in every slide list and in the theme (a whole value, or a `url(…)` inside a CSS value such as `--t-logo-url`) is read once and inlined as a data URL, through the same image transform the live published page applies. Uploaded fonts are inlined through `buildEmbeddedFontCss()`; the `/fonts/managed/` address does not appear in the input.
+4. **Refusals, as one list.** Everything below is collected first and refused together as `renderer_edition_input_unsealable`, with `details.problems` (`{reason, lang, slideId, message}`), so an author sees the whole list at once (D362).
+
+| `reason`             | When                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `unknown_slide_type` | A type the bundle does not carry (a database-backed type). Shared rule with the render entry: `sealable.js`. |
+| `author_markup`      | Author markup in a `markup: true` field. Same shared rule.                                                   |
+| `asset_unreadable`   | A served ref this installation cannot read.                                                                  |
+| `live_embed`         | A slide renders an `<iframe>`, `<frame>`, `<embed>` or `<object>`: its content can change after publication. |
+| `remote_resource`    | A slide or the theme would fetch something that is not a data URL (a remote image, a leftover served path).  |
+| `external_font`      | The theme loads fonts from a font service (`externalFontLinks`).                                             |
+| `foreign_font`       | An uploaded font that is not one of the deck organization's own font variants.                               |
+| `font_unreadable`    | A font face whose bytes cannot be read; an export would fall back silently, an edition may not.              |
+| `too_large`          | The sealed input exceeds the runner's 16 MiB request limit.                                                  |
+
+The remote-load check renders each slide with the current registry and reads the resource attributes and `url()`s of the result. Icon SVGs the renderer itself emits (`/client/vendor/lucide-icons/…`) are exempt; they are renderer bytes, in the same open position as the highlighter (§ Limits).
+
+### The edition-input manifest
+
+`server/render/renderer-bundle/edition-manifest.js` defines the canonical form (object keys sorted at every depth, no whitespace, one trailing newline; `canonicalJson()` refuses non-finite numbers and `undefined` array members rather than letting `JSON.stringify` change them) and derives the manifest (`deckyard.edition-input-manifest/1`) from the input bytes alone: the input's hash and length, separate hashes for the public deck, the theme and the font CSS, the asset inventory (every inline data URL by SHA-256, media type and length, deduplicated and sorted), the projection version and the versioned list of checks the input passed. `verifyEditionInput()` checks a manifest and input pair offline and names each problem separately (`input_hash_mismatch`, `manifest_mismatch`, `manifest_not_canonical`, …); one changed byte in either file is red. Series, version, publication time and renderer hash belong to the edition record that wraps this manifest, not to it. A hash proves equality with the bytes received, not authorship or time.
 
 ### Refusals
 
