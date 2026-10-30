@@ -9,6 +9,7 @@ import {
 } from './static-files.js';
 import { handleEmbed } from './embed.js';
 import { handleManagedFont } from './managed-fonts.js';
+import { handleEditions } from './edition.js';
 import { handlePublished } from './published.js';
 import { handleSandboxOg } from './sandbox-og.js';
 import { handleShareLink } from './share-viewer.js';
@@ -30,6 +31,7 @@ export const STATIC_MOUNTS = [
   // The audience's join-code page belongs to the live cluster.
   { handle: handleGo, feature: 'live' },
   { handle: handleEmbed },
+  { handle: handleEditions },
   { handle: handlePublished },
   { handle: handleSandboxOg },
   { handle: handleCustomStyles },

@@ -183,6 +183,9 @@ export const NON_RENDER_PATH_DOCUMENTS = Object.freeze({
     'document opening is written, which is what makes it addressable at all',
   'server/routes/static/embed.js':
     'error page shown when a render path threw — deliberately renders no deck',
+  'server/routes/static/edition.js':
+    'tombstone of a revoked edition — deliberately renders no deck; the ' +
+    "edition's views come from the bundle entry, not from a render path",
   'server/routes/public-api/v1/index.js':
     'Swagger UI shell for /api/v1/docs — API documentation, not a deck',
   'server/render/pdf-to-images.js':

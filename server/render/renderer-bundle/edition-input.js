@@ -31,8 +31,12 @@
  *   layers that are bytes rather than logic: the embedded font faces and the
  *   sandbox watermark.
  * @property {string} [metaDescription] - `<meta name="description">`.
- * @property {string} [canonicalUrl] - The canvas address of this edition, for
- *   the reader's link back to the slides.
+ * @property {string} [canonicalUrl] - The canvas address of this edition. Not
+ *   part of the stored input (the number exists only once the edition is
+ *   committed): the public read path sets it from the edition record, and the
+ *   render entry derives the document's links and card from it.
+ * @property {string} [lang] - The language version to render. A request value
+ *   of the read path, never stored.
  */
 
 /** The only edition-input schema this build accepts. */

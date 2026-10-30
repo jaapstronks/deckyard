@@ -91,6 +91,9 @@ export const SLIDE_COPY = {
     readerContents: 'Inhoud',
     readerSlidesLabel: "Dia's",
     readerViewSlides: "Bekijk de dia's",
+    // The canvas link to the reader, and the language group around its links.
+    readerOpen: 'Leesweergave',
+    readerLanguages: 'Taal',
     readerSlideCountOne: '{n} dia.',
     readerSlideCountOther: "{n} dia's.",
 
@@ -242,6 +245,8 @@ export const SLIDE_COPY = {
     readerContents: 'Contents',
     readerSlidesLabel: 'Slides',
     readerViewSlides: 'View the slides',
+    readerOpen: 'Reading view',
+    readerLanguages: 'Language',
     readerSlideCountOne: '{n} slide.',
     readerSlideCountOther: '{n} slides.',
 

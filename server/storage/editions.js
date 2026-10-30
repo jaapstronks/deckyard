@@ -380,7 +380,7 @@ export async function commitEdition(
 
 /**
  * One edition of a series in the scope's organization, with its frozen
- * bytes. An authoring read: the public read path is T1.4's.
+ * bytes. An authoring read; the public read path is {@link getPublicEdition}.
  *
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} publicationId
@@ -435,6 +435,166 @@ export async function getEdition(scope, publicationId, version) {
       mediaType: a.media_type,
       bytes: Number(a.bytes),
     })),
+  };
+}
+
+/**
+ * @typedef {Object} PublicEdition
+ * @property {string} id
+ * @property {string} publicationId
+ * @property {number} version
+ * @property {string} rendererHash
+ * @property {string} manifestHash
+ * @property {string|null} previousManifestHash - The manifest hash of
+ *   version - 1 in the same series; null for version 1, and null when that
+ *   edition no longer exists (a verifier then reports the link as missing)
+ * @property {string} publishedAt - ISO timestamp
+ * @property {string|null} revokedAt - ISO timestamp once revoked
+ * @property {Buffer} [inputBytes] - Only with `withBytes`, and never for a
+ *   revoked edition
+ * @property {Buffer} [manifestBytes] - Likewise
+ */
+
+/**
+ * One edition as the public read path sees it: addressed by its series'
+ * public id and its version, in whatever organization it lives (the public id
+ * is the authorization, as for `getPublishedById`).
+ *
+ * It answers only about that edition. There is no "latest" and no fallback to
+ * the deck: an unknown `(publicationId, version)` is null, and a revoked one
+ * comes back with `revokedAt` and without its bytes, so a caller that forgets
+ * to check cannot serve them.
+ *
+ * @param {import('./scope.js').StorageScope} scope - Normally a
+ *   cross-organization scope; an organization scope limits the read to it
+ * @param {string} publicationId
+ * @param {number} version
+ * @param {{withBytes?: boolean}} [options] - Load the input and manifest bytes
+ *   (they can be megabytes; a revocation check does not need them)
+ * @returns {Promise<PublicEdition|null>}
+ */
+export async function getPublicEdition(
+  scope,
+  publicationId,
+  version,
+  { withBytes = false } = {},
+) {
+  const ctx = resolveScope(scope, 'getPublicEdition', {
+    allowCrossOrganization: true,
+  });
+  if (!UUID_RE.test(String(publicationId || ''))) return null;
+  const v = Number(version);
+  if (!Number.isInteger(v) || v < 1 || v > 2147483647) return null;
+
+  let query = getDb()
+    .selectFrom('publication_editions as e')
+    .leftJoin('publication_edition_revocations as r', 'r.edition_id', 'e.id')
+    .leftJoin('publication_editions as prev', (join) =>
+      join
+        .onRef('prev.publication_id', '=', 'e.publication_id')
+        .on('prev.version', '=', sql`e.version - 1`),
+    )
+    .select([
+      'e.id',
+      'e.publication_id',
+      'e.version',
+      'e.renderer_hash',
+      'e.manifest_hash',
+      'e.published_at',
+      'r.revoked_at',
+      'prev.manifest_hash as previous_manifest_hash',
+    ])
+    .where('e.publication_id', '=', publicationId)
+    .where('e.version', '=', v);
+  if (ctx.organizationId) {
+    query = query.where('e.organization_id', '=', ctx.organizationId);
+  }
+  if (withBytes) {
+    // Bytes only while the edition is public: a revoked edition's input never
+    // leaves the database on the read path.
+    query = query.select([
+      sql`CASE WHEN r.edition_id IS NULL THEN e.input_bytes END`.as(
+        'input_bytes',
+      ),
+      sql`CASE WHEN r.edition_id IS NULL THEN e.manifest_bytes END`.as(
+        'manifest_bytes',
+      ),
+    ]);
+  }
+  const row = await query.executeTakeFirst();
+  if (!row) return null;
+
+  const edition = {
+    id: row.id,
+    publicationId: row.publication_id,
+    version: Number(row.version),
+    rendererHash: row.renderer_hash,
+    manifestHash: row.manifest_hash,
+    previousManifestHash: row.previous_manifest_hash ?? null,
+    publishedAt: new Date(row.published_at).toISOString(),
+    revokedAt: row.revoked_at ? new Date(row.revoked_at).toISOString() : null,
+  };
+  if (withBytes && !edition.revokedAt) {
+    edition.inputBytes = Buffer.from(row.input_bytes);
+    edition.manifestBytes = Buffer.from(row.manifest_bytes);
+  }
+  return edition;
+}
+
+/**
+ * Revoke one edition of a series in the scope's organization. From then on
+ * every public surface of it answers 410 (`docs/reference/publication-editions.md`
+ * § Revocation); other editions of the series are not touched.
+ *
+ * Revoking twice keeps the first revocation. The authorization check (who may
+ * revoke) belongs to the service that calls this; the storage layer only
+ * guarantees that organization B cannot revoke an edition of A.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} publicationId
+ * @param {number} version
+ * @param {{actorUserId?: string|null}} [options]
+ * @returns {Promise<{editionId: string, revokedAt: string}>}
+ * @throws {NotFoundError} No such edition in the scope's organization.
+ */
+export async function revokeEdition(
+  scope,
+  publicationId,
+  version,
+  { actorUserId = null } = {},
+) {
+  const orgId = getOrgId(resolveScope(scope, 'revokeEdition'));
+  const v = Number(version);
+  if (
+    !UUID_RE.test(String(publicationId || '')) ||
+    !Number.isInteger(v) ||
+    v < 1 ||
+    v > 2147483647
+  ) {
+    throw new NotFoundError('Edition not found');
+  }
+  const { rows } = await sql`
+    WITH target AS (
+      SELECT id, organization_id FROM publication_editions
+      WHERE publication_id = ${publicationId} AND version = ${v}
+        AND organization_id = ${orgId}
+    ), inserted AS (
+      INSERT INTO publication_edition_revocations
+        (edition_id, organization_id, actor_user_id)
+      SELECT id, organization_id, ${actorUserId} FROM target
+      ON CONFLICT (edition_id) DO NOTHING
+      RETURNING edition_id, revoked_at
+    )
+    SELECT t.id AS edition_id,
+      COALESCE(i.revoked_at, r.revoked_at) AS revoked_at
+    FROM target t
+    LEFT JOIN inserted i ON i.edition_id = t.id
+    LEFT JOIN publication_edition_revocations r ON r.edition_id = t.id
+  `.execute(getDb());
+  if (!rows[0]) throw new NotFoundError('Edition not found');
+  return {
+    editionId: rows[0].edition_id,
+    revokedAt: new Date(rows[0].revoked_at).toISOString(),
   };
 }
 
