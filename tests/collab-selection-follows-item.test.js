@@ -151,6 +151,7 @@ function openTab(doc, { surface, selectedElement = null }) {
     fieldRenderers: createFieldRenderers(deps),
     surface,
     getSelectedElement: () => anchor.get(),
+    getSelectedElementKey: () => anchor.key(),
   });
   editor.rerender();
   return { pres: p, binder, editorMount, anchor, rerender: editor.rerender };
@@ -317,6 +318,35 @@ test('a row selected through its title keeps the title path in step', () => {
     idx: 1,
     fieldKey: 'rows.1.title',
   });
+
+  tabA.binder.detach();
+  tabB.binder.detach();
+});
+
+test('a remote move keeps the inspector on the tab the user chose', () => {
+  const { a, b } = linkedDocs();
+  const tabA = openTab(a, {
+    surface: 'inspector',
+    selectedElement: { kind: 'card', idx: 0 },
+  });
+  const tabB = openTab(b, { surface: 'library' });
+
+  const slideTab = () =>
+    [...tabA.editorMount.querySelectorAll('.inspector-tab')].find(
+      (tab) => tab.textContent.trim() === 'Slide',
+    );
+  // The real controller rebuilds the form on a tab click; so does this tab.
+  slideTab().click();
+  tabA.rerender();
+  assert.equal(slideTab().getAttribute('aria-selected'), 'true');
+
+  moveFirstRowDown(tabB);
+  tabA.rerender();
+  assert.equal(
+    slideTab().getAttribute('aria-selected'),
+    'true',
+    'not yanked back to the element tab',
+  );
 
   tabA.binder.detach();
   tabB.binder.detach();

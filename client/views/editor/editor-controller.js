@@ -1751,6 +1751,7 @@ export async function createEditorController({
     ...editorFormDeps,
     surface: 'inspector',
     getSelectedElement: () => elementAnchor.get(),
+    getSelectedElementKey: () => elementAnchor.key(),
     // Chart inspector's "Edit data…" entry point opens the chart-data modal
     // (grid + live preview, editing-surfaces §4.3).
     onEditChartData: (fieldKey) => openChartData({ fieldKey }),

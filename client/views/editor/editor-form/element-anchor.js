@@ -14,6 +14,10 @@
  * Only an element whose type declares the list it indexes (`elementTab.<kind>
  * .list`) is anchored. A text selection or a fixed slot range has no item to
  * follow and passes through unchanged.
+ *
+ * `key()` names the selection the user made, not where it now stands: it
+ * changes when another element is selected, not when the selected one moves,
+ * so the inspector keeps the tab the user chose.
  */
 import { locateItem } from './collection-editor.js';
 import { slideTypeElementTab } from '../../../../shared/slide-types/inline-edit-companions.js';
@@ -23,10 +27,13 @@ import { slideTypeElementTab } from '../../../../shared/slide-types/inline-edit-
  * @param {Function} o.getSlide - () => the selected slide, or null
  * @param {Object} [o.slideTypes] - the editor's slide-type metadata, so a
  *   fork type's own declaration is heard
- * @returns {{get: Function, set: Function, refresh: Function, follow: Function}}
+ * @returns {{get: Function, key: Function, set: Function, refresh: Function,
+ *   follow: Function}}
  */
 export function createElementAnchor({ getSlide, slideTypes = null }) {
   let selected = null;
+  // Bumped per selection the user makes; a followed move keeps it.
+  let serial = 0;
   // Per item of the list as it last stood: its index and its value.
   let rows = null;
 
@@ -69,9 +76,16 @@ export function createElementAnchor({ getSlide, slideTypes = null }) {
     /** @returns {Object|null} the selection */
     get: () => selected,
 
+    /** @returns {string|null} the selection's identity, stable across moves */
+    key: () => (selected ? `${selected.kind}:${serial}` : null),
+
     /** Select an element (or clear with null), anchored to the list as it is. */
     set(sel) {
-      selected = sel || null;
+      const next = sel || null;
+      if (next?.kind !== selected?.kind || next?.idx !== selected?.idx) {
+        serial += 1;
+      }
+      selected = next;
       snapshot();
     },
 
