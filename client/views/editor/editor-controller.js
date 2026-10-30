@@ -47,6 +47,7 @@ import {
   convertSlideWithConfirm,
 } from './convert-slide-action.js';
 import { createEditorTopbar } from './topbar/index.js';
+import { setTopbarTitleText } from './topbar/title-button.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createCanvasTabs } from './canvas-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
@@ -587,9 +588,7 @@ export async function createEditorController({
   setDocumentTitle(pres?.title);
   /** Show a changed deck title in the topbar and the browser tab. */
   const showTitle = (next) => {
-    if (!topbarTitle) return;
-    topbarTitle.textContent = next;
-    topbarTitle.title = next;
+    setTopbarTitleText(topbarTitle, next);
     setDocumentTitle(next);
   };
   const titleCtl = createEditorTitleController({
