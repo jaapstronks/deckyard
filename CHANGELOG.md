@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.93.1](https://github.com/jaapstronks/deckyard/compare/v1.93.0...v1.93.1) (2026-10-30)
+
+
+### Fixed
+
+* **capture:** a stage-tally timeout reports server, stage and live traffic (B889) ([#1930](https://github.com/jaapstronks/deckyard/issues/1930)) ([e757564](https://github.com/jaapstronks/deckyard/commit/e757564d4ab9d85d9dd6e12ae811a7275c1c9286))
+* **editor:** a remote item move no longer sends Fields-form edits into the wrong item (DY-781) ([#1931](https://github.com/jaapstronks/deckyard/issues/1931)) ([238ea49](https://github.com/jaapstronks/deckyard/commit/238ea49319e6bcf83b8af6fdb1f85e35deee8f8b))
+* **i18n:** content-field terms outside the detector follow batch13a (B861) ([#1928](https://github.com/jaapstronks/deckyard/issues/1928)) ([a1c421c](https://github.com/jaapstronks/deckyard/commit/a1c421cd584b7166a24a2a1aa565483436ac73ba))
+* **i18n:** Danish duplicate labels use Duplikér (B860) ([#1925](https://github.com/jaapstronks/deckyard/issues/1925)) ([62f98e7](https://github.com/jaapstronks/deckyard/commit/62f98e72c8e25086328e59ee128d86329d077e13))
+* **i18n:** Dutch action labels use the infinitive (B854) ([#1920](https://github.com/jaapstronks/deckyard/issues/1920)) ([48a7420](https://github.com/jaapstronks/deckyard/commit/48a74207a26b764eb6f20832ad9ebfda9a73ceb1))
+* **i18n:** it and nl progress labels follow the glossary form (B856) ([#1923](https://github.com/jaapstronks/deckyard/issues/1923)) ([339b7e1](https://github.com/jaapstronks/deckyard/commit/339b7e13ea37fa88a7c9fdba9abe9891267402cd))
+* **i18n:** nl, sv and pl follow the batch13b terms (B865) ([#1926](https://github.com/jaapstronks/deckyard/issues/1926)) ([4859004](https://github.com/jaapstronks/deckyard/commit/4859004fd3d1a5b396526538ed02fb2519f5a508))
+* **i18n:** pt validation messages drop "Por favor" (B888) ([#1927](https://github.com/jaapstronks/deckyard/issues/1927)) ([a56b049](https://github.com/jaapstronks/deckyard/commit/a56b049d3acc2fb0c6d75d9c6acff44cd149c55c))
+* **i18n:** retry messages follow their locale's register (B858) ([#1924](https://github.com/jaapstronks/deckyard/issues/1924)) ([156c9c6](https://github.com/jaapstronks/deckyard/commit/156c9c6fda406d11c9f2529a6eef29d4c95f5924))
+* **modals:** hold every dialog to the screen on a phone (B887) ([#1921](https://github.com/jaapstronks/deckyard/issues/1921)) ([e603a85](https://github.com/jaapstronks/deckyard/commit/e603a859bd96c852d64b6609be59bf105b57db1d))
+* **runner:** no false alarms on supervisor stop, name three silent failure paths ([#1929](https://github.com/jaapstronks/deckyard/issues/1929)) ([156c3d1](https://github.com/jaapstronks/deckyard/commit/156c3d132fb37a5a3e0974f93bf89e5dd33687c0))
+
 ## [1.93.0](https://github.com/jaapstronks/deckyard/compare/v1.92.1...v1.93.0) (2026-10-29)
 
 

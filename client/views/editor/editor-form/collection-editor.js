@@ -18,6 +18,52 @@ import {
   startBatchCollectionUpload,
 } from '../media/batch-collection.js';
 
+const isObj = (v) => v !== null && typeof v === 'object';
+
+/** Structural equality that ignores key order (a projected item from the
+ * live doc carries its keys in the doc's order, not the form's). */
+function sameValue(a, b) {
+  if (a === b) return true;
+  if (!isObj(a) || !isObj(b) || Array.isArray(a) !== Array.isArray(b))
+    return false;
+  const ka = Object.keys(a);
+  if (ka.length !== Object.keys(b).length) return false;
+  return ka.every((k) => Object.hasOwn(b, k) && sameValue(a[k], b[k]));
+}
+
+/**
+ * Where the item that row `r` of a rendered list shows stands in `arr` now
+ * (DY-781). A form rendered before a collaborator moved an item would
+ * otherwise write into whatever item now holds the row's position.
+ *
+ * - still at its rendered index, unchanged: that index;
+ * - unchanged at exactly one other index: there (it moved);
+ * - nowhere unchanged, the list as long as the rendered one and its index
+ *   not holding another row's item: its index (it was edited in place; the
+ *   field-level last-writer-wins of live edits);
+ * - otherwise -1: the form is stale and must not write.
+ *
+ * @param {Array<unknown>} arr - the collection as it stands
+ * @param {Array<{at: number, shown: unknown}>} rows - per rendered row, the
+ *   index it last wrote at and the item as it shows it
+ * @param {number} r - the row asking
+ * @returns {number}
+ */
+export function locateItem(arr, rows, r) {
+  const { at, shown } = rows[r];
+  if (at < arr.length && sameValue(arr[at], shown)) return at;
+  const matches = [];
+  for (let j = 0; j < arr.length; j += 1) {
+    if (sameValue(arr[j], shown)) matches.push(j);
+  }
+  if (matches.length === 1) return matches[0];
+  if (matches.length > 1) return -1;
+  const holdsOther = rows.some(
+    (row, q) => q !== r && sameValue(arr[at], row.shown),
+  );
+  return arr.length === rows.length && at < arr.length && !holdsOther ? at : -1;
+}
+
 /**
  * The generic collection editor: ONE add/remove/reorder/collapse machine for
  * every `type: 'items'` field, driven entirely by the field's schema. This is
@@ -220,8 +266,18 @@ export function createCollectionEditor({
   // flex-wrap grid, where each widget's own size intent drives the layout.
   const hasItemFormLayout = itemFields.some((f) => fieldFormLayout(f));
 
+  // Per rendered row: the index it writes at and the item as it shows it.
+  let rows = [];
+  // The list on screen still matches the data, row for row.
+  const inStep = (arr) =>
+    rows.every((row, r) => row.at === r && locateItem(arr, rows, r) === r);
+
   const moveItem = (from, to) => {
     const current = readArr();
+    if (!inStep(current)) {
+      renderList();
+      return;
+    }
     if (
       from === to ||
       from < 0 ||
@@ -261,10 +317,12 @@ export function createCollectionEditor({
   function renderList() {
     const current = readArr();
     list.replaceChildren();
+    rows = current.map((it, at) => ({ at, shown: structuredClone(it) }));
 
     for (let i = 0; i < current.length; i += 1) {
       const item =
         current[i] && typeof current[i] === 'object' ? current[i] : {};
+      const row = rows[i];
       const group = h('div', { class: 'stack card-group' });
       const key = stateKey(i);
       const isCollapsed = collapsible && collapsedState.isCollapsed(key);
@@ -272,13 +330,20 @@ export function createCollectionEditor({
 
       const setItemKey = (k, v) => {
         const now = readArr();
+        // Write into the item this row shows, wherever it stands now.
+        const at = locateItem(now, rows, i);
+        if (at < 0) {
+          renderList();
+          return;
+        }
         const next = now.slice();
-        const nextItem =
-          next[i] && typeof next[i] === 'object' ? { ...next[i] } : {};
+        const nextItem = isObj(next[at]) ? { ...next[at] } : {};
         nextItem[k] = v;
-        next[i] = nextItem;
+        next[at] = nextItem;
         if (model) model.write(next);
         else slide.content[field.key] = next;
+        row.at = at;
+        row.shown = structuredClone(nextItem);
         markDirty?.();
         scheduleUiRefresh?.();
         // No renderList(): value edits keep focus in the input; only
@@ -339,9 +404,14 @@ export function createCollectionEditor({
             onclick: () => {
               const now = readArr();
               if (now.length <= removeFloor) return;
+              const at = locateItem(now, rows, i);
+              if (at < 0) {
+                renderList();
+                return;
+              }
               const next = now.slice();
-              next.splice(i, 1);
-              mirror({ kind: 'remove', index: i });
+              next.splice(at, 1);
+              mirror({ kind: 'remove', index: at });
               commit(next);
             },
           },

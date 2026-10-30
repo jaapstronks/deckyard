@@ -6,7 +6,8 @@
  * - The title field heads the form beside the preview, also after the form
  *   rerendered itself.
  * - It follows the editor's selection through `sync()`, and does not rebuild
- *   under the user's caret on the slide they are typing in.
+ *   under the user's caret on the slide they are typing in; that rebuild is
+ *   owed and runs once the focus leaves the form (DY-781).
  * - A locked slide reads but takes no input (the state-driven lock seam).
  * - A click on the preview goes back to the canvas at the clicked field.
  * - An edit in the form re-renders the inspector beside it once typing
@@ -179,6 +180,31 @@ test('sync follows a new selection, but leaves the slide being typed in alone', 
   view.el.querySelector('input')?.blur();
   view.sync();
   assert.equal(state.renders, 3);
+});
+
+test('a rebuild skipped under the caret runs once the focus leaves the form (DY-781)', async () => {
+  const { view, state } = setup();
+  view.show();
+  const inputs = view.el.querySelectorAll(
+    '.fields-view-form input, .fields-view-title-slot input',
+  );
+  inputs[0].focus();
+  // A remote update (a collaborator moved an item) while typing: no rebuild.
+  view.sync();
+  assert.equal(state.renders, 1);
+
+  // Tab to the next field of the same form: still typing here.
+  inputs[1].focus();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(state.renders, 1, 'moving between fields keeps the form');
+
+  // Leave the form: the owed rebuild runs, once.
+  inputs[1].blur();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(state.renders, 2, 'the form catches up after the blur');
+  view.el.dispatchEvent(new dom.window.FocusEvent('focusout'));
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(state.renders, 2, 'nothing owed, nothing rebuilt');
 });
 
 test('a locked slide gates the form and the note clears on an editable one', () => {
