@@ -116,6 +116,17 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
         attempted_at: new Date(now - 60 * 60 * 1000).toISOString(),
       },
     ],
+    // Edition staging across two orgs: abandoned for over a day goes
+    // instance-wide, a commit still in progress stays (T1.3).
+    publication_staging: [
+      { id: 'st-old-a', organization_id: ORG_A, created_at: daysAgoIso(2) },
+      { id: 'st-old-b', organization_id: ORG_B, created_at: daysAgoIso(9) },
+      {
+        id: 'st-fresh-a',
+        organization_id: ORG_A,
+        created_at: new Date(now - 60 * 1000).toISOString(),
+      },
+    ],
     // The trash across two orgs: past the window goes, inside it stays, and a
     // deck that was never trashed is not a candidate at all.
     presentations: [
@@ -156,6 +167,7 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
     activityEvents: 2,
     slideLocks: 2,
     accessAttempts: 2,
+    editionStaging: 2,
     trashedDecks: 2,
   });
 
@@ -197,6 +209,12 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
   assert.deepEqual(
     db.__tables.access_attempt_log.map((r) => r.id),
     ['x-fresh-a'],
+  );
+
+  // Edition staging: both abandoned rows gone, the fresh one stays.
+  assert.deepEqual(
+    db.__tables.publication_staging.map((r) => r.id),
+    ['st-fresh-a'],
   );
 
   // Trash: both decks past the window are gone, in whichever organization they

@@ -190,6 +190,7 @@ nothing is discoverable only by `ls`.
 | [`reflowable-html-export.md`](reference/reflowable-html-export.md) | Reflowable "reader" export                                                                     |
 | [`bulk-export.md`](reference/bulk-export.md)                       | Bulk export / backup                                                                           |
 | [`publishing.md`](reference/publishing.md)                         | Publish/unpublish, the public deck pages and embed, and the RSS/Atom/JSON feed                 |
+| [`publication-editions.md`](reference/publication-editions.md)     | Publication series, immutable editions, deliveries and the one atomic publish                  |
 | [`renderer-bundle.md`](reference/renderer-bundle.md)               | Freezing a renderer so a published document keeps rendering the same way                       |
 | [`export-safe-css.md`](reference/export-safe-css.md)               | Which CSS constructions survive PDF/PNG, and which break quietly                               |
 | [`pdf-export-performance.md`](reference/pdf-export-performance.md) | What makes a PDF export heavy, and how to measure it                                           |
