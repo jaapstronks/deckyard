@@ -2,7 +2,7 @@
 
 How a deck becomes an immutable edition, and what the database promises about it. The bytes an edition stores are made by the edition-input preparer ([renderer-bundle.md § The edition input](renderer-bundle.md#the-edition-input)); this page is about keeping them.
 
-**Status:** the store and the service exist; nothing calls them in production yet. The publish routes still write `published_presentations` ([publishing.md](publishing.md)), and no public route reads an edition. Both move over in later steps of the T1 track.
+**Status:** the store and the service exist; nothing calls them in production yet. The publish routes still write `published_presentations` ([publishing.md](publishing.md)), and no public route reads an edition. Both move over in later steps of this track.
 
 ## Three records
 
