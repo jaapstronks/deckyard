@@ -7,7 +7,7 @@ Its purpose is a single property: a published edition that names a bundle keeps
 rendering the way it rendered on the day it was published, whatever the
 installation does afterwards.
 
-**Status 2026-10-28: production execution goes through the Linux operator runner, or refuses.** The original trusted-fixture import filter permits real TCP connections through `process.getBuiltinModule('net')`; that counterexample is retained. The operator runner under `server/render/renderer-bundle/runner/` (separate broker/supervisor services, verified private copies, a native syscall boundary) passed the full external Linux acceptance (P1-P16) for each of its three iterations, the last on code SHA `0dd7d8ea` (runnerId `7ae4568f…`), each with an independent code review. Production `renderEditionInBundle()` is the broker's client: without `RENDERER_RUNNER_SOCKET` it refuses with `renderer_bundle_sandbox_unavailable` before inspecting a bundle or its input; with it, it speaks only to that Unix socket, without retry or fallback (§ Execution gate). No publication, v1 or MCP route calls it yet (T1.2-T1.7). Installation, registration and recovery are in the [operator runbook](../ops/renderer-runner.md).
+**Status 2026-10-28: production execution goes through the Linux operator runner, or refuses.** The original trusted-fixture import filter permits real TCP connections through `process.getBuiltinModule('net')`; that counterexample is retained. The operator runner under `server/render/renderer-bundle/runner/` (separate broker/supervisor services, verified private copies, a native syscall boundary) passed the full external Linux acceptance (P1-P16) for each of its three iterations, the last on code SHA `0dd7d8ea` (runnerId `7ae4568f…`), each with an independent code review. Production `renderEditionInBundle()` is the broker's client: without `RENDERER_RUNNER_SOCKET` it refuses with `renderer_bundle_sandbox_unavailable` before inspecting a bundle or its input; with it, it speaks only to that Unix socket, without retry or fallback (§ Execution gate). The public edition read path calls it ([publication-editions.md § Public read path](publication-editions.md#public-read-path)); no publish, v1 or MCP route does. Installation, registration and recovery are in the [operator runbook](../ops/renderer-runner.md).
 
 ## Why a version number was not enough
 
@@ -205,7 +205,12 @@ Everything that varies per installation or per day is in the input; everything
 else is in the bundle. `server/render/renderer-bundle/edition-input.js` is the
 contract: the public projection of the deck with every asset reference already an
 inline data URL, the effective theme record with the dynamic `default` resolved,
-the frozen font CSS, the meta description and the canvas address.
+the frozen font CSS and the meta description. Two fields are request values of
+the read path and never stored: `canonicalUrl`, the edition's canvas address
+from its record, from which the entry derives every link and the card in the
+document; and `lang`, the language version to render. The entry checks every
+language list for slides it cannot seal, not only the main one, since the input
+reaches it from a store.
 
 There is deliberately **no slide-type registry field**. The renderer's registry
 is the one frozen in its own bundle, which is exactly what keeps a core slide
@@ -285,11 +290,11 @@ type. Not something to decide inside a technical proof.
   `tests/renderer-bundle-screenshot.test.js` compares the deck's own stage in
   one browser in one process, which measures whether the input to Chrome
   changed and nothing more.
-- **The highlighter bytes are carried but not yet served from the edition.** A
-  published document _links_ Prism and KaTeX, so the bytes a reader gets come
-  from whatever the installation serves at `/client/vendor/…`. The bundle
-  freezes and hashes them; serving them per edition is the public read path's
-  half of the work.
+- **The highlighter bytes come from the bundle.** An edition document carries
+  Prism and KaTeX inline from its own bundle, not linked from the serving
+  installation's `/client/vendor/…`. The icon SVGs the renderer emits
+  (`/client/vendor/lucide-icons/…`) are still linked: they are the one
+  renderer byte a reader fetches from the installation.
 - **Fonts and images are not in the bundle.** They are bytes of the edition, not
   of the renderer, and belong in the edition input. A bundle therefore renders
   with no font faces at all unless the input brings them.

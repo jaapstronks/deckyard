@@ -31,13 +31,18 @@ import path from 'node:path';
 import { readCssWithImports } from '../../../utils/read-css-with-imports.js';
 import { themeVarsCssText } from '../../../utils/theme-vars-css.js';
 import { resolveDocLangFromPresentation } from '../../../utils/doc-lang.js';
-import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
+import {
+  normalizeLang,
+  resolveDeckLang,
+} from '../../../../shared/i18n-utils.js';
+import { projectPresentationForLang } from '../../../utils/i18n.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { renderCanvasDocument } from '../../../export/canvas-document.js';
 import { renderReaderDocument } from '../../../export/reader-document.js';
 import { RENDERER_BUNDLE_ERRORS, RendererBundleError } from '../errors.js';
 import { EDITION_INPUT_SCHEMA } from '../edition-input.js';
 import { findUnsealableSlides } from '../sealable.js';
+import { canvasChrome, readerChrome } from './edition-chrome.js';
 
 /**
  * Refuse an input whose render would need something the bundle does not carry.
@@ -53,15 +58,30 @@ import { findUnsealableSlides } from '../sealable.js';
  * @param {Record<string, object>} [registry] - Defaults to the bundle's own
  */
 export function assertSealableEdition(presentation, registry = SLIDE_TYPES) {
-  const [first] = findUnsealableSlides(presentation?.slides, registry);
-  if (!first) return;
-  throw new RendererBundleError(
-    RENDERER_BUNDLE_ERRORS.UNSEALABLE_INPUT,
-    first.message,
-    first.field
-      ? { index: first.index, type: first.type, field: first.field }
-      : { index: first.index, type: first.type },
-  );
+  // Every language list, not only the main one: the read path renders any
+  // version the input carries, and the input reaches this entry from a store
+  // rather than straight from the builder that already checked it.
+  const versions =
+    presentation?.i18n?.versions &&
+    typeof presentation.i18n.versions === 'object'
+      ? presentation.i18n.versions
+      : {};
+  const lists = [
+    [null, presentation?.slides],
+    ...Object.entries(versions).map(([lang, v]) => [lang, v?.slides]),
+  ];
+  for (const [lang, slides] of lists) {
+    const [first] = findUnsealableSlides(slides, registry);
+    if (!first) continue;
+    const details = { index: first.index, type: first.type };
+    if (first.field) details.field = first.field;
+    if (lang) details.lang = lang;
+    throw new RendererBundleError(
+      RENDERER_BUNDLE_ERRORS.UNSEALABLE_INPUT,
+      first.message,
+      details,
+    );
+  }
 }
 
 /**
@@ -77,8 +97,11 @@ export function assertSealableEdition(presentation, registry = SLIDE_TYPES) {
  * @param {object} [input.css] - Frozen CSS layers the bundle cannot derive:
  *   `{ fontCss, wmCss, wmHtml }`
  * @param {string} [input.metaDescription] - `<meta name="description">`
- * @param {string} [input.canonicalUrl] - The canvas address, for the reader's
- *   "view the slides" link
+ * @param {string} [input.canonicalUrl] - The edition's canvas address, from
+ *   which its chrome (canonical links, the card, the language switch, the
+ *   reader link) is derived; none without it
+ * @param {string} [input.lang] - The language version to render; the stored
+ *   main list without it
  * @returns {Promise<{canvas: string, reader: string}>}
  */
 export async function renderEdition(bundleRoot, input) {
@@ -88,15 +111,30 @@ export async function renderEdition(bundleRoot, input) {
       `edition input declares schema ${JSON.stringify(input?.schema)}, expected ${EDITION_INPUT_SCHEMA}`,
     );
   }
-  const pres = input.presentation;
-  if (!pres || typeof pres !== 'object' || !Array.isArray(pres.slides)) {
+  const stored = input.presentation;
+  if (!stored || typeof stored !== 'object' || !Array.isArray(stored.slides)) {
     throw new RendererBundleError(
       RENDERER_BUNDLE_ERRORS.INPUT_INVALID,
       'edition input has no presentation with a slides array',
     );
   }
+  if (input.lang != null && !normalizeLang(input.lang)) {
+    throw new RendererBundleError(
+      RENDERER_BUNDLE_ERRORS.INPUT_INVALID,
+      `edition input asks for language ${JSON.stringify(input.lang)}, which is not one`,
+    );
+  }
 
-  assertSealableEdition(pres);
+  assertSealableEdition(stored);
+
+  // The language version on screen. The projection is the live page's own
+  // (`projectPresentationForLang`), frozen here with the renderer.
+  const lang = normalizeLang(input.lang) || null;
+  const pres = lang ? projectPresentationForLang(stored, lang) : stored;
+  const canonicalUrl =
+    typeof input.canonicalUrl === 'string' ? input.canonicalUrl : '';
+  const metaDescription =
+    typeof input.metaDescription === 'string' ? input.metaDescription : '';
 
   const theme = input.theme || null;
   const frozenCss = input.css || {};
@@ -140,18 +178,21 @@ export async function renderEdition(bundleRoot, input) {
     slideTypes: null,
     docLang,
     deckLang,
-    metaDescription:
-      typeof input.metaDescription === 'string' ? input.metaDescription : '',
-    // A published edition links the Prism/KaTeX bytes this installation serves
-    // rather than inlining them, the same way the live `/p/` page does.
-    context: 'published',
+    metaDescription,
+    ...canvasChrome(stored, pres, { canonicalUrl, lang, metaDescription }),
+    // An edition carries the Prism/KaTeX bytes of its own bundle inline. Linked,
+    // they would come from whatever the serving installation has at
+    // `/client/vendor/…` on the day of the visit: renderer bytes from outside
+    // the edition.
+    context: 'export',
   });
 
-  const reader = renderReaderDocument(bundleRoot, pres, {
+  const reader = readerChrome({ canonicalUrl, lang });
+  const readerHtml = renderReaderDocument(bundleRoot, pres, {
     slideTypes: null,
-    canonicalUrl:
-      typeof input.canonicalUrl === 'string' ? input.canonicalUrl : '',
+    canonicalUrl: reader.canvasUrl,
+    headHtml: reader.headHtml,
   });
 
-  return { canvas, reader };
+  return { canvas, reader: readerHtml };
 }

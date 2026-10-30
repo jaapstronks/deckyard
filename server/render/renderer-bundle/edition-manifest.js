@@ -124,7 +124,7 @@ function walkStrings(value, visit) {
  * @param {string} url
  * @returns {{mediaType: string, bytes: Buffer}|null}
  */
-function decodeDataUrl(url) {
+export function decodeDataUrl(url) {
   const comma = url.indexOf(',');
   if (!url.startsWith('data:') || comma < 0) return null;
   const meta = url.slice(5, comma);

@@ -38,6 +38,7 @@ export {
   buildEditionManifest,
   canonicalJson,
   canonicalJsonBytes,
+  decodeDataUrl,
   verifyEditionInput,
 } from './edition-manifest.js';
 export { findUnsealableSlides } from './sealable.js';
