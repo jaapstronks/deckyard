@@ -59,6 +59,12 @@ const ALL_ATTRS = [...new Set(Object.values(ALLOWED).flat())];
 
 /** Assert the parsed output stays inside the allowlist; return its HTML. */
 function assertInsideDialect(html, input, tags = Object.keys(ALLOWED)) {
+  // NUL delimits the generator's placeholders and is stripped from input, so
+  // one in the output is a placeholder that was never restored.
+  assert.ok(
+    !html.includes('\x00'),
+    `placeholder from ${JSON.stringify(input)}`,
+  );
   const body = fragment(html);
   for (const el of body.querySelectorAll('*')) {
     const tag = el.localName;
@@ -164,6 +170,7 @@ const TOKENS = [
   '- ',
   '1. ',
   '3. ',
+  '99999999999999999999. ',
   '  - ',
   '## ',
   '> ',
@@ -246,6 +253,38 @@ test('link text and href are escaped once, not twice', () => {
 test('a code span in a link target wins over the link', () => {
   const html = inlineMarkdownToSafeHtml('[t](https://a`b`)');
   assert.equal(html, '[t](https://a<code class="md-code-inline">b</code>)');
+});
+
+test('a fence or $$ that is not a block of its own renders inline', () => {
+  assert.equal(
+    markdownToSafeHtml('text ```js\ncode\n``` more'),
+    '<p dir="auto">text <code class="md-code-inline">code</code> more</p>',
+  );
+  assert.equal(
+    markdownToSafeHtml('$$ ```js\na<b>\n``` $$'),
+    '<p dir="auto">$$ <code class="md-code-inline">a&lt;b&gt;</code> $$</p>',
+  );
+  assert.equal(
+    markdownToSafeHtml('- a $$x^2$$'),
+    '<ul dir="auto"><li dir="auto">a <span class="md-math-inline" data-math="x^2">x^2</span></li></ul>',
+  );
+});
+
+test('a stray code or math block in a link target wins over the link', () => {
+  for (const input of ['[t](https://a```\nb```)', '[t](https://a$$b$$)']) {
+    const html = markdownToSafeHtml(input);
+    assert.ok(!html.includes('<a'), html);
+    assertInsideDialect(html, input);
+  }
+});
+
+test('an ordinal past the safe-integer range drops start', () => {
+  const html = markdownToSafeHtml('99999999999999999999. x');
+  assert.equal(html, '<ol dir="auto"><li dir="auto">x</li></ol>');
+  assert.match(
+    markdownToSafeHtml('9007199254740991. x'),
+    /<ol dir="auto" start="9007199254740991">/,
+  );
 });
 
 test('random markdown stays inside the dialect, block and inline', () => {
