@@ -41,12 +41,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Before anything that renders markdown. `markdownToSafeHtml()` ends in
-// `sanitizeHtmlSync()`, which falls back to escaping its own output when no
-// DOMPurify instance was initialised — so an uninitialised test process
-// measures a slide whose body shows literal `<p>` tags, which is not what the
-// server (server.js calls initSanitizer() at boot) renders. Measuring the wrong
-// document would make every metric below meaningless.
+// Before anything that renders author HTML. `sanitizeSlideHtmlSync()` falls
+// back to escaping when no DOMPurify instance was initialised — so an
+// uninitialised test process measures a slide whose body shows literal tags,
+// which is not what the server (server.js calls initSanitizer() at boot)
+// renders. Measuring the wrong document would make every metric below
+// meaningless.
 import { initSanitizer } from '../shared/sanitize.js';
 await initSanitizer();
 
