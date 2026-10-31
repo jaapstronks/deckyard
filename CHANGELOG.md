@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.95.0](https://github.com/jaapstronks/deckyard/compare/v1.94.0...v1.95.0) (2026-10-31)
+
+
+### Added
+
+* **capture:** launch video takes, terminal payoff and five app clips ([#1947](https://github.com/jaapstronks/deckyard/issues/1947)) ([40efebe](https://github.com/jaapstronks/deckyard/commit/40efebe027020bd166bb3ecfb287d9e9ed906fb1))
+* **library:** record library provenance on deck slides and notify owners of new revisions (B904) ([#1949](https://github.com/jaapstronks/deckyard/issues/1949)) ([7403fb8](https://github.com/jaapstronks/deckyard/commit/7403fb85544abc2c89aff7fa9cf95a8659df1cb2))
+
+
+### Fixed
+
+* count publication edition visits in deck analytics ([#1945](https://github.com/jaapstronks/deckyard/issues/1945)) ([206950f](https://github.com/jaapstronks/deckyard/commit/206950fd2d5c07ec2c384f2530508f3c42eb9b8c))
+
 ## [1.94.0](https://github.com/jaapstronks/deckyard/compare/v1.93.1...v1.94.0) (2026-10-31)
 
 
