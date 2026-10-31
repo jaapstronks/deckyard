@@ -167,6 +167,10 @@
       "forms": ["Herstel", "Herstellen"],
       "reason": "noun versus button — Herstel is the noun in editor.versions.reason.restore, the label that says why a version exists, next to Automatische snapshot and Backup (vóór herstel); Herstellen is the infinitive on the buttons editor.versions.restore, list.restore, list.bulk.restore and slideLibrary.action.restore."
     },
+    "nl  Update": {
+      "forms": ["Bijwerken", "Update"],
+      "reason": "different concepts — Bijwerken is the verb on editor.libraryUpdate.update (take a newer library revision into the slide, D223); Update is the noun on follow.interactionFeedbackUpdate."
+    },
     "no  Dark": {
       "forms": ["Mørk", "Mørke", "Mørkt"],
       "reason": "grammatical agreement — Mørkt agrees with utseende (neuter singular, the appearance.label group) in appearance.dark; Mørk agrees with farge, bakgrunn and tekstfarge (masculine/feminine singular) in editor.color.preset.dark, editor.slideField.background.option.dark and editor.slideField.slideBgText.option.dark; Mørke agrees with gradienter (plural) in stockMedia.gradients.tone.dark."

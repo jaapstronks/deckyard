@@ -95,6 +95,7 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     SLIDE_TYPES,
     renderSlideElement,
     getSlideCommentCount,
+    hasLibraryUpdate,
     getSlideLockInfo,
     isSlideLockedByOther,
     isSlideAuthorLocked,
@@ -212,6 +213,20 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
       ),
     });
     thumbMini.append(commentIndicator);
+  }
+
+  // A newer revision of the library item this slide copies (B904).
+  if (hasLibraryUpdate?.(s.id)) {
+    const label = t(
+      'editor.slideList.libraryUpdate',
+      'A newer version is in the library',
+    );
+    thumbMini.append(
+      h('div', { class: 'slide-library-update-indicator', title: label }, [
+        icon('refresh-cw', { size: 12 }),
+        h('span', { class: 'sr-only', text: label }),
+      ]),
+    );
   }
 
   // Visibility badge and toggle
