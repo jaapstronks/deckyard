@@ -7,6 +7,18 @@ entries are grouped per release rather than exhaustively listed.
 ## [1.94.0](https://github.com/jaapstronks/deckyard/compare/v1.93.1...v1.94.0) (2026-10-31)
 
 
+### ⚠ BREAKING CHANGES
+
+* Publishing now creates an immutable edition at `/p/{publicationId}/{version}`. The internal and v1 publish endpoints require `{expectedRevision, idempotencyKey}`; creation returns 201 and an idempotent replay returns 200. Update API callers before upgrading. Slug editing and preview regeneration endpoints have been removed. Unpublishing revokes every edition in the series; edition URLs then return 410.
+* Existing `/p/{hex8}-{slug}`, reader and `/embed/{hex8}` links return 404 until explicitly converted with `scripts/migrate-publications-to-editions.js`; after conversion they redirect permanently to edition 1, never the latest edition. Edition visits currently do not contribute to visitor analytics. The old embed SDK controls are unavailable on edition canvases.
+
+### Upgrade instructions
+
+1. Take and verify a restorable database backup before deploying. Startup migrations 103 and 104 add edition storage and revocations; migration 105 adds legacy links, drops `presentations.published` and removes `settings.ogPreview`. The old publication index remains for conversion. Migration down functions are development rollback helpers, not a production restore strategy.
+2. Deploy the release. On runner installations export and register this release's renderer bundle and require a green `renderer-runner` doctor check before publishing. Keep older renderer registrations for existing editions. See `docs/ops/renderer-runner.md`.
+3. Run `node scripts/migrate-publications-to-editions.js` without `--apply` and preserve the dry-run report. Review every refusal, including missing or trashed sources and publication gate failures; do not automatically apply an unexplained report. Old links remain unavailable until conversion.
+4. After review, run the same script with `--apply`, preserve its report and test the old links. The conversion is resumable and idempotent. Then run `node scripts/sweep-published-previews.js --check`, review it, and use `--apply` to remove obsolete generated previews.
+
 ### Added
 
 * **publishing:** publish editions and point old links at their first (T1.5) ([#1943](https://github.com/jaapstronks/deckyard/issues/1943)) ([1c3231f](https://github.com/jaapstronks/deckyard/commit/1c3231f5c5860dbb3edfbd07a86f1447873f7986))
