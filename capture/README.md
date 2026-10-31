@@ -439,15 +439,31 @@ export default {
 };
 ```
 
-Two takes exist, both layered on a marketing shot:
+Thirteen takes exist. The first two were the factory's acceptance clips;
+the other eleven are the launch video's (deckyard-planning
+`briefs/launch-video-script.md`), with the body of the app clips in
+`recipes/_launch-takes.js` and one thin module per language:
 
-| take                 | claim                      | built on             |
-| -------------------- | -------------------------- | -------------------- |
-| `form-drives-slide`  | a slide is a form          | `editor-form-nl`     |
-| `agent-fills-fields` | your agent builds the deck | `ai-fills-fields-nl` |
+| take                      | claim                               | built on                                  |
+| ------------------------- | ----------------------------------- | ----------------------------------------- |
+| `form-drives-slide`       | a slide is a form                   | `editor-form-nl`                          |
+| `agent-fills-fields`      | your agent builds the deck          | `ai-fills-fields-nl`                      |
+| `editor-tour-{nl,en}`     | presentations on your own server    | `editor-canvas-{nl,en}`                   |
+| `theme-colours-{nl,en}`   | your brand, as a theme              | the theme editor's Create flow            |
+| `poll-votes-{nl,en}`      | the room follows along and votes    | the poll-live session, votes cast live    |
+| `comment-resolve-{nl,en}` | review without the email thread     | `comments-{nl,en}`                        |
+| `presenter-notes-{nl,en}` | notes where only you see them       | the presenter console, on the KPI slide   |
+| `compose-up`              | on your own server, in five minutes | a drawn terminal, containers from compose |
 
-The first is a typing clip, the second a click clip, so between them the
-recorder's whole vocabulary is exercised by something that ships.
+The launch takes are shot in both languages because the video ships in both,
+and the composition only swaps the overlay: English words over Dutch app
+chrome would be the one thing in the English video that is not English. Two
+of them do something no shot needs. `poll-votes-*` casts the votes the poll
+shot seeds _while it records_, each at a fixed moment through the public vote
+route, so the bars grow because an audience moved them. `compose-up` films no
+app at all: it draws a terminal on `about:blank` and prints the
+`container_name`s of `docker-compose.yml`, so a renamed service changes the
+take at its next re-record (the recipe hash does not see the compose file).
 
 `npm run capture -- --video form-drives-slide` writes two files under
 `--out` (default `../deckyard-video`):

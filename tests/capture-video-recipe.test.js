@@ -24,13 +24,27 @@ import {
 import { RECIPES } from '../capture/recipes/index.js';
 import formDrivesSlide from '../capture/recipes/form-drives-slide.js';
 import agentFillsFields from '../capture/recipes/agent-fills-fields.js';
-import { editorFormShot } from '../capture/recipes/_marketing-shots.js';
-import { aiFillsFieldsShot } from '../capture/recipes/_features-shots.js';
+import {
+  editorCanvasShot,
+  editorFormShot,
+} from '../capture/recipes/_marketing-shots.js';
+import {
+  aiFillsFieldsShot,
+  commentsShot,
+} from '../capture/recipes/_features-shots.js';
+import {
+  commentResolveTake,
+  editorTourTake,
+} from '../capture/recipes/_launch-takes.js';
 
 /** Every take, with the shot it is layered on. */
 const TAKES = [
   { take: formDrivesSlide, shot: editorFormShot('nl') },
   { take: agentFillsFields, shot: aiFillsFieldsShot('nl') },
+  ...['nl', 'en'].flatMap((lang) => [
+    { take: editorTourTake(lang), shot: editorCanvasShot(lang) },
+    { take: commentResolveTake(lang), shot: commentsShot(lang) },
+  ]),
 ];
 
 /**
