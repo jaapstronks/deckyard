@@ -58,6 +58,20 @@ import aiFillsFieldsEn from './ai-fills-fields-en.js';
 // recipes.
 import formDrivesSlide from './form-drives-slide.js';
 import agentFillsFields from './agent-fills-fields.js';
+import composeUp from './compose-up.js';
+
+// The launch video's takes (deckyard-planning `briefs/launch-video-script.md`):
+// five app clips per language, bodies in `_launch-takes.js`.
+import editorTourNl from './editor-tour-nl.js';
+import editorTourEn from './editor-tour-en.js';
+import themeColoursNl from './theme-colours-nl.js';
+import themeColoursEn from './theme-colours-en.js';
+import pollVotesNl from './poll-votes-nl.js';
+import pollVotesEn from './poll-votes-en.js';
+import commentResolveNl from './comment-resolve-nl.js';
+import commentResolveEn from './comment-resolve-en.js';
+import presenterNotesNl from './presenter-notes-nl.js';
+import presenterNotesEn from './presenter-notes-en.js';
 
 /** @type {Array<import('../lib/recipe.js').Recipe | import('../lib/recipe.js').VideoRecipe>} */
 export const RECIPES = [
@@ -100,6 +114,17 @@ export const RECIPES = [
   aiFillsFieldsEn,
   formDrivesSlide,
   agentFillsFields,
+  composeUp,
+  editorTourNl,
+  editorTourEn,
+  themeColoursNl,
+  themeColoursEn,
+  pollVotesNl,
+  pollVotesEn,
+  commentResolveNl,
+  commentResolveEn,
+  presenterNotesNl,
+  presenterNotesEn,
 ];
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));

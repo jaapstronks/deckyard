@@ -133,28 +133,42 @@ export async function seedPollVotes(base, { deckId, slideId, votes }) {
   let cast = 0;
   for (let option = 0; option < votes.length; option += 1) {
     for (let n = 0; n < votes[option]; n += 1) {
-      const res = await fetch(
-        `${base}/api/follow/${deckId}/interactions/${slideId}/vote`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Cookie: `sb_int=${randomUUID()}`,
-          },
-          body: JSON.stringify({ optionIndex: option }),
-        },
-      );
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(
-          `Vote ${cast + 1} (option ${option}) failed: ${res.status} ${text}`.trim(),
-        );
-      }
+      await castPollVote(base, { deckId, slideId, optionIndex: option });
       cast += 1;
     }
   }
   await waitForPollTotal(base, { deckId, slideId, total: cast });
   return cast;
+}
+
+/**
+ * Cast one vote through the public vote route, as one fresh device.
+ *
+ * The single-vote step of {@link seedPollVotes}, exported for a take that
+ * has to show votes *arriving*: it casts them one by one while it records.
+ *
+ * @param {string} base Dev server base URL.
+ * @param {{deckId: string, slideId: string, optionIndex: number}} vote
+ * @returns {Promise<void>}
+ */
+export async function castPollVote(base, { deckId, slideId, optionIndex }) {
+  const res = await fetch(
+    `${base}/api/follow/${deckId}/interactions/${slideId}/vote`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `sb_int=${randomUUID()}`,
+      },
+      body: JSON.stringify({ optionIndex }),
+    },
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(
+      `Vote (option ${optionIndex}) failed: ${res.status} ${text}`.trim(),
+    );
+  }
 }
 
 /**

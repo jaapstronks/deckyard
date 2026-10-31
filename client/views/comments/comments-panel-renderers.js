@@ -331,7 +331,7 @@ export function createCommentRenderers({
       if (isOwner() && !isReply) {
         if (comment.status === 'open') {
           const resolveBtn = h('button', {
-            class: 'btn btn-xs btn-secondary',
+            class: 'btn btn-xs btn-secondary comment-resolve',
             type: 'button',
             text: t('comments.resolve', 'Resolve'),
             onclick: () => onResolve?.(comment.id),
