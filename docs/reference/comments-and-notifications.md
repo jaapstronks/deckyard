@@ -102,7 +102,7 @@ or collaborate on, you get one bundled bell notification, not a ping per slide.
     `(recipient, deck, actor)` created inside the window
     (`findUnreadDeckActivityNotification`). Found → bump the count, refresh
     the title, move it back to the top and re-mark unread
-    (`refreshDeckActivityNotification`); the window extends on each edit. Not
+    (`refreshCoalescedNotification`); the window extends on each edit. Not
     found → one new row. So an actor making 40 edits in an hour yields **one**
     unread notification ("_Riley_ added 40 slides to _Deck_"), not 40. No job
     or queue: the coalescing happens on the write itself.
@@ -121,6 +121,33 @@ or collaborate on, you get one bundled bell notification, not a ping per slide.
 
 Copy note: the only trigger today is slide-adds, so the title reads "added N
 slides"; a future edit trigger would generalise it.
+
+## Library revisions in your deck
+
+A slide inserted from the slide library is a copy that remembers its item and
+revision (`slide.libraryRef`, `shared/slide-library/library-ref.js`). When the
+item's maker saves a new revision, the owner of every deck with an older copy
+hears about it; the deck itself never changes until its owner updates it.
+
+- **Index**: `slide_library_links` (migration 106) holds one row per linked
+  slide, rebuilt from the deck JSON on every deck write that names slides
+  (`server/storage/slide-library-links.js`). The JSON is the truth; the table
+  is how an item save finds its decks without reading every deck.
+- **Trigger**: the library PATCH routes, when the write raised the item's
+  revision (`name`, `description` or `content`, D175), call
+  `notifyLibraryItemRevision` (`server/services/library-revision-notifications.js`)
+  fire-and-forget. A favorite or trash toggle notifies nobody.
+- **Recipients**: the deck owner only; the actor never; and only an owner who
+  may read the item (an organization-shelf item, or their own personal one),
+  since the ref is written by whoever edits the deck. Decks already at the
+  revision, trashed, or that ignored it (`libraryRef.ignoredRevision`) are
+  skipped in the query.
+- **Bundling**: one unread, unarchived `library_update` row per
+  `(owner, deck, item)` (`findUnreadLibraryUpdateNotification`); a later
+  revision refreshes it with `refreshCoalescedNotification`. No time window:
+  the row stays one until it is read.
+- Clicking opens the deck on the first linked slide (`/app/<id>?slideId=…`).
+  `data` carries `{ itemId, itemName, revision, presentationTitle, slideIds }`.
 
 ## The comment composer
 

@@ -35,6 +35,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { createLogger } from '../../utils/logger.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
+import { notifyLibraryItemRevision } from '../../services/library-revision-notifications.js';
 import { parseIfMatchRevision } from './presentations/helpers.js';
 import { sharingEnabled } from '../../config/sandbox.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
@@ -153,6 +154,27 @@ function patchOptions(req, res, body) {
 
 function actorEmail(authedUser) {
   return normalizeEmail(authedUser?.email);
+}
+
+/**
+ * After a PATCH that raised the item's revision, tell the owners of decks
+ * with an older linked copy (B904). A favorite or a trash toggle leaves the
+ * revision alone and notifies nobody.
+ */
+function announceRevision(storageScope, authedUser, opts, item) {
+  if (
+    !Number.isInteger(opts?.expectedRevision) ||
+    item?.revision !== opts.expectedRevision + 1
+  )
+    return;
+  fireAndForget(
+    notifyLibraryItemRevision({
+      scope: storageScope,
+      item,
+      actor: { email: authedUser?.email, name: authedUser?.name },
+    }),
+    'library revision notifications',
+  );
 }
 
 // GET /api/slide-library/usage - Per-user usage ("new to you" tracking):
@@ -326,6 +348,7 @@ async function handlePersonalUpdate(
     ...opts,
   });
   if (!r.ok) return mutationError(res, r);
+  announceRevision(storageScope, authedUser, opts, r.item);
   serveJson(res, 200, { ...r.item, canEdit: true });
   return true;
 }
@@ -433,6 +456,7 @@ async function handleOrganizationUpdate(
     allowEdit: (item) => canEditOrganizationItem(authedUser, item),
   });
   if (!r.ok) return mutationError(res, r);
+  announceRevision(storageScope, authedUser, opts, r.item);
   serveJson(res, 200, {
     ...r.item,
     canEdit: canEditOrganizationItem(authedUser, r.item),
