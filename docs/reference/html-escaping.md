@@ -44,15 +44,15 @@ a quote. Those values are **charset-validated** instead — see
 
 ### The precondition: a DOMPurify instance must exist
 
-The sync sanitizers (`sanitizeHtmlSync`, `sanitizeSlideHtmlSync`,
-`sanitizeInlineSync`; on the render path that is author HTML of a
-database-backed slide type, not markdown) cannot load DOMPurify themselves — loading it is async. In
-the browser the page loads the vendored bundle (`client/index.html` →
+The slide sanitizer (`sanitizeSlideHtmlSync()` in `shared/sanitize.js`, for
+author HTML of a database-backed slide type, not markdown) cannot load DOMPurify
+itself — loading it is async. It is the module's only sanitizer; markdown
+needs no pass. In the browser the page loads the vendored bundle (`client/index.html` →
 `client/app.js`). **In Node every process that can reach a render path must call
 `initSanitizer()` at boot** — `server/server.js` and `server/mcp/index.js` both
 do.
 
-Without it the sanitizers fall back to escaping. That is safe (nothing unsafe is
+Without it the sanitizer falls back to escaping. That is safe (nothing unsafe is
 injected) but wrong-looking: the slide renders its own markup as visible text.
 The fallback warns once per process so the miss is diagnosable from a log; the
 uninitialized path is pinned by `tests/sanitizer-fallback-path.test.js`.
@@ -128,8 +128,8 @@ broadening the expression expires the entry rather than silently inheriting its
 verdict.
 
 Adding client code: prefer `h()` and you need no entry at all. If it must be
-`innerHTML`, route the value through `escapeHtml()`, `markdownToSafeHtml()` or
-`sanitizeHtml()` — not a fourth mechanism — and add an entry stating which.
+`innerHTML`, route the value through `escapeHtml()` or `markdownToSafeHtml()` —
+not a third mechanism — and add an entry stating which.
 
 ### The one genuine XSS that was fixed
 
