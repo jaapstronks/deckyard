@@ -127,13 +127,7 @@ export const JSONB_COLUMNS = {
   // Migration 058: an admin's template override is a jsonb bag holding only
   // the fields they actually changed.
   email_templates: ['fields'],
-  presentations: [
-    'settings',
-    'i18n',
-    'slides',
-    'sandbox',
-    'extensions',
-  ],
+  presentations: ['settings', 'i18n', 'slides', 'sandbox', 'extensions'],
   presentation_versions: ['presentation_data'],
   present_sessions: ['state', 'follow_codes'],
   // Migration 061: `texts` is the per-language map of a question.
