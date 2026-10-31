@@ -238,7 +238,7 @@ export class S3Provider extends MediaProvider {
     return { key, size: buffer.length, contentType };
   }
 
-  async readFile(key) {
+  async readFile(key, { maxBytes, timeoutMs } = {}) {
     const client = await this._getClient();
     try {
       const result = await client.send(
@@ -246,7 +246,25 @@ export class S3Provider extends MediaProvider {
           Bucket: this.config.bucket,
           Key: key,
         }),
+        timeoutMs ? { abortSignal: AbortSignal.timeout(timeoutMs) } : undefined,
       );
+      if (maxBytes !== undefined) {
+        try {
+          if (result.ContentLength > maxBytes)
+            throw new Error('Media read exceeds byte limit');
+          const chunks = [];
+          let size = 0;
+          for await (const chunk of result.Body) {
+            size += chunk.length;
+            if (size > maxBytes)
+              throw new Error('Media read exceeds byte limit');
+            chunks.push(Buffer.from(chunk));
+          }
+          return Buffer.concat(chunks, size);
+        } finally {
+          result.Body?.destroy();
+        }
+      }
       return Buffer.from(await result.Body.transformToByteArray());
     } catch (err) {
       if (

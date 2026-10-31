@@ -83,9 +83,11 @@ export class MediaProvider {
   /**
    * Read a stored object's bytes by its storage key, public or private.
    * @param {string} key
+   * @param {{maxBytes?: number, timeoutMs?: number}} [options] - S3 reads may
+   *   bound the response stream and request time (edition preparation).
    * @returns {Promise<Buffer|null>} null when there is no such object
    */
-  async readFile(key) {
+  async readFile(key, options) {
     throw new Error('Not implemented');
   }
 
