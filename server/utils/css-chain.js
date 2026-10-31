@@ -50,7 +50,7 @@ const cache = new Map();
  * Read and concatenate `custom/styles/*.css`, in filename order.
  *
  * Synchronous on purpose: the chain builder is called from sync template
- * renderers (`renderEmbedHtmlDocument`) as well as async export builders, and
+ * renderers as well as async export builders, and
  * one loader with one cache beats two that can drift. The result is cached per
  * directory, so a fork restarts the server after editing its CSS — the same
  * deal as `custom/slide-types/`.

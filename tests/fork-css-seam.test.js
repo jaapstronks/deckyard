@@ -231,15 +231,6 @@ const CASCADE_DUELS = {
     expect: /^7px$/,
     core: 'the print document CSS sets `body { margin: 0 }`',
   },
-  'utils/embed-html': {
-    // The embed page <link>s core CSS from the server, so under setContent
-    // those 404 — deliberately: the duel here is against the embed shell's own
-    // inline `body { background: #000 }`, which is in the chain either way.
-    selector: 'body',
-    prop: 'background-color',
-    expect: /^rgb\(1, 2, 3\)$/,
-    core: 'the embed shell sets `body { background: #000 }`',
-  },
   'export/reader': {
     // The reflow chain. Its own layer is the only thing above the seam here,
     // which is exactly the point: one layer or seven, the seam still lands last.

@@ -78,12 +78,7 @@ const RULES = [
   {
     name: 'clamp is declared only in shared/number-utils.js',
     re: /\b(?:function\s+clamp\b|(?:const|let|var)\s+clamp\s*=)/,
-    owners: [
-      'shared/number-utils.js',
-      // Served standalone to third-party pages: this file has no imports by
-      // design (see its header), so it keeps its own copy.
-      'client/embed-sdk.js',
-    ],
+    owners: ['shared/number-utils.js'],
     fix: 'import clamp from shared/number-utils.js',
   },
 ];

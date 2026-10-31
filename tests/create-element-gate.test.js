@@ -7,9 +7,7 @@
  * five times, whose copies had drifted on the `id` the dedupe hangs on. This
  * file pins the ESLint rule that keeps the second form from growing back.
  *
- * Two files are exempt: `client/lib/dom/index.js`, where the factory is implemented,
- * and `client/embed-sdk.js`, the standalone IIFE served to third-party pages,
- * which has no module graph to import from.
+ * Only `client/lib/dom/index.js`, where the factory is implemented, is exempt.
  *
  * Run with: node --test tests/create-element-gate.test.js
  */
@@ -78,9 +76,9 @@ test('gate: a `createElement` on something that is not `document` is untouched',
   assert.deepEqual(messages, []);
 });
 
-test('gate: exactly two files are exempt', async () => {
+test('gate: only the DOM factory is exempt', async () => {
   const code = "export const f = () => document.createElement('div');\n";
-  for (const file of ['client/lib/dom/index.js', 'client/embed-sdk.js']) {
+  for (const file of ['client/lib/dom/index.js']) {
     assert.deepEqual(await lintProbe(code, file), [], `${file} must be exempt`);
   }
   for (const file of [

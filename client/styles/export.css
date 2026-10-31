@@ -9,12 +9,11 @@
    selectors appear in an exported deck's DOM; they only shipped because
    loadExportCssBundle inlined app.css wholesale.
 
-   Like embed.css (the iframe viewer), a deck viewer needs only tokens,
-   primitives and slides.css. The export DOM is a superset of the embed DOM:
-   it has a full presenter topbar, prev/next/loop nav and the pdf/png/print
+   A deck viewer needs only tokens, primitives and slides.css. The export DOM
+   has a full presenter topbar, prev/next/loop nav and the pdf/png/print
    toolbars, which render the `.btn` family, `.form-input` (the PNG toolbar's
    scale picker), `.row` and the language switch. All of those come from
-   shared/primitives.css, the one definition app.css and embed.css import too
+   shared/primitives.css, the one definition app.css imports too
    (D266); this file keeps no copy of them.
 
    The presenter chrome itself (.presenter-*, .deck, .deck-slide, progress

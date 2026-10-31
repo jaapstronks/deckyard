@@ -14,11 +14,6 @@
       "count": 4
     }
   },
-  "client/embed-sdk.js": {
-    "no-restricted-syntax": {
-      "count": 6
-    }
-  },
   "client/lib/api.js": {
     "no-useless-assignment": {
       "count": 1
@@ -1072,11 +1067,6 @@
   },
   "server/utils/debug-log.js": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "server/utils/embed-html/index.js": {
-    "no-useless-assignment": {
       "count": 1
     }
   },

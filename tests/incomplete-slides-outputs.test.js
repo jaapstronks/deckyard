@@ -39,7 +39,6 @@ import { McpServer } from '../server/mcp/protocol.js';
 import { registerTools } from '../server/mcp/tools.js';
 import { buildStandaloneHtml } from '../server/export/html.js';
 import { buildReaderHtml } from '../server/export/reader.js';
-import { buildEmbedHtml } from '../server/utils/embed-html/index.js';
 import { seedThemeConfig } from './helpers/theme-seed.js';
 
 const MARK = 'INCOMPLETE-B590';
@@ -269,7 +268,7 @@ test('a view-only read, a share link and follow-along leave it out in every lang
   }
 });
 
-test('published canvas, reader and embed leave it out', async () => {
+test('published canvas and reader leave it out', async () => {
   const theme = await seedThemeConfig('brand');
   const pres = structuredClone(fixture.row);
   for (const html of [
@@ -278,7 +277,6 @@ test('published canvas, reader and embed leave it out', async () => {
       theme,
     }),
     buildReaderHtml(process.cwd(), pres, { context: 'published' }),
-    await buildEmbedHtml(process.cwd(), pres, { theme }),
   ]) {
     absent(html, [MARK], 'published');
     assert.ok(html.includes('VISIBLE-B769'));

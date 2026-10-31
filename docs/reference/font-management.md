@@ -257,8 +257,6 @@ A second `--apply` does nothing.
 | `server/routes/static/managed-fonts.js`       | `GET /fonts/managed/<file>` — serves a private variant                                          |
 | `scripts/privatize-font-variants.js`          | One-time move of variants uploaded as public into private storage                               |
 | `server/export/html.js`                       | Standalone HTML export (injects external font tags)                                             |
-| `server/utils/embed-html/index.js`            | Embed HTML builder (injects external font tags)                                                 |
-| `server/utils/embed-html/template.js`         | Embed HTML template (renders external font HTML in `<head>`)                                    |
 | `shared/theme-fonts.js`                       | Curated fonts list (single source of truth for client + server)                                 |
 
 ### Key Client Files
@@ -282,10 +280,7 @@ A second `--apply` does nothing.
 - Uploaded fonts: read through the media provider, base64-encoded into `@font-face` rules (via `embed-fonts.js`)
 - External fonts: `<link>` and `<script>` tags injected into `<head>` with URL safety checks
 
-**Embed HTML** (`server/utils/embed-html/`):
-
-- External fonts: same `<link>`/`<script>` injection as standalone
-- Uploaded fonts: served by `/fonts/managed/` on the same origin (embeds load from the server, not offline)
+**Edition embed**: the frozen canvas carries the edition's bundled fonts, like the edition canvas view. See [publication-editions.md](publication-editions.md).
 
 **PDF/PNG** (Puppeteer):
 

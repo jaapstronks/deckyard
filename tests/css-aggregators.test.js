@@ -191,11 +191,7 @@ test('the viewer layer loads in app.css and export.css only, before slides.css (
       exp.indexOf('shared/primitives.css') >= 0,
     'export.css imports viewer.css after shared/primitives.css',
   );
-  // The embed iframe and the slide chain carry no presenter shell.
-  assert.ok(
-    !importsOf('embed.css').includes(viewer),
-    'embed.css has no viewer layer',
-  );
+  // The slide chain carries no presenter shell.
   assert.ok(
     !importsOf(ROOT_AGGREGATOR).some((p) => p.includes(viewer)),
     'slides.css (and so the MCP preview) has no viewer layer',

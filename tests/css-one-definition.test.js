@@ -11,7 +11,7 @@
  *      top-level rule's list) is defined in two files of `client/styles/**`;
  *   2. a primitive every bundle renders (the `.btn` family, the `.form-input`
  *      ladder, `.row`, the segmented control) is defined only in
- *      `shared/primitives.css`, which `app.css`, `export.css` and `embed.css`
+ *      `shared/primitives.css`, which `app.css` and `export.css`
  *      all import. A leaf file, or a bundle entry, may scope an override
  *      (`.ps-embed-controls .btn`); it may not define the primitive, which is
  *      how `.btn-xs` came to exist twice with two sizes.

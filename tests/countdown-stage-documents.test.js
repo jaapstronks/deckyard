@@ -1,5 +1,5 @@
 /**
- * Countdown slides tick in the published deck, the download and the embed.
+ * Countdown slides tick in the standalone canvas document.
  *
  * The published page `/p/:id-:slug` is the standalone export. It carried slide
  * navigation, video and stage scaling, but no countdown runtime: a timer slide
@@ -10,7 +10,7 @@
  *   1. **One source.** The stage documents inline the module the app runs,
  *      `client/lib/slide-runtime/countdown-runtime.js`; no render path keeps a
  *      server-side copy of it.
- *   2. **Stage documents only.** The standalone export and the embed show one
+ *   2. **Stage documents only.** The standalone export shows one
  *      slide at a time and get the runtime when the deck has a countdown. The
  *      static sheets (print, PDF, PNG, previews) never do, and asking the chain
  *      for it on a `none` document throws.
@@ -46,7 +46,7 @@ const repoRoot = path.resolve(
 await initSanitizer();
 after(closePuppeteerBrowser);
 
-const STAGE_PATHS = new Set(['export/html', 'utils/embed-html']);
+const STAGE_PATHS = new Set(['export/html']);
 
 const countdown = (id, title) => ({
   id,

@@ -126,8 +126,7 @@ const textCache = new Map();
  * Read one vendored file, cached.
  *
  * Synchronous for the same reason `readCustomStylesCss()` is: this is called
- * from a sync template renderer (`renderEmbedHtmlDocument`) as well as from
- * async export builders, and one loader with one cache beats two that drift.
+ * from synchronous consumers as well as from async export builders, and one loader with one cache beats two that drift.
  *
  * @param {string} rel Path below `client/vendor/`
  * @returns {string}

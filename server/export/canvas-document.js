@@ -661,8 +661,7 @@ export async function renderCanvasDocument(
       // ?ui=min hides the presenter chrome, ?ui=strip puts one toolbar below
       // the stage (see the .ui-min and .ui-strip rules above). Read before the
       // shell renders so an embedded deck never flashes a topbar it is about
-      // to drop. Same param name and meaning as buildEmbedHtml's ui option,
-      // so the two runtimes keep one vocabulary.
+      // to drop.
       (function () {
         var ui = 'default';
         try {

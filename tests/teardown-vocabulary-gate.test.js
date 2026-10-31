@@ -26,15 +26,12 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const GATE_MESSAGE = /One teardown word and one element word/;
-// The one file whose handle is a public contract for third-party embedders.
-const EXEMPT = 'client/embed-sdk.js';
 
 async function lintProbe(code, relPath) {
   const { ESLint } = await import('eslint');
@@ -100,14 +97,7 @@ test('gate: `close` and `stop` are deliberately not gated', async () => {
   assert.deepEqual(messages, []);
 });
 
-test('gate: the exemption is exactly one file, and it is not stale', async () => {
-  assert.deepEqual(
-    await lintProbe('export const f = () => ({ destroy() {} });\n', EXEMPT),
-    [],
-    `${EXEMPT} carries the public embed handle and must stay exempt`,
-  );
-  // dom.js is the other file exempted from the createElement gate — it must
-  // NOT have inherited this exemption.
+test('gate: the DOM factory follows the teardown vocabulary too', async () => {
   assert.equal(
     (
       await lintProbe(
@@ -116,14 +106,6 @@ test('gate: the exemption is exactly one file, and it is not stale', async () =>
       )
     ).length,
     1,
-    'client/lib/dom/index.js must not be exempt from the teardown gate',
-  );
-  // An exemption for a key that no longer exists is dead config.
-  const sdk = fs.readFileSync(path.join(repoRoot, EXEMPT), 'utf8');
-  assert.match(
-    sdk,
-    /\n\s{6}destroy\(\) \{/,
-    `${EXEMPT} must still expose destroy() — otherwise the exemption is stale`,
   );
 });
 
