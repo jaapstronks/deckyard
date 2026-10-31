@@ -131,7 +131,6 @@ export const JSONB_COLUMNS = {
     'settings',
     'i18n',
     'slides',
-    'published',
     'sandbox',
     'extensions',
   ],
