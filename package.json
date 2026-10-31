@@ -66,9 +66,9 @@
     "hls.js": "^1.7.3",
     "jsdom": "^30.1.3",
     "jszip": "^3.10.2",
-    "katex": "0.19.0",
-    "kysely": "^0.29.6",
-    "lucide-static": "^1.59.0",
+    "katex": "0.19.1",
+    "kysely": "^0.29.7",
+    "lucide-static": "^1.63.0",
     "mammoth": "^1.13.0",
     "nodemailer": "^10.2.1",
     "openid-client": "^6.8.8",
@@ -81,14 +81,14 @@
     "zod": "^4.6.7"
   },
   "optionalDependencies": {
-    "@aws-sdk/client-s3": "^3.1152.0",
-    "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "@aws-sdk/client-s3": "^3.1158.0",
+    "@aws-sdk/s3-request-presigner": "^3.1158.0",
     "@hocuspocus/server": "^4.7.1",
-    "bullmq": "^6.3.16",
-    "crossws": "^0.4.15",
+    "bullmq": "^6.5.0",
+    "crossws": "^0.4.17",
     "ioredis": "^6.0.0",
     "pptxgenjs": "^4.0.1",
-    "puppeteer-core": "^25.14.0"
+    "puppeteer-core": "^25.16.0"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
