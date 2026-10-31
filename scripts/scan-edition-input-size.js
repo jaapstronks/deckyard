@@ -144,6 +144,8 @@ const mib = (n) => `${(n / 1024 / 1024).toFixed(2)} MiB`;
 
 async function main() {
   const { values } = parseArgs({ options: { json: { type: 'boolean' } } });
+  // Provider initialization logs through console.log; stdout is the JSON report.
+  if (values.json) console.log = console.error;
   await loadDotEnv(REPO_ROOT);
   await initializeMediaProvider(REPO_ROOT);
   const db = await createMigrationDb();
