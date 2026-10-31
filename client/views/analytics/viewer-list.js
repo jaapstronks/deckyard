@@ -257,6 +257,12 @@ function createSessionRow(session) {
         })
       : '-';
 
+  // Edition visits carry the canonical series/version in the existing source id.
+  const editionVersion = ['published', 'embed'].includes(session.sourceType)
+    ? session.sourceId?.match(/^[0-9a-f-]{36}\/([1-9][0-9]*)$/i)?.[1]
+    : null;
+  const sourceLabel = getSourceLabel(session.sourceType);
+
   // Time display
   const when = session.startedAt ? formatRelativeTime(session.startedAt) : '-';
 
@@ -285,7 +291,13 @@ function createSessionRow(session) {
       [
         h('span', {
           class: `analytics-source-badge analytics-source-${session.sourceType}`,
-          text: getSourceLabel(session.sourceType),
+          text: editionVersion
+            ? t('analytics.editionSource', '{source} · v{version}', {
+                source: sourceLabel,
+                version: editionVersion,
+              })
+            : sourceLabel,
+          title: editionVersion ? session.sourceId : null,
         }),
       ],
     ),

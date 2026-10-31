@@ -110,6 +110,8 @@ export function getSourceLabel(type) {
       return t('analytics.sourceShareLink', 'Share Link');
     case 'follow':
       return t('analytics.sourceFollow', 'Follow');
+    case 'published':
+      return t('analytics.sourcePublished', 'Published');
     case 'embed':
       return t('analytics.sourceEmbed', 'Embed');
     default:

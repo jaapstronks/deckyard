@@ -551,6 +551,34 @@ export async function getPublicEdition(
 }
 
 /**
+ * Internal analytics destination for a served edition. The series owns the
+ * optional source reference; neither the frozen input nor the visitor does.
+ * No source identity is added to the public document or manifest.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} publicationId
+ * @returns {Promise<{presentationId: string, organizationId: string}|null>}
+ */
+export async function getEditionAnalyticsSource(scope, publicationId) {
+  const ctx = resolveScope(scope, 'getEditionAnalyticsSource', {
+    allowCrossOrganization: true,
+  });
+  let query = getDb()
+    .selectFrom('publications')
+    .select(['presentation_id', 'organization_id'])
+    .where('id', '=', publicationId);
+  if (ctx.organizationId) {
+    query = query.where('organization_id', '=', ctx.organizationId);
+  }
+  const row = await query.executeTakeFirst();
+  return row?.presentation_id
+    ? {
+        presentationId: row.presentation_id,
+        organizationId: row.organization_id,
+      }
+    : null;
+}
+
+/**
  * Revoke one edition of a series in the scope's organization. From then on
  * every public surface of it answers 410 (`docs/reference/publication-editions.md`
  * § Revocation); other editions of the series are not touched.

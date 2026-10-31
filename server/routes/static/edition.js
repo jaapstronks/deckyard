@@ -18,6 +18,8 @@ import {
 } from '../../services/public-edition.js';
 import { createLogger } from '../../utils/logger.js';
 import { countInstanceHealth } from '../../storage/instance-health.js';
+import { recordEditionVisit } from '../../services/edition-analytics.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 
 const log = createLogger('edition');
 
@@ -137,7 +139,12 @@ function viewHandler(view, { frameable = false } = {}) {
     countInstanceHealth([
       { axis: 'surface', key: frameable ? 'embed' : 'published' },
     ]);
-    return sendDocument(ctx.res, views[view], { frameable });
+    const handled = sendDocument(ctx.res, views[view], { frameable });
+    fireAndForget(
+      recordEditionVisit(ctx.repoRoot, edition, { embedded: frameable }),
+      'edition visit analytics',
+    );
+    return handled;
   };
 }
 
