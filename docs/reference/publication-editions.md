@@ -2,7 +2,7 @@
 
 How a deck becomes an immutable edition, and what the database promises about it. The bytes an edition stores are made by the edition-input preparer ([renderer-bundle.md § The edition input](renderer-bundle.md#the-edition-input)); this page is about keeping them.
 
-**Status:** the store, the service and the public read path exist. The publish routes still write `published_presentations` ([publishing.md](publishing.md)) and the old `/p/:id-:slug` links still read the deck; both move over to editions in a later step of this track, together with the authoring surface for revocation.
+**Status:** every publish makes an edition (T1.5). The internal and v1 publish routes call `publishEdition()`, unpublishing revokes the deck's editions, and the old `/p/:id-:slug` links redirect to the first edition the one-off conversion made of their deck. The flow around it (routes, feed, Public tab, conversion) is [publishing.md](publishing.md); an authoring surface for a single edition's revocation follows later (T1.6).
 
 ## Three records
 
@@ -18,20 +18,22 @@ Beside them:
 - `publication_edition_audit` records who published (`actor_user_id`, internal). It is a separate table because a user can be deleted and an edition row cannot be updated; the actor never enters the manifest.
 - `publication_staging` holds prepared bytes until their commit. It is never served.
 - `publication_edition_revocations` marks an edition as revoked (§ Revocation).
+- `publication_legacy_links` points an old eight-hex publish id at the first edition the conversion made of its deck (§ Old links).
 
 Restore versions (`presentation_versions`) are unrelated: an edition is never derived from one and is not subject to their retention.
 
 ## One publish
 
-`publishEdition()` in `server/services/publish-edition.js` takes a scope, an identity and `{presentationId, expectedRevision, idempotencyKey}`:
+`publishEdition()` in `server/services/publish-edition.js` takes a scope, an identity and `{presentationId, expectedRevision, idempotencyKey}`; `createEdition()` is the same from step 3 on, for a deck the caller already loaded (the conversion has no acting user):
 
 1. Sandbox refusal, then input validation.
-2. Load the deck for an actor with `write` access (`loadPresentationForActor`).
+2. Load the deck for an actor with `write` access (`loadPresentationForActor`). The caller's key is stored as `actor:<userId>:<key>`, so keys of two users never meet; the conversion's keys are `migration:<deckId>`.
 3. **Idempotency first.** If the organization already has an edition under this key, the same request (same deck, revision and destination, compared by `editionRequestHash()`) gets that edition back with `replayed: true`, even when the deck has moved on since. Any other request under the key is refused with `idempotency_key_reused` (409).
 4. A deck that is no longer at `expectedRevision` is refused with `conflict` (409) before anything is prepared.
-5. The existing publish gates (`assertSlidesComplete`, `assertImagesNamed`), then the installation's render bundle (`openCurrentRendererBundle`): without one there is nothing to publish with.
-6. `prepareEditionInput()` seals one snapshot of the deck; `stageEditionInput()` verifies the bytes against their manifest and stores them in staging.
+5. `prepareEdition()`: the existing publish gates (`assertSlidesComplete`, `assertImagesNamed`), then the installation's render bundle (`openCurrentRendererBundle`), without which there is nothing to publish with, then `prepareEditionInput()`, which seals one snapshot of the deck. It writes nothing; the conversion's dry run calls it alone.
+6. `stageEditionInput()` verifies the bytes against their manifest and stores them in staging.
 7. `commitEdition()` makes the edition in one transaction.
+8. `publishEdition()` only: a new edition (not a replay) fires the `presentation.published` webhook once, naming the edition by id, publication, version and manifest hash.
 
 ## The commit transaction
 
@@ -41,7 +43,7 @@ Restore versions (`presentation_versions`) are unrelated: an edition is never de
 2. Looks the idempotency key up again under the lock: the check that counts. A replay drops its staging row.
 3. Takes `last_version + 1`, copies the staged bytes into the edition inside the database (`INSERT … SELECT`, so the lock is held only for that copy), inserts the asset references, the audit row and the `local` delivery (`delivered`, receipt `{editionId, manifestHash}`), and deletes the staging row.
 
-A failure anywhere rolls back all of it, including a series created in the same transaction: no edition, no consumed number, the staging row kept. The same key used concurrently on two different decks is ordered by the unique index `(organization_id, idempotency_key)`; the loser is answered as a replay or a refusal, never a 500.
+A failure anywhere rolls back all of it, including a series created in the same transaction: no edition, no consumed number, the staging row kept. The same key used concurrently on two different decks is ordered by the unique index `(organization_id, idempotency_key)`; the loser is answered as a replay or a refusal, never a 500, and its staging row is deleted on the spot.
 
 There is no write addressed by publication id. Organization B can only reach a series through a deck of B, so it cannot append to a series of A; every storage function takes a storage scope, and only the staging sweep may run cross-organization.
 
@@ -59,17 +61,21 @@ An edition is public at `/p/{publicationId}/{version}`, served by `server/routes
 
 What each view reads, and what it never reads:
 
-- **Bytes and record only.** The canvas and reader are one call of `renderEditionInBundle(rendererHash, input)`: the stored input, plus two request values that are not stored. `canonicalUrl` is built from the edition record (`origin/p/{publicationId}/{version}`), never taken from the input, which leaves it empty because the number exists only once the edition is committed. `lang` is the version on screen, accepted only when the edition has that version (any other `?lang=` falls back to the edition's own language, so a crafted query cannot make the runner render views that do not exist). The deck, the theme store, the installation default, the slide-type registry and the upload store are not consulted.
+- **Bytes and record only.** The canvas and reader are one call of `renderEditionInBundle(rendererHash, input)`: the stored input, plus two request values that are not stored. `canonicalUrl` is built from the edition record (`origin/p/{publicationId}/{version}`, with the origin from `APP_URL`/`DOMAIN` when set and the request's only otherwise, so a forged `Host` header changes neither the address nor the cache entry), never taken from the input, which leaves it empty because the number exists only once the edition is committed. `lang` is the version on screen, accepted only when the edition has that version (any other `?lang=` falls back to the edition's own language, so a crafted query cannot make the runner render views that do not exist). The deck, the theme store, the installation default, the slide-type registry and the upload store are not consulted.
 - **The chrome is frozen too.** Canonical and alternate links, the Open Graph and Twitter card, the JSON-LD block, the language switch and the reader link are written by the render entry (`server/render/renderer-bundle/bundle/edition-chrome.js`) from the edition's title, description and address, with labels from the frozen slide copy. Prism and KaTeX are carried inline from the bundle rather than linked from the installation's `/client/vendor/`. The serving installation adds HTTP headers and nothing else; the one remaining reference to it is the icon SVGs the renderer itself emits ([renderer-bundle.md § Limits](renderer-bundle.md#limits)).
 - **No fallback.** An unknown `(publicationId, version)` is a 404, also when the id happens to be a deck's. A render the runner refuses or cannot do is an error (503 when unavailable, 500 otherwise), never the current renderer.
 
-Rendered HTML is a disposable derivative: an in-memory cache (64 views, 64 MiB) keyed by edition, language and canvas address, rebuilt from the same bytes when it is gone. Every response carries `Cache-Control: no-store`, so nothing in front of the server keeps a copy that revocation could not reach.
+Rendered HTML is a disposable derivative: an in-memory cache (64 views, 64 MiB) keyed by edition, language and canvas address, rebuilt from the same bytes when it is gone. The per-edition facts read from the input (languages, preview image) have their own cache, bounded the same way (256 editions, 64 MiB of image bytes). `/og` serves an image only under a plain `image/…` media type; anything else gets the installation's card. Every response carries `Cache-Control: no-store`, so nothing in front of the server keeps a copy that revocation could not reach.
 
 ## Revocation
 
-`revokeEdition(scope, publicationId, version)` records a revocation in `publication_edition_revocations` (migration 104): one row per edition, in the edition's organization, with the internal actor. An edition row itself cannot be updated, so revocation is not a column on it. Revoking twice keeps the first revocation; organization B cannot revoke an edition of A.
+`revokeEdition(scope, publicationId, version)` records a revocation in `publication_edition_revocations` (migration 104): one row per edition, in the edition's organization, with the internal actor. An edition row itself cannot be updated, so revocation is not a column on it. Revoking twice keeps the first revocation; organization B cannot revoke an edition of A. `revokeDeckEditions(scope, presentationId)` revokes every public edition of a deck's series at once: that is what unpublishing does.
 
-From then on every subresource of that edition answers 410 with a content-free tombstone (no title, no author, `noindex`, `no-store`). The check runs on every request before any cache is consulted and drops what is cached; `getPublicEdition()` does not even return the bytes of a revoked edition, so a caller that forgets to check cannot serve them. A render that was in flight when the revocation landed is not cached. Other editions of the series are served as before. Wiping the bytes of a revoked edition is a separate, later operation; who may revoke is decided by the authoring service that will call this.
+From then on every subresource of that edition answers 410 with a content-free tombstone (no title, no author, `noindex`, `no-store`). The check runs on every request before any cache is consulted and drops what is cached; `getPublicEdition()` does not even return the bytes of a revoked edition, so a caller that forgets to check cannot serve them. A render that was in flight when the revocation landed is not cached. Other editions of the series are served as before. Wiping the bytes of a revoked edition is a separate, later operation. Who may revoke is the publish service's question: whoever may write the deck (`unpublishPresentation()`).
+
+## Old links
+
+Before editions a deck was published at `/p/{publishId}-{slug}` and showed its HEAD. `scripts/migrate-publications-to-editions.js` (logic in `server/services/publication-migration.js`, [publishing.md § Converting old publications](publishing.md#converting-old-publications)) seals each such deck once and writes a `publication_legacy_links` row per old id. `resolveLegacyPublication()` answers the old id with `{publicationId, version}` of that edition, in whatever organization it lives, and `server/routes/static/published.js` redirects `/p/…`, `/p/…/reader` and `/embed/…` there with a 301. A link never moves: `linkLegacyPublication()` keeps the first target on a second run, and a revoked first edition is a 410 at its own address.
 
 ## Verification package
 
@@ -77,7 +83,7 @@ From then on every subresource of that edition answers 410 with a content-free t
 
 - `edition.json` - the edition record in canonical JSON (`deckyard.edition-record/1`): series, version, publication time, renderer hash, manifest hash and `previousManifestHash`, the manifest hash of version − 1 (null for version 1).
 - `manifest.json` - the stored manifest, byte for byte.
-- `input.json` - the stored input, byte for byte, except that every font face in `css.fontCss` is replaced by `deckyard-withheld:<media type>;sha256,<hex>`. Fonts are licensed bytes; a package anyone can download names them by hash, while the edition keeps them. Images stay: every reader of the edition already receives them.
+- `input.json` - the stored input, byte for byte, except that every font face in `css.fontCss` is replaced by `deckyard-withheld:<media type>;sha256,<hex>`, the media type verbatim so the rebuild is exact. Fonts are licensed bytes; a package anyone can download names them by hash, while the edition keeps them. Images stay: every reader of the edition already receives them.
 
 `node scripts/verify-edition.js <package.zip>… [--font <file>]…` checks packages offline, with no database, network or installation, and reports three things apart:
 

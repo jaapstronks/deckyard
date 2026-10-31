@@ -19,8 +19,8 @@
  *
  * The reason stripping is safe is that restore *already* ignores these fields.
  * Restoring a version is `updatePresentation(storageScope, id, snapshot, …)`, and that
- * write path consumes only `title`, `description`, `settings`, `i18n`,
- * `slides` and `published`; ownership moves solely through the transfer route's
+ * write path consumes only `title`, `description`, `settings`, `i18n` and
+ * `slides`; ownership moves solely through the transfer route's
  * `allowOwnerChange` opt-in, and `updated_by` comes from the acting user, not
  * from the body (`server/storage/presentations/index.js`). Restore
  * moves slides, never ownership — so the identity of a restored deck is the

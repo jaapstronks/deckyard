@@ -144,10 +144,13 @@ describe('the delivered request', () => {
   });
 });
 
+const PUBLICATION = '0b6f0c2e-6a59-4a7e-9d2a-1f0c5e7d9a10';
+
 // ─── common payload (presentation.*, comment.created) ──────────────────────
 
 describe('common payload shape', () => {
-  it('presentation.published: exact shape, lowercased actor, published block and links', async () => {
+  it('presentation.published: exact shape, lowercased actor, published block, edition and links', async () => {
+    const path = `/p/${PUBLICATION}/2`;
     await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'presentation.published',
       pres: {
@@ -156,9 +159,22 @@ describe('common payload shape', () => {
         description: 'Numbers',
         theme: 'aurora',
         visibility: 'organization',
-        published: { id: 'ab12', slug: 'quarterly' },
+        published: {
+          publicationId: PUBLICATION,
+          version: 2,
+          path,
+          publishedAt: '2026-10-31T08:00:00.000Z',
+        },
       },
       authedUser: ACTOR,
+      edition: {
+        id: 'edition-2',
+        publicationId: PUBLICATION,
+        version: 2,
+        manifestHash: 'ab'.repeat(32),
+        publishedAt: '2026-10-31T08:00:00.000Z',
+        path,
+      },
     });
     await settle();
 
@@ -166,6 +182,7 @@ describe('common payload shape', () => {
     assert.deepEqual(Object.keys(payload).sort(), [
       'actor',
       'createdAt',
+      'edition',
       'event',
       'links',
       'presentation',
@@ -188,18 +205,30 @@ describe('common payload shape', () => {
       theme: 'aurora',
       visibility: 'organization',
       published: {
-        id: 'ab12',
-        slug: 'quarterly',
-        path: '/p/ab12-quarterly',
-        url: 'http://decks.example.test/p/ab12-quarterly',
+        publicationId: PUBLICATION,
+        version: 2,
+        path,
+        url: `http://decks.example.test${path}`,
       },
+    });
+
+    // The edition the event announces; its id is the same on every delivery
+    // of that edition, so a receiver can tell a repeat from a new one.
+    assert.deepEqual(payload.edition, {
+      id: 'edition-2',
+      publicationId: PUBLICATION,
+      version: 2,
+      manifestHash: 'ab'.repeat(32),
+      publishedAt: '2026-10-31T08:00:00.000Z',
+      path,
+      url: `http://decks.example.test${path}`,
     });
 
     assert.deepEqual(payload.links, {
       editPath: '/app/pres-1',
       editUrl: 'http://decks.example.test/app/pres-1',
-      publicPath: '/p/ab12-quarterly',
-      publicUrl: 'http://decks.example.test/p/ab12-quarterly',
+      publicPath: path,
+      publicUrl: `http://decks.example.test${path}`,
     });
   });
 

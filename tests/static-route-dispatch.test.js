@@ -56,7 +56,7 @@ test('a non-matching prefix is not handled (falls through)', () => {
 test('all static handler modules export their handler function', async () => {
   const mods = {
     'static-files.js': ['handleGo', 'handleStaticFiles'],
-    'embed.js': ['handleEmbed'],
+    'edition.js': ['handleEditions'],
     'published.js': ['handlePublished'],
     'sandbox-og.js': ['handleSandboxOg'],
     'share-viewer.js': ['handleShareLink'],

@@ -20,7 +20,6 @@
   "imageLibrary.delete.title": "Elimina l'immagine",
   "imageLibrary.delete.usedBy.many": "Usata da {count} presentazioni.",
   "imageLibrary.delete.usedByList": "Usata da (dalla più recente):",
-  "imageLibrary.delete.usedByPublished.many": "Attenzione: {count} di queste sono pubblicate sul web.",
   "imageLibrary.description": "Breve descrizione (facoltativa)",
   "imageLibrary.description.label": "Descrizione (interna)",
   "imageLibrary.detail.created": "Caricata: {date}",

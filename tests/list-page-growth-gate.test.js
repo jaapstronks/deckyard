@@ -38,6 +38,10 @@ const BOUNDED = {
     "the organization's slide-type vocabulary",
   'custom-slide-types.js :: listPublishedCustomSlideTypes':
     "the organization's slide-type vocabulary",
+  'editions.js :: listLegacyPublications':
+    'the one-off conversion: the whole old index by definition',
+  'editions.js :: listLatestPublicEditions':
+    'the feed: top-N under its limit (at most 100)',
   'feedback.js :: listFeedbackEntries': "one slide's feedback, for an export",
   'font-families.js :: listAllFontFamiliesWithVariants':
     "the organization's font families",
@@ -50,7 +54,6 @@ const BOUNDED = {
     'the purge job: the whole expired set by definition',
   'presentations/subscriptions.js :: listSubscriptions':
     "one deck's subscription overrides",
-  'published.js :: listPublishedForFeed': 'the feed: top-N under its limit',
   'questions.js :: listQuestions': "one live session's questions",
   'settings.js :: listDigestRecipients':
     'the digest job: everyone due by definition',

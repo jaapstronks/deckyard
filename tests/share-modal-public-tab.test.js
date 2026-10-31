@@ -2,10 +2,12 @@
  * The Share dialog's Public tab (B342, D174).
  *
  * The tabs are named after who gets access — Team / Guests / Public — and a
- * published deck shows its two links as equal rows on the Public tab: the page
- * (`/p/…`) and the embed (`/embed/…`), with the iframe/SDK snippets folded
- * underneath. One language picker drives all four, and only exists when the
- * deck has more than one version. The Export dialog's HTML row links here.
+ * published deck shows its newest edition's two links as equal rows on the
+ * Public tab: the page (`/p/{publicationId}/{version}`) and the embed
+ * (`/embed/{publicationId}/{version}`), with the iframe snippet folded
+ * underneath. One language picker drives all three, and only exists when the
+ * deck has more than one version. Publishing again makes the next edition
+ * (T1.5). The Export dialog's HTML row links here.
  *
  * Run with: node --test tests/share-modal-public-tab.test.js
  */
@@ -37,10 +39,19 @@ const { openShareModal } =
 const { openExportModal } =
   await import('../client/views/editor/export-modal.js');
 
+const PUB = '0b6f0c2e-6a59-4a7e-9d2a-1f0c5e7d9a10';
+const ADDR = `${PUB}/2`;
+
 const BILINGUAL = {
   id: 'deck-1',
   title: 'Deck',
-  published: { id: 'ab12cd34', slug: 'deck' },
+  revision: 3,
+  published: {
+    publicationId: PUB,
+    version: 2,
+    path: `/p/${PUB}/2`,
+    publishedAt: '2026-10-31T10:00:00.000Z',
+  },
   i18n: {
     active: 'nl',
     versions: { nl: { slides: [] }, 'en-GB': { slides: [] } },
@@ -103,13 +114,17 @@ test('initialTab "public" opens on the Public panel', () => {
 
 test('a published deck shows Link and Embed as two different URLs', () => {
   const handle = open(BILINGUAL, { initialTab: 'public' });
-  assert.match(value('page'), /\/p\/ab12cd34-deck\?lang=nl$/);
-  assert.match(value('embed'), /\/embed\/ab12cd34-deck\?lang=nl$/);
-  assert.match(
+  assert.ok(value('page').endsWith(`/p/${ADDR}?lang=nl`), value('page'));
+  assert.ok(value('embed').endsWith(`/embed/${ADDR}?lang=nl`), value('embed'));
+  assert.ok(
+    value('iframe').includes(`/embed/${ADDR}?lang=nl"`),
     value('iframe'),
-    /<iframe src="[^"]*\/embed\/ab12cd34-deck\?lang=nl&/,
   );
-  assert.match(value('sdk'), /lang: 'nl'/);
+  assert.equal(
+    panel().querySelector('[data-link="sdk"]'),
+    null,
+    'no SDK snippet: the edition embed is a plain frame',
+  );
   assert.ok(
     panel().querySelector('details.share-publish-snippets'),
     'the snippets fold out underneath',
@@ -131,8 +146,7 @@ test('one language picker drives both URLs and the snippets', () => {
   const q = `?lang=${encodeURIComponent(other)}`;
   assert.ok(value('page').endsWith(q), value('page'));
   assert.ok(value('embed').endsWith(q), value('embed'));
-  assert.ok(value('iframe').includes(`${q}&`), value('iframe'));
-  assert.ok(value('sdk').includes(`lang: '${other}'`));
+  assert.ok(value('iframe').includes(`${q}"`), value('iframe'));
   assert.equal(details.open, true, 'an unfolded snippet block stays unfolded');
   handle.close();
 });
@@ -143,22 +157,44 @@ test('one language version → no picker', () => {
     { initialTab: 'public' },
   );
   assert.equal(panel().querySelector('select'), null);
-  assert.match(value('embed'), /\/embed\/ab12cd34-deck\?lang=nl$/);
+  assert.ok(value('embed').endsWith(`/embed/${ADDR}?lang=nl`));
   handle.close();
 });
 
-test('"Preview and address…" replaces "Manage published…"', () => {
-  let opened = 0;
+test('a published deck publishes its next version from the tab', async () => {
+  let published = 0;
   const handle = open(BILINGUAL, {
     initialTab: 'public',
-    openPreviewAddress: () => opened++,
+    doPublish: async () => {
+      published++;
+      return null;
+    },
   });
-  const btn = [...panel().querySelectorAll('button')].find(
-    (b) => b.textContent === 'Preview and address…',
+  const labels = [...panel().querySelectorAll('button')].map(
+    (b) => b.textContent,
   );
-  assert.ok(btn);
+  assert.ok(!labels.includes('Preview and address…'), labels.join(', '));
+  const btn = [...panel().querySelectorAll('button')].find(
+    (b) => b.textContent === 'Publish new version',
+  );
+  assert.ok(btn, labels.join(', '));
   btn.click();
-  assert.equal(opened, 1);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(published, 1);
+  handle.close();
+});
+
+test('an unpublished deck offers Publish and no links', () => {
+  const handle = open(
+    { ...BILINGUAL, published: null },
+    { initialTab: 'public' },
+  );
+  assert.equal(panel().querySelector('[data-link="page"]'), null);
+  assert.ok(
+    [...panel().querySelectorAll('button')].some(
+      (b) => b.textContent === 'Publish',
+    ),
+  );
   handle.close();
 });
 

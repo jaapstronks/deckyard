@@ -1051,7 +1051,10 @@ paths:
       tags:
         - Publishing
       summary: Get publish status
-      description: Returns the publication status of a presentation.
+      description: >-
+        The presentation's newest public edition. An edition is a fixed copy
+        of the deck at `/p/{publicationId}/{version}`; editing the deck does
+        not change it.
       parameters:
         - name: id
           in: path
@@ -1062,22 +1065,27 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Publish status
+          description: >-
+            `isPublished: false` alone when no edition is public; otherwise
+            the newest public edition.
           content:
             application/json:
               schema:
                 type: object
+                required:
+                  - isPublished
                 properties:
                   isPublished:
                     type: boolean
-                  publishId:
+                  publicationId:
                     type: string
-                  slug:
-                    type: string
+                    format: uuid
+                  version:
+                    type: integer
+                    minimum: 1
                   path:
                     type: string
-                  ogImageUrl:
-                    type: string
+                    example: /p/0b6f0c2e-6a59-4a7e-9d2a-1f0c5e7d9a10/2
                   publishedAt:
                     type: string
                     format: date-time
@@ -1096,13 +1104,30 @@ paths:
         - Publishing
       summary: Publish presentation
       description: >-
-        Makes the presentation publicly accessible via a share link. Refused
-        with 422 `incomplete_slides` while a slide the published page would
-        show still has an empty essential image (in any language version);
-        `details.slides` lists their 1-based numbers. Refused with 422
-        `missing_alt` while a picture that is not decorative has no alt text
-        (in any language version, on any slide the published page shows);
-        `details` names the first one and `count` how many there are.
+        Publishes the presentation as its next edition: an immutable copy of
+        the deck at `expectedRevision`, public at
+        `/p/{publicationId}/{version}`. Earlier editions stay public at their
+        own addresses. Send one `idempotencyKey` per publish intent and the
+        same key on a retry: a retry of the same request answers 200 with the
+        edition the first attempt made and publishes nothing new; the same
+        key with a different request is refused (409
+        `idempotency_key_reused`). Keys are scoped to the API key's user.
+
+
+        Refused with 409 `conflict` when the deck is no longer at
+        `expectedRevision`. Refused with 422 `incomplete_slides` while a
+        slide the edition would show still has an empty essential image (in
+        any language version); `details.slides` lists their 1-based numbers.
+        Refused with 422 `missing_alt` while a picture that is not
+        decorative has no alt text (in any language version, on any slide the
+        edition shows); `details` names the first one and `count` how many
+        there are.
+
+
+        **Beta break:** this endpoint used to publish a live link
+        `/p/{publishId}-{slug}` with no body. It now requires the body below
+        and answers with the edition; `publishId`, `slug` and `ogImageUrl`
+        are gone.
       parameters:
         - name: id
           in: path
@@ -1111,35 +1136,64 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - expectedRevision
+                - idempotencyKey
+              properties:
+                expectedRevision:
+                  type: integer
+                  minimum: 1
+                  description: The deck revision the caller means to publish
+                idempotencyKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  description: One per publish intent; a retry sends the same
       responses:
         '200':
-          description: Published successfully
+          description: A retry; the edition the first attempt made
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  publishId:
-                    type: string
-                  slug:
-                    type: string
-                  path:
-                    type: string
-                  ogImageUrl:
-                    type: string
+                $ref: '#/components/schemas/PublishedEdition'
+        '201':
+          description: A new edition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedEdition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: >-
+            `conflict`: the deck is no longer at `expectedRevision`.
+            `idempotency_key_reused`: the key already named a different
+            request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '422':
           description: >-
             `incomplete_slides`: a slide still has an empty essential image;
             `details.slides` lists the slide numbers. `missing_alt`: a picture
             has no alt text. `details` carries `lang`, `slideIndex`,
             `slideId`, `field`, `itemIndex` and `itemField` (for a picture in
-            an item) and `count`.
+            an item) and `count`. `renderer_edition_input_unsealable`: the
+            deck depends on something an edition cannot freeze; `details`
+            lists it.
           content:
             application/json:
               schema:
@@ -1152,7 +1206,10 @@ paths:
       tags:
         - Publishing
       summary: Unpublish presentation
-      description: Removes public access to the presentation.
+      description: >-
+        Revokes every public edition of the presentation. Each one, and the
+        old `/p/{publishId}-{slug}` link that pointed at the first, then
+        answers 410.
       parameters:
         - name: id
           in: path
@@ -1171,6 +1228,17 @@ paths:
                 properties:
                   unpublished:
                     type: boolean
+                  revoked:
+                    type: array
+                    description: The editions this call revoked
+                    items:
+                      type: object
+                      properties:
+                        publicationId:
+                          type: string
+                          format: uuid
+                        version:
+                          type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2787,6 +2855,33 @@ components:
           items:
             type: object
 
+    PublishedEdition:
+      type: object
+      required:
+        - replayed
+        - edition
+      properties:
+        replayed:
+          type: boolean
+          description: True when this answers a retry of an earlier request
+        edition:
+          type: object
+          properties:
+            publicationId:
+              type: string
+              format: uuid
+            version:
+              type: integer
+              minimum: 1
+            path:
+              type: string
+              example: /p/0b6f0c2e-6a59-4a7e-9d2a-1f0c5e7d9a10/1
+            manifestHash:
+              type: string
+              description: sha256 hex of the edition's manifest
+            publishedAt:
+              type: string
+              format: date-time
     TextStyleRefusal:
       type: object
       description: >-

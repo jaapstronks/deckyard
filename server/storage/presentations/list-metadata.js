@@ -1,22 +1,24 @@
 import { withDbGuard } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
+import {
+  deckHasPublicEditionSql,
+  latestPublicEditionsForDecks,
+} from '../editions.js';
 
 /**
- * Get the set of presentation IDs that are published.
+ * Get the set of presentation IDs that have a public edition.
  */
 export async function getPublishedPresentationIds(scope, presentationIds) {
   toStorageContext(scope, 'getPublishedPresentationIds');
   if (presentationIds.length === 0) return new Set();
 
-  return withDbGuard(new Set(), async (db) => {
-    const rows = await db
-      .selectFrom('published_presentations')
-      .select('presentation_id')
-      .where('presentation_id', 'in', presentationIds)
-      .execute();
-
-    return new Set(rows.map((r) => r.presentation_id));
+  return withDbGuard(new Set(), async () => {
+    const published = await latestPublicEditionsForDecks(
+      scope,
+      presentationIds,
+    );
+    return new Set(published.keys());
   });
 }
 
@@ -70,7 +72,6 @@ export async function getPopularPresentationRows(scope) {
           .on('ae.organization_id', '=', orgId)
           .on('ae.created_at', '>=', thirtyDaysAgo),
       )
-      .leftJoin('published_presentations as pub', 'pub.presentation_id', 'p.id')
       .select([
         'p.id',
         'p.title',
@@ -93,7 +94,7 @@ export async function getPopularPresentationRows(scope) {
       .where((eb) =>
         eb.or([
           eb('p.visibility', '=', 'organization'),
-          eb('pub.id', 'is not', null),
+          deckHasPublicEditionSql('p.id'),
         ]),
       )
       .groupBy([
@@ -120,11 +121,6 @@ export async function getPopularPresentationRows(scope) {
     if (rows.length === 0) {
       const fallbackRows = await db
         .selectFrom('presentations as p')
-        .leftJoin(
-          'published_presentations as pub',
-          'pub.presentation_id',
-          'p.id',
-        )
         .select([
           'p.id',
           'p.title',
@@ -145,7 +141,7 @@ export async function getPopularPresentationRows(scope) {
         .where((eb) =>
           eb.or([
             eb('p.visibility', '=', 'organization'),
-            eb('pub.id', 'is not', null),
+            deckHasPublicEditionSql('p.id'),
           ]),
         )
         .orderBy('p.modified_at', 'desc')

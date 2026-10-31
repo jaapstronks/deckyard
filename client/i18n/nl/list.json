@@ -69,8 +69,6 @@
   "imageLibrary.delete.usedBy.many": "Gebruikt door {count} presentaties.",
   "imageLibrary.delete.usedBy.one": "Gebruikt door 1 presentatie.",
   "imageLibrary.delete.usedByList": "Gebruikt door (meest recent eerst):",
-  "imageLibrary.delete.usedByPublished.many": "Let op: {count} daarvan zijn gepubliceerd op het web.",
-  "imageLibrary.delete.usedByPublished.one": "Let op: 1 daarvan is gepubliceerd op het web.",
   "imageLibrary.description": "Korte beschrijving (optioneel)",
   "imageLibrary.description.label": "Beschrijving (intern)",
   "imageLibrary.detail.created": "Geüpload: {date}",

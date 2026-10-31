@@ -1,14 +1,16 @@
 /**
  * Public RSS/Atom/JSON feed route handler.
- * Serves feed content for published presentations (no authentication required).
+ * Lists the newest public edition of each publication (no authentication
+ * required), each read from its own bytes.
  */
 
+import { createHash } from 'node:crypto';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getOrgSettings } from '../utils/org-settings.js';
-import { listPublishedForFeed } from '../storage/published.js';
+import { listLatestPublicEditions } from '../storage/editions.js';
 import { buildFeed } from '../utils/rss-feed.js';
-import { resolvePublicOgImage } from '../services/publish-presentation.js';
+import { editionSummary } from '../services/public-edition.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
 import { matchesIfNoneMatch, notModified } from '../utils/http.js';
@@ -89,29 +91,24 @@ export async function handleFeed({ repoRoot, req, res, url }) {
   // The feed is per-organization, and this route resolves the organization from
   // configuration rather than a session (there is none) — so it states that
   // organization explicitly instead of letting storage pick one.
-  const presentations = await listPublishedForFeed(
+  const editions = await listLatestPublicEditions(
     { repoRoot, organizationId: orgId },
     { limit: maxItems },
   );
-  // Which preview each item may show; an expired one is withdrawn here (B806).
-  for (const item of presentations) {
-    item.publicPreviewUrl = await resolvePublicOgImage({
-      repoRoot,
-      pres: item.presentation,
-      storedUrl: item.published.ogImageUrl,
-      publishId: item.published.id,
-    });
+  const items = [];
+  for (const edition of editions) {
+    const summary = await editionSummary(repoRoot, edition);
+    // Revoked between the list and the read: not in the feed.
+    if (summary) items.push({ ...edition, ...summary });
   }
 
-  // Compute ETag from latest modified timestamp
-  const latestModified =
-    presentations.length > 0
-      ? presentations.reduce((max, p) => {
-          const t = new Date(p.modified || 0).getTime();
-          return t > max ? t : max;
-        }, 0)
-      : 0;
-  const etag = `"feed-${format}-${latestModified}"`;
+  // The ETag names the editions listed: a new edition or a revocation
+  // changes the set, nothing else can change an edition.
+  const listed = createHash('sha256')
+    .update(items.map((i) => i.id).join(','))
+    .digest('hex')
+    .slice(0, 16);
+  const etag = `"feed-${format}-${listed}"`;
 
   // Support conditional requests
   const cacheControl = 'public, max-age=300';
@@ -121,7 +118,7 @@ export async function handleFeed({ repoRoot, req, res, url }) {
 
   let content;
   try {
-    content = buildFeed({ org, presentations, baseUrl, format });
+    content = buildFeed({ org, editions: items, baseUrl, format });
   } catch (err) {
     log.error('[feed] buildFeed error:', err);
     res.writeHead(500, { 'Content-Type': 'text/plain' });

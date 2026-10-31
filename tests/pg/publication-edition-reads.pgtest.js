@@ -99,8 +99,8 @@ const i18n = () => ({
   },
 });
 
-/** Drive one GET through the edition routes. */
-async function get(pathname) {
+/** Drive one GET through the edition routes, with an optional Host header. */
+async function get(pathname, { host } = {}) {
   const res = {
     statusCode: null,
     headers: {},
@@ -124,7 +124,7 @@ async function get(pathname) {
     repoRoot,
     req: {
       method: 'GET',
-      headers: { host: url.host, 'x-forwarded-proto': 'https' },
+      headers: { host: host || url.host, 'x-forwarded-proto': 'https' },
     },
     res,
     url,
@@ -334,6 +334,56 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
       await get(`/p/${v1.publicationId}/1/reader`)
     ).body.toString();
     assert.ok(reader.includes(`href="${base}?lang=nl"`));
+  });
+
+  it('builds the address on the configured URL, whatever Host is sent', async () => {
+    const v1 = (await publish('host')).edition;
+    const base = `${ORIGIN}/p/${v1.publicationId}/1`;
+    const before = process.env.APP_URL;
+    process.env.APP_URL = ORIGIN;
+    try {
+      const start = renders;
+      const own = (await get(`/p/${v1.publicationId}/1`)).body.toString();
+      const forged = (
+        await get(`/p/${v1.publicationId}/1`, { host: 'evil.example.test' })
+      ).body.toString();
+      assert.ok(forged.includes(`<link rel="canonical" href="${base}`));
+      assert.ok(!forged.includes('evil.example.test'));
+      assert.equal(forged, own);
+      assert.equal(
+        renders - start,
+        1,
+        'a foreign Host is the same cache entry',
+      );
+    } finally {
+      if (before === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = before;
+    }
+  });
+
+  it('counts the canvas and reader as published, the embed as embed, for instance health', async () => {
+    const v1 = (await publish('health')).edition;
+    await db.deleteFrom('instance_health').execute();
+    const address = `${v1.publicationId}/1`;
+    assert.equal((await get(`/p/${address}`)).statusCode, 200);
+    assert.equal((await get(`/p/${address}/reader`)).statusCode, 200);
+    const embed = await get(`/embed/${address}`);
+    assert.equal(embed.statusCode, 200);
+    assert.match(
+      embed.headers['Content-Security-Policy'],
+      /frame-ancestors \*/,
+    );
+    // The counter is fire-and-forget; let it land.
+    await new Promise((r) => setTimeout(r, 100));
+    const rows = await db
+      .selectFrom('instance_health')
+      .select(['axis', 'key', 'count'])
+      .where('axis', '=', 'surface')
+      .execute();
+    const counts = Object.fromEntries(
+      rows.map((r) => [r.key, Number(r.count)]),
+    );
+    assert.deepEqual(counts, { published: 2, embed: 1 });
   });
 
   it('answers an unknown edition with 404 and never with the deck', async () => {

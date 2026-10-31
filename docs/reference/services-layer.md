@@ -43,18 +43,18 @@ The import above is relative to the repository root. `server/utils/route-middlew
 
 ## Where operations live
 
-| Module                                                                      | Responsibility                                                                            |
-| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `server/services/presentations.js`                                          | Load and authorize decks; list, create, duplicate, trash and restore them                 |
-| `server/services/save-presentation.js`                                      | Validate and save deck changes, including revision-aware updates                          |
-| `server/services/slides.js`                                                 | Add, update, remove, reorder and replace slides through the shared save path              |
-| `server/services/comments.js`                                               | Comment creation, editing, removal, status changes and lists for supported identities     |
-| `server/services/ownership.js`, `server/services/visibility.js`             | Ownership transfer and visibility changes                                                 |
-| `server/services/collaborators.js`                                          | List a deck's collaborators and invite members of its organization                        |
-| `server/services/theme.js`, `server/services/translate.js`                  | Offered theme catalog and theme changes; translation operations                           |
-| `server/services/deck-versions.js`, `server/services/permanent-delete.js`   | Version operations and permanent removal                                                  |
-| `server/services/import-json.js`, `server/services/publish-presentation.js` | Deck import and publishing workflows                                                      |
-| `server/services/exports.js`                                                | Authorized export context, language projection, theme/type resolution and export counting |
+| Module                                                                    | Responsibility                                                                            |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `server/services/presentations.js`                                        | Load and authorize decks; list, create, duplicate, trash and restore them                 |
+| `server/services/save-presentation.js`                                    | Validate and save deck changes, including revision-aware updates                          |
+| `server/services/slides.js`                                               | Add, update, remove, reorder and replace slides through the shared save path              |
+| `server/services/comments.js`                                             | Comment creation, editing, removal, status changes and lists for supported identities     |
+| `server/services/ownership.js`, `server/services/visibility.js`           | Ownership transfer and visibility changes                                                 |
+| `server/services/collaborators.js`                                        | List a deck's collaborators and invite members of its organization                        |
+| `server/services/theme.js`, `server/services/translate.js`                | Offered theme catalog and theme changes; translation operations                           |
+| `server/services/deck-versions.js`, `server/services/permanent-delete.js` | Version operations and permanent removal                                                  |
+| `server/services/import-json.js`, `server/services/publish-edition.js`    | Deck import and publishing workflows                                                      |
+| `server/services/exports.js`                                              | Authorized export context, language projection, theme/type resolution and export counting |
 
 Event and notification modules also live in this layer, such as `server/services/activity-events.js`, `server/services/comment-events.js` and `server/services/comment-notifications.js`. Their responsibilities are described in [comments-and-notifications.md](comments-and-notifications.md).
 
@@ -62,7 +62,7 @@ Event and notification modules also live in this layer, such as `server/services
 
 Services return domain values and use typed errors from `server/utils/errors.js` for refusals. Each adapter translates those errors into its own envelope; an internal HTTP error body is not the v1 or MCP response contract.
 
-The common signature is not universal. `loadPresentationForActor()` takes a deck id and access options after the identity. `importJsonDeck()` takes an options object and returns `{ ok: false, message }` for a language refusal. `publishPresentation()` takes an options object containing an already-authorized presentation and request context; its callers establish access before invoking it. Follow each function's signature and preconditions rather than assuming that every exported helper performs authorization or returns the same result shape.
+The common signature is not universal. `loadPresentationForActor()` takes a deck id and access options after the identity. `importJsonDeck()` takes an options object and returns `{ ok: false, message }` for a language refusal. `createEdition()` takes an already-loaded presentation; its caller (`publishEdition()`, or the one-off conversion) establishes access before invoking it. Follow each function's signature and preconditions rather than assuming that every exported helper performs authorization or returns the same result shape.
 
 A list that grows per organization answers one page at a time through `server/services/list-page.js` (D358): adapters pass their query parameters or tool arguments to `parseListPage()`, which refuses an out-of-range `limit`, any `offset` and a foreign cursor as a 400 `invalid` naming `details.field`, and shape the answer with `listPageResult()` as `{ <collection>, nextCursor }`. Storage receives only the decoded position. The contract, the keyset query and which lists use it are described in [storage-layer.md](storage-layer.md) § A list read.
 

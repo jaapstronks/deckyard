@@ -160,17 +160,11 @@ suite('publish', {
   served: [
     ['POST', '/api/presentations/deck1/publish', 'handlePublishCreate'],
     ['DELETE', '/api/presentations/deck1/publish', 'handlePublishDelete'],
-    ['PATCH', '/api/presentations/deck1/publish/slug', 'handlePublishSlug'],
-    [
-      'POST',
-      '/api/presentations/deck1/preview/regenerate',
-      'handlePreviewRegenerate',
-    ],
   ],
   falls: [
     ['GET', '/api/presentations/deck1/publish'],
-    ['PUT', '/api/presentations/deck1/publish/slug'],
-    ['GET', '/api/presentations/deck1/preview/regenerate'],
+    ['PATCH', '/api/presentations/deck1/publish/slug'],
+    ['POST', '/api/presentations/deck1/preview/regenerate'],
   ],
 });
 

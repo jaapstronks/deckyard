@@ -20,7 +20,6 @@
   "imageLibrary.delete.title": "Poista kuva",
   "imageLibrary.delete.usedBy.many": "Käytössä {count} esityksessä.",
   "imageLibrary.delete.usedByList": "Käytössä (uusimmasta alkaen):",
-  "imageLibrary.delete.usedByPublished.many": "Huomio: näistä {count} on julkaistu verkossa.",
   "imageLibrary.description": "Lyhyt kuvaus (valinnainen)",
   "imageLibrary.description.label": "Kuvaus (sisäinen)",
   "imageLibrary.detail.created": "Lähetetty: {date}",

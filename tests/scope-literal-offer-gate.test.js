@@ -14,10 +14,7 @@ const ALLOWED = {
   'server/export/deck-theme.js': 1,
   'server/jobs/queue/workers/bulk-export-worker.js': 1,
   'server/routes/api/share-links/public.js': 1,
-  'server/routes/static/published.js': 2,
-  'server/routes/static/embed.js': 1,
   'server/services/exports.js': 1,
-  'server/services/publish-presentation.js': 1,
   'server/utils/themes.js': 1,
 };
 

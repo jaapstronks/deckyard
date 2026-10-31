@@ -9,6 +9,7 @@ import { normalizeLang } from '../../../lib/format/i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import { isPublished } from '../publish-export/publish.js';
 
 /**
  * Handle publishing to Notion.
@@ -17,10 +18,8 @@ import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
  */
 export async function handleNotionPublish({ api, toast, pres }) {
   const notionPageId = pres?.notionSourcePageId;
-  const publishId = pres?.published?.id;
-  const slug = pres?.published?.slug || '';
 
-  if (!notionPageId || !publishId) {
+  if (!notionPageId || !isPublished(pres)) {
     toast?.(
       t(
         'editor.publish.notion.notAvailable',
@@ -31,7 +30,9 @@ export async function handleNotionPublish({ api, toast, pres }) {
   }
 
   const lang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-  const embedUrl = `${location.origin}/embed/${publishId}${slug ? `-${slug}` : ''}?lang=${encodeURIComponent(lang)}`;
+  // The newest edition, frameable: the Notion page keeps showing this version.
+  const { publicationId, version } = pres.published;
+  const embedUrl = `${location.origin}/embed/${publicationId}/${version}?lang=${encodeURIComponent(lang)}`;
   const title = pres?.title || '';
 
   const confirmed = await confirmModal(document.body, {

@@ -48,6 +48,7 @@ import {
 import { getFollowStateForPresentation } from '../../storage/live-sessions/index.js';
 import { createLogger } from '../../utils/logger.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
+import { getDeckPublication } from '../../services/publish-edition.js';
 const log = createLogger('analytics-track');
 
 /**
@@ -198,8 +199,16 @@ async function validatePresentationAccess(data, ctx) {
     }
 
     case SOURCE_TYPES.PUBLISHED: {
-      // Published pages: verify the presentation is actually published
-      if (!presentation.published?.id) {
+      // Published pages: the deck must have a public edition, and the source
+      // id, when given, is that edition's publication id.
+      const published = await getDeckPublication(
+        crossOrganizationScope(
+          null,
+          'analytics ingest from a public viewer; the deck is public or not',
+        ),
+        presentation,
+      );
+      if (!published) {
         logSecurityEvent(SECURITY_EVENTS.ACCESS_DENIED, {
           endpoint: '/api/track/session/start',
           reason: 'Presentation is not published',
@@ -213,19 +222,18 @@ async function validatePresentationAccess(data, ctx) {
         };
       }
 
-      // Optionally verify the sourceId matches the publish ID
-      if (sourceId && presentation.published.id !== sourceId) {
+      if (sourceId && published.publicationId !== sourceId) {
         logSecurityEvent(SECURITY_EVENTS.ACCESS_DENIED, {
           endpoint: '/api/track/session/start',
-          reason: 'Publish ID mismatch',
+          reason: 'Publication ID mismatch',
           presentationId,
           sourceId,
-          actualPublishId: presentation.published.id,
+          actualPublicationId: published.publicationId,
         });
         return {
           ok: false,
           reason: 'forbidden',
-          message: 'Invalid publish ID',
+          message: 'Invalid publication ID',
         };
       }
 

@@ -1,10 +1,10 @@
 /**
  * The instance-health measuring points on the audience's side (B514, D247):
- * the four viewing handlers count `surface` and `slide_type.viewed`, and the
- * live-interaction facades count `interaction`.
+ * the viewing handlers count `surface` and `slide_type.viewed`, and the
+ * live-interaction facades count `interaction`. An old publication address only
+ * redirects to an edition since T1.5, so it counts nothing.
  *
  * Handler- and facade-level over the database double, in the house shape of
- * `tests/published-embed-first-party-only.test.js` and
  * `tests/anon-follow-and-share-surfaces.test.js`. The counts land
  * fire-and-forget, so each assertion reads through `healthKeys`.
  *
@@ -14,6 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { testScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
@@ -44,7 +45,6 @@ const { votePollInteraction } =
 const { createQuestion } = await import('../server/storage/questions.js');
 const { handlePublished } =
   await import('../server/routes/static/published.js');
-const { handleEmbed } = await import('../server/routes/static/embed.js');
 const { handleShareLink } =
   await import('../server/routes/static/share-viewer.js');
 const { handleFollowPresentation } =
@@ -105,48 +105,27 @@ const VIEWED = [
   'slide_type.viewed:title-slide',
 ];
 
-async function publish(pres) {
-  db.__tables.published_presentations = [
-    {
-      id: PUBLISH_ID,
-      organization_id: ORG,
-      presentation_id: pres.id,
-      title: pres.title,
-      slug: SLUG,
-      og_image_url: null,
-      created_at: '2026-02-01T00:00:00.000Z',
-      modified_at: '2026-02-01T00:00:00.000Z',
-    },
-  ];
-}
-
-for (const [label, handle, pathname] of [
-  ['the published page', handlePublished, `/p/${PUBLISH_ID}-${SLUG}`],
-  ['the published reader', handlePublished, `/p/${PUBLISH_ID}-${SLUG}/reader`],
-]) {
-  test(`${label} counts surface:published and the deck's types`, async () => {
-    await publish(await seedDeck());
-    const c = viewerContext(pathname);
-    assert.equal(await handle(c), true);
-    assert.equal(c.res.statusCode, 200);
-    assert.deepEqual(await healthKeys(db), [...VIEWED, 'surface:published']);
-  });
-}
-
-test('a slug redirect is not a view; the page it lands on is', async () => {
-  await publish(await seedDeck());
-  const c = viewerContext(`/p/${PUBLISH_ID}-wrong-slug`);
-  await handlePublished(c);
-  assert.equal(c.res.statusCode, 302);
-  assert.deepEqual(await healthKeys(db), []);
+// An edition is read through a callback join the database double does not
+// run, so the edition route's count is pinned at its source here; the counted
+// request itself is `tests/pg/publication-edition-reads.pgtest.js`'s.
+test('an edition view counts its surface, published or embed, and no slide types', () => {
+  const src = readFileSync(
+    new URL('../server/routes/static/edition.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(
+    src,
+    /countInstanceHealth\(\[\s*\{ axis: 'surface', key: frameable \? 'embed' : 'published' \},?\s*\]\)/,
+  );
+  assert.doesNotMatch(src, /slide_type\.viewed/);
 });
 
-test('an embed counts surface:embed and the deck types', async () => {
-  await publish(await seedDeck());
-  const c = viewerContext(`/embed/${PUBLISH_ID}-${SLUG}`);
-  assert.equal(await handleEmbed(c), true);
-  assert.equal(c.res.statusCode, 200);
-  assert.deepEqual(await healthKeys(db), [...VIEWED, 'surface:embed']);
+test('an old publication address renders nothing and counts nothing', async () => {
+  await seedDeck();
+  const c = viewerContext(`/p/${PUBLISH_ID}-${SLUG}`);
+  assert.equal(await handlePublished(c), true);
+  assert.equal(c.res.statusCode, 404);
+  assert.deepEqual(await healthKeys(db), []);
 });
 
 test('a share link counts surface:share and the deck types', async () => {

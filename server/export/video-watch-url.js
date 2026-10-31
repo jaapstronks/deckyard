@@ -65,7 +65,8 @@ function buildProviderUrl(parsed, autoplay) {
  * Resolve the watch URL for a video slide.
  *
  * @param {object} slide - The video slide ({ id, content }).
- * @param {object} pres - The presentation (may carry `published: { id, slug }`).
+ * @param {object} pres - The presentation (may carry `published: { path }`,
+ *   its newest public edition).
  * @param {object} options
  * @param {string} [options.baseUrl] - Public base URL (no trailing slash), from
  *   getAppBaseUrl(). Empty means the deck deep-link can't be built (no origin).
@@ -90,19 +91,17 @@ export function resolveVideoWatchUrl(
   const explicit = normalizeAuthoredUrl(content?.watchUrl);
   if (explicit) return { url: explicit, kind: 'explicit' };
 
-  // Rung 1: published deck deep-link.
+  // Rung 1: deep-link into the deck's newest public edition.
   const published =
     pres && typeof pres.published === 'object' ? pres.published : null;
-  const publishId = published ? String(published.id || '').trim() : '';
-  const slug = published ? String(published.slug || '').trim() : '';
+  const path = published ? String(published.path || '').trim() : '';
   const base = String(baseUrl || '').replace(/\/+$/, '');
-  if (publishId && base) {
-    const slugPart = slug ? `-${slug}` : '';
+  if (path && base) {
     const idx =
       Number.isInteger(slideIndex) && slideIndex >= 0 ? slideIndex : 0;
     // The published deck reads the initial slide from `#slide=<0-based index>`.
     return {
-      url: `${base}/p/${publishId}${slugPart}#slide=${idx}`,
+      url: `${base}${path}#slide=${idx}`,
       kind: 'deck',
     };
   }

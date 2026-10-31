@@ -2,33 +2,29 @@
  * The public viewer routes and the email-delivery route (test-coverage gap map,
  * B40 — surface 10, "publieke viewer-routes + e-mail-uitlevering").
  *
- * `server/routes/static/{published,embed}.js` serve a published deck to anonymous
- * web visitors (`/p/:id-:slug`, `/p/:id-:slug/reader`, `/embed/:id-:slug`) — no
- * session, the publish id is the whole authorization. Because the surface is
- * anonymous, its *refusal* paths are the contract: an unknown publish id, a
- * publish entry whose deck is gone, and a wrong/absent slug. The email side is
+ * `server/routes/static/published.js` answers the old publication addresses
+ * (`/p/:id-:slug`, `/p/:id-:slug/reader`, `/embed/:id-:slug`) for anonymous web
+ * visitors — no session, the old publish id is the whole authorization. Since
+ * T1.5 it renders nothing: a converted id is a 301 to its first edition, any
+ * other id a 404, and the deck is never read. The email side is
  * `server/routes/api/email-templates.js`, whose one handler that actually hands a
  * message to an external provider (`…/:type/test`) is pinned at its admin gate,
  * its validation, and its "email not configured" refusal.
  *
  * Two rules carry this surface and are stated here as assertions:
  *
- *   1. **A published/embed URL resolves the publish id, then the deck, then the
- *      slug — refusing at each step.** A publish id that names nothing is a 404;
- *      a publish entry pointing at a deck that no longer exists is a 404; a
- *      canvas/reader URL with a wrong or missing slug is a 302 to the canonical
- *      path. Embed deliberately differs on one point — it only redirects when a
- *      slug is *supplied* and wrong — and that difference is pinned.
+ *   1. **An old URL resolves only through its legacy link.** An old id without a
+ *      link is a 404 on every subresource, even when an old index row and its
+ *      deck still exist; a linked id is a 301 to the edition, whatever slug
+ *      it carries. (The redirect targets are pinned in
+ *      `tests/published-legacy-redirect.test.js`.)
  *   2. **Sending email is admin-only and honest about not being configured.** The
  *      email-template routes refuse a non-authenticated (401) and a
  *      non-admin (403) caller before dispatch; the test-send validates the
  *      template type and locale; and with no `BREVO_API_KEY` it answers 501
  *      `email_not_configured` rather than pretending a message went out.
  *
- * Feasibility note (opt-out, logged in briefs/test-coverage-gaps.md): the 200
- * happy paths of the viewer routes render full deck HTML (themes, merged slide
- * types, standalone/embed/reader builders) — driven only up to the last refusal
- * before the render here; the render itself is an export/browser concern. The
+ * Feasibility note (opt-out, logged in briefs/test-coverage-gaps.md): the
  * test-send success (200) and upstream-failure (502) branches need a configured
  * Brevo peer; the `sendEmail` result typing behind them already has its own file
  * (`tests/email-send-failure-typing.test.js`), so only the network-free 501 is
@@ -60,14 +56,15 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handlePublished } =
   await import('../server/routes/static/published.js');
-const { handleEmbed } = await import('../server/routes/static/embed.js');
 const { handleEmailTemplates } =
   await import('../server/routes/api/email-templates.js');
 
 const PUBLISH_ID = 'abcd1234'; // 8 hex chars, matches the route regexes
 const SLUG = 'my-deck';
-const GHOST_PUBLISH_ID = 'beef1234'; // entry exists, its deck is gone
+const UNCONVERTED_ID = 'beef1234'; // old index row and deck exist, no link
 const UNKNOWN_ID = 'deadbeef'; // well-formed, never published
+const PUB = '0b6f0c2e-6a59-4a7e-9d2a-1f0c5e7d9a10';
+const ED1 = '11111111-1111-4111-8111-111111111111';
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
@@ -132,10 +129,15 @@ function seed() {
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     presentations: [deckRow({ id: 'deck-pub' })],
     published_presentations: [
-      // A live publish entry whose deck exists.
       publishedRow({ id: PUBLISH_ID }),
-      // A publish entry whose deck no longer exists.
-      publishedRow({ id: GHOST_PUBLISH_ID, presentation_id: 'ghost-deck' }),
+      // Never converted: the old route must not fall back to the deck.
+      publishedRow({ id: UNCONVERTED_ID }),
+    ],
+    publication_editions: [
+      { id: ED1, publication_id: PUB, organization_id: ORG, version: 1 },
+    ],
+    publication_legacy_links: [
+      { legacy_id: PUBLISH_ID, organization_id: ORG, edition_id: ED1 },
     ],
     app_settings: [{ id: 'singleton', settings: {} }],
   });
@@ -147,10 +149,7 @@ function seed() {
 // Driving the handlers
 // ---------------------------------------------------------------------------
 
-/**
- * Drive a viewer handler (`handlePublished`/
- * `handleEmbed`) with a static-route context.
- */
+/** Drive the old-address handler with a static-route context. */
 async function callViewer(handle, method, pathAndQuery) {
   const req = { method, headers: { host: 'decks.example.test' } };
   const res = createMockStreamRes();
@@ -189,127 +188,44 @@ async function callEmail(method, pathAndQuery, { as = null, body } = {}) {
 }
 
 // ===========================================================================
-// published.js — resolve publish id → deck → slug, refusing at each step
+// published.js — an old id resolves through its legacy link, or not at all
 // ===========================================================================
 
-test('a published page for an unknown publish id is a 404', async () => {
-  seed();
-  const { handled, res } = await callViewer(
-    handlePublished,
-    'GET',
-    `/p/${UNKNOWN_ID}-${SLUG}`,
-  );
+for (const [label, path] of [
+  ['canvas', `/p/${UNCONVERTED_ID}-${SLUG}`],
+  ['reader', `/p/${UNCONVERTED_ID}-${SLUG}/reader`],
+  ['embed', `/embed/${UNCONVERTED_ID}`],
+  ['unknown id', `/p/${UNKNOWN_ID}-${SLUG}`],
+]) {
+  test(`an old ${label} address without a legacy link is a 404`, async () => {
+    seed();
+    const { handled, res } = await callViewer(handlePublished, 'GET', path);
+    assert.equal(handled, true);
+    assert.equal(res.statusCode, 404);
+  });
+}
 
-  assert.equal(handled, true);
-  assert.equal(res.statusCode, 404);
+test('a converted id is a 301 to its edition, whatever the slug', async () => {
+  seed();
+  for (const slug of ['', `-${SLUG}`, '-not-the-slug']) {
+    const { res } = await callViewer(
+      handlePublished,
+      'GET',
+      `/p/${PUBLISH_ID}${slug}`,
+    );
+    assert.equal(res.statusCode, 301);
+    assert.equal(res.headers.Location, `/p/${PUB}/1`);
+  }
 });
 
-test('a published page whose deck no longer exists is a 404', async () => {
+test('a non-GET method on an old path falls through unmatched', async () => {
   seed();
-  const { res } = await callViewer(
-    handlePublished,
-    'GET',
-    `/p/${GHOST_PUBLISH_ID}-${SLUG}`,
-  );
-
-  assert.equal(
-    res.statusCode,
-    404,
-    'the publish entry resolves, but its deck is gone',
-  );
-});
-
-test('a published page with a missing slug redirects to the canonical path', async () => {
-  seed();
-  const { res } = await callViewer(handlePublished, 'GET', `/p/${PUBLISH_ID}`);
-
-  assert.equal(res.statusCode, 302);
-  assert.equal(res.headers.Location, `/p/${PUBLISH_ID}-${SLUG}`);
-});
-
-test('a published page with the wrong slug redirects to the canonical path', async () => {
-  seed();
-  const { res } = await callViewer(
-    handlePublished,
-    'GET',
-    `/p/${PUBLISH_ID}-not-the-slug`,
-  );
-
-  assert.equal(res.statusCode, 302);
-  assert.equal(res.headers.Location, `/p/${PUBLISH_ID}-${SLUG}`);
-});
-
-test('a non-GET method on a published path falls through unmatched', async () => {
-  seed();
-  const { handled, res } = await callViewer(
+  const { handled } = await callViewer(
     handlePublished,
     'POST',
     `/p/${PUBLISH_ID}-${SLUG}`,
   );
-
-  assert.equal(handled, false, 'only GET is served');
-  assert.equal(res.statusCode, null);
-});
-
-test('the reader view refuses an unknown publish id with a 404', async () => {
-  seed();
-  const { res } = await callViewer(
-    handlePublished,
-    'GET',
-    `/p/${UNKNOWN_ID}-${SLUG}/reader`,
-  );
-
-  assert.equal(res.statusCode, 404);
-});
-
-test('the reader view redirects a wrong slug to the canonical reader path', async () => {
-  seed();
-  const { res } = await callViewer(
-    handlePublished,
-    'GET',
-    `/p/${PUBLISH_ID}-wrong/reader`,
-  );
-
-  assert.equal(res.statusCode, 302);
-  assert.equal(res.headers.Location, `/p/${PUBLISH_ID}-${SLUG}/reader`);
-});
-
-// ===========================================================================
-// embed.js — same id→deck ladder, but slug redirect only when a slug is given
-// ===========================================================================
-
-test('an embed for an unknown publish id is a 404', async () => {
-  seed();
-  const { res } = await callViewer(
-    handleEmbed,
-    'GET',
-    `/embed/${UNKNOWN_ID}-${SLUG}`,
-  );
-
-  assert.equal(res.statusCode, 404);
-});
-
-test('an embed whose deck no longer exists is a 404', async () => {
-  seed();
-  const { res } = await callViewer(
-    handleEmbed,
-    'GET',
-    `/embed/${GHOST_PUBLISH_ID}-${SLUG}`,
-  );
-
-  assert.equal(res.statusCode, 404);
-});
-
-test('an embed with a wrong slug redirects to the canonical embed path', async () => {
-  seed();
-  const { res } = await callViewer(
-    handleEmbed,
-    'GET',
-    `/embed/${PUBLISH_ID}-not-the-slug`,
-  );
-
-  assert.equal(res.statusCode, 302, 'a supplied-but-wrong slug is corrected');
-  assert.equal(res.headers.Location, `/embed/${PUBLISH_ID}-${SLUG}`);
+  assert.equal(handled, false);
 });
 
 // ===========================================================================

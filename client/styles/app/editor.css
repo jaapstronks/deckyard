@@ -36,14 +36,12 @@
 @import url('./editor/17-deck-grid.css');
 @import url('./editor/modals/18-modals-export.css');
 @import url('./editor/20-preview.css');
-@import url('./editor/30-publish.css');
 @import url('./editor/35-image-library.css');
 @import url('./editor/36-imagekit-picker.css');
 @import url('./editor/40-thumb.css');
 @import url('./editor/50-editor-responsive.css');
 @import url('./editor/modals/19-modals-revoke.css');
 @import url('./editor/93-read-only-mode.css');
-@import url('./editor/94-published-alt-warning.css');
 @import url('./editor/102-stock-media.css');
 @import url('./editor/103-data-source.css');
 @import url('./editor/105-inline-edit.css');

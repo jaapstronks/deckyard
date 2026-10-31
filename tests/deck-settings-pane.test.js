@@ -106,7 +106,7 @@ test('the pane assembles every section and normalizes each slice', () => {
   assert.equal(sectionChildren(pane, 'general'), 3, 'language, tags, text');
   assert.equal(sectionChildren(pane, 'appearance'), 1, 'theme');
   assert.equal(sectionChildren(pane, 'playback'), 4, 'builds … timing');
-  assert.equal(sectionChildren(pane, 'publishing'), 3, 'Q&A, preview, feed');
+  assert.equal(sectionChildren(pane, 'publishing'), 2, 'Q&A, feed');
   assert.equal(sectionChildren(pane, 'analytics'), 1);
   assert.equal(sectionChildren(pane, 'live-video'), 1);
 

@@ -3,6 +3,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { getRequestOrigin } from '../../utils/request-url.js';
 import { getOgImageUrl } from '../../config/branding.js';
+import { getAppBaseUrl } from '../../config/utils.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
   RENDERER_BUNDLE_ERRORS,
@@ -16,6 +17,7 @@ import {
   renderEditionViews,
 } from '../../services/public-edition.js';
 import { createLogger } from '../../utils/logger.js';
+import { countInstanceHealth } from '../../storage/instance-health.js';
 
 const log = createLogger('edition');
 
@@ -25,6 +27,21 @@ const log = createLogger('edition');
  * server may keep a copy (`docs/reference/publication-editions.md` § Caching).
  */
 const NO_STORE = 'no-store';
+
+/**
+ * A preview image is served with the media type its data URL names; only a
+ * plain image type is ever put in a header.
+ */
+const IMAGE_MEDIA_TYPE = /^image\/[a-z0-9.+-]+$/;
+
+/**
+ * The origin an edition's address is built on: the configured public URL,
+ * else the request's. Canonical link, card and render cache key then do not
+ * depend on the Host header a visitor sends (as `server/collab/origin.js`).
+ */
+function editionOrigin(req) {
+  return getAppBaseUrl() || getRequestOrigin(req) || 'http://localhost';
+}
 
 /** The tombstone of a revoked edition: no title, no author, no content. */
 const TOMBSTONE_HTML =
@@ -46,13 +63,15 @@ function sendTombstone(res) {
   return true;
 }
 
-function sendDocument(res, html) {
+function sendDocument(res, html, { frameable = false } = {}) {
   res.writeHead(200, {
     ...baseHeaders('text/html; charset=utf-8'),
     // The document carries this policy as a meta as well; the header adds
-    // `frame-ancestors`, which a meta cannot (as for the live `/p/` page).
+    // `frame-ancestors`, which a meta cannot. Only the `/embed/` address may
+    // be framed, anywhere: that is what it is for, and why
+    // security-headers.js omits X-Frame-Options there.
     'Content-Security-Policy': buildDocumentCspHeader({
-      frameAncestors: "'none'",
+      frameAncestors: frameable ? '*' : "'none'",
     }),
   });
   res.end(html);
@@ -99,21 +118,26 @@ async function resolve({ repoRoot, res }, publicationId, versionText) {
   return edition;
 }
 
-function viewHandler(view) {
+function viewHandler(view, { frameable = false } = {}) {
   return async (ctx, publicationId, versionText) => {
     const edition = await resolve(ctx, publicationId, versionText);
     if (!edition) return true;
     let views;
     try {
       views = await renderEditionViews(ctx.repoRoot, edition, {
-        origin: getRequestOrigin(ctx.req) || 'http://localhost',
+        origin: editionOrigin(ctx.req),
         lang: ctx.url.searchParams.get('lang'),
       });
     } catch (err) {
       return renderFailed(ctx.res, err);
     }
     if (!views) return sendTombstone(ctx.res);
-    return sendDocument(ctx.res, views[view]);
+    // The audience a surface had, for instance health; an edition names no
+    // slide types to the counter, its input is not read for it.
+    countInstanceHealth([
+      { axis: 'surface', key: frameable ? 'embed' : 'published' },
+    ]);
+    return sendDocument(ctx.res, views[view], { frameable });
   };
 }
 
@@ -145,9 +169,9 @@ async function serveOgImage(ctx, publicationId, versionText) {
   if (!edition) return true;
   const og = await editionOgImage(ctx.repoRoot, edition);
   if (!og) return sendTombstone(ctx.res);
-  if (!og.image) {
-    // The edition shows no image: the installation's own card, which says
-    // nothing about the deck and so cannot drift from it.
+  if (!og.image || !IMAGE_MEDIA_TYPE.test(og.image.mediaType)) {
+    // The edition shows no (servable) image: the installation's own card,
+    // which says nothing about the deck and so cannot drift from it.
     ctx.res.writeHead(302, {
       Location: getOgImageUrl(),
       'Cache-Control': NO_STORE,
@@ -166,22 +190,28 @@ async function serveOgImage(ctx, publicationId, versionText) {
 }
 
 const EDITION =
-  '/p/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([1-9][0-9]{0,8})';
+  '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([1-9][0-9]{0,8})';
 
 /**
  * One edition of a publication at `/p/:publicationId/:version`, and its
- * subresources. The version is part of the address: there is no route that
- * resolves "the latest" edition, and none that reaches the deck.
+ * subresources; `/embed/:publicationId/:version` is the same canvas, frameable.
+ * The version is part of the address: there is no route that resolves "the
+ * latest" edition, and none that reaches the deck.
  */
 export const ROUTES = [
+  {
+    prefix: '/embed/',
+    suffix: '',
+    handler: viewHandler('canvas', { frameable: true }),
+  },
   { suffix: '', handler: viewHandler('canvas') },
   { suffix: '/reader', handler: viewHandler('reader') },
   { suffix: '/manifest.json', handler: serveManifest },
   { suffix: '/edition.zip', handler: servePackage },
   { suffix: '/og', handler: serveOgImage },
-].map(({ suffix, handler }) => ({
+].map(({ prefix = '/p/', suffix, handler }) => ({
   method: 'GET',
-  pattern: new RegExp(`^${EDITION}${suffix.replace('.', '\\.')}$`),
+  pattern: new RegExp(`^${prefix}${EDITION}${suffix.replace('.', '\\.')}$`),
   captures: ['uuid', 'text'],
   handler,
 }));

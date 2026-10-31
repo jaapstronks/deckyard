@@ -828,7 +828,6 @@ export function mapPresentationRow(row, lookup = NO_DISPLAY_NAMES) {
     slides: row.slides || [],
     notionSourcePageId: row.notion_source_page_id,
     sandbox: row.sandbox,
-    published: row.published,
     trashedAt: row.trashed_at,
     trashedBy: toDisplayIdentity(
       row.trashed_by_user_id,
@@ -1089,7 +1088,7 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   // This used to be built unconditionally, and the two halves disagreed:
   // Kysely drops an `undefined` from a SET clause, so `title` survived a
   // partial write, while `jsonb(undefined)` turned the same absence into an
-  // explicit `null` and wiped `settings`, `i18n`, `published` and
+  // explicit `null` and wiped `settings`, `i18n` and
   // `description`. One partial `POST /api/v1/presentations/:id/slides`
   // emptied a production deck's whole i18n object that way.
   // Dual-key (T10 PR 3 + transfer-gap fix): the update path stamps the
@@ -1133,8 +1132,6 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   if (data.settings !== undefined) updateData.settings = jsonb(data.settings);
   if (data.i18n !== undefined) updateData.i18n = jsonb(data.i18n);
   if (data.slides !== undefined) updateData.slides = jsonb(data.slides);
-  if (data.published !== undefined)
-    updateData.published = jsonb(data.published);
 
   if (opts?.allowVisibilityChange && data.visibility) {
     updateData.visibility = data.visibility;
@@ -1619,8 +1616,6 @@ export { getSandboxTotalBytes, sandboxMaxTotalBytes } from './sandbox-quota.js';
 export { getPresentationCached } from './cache.js';
 
 export { updateSlideNotes } from './slide-notes.js';
-
-export { clearPublishedOgImageUrl } from './published-preview.js';
 
 export {
   createComment,

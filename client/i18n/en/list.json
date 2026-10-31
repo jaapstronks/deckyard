@@ -69,8 +69,6 @@
   "imageLibrary.delete.usedBy.many": "Used by {count} presentations.",
   "imageLibrary.delete.usedBy.one": "Used by 1 presentation.",
   "imageLibrary.delete.usedByList": "Used by (most recent first):",
-  "imageLibrary.delete.usedByPublished.many": "Warning: {count} of those are published on the web.",
-  "imageLibrary.delete.usedByPublished.one": "Warning: 1 of those is published on the web.",
   "imageLibrary.description": "Brief description (optional)",
   "imageLibrary.description.label": "Description (internal)",
   "imageLibrary.detail.created": "Uploaded: {date}",

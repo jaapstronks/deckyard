@@ -13,7 +13,7 @@
  * - the match is whole-value and content-scoped, not a substring or a
  *   whole-deck sweep;
  * - trashed decks and other organizations' decks stay out;
- * - published decks carry their publish entries;
+ * - a deck with a public edition carries its newest one, a revoked one none;
  * - results come back newest-modified first.
  */
 
@@ -31,7 +31,6 @@ import {
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import { getImageLibraryUsage } from '../../server/storage/image-library-usage.js';
-import { upsertPublishedEntry } from '../../server/storage/published.js';
 
 const storageScope = testScope();
 
@@ -207,26 +206,57 @@ pgDescribe('image library usage (real PostgreSQL, via facade)', () => {
     assert.ok(!titles.includes('Foreign deck'));
   });
 
-  it('carries the publish entries of a deck that is published', async () => {
-    await upsertPublishedEntry(storageScope, {
-      publishId: 'pub-hero',
-      presentationId: deckWithImage,
-      title: 'Deck with image',
-    });
+  it('carries the newest public edition of a deck that is published', async () => {
+    const orgId = storageScope.organizationId;
+    const edition = async (publicationId, version) => {
+      const row = await db
+        .insertInto('publication_editions')
+        .values({
+          publication_id: publicationId,
+          organization_id: orgId,
+          version,
+          source_revision: 1,
+          renderer_hash: 'r',
+          manifest_hash: `m${version}`,
+          manifest_bytes: Buffer.from('{}'),
+          input_bytes: Buffer.from('{}'),
+          idempotency_key: `k-${publicationId}-${version}`,
+          request_hash: 'h',
+        })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+      return row.id;
+    };
+    const series = async (presentationId) =>
+      (
+        await db
+          .insertInto('publications')
+          .values({ organization_id: orgId, presentation_id: presentationId })
+          .returning('id')
+          .executeTakeFirstOrThrow()
+      ).id;
+
+    const published = await series(deckWithImage);
+    await edition(published, 1);
+    const v2 = await edition(published, 2);
+    const revoked = await series(deckWithNestedImage);
+    const only = await edition(revoked, 1);
+    await db
+      .insertInto('publication_edition_revocations')
+      .values({ edition_id: only, organization_id: orgId })
+      .execute();
 
     const usage = await getImageLibraryUsage(storageScope, URL_IN_SLIDES);
     const hit = usage.find((u) => u.id === deckWithImage);
-    assert.deepStrictEqual(
-      hit.published.map((p) => p.publishId),
-      ['pub-hero'],
-    );
-    assert.strictEqual(hit.published[0].slug, 'deck-with-image');
+    assert.ok(v2);
+    assert.strictEqual(hit.published.version, 2);
+    assert.strictEqual(hit.published.path, `/p/${published}/2`);
 
     const unpublished = usage.find((u) => u.id === deckWithNestedImage);
-    assert.deepStrictEqual(
+    assert.strictEqual(
       unpublished.published,
-      [],
-      'an unpublished deck gets an empty list',
+      null,
+      'a deck whose only edition is revoked is not published',
     );
   });
 });

@@ -52,6 +52,14 @@ const { crossOrganizationScope, singleOrganizationScope } =
 const facade = await import('../server/storage/presentations/index.js');
 const { initializeStorage } = await import('../server/db/lifecycle.js');
 
+const PUB_A = 'a0000000-0000-4000-8000-0000000000a1';
+const PUB_B = 'b0000000-0000-4000-8000-0000000000b1';
+const EDITION_A = 'a0000000-0000-4000-8000-0000000000a2';
+const EDITION_B = 'b0000000-0000-4000-8000-0000000000b2';
+// The edition tables address decks by UUID; these stand for the two decks.
+const SERIES_DECK_A = 'a0000000-0000-4000-8000-0000000000a3';
+const SERIES_DECK_B = 'b0000000-0000-4000-8000-0000000000b3';
+
 test.before(async () => {
   assert.equal(
     isMultiOrgEnabled(),
@@ -71,9 +79,28 @@ test.before(async () => {
       // PR 2: the same question for the seven small facades. One row per
       // organization per table, so "did the facade filter on the session's
       // organization" has a visibly different answer per organization.
-      published_presentations: [
-        publishedRow({ id: 'pub-alpha', deck: 'deck-alpha', org: ORG_A }),
-        publishedRow({ id: 'pub-beta', deck: 'deck-beta', org: ORG_B }),
+      // One publication per organization, each at version 1, with an old
+      // publish id that points at it (T1.5).
+      publications: [
+        { id: PUB_A, organization_id: ORG_A, presentation_id: SERIES_DECK_A },
+        { id: PUB_B, organization_id: ORG_B, presentation_id: SERIES_DECK_B },
+      ],
+      publication_editions: [
+        editionRow({ id: EDITION_A, publication: PUB_A, org: ORG_A }),
+        editionRow({ id: EDITION_B, publication: PUB_B, org: ORG_B }),
+      ],
+      publication_edition_revocations: [],
+      publication_legacy_links: [
+        {
+          legacy_id: 'aaaa0001',
+          organization_id: ORG_A,
+          edition_id: EDITION_A,
+        },
+        {
+          legacy_id: 'bbbb0002',
+          organization_id: ORG_B,
+          edition_id: EDITION_B,
+        },
       ],
       image_library: [
         imageRow({ id: 'img-alpha', org: ORG_A }),
@@ -123,16 +150,13 @@ function deckRow({ id, org }) {
   };
 }
 
-function publishedRow({ id, deck, org }) {
+function editionRow({ id, publication, org }) {
   return {
     id,
+    publication_id: publication,
     organization_id: org,
-    presentation_id: deck,
-    title: deck,
-    slug: deck,
-    og_image_url: '',
-    created_at: '2026-01-01T00:00:00.000Z',
-    modified_at: '2026-01-01T00:00:00.000Z',
+    version: 1,
+    published_at: '2026-01-01T00:00:00.000Z',
   };
 }
 
@@ -292,29 +316,41 @@ test('an entry point with no organization refuses to guess once there are severa
 // `getStorageContext()` got wrong: it either handed Beta Alpha's rows or told
 // Beta its own rows did not exist.
 
-test('the published index is per organization', async () => {
-  const { getPublishedIndex } = await import('../server/storage/published.js');
-  const alpha = await getPublishedIndex({ organizationId: ORG_A });
-  const beta = await getPublishedIndex({ organizationId: ORG_B });
-  assert.deepEqual(Object.keys(alpha), ['pub-alpha']);
+test("a deck's publication state is read per organization", async () => {
+  const { latestPublicEditionsForDecks } =
+    await import('../server/storage/editions.js');
+  const decks = [SERIES_DECK_A, SERIES_DECK_B];
+  const alpha = await latestPublicEditionsForDecks(
+    { organizationId: ORG_A },
+    decks,
+  );
+  const beta = await latestPublicEditionsForDecks(
+    { organizationId: ORG_B },
+    decks,
+  );
+  assert.deepEqual([...alpha.keys()], [SERIES_DECK_A]);
   assert.deepEqual(
-    Object.keys(beta),
-    ['pub-beta'],
-    "Beta used to be handed Alpha's publish index",
+    [...beta.keys()],
+    [SERIES_DECK_B],
+    "Beta must not see Alpha's publication",
   );
 });
 
-test('a publish id still resolves across organizations, because it is the token', async () => {
-  const { getPublishedById } = await import('../server/storage/published.js');
+test('an old publish id resolves across organizations, because it is the token', async () => {
+  const { resolveLegacyPublication } =
+    await import('../server/storage/editions.js');
   const scope = crossOrganizationScope(
     null,
-    'published deck: the publish id is the authorization',
+    'published deck: the old publish id is the authorization',
   );
-  const entry = await getPublishedById(scope, 'pub-beta');
+  assert.deepEqual(await resolveLegacyPublication(scope, 'bbbb0002'), {
+    publicationId: PUB_B,
+    version: 1,
+  });
+  // Under an organization scope the read is limited to that organization.
   assert.equal(
-    entry?.presentationId,
-    'deck-beta',
-    'a public link must work from any organization',
+    await resolveLegacyPublication({ organizationId: ORG_A }, 'bbbb0002'),
+    null,
   );
 });
 

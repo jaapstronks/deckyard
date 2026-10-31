@@ -3,14 +3,14 @@
  *
  * Answers "which decks use this image, and are any of them published" for one
  * image library URL. It reads the decks straight from the presentations store
- * and joins them against the organization's publish index, so it takes a
+ * and asks the editions which of them have a public edition, so it takes a
  * storage scope rather than a bare repo root — see server/storage/scope.js.
  */
 
 import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
-import { getPublishedIndex } from './published.js';
+import { latestPublicEditionsForDecks } from './editions.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 
 /**
@@ -85,27 +85,17 @@ export async function getImageLibraryUsage(scope, url) {
   const u = String(url || '').trim();
   if (!u) return [];
 
-  const idx = await getPublishedIndex(scope);
-  const publishedByPresId = new Map();
-  for (const [publishId, entry] of Object.entries(idx || {})) {
-    const pid = String(entry?.presentationId || '').trim();
-    if (!pid) continue;
-    const arr = publishedByPresId.get(pid) || [];
-    arr.push({
-      publishId,
-      slug: entry?.slug || '',
-      modified: entry?.modified || null,
-      created: entry?.created || null,
-    });
-    publishedByPresId.set(pid, arr);
-  }
-
   const decks = await findPresentationsUsingUrl(u, ctx);
+  const published = await latestPublicEditionsForDecks(
+    scope,
+    decks.map((pres) => pres.id),
+  );
 
   return decks.map((pres) => ({
     id: pres.id,
     title: pickTitle(pres),
     modified: pres.modified || null,
-    published: publishedByPresId.get(pres.id) || [],
+    // The deck's newest public edition, or null.
+    published: published.get(pres.id) || null,
   }));
 }

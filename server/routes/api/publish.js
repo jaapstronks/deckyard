@@ -1,208 +1,52 @@
-import { publishedPreviewFingerprint } from '../../render/og-image.js';
-import {
-  updatePublishedSlug,
-  upsertPublishedEntry,
-} from '../../storage/published.js';
-import { updatePresentation } from '../../storage/presentations/index.js';
 import {
   serveJson,
-  serverError,
-  badRequest,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
-import { withPresentationAuth } from '../../utils/route-middleware.js';
-import { isMediaProviderInitialized } from '../../media/index.js';
-import { firstPublicSlide } from '../../utils/public-output.js';
+import { getRequestOrigin } from '../../utils/request-url.js';
 import {
-  publishPresentation,
   assertPublishingEnabled,
-  buildPublishOgImage,
-  withdrawReplacedPreview,
+  publishEdition,
   unpublishPresentation,
-} from '../../services/publish-presentation.js';
-import { createLogger } from '../../utils/logger.js';
+} from '../../services/publish-edition.js';
 import { dispatchRoutes } from '../../utils/router.js';
-const log = createLogger('publish');
 
-// POST /api/presentations/:id/publish — publish (public share link)
-async function handlePublishCreate(
-  { repoRoot, storageScope, req, res, authedUser },
-  id,
-) {
-  // Refuse in sandbox before loading the deck (the shared policy gate).
+// POST /api/presentations/:id/publish — publish the deck as its next edition
+async function handlePublishCreate({ storageScope, req, res, authedUser }, id) {
+  // Refuse in sandbox before reading anything (the shared policy gate).
   assertPublishingEnabled();
 
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'write',
-  });
-  if (!pres) return true;
-
-  // The publish flow (sandbox refusal, OG preview, entry upsert, thumbnail
-  // warm, webhook) is shared with the v1 route — one canonical form.
-  const result = await publishPresentation({
-    repoRoot,
-    storageScope,
-    req,
-    pres,
-    actor: authedUser,
-  });
-  serveJson(res, 200, result);
-  return true;
-}
-
-// DELETE /api/presentations/:id/publish — depublish (disable public link)
-async function handlePublishDelete({ storageScope, res, authedUser }, id) {
-  // The flow is shared with the v1 route (`services/publish-presentation.js`);
-  // a refusal is thrown and `withErrorHandler` renders it.
-  await unpublishPresentation(storageScope, { actor: authedUser }, id);
-  serveJson(res, 200, { ok: true });
-  return true;
-}
-
-// PATCH /api/presentations/:id/publish/slug — update published slug (cosmetic,
-// but controls the canonical URL)
-async function handlePublishSlug({ storageScope, req, res, authedUser }, id) {
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'write',
-  });
-  if (!pres) return true;
-
-  const publishId = String(pres?.published?.id || '').trim();
-  if (!publishId) {
-    badRequest(res, 'Not published');
-    return true;
-  }
-
-  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
-  const nextSlug = parsed.body?.slug;
-  const entry = await updatePublishedSlug(storageScope, publishId, nextSlug);
+  const { expectedRevision, idempotencyKey } = parsed.body;
 
-  // Only the publication column moves: writing the loaded deck back whole
-  // would put the dominant text in the active language version (B620).
-  const published = {
-    ...(pres.published && typeof pres.published === 'object'
-      ? pres.published
-      : {}),
-    id: publishId,
-    slug: entry.slug,
-    modified: entry.modified,
-  };
-  await updatePresentation(
+  // The one publish service, shared with v1 (`services/publish-edition.js`):
+  // authorization, gates, sealing, commit and webhook. A refusal is thrown and
+  // `withErrorHandler` renders it.
+  const result = await publishEdition(
     storageScope,
-    id,
-    { published },
-    {
-      actorEmail: authedUser?.email || null,
-    },
+    { actor: authedUser },
+    { presentationId: id, expectedRevision, idempotencyKey },
+    { origin: getRequestOrigin(req) },
   );
-
-  serveJson(res, 200, {
-    publishId,
-    slug: entry.slug,
-    path: `/p/${publishId}-${entry.slug}`,
-  });
+  serveJson(res, result.replayed ? 200 : 201, result);
   return true;
 }
 
-// POST /api/presentations/:id/preview/regenerate — regenerate the preview image
-// for an already-published presentation
-async function handlePreviewRegenerate(
-  { repoRoot, storageScope, res, authedUser },
-  id,
-) {
-  const pres = await withPresentationAuth({
+// DELETE /api/presentations/:id/publish — revoke every public edition
+async function handlePublishDelete({ storageScope, res, authedUser }, id) {
+  const { revoked } = await unpublishPresentation(
     storageScope,
+    { actor: authedUser },
     id,
-    authedUser,
-    res,
-    permission: 'write',
-  });
-  if (!pres) return true;
-
-  const publishId = String(pres?.published?.id || '').trim();
-  if (!publishId) {
-    badRequest(res, 'Not published');
-    return true;
-  }
-
-  // Regenerate insists on a live media provider and reports its absence, where
-  // the publish flow would silently fall back to a picked/default image: this
-  // route exists to re-render, so "nothing to render with" is an error, not a
-  // quiet no-op.
-  if (!isMediaProviderInitialized()) {
-    serverError(res, 'Media provider not available');
-    return true;
-  }
-
-  // Nothing to render a preview from (every slide is live-only, e.g. a deck
-  // that holds only a follow-along invite).
-  if (!firstPublicSlide(pres, { channel: 'published' })) {
-    badRequest(res, 'No slides to preview');
-    return true;
-  }
-
-  try {
-    // Same renderer, author overlay and fallback ladder as POST /publish — the
-    // one canonical OG-preview build (B73). Regenerate keeps its own entry
-    // upsert + document write below: it is only a fresh image, not the full
-    // publish flow (no webhook, no deck-grid thumbnail warm).
-    const ogImageUrl = await buildPublishOgImage({
-      repoRoot,
-      storageScope,
-      pres,
-      actorEmail: authedUser?.email || null,
-      publishId,
-    });
-
-    // Update the published entry
-    await upsertPublishedEntry(storageScope, {
-      publishId,
-      presentationId: pres.id,
-      title: pres.title,
-      ogImageUrl,
-    });
-
-    // Only the publication column moves, as on publish (B620).
-    const published = {
-      ...(pres.published && typeof pres.published === 'object'
-        ? pres.published
-        : {}),
-      ogImageUrl,
-      previewFingerprint: publishedPreviewFingerprint(pres),
-    };
-    await updatePresentation(
-      storageScope,
-      id,
-      { published },
-      {
-        actorEmail: authedUser?.email || null,
-      },
-    );
-    await withdrawReplacedPreview(pres, ogImageUrl);
-
-    serveJson(res, 200, { ok: true, ogImageUrl });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    log.error('[publish] Preview regeneration failed:', err);
-    serverError(res, 'Preview generation failed');
-  }
+  );
+  serveJson(res, 200, { ok: true, revoked });
   return true;
 }
 
 /**
- * Declarative route table for the publish/preview endpoints (A7.19 C8). Order
- * matches the previous if-chain; the two `publish$` routes share one pattern
- * and split on method. Method mismatch falls through (the chain had no 405).
+ * Declarative route table for publishing: one path, split on method. Method
+ * mismatch falls through.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
@@ -218,18 +62,6 @@ export const ROUTES = [
     pattern: /^\/api\/presentations\/([^/]+)\/publish$/,
     captures: ['uuid'],
     handler: handlePublishDelete,
-  },
-  {
-    method: 'PATCH',
-    pattern: /^\/api\/presentations\/([^/]+)\/publish\/slug$/,
-    captures: ['uuid'],
-    handler: handlePublishSlug,
-  },
-  {
-    method: 'POST',
-    pattern: /^\/api\/presentations\/([^/]+)\/preview\/regenerate$/,
-    captures: ['uuid'],
-    handler: handlePreviewRegenerate,
   },
 ];
 

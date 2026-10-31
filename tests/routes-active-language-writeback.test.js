@@ -8,15 +8,14 @@
  * question, renaming the published slug, regenerating the preview and
  * restoring a saved version. On a deck whose active language is not the
  * dominant one, the dominant text landed in `versions[active]`. The slide
- * writers now go through `dominantSlidesBody`, the restore aligns the
- * snapshot to its active version, and the publish routes write only the
- * publication column, as the shared publish flow does.
+ * writers now go through `dominantSlidesBody` and the restore aligns the
+ * snapshot to its active version. The slug and preview routes are gone since
+ * T1.5: a publish makes an edition and writes nothing on the deck.
  *
  * The store: OWNER's Dutch deck with a German version, edited last in German
  * (`active = de`), in the shape of the dominant-version write test (B740).
  * Each case drives one route through its exported handler over the fake
- * database and reads the stored row. The preview regenerate route needs a
- * live media provider and is covered by its shared shape with the slug route.
+ * database and reads the stored row.
  *
  * Run with: node --test tests/routes-active-language-writeback.test.js
  */
@@ -41,7 +40,6 @@ delete process.env.SANDBOX_MODE;
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OWNER_EMAIL = 'owner@example.com';
 const DECK_ID = 'd0000748-0000-4000-8000-000000000001';
-const PUBLISH_ID = 'pub748';
 const REPO_ROOT = process.cwd();
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
@@ -51,7 +49,6 @@ const { createStorageScope } = await import('../server/utils/context.js');
 const { withErrorHandler } = await import('../server/utils/http.js');
 const { getPresentation, createPresentationVersion } =
   await import('../server/storage/presentations/index.js');
-const { upsertPublishedEntry } = await import('../server/storage/published.js');
 const { createLiveSession, updateLiveSessionState } =
   await import('../server/storage/live-sessions/index.js');
 const { createQuestion } = await import('../server/storage/questions.js');
@@ -62,7 +59,6 @@ const { handlePresentationCommentApply } =
 const { handlePresentationRestoreVersion } =
   await import('../server/routes/api/presentations/restore.js');
 const { handleQuestions } = await import('../server/routes/api/questions.js');
-const { handlePublish } = await import('../server/routes/api/publish.js');
 
 let PptxGenJS = null;
 try {
@@ -128,7 +124,6 @@ async function installDb({ comments = [] } = {}) {
           versions: { nl: structuredClone(NL), de: structuredClone(DE) },
         },
         slides: structuredClone(NL.slides),
-        published: { id: PUBLISH_ID, slug: 'roadmap' },
         created_at: '2026-07-01T00:00:00.000Z',
         modified_at: '2026-07-01T00:00:00.000Z',
         trashed_at: null,
@@ -331,26 +326,6 @@ test('promoting an audience question keeps the active version', async () => {
   const row = storedDeck();
   assert.equal(row.slides.length, 3, 'the question slide joins the deck');
   assert.equal(row.i18n.versions.de.slides.length, 3);
-  assertVersionsKept(row);
-});
-
-test('renaming the published slug keeps the active version', async () => {
-  await installDb();
-  await upsertPublishedEntry(scope(), {
-    publishId: PUBLISH_ID,
-    presentationId: DECK_ID,
-    title: NL.title,
-  });
-  const res = await call(handlePublish, {
-    method: 'PATCH',
-    body: { slug: 'fahrplan' },
-    path: `/api/presentations/${DECK_ID}/publish/slug`,
-  });
-  assert.equal(res.statusCode, 200, String(res.body));
-
-  const row = storedDeck();
-  assert.equal(row.published.slug, 'fahrplan');
-  assert.equal(row.published.id, PUBLISH_ID);
   assertVersionsKept(row);
 });
 

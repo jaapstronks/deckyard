@@ -20,7 +20,6 @@
   "imageLibrary.delete.title": "Slet billede",
   "imageLibrary.delete.usedBy.many": "Bruges i {count} præsentationer.",
   "imageLibrary.delete.usedByList": "Bruges i (nyeste først):",
-  "imageLibrary.delete.usedByPublished.many": "Bemærk: {count} af dem er udgivet på nettet.",
   "imageLibrary.description": "Kort beskrivelse (valgfri)",
   "imageLibrary.description.label": "Beskrivelse (intern)",
   "imageLibrary.detail.created": "Uploadet: {date}",

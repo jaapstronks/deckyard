@@ -305,6 +305,8 @@ test('the presentation cache refuses a bare repoRoot, like the facade does', asy
 // `toStorageContext` **before** touching the adapter, so a missed call site
 // fails on validation rather than somewhere inside a query.
 
+const PUB = '00000000-0000-4000-8000-0000000000e1';
+
 const smallFacades = {
   'slide-library.js': [
     ['listPersonalLibrary', (fn) => fn('/srv', 'a@b.c')],
@@ -334,16 +336,17 @@ const smallFacades = {
       (fn) => fn('/srv', 'a@b.c', [{ type: 'slide', id: 'x' }]),
     ],
   ],
-  'published.js': [
-    ['getPublishedIndex', (fn) => fn('/srv')],
-    ['getPublishedById', (fn) => fn('/srv', 'pub-1')],
+  // The editions store replaced the published facade (T1.5).
+  'editions.js': [
+    ['getPublicEdition', (fn) => fn('/srv', PUB, 1)],
+    ['latestPublicEditionsForDecks', (fn) => fn('/srv', [PUB])],
+    ['resolveLegacyPublication', (fn) => fn('/srv', 'abcd1234')],
+    ['revokeDeckEditions', (fn) => fn('/srv', PUB)],
     [
-      'upsertPublishedEntry',
-      (fn) => fn('/srv', { publishId: 'pub-1', presentationId: 'deck-1' }),
+      'linkLegacyPublication',
+      (fn) => fn('/srv', { legacyId: 'abcd1234', editionId: PUB }),
     ],
-    ['removePublishedEntry', (fn) => fn('/srv', 'pub-1')],
-    ['updatePublishedSlug', (fn) => fn('/srv', 'pub-1', 'slug')],
-    ['listPublishedForFeed', (fn) => fn('/srv')],
+    ['listLatestPublicEditions', (fn) => fn('/srv')],
   ],
   'tags.js': [
     // The old shape took no scope at all, hence the missing first argument.
@@ -405,24 +408,38 @@ for (const [file, calls] of Object.entries(smallFacades)) {
   });
 }
 
-test('a publish id is the one read the published facade may do unscoped', () => {
-  // Same reasoning as getPresentation: /p/:id, /embed/:id and the feed resolve a
-  // globally unique publish id, so the token is the authorization. Every other
-  // function on that facade — including the index the feed lists from — must
-  // state its organization.
+test('the public edition reads may run cross-organization; every write and listing may not', async () => {
+  // Same reasoning as getPresentation: /p/:publicationId/:version, an old
+  // /p/:publishId link and the edition embed resolve a public id, so the id is
+  // the authorization. A write and the feed's listing must state their
+  // organization: organization B can never reach a series of A.
+  const editions = await import('../server/storage/editions.js');
   const scope = crossOrganizationScope(
     null,
-    'published deck: the publish id is the authorization',
+    'publication-edition: the public publication id is the authorization',
   );
-  assert.doesNotThrow(() =>
-    resolveScope(scope, 'getPublishedById', { allowCrossOrganization: true }),
-  );
-  assert.throws(
-    () => resolveScope(scope, 'getPublishedIndex'),
-    /cannot run cross-organization/,
-  );
-  assert.throws(
-    () => resolveScope(scope, 'upsertPublishedEntry'),
-    /cannot run cross-organization/,
-  );
+  for (const name of [
+    'getPublicEdition',
+    'resolveLegacyPublication',
+    'latestPublicEditionsForDecks',
+  ]) {
+    assert.doesNotThrow(() =>
+      resolveScope(scope, name, { allowCrossOrganization: true }),
+    );
+  }
+  for (const [name, invoke] of [
+    ['revokeDeckEditions', (fn) => fn(scope, PUB)],
+    [
+      'linkLegacyPublication',
+      (fn) => fn(scope, { legacyId: 'abcd1234', editionId: PUB }),
+    ],
+    ['listLatestPublicEditions', (fn) => fn(scope)],
+    ['revokeEdition', (fn) => fn(scope, PUB, 1)],
+  ]) {
+    await assert.rejects(
+      async () => invoke(editions[name]),
+      /cannot run cross-organization/,
+      `${name}() refuses a cross-organization scope`,
+    );
+  }
 });

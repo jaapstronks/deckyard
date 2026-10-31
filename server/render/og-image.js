@@ -1,111 +1,15 @@
-import crypto from 'node:crypto';
-import { getOgImageUrl } from '../config/branding.js';
-import { SLIDE_TYPES } from '../../shared/slide-types.js';
-import { firstPublicSlide } from '../utils/public-output.js';
-
-function firstNonEmptyString(arr) {
-  for (const v of arr || []) {
-    if (typeof v === 'string' && v.trim()) return v.trim();
-  }
-  return '';
-}
-
-export function pickOgImageUrlFromPresentation(pres, options) {
-  const first = firstPublicSlide(pres, options);
-  if (!first) return '';
-
-  const type = String(first.type || '');
-  const content =
-    first.content && typeof first.content === 'object' ? first.content : {};
-  const def = SLIDE_TYPES?.[type];
-
-  // Heuristic: use the first image-like field (in schema order).
-  if (def?.fields && Array.isArray(def.fields)) {
-    for (const f of def.fields) {
-      if (!f || typeof f !== 'object') continue;
-      if (f.type === 'image' && typeof f.key === 'string') {
-        const v = content[f.key];
-        if (typeof v === 'string' && v.trim()) return v.trim();
-      }
-      if (f.type === 'images' && typeof f.key === 'string') {
-        const v = content[f.key];
-        if (Array.isArray(v)) {
-          const s = firstNonEmptyString(v);
-          if (s) return s;
-        }
-      }
-    }
-  }
-
-  // Fallback: scan for any string that looks like an asset/upload URL.
-  for (const v of Object.values(content)) {
-    if (typeof v === 'string' && v.trim()) {
-      const s = v.trim();
-      if (s.startsWith('/uploads/') || s.startsWith('/assets/')) return s;
-    }
-    if (Array.isArray(v)) {
-      const s = firstNonEmptyString(v);
-      if (s.startsWith('/uploads/') || s.startsWith('/assets/')) return s;
-    }
-  }
-
-  return '';
-}
-
 /**
- * Versioned evidence for a rendered published preview: the slide the image
- * shows, as the publication channel selects it, plus the theme and preview
- * settings it was rendered with. Never an author snapshot. The rest of the
- * deck is not part of the image, so an edit elsewhere keeps the proof; hiding
- * or editing the previewed slide (or hiding everything) expires it.
+ * Until T1.5 a publish rendered a preview image of the deck and stored it
+ * under a name of this shape. No publication uses one any more (an edition's
+ * preview is its own `/og`); the name is kept so the static route can refuse
+ * the leftover files and `scripts/sweep-published-previews.js` can find them,
+ * without touching any other upload.
+ *
+ * @param {string} name - A file name, no directory
+ * @returns {boolean}
  */
-export function publishedPreviewFingerprint(pres) {
-  return crypto
-    .createHash('sha256')
-    .update(
-      JSON.stringify({
-        contract: 'published-preview-v2',
-        slide: firstPublicSlide(pres, { channel: 'published' }),
-        theme: pres?.theme,
-        settings: pres?.settings?.ogPreview,
-      }),
-    )
-    .digest('hex');
-}
-
-/** Legacy or changed snapshots fail closed; publishing again creates fresh proof. */
-export function safePublishedOgImage(
-  pres,
-  storedUrl = pres?.published?.ogImageUrl,
-) {
-  if (
-    storedUrl &&
-    pres?.published?.ogImageUrl === storedUrl &&
-    pres?.published?.previewFingerprint === publishedPreviewFingerprint(pres)
-  ) {
-    return storedUrl;
-  }
-  return getOgImageUrl();
-}
-
-/** Only filenames minted by the publication OG generator, never arbitrary uploads. */
 export function isPublishedPreviewAssetName(name) {
   return /^og-(?:[a-f0-9]{8}|v2-[a-f0-9]{8}-[a-f0-9]{20})-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.png$/.test(
     name,
   );
-}
-
-/**
- * The publish id a generated preview name was minted for (`og-<id>-…` and
- * `og-v2-<id>-…`), or null for any other name. A publication only ever
- * withdraws its own previews, so a stored URL that names another publication's
- * object (a picked content image, a hand-edited column) cannot delete it.
- * @param {unknown} name
- * @returns {string|null}
- */
-export function publishedPreviewPublishId(name) {
-  if (typeof name !== 'string' || !isPublishedPreviewAssetName(name)) {
-    return null;
-  }
-  return /^og-(?:v2-)?([a-f0-9]{8})-/.exec(name)?.[1] ?? null;
 }
