@@ -4,10 +4,9 @@
  * Provides defense-in-depth HTML sanitization using DOMPurify.
  * Works in both browser and Node.js environments.
  *
- * Usage:
- * - sanitizeHtml(html, config): Full HTML sanitization with allowed tags
- * - sanitizeInline(html): Inline-only (strong, em, a, span)
- * - stripHtml(html): Remove all HTML, return plain text
+ * One job: author HTML of a custom-HTML slide (`sanitizeSlideHtmlSync()` and
+ * the two readers of its tree). Markdown does not come here; it is safe by
+ * construction in `shared/markdown.js`.
  */
 
 let purify = null;
@@ -54,179 +53,7 @@ async function initPurify() {
 }
 
 /**
- * Default allowed tags for full HTML sanitization
- */
-const DEFAULT_ALLOWED_TAGS = [
-  // Block elements
-  'p',
-  'div',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'ul',
-  'ol',
-  'li',
-  'blockquote',
-  'pre',
-  'code',
-  'table',
-  'thead',
-  'tbody',
-  'tr',
-  'th',
-  'td',
-  'hr',
-  'br',
-  // Inline elements
-  'strong',
-  'b',
-  'em',
-  'i',
-  'u',
-  's',
-  'strike',
-  'a',
-  'span',
-  'sub',
-  'sup',
-  'mark',
-  // Media (sanitized attributes)
-  'img',
-];
-
-/**
- * Default allowed attributes
- */
-const DEFAULT_ALLOWED_ATTR = [
-  'href',
-  'target',
-  'rel',
-  'title',
-  'alt',
-  'src',
-  'class',
-  'id',
-  'style',
-  'colspan',
-  'rowspan',
-  'scope',
-  'start', // <ol start> for an ordered list that doesn't begin at 1
-  'data-lang',
-  'data-math', // Code highlighting and math rendering
-];
-
-/**
- * Inline-only allowed tags (for sanitizeInline)
- */
-const INLINE_ALLOWED_TAGS = [
-  'strong',
-  'b',
-  'em',
-  'i',
-  'a',
-  'span',
-  'br',
-  'code',
-];
-
-/**
- * Inline-only allowed attributes
- */
-const INLINE_ALLOWED_ATTR = ['href', 'target', 'rel', 'class', 'data-math'];
-
-/**
- * Sanitize HTML with full tag support
- *
- * @param {string} html - Raw HTML to sanitize
- * @param {Object} config - Optional DOMPurify config overrides
- * @returns {Promise<string>} Sanitized HTML
- */
-export async function sanitizeHtml(html, config = {}) {
-  if (!html || typeof html !== 'string') return '';
-
-  const DOMPurify = await initPurify();
-
-  const mergedConfig = {
-    ALLOWED_TAGS: config.ALLOWED_TAGS || DEFAULT_ALLOWED_TAGS,
-    ALLOWED_ATTR: config.ALLOWED_ATTR || DEFAULT_ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: false,
-    // Force safe link targets
-    ADD_ATTR: ['target'],
-    ...config,
-  };
-
-  let result = DOMPurify.sanitize(html, mergedConfig);
-
-  // Ensure external links have proper security attributes
-  result = result.replace(
-    /<a\s+([^>]*href=["'][^"']*["'][^>]*)>/gi,
-    (match, attrs) => {
-      if (!attrs.includes('target=')) {
-        attrs += ' target="_blank"';
-      }
-      if (!attrs.includes('rel=')) {
-        attrs += ' rel="noopener noreferrer"';
-      }
-      return `<a ${attrs}>`;
-    },
-  );
-
-  return result;
-}
-
-/**
- * Sanitize HTML allowing only inline elements
- * Use for text that should not contain block elements
- *
- * @param {string} html - Raw HTML to sanitize
- * @returns {Promise<string>} Sanitized inline HTML
- */
-export async function sanitizeInline(html) {
-  if (!html || typeof html !== 'string') return '';
-
-  const DOMPurify = await initPurify();
-
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: INLINE_ALLOWED_TAGS,
-    ALLOWED_ATTR: INLINE_ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: false,
-  });
-}
-
-/**
- * Strip all HTML tags and return plain text
- *
- * @param {string} html - Raw HTML to strip
- * @returns {Promise<string>} Plain text
- */
-export async function stripHtml(html) {
-  if (!html || typeof html !== 'string') return '';
-
-  const DOMPurify = await initPurify();
-
-  // Use DOMPurify with no allowed tags to strip all HTML
-  const text = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [],
-    ALLOWED_ATTR: [],
-  });
-
-  // Decode common HTML entities. `&amp;` goes LAST: decoding it first turns
-  // `&amp;lt;` into `&lt;` and the next pass into `<`, which un-escapes markup
-  // the author escaped on purpose (js/double-escaping).
-  return text
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&');
-}
-
-/**
- * The one escape fallback shared by every sync sanitizer.
+ * The escape fallback of the slide sanitizer.
  *
  * Escaping is the safe degradation — nothing unsafe is injected — but it makes
  * authored markup render as visible text, which is the "raw HTML in the slide"
@@ -247,7 +74,7 @@ function escapeFallback(html) {
         ? 'this Node process never called initSanitizer() (see server/server.js and server/mcp/index.js)'
         : 'DOMPurify did not load in this page';
     console.warn(
-      `[sanitize] No DOMPurify available: ${cause}. Markup is escaped, so authored HTML and rendered markdown appear as visible text.`,
+      `[sanitize] No DOMPurify available: ${cause}. Markup is escaped, so authored HTML appears as visible text.`,
     );
   }
   return html
@@ -256,42 +83,6 @@ function escapeFallback(html) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-/**
- * Synchronous sanitization
- * Uses pre-initialized purify instance (server or browser)
- * Falls back to escaping if DOMPurify not available
- */
-export function sanitizeHtmlSync(html, config = {}) {
-  if (!html || typeof html !== 'string') return '';
-
-  // Use pre-initialized purify instance (works for both server and browser)
-  if (purify) {
-    return purify.sanitize(html, {
-      ALLOWED_TAGS: config.ALLOWED_TAGS || DEFAULT_ALLOWED_TAGS,
-      ALLOWED_ATTR: config.ALLOWED_ATTR || DEFAULT_ALLOWED_ATTR,
-      ALLOW_DATA_ATTR: false,
-      ...config,
-    });
-  }
-
-  // Browser environment with DOMPurify available
-  if (
-    typeof window !== 'undefined' &&
-    (globalThis.DOMPurify || window.DOMPurify)
-  ) {
-    const DOMPurify = globalThis.DOMPurify || window.DOMPurify;
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: config.ALLOWED_TAGS || DEFAULT_ALLOWED_TAGS,
-      ALLOWED_ATTR: config.ALLOWED_ATTR || DEFAULT_ALLOWED_ATTR,
-      ALLOW_DATA_ATTR: false,
-      ...config,
-    });
-  }
-
-  // Fallback: escape HTML (not ideal but safe)
-  return escapeFallback(html);
 }
 
 /**
@@ -440,36 +231,4 @@ function slidePurify() {
       ? globalThis.DOMPurify || window.DOMPurify
       : null)
   );
-}
-
-/**
- * Synchronous inline sanitization
- * Uses pre-initialized purify instance (server or browser)
- */
-export function sanitizeInlineSync(html) {
-  if (!html || typeof html !== 'string') return '';
-
-  // Use pre-initialized purify instance (works for both server and browser)
-  if (purify) {
-    return purify.sanitize(html, {
-      ALLOWED_TAGS: INLINE_ALLOWED_TAGS,
-      ALLOWED_ATTR: INLINE_ALLOWED_ATTR,
-      ALLOW_DATA_ATTR: false,
-    });
-  }
-
-  if (
-    typeof window !== 'undefined' &&
-    (globalThis.DOMPurify || window.DOMPurify)
-  ) {
-    const DOMPurify = globalThis.DOMPurify || window.DOMPurify;
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: INLINE_ALLOWED_TAGS,
-      ALLOWED_ATTR: INLINE_ALLOWED_ATTR,
-      ALLOW_DATA_ATTR: false,
-    });
-  }
-
-  // Fallback: escape HTML
-  return escapeFallback(html);
 }

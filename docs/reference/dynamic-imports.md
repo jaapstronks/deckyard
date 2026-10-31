@@ -51,7 +51,7 @@ about twice that; half are JSDoc type annotations like
 | `bullmq`                                              | `server/jobs/queue/connection.js`   | same gate, paired                                                                                         |
 | `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | `server/media/s3.js`                | `isS3Configured()`; `s3.js` itself is loaded dynamically from `server/media/index.js` for the same reason |
 | `@hocuspocus/server`, `crossws/adapters/node`         | `server/collab/mount.js`            | `isCollabEnabled()` — a disabled install never loads the collab dependency tree                           |
-| `dompurify`, `jsdom`                                  | `shared/sanitize.js`                | server-side sanitization path only                                                                        |
+| `dompurify`, `jsdom`                                  | `shared/sanitize.js`                | `initSanitizer()`: the slide-HTML sanitizer for custom-HTML slide types, Node only                        |
 
 A package that is imported **statically** anywhere stays a hard `dependency`
 even when its feature is off, because loading that module pulls it in
