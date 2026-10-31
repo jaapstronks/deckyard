@@ -54,6 +54,7 @@ function generateSessionToken() {
  * @param {string} [data.ipAddress] - Client IP address
  * @param {string} [data.userAgent] - Client user agent
  * @param {boolean} [data.attributionAllowed] - True if viewer opts into having name shown
+ * @param {boolean} [data.completed] - A server-side page visit, already complete
  * @returns {Promise<{ok: boolean, session?: Object, reason?: string}>}
  */
 export async function createViewSession(scope, data) {
@@ -88,6 +89,7 @@ export async function createViewSession(scope, data) {
         device_id: data?.deviceId ?? null,
         started_at: now,
         last_activity_at: now,
+        ended_at: data?.completed ? now : null,
         duration_seconds: 0,
         ip_address: data?.ipAddress ?? null,
         user_agent: data?.userAgent ?? null,

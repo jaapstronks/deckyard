@@ -65,6 +65,14 @@ const { readEditionPackage, verifyEditionPackages } =
 const { initializeThemeSeeds } =
   await import('../../server/utils/theme-seeds.js');
 
+const { __settleBackgroundTasks } =
+  await import('../../server/utils/fire-and-forget.js');
+const {
+  getPresentationAnalyticsOverview,
+  listViewSessions,
+  getActiveViewerCount,
+} = await import('../../server/storage/analytics/index.js');
+
 const ORIGIN = 'https://decks.example.test';
 const PHOTO_V1 = Buffer.from('edition-reads-photo-one');
 const PHOTO_V2 = Buffer.from('edition-reads-photo-two');
@@ -384,6 +392,60 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
       rows.map((r) => [r.key, Number(r.count)]),
     );
     assert.deepEqual(counts, { published: 2, embed: 1 });
+  });
+
+  it('counts successful documents in source-deck analytics per edition, leaving bytes unchanged', async () => {
+    const v1 = (await publish('analytics-v1')).edition;
+    const v2 = (await publish('analytics-v2')).edition;
+    const address = `${v1.publicationId}/1`;
+    const first = await get(`/p/${address}`);
+    const repeated = await get(`/p/${address}`);
+    assert.deepEqual(first.body, repeated.body, 'counting never injects bytes');
+    assert.doesNotMatch(first.body.toString(), /ps\.analytics|session\/start/);
+    await get(`/p/${address}/reader`);
+    await get(`/embed/${address}`);
+    await get(`/p/${v2.publicationId}/2`);
+    await __settleBackgroundTasks();
+    const overview = await getPresentationAnalyticsOverview(scopeA, deck);
+    assert.equal(overview.totalViews, 5);
+    assert.equal(
+      overview.uniqueViewers,
+      5,
+      'anonymous requests cannot be deduplicated as people',
+    );
+    assert.equal(await getActiveViewerCount(scopeA, deck), 0);
+    const { items } = await listViewSessions(scopeA, deck, { limit: 20 });
+    assert.equal(items.filter((s) => s.sourceId === address).length, 4);
+    assert.equal(
+      items.filter((s) => s.sourceId === `${v2.publicationId}/2`).length,
+      1,
+    );
+    assert.equal(items.filter((s) => s.sourceType === 'embed').length, 1);
+    assert.deepEqual(
+      (
+        await listViewSessions({ ...scopeA, organizationId: ORG_B }, deck, {
+          limit: 20,
+        })
+      ).items,
+      [],
+    );
+
+    for (const suffix of ['/manifest.json', '/edition.zip', '/og']) {
+      assert.equal((await get(`/p/${address}${suffix}`)).statusCode, 200);
+    }
+    assert.equal((await get(`/p/${v1.publicationId}/999`)).statusCode, 404);
+    await revokeEdition(scopeA, v1.publicationId, 1);
+    assert.equal((await get(`/p/${address}`)).statusCode, 410);
+    __setEditionRendererForTests(async () => {
+      throw new RendererBundleError(RENDERER_BUNDLE_ERRORS.UNKNOWN, 'blocked');
+    });
+    assert.equal((await get(`/p/${v2.publicationId}/2`)).statusCode, 500);
+    await __settleBackgroundTasks();
+    assert.equal(
+      (await getPresentationAnalyticsOverview(scopeA, deck)).totalViews,
+      5,
+      'subresources, missing/revoked editions and refused renders count no visit',
+    );
   });
 
   it('answers an unknown edition with 404 and never with the deck', async () => {
