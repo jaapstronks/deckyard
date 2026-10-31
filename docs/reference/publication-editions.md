@@ -4,6 +4,20 @@ How a deck becomes an immutable edition, and what the database promises about it
 
 **Status:** every publish makes an edition (T1.5). The internal and v1 publish routes call `publishEdition()`, unpublishing revokes the deck's editions, and the old `/p/:id-:slug` links redirect to the first edition the one-off conversion made of their deck. The flow around it (routes, feed, Public tab, conversion) is [publishing.md](publishing.md); an authoring surface for a single edition's revocation follows later (T1.6).
 
+## Media and upgrade readiness
+
+**v1.94.0 upgrade blocker:** its preparer reads only local served files. An installation with S3 uploads must postpone the edition cutover until it has a release containing the provider-aware preparer described below. A successful database migration is not evidence that existing public links can be converted. Run the publication conversion without `--apply` on a restored production copy first; account for every refusal before deploying or converting production.
+
+The provider-aware preparer reads public uploads through the configured S3 provider. It recognizes the exact `S3_PUBLIC_URL` base (including a configured CDN/path prefix), or the bucket base derived from `S3_ENDPOINT` and `S3_BUCKET` when no public URL is set. Root-relative `/uploads/…` image refs use that same bucket on an S3 installation. Public object keys must begin with `uploads/`; private keys, credentials in URLs, query strings, fragments, traversal and encoded separators are refused. The input URL is never fetched: only the validated key is passed to the configured bucket's SDK. Reads have an eight-second deadline and a 20 MiB source-byte ceiling; the complete sealed input still has the runner's 16 MiB ceiling. Local `/assets/` and `/custom/assets/` continue to use their served directories. Image compression runs before the bytes are sealed. The size scan measures S3 uploads using object metadata, but remains a lower bound; the actual preparer/dry-run is the publication gate.
+
+Other dependencies have these explicit policies:
+
+- **ImageKit and other external images:** copy into the installation's own media before publishing. The ImageKit picker already does this through `createImagePickerSeam()` in `client/views/editor/media/picker-provider.js`; it keeps ImageKit provenance separately. There is no edition-specific remote-host allowlist. For existing decks that still refer directly to ImageKit, the operator must prepare a one-time, reviewed copy-and-rewrite migration through the existing media-copy path. Preserve alt text, credits and provenance, map each old URL once, cover themes and every language, and keep a dry-run/report. This can be automated; authors need not download and upload each image manually. Do not silently rewrite the working deck during edition preparation.
+- **Database slide types:** refused until their rendering dependencies are actually carried by an approved render bundle. Convert affected slides to bundled types before publishing, with an explicit mapping and content/render checks. Reading the current database template at visit time cannot produce a fixed edition. This release does not add database-type sealing.
+- **Bunny and other live embeds:** remain refused as `live_embed`. An author may replace a video slide with a bundled slide containing a poster/text and a normal link; the target video is outside the edition's frozen-content promise. No automatic iframe-to-link conversion takes place.
+
+Fork-specific URL aliases, missing source objects, missing alt text and incomplete slides require separate correction before cutover. A dry-run's expected conversion count must follow the measured production inventory; do not assume every active source passes these gates. Deleted sources require an explicit owner decision rather than automatic restoration or republication.
+
 ## Three records
 
 | Table                    | Holds                                                                                                                  | Lifecycle                                                                                      |
