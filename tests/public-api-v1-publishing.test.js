@@ -1,22 +1,15 @@
 /**
- * Contract tests for the public API v1 publishing module (B40 PR 5+):
- * POST/GET/DELETE /api/v1/presentations/:id/publish.
+ * Contract tests for the public API v1 publishing module:
+ * POST/GET/DELETE /api/v1/presentations/:id/publish (T1.5: publishing makes
+ * an edition, unpublishing revokes the deck's editions).
  *
- * The surface these pin, per docs/openapi.yaml: status codes, the publish
- * response (publishId/slug/path/ogImageUrl), status reporting for published
- * and unpublished decks, the unpublish round-trip (entry removed, deck column
- * cleared with an explicit null), and the gates (`write` to publish and
- * unpublish, `read` for status; write access on the deck itself).
- * Handler-import level against the database double, like the neighbours
- * (tests/public-api-partial-write.test.js) — no HTTP server involved. The
- * media provider is not initialized under test, so the OG-image path takes
- * the documented fallback ladder instead of rendering a preview.
- *
- * The publish route now shares one core with the internal route
- * (server/services/publish-presentation.js) — the sandbox refusal and the
- * presentation.published webhook are converged, and pinned in
- * tests/publish-convergence.test.js (B62 vondst 8). These tests describe the
- * happy-path contract; the convergence assertions live next door.
+ * Handler-import level against the database double, no HTTP server. The
+ * double has no render bundle and runs no raw SQL, so what it covers is what
+ * the route decides before an edition is sealed or revoked: the key's
+ * permission, the body, the deck's write access and existence, and the status
+ * read from the edition tables. Sealing, the commit, idempotent replays and
+ * revocation run against real PostgreSQL in
+ * tests/pg/publication-editions.pgtest.js and the T1.5 pg tests.
  *
  * Negative assertions here pin the status code; the v1 error envelope itself is
  * covered by tests/public-api-v1-error-envelope.test.js.
@@ -47,13 +40,9 @@ const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handlePublishing } =
   await import('../server/routes/public-api/v1/publishing.js');
 
-const STORED_PUBLISHED = {
-  id: 'pub-aaaa',
-  slug: 'deck-already-published',
-  ogImageUrl: '/media/og-existing.png',
-  created: '2026-07-01T00:00:00.000Z',
-  modified: '2026-07-01T00:00:00.000Z',
-};
+const PUBLICATION = 'e000000b-0000-4000-8000-00000000000b';
+const PUBLISHED_AT = '2026-10-31T08:00:00.000Z';
+const EDITION_2 = 'e000000b-0000-4000-8000-000000000102';
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -65,32 +54,37 @@ async function installDb() {
     users: userRows(KEY_OWNER, 'someone-else@example.com'),
     presentations: [
       deckRow({ id: DECK_ID, owner: KEY_OWNER }),
-      deckRow({
-        id: PUBLISHED_DECK_ID,
-        owner: KEY_OWNER,
-        published: STORED_PUBLISHED,
-      }),
+      deckRow({ id: PUBLISHED_DECK_ID, owner: KEY_OWNER }),
       deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com' }),
     ],
-    published_presentations: [
+    // The published deck's series, at version 2. Which of several editions
+    // is the newest public one is a DISTINCT ON the double does not model;
+    // the PostgreSQL suite covers it.
+    publications: [
       {
-        id: STORED_PUBLISHED.id,
+        id: PUBLICATION,
         organization_id: ORG,
         presentation_id: PUBLISHED_DECK_ID,
-        title: 'Already published',
-        slug: STORED_PUBLISHED.slug,
-        og_image_url: STORED_PUBLISHED.ogImageUrl,
-        created_at: '2026-07-01T00:00:00.000Z',
-        modified_at: '2026-07-01T00:00:00.000Z',
+        last_version: 2,
       },
     ],
+    publication_editions: [
+      {
+        id: EDITION_2,
+        publication_id: PUBLICATION,
+        organization_id: ORG,
+        version: 2,
+        published_at: PUBLISHED_AT,
+      },
+    ],
+    publication_edition_revocations: [],
   });
   __setTestDb(db);
   await initializeStorage(process.cwd());
   return db;
 }
 
-function deckRow({ id, owner, published = null }) {
+function deckRow({ id, owner }) {
   return {
     id,
     organization_id: ORG,
@@ -121,7 +115,6 @@ function deckRow({ id, owner, published = null }) {
         parentId: null,
       },
     ],
-    published,
     created_at: '2026-07-01T00:00:00.000Z',
     modified_at: '2026-07-01T00:00:00.000Z',
     trashed_at: null,
@@ -137,8 +130,14 @@ function deckRow({ id, owner, published = null }) {
  * @param {string[]} [options.permissions] - API key permissions
  * @returns {Object} ctx, with `res.statusCode` / `res.body` recorded
  */
-function makeCtx(method, deckId, { permissions = ['read', 'write'] } = {}) {
-  const req = Readable.from([]);
+function makeCtx(
+  method,
+  deckId,
+  { permissions = ['read', 'write'], body = null } = {},
+) {
+  const req = Readable.from(
+    body == null ? [] : [Buffer.from(JSON.stringify(body))],
+  );
   req.method = method;
   req.headers = {};
 
@@ -186,107 +185,94 @@ function makeCtx(method, deckId, { permissions = ['read', 'write'] } = {}) {
   };
 }
 
-function storedDeck(db, id) {
-  return db.__tables.presentations.find((row) => row.id === id);
+/** No edition was made: the double never sees a staging or edition write. */
+function assertNothingPublished(db) {
+  assert.equal(db.__tables.publication_editions.length, 1);
+  assert.equal(db.__tables.publication_staging?.length ?? 0, 0);
 }
 
-function publishRows(db) {
-  return db.__tables.published_presentations;
-}
+const BODY = { expectedRevision: 1, idempotencyKey: 'intent-1' };
 
 // ---------------------------------------------------------------------------
 // POST /api/v1/presentations/:id/publish
 // ---------------------------------------------------------------------------
 
-test('POST /publish publishes the deck and answers the public path', async () => {
-  const db = await installDb();
-  const ctx = makeCtx('POST', DECK_ID);
-  assert.equal(await handlePublishing(ctx), true);
-
-  assert.equal(ctx.res.statusCode, 200);
-  const body = ctx.res.body;
-  assert.ok(body.publishId, 'a publish id is minted');
-  assert.equal(body.slug, `title-of-${DECK_ID}`);
-  assert.equal(body.path, `/p/${body.publishId}-${body.slug}`);
-  // No media provider under test: the OG image comes off the fallback ladder,
-  // here the first slide's own image.
-  assert.equal(body.ogImageUrl, '/media/first-slide.jpg');
-
-  const entry = publishRows(db).find((row) => row.presentation_id === DECK_ID);
-  assert.ok(entry, 'a publish entry row was written');
-  assert.equal(entry.id, body.publishId);
-
-  const stored = storedDeck(db, DECK_ID);
-  assert.equal(
-    stored.published.id,
-    body.publishId,
-    'the deck document carries the publish state',
-  );
-  assert.equal(stored.published.slug, body.slug);
-  const status = makeCtx('GET', DECK_ID);
-  await handlePublishing(status);
-  assert.equal(
-    status.res.body.ogImageUrl,
-    body.ogImageUrl,
-    'freshly published proof survives storage reload',
-  );
-});
-
-test('POST /publish on an already-published deck reuses the publish id', async () => {
-  const db = await installDb();
-  const ctx = makeCtx('POST', PUBLISHED_DECK_ID);
-  await handlePublishing(ctx);
-
-  assert.equal(ctx.res.statusCode, 200);
-  assert.equal(
-    ctx.res.body.publishId,
-    STORED_PUBLISHED.id,
-    'republish keeps the public link stable',
-  );
-  assert.equal(
-    publishRows(db).filter((row) => row.presentation_id === PUBLISHED_DECK_ID)
-      .length,
-    1,
-    'no second entry appears',
-  );
-});
-
 test('POST /publish without the write permission is refused with 403', async () => {
   const db = await installDb();
-  const ctx = makeCtx('POST', DECK_ID, { permissions: ['read'] });
+  const ctx = makeCtx('POST', DECK_ID, { permissions: ['read'], body: BODY });
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 403);
-  assert.equal(
-    storedDeck(db, DECK_ID).published,
-    null,
-    'the deck stays unpublished',
-  );
+  assertNothingPublished(db);
+});
+
+test('POST /publish without a body is refused with 400', async () => {
+  const db = await installDb();
+  const ctx = makeCtx('POST', DECK_ID);
+  await handlePublishing(ctx);
+  assert.equal(ctx.res.statusCode, 400);
+  assertNothingPublished(db);
+});
+
+test('POST /publish names the field that is missing or wrong', async () => {
+  const db = await installDb();
+  for (const [body, field] of [
+    [{ idempotencyKey: 'k' }, 'expectedRevision'],
+    [{ expectedRevision: 0, idempotencyKey: 'k' }, 'expectedRevision'],
+    [{ expectedRevision: 1 }, 'idempotencyKey'],
+    [{ expectedRevision: 1, idempotencyKey: '' }, 'idempotencyKey'],
+    [
+      { expectedRevision: 1, idempotencyKey: 'k'.repeat(201) },
+      'idempotencyKey',
+    ],
+  ]) {
+    const ctx = makeCtx('POST', DECK_ID, { body });
+    await handlePublishing(ctx);
+    assert.equal(ctx.res.statusCode, 400, JSON.stringify(body));
+    assert.equal(
+      ctx.res.body.error?.details?.field ?? ctx.res.body.details?.field,
+      field,
+    );
+  }
+  assertNothingPublished(db);
 });
 
 test("POST /publish on someone else's private deck is refused with 403", async () => {
   const db = await installDb();
-  const ctx = makeCtx('POST', FOREIGN_DECK_ID);
+  const ctx = makeCtx('POST', FOREIGN_DECK_ID, { body: BODY });
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 403);
-  assert.equal(
-    storedDeck(db, FOREIGN_DECK_ID).published,
-    null,
-    'the foreign deck stays unpublished',
-  );
+  assertNothingPublished(db);
 });
 
 test('POST /publish on an unknown deck answers 404', async () => {
   await installDb();
-  const ctx = makeCtx('POST', '00000000-0000-4000-8000-00000000dead');
+  const ctx = makeCtx('POST', '00000000-0000-4000-8000-00000000dead', {
+    body: BODY,
+  });
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 404);
+});
+
+test('POST /publish is refused in sandbox mode before the body is read', async () => {
+  const db = await installDb();
+  const prev = process.env.SANDBOX_MODE;
+  process.env.SANDBOX_MODE = 'true';
+  try {
+    const ctx = makeCtx('POST', DECK_ID, { body: BODY });
+    await handlePublishing(ctx);
+    assert.equal(ctx.res.statusCode, 403);
+  } finally {
+    if (prev === undefined) delete process.env.SANDBOX_MODE;
+    else process.env.SANDBOX_MODE = prev;
+  }
+  assertNothingPublished(db);
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/v1/presentations/:id/publish
 // ---------------------------------------------------------------------------
 
-test('GET /publish reports a published deck with its public path', async () => {
+test('GET /publish reports the newest public edition', async () => {
   await installDb();
   const ctx = makeCtx('GET', PUBLISHED_DECK_ID);
   assert.equal(await handlePublishing(ctx), true);
@@ -294,12 +280,22 @@ test('GET /publish reports a published deck with its public path', async () => {
   assert.equal(ctx.res.statusCode, 200);
   assert.deepEqual(ctx.res.body, {
     isPublished: true,
-    publishId: STORED_PUBLISHED.id,
-    slug: STORED_PUBLISHED.slug,
-    path: `/p/${STORED_PUBLISHED.id}-${STORED_PUBLISHED.slug}`,
-    ogImageUrl: '/assets/images/slides-previewimage.png',
-    publishedAt: STORED_PUBLISHED.created,
+    publicationId: PUBLICATION,
+    version: 2,
+    path: `/p/${PUBLICATION}/2`,
+    publishedAt: PUBLISHED_AT,
   });
+});
+
+test('GET /publish reports a deck whose editions are all revoked as unpublished', async () => {
+  const db = await installDb();
+  db.__tables.publication_edition_revocations.push({
+    edition_id: EDITION_2,
+    organization_id: ORG,
+  });
+  const ctx = makeCtx('GET', PUBLISHED_DECK_ID);
+  await handlePublishing(ctx);
+  assert.deepEqual(ctx.res.body, { isPublished: false });
 });
 
 test('GET /publish reports an unpublished deck as isPublished false', async () => {
@@ -322,53 +318,20 @@ test('GET /publish without the read permission is refused with 403', async () =>
 // DELETE /api/v1/presentations/:id/publish
 // ---------------------------------------------------------------------------
 
-test('DELETE /publish removes the entry and clears the deck column', async () => {
-  const db = await installDb();
-  const ctx = makeCtx('DELETE', PUBLISHED_DECK_ID);
-  assert.equal(await handlePublishing(ctx), true);
-
-  assert.equal(ctx.res.statusCode, 200);
-  assert.deepEqual(ctx.res.body, { unpublished: true });
-
-  assert.equal(
-    publishRows(db).some((row) => row.presentation_id === PUBLISHED_DECK_ID),
-    false,
-    'the publish entry is gone',
-  );
-  // An explicit null, not a dropped key: the storage layer reads an absent
-  // key as "leave this column alone" (see the partial-write tests).
-  assert.equal(storedDeck(db, PUBLISHED_DECK_ID).published, null);
-});
-
-test('DELETE /publish on an unpublished deck still answers 200', async () => {
-  await installDb();
-  const ctx = makeCtx('DELETE', DECK_ID);
-  await handlePublishing(ctx);
-
-  assert.equal(ctx.res.statusCode, 200);
-  assert.deepEqual(
-    ctx.res.body,
-    { unpublished: true },
-    'unpublish is idempotent',
-  );
-});
-
 test('DELETE /publish without the write permission is refused with 403', async () => {
   const db = await installDb();
   const ctx = makeCtx('DELETE', PUBLISHED_DECK_ID, { permissions: ['read'] });
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 403);
-  assert.ok(
-    publishRows(db).some((row) => row.presentation_id === PUBLISHED_DECK_ID),
-    'the publish entry survives',
-  );
+  assert.equal(db.__tables.publication_edition_revocations.length, 0);
 });
 
 test("DELETE /publish on someone else's private deck is refused with 403", async () => {
-  await installDb();
+  const db = await installDb();
   const ctx = makeCtx('DELETE', FOREIGN_DECK_ID);
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 403);
+  assert.equal(db.__tables.publication_edition_revocations.length, 0);
 });
 
 // ---------------------------------------------------------------------------

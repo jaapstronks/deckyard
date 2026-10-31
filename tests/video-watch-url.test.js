@@ -5,7 +5,7 @@ import { resolveVideoWatchUrl } from '../server/export/video-watch-url.js';
 
 /**
  * The PDF video-slide placeholder resolves a "watch online" URL server-side.
- * Ladder: explicit watchUrl → published deck deep-link → provider URL → none.
+ * Ladder: explicit watchUrl → deep-link into the newest edition → provider URL → none.
  * (2026-07-18 decision; rung 0 added 2026-07-27.)
  */
 
@@ -15,8 +15,11 @@ const youtubeSlide = (autoplay = 'off') => ({
   content: { source: 'https://youtu.be/dQw4w9WgXcQ', autoplay },
 });
 
+/** The newest public edition's canvas path (`pres.published.path`). */
+const PUB_PATH = '/p/0b6f0c2e-6a59-4a7e-9d2a-1f0c5e7d9a10/2';
+
 test('an explicit watchUrl beats every generated rung', () => {
-  const pres = { published: { id: 'ab12', slug: 'mijn-deck' } };
+  const pres = { published: { path: PUB_PATH } };
   const slide = {
     id: 'v1',
     content: {
@@ -70,26 +73,26 @@ test('a watchUrl on a slide with no source still resolves', () => {
 });
 
 test('published deck wins: deep-links to the slide by index', () => {
-  const pres = { published: { id: 'ab12', slug: 'mijn-deck' } };
+  const pres = { published: { path: PUB_PATH } };
   const { url, kind } = resolveVideoWatchUrl(youtubeSlide(), pres, {
     baseUrl: 'https://slides.ciiic.nl',
     slideIndex: 6,
   });
   assert.equal(kind, 'deck');
-  assert.equal(url, 'https://slides.ciiic.nl/p/ab12-mijn-deck#slide=6');
+  assert.equal(url, `https://slides.ciiic.nl${PUB_PATH}#slide=6`);
 });
 
 test('trailing slash on baseUrl is normalised', () => {
-  const pres = { published: { id: 'ab12', slug: 'x' } };
+  const pres = { published: { path: PUB_PATH } };
   const { url } = resolveVideoWatchUrl(youtubeSlide(), pres, {
     baseUrl: 'https://slides.ciiic.nl/',
     slideIndex: 0,
   });
-  assert.equal(url, 'https://slides.ciiic.nl/p/ab12-x#slide=0');
+  assert.equal(url, `https://slides.ciiic.nl${PUB_PATH}#slide=0`);
 });
 
 test('published but no base URL falls through to the provider URL', () => {
-  const pres = { published: { id: 'ab12', slug: 'x' } };
+  const pres = { published: { path: PUB_PATH } };
   const { url, kind } = resolveVideoWatchUrl(youtubeSlide(), pres, {
     baseUrl: '',
     slideIndex: 3,

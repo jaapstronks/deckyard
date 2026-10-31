@@ -49,7 +49,7 @@ const renders = new Map();
 let renderBytes = 0;
 /** @type {Map<string, Promise<{canvas: string, reader: string}>>} */
 const inflight = new Map();
-/** @type {Map<string, {langs: string[], defaultLang: string|null, ogImage: {mediaType: string, bytes: Buffer}|null, size: number}>} */
+/** @type {Map<string, {title: string, description: string, langs: string[], defaultLang: string|null, ogImage: {mediaType: string, bytes: Buffer}|null, size: number}>} */
 const metas = new Map();
 let metaBytes = 0;
 
@@ -171,6 +171,11 @@ function remember(editionId, input) {
   const presentation = input?.presentation || {};
   const ogImage = firstImage(presentation);
   const meta = {
+    title: typeof presentation.title === 'string' ? presentation.title : '',
+    description:
+      typeof presentation.description === 'string'
+        ? presentation.description
+        : '',
     langs: existingVersionLangs(presentation),
     defaultLang: normalizeLang(resolveLangModeFromPresOrUrl(presentation)),
     ogImage,
@@ -309,4 +314,17 @@ export async function editionPackageBytes(repoRoot, edition) {
 export async function editionOgImage(repoRoot, edition) {
   const meta = await editionMeta(repoRoot, edition);
   return meta ? { image: meta.ogImage } : null;
+}
+
+/**
+ * The title and description the edition itself shows (in its own language),
+ * from its own bytes: what a feed lists. Null when revoked meanwhile.
+ *
+ * @param {string} repoRoot
+ * @param {{id: string, publicationId: string, version: number}} edition
+ * @returns {Promise<{title: string, description: string}|null>}
+ */
+export async function editionSummary(repoRoot, edition) {
+  const meta = await editionMeta(repoRoot, edition);
+  return meta ? { title: meta.title, description: meta.description } : null;
 }

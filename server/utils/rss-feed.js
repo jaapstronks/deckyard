@@ -1,4 +1,3 @@
-import { safePublishedOgImage } from '../render/og-image.js';
 /**
  * RSS/Atom/JSON Feed generation utility.
  * Uses the `feed` npm package to produce all three formats from a single data model.
@@ -7,15 +6,16 @@ import { safePublishedOgImage } from '../render/og-image.js';
 import { Feed } from 'feed';
 
 /**
- * Build an RSS/Atom/JSON feed from published presentations.
+ * Build an RSS/Atom/JSON feed from public editions.
  * @param {Object} options
  * @param {Object} options.org - Organization record
- * @param {Array}  options.presentations - Published presentations with full metadata
+ * @param {Array<{publicationId: string, version: number, publishedAt: string, title: string, description: string}>} options.editions -
+ *   The newest public edition of each publication, newest first
  * @param {string} options.baseUrl - Base URL (e.g. https://example.com)
  * @param {string} [options.format='rss'] - 'rss' | 'atom' | 'json'
  * @returns {string} Serialized feed content
  */
-export function buildFeed({ org, presentations, baseUrl, format = 'rss' }) {
+export function buildFeed({ org, editions, baseUrl, format = 'rss' }) {
   const rssSettings = org.settings?.rss || {};
 
   const orgName = org.displayName || org.name || 'Presentations';
@@ -39,25 +39,22 @@ export function buildFeed({ org, presentations, baseUrl, format = 'rss' }) {
     image: org.logoUrl ? `${baseUrl}${org.logoUrl}` : undefined,
   });
 
-  for (const pres of presentations) {
-    const publishId = pres.published?.id;
-    const slug = pres.published?.slug || '';
-    const link = `${baseUrl}/p/${publishId}-${slug}`;
+  for (const edition of editions) {
+    const path = `/p/${edition.publicationId}/${edition.version}`;
+    const link = `${baseUrl}${path}`;
 
     feed.addItem({
-      title: pres.title || 'Untitled',
+      title: edition.title || 'Untitled',
       id: link,
       link,
-      description: pres.description || '',
-      date: new Date(pres.modified || pres.created),
-      published: new Date(pres.published?.created || pres.created),
+      description: edition.description || '',
+      // An edition never changes: its date is the moment it was published.
+      date: new Date(edition.publishedAt),
+      published: new Date(edition.publishedAt),
       // No per-item author: nothing public derives a name from the owner's
       // email, and a display name arrives with identity decoupling
       // (docs/plans/briefs/identity-decoupling.md).
-      image: new URL(
-        pres.publicPreviewUrl || safePublishedOgImage(pres),
-        baseUrl,
-      ).href,
+      image: `${baseUrl}${path}/og`,
     });
   }
 

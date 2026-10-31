@@ -630,3 +630,291 @@ export async function deleteAbandonedEditionStaging(scope, cutoffIso) {
   const result = await query.executeTakeFirst();
   return { deleted: Number(result.numDeletedRows || 0) };
 }
+
+/**
+ * @typedef {Object} DeckPublication
+ * @property {string} publicationId - The series' public UUID
+ * @property {number} version - The newest edition that is not revoked
+ * @property {string} path - `/p/{publicationId}/{version}`
+ * @property {string} publishedAt - ISO timestamp of that edition
+ */
+
+/** The canvas path of an edition; the one spelling every caller links to. */
+export function editionPath({ publicationId, version }) {
+  return `/p/${publicationId}/${version}`;
+}
+
+/**
+ * The newest public (not revoked) edition of each deck's series, keyed by
+ * deck id. A deck without one is absent from the map: it is not published.
+ * A cross-organization scope is allowed: whether a deck is published is
+ * public, and a caller that resolved the deck by a public token has no other
+ * organization to state.
+ *
+ * This is the only answer to "is this deck published": the deck row carries no
+ * copy of it that could drift (migration 105).
+ *
+ * @param {import('./scope.js').StorageScope} scope - The decks' organization,
+ *   or cross-organization
+ * @param {string[]} presentationIds
+ * @returns {Promise<Map<string, DeckPublication>>}
+ */
+export async function latestPublicEditionsForDecks(scope, presentationIds) {
+  const ctx = resolveScope(scope, 'latestPublicEditionsForDecks', {
+    allowCrossOrganization: true,
+  });
+  const ids = [...new Set(presentationIds)].filter((id) =>
+    UUID_RE.test(String(id || '')),
+  );
+  const out = new Map();
+  if (!ids.length) return out;
+  let query = getDb()
+    .selectFrom('publications as p')
+    .innerJoin('publication_editions as e', 'e.publication_id', 'p.id')
+    .leftJoin('publication_edition_revocations as r', 'r.edition_id', 'e.id')
+    .select([
+      'p.presentation_id',
+      'e.publication_id',
+      'e.version',
+      'e.published_at',
+    ])
+    .distinctOn('p.presentation_id')
+    .where('p.presentation_id', 'in', ids)
+    .where('r.edition_id', 'is', null)
+    .orderBy('p.presentation_id')
+    .orderBy('e.version', 'desc');
+  if (ctx.organizationId) {
+    query = query.where('p.organization_id', '=', ctx.organizationId);
+  }
+  for (const row of await query.execute()) {
+    const edition = {
+      publicationId: row.publication_id,
+      version: Number(row.version),
+    };
+    out.set(row.presentation_id, {
+      ...edition,
+      path: editionPath(edition),
+      publishedAt: new Date(row.published_at).toISOString(),
+    });
+  }
+  return out;
+}
+
+/**
+ * The SQL condition "this deck has a public edition", for list queries that
+ * filter or flag published decks in the database.
+ *
+ * @param {import('kysely').RawBuilder<unknown>|string} presentationIdRef - A
+ *   column reference such as `p.id`
+ * @returns {import('kysely').RawBuilder<boolean>}
+ */
+export function deckHasPublicEditionSql(presentationIdRef) {
+  return sql`EXISTS (
+    SELECT 1 FROM publications pub_s
+    JOIN publication_editions pub_e ON pub_e.publication_id = pub_s.id
+    LEFT JOIN publication_edition_revocations pub_r ON pub_r.edition_id = pub_e.id
+    WHERE pub_s.presentation_id = ${sql.ref(String(presentationIdRef))}
+      AND pub_r.edition_id IS NULL
+  )`;
+}
+
+/**
+ * Take a deck's publication down: revoke every edition of its series that is
+ * still public, in the scope's organization. Already revoked editions keep
+ * their first revocation. A deck without a series revokes nothing.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} presentationId
+ * @param {{actorUserId?: string|null}} [options]
+ * @returns {Promise<{revoked: Array<{publicationId: string, version: number, editionId: string}>}>}
+ */
+export async function revokeDeckEditions(
+  scope,
+  presentationId,
+  { actorUserId = null } = {},
+) {
+  const orgId = getOrgId(resolveScope(scope, 'revokeDeckEditions'));
+  if (!UUID_RE.test(String(presentationId || ''))) return { revoked: [] };
+  const { rows } = await sql`
+    INSERT INTO publication_edition_revocations
+      (edition_id, organization_id, actor_user_id)
+    SELECT e.id, e.organization_id, ${actorUserId}
+    FROM publications p
+    JOIN publication_editions e ON e.publication_id = p.id
+    WHERE p.presentation_id = ${presentationId} AND p.organization_id = ${orgId}
+    ON CONFLICT (edition_id) DO NOTHING
+    RETURNING edition_id
+  `.execute(getDb());
+  if (!rows.length) return { revoked: [] };
+  const editions = await getDb()
+    .selectFrom('publication_editions')
+    .select(['id', 'publication_id', 'version'])
+    .where(
+      'id',
+      'in',
+      rows.map((r) => r.edition_id),
+    )
+    .orderBy('version')
+    .execute();
+  return {
+    revoked: editions.map((e) => ({
+      editionId: e.id,
+      publicationId: e.publication_id,
+      version: Number(e.version),
+    })),
+  };
+}
+
+/** The shape of an old eight-hex publish id (`published_presentations.id`). */
+const LEGACY_ID_RE = /^[a-f0-9]{8}$/;
+
+/**
+ * The edition an old `/p/{publishId}-{slug}` link stands for (migration 105),
+ * in whatever organization it lives: the old id is the authorization, as it
+ * was before the conversion. Only the edition's address is returned; whether
+ * it is revoked is for the edition route to answer, so a revoked first edition
+ * is a tombstone at its own address rather than a 404 here.
+ *
+ * @param {import('./scope.js').StorageScope} scope - Normally cross-organization
+ * @param {string} legacyId
+ * @returns {Promise<{publicationId: string, version: number}|null>}
+ */
+export async function resolveLegacyPublication(scope, legacyId) {
+  const ctx = resolveScope(scope, 'resolveLegacyPublication', {
+    allowCrossOrganization: true,
+  });
+  if (!LEGACY_ID_RE.test(String(legacyId || ''))) return null;
+  let query = getDb()
+    .selectFrom('publication_legacy_links as l')
+    .innerJoin('publication_editions as e', 'e.id', 'l.edition_id')
+    .select(['e.publication_id', 'e.version'])
+    .where('l.legacy_id', '=', legacyId);
+  if (ctx.organizationId) {
+    query = query.where('l.organization_id', '=', ctx.organizationId);
+  }
+  const row = await query.executeTakeFirst();
+  return row
+    ? { publicationId: row.publication_id, version: Number(row.version) }
+    : null;
+}
+
+/**
+ * Point an old publish id at an edition of the scope's organization, once.
+ * A second call for the same id keeps the first link and reports it, so the
+ * conversion can run again without moving a link that was already set.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {{legacyId: string, editionId: string}} link
+ * @returns {Promise<{linked: boolean, editionId: string}>} `linked` is false
+ *   when the id already had a link (`editionId` is then that link's edition)
+ * @throws {NotFoundError} The edition is not in the scope's organization.
+ */
+export async function linkLegacyPublication(scope, { legacyId, editionId }) {
+  const orgId = getOrgId(resolveScope(scope, 'linkLegacyPublication'));
+  if (!LEGACY_ID_RE.test(String(legacyId || ''))) {
+    throw new AppError('Not an old publish id', 400, null, 'invalid');
+  }
+  const { rows } = await sql`
+    INSERT INTO publication_legacy_links (legacy_id, organization_id, edition_id)
+    SELECT ${legacyId}, organization_id, id FROM publication_editions
+    WHERE id = ${editionId} AND organization_id = ${orgId}
+    ON CONFLICT (legacy_id) DO NOTHING
+    RETURNING edition_id
+  `.execute(getDb());
+  if (rows[0]) return { linked: true, editionId: rows[0].edition_id };
+  const existing = await getDb()
+    .selectFrom('publication_legacy_links')
+    .select('edition_id')
+    .where('legacy_id', '=', legacyId)
+    .where('organization_id', '=', orgId)
+    .executeTakeFirst();
+  if (!existing) throw new NotFoundError('Edition not found');
+  return { linked: false, editionId: existing.edition_id };
+}
+
+/**
+ * The newest public edition of each series in the scope's organization,
+ * newest first: what a feed lists. An edition outlives its deck (D361), so a
+ * series whose deck is gone is listed as long as it is not revoked; a deck
+ * that opts out of the feed (`settings.excludeFromFeed`) keeps its series out.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {{limit?: number}} [options]
+ * @returns {Promise<Array<{id: string, publicationId: string, version: number, publishedAt: string, presentationId: string|null}>>}
+ */
+export async function listLatestPublicEditions(scope, { limit = 50 } = {}) {
+  const orgId = getOrgId(resolveScope(scope, 'listLatestPublicEditions'));
+  const n = Math.max(1, Math.min(100, Number(limit) || 50));
+  const { rows } = await sql`
+    SELECT * FROM (
+      SELECT DISTINCT ON (e.publication_id)
+        e.id, e.publication_id, e.version, e.published_at, p.presentation_id
+      FROM publication_editions e
+      JOIN publications p ON p.id = e.publication_id
+      LEFT JOIN presentations d ON d.id = p.presentation_id
+      LEFT JOIN publication_edition_revocations r ON r.edition_id = e.id
+      WHERE e.organization_id = ${orgId} AND r.edition_id IS NULL
+        AND (d.settings->>'excludeFromFeed') IS DISTINCT FROM 'true'
+      ORDER BY e.publication_id, e.version DESC
+    ) latest
+    ORDER BY published_at DESC
+    LIMIT ${n}
+  `.execute(getDb());
+  return rows.map((row) => ({
+    id: row.id,
+    publicationId: row.publication_id,
+    version: Number(row.version),
+    publishedAt: new Date(row.published_at).toISOString(),
+    presentationId: row.presentation_id ?? null,
+  }));
+}
+
+/**
+ * @typedef {Object} LegacyPublication
+ * @property {string} legacyId - The old publish id
+ * @property {string|null} indexOrganizationId - The organization the old
+ *   index row names
+ * @property {string|null} presentationId - The deck, when it still exists
+ * @property {string|null} deckOrganizationId - The deck's organization now
+ * @property {boolean} trashed - The deck is in the trash
+ * @property {{publicationId: string, version: number}|null} linkedEdition -
+ *   The edition the old id already points at
+ */
+
+/**
+ * Every row of the old publication index (`published_presentations`), with
+ * its deck's state and the edition it is already linked to: what the one-off
+ * conversion works through. Read across organizations, oldest first; the
+ * index is closed, so the list only shrinks into links.
+ *
+ * @param {import('./scope.js').StorageScope} scope - Cross-organization
+ * @returns {Promise<LegacyPublication[]>}
+ */
+export async function listLegacyPublications(scope) {
+  resolveScope(scope, 'listLegacyPublications', {
+    allowCrossOrganization: true,
+  });
+  const { rows } = await sql`
+    SELECT pp.id AS legacy_id, pp.organization_id AS index_org,
+      d.id AS deck_id, d.organization_id AS deck_org, d.trashed_at,
+      e.publication_id AS linked_publication, e.version AS linked_version
+    FROM published_presentations pp
+    LEFT JOIN presentations d ON d.id = pp.presentation_id
+    LEFT JOIN publication_legacy_links l ON l.legacy_id = pp.id
+    LEFT JOIN publication_editions e ON e.id = l.edition_id
+    ORDER BY pp.created_at, pp.id
+  `.execute(getDb());
+  return rows.map((row) => ({
+    legacyId: row.legacy_id,
+    indexOrganizationId: row.index_org ?? null,
+    presentationId: row.deck_id ?? null,
+    deckOrganizationId: row.deck_org ?? null,
+    trashed: !!row.trashed_at,
+    linkedEdition: row.linked_publication
+      ? {
+          publicationId: row.linked_publication,
+          version: Number(row.linked_version),
+        }
+      : null,
+  }));
+}

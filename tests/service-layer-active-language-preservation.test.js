@@ -8,8 +8,8 @@
  * language is not the dominant one the dominant text landed in
  * `versions[active]`. Now the theme switch writes the stored slides as the
  * dominant buffer through `server/services/deck-versions.js`, the helper
- * `persistSlides` and the translate writers share, and a publish writes only
- * the publication column, as an unpublish does (B575).
+ * `persistSlides` and the translate writers share. A publish writes nothing
+ * on the deck at all since T1.5: it makes an edition.
  *
  * A theme switch that converts a slide converts it in every language
  * version, on both paths (with and without a save body), and a conversion
@@ -46,8 +46,6 @@ const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { changeTheme, applyThemeChange } =
   await import('../server/services/theme.js');
-const { publishPresentation } =
-  await import('../server/services/publish-presentation.js');
 const { loadPresentationForActor } =
   await import('../server/services/presentations.js');
 
@@ -104,14 +102,12 @@ async function installDb() {
           versions: { nl: structuredClone(NL), de: structuredClone(DE) },
         },
         slides: structuredClone(NL.slides),
-        published: null,
         created_at: '2026-07-01T00:00:00.000Z',
         modified_at: '2026-07-01T00:00:00.000Z',
         trashed_at: null,
       },
     ],
     themes: [await seedRow('amethyst')],
-    published_presentations: [],
     activity_events: [],
   });
   __setTestDb(db);
@@ -149,30 +145,6 @@ test('a theme switch without a save body keeps the active version (the editor /c
   assert.equal(row.theme, other);
   // The loaded deck went back whole with `active = de` and its Dutch top
   // level; the seam stored that text as the German version.
-  assertVersionsKept(row);
-});
-
-test('a publish keeps the active version and writes only the publication column', async () => {
-  const db = await installDb();
-  const pres = await loadPresentationForActor(
-    scope(),
-    { actor: OWNER },
-    DECK_ID,
-    {
-      access: 'write',
-    },
-  );
-
-  const result = await publishPresentation({
-    repoRoot: REPO_ROOT,
-    storageScope: scope(),
-    req: { headers: {} },
-    pres,
-    actor: OWNER,
-  });
-
-  const row = storedDeck(db);
-  assert.equal(row.published?.id, result.publishId);
   assertVersionsKept(row);
 });
 

@@ -310,11 +310,6 @@ export class S3Provider extends MediaProvider {
     }
   }
 
-  ownsUrl(url) {
-    if (!url || typeof url !== 'string') return false;
-    return this._urlBases().some((base) => url.startsWith(base));
-  }
-
   /**
    * Every object under a key prefix, page by page. S3-specific: only the
    * remote-origin sweeps (`scripts/sweep-published-previews.js`) enumerate a
@@ -342,50 +337,7 @@ export class S3Provider extends MediaProvider {
     } while (ContinuationToken);
   }
 
-  async withdrawPublicObject(url) {
-    const key = this._keyForUrl(url);
-    if (!key) return 'kept';
-    return (await this.deleteFile(key)) ? 'deleted' : 'failed';
-  }
-
   // Private helpers
-
-  /**
-   * The URL prefixes an object of this bucket can be addressed under, each
-   * ending in `/` and followed directly by the key: the configured public base,
-   * and both addressing styles for the configured endpoint, virtual-hosted
-   * (https://<bucket>.<host>/) and path style (https://<host>/<bucket>/).
-   * @returns {string[]}
-   */
-  _urlBases() {
-    const { bucket, endpoint, publicUrl } = this.config;
-    const bases = publicUrl ? [`${publicUrl}/`] : [];
-    if (!endpoint || !bucket || !URL.canParse(endpoint)) return bases;
-    const u = new URL(endpoint);
-    bases.push(
-      `${u.protocol}//${bucket}.${u.host}/`,
-      `${u.protocol}//${u.host}/${bucket}/`,
-    );
-    return bases;
-  }
-
-  /**
-   * The storage key a URL of this bucket addresses, or null when the URL is
-   * not one of its objects. Query and fragment are not part of the key.
-   * @param {unknown} url
-   * @returns {string|null}
-   */
-  _keyForUrl(url) {
-    if (!url || typeof url !== 'string') return null;
-    const base = this._urlBases().find((b) => url.startsWith(b));
-    if (!base) return null;
-    const key = url.slice(base.length).split(/[?#]/)[0];
-    try {
-      return decodeURIComponent(key) || null;
-    } catch {
-      return null;
-    }
-  }
 
   /**
    * The public addresses an object with this key could be reached at: the

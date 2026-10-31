@@ -106,28 +106,4 @@ export class MediaProvider {
   async deleteFile(key) {
     throw new Error('Not implemented');
   }
-
-  /**
-   * Withdraw a public object from the origin that serves it, addressed by its
-   * public URL. A remote origin (bucket, CDN) answers a URL without asking the
-   * app, so withdrawing there means deleting the object. A provider whose
-   * public objects are served by the app's own routes keeps the file: the
-   * route is the boundary there (docs/reference/viewer-read-data.md).
-   * Idempotent; never throws for an object that is already gone.
-   * @param {string} url
-   * @returns {Promise<'deleted'|'kept'|'failed'>} `kept` when the provider
-   *   keeps the file or the URL is not one of its objects
-   */
-  async withdrawPublicObject(url) {
-    throw new Error('Not implemented');
-  }
-
-  /**
-   * Check if a URL belongs to this provider.
-   * @param {string} url
-   * @returns {boolean}
-   */
-  ownsUrl(url) {
-    return false;
-  }
 }

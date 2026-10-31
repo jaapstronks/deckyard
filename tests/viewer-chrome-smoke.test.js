@@ -4,8 +4,8 @@
  * the HTTP request pipeline and drives the client app in Chrome.
  *
  * Why this exists (docs/plans/TODO.md B83 / decision D32): the whole anonymous
- * viewer surface — the published public deck, the share-link viewer, and the
- * presenter/follow live coupling — renders client-side. Every unit test in the
+ * viewer surface — the share-link viewer and the presenter/follow live
+ * coupling — renders client-side. Every unit test in the
  * suite exercises the *handlers*, so a route can answer 200 with a perfectly
  * good app shell while the client bundle throws on boot and the audience stares
  * at a white screen. That failure mode is invisible to an HTTP-level assertion;
@@ -15,7 +15,6 @@
  * What it covers — one thin pass per anonymous route, asserting the deck
  * *rendered* (a real `.slide` with the seeded slide text), not merely that the
  * server answered:
- *   - the published public viewer            (/p/:id-:slug, server-rendered)
  *   - the share-link viewer WITH a token     (/s/:token → the deck)
  *   - the share-link viewer WITHOUT a valid token (/s/:bogus → the shared
  *     page-unavailable state, never a blank page and never a leaked deck)
@@ -89,8 +88,6 @@ before(async () => {
     await import('../server/storage/presentations/index.js');
   const { createShareLink } =
     await import('../server/storage/share-links/index.js');
-  const { upsertPublishedEntry, newPublishId } =
-    await import('../server/storage/published.js');
   const { createLiveSession, updateLiveSessionState } =
     await import('../server/storage/live-sessions/index.js');
   const { testScope } = await import('./helpers/storage-scope.js');
@@ -124,14 +121,6 @@ before(async () => {
         content: { title: SLIDE_TWO, subheading: 'second' },
       },
     ],
-  });
-
-  // Public viewer fixture: a published entry → /p/:id-:slug.
-  const publishId = newPublishId();
-  const published = await upsertPublishedEntry(testScope(), {
-    publishId,
-    presentationId: deck.id,
-    title: deck.title,
   });
 
   // Share-viewer fixture: a view-permission share link → /s/:token.
@@ -201,7 +190,6 @@ before(async () => {
     server,
     browser,
     deck,
-    publishPath: `/p/${published.publishId}-${published.slug}`,
     shareToken,
     pushLiveSlide,
     __setTestDb,
@@ -241,26 +229,6 @@ async function waitForSlideText(page, re, timeout = 10000) {
     re.source,
   );
 }
-
-test('the published public viewer renders the deck', { skip }, async () => {
-  const { page, pageErrors } = await openViewer(ctx.publishPath);
-  try {
-    await waitForSlideText(page, new RegExp(SLIDE_ONE));
-    const slideText = await page.$eval('.slide', (el) => el.textContent || '');
-    assert.match(
-      slideText,
-      new RegExp(SLIDE_ONE),
-      'slide 1 text should render',
-    );
-    assert.deepEqual(
-      pageErrors,
-      [],
-      'the public viewer must not throw on boot',
-    );
-  } finally {
-    await page.close();
-  }
-});
 
 test(
   'the share viewer renders the deck for a valid token',

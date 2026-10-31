@@ -20,7 +20,6 @@
   "imageLibrary.delete.title": "Usuń obraz",
   "imageLibrary.delete.usedBy.many": "Używany w prezentacjach: {count}.",
   "imageLibrary.delete.usedByList": "Używany w (od najnowszych):",
-  "imageLibrary.delete.usedByPublished.many": "Uwaga: z tego opublikowanych w internecie: {count}.",
   "imageLibrary.description": "Krótki opis (opcjonalnie)",
   "imageLibrary.description.label": "Opis (wewnętrzny)",
   "imageLibrary.detail.created": "Przesłano: {date}",

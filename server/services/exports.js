@@ -55,6 +55,7 @@ import { loadThemeAssets } from '../utils/themes.js';
 import { buildThemeTemplateBuffer } from '../export/pptx-theme.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { AppError, ForbiddenError } from '../utils/errors.js';
+import { getDeckPublication } from './publish-edition.js';
 import { normalizeEmail } from '../../shared/email.js';
 
 /**
@@ -189,15 +190,20 @@ export async function buildExportContext(
   pres,
   { exportLang, stripLiveOnly, audience, slideSelection = null },
 ) {
-  const [theme, slideTypes] = await Promise.all([
+  const [theme, slideTypes, published] = await Promise.all([
     loadThemeAssets(repoRootOf(scope), pres.theme, scope),
     buildMergedSlideTypes({ organizationId: pres.organizationId }),
+    // A video slide's "watch online" link points into the newest edition.
+    getDeckPublication(scope, pres),
   ]);
-  const safe = projectPresentationForAudience(pres, {
-    audience,
-    channel: 'viewer',
-    slideTypes,
-  });
+  const safe = projectPresentationForAudience(
+    { ...pres, published },
+    {
+      audience,
+      channel: 'viewer',
+      slideTypes,
+    },
+  );
   const projected = exportLang
     ? projectPresentationForLang(safe, exportLang)
     : safe;

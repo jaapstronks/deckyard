@@ -3,8 +3,9 @@
  * (audit findings H6, H7, H8).
  *
  * H6 — the unauthenticated /embed/:publishId render-failure page leaked the
- *      server error message + full stack (`server/routes/static/index.js`). Gated
- *      behind non-production now.
+ *      server error message + full stack. That page is gone (T1.5); its
+ *      successor, the edition route's render failure, answers a fixed message
+ *      and the error code only.
  * H7 — the JSON/markdown import endpoints returned `err.message` + `err.stack`
  *      in the 500 body (effectively public in sandbox/demo mode). Now generic.
  * H8 — no framing/clickjacking headers anywhere. A global layer now sets
@@ -166,25 +167,21 @@ test('H7: markdown import rejects a broken body as 400 (no stack, no parser text
 });
 
 // ============================================================================
-// H6 — embed error page gates message + stack behind non-production
+// H6 — a failed edition render names no server internals
 // ============================================================================
 
-test('H6: embed render-failure message + stack are gated behind isDev', () => {
+test('H6: an edition render failure answers a fixed message, never err.message or a stack', () => {
   const src = readFileSync(
-    fileURLToPath(new URL('../server/routes/static/embed.js', import.meta.url)),
+    fileURLToPath(
+      new URL('../server/routes/static/edition.js', import.meta.url),
+    ),
     'utf8',
   );
-  // The error message line must only render in dev.
-  assert.match(
-    src,
-    /isDev\s*\?\s*`<p class="help">Foutmelding/,
-    'embed error message must be dev-gated',
+  const body = src.slice(
+    src.indexOf('function renderFailed('),
+    src.indexOf('\n}\n', src.indexOf('function renderFailed(')),
   );
-  // The stack <details> block must require isDev (and a stack) — the condition
-  // driving it is `isDev && stackRaw`, so a stack can never render in prod.
-  assert.match(
-    src,
-    /isDev\s*&&\s*stackRaw/,
-    'embed stack block must be dev-gated',
-  );
+  assert.ok(body.length > 0, 'renderFailed exists');
+  assert.doesNotMatch(body, /err\.message|err\.stack|\.stack\b/);
+  assert.match(body, /'This edition cannot be rendered'/);
 });

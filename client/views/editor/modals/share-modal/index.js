@@ -25,6 +25,7 @@ import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
 import { createVisibilitySection } from './visibility-section.js';
 import { createPublishSection } from './publish-section.js';
+import { isPublished } from '../../publish-export/publish.js';
 import { createShareStatus, countActiveLinks } from './share-status.js';
 import { h } from '../../../../lib/dom/index.js';
 import {
@@ -55,8 +56,6 @@ import {
  * @param {Function} options.doPublish - Runs the publish flow
  * @param {Record<string, Object>} [options.slideTypes] - The editor's
  *   slide-type registry, to name the field a refused publish points at
- * @param {Function} options.openPreviewAddress - Opens the social preview +
- *   slug modal of a published deck
  * @param {Function} options.handleNotionPublish - Adds the embed to Notion
  * @param {Function} options.notionAvailable - Returns true if Notion is enabled
  * @param {Function} options.openExport - Opens the Export modal
@@ -83,7 +82,6 @@ export function openShareModal({
   openDescriptionModal,
   doPublish,
   slideTypes,
-  openPreviewAddress,
   handleNotionPublish,
   notionAvailable,
   openExport,
@@ -122,7 +120,7 @@ export function openShareModal({
     status.update({
       visibility: pres?.visibility,
       activeLinks,
-      published: publishAvailable ? !!pres?.published?.id : null,
+      published: publishAvailable ? isPublished(pres) : null,
     });
 
   // --- Organization tab (labelled "Team" in the UI) ---
@@ -201,7 +199,6 @@ export function openShareModal({
         toast,
         doPublish,
         slideTypes,
-        openPreviewAddress,
         handleNotionPublish,
         notionAvailable,
         syncShareUi: () => {

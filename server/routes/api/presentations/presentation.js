@@ -16,6 +16,7 @@ import { parseIfMatchRevision, parseSlideMergeHeaders } from './helpers.js';
 import { savePresentation } from '../../../services/save-presentation.js';
 import { projectReaderPresentation } from '../../../utils/reader-presentation.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import { getDeckPublication } from '../../../services/publish-edition.js';
 
 /**
  * GET /api/presentations/:id/revision — lightweight revision probe.
@@ -80,6 +81,8 @@ export async function handlePresentationItem(
 
     // Fetch tags for the presentation
     const tags = await getTagsForPresentation(storageScope, id);
+    // Its newest public edition: read from the editions, not stored on it.
+    pres.published = await getDeckPublication(storageScope, pres);
 
     const lang = normalizeLang(url.searchParams.get('lang'));
     if (

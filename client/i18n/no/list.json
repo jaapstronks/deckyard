@@ -20,7 +20,6 @@
   "imageLibrary.delete.title": "Slett bildet",
   "imageLibrary.delete.usedBy.many": "Brukes i {count} presentasjoner.",
   "imageLibrary.delete.usedByList": "Brukes i (nyeste først):",
-  "imageLibrary.delete.usedByPublished.many": "Merk: {count} av dem er publisert på nettet.",
   "imageLibrary.description": "Kort beskrivelse (valgfri)",
   "imageLibrary.description.label": "Beskrivelse (intern)",
   "imageLibrary.detail.created": "Lastet opp: {date}",

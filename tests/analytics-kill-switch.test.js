@@ -8,7 +8,8 @@
  *    login gate, `/api/analytics/*` + `/api/presentations/:id/analytics*`
  *    behind it) are skipped by `dispatchMounts`, so `handleApi` reaches its
  *    404;
- *  - a published page carries no tracking script;
+ *  - a published edition carries no tracking script, on or off: its HTML is
+ *    frozen in its render bundle and the route adds headers only (T1.5);
  *  - the app shell is not served for `/insights`, `/analytics/:id` and
  *    `/reports/:token`;
  *  - the weekly digest is not scheduled, while the retention cleanup is
@@ -25,23 +26,17 @@ import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'analytics-killswitch']
   .join('-')
   .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
-const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 delete process.env.ANALYTICS_ENABLED;
 
-const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { dispatchMounts } = await import('../server/utils/router.js');
 const { PUBLIC_MOUNTS, MOUNTS } = await import('../server/routes/api/index.js');
 const { getFeatureFlags } = await import('../server/config/flags-snapshot.js');
-const { handlePublished } =
-  await import('../server/routes/static/published.js');
 const { handleAppRoutes } =
   await import('../server/routes/static/app-shell.js');
 
@@ -101,69 +96,15 @@ test('the app shell is not served for the analytics pages with the cluster off',
   }
 });
 
-test('published page: a tracking script only with the cluster on', async (t) => {
-  const brandSeed = await brandSeedRow();
-  __setTestDb(
-    createFakeDb({
-      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
-      themes: [brandSeed],
-      presentations: [
-        {
-          id: 'deck-pub',
-          organization_id: ORG,
-          title: 'Published deck',
-          owner_email: 'owner@example.com',
-          created_by: 'owner@example.com',
-          updated_by: 'owner@example.com',
-          visibility: 'organization',
-          theme: 'default',
-          lang: 'nl',
-          revision: 1,
-          is_view_only: false,
-          slides: [{ id: 's1', type: 'content-slide', content: {} }],
-          i18n: null,
-          settings: {},
-          created_at: '2026-02-01T00:00:00.000Z',
-          modified_at: '2026-02-01T00:00:00.000Z',
-          trashed_at: null,
-        },
-      ],
-      published_presentations: [
-        {
-          id: 'abcd1234',
-          organization_id: ORG,
-          presentation_id: 'deck-pub',
-          title: 'Published deck',
-          slug: 'my-deck',
-          og_image_url: null,
-          created_at: '2026-02-01T00:00:00.000Z',
-          modified_at: '2026-02-01T00:00:00.000Z',
-        },
-      ],
-      app_settings: [{ id: 'singleton', settings: {} }],
-    }),
-  );
-  await initializeStorage();
-  t.after(() => {
-    __setTestDb(null);
-  });
-
-  const page = async () => {
-    const res = createMockStreamRes();
-    const handled = await handlePublished({
-      repoRoot: process.cwd(),
-      req: { method: 'GET', headers: { host: 'decks.example.test' } },
-      res,
-      url: new URL('http://decks.example.test/p/abcd1234-my-deck'),
-    });
-    assert.equal(handled, true);
-    assert.equal(res.statusCode, 200);
-    return String(res.body || '');
-  };
-
-  assert.match(await page(), /\/api\/track\/session\/start/);
-  process.env.ANALYTICS_ENABLED = 'false';
-  assert.doesNotMatch(await page(), /\/api\/track\//);
+test('published editions: no route injects a tracking script (T1.5)', () => {
+  for (const rel of [
+    'server/routes/static/edition.js',
+    'server/routes/static/published.js',
+    'server/services/public-edition.js',
+  ]) {
+    const src = readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(src, /tracking-script|generateTrackingScriptHtml/, rel);
+  }
 });
 
 test('boot: the digest is scheduled only with the cluster on; the cleanup always (D261)', () => {

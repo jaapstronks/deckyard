@@ -347,11 +347,12 @@ pgDescribe('publication editions (PostgreSQL)', () => {
     const other = await caught(publish('k', { id: otherDeck }));
     assert.equal(other.error?.code, 'idempotency_key_reused');
 
-    // Under the lock too: a commit carrying a reused key is refused.
+    // Under the lock too: a commit carrying a reused key is refused. The
+    // service stores a caller's key scoped to the actor.
     const { stagingId } = await stage();
     const raw = await caught(
       commitEdition(scopeA, {
-        ...commitArgs(stagingId, 'k', 999),
+        ...commitArgs(stagingId, `actor:${identity.actor.id}:k`, 999),
       }),
     );
     assert.equal(raw.error?.code, 'idempotency_key_reused');

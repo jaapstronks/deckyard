@@ -79,8 +79,8 @@ export function handleStaticFiles({ res, url, sharedPublicDirs }) {
         rel = relRaw;
       }
 
-      // Generated publication previews have a separate proof-checking route.
-      // Fail closed even when a caller bypasses the static mount chain.
+      // Previews generated for the publications before editions are never
+      // served: an edition's preview is its own `/og`, from its own bytes.
       if (
         urlPrefix === '/uploads/' &&
         isPublishedPreviewAssetName(path.basename(rel))

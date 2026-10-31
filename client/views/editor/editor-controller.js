@@ -61,7 +61,6 @@ import { openConflictModal as openConflictModalImpl } from './modals/conflict-mo
 import { openRemoteMergeModal } from './modals/remote-merge-modal.js';
 import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal.js';
 import { createDeckReviewOpeners } from './deck-review-openers.js';
-import { createPublishedAltWarning } from './published-alt-warning.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
@@ -407,9 +406,6 @@ export async function createEditorController({
   let setSaveStatus = () => {};
   let setSaveError = () => {};
   let addNormalizedFields = () => {};
-  // Re-reads the published-alt warning (B331). Reassigned once it exists; a
-  // save transition or a publish/unpublish may change what it says.
-  let syncPublishedAltWarning = () => {};
   // Bound to the topbar once it exists; the share dropdown fires its first
   // sync before that, and the topbar runs its own at mount.
   let syncAnalyticsAvailability = () => {};
@@ -432,7 +428,6 @@ export async function createEditorController({
     normalizeLang,
     onStatusChange: (status, detail, blocked) => {
       setSaveStatus(status, detail, blocked);
-      syncPublishedAltWarning();
     },
     getSelectedSlideId: () => selectedSlideId,
     // A slide replaced from the server is no edit by this user.
@@ -737,7 +732,6 @@ export async function createEditorController({
     user,
     slideTypes: SLIDE_TYPES,
     onShareStateChange: () => {
-      syncPublishedAltWarning();
       syncAnalyticsAvailability();
     },
     // The export modal's "current slide" and "selection" (B871), numbered as
@@ -764,24 +758,23 @@ export async function createEditorController({
   // Deck-overview + AI-review openers and the slide-jump they share. The
   // renderers and slide-list element are bound later, so they're passed as
   // indirections read at call time.
-  const { jumpToSlide, openDeckOverview, openAiDeckReview } =
-    createDeckReviewOpeners({
-      root,
-      api,
-      pres,
-      theme,
-      SLIDE_TYPES,
-      editorState,
-      setSelectedSlideId: setSelectedSlideIdWithLock,
-      rerenderSlideList: () => rerenderSlideList(),
-      rerenderEditor: () => rerenderEditor(),
-      rerenderPreview: () => rerenderPreview(),
-      getSlideListEl: () => slideListEl,
-      // The picker seam is built further down (it awaits the stock-media
-      // status); a review opens only after boot, so it is read at call time.
-      getOpenImagePicker: () => openImagePicker,
-      normalizeLang,
-    });
+  const { openDeckOverview, openAiDeckReview } = createDeckReviewOpeners({
+    root,
+    api,
+    pres,
+    theme,
+    SLIDE_TYPES,
+    editorState,
+    setSelectedSlideId: setSelectedSlideIdWithLock,
+    rerenderSlideList: () => rerenderSlideList(),
+    rerenderEditor: () => rerenderEditor(),
+    rerenderPreview: () => rerenderPreview(),
+    getSlideListEl: () => slideListEl,
+    // The picker seam is built further down (it awaits the stock-media
+    // status); a review opens only after boot, so it is read at call time.
+    getOpenImagePicker: () => openImagePicker,
+    normalizeLang,
+  });
 
   // ============================================================
   // TOPBAR
@@ -860,18 +853,6 @@ export async function createEditorController({
   syncAnalyticsAvailability = topbarApi.syncAnalyticsAvailability;
   cleanup.register('topbar', topbarApi.detach);
   shell.append(topbarApi.topbarEl);
-
-  // A published deck says so while a picture on it has no alt text (B331):
-  // a state under the topbar, beside the deck rather than one field.
-  const publishedAltWarning = createPublishedAltWarning({
-    pres,
-    slideTypes: SLIDE_TYPES,
-    onGoToSlide: jumpToSlide,
-  });
-  cleanup.register('publishedAltWarning', publishedAltWarning.detach);
-  shell.append(publishedAltWarning.el);
-  syncPublishedAltWarning = publishedAltWarning.sync;
-  syncPublishedAltWarning();
 
   const saveStatus = createSaveStatus({
     pres,
@@ -1173,10 +1154,7 @@ export async function createEditorController({
                 updateSelectedSlideListItem?.(),
               editorMount,
               previewNotesTa,
-              setSaveStatus: (s) => {
-                setSaveStatus(s);
-                syncPublishedAltWarning();
-              },
+              setSaveStatus: (s) => setSaveStatus(s),
               onTitleChanged: showTitle,
               onUndoStateChanged: () => syncTopbarUndo(),
               onVersionsChanged: versionTextSignal.emit,

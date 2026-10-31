@@ -2,7 +2,7 @@
 
 How a deck becomes an immutable edition, and what the database promises about it. The bytes an edition stores are made by the edition-input preparer ([renderer-bundle.md § The edition input](renderer-bundle.md#the-edition-input)); this page is about keeping them.
 
-**Status:** the store, the service and the public read path exist. The publish routes still write `published_presentations` ([publishing.md](publishing.md)) and the old `/p/:id-:slug` links still read the deck; both move over to editions in a later step of this track, together with the authoring surface for revocation.
+**Status:** every publish makes an edition (T1.5). The internal and v1 publish routes call `publishEdition()`, unpublishing revokes the deck's editions, and the old `/p/:id-:slug` links redirect to the first edition the one-off conversion made of their deck. The flow around it (routes, feed, Public tab, conversion) is [publishing.md](publishing.md); an authoring surface for a single edition's revocation follows later (T1.6).
 
 ## Three records
 
@@ -18,20 +18,22 @@ Beside them:
 - `publication_edition_audit` records who published (`actor_user_id`, internal). It is a separate table because a user can be deleted and an edition row cannot be updated; the actor never enters the manifest.
 - `publication_staging` holds prepared bytes until their commit. It is never served.
 - `publication_edition_revocations` marks an edition as revoked (§ Revocation).
+- `publication_legacy_links` points an old eight-hex publish id at the first edition the conversion made of its deck (§ Old links).
 
 Restore versions (`presentation_versions`) are unrelated: an edition is never derived from one and is not subject to their retention.
 
 ## One publish
 
-`publishEdition()` in `server/services/publish-edition.js` takes a scope, an identity and `{presentationId, expectedRevision, idempotencyKey}`:
+`publishEdition()` in `server/services/publish-edition.js` takes a scope, an identity and `{presentationId, expectedRevision, idempotencyKey}`; `createEdition()` is the same from step 3 on, for a deck the caller already loaded (the conversion has no acting user):
 
 1. Sandbox refusal, then input validation.
-2. Load the deck for an actor with `write` access (`loadPresentationForActor`).
+2. Load the deck for an actor with `write` access (`loadPresentationForActor`). The caller's key is stored as `actor:<userId>:<key>`, so keys of two users never meet; the conversion's keys are `migration:<deckId>`.
 3. **Idempotency first.** If the organization already has an edition under this key, the same request (same deck, revision and destination, compared by `editionRequestHash()`) gets that edition back with `replayed: true`, even when the deck has moved on since. Any other request under the key is refused with `idempotency_key_reused` (409).
 4. A deck that is no longer at `expectedRevision` is refused with `conflict` (409) before anything is prepared.
-5. The existing publish gates (`assertSlidesComplete`, `assertImagesNamed`), then the installation's render bundle (`openCurrentRendererBundle`): without one there is nothing to publish with.
-6. `prepareEditionInput()` seals one snapshot of the deck; `stageEditionInput()` verifies the bytes against their manifest and stores them in staging.
+5. `prepareEdition()`: the existing publish gates (`assertSlidesComplete`, `assertImagesNamed`), then the installation's render bundle (`openCurrentRendererBundle`), without which there is nothing to publish with, then `prepareEditionInput()`, which seals one snapshot of the deck. It writes nothing; the conversion's dry run calls it alone.
+6. `stageEditionInput()` verifies the bytes against their manifest and stores them in staging.
 7. `commitEdition()` makes the edition in one transaction.
+8. `publishEdition()` only: a new edition (not a replay) fires the `presentation.published` webhook once, naming the edition by id, publication, version and manifest hash.
 
 ## The commit transaction
 
@@ -67,9 +69,13 @@ Rendered HTML is a disposable derivative: an in-memory cache (64 views, 64 MiB) 
 
 ## Revocation
 
-`revokeEdition(scope, publicationId, version)` records a revocation in `publication_edition_revocations` (migration 104): one row per edition, in the edition's organization, with the internal actor. An edition row itself cannot be updated, so revocation is not a column on it. Revoking twice keeps the first revocation; organization B cannot revoke an edition of A.
+`revokeEdition(scope, publicationId, version)` records a revocation in `publication_edition_revocations` (migration 104): one row per edition, in the edition's organization, with the internal actor. An edition row itself cannot be updated, so revocation is not a column on it. Revoking twice keeps the first revocation; organization B cannot revoke an edition of A. `revokeDeckEditions(scope, presentationId)` revokes every public edition of a deck's series at once: that is what unpublishing does.
 
-From then on every subresource of that edition answers 410 with a content-free tombstone (no title, no author, `noindex`, `no-store`). The check runs on every request before any cache is consulted and drops what is cached; `getPublicEdition()` does not even return the bytes of a revoked edition, so a caller that forgets to check cannot serve them. A render that was in flight when the revocation landed is not cached. Other editions of the series are served as before. Wiping the bytes of a revoked edition is a separate, later operation; who may revoke is decided by the authoring service that will call this.
+From then on every subresource of that edition answers 410 with a content-free tombstone (no title, no author, `noindex`, `no-store`). The check runs on every request before any cache is consulted and drops what is cached; `getPublicEdition()` does not even return the bytes of a revoked edition, so a caller that forgets to check cannot serve them. A render that was in flight when the revocation landed is not cached. Other editions of the series are served as before. Wiping the bytes of a revoked edition is a separate, later operation. Who may revoke is the publish service's question: whoever may write the deck (`unpublishPresentation()`).
+
+## Old links
+
+Before editions a deck was published at `/p/{publishId}-{slug}` and showed its HEAD. `scripts/migrate-publications-to-editions.js` (logic in `server/services/publication-migration.js`, [publishing.md § Converting old publications](publishing.md#converting-old-publications)) seals each such deck once and writes a `publication_legacy_links` row per old id. `resolveLegacyPublication()` answers the old id with `{publicationId, version}` of that edition, in whatever organization it lives, and `server/routes/static/published.js` redirects `/p/…`, `/p/…/reader` and `/embed/…` there with a 301. A link never moves: `linkLegacyPublication()` keeps the first target on a second run, and a revoked first edition is a 410 at its own address.
 
 ## Verification package
 

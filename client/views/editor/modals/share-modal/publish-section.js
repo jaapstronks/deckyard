@@ -1,13 +1,13 @@
 /**
  * The Public tab of the unified Share dialog: put the deck on the open web.
  *
- * A published deck has two links, and they are not interchangeable (B342):
- * `/p/…` is a page (findable, with a social preview, refuses to be framed) and
- * `/embed/…` is the player (`noindex`, frameable, controls under the slide).
- * Both are shown here as equal rows, with the iframe/SDK snippets folded
- * underneath, and one language picker drives all of them. This is the only
- * place the links live; the "Preview and address…" modal manages the social
- * preview and the slug.
+ * Publishing makes an edition: a fixed copy of the deck with its own address,
+ * `/p/{publicationId}/{version}`. Editing the deck afterwards does not change
+ * it; publishing again makes the next edition. The tab shows the newest
+ * edition's two links, which are not interchangeable (B342): `/p/…` is a page
+ * (findable, with a social preview, refuses to be framed) and `/embed/…` is
+ * the same edition, frameable. Both are shown as equal rows, with the iframe
+ * snippet folded underneath, and one language picker drives all of them.
  *
  * Publishing produces the same standalone page you can also download from
  * Export → HTML, so a cross-reference points at that offline twin.
@@ -21,6 +21,7 @@ import { getLangDisplayName } from '../../../../../shared/i18n-utils.js';
 import {
   buildPublishedLinks,
   incompleteSlidesMessage,
+  isPublished,
   missingAltMessage,
 } from '../../publish-export/publish.js';
 
@@ -36,8 +37,6 @@ import {
  * @param {Function} options.doPublish - Runs the full publish flow
  * @param {Record<string, Object>} [options.slideTypes] - The editor's
  *   slide-type registry, to name the field a refused publish points at
- * @param {Function} options.openPreviewAddress - Opens the social preview +
- *   slug modal
  * @param {Function} options.handleNotionPublish - Adds the embed to Notion
  * @param {Function} options.notionAvailable - Returns true if Notion is enabled
  * @param {Function} options.syncShareUi - Refresh the topbar share button + dialog
@@ -54,7 +53,6 @@ export function createPublishSection({
   toast,
   doPublish,
   slideTypes,
-  openPreviewAddress,
   handleNotionPublish,
   notionAvailable,
   syncShareUi,
@@ -66,13 +64,9 @@ export function createPublishSection({
   // refused (docs/reference/feedback-surfaces.md), not a passing toast: the
   // author has to go and fix a picture and try again.
   const publishError = createInlineError({ callout: true });
-  // The language the links are shown in. Survives a re-render (a slug change
-  // refreshes the tab); starts on the language being edited.
+  // The language the links are shown in. Survives a re-render (a new
+  // edition refreshes the tab); starts on the language being edited.
   let selectedLang = null;
-
-  function isPublished() {
-    return !!(typeof pres?.published?.id === 'string' && pres.published.id);
-  }
 
   async function publishNow(button) {
     publishError.clear();
@@ -90,6 +84,13 @@ export function createPublishSection({
         publishError.show(missingAltMessage(e, { pres, slideTypes }));
       } else if (e?.code === 'incomplete_slides') {
         publishError.show(incompleteSlidesMessage(e));
+      } else if (e?.code === 'conflict') {
+        publishError.show(
+          t(
+            'share.publish.conflict',
+            'The presentation changed while you were publishing. Reload it and publish again.',
+          ),
+        );
       } else {
         toast?.error?.(e, { durationMs: 3000 });
       }
@@ -104,7 +105,7 @@ export function createPublishSection({
       title: t('editor.publish.unpublish', 'Unpublish'),
       message: t(
         'editor.publish.unpublish.confirm',
-        'Unpublish?\n\nThis will invalidate the public link and embed links. Anyone with a shared /p/ or /embed/ link will no longer be able to open the presentation.\n\nIf you use this link in a website, invite, follow-along, notes/QR or other tooling, it will stop working there too.',
+        'Unpublish?\n\nThis withdraws every published version of this presentation. Anyone with a shared /p/ or /embed/ link will no longer be able to open it.\n\nIf you use a link in a website, invite, follow-along, notes/QR or other tooling, it will stop working there too.',
       ),
       confirmLabel: t('editor.publish.unpublish', 'Unpublish'),
       danger: true,
@@ -237,7 +238,7 @@ export function createPublishSection({
           label: t('share.publish.embedLabel', 'Embed'),
           help: t(
             'share.publish.embedHelp',
-            'Paste this URL into Notion or your own site. The controls sit below the slide.',
+            'Paste this URL into Notion or your own site.',
           ),
           value: links.embedUrl,
         }),
@@ -247,12 +248,6 @@ export function createPublishSection({
           kind: 'iframe',
           label: t('share.publish.iframeLabel', 'iframe'),
           value: links.iframeSnippet,
-          multiline: true,
-        }),
-        linkRow({
-          kind: 'sdk',
-          label: t('share.publish.sdkLabel', 'Embed SDK'),
-          value: links.sdkSnippet,
           multiline: true,
         }),
       );
@@ -300,12 +295,12 @@ export function createPublishSection({
       class: 'help share-publish-help',
       text: t(
         'share.publish.help',
-        'A public, findable page with a social preview. It stays current and you can unpublish it anytime.',
+        'A public, findable page with a social preview. Each publish is a fixed version with its own link: later edits appear once you publish again. You can unpublish anytime.',
       ),
     });
     section.append(title, help);
 
-    if (!isPublished()) {
+    if (!isPublished(pres)) {
       const publishBtn = h('button', {
         class: 'btn btn-primary',
         type: 'button',
@@ -324,14 +319,13 @@ export function createPublishSection({
     section.append(renderLinks());
 
     const actions = h('div', { class: 'share-publish-actions' });
-    actions.append(
-      h('button', {
-        class: 'btn btn-secondary',
-        type: 'button',
-        text: t('share.publish.previewAddress', 'Preview and address…'),
-        onclick: () => openPreviewAddress?.(),
-      }),
-    );
+    const republishBtn = h('button', {
+      class: 'btn btn-primary',
+      type: 'button',
+      text: t('share.publish.republish', 'Publish new version'),
+      onclick: () => publishNow(republishBtn),
+    });
+    actions.append(republishBtn);
     if (
       notionAvailable?.() &&
       typeof pres?.notionSourcePageId === 'string' &&
@@ -354,7 +348,7 @@ export function createPublishSection({
         onclick: unpublish,
       }),
     );
-    section.append(actions, exportHint());
+    section.append(actions, publishError.el, exportHint());
   }
 
   render();

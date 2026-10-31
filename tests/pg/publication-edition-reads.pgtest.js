@@ -361,6 +361,31 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
     }
   });
 
+  it('counts the canvas and reader as published, the embed as embed, for instance health', async () => {
+    const v1 = (await publish('health')).edition;
+    await db.deleteFrom('instance_health').execute();
+    const address = `${v1.publicationId}/1`;
+    assert.equal((await get(`/p/${address}`)).statusCode, 200);
+    assert.equal((await get(`/p/${address}/reader`)).statusCode, 200);
+    const embed = await get(`/embed/${address}`);
+    assert.equal(embed.statusCode, 200);
+    assert.match(
+      embed.headers['Content-Security-Policy'],
+      /frame-ancestors \*/,
+    );
+    // The counter is fire-and-forget; let it land.
+    await new Promise((r) => setTimeout(r, 100));
+    const rows = await db
+      .selectFrom('instance_health')
+      .select(['axis', 'key', 'count'])
+      .where('axis', '=', 'surface')
+      .execute();
+    const counts = Object.fromEntries(
+      rows.map((r) => [r.key, Number(r.count)]),
+    );
+    assert.deepEqual(counts, { published: 2, embed: 1 });
+  });
+
   it('answers an unknown edition with 404 and never with the deck', async () => {
     const v1 = (await publish('known')).edition;
     for (const pathname of [

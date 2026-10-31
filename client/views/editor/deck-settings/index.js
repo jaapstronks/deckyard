@@ -2,7 +2,6 @@ import { t } from '../../../lib/ui-i18n.js';
 import {
   buildQaSection,
   buildBuildsSection,
-  buildAuthorPreviewSection,
   buildRssFeedSection,
 } from './toggles.js';
 import { buildRevealStyleSection } from './reveal-style.js';
@@ -127,11 +126,7 @@ function buildSections({
     ],
     [
       'publishing',
-      [
-        buildQaSection(ctx).row,
-        buildAuthorPreviewSection(ctx).row,
-        buildRssFeedSection({ ...ctx, api }).row,
-      ],
+      [buildQaSection(ctx).row, buildRssFeedSection({ ...ctx, api }).row],
     ],
     ['live-video', [buildLiveVideoSection(ctx).el]],
   ]);

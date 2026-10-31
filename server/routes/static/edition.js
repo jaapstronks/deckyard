@@ -17,6 +17,7 @@ import {
   renderEditionViews,
 } from '../../services/public-edition.js';
 import { createLogger } from '../../utils/logger.js';
+import { countInstanceHealth } from '../../storage/instance-health.js';
 
 const log = createLogger('edition');
 
@@ -62,13 +63,15 @@ function sendTombstone(res) {
   return true;
 }
 
-function sendDocument(res, html) {
+function sendDocument(res, html, { frameable = false } = {}) {
   res.writeHead(200, {
     ...baseHeaders('text/html; charset=utf-8'),
     // The document carries this policy as a meta as well; the header adds
-    // `frame-ancestors`, which a meta cannot (as for the live `/p/` page).
+    // `frame-ancestors`, which a meta cannot. Only the `/embed/` address may
+    // be framed, anywhere: that is what it is for, and why
+    // security-headers.js omits X-Frame-Options there.
     'Content-Security-Policy': buildDocumentCspHeader({
-      frameAncestors: "'none'",
+      frameAncestors: frameable ? '*' : "'none'",
     }),
   });
   res.end(html);
@@ -115,7 +118,7 @@ async function resolve({ repoRoot, res }, publicationId, versionText) {
   return edition;
 }
 
-function viewHandler(view) {
+function viewHandler(view, { frameable = false } = {}) {
   return async (ctx, publicationId, versionText) => {
     const edition = await resolve(ctx, publicationId, versionText);
     if (!edition) return true;
@@ -129,7 +132,12 @@ function viewHandler(view) {
       return renderFailed(ctx.res, err);
     }
     if (!views) return sendTombstone(ctx.res);
-    return sendDocument(ctx.res, views[view]);
+    // The audience a surface had, for instance health; an edition names no
+    // slide types to the counter, its input is not read for it.
+    countInstanceHealth([
+      { axis: 'surface', key: frameable ? 'embed' : 'published' },
+    ]);
+    return sendDocument(ctx.res, views[view], { frameable });
   };
 }
 
@@ -182,22 +190,28 @@ async function serveOgImage(ctx, publicationId, versionText) {
 }
 
 const EDITION =
-  '/p/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([1-9][0-9]{0,8})';
+  '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([1-9][0-9]{0,8})';
 
 /**
  * One edition of a publication at `/p/:publicationId/:version`, and its
- * subresources. The version is part of the address: there is no route that
- * resolves "the latest" edition, and none that reaches the deck.
+ * subresources; `/embed/:publicationId/:version` is the same canvas, frameable.
+ * The version is part of the address: there is no route that resolves "the
+ * latest" edition, and none that reaches the deck.
  */
 export const ROUTES = [
+  {
+    prefix: '/embed/',
+    suffix: '',
+    handler: viewHandler('canvas', { frameable: true }),
+  },
   { suffix: '', handler: viewHandler('canvas') },
   { suffix: '/reader', handler: viewHandler('reader') },
   { suffix: '/manifest.json', handler: serveManifest },
   { suffix: '/edition.zip', handler: servePackage },
   { suffix: '/og', handler: serveOgImage },
-].map(({ suffix, handler }) => ({
+].map(({ prefix = '/p/', suffix, handler }) => ({
   method: 'GET',
-  pattern: new RegExp(`^${EDITION}${suffix.replace('.', '\\.')}$`),
+  pattern: new RegExp(`^${prefix}${EDITION}${suffix.replace('.', '\\.')}$`),
   captures: ['uuid', 'text'],
   handler,
 }));

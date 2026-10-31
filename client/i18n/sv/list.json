@@ -20,7 +20,6 @@
   "imageLibrary.delete.title": "Ta bort bilden",
   "imageLibrary.delete.usedBy.many": "Används i {count} presentationer.",
   "imageLibrary.delete.usedByList": "Används i (senaste först):",
-  "imageLibrary.delete.usedByPublished.many": "Observera: {count} av dem är publicerade på webben.",
   "imageLibrary.description": "Kort beskrivning (valfri)",
   "imageLibrary.description.label": "Beskrivning (intern)",
   "imageLibrary.detail.created": "Uppladdad: {date}",

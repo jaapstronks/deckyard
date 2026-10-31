@@ -59,9 +59,6 @@ export function createImageLibraryDetail({
       const usageResp = await api(`/api/image-library/${id}/usage`);
       const usage = Array.isArray(usageResp?.usage) ? usageResp.usage : [];
       const usedBy = usage.length;
-      const usedByPublished = usage.filter(
-        (u) => (u?.published || []).length > 0,
-      ).length;
 
       const lines = [];
       if (usedBy) {
@@ -77,29 +74,16 @@ export function createImageLibraryDetail({
             },
           ),
         );
-        if (usedByPublished) {
-          lines.push(
-            t(
-              'imageLibrary.delete.usedByPublished',
-              {
-                one: 'Warning: 1 of those is published on the web.',
-                many: 'Warning: {count} of those are published on the web.',
-              },
-              {
-                count: usedByPublished,
-              },
-            ),
-          );
-        }
         lines.push('');
         lines.push(
           t('imageLibrary.delete.usedByList', 'Used by (most recent first):'),
         );
         for (const u of usage.slice(0, 8)) {
           const title = String(u?.title || u?.id || '').trim() || '(Untitled)';
+          // Published versions keep their own copy of the image, so deleting
+          // it here does not reach them; only the decks are listed.
           const mod = u?.modified ? ` — ${u.modified}` : '';
-          const pub = (u?.published || []).length ? ' — PUBLISHED' : '';
-          lines.push(`- ${title}${mod}${pub}`);
+          lines.push(`- ${title}${mod}`);
         }
         if (usage.length > 8) lines.push('…');
         lines.push('');
@@ -394,9 +378,7 @@ export function createImageLibraryDetail({
     const usageResp = usageById.get(String(it?.id || '').trim()) || null;
     const usageArr = Array.isArray(usageResp?.usage) ? usageResp.usage : [];
     const usedByCount = usageArr.length;
-    const publishedCount = usageArr.filter(
-      (u) => Array.isArray(u?.published) && u.published.length,
-    ).length;
+    const publishedCount = usageArr.filter((u) => u?.published?.path).length;
 
     const usageBlock = h('div', { class: 'image-lib-usage' }, [
       h('div', {
@@ -431,22 +413,18 @@ export function createImageLibraryDetail({
             usageArr.slice(0, 12).map((u) => {
               const title =
                 String(u?.title || u?.id || '').trim() || '(Untitled)';
-              const pub = Array.isArray(u?.published) ? u.published : [];
-              const pubLinks = pub
-                .slice(0, 2)
-                .map((p) => {
-                  const pid = String(p?.publishId || '').trim();
-                  if (!pid) return null;
-                  const slug = String(p?.slug || '').trim() || 'presentation';
-                  return h('a', {
-                    class: 'btn btn-secondary btn-xs',
-                    href: `/p/${pid}-${slug}`,
-                    target: '_blank',
-                    rel: 'noreferrer',
-                    text: t('imageLibrary.usage.openPublic', 'Open public'),
-                  });
-                })
-                .filter(Boolean);
+              const publicPath = String(u?.published?.path || '');
+              const pubLinks = publicPath
+                ? [
+                    h('a', {
+                      class: 'btn btn-secondary btn-xs',
+                      href: publicPath,
+                      target: '_blank',
+                      rel: 'noreferrer',
+                      text: t('imageLibrary.usage.openPublic', 'Open public'),
+                    }),
+                  ]
+                : [];
               return h('div', { class: 'row spread is-wrap is-gap-sm' }, [
                 h('div', { class: 'stack' }, [
                   h('div', { text: title }),

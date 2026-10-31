@@ -44,32 +44,6 @@ export function buildBuildsSection({ pres, markDirty, requestSave }) {
 }
 
 /**
- * Show author on social-preview image toggle.
- * @param {object} ctx - { h, pres, markDirty, requestSave }
- * @returns {{ row: HTMLElement }}
- */
-export function buildAuthorPreviewSection({ pres, markDirty, requestSave }) {
-  pres.settings.ogPreview =
-    pres.settings.ogPreview && typeof pres.settings.ogPreview === 'object'
-      ? pres.settings.ogPreview
-      : {};
-  pres.settings.ogPreview.showAuthor = !!pres.settings.ogPreview.showAuthor;
-  const { row } = buildCheckboxCallout({
-    checked: pres.settings.ogPreview.showAuthor,
-    titleKey: 'editor.deckSettings.authorPreview.title',
-    title: 'Show author on preview',
-    helpKey: 'editor.deckSettings.authorPreview.help',
-    help: 'Display your name and photo on the social media preview image when published.',
-    onChange: (checked) => {
-      pres.settings.ogPreview.showAuthor = checked;
-      markDirty?.();
-      requestSave?.();
-    },
-  });
-  return { row };
-}
-
-/**
  * Exclude-from-RSS toggle. Hidden until we confirm the org has RSS enabled.
  * @param {object} ctx - { h, pres, api, markDirty, requestSave }
  * @returns {{ row: HTMLElement }}

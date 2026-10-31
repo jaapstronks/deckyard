@@ -9,8 +9,7 @@
 
 import { lockDocumentScroll } from '../editor-utils.js';
 import { copyToClipboard } from '../publish-export/clipboard.js';
-import { openPreviewAddressModal } from '../publish-export/preview-address-modal.js';
-import { doPublish } from '../publish-export/publish.js';
+import { doPublish, isPublished } from '../publish-export/publish.js';
 import { openShareModal } from '../modals/share-modal/index.js';
 import { openDescriptionModal } from '../modals/description-modal.js';
 import { openExportModal } from '../export-modal.js';
@@ -48,18 +47,16 @@ export function setupShareDropdown({
 
   /** Update the published-state indicator on the button (and any open dialog). */
   function syncShareUi() {
-    const isPublished = !!(
-      typeof pres?.published?.id === 'string' && pres.published.id
-    );
-    button.classList.toggle('btn-published', isPublished);
+    const published = isPublished(pres);
+    button.classList.toggle('btn-published', published);
     try {
       const existingDot = button.querySelector('.live-dot');
-      if (isPublished && !existingDot) {
+      if (published && !existingDot) {
         button.insertBefore(
           h('span', { class: 'live-dot', 'aria-hidden': 'true' }),
           button.firstChild,
         );
-      } else if (!isPublished && existingDot) {
+      } else if (!published && existingDot) {
         existingDot.remove();
       }
     } catch {
@@ -70,16 +67,6 @@ export function setupShareDropdown({
   }
 
   // Bound helpers passed into the dialog's Public tab.
-  const openPreviewAddress = () =>
-    openPreviewAddressModal({
-      api,
-      pres,
-      id,
-      root,
-      lockDocumentScroll,
-      onChange: syncShareUi,
-    });
-
   const doPublishBound = () =>
     doPublish({ root, api, toast, pres, id, requestSave });
 
@@ -124,7 +111,6 @@ export function setupShareDropdown({
       openDescriptionModal,
       doPublish: doPublishBound,
       slideTypes,
-      openPreviewAddress,
       handleNotionPublish: () => handleNotionPublish({ api, toast, pres }),
       notionAvailable: () => notionAvailable,
       openExport,

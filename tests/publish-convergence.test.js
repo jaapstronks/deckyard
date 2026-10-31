@@ -1,27 +1,33 @@
 /**
- * The internal and public-API publish routes converge on one shared core
- * (server/services/publish-presentation.js; B62, finding 8).
+ * The internal and public-API publish routes converge on one service
+ * (server/services/publish-edition.js; B62 finding 8, T1.5).
  *
- * The v1 route (`POST /api/v1/presentations/:id/publish`) used to reimplement a
- * subset of the internal route and had silently dropped two behaviours: the
- * sandbox refusal (a guest could mint an API key and publish onto the public
- * domain) and the `presentation.published` webhook. These tests pin the
- * converged behaviour on both the core and the v1 route:
+ * The v1 route used to reimplement a subset of the internal route and had
+ * silently dropped the sandbox refusal and the `presentation.published`
+ * webhook. Since T1.5 both routes only parse and answer: authorization, the
+ * gates, the sealing, the commit and the webhook are `publishEdition()`, and
+ * unpublishing is `unpublishPresentation()` on both. These tests pin that:
  *
- *   - the core throws a 403 ForbiddenError in sandbox mode, and writes the
- *     entry / deck column / descriptor on the happy path;
- *   - the v1 route answers 403 in sandbox mode without publishing; and
- *   - a publish through the v1 route fires the presentation.published webhook.
+ *   - both route modules import their publish and unpublish from the one
+ *     service, and neither reaches the edition storage itself;
+ *   - both routes answer 403 in sandbox mode and 400 without a body, before
+ *     anything is read or written;
+ *   - the gates (`missing_alt`, `incomplete_slides`) are the service's
+ *     `prepareEdition()`, which refuses before the render bundle is opened.
  *
- * Handler-import level against the database double, like the neighbours
- * (tests/public-api-v1-publishing.test.js). The media provider is not
- * initialized under test, so the OG image takes the documented fallback ladder.
+ * Handler-import level against the database double. The double has no render
+ * bundle, so a publish that passes the gates stops at the bundle here; the
+ * commit and the webhook it fires once per new edition (never on a replay)
+ * run against PostgreSQL in the pg suite.
  *
  * Run with: node --test tests/publish-convergence.test.js
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { Readable } from 'node:stream';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
@@ -35,21 +41,22 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const KEY_OWNER = 'owner@example.com';
 const DECK_ID = 'd0000011-0000-4000-8000-000000000011';
 const REPO_ROOT = process.cwd();
-// A public-IP URL so the SSRF guard passes without a DNS lookup (matching
-// tests/webhook-payload-contracts.test.js).
-const WEBHOOK_URL = 'http://203.0.114.9/published';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { userIdFor, userRows } = await import('./helpers/identity-fixtures.js');
-const { writeAppSettings } = await import('../server/storage/settings.js');
 const { handlePublishing } =
   await import('../server/routes/public-api/v1/publishing.js');
-const { publishPresentation } =
-  await import('../server/services/publish-presentation.js');
-const { isAppError, getStatusCode } = await import('../server/utils/errors.js');
+const { handlePublish: handleInternalPublish } =
+  await import('../server/routes/api/publish.js');
+const { prepareEdition } =
+  await import('../server/services/publish-edition.js');
+const { RENDERER_BUNDLE_ERRORS } =
+  await import('../server/render/renderer-bundle/index.js');
+const { createMockRes } = await import('./helpers/http-mocks.js');
+const { getStatusCode } = await import('../server/utils/errors.js');
 
 function deckRow({ id, owner }) {
   return {
@@ -82,7 +89,6 @@ function deckRow({ id, owner }) {
         parentId: null,
       },
     ],
-    published: null,
     created_at: '2026-07-01T00:00:00.000Z',
     modified_at: '2026-07-01T00:00:00.000Z',
     trashed_at: null,
@@ -94,7 +100,6 @@ async function installDb() {
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     users: userRows(KEY_OWNER),
     presentations: [deckRow({ id: DECK_ID, owner: KEY_OWNER })],
-    published_presentations: [],
   });
   __setTestDb(db);
   await initializeStorage(REPO_ROOT);
@@ -105,8 +110,22 @@ function storedDeck(db, id) {
   return db.__tables.presentations.find((row) => row.id === id);
 }
 
-function makeV1Ctx(method, deckId, { permissions = ['read', 'write'] } = {}) {
-  const req = Readable.from([]);
+/** Nothing was staged or committed, and no edition table was even read. */
+function assertNothingWritten(db) {
+  assert.equal(db.__tables.publication_staging?.length ?? 0, 0);
+  assert.equal(db.__tables.publication_editions?.length ?? 0, 0);
+}
+
+const BODY = { expectedRevision: 1, idempotencyKey: 'intent-1' };
+const bodyStream = (body) =>
+  Readable.from(body == null ? [] : [Buffer.from(JSON.stringify(body))]);
+
+function makeV1Ctx(
+  method,
+  deckId,
+  { permissions = ['read', 'write'], body = BODY } = {},
+) {
+  const req = bodyStream(body);
   req.method = method;
   req.headers = { host: 'decks.example.test' };
 
@@ -154,208 +173,9 @@ function makeV1Ctx(method, deckId, { permissions = ['read', 'write'] } = {}) {
   };
 }
 
-/** The webhook fire path is `void postJson(...)`; give its microtasks room. */
-async function settle() {
-  for (let i = 0; i < 20; i++) await new Promise((r) => setImmediate(r));
-}
-
-// ---------------------------------------------------------------------------
-// The shared core
-// ---------------------------------------------------------------------------
-
-test('core: publishPresentation refuses in sandbox mode with a 403', async () => {
-  const db = await installDb();
-  const pres = storedDeck(db, DECK_ID);
-  process.env.SANDBOX_MODE = 'true';
-  try {
-    await assert.rejects(
-      () =>
-        publishPresentation({
-          repoRoot: REPO_ROOT,
-          storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
-          req: { headers: {} },
-          pres,
-          actor: { email: KEY_OWNER },
-        }),
-      (err) => {
-        assert.ok(isAppError(err), 'is an AppError');
-        assert.equal(getStatusCode(err), 403);
-        assert.equal(err.code, 'forbidden');
-        return true;
-      },
-    );
-  } finally {
-    delete process.env.SANDBOX_MODE;
-  }
-  // No published row was written and the deck column is untouched.
-  assert.equal(db.__tables.published_presentations.length, 0);
-  assert.equal(storedDeck(db, DECK_ID).published, null);
-});
-
-test('core: publishPresentation writes the entry, the deck column, and the descriptor', async () => {
-  const db = await installDb();
-  const pres = storedDeck(db, DECK_ID);
-
-  const result = await publishPresentation({
-    repoRoot: REPO_ROOT,
-    storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
-    req: { headers: {} },
-    pres,
-    actor: { email: KEY_OWNER },
-  });
-
-  assert.ok(result.publishId, 'a publish id is minted');
-  assert.equal(result.slug, `title-of-${DECK_ID}`);
-  assert.equal(result.path, `/p/${result.publishId}-${result.slug}`);
-  assert.equal(
-    result.ogImageUrl,
-    '/media/first-slide.jpg',
-    'fallback ladder: first slide image',
-  );
-
-  const entry = db.__tables.published_presentations.find(
-    (r) => r.presentation_id === DECK_ID,
-  );
-  assert.ok(entry, 'a publish entry row was written');
-  assert.equal(entry.id, result.publishId);
-  assert.equal(
-    storedDeck(db, DECK_ID).published.id,
-    result.publishId,
-    'deck carries the publish state',
-  );
-});
-
-test('core: a picture without alt text is refused before anything is written (D137)', async () => {
-  const db = await installDb();
-  const pres = storedDeck(db, DECK_ID);
-  pres.slides[0].content.alt = '';
-
-  await assert.rejects(
-    publishPresentation({
-      repoRoot: REPO_ROOT,
-      storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
-      req: { headers: {} },
-      pres,
-      actor: { email: KEY_OWNER },
-    }),
-    (err) => {
-      assert.equal(getStatusCode(err), 422);
-      assert.equal(err.code, 'missing_alt');
-      assert.deepEqual(err.toJSON().details, {
-        lang: null,
-        slideIndex: 0,
-        slideId: 'slide-1',
-        field: 'image',
-        count: 1,
-      });
-      return true;
-    },
-  );
-  assert.equal(db.__tables.published_presentations.length, 0);
-  assert.equal(storedDeck(db, DECK_ID).published, null);
-});
-
-test('core: a decorative picture needs no alt text', async () => {
-  const db = await installDb();
-  const pres = storedDeck(db, DECK_ID);
-  pres.slides[0].content = {
-    title: 'Hoi',
-    image: '/media/first-slide.jpg',
-    imageRole: 'decorative',
-  };
-  const result = await publishPresentation({
-    repoRoot: REPO_ROOT,
-    storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
-    req: { headers: {} },
-    pres,
-    actor: { email: KEY_OWNER },
-  });
-  assert.ok(result.publishId);
-});
-
-// ---------------------------------------------------------------------------
-// The v1 route, converged
-// ---------------------------------------------------------------------------
-
-test('v1: POST /publish is refused with 403 in sandbox mode and does not publish', async () => {
-  const db = await installDb();
-  const ctx = makeV1Ctx('POST', DECK_ID);
-  process.env.SANDBOX_MODE = 'true';
-  try {
-    assert.equal(await handlePublishing(ctx), true);
-  } finally {
-    delete process.env.SANDBOX_MODE;
-  }
-  assert.equal(ctx.res.statusCode, 403);
-  // The v1 envelope: a machine code, no internal `ok:false`.
-  assert.equal(ctx.res.body.error, 'forbidden');
-  assert.equal(
-    storedDeck(db, DECK_ID).published,
-    null,
-    'the deck stays unpublished',
-  );
-  assert.equal(db.__tables.published_presentations.length, 0);
-});
-
-test('v1: POST /publish refuses a picture without alt text with 422 missing_alt', async () => {
-  const db = await installDb();
-  storedDeck(db, DECK_ID).slides[0].content.alt = '';
-  const ctx = makeV1Ctx('POST', DECK_ID);
-  assert.equal(await handlePublishing(ctx), true);
-  assert.equal(ctx.res.statusCode, 422);
-  assert.equal(ctx.res.body.error, 'missing_alt');
-  assert.equal(ctx.res.body.details.field, 'image');
-  assert.equal(ctx.res.body.details.slideIndex, 0);
-  assert.match(ctx.res.body.message, /Slide 1 has an image without alt text/);
-  assert.equal(db.__tables.published_presentations.length, 0);
-});
-
-test('v1: POST /publish fires the presentation.published webhook', async () => {
-  const db = await installDb();
-  await writeAppSettings(testScope(REPO_ROOT), {
-    webhooks: { presentationPublishedUrl: WEBHOOK_URL },
-  });
-
-  const originalFetch = globalThis.fetch;
-  const fetchCalls = [];
-  globalThis.fetch = async (url, options = {}) => {
-    fetchCalls.push({ url: String(url), options });
-    return { ok: true, status: 200 };
-  };
-
-  try {
-    const ctx = makeV1Ctx('POST', DECK_ID);
-    assert.equal(await handlePublishing(ctx), true);
-    assert.equal(ctx.res.statusCode, 200);
-    await settle();
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-
-  assert.equal(fetchCalls.length, 1, 'exactly one webhook delivery');
-  const call = fetchCalls[0];
-  assert.equal(call.url, WEBHOOK_URL);
-  assert.equal(call.options.headers['x-sb-event'], 'presentation.published');
-  const payload = JSON.parse(call.options.body);
-  assert.equal(payload.event, 'presentation.published');
-  assert.equal(payload.presentation.id, DECK_ID);
-  assert.equal(payload.actor.email, KEY_OWNER);
-
-  // Sanity: the deck is actually published too.
-  assert.ok(storedDeck(db, DECK_ID).published?.id);
-});
-
-// ---------------------------------------------------------------------------
-// Incomplete slides (B590): an empty essential picture refuses the publish
-// ---------------------------------------------------------------------------
-
-const { handlePublish: handleInternalPublish } =
-  await import('../server/routes/api/publish.js');
-const { createMockRes } = await import('./helpers/http-mocks.js');
-
 /** POST /api/presentations/:id/publish as the editor sends it. */
-async function internalPublish(deckId) {
-  const req = Readable.from([]);
+async function internalPublish(deckId, body = BODY) {
+  const req = bodyStream(body);
   req.method = 'POST';
   req.headers = { host: 'decks.example.test' };
   const res = createMockRes();
@@ -370,6 +190,18 @@ async function internalPublish(deckId) {
   return res;
 }
 
+/** A store with no render bundle: a publish past the gates stops there. */
+const emptyStore = await fs.mkdtemp(path.join(os.tmpdir(), 'no-bundle-'));
+test.after(() => fs.rm(emptyStore, { recursive: true, force: true }));
+
+function prepare(db) {
+  return prepareEdition(
+    testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
+    storedDeck(db, DECK_ID),
+    { rendererStore: emptyStore },
+  );
+}
+
 function addEmptyImageSlide(db) {
   storedDeck(db, DECK_ID).slides.push({
     id: 'slide-2',
@@ -379,64 +211,126 @@ function addEmptyImageSlide(db) {
   });
 }
 
-test('core: an empty essential picture is refused with 422 incomplete_slides before anything is written', async () => {
-  const db = await installDb();
-  addEmptyImageSlide(db);
-  await assert.rejects(
-    publishPresentation({
-      repoRoot: REPO_ROOT,
-      storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
-      req: { headers: {} },
-      pres: storedDeck(db, DECK_ID),
-      actor: { email: KEY_OWNER },
-    }),
-    (err) => {
-      assert.equal(getStatusCode(err), 422);
-      assert.equal(err.code, 'incomplete_slides');
-      assert.deepEqual(err.toJSON().details, { slides: [2] });
-      assert.match(err.message, /Slide 2 still has an empty image/);
-      return true;
-    },
-  );
-  assert.equal(db.__tables.published_presentations.length, 0);
-  assert.equal(storedDeck(db, DECK_ID).published, null);
+// ---------------------------------------------------------------------------
+// One service behind both routes
+// ---------------------------------------------------------------------------
+
+test('both routes publish and unpublish through the one service, never the storage', async () => {
+  for (const file of [
+    'server/routes/api/publish.js',
+    'server/routes/public-api/v1/publishing.js',
+  ]) {
+    const src = await fs.readFile(path.join(REPO_ROOT, file), 'utf8');
+    assert.match(
+      src,
+      /import \{[^}]*\bpublishEdition\b[^}]*\bunpublishPresentation\b[^}]*\} from '[./]+services\/publish-edition\.js'/s,
+      `${file} imports publishEdition and unpublishPresentation from the service`,
+    );
+    assert.doesNotMatch(
+      src,
+      /storage\/editions\.js|commitEdition|revokeDeckEditions/,
+      file,
+    );
+  }
 });
 
-test('internal and v1 routes refuse incomplete_slides; a chosen picture then meets the alt check, and with alt it publishes', async () => {
+test('both routes refuse in sandbox mode with 403, before the body or the deck is read', async () => {
+  const db = await installDb();
+  process.env.SANDBOX_MODE = 'true';
+  let internal, v1;
+  try {
+    internal = await internalPublish(DECK_ID);
+    v1 = makeV1Ctx('POST', DECK_ID);
+    assert.equal(await handlePublishing(v1), true);
+  } finally {
+    delete process.env.SANDBOX_MODE;
+  }
+  assert.equal(internal.statusCode, 403);
+  assert.equal(v1.res.statusCode, 403);
+  // The v1 envelope: a machine code, no internal `ok:false`.
+  assert.equal(v1.res.body.error, 'forbidden');
+  assertNothingWritten(db);
+});
+
+test('both routes refuse a publish without expectedRevision or idempotencyKey with 400', async () => {
+  const db = await installDb();
+  for (const body of [
+    { idempotencyKey: 'k' },
+    { expectedRevision: 1 },
+    { expectedRevision: '1', idempotencyKey: 'k' },
+  ]) {
+    const internal = await internalPublish(DECK_ID, body);
+    assert.equal(internal.statusCode, 400, JSON.stringify(body));
+    assert.equal(internal.json().error, 'invalid');
+    const v1 = makeV1Ctx('POST', DECK_ID, { body });
+    await handlePublishing(v1);
+    assert.equal(v1.res.statusCode, 400, JSON.stringify(body));
+    assert.equal(v1.res.body.error, 'invalid');
+  }
+  assertNothingWritten(db);
+});
+
+// ---------------------------------------------------------------------------
+// The gates: prepareEdition refuses before the render bundle is opened
+// ---------------------------------------------------------------------------
+
+test('a picture without alt text is refused before the bundle is opened (D137)', async () => {
+  const db = await installDb();
+  storedDeck(db, DECK_ID).slides[0].content.alt = '';
+  await assert.rejects(prepare(db), (err) => {
+    assert.equal(getStatusCode(err), 422);
+    assert.equal(err.code, 'missing_alt');
+    assert.deepEqual(err.toJSON().details, {
+      lang: null,
+      slideIndex: 0,
+      slideId: 'slide-1',
+      field: 'image',
+      count: 1,
+    });
+    assert.match(err.message, /Slide 1 has an image without alt text/);
+    return true;
+  });
+  assertNothingWritten(db);
+});
+
+test('an empty essential picture is refused with 422 incomplete_slides, before the alt check', async () => {
   const db = await installDb();
   addEmptyImageSlide(db);
-
-  const internal = await internalPublish(DECK_ID);
-  assert.equal(internal.statusCode, 422);
-  assert.equal(internal.json().error, 'incomplete_slides');
-  assert.deepEqual(internal.json().details, { slides: [2] });
-
-  const refused = makeV1Ctx('POST', DECK_ID);
-  assert.equal(await handlePublishing(refused), true);
-  assert.equal(refused.res.statusCode, 422);
-  assert.equal(refused.res.body.error, 'incomplete_slides');
-  assert.deepEqual(refused.res.body.details, { slides: [2] });
-  assert.equal(db.__tables.published_presentations.length, 0);
+  await assert.rejects(prepare(db), (err) => {
+    assert.equal(getStatusCode(err), 422);
+    assert.equal(err.code, 'incomplete_slides');
+    assert.deepEqual(err.toJSON().details, { slides: [2] });
+    assert.match(err.message, /Slide 2 still has an empty image/);
+    return true;
+  });
 
   // A picture chosen without alt text: rightly the next refusal.
   storedDeck(db, DECK_ID).slides[1].content.image = '/media/second.jpg';
-  const unnamed = makeV1Ctx('POST', DECK_ID);
-  await handlePublishing(unnamed);
-  assert.equal(unnamed.res.statusCode, 422);
-  assert.equal(unnamed.res.body.error, 'missing_alt');
-  assert.equal(unnamed.res.body.details.slideIndex, 1);
+  await assert.rejects(prepare(db), (err) => {
+    assert.equal(err.code, 'missing_alt');
+    assert.equal(err.toJSON().details.slideIndex, 1);
+    return true;
+  });
 
+  // With alt text the gates pass, and the bundle is the next question.
   storedDeck(db, DECK_ID).slides[1].content.alt = 'The quay at noon';
-  const done = await internalPublish(DECK_ID);
-  assert.equal(done.statusCode, 200, JSON.stringify(done.json()));
-  assert.ok(storedDeck(db, DECK_ID).published?.id);
+  await assert.rejects(prepare(db), { code: RENDERER_BUNDLE_ERRORS.UNKNOWN });
+  assertNothingWritten(db);
+});
+
+test('a decorative picture needs no alt text', async () => {
+  const db = await installDb();
+  storedDeck(db, DECK_ID).slides[0].content = {
+    title: 'Hoi',
+    image: '/media/first-slide.jpg',
+    imageRole: 'decorative',
+  };
+  await assert.rejects(prepare(db), { code: RENDERER_BUNDLE_ERRORS.UNKNOWN });
 });
 
 test('a slide the published page never shows does not block the publish', async () => {
   const db = await installDb();
   addEmptyImageSlide(db);
   storedDeck(db, DECK_ID).slides[1].visibility = { hideInPublished: true };
-  const ctx = makeV1Ctx('POST', DECK_ID);
-  await handlePublishing(ctx);
-  assert.equal(ctx.res.statusCode, 200, JSON.stringify(ctx.res.body));
+  await assert.rejects(prepare(db), { code: RENDERER_BUNDLE_ERRORS.UNKNOWN });
 });

@@ -1,320 +1,149 @@
 # Publishing
 
-Making a deck readable on the open web: the publish flow, the public pages it
-mints, and the feed that lists them. Written 2026-08-05 against HEAD.
+Making a deck readable on the open web: the publish flow, the public pages it mints, and the feed that lists them. Rewritten 2026-10-31 for editions (T1.5).
 
-Publishing is one of three ways a deck leaves the logged-in app, and the only
-one that produces a durable, indexable, guessable-length public URL. The other
-two are **share links** (a long token, revocable, optionally password- or
-email-gated — [`permission-model.md`](permission-model.md)) and **follow codes**
-(a short code with a 24-hour TTL — [`live-sessions.md`](live-sessions.md)). They
-are not variants of each other: publishing is the one with no expiry, no token
-secrecy and search-engine metadata.
+Publishing is one of three ways a deck leaves the logged-in app, and the only one that produces a durable, indexable public URL. The other two are **share links** (a long token, revocable, optionally password- or email-gated — [`permission-model.md`](permission-model.md)) and **follow codes** (a short code with a 24-hour TTL — [`live-sessions.md`](live-sessions.md)). They are not variants of each other: publishing is the one with no expiry, no token secrecy and search-engine metadata.
 
 ## Purpose & scope
 
-Publishing turns a deck into a **public token plus a rendered page**. The token
-is an 8-hex `publishId`; the page is the same standalone HTML the export
-pipeline produces, wrapped in Open Graph, Twitter and JSON-LD metadata and an
-analytics tracking script. Unpublishing deletes the token, and the URL 404s
-immediately.
+Publishing seals the deck as an **edition**: an immutable copy with its own address, `/p/{publicationId}/{version}`. Editing the deck afterwards does not change it; publishing again makes the next edition, at the next version number, and the earlier ones stay public at their own addresses. How an edition is stored, sealed, served and verified is [`publication-editions.md`](publication-editions.md); this page is about the flow around it.
 
-The publish id _is_ the authorization. Everything downstream — the canvas page,
-the reader view, the embed player, the feed — resolves the id first and then
-fetches the deck by the id that lookup yielded, on a deliberately
-organization-unscoped storage scope. There is no session on any of those
-requests, so there is nothing else the authorization could rest on. That is one
-of the named `crossOrganizationScope` cases in
-[`tenant-isolation.md`](tenant-isolation.md).
+The publication id is the authorization on the public side. The canvas, reader, manifest, package, preview image, embed and feed take no session and resolve the edition by its address, on a deliberately organization-unscoped storage scope; that is one of the named `crossOrganizationScope` cases in [`tenant-isolation.md`](tenant-isolation.md).
 
 ## Module map
 
 Publish / unpublish:
 
-- `server/routes/api/publish.js` — the app's four routes: publish,
-  unpublish, rename the slug, regenerate the preview image.
-- `server/routes/public-api/v1/publishing.js` — the machine-client
-  equivalents: publish, publish status, unpublish.
-- `server/storage/published.js` — the storage facade:
-  `newPublishId`, `getPublishedById`, `upsertPublishedEntry`,
-  `removePublishedEntry`, `updatePublishedSlug`, `getPublishedIndex`,
-  `listPublishedForFeed`.
-- `server/render/preview-image.js` + `server/render/og-image.js` — the OG image:
-  render the first meaningful slide, or pick one out of the deck's content.
-- `shared/slug.js` - `generateSlug()` derives a URL slug from a title; `isValidSlug()` validates explicitly supplied slugs.
+- `server/services/publish-edition.js` — the one service. `publishEdition()` for an acting user, `createEdition()` (the same steps without one, for the conversion), `prepareEdition()` (the gates and the sealing, no write), `unpublishPresentation()` and `getDeckPublication()`.
+- `server/routes/api/publish.js` — the app's routes: publish and unpublish.
+- `server/routes/public-api/v1/publishing.js` — the machine-client equivalents: publish, publish status, unpublish.
+- `server/storage/editions.js` — series, editions, revocations, old links.
 
 The public pages:
 
-- `server/routes/static/published.js` — `/p/:id-:slug` (canvas) and
-  `/p/:id-:slug/reader` (reflowable reading view).
-- `server/routes/static/embed.js` — `/embed/:id-:slug`, the iframe player.
-- `server/export/html.js` / `server/export/reader.js` — the two renderers, shared
-  with export. See [`standalone-html-export.md`](standalone-html-export.md) and
-  [`reflowable-html-export.md`](reflowable-html-export.md).
+- `server/routes/static/edition.js` — `/p/{publicationId}/{version}` and its subresources, and `/embed/{publicationId}/{version}`.
+- `server/routes/static/published.js` — the old `/p/{publishId}-{slug}`, its reader and `/embed/{publishId}-{slug}`: redirects to the first edition (§ Old links).
+- `server/services/public-edition.js` — the read path: render, manifest, package, preview, and the title and description a feed lists.
 
 The feed:
 
-- `server/routes/feed.js` — `/feed/rss.xml`, `/feed/atom.xml`,
-  `/feed/feed.json`.
-- `server/utils/rss-feed.js` — `buildFeed()`, all three formats from
-  one model via the `feed` package.
-- `server/routes/static/app-shell.js` — `injectFeedDiscovery()`, the
-  `<link rel="alternate">` autodiscovery tags.
+- `server/routes/feed.js` — `/feed/rss.xml`, `/feed/atom.xml`, `/feed/feed.json`.
+- `server/utils/rss-feed.js` — `buildFeed()`, all three formats from one model via the `feed` package.
+- `server/routes/static/app-shell.js` — `injectFeedDiscovery()`, the `<link rel="alternate">` autodiscovery tags.
 
 Client surfaces:
 
-- `client/views/editor/publish-export/publish.js` — the publish flow
-  (`doPublish`) and the link set of a published deck (`buildPublishedLinks`:
-  page, embed, iframe and SDK snippet, per language version).
-- `client/views/editor/modals/share-modal/publish-section.js` — the Share
-  dialog's **Public** tab, the one place the links are shown (below).
-- `client/views/editor/publish-export/preview-address-modal.js` — "Preview and
-  address…": the social preview image and the slug.
-- `client/views/editor/deck-settings/toggles.js` — the per-deck
-  `excludeFromFeed` toggle.
-- `client/views/settings/tabs/integrations-tab.js` — the organization's RSS
-  settings and the feed URLs.
+- `client/views/editor/publish-export/publish.js` — the publish flow (`doPublish`), `isPublished()` and the links of the newest edition (`buildPublishedLinks`: page, embed and iframe snippet, per language version).
+- `client/views/editor/modals/share-modal/publish-section.js` — the Share dialog's **Public** tab, the one place the links are shown (below).
+- `client/views/editor/deck-settings/toggles.js` — the per-deck `excludeFromFeed` toggle.
+- `client/views/settings/tabs/integrations-tab.js` — the organization's RSS settings and the feed URLs.
 
 ## Data model
 
-**`published_presentations`** (migration 001) — one row per published deck:
+The editions tables are described in [`publication-editions.md`](publication-editions.md) § Three records. What publishing adds:
 
-| Column                      | Notes                                                                                                                                                                  |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                        | The publish id: the first segment of a UUID, 8 hex characters. Primary key, and the public token.                                                                      |
-| `presentation_id`           | FK, `ON DELETE CASCADE` — deleting a deck unpublishes it.                                                                                                              |
-| `organization_id`           | FK. Used by the listing and the feed; _not_ by `getPublishedById`, which is deliberately unscoped.                                                                     |
-| `title`, `slug`             | The slug comes from `generateSlug(title, { fallback: 'presentation' })` at publish time and can be renamed afterwards. It is cosmetic: the id alone resolves the deck. |
-| `og_image_url`              | The generated preview, or the fallback asset.                                                                                                                          |
-| `created_at`, `modified_at` |                                                                                                                                                                        |
-
-The same facts are mirrored onto **`presentations.published`** (a JSONB column,
-migration 001) as `{ id, slug, ogImageUrl, previewFingerprint, created, modified }`, so exports and
-the editor UI can see publish state without a second query. Unpublishing writes
-an explicit `null` there rather than deleting the key — the storage layer reads
-an absent key as "leave this column alone", so dropping it would leave the deck
-published in the database. Only the publish, unpublish, slug and preview routes write this column: a deck save drops whatever `published` its body carries, so the editor's echoed copy cannot erase `previewFingerprint`, the proof on which the generated preview is served ([viewer-read-data.md](viewer-read-data.md) § Implementation boundary).
-
-**Per-deck**: `presentations.settings.excludeFromFeed` — published, but not
-listed in the feed.
-
-**Per-organization**: `organizations.settings.rss` (JSONB; migration 038 is a
-deliberate no-op that only reserves the number) — `enabled`, `title`,
-`description`, `language`, `copyright`, `authorName`, `customFeedUrl`,
-`maxItems`.
+- **Publication state is read, never stored on the deck.** A deck is published when its series has an edition that is not revoked; `pres.published` on the API is `{ publicationId, version, path, publishedAt }` of the newest one, or `null`, attached by `getDeckPublication()` where a response needs it (the deck GET, exports, webhooks). The `presentations.published` column is gone (migration 105): it was a copy that drifted from the index it mirrored.
+- **`publication_legacy_links`** (migration 105) — `legacy_id` (an old eight-hex publish id) → `edition_id`. Written once by the conversion; never by a publish.
+- **`published_presentations`** (migration 001) — the old index. Read only by the conversion; a later migration drops it once every installation has converted.
+- **Per-deck**: `presentations.settings.excludeFromFeed` — published, but not listed in the feed.
+- **Per-organization**: `organizations.settings.rss` (JSONB) — `enabled`, `title`, `description`, `language`, `copyright`, `authorName`, `customFeedUrl`, `maxItems`.
 
 ## Flows
 
 ### 1. Publish
 
-`POST /api/presentations/:id/publish`:
+`POST /api/presentations/:id/publish` with `{ expectedRevision, idempotencyKey }`:
 
-1. **Sandbox refuses outright** (403). A guest owns a private deck and could
-   otherwise push arbitrary content onto a public domain; this mirrors
-   `canChangePresentationVisibility` returning false there.
-2. `withPresentationAuth(… permission: 'write')` — publishing is a write, so
-   collaborators with `edit` can do it, viewers cannot.
-3. Reuse the existing publish id if the deck was published before, otherwise
-   mint one. **Re-publishing keeps the URL.**
-4. Generate the OG image: find the first slide that is not a
-   `follow-invite-slide`, load the theme, and render it through
-   `generateAndSaveOgPreview` — optionally with an author overlay when
-   `settings.ogPreview.showAuthor` is set, taking the name and avatar from the
-   owner's profile. Every failure path falls back:
-   no media provider or a render error → `pickOgImageUrlFromPresentation`, and
-   failing that, a bundled default asset.
-5. `upsertPublishedEntry` (which derives the slug from the title), then mirror
-   the entry onto `presentations.published`. A generated preview this replaced
-   is withdrawn from its origin (§ Withdrawing a generated preview).
-6. Warm the deck-grid thumbnail, fire the `presentation.published` webhook
-   ([`webhooks.md`](webhooks.md)), and answer with
-   `{ publishId, slug, path, ogImageUrl }`.
+1. **Sandbox refuses outright** (403), before the body is read. A guest owns a private deck and could otherwise push arbitrary content onto a public domain.
+2. `expectedRevision` must be a revision and `idempotencyKey` 1-200 characters (400 `invalid`).
+3. The deck is loaded for an actor with **write** access (`loadPresentationForActor`): owner, creator, a collaborator with `edit`/`admin`, or an organization member on an organization deck. A read-only actor gets 403; a deck of another organization 404.
+4. The key is scoped to the actor (`actor:<userId>:<key>`), so two users who both send `1` publish two editions. A retry of the same request (same deck and revision) answers **200** with the edition its first attempt made; the same key for another request is 409 `idempotency_key_reused`.
+5. A deck no longer at `expectedRevision` is 409 `conflict`: the author publishes what they saw, or nothing.
+6. The publish gates (`incomplete_slides`, `missing_alt`, 422), the render bundle and the sealing (`renderer_edition_input_unsealable`, 422, with the dependency list) — `prepareEdition()`.
+7. Stage and commit ([`publication-editions.md`](publication-editions.md) § The commit transaction); answer **201** `{ replayed: false, edition: { id, publicationId, version, path, manifestHash, publishedAt, … } }`.
+8. A new edition, not a replay, fires the `presentation.published` webhook once, naming the edition ([`webhooks.md`](webhooks.md)). A retry sends nothing.
 
-`PATCH …/publish/slug` renames the slug. It refuses invalid spelling with HTTP 400, code `invalid` and `details.field = "slug"`; the editor shows that refusal inline beside the input. Explicit slugs must be 1-80 lowercase ASCII letters, digits or hyphens, with a letter or digit at both ends. Input is never trimmed, lowercased or otherwise repaired. A deck that is not published also receives HTTP 400.
-
-`POST …/preview/regenerate` re-runs step 4 alone, and withdraws the preview it replaced.
+The editor sends one key per deck revision (`publishKeyFor` in `publish.js`), so a double click or a retry of the same revision gets the same edition back.
 
 ### 2. Unpublish
 
-`DELETE /api/presentations/:id/publish` — write access, then
-`removePublishedEntry` and an explicit `published: null` on the deck, then the
-preview the link advertised is withdrawn from its origin. No webhook fires. The public URL 404s on the next request; nothing is cached
-server-side, and the pages are served `Cache-Control: no-store`.
+`DELETE /api/presentations/:id/publish` — write access, then every edition of the deck's series that is still public is revoked (`revokeDeckEditions`) and its cached views dropped. Each of them, and the old link that pointed at the first, then answers 410 with a content-free tombstone. The deck is not written; no webhook fires. Publishing again afterwards makes the next version, public again.
 
-### Withdrawing a generated preview
+### 3. The public pages
 
-A generated preview is public at its URL. With the local provider that URL is
-an app route (`server/routes/static/published-preview.js`), which serves the
-file only while the publication still proves it, so the file stays on disk.
-With an S3-compatible bucket the bucket or CDN answers the URL without the app,
-so `withdrawPublishedPreview` (`server/services/publish-presentation.js`)
-deletes the object (B806). It acts only when the file name was minted for
-that publication (`publishedPreviewPublishId` equals the publish id) and the
-media provider owns the URL, so a picked content image, any other upload and
-another publication's preview are never touched (such a URL is still blanked
-from the stored columns once it expires, just not deleted); what "withdraw"
-means is the provider's `withdrawPublicObject`.
+An edition is served as described in [`publication-editions.md`](publication-editions.md) § Public read path: canvas, `/reader`, `/manifest.json`, `/edition.zip` and `/og`, all from the edition's own bytes, `Cache-Control: no-store`. The canvas refuses to be framed (`frame-ancestors 'none'`).
 
-It runs when a publish or regenerate replaces the preview, on unpublish, and
-at the public seams: `/p/`, the feed and the v1 publish status ask
-`resolvePublicOgImage`, which wraps `safePublishedOgImage`. When that declines
-a stored URL, the object is withdrawn and the URL is blanked on the entry and
-the deck, without bumping the deck's revision or either `modified_at`, so the
-next read does not decide again. A delete the bucket refuses leaves the URL in
-place and is retried on the next read. Objects from before this boundary are
-removed once with `node scripts/sweep-published-previews.js --check`, then `--apply`;
-it skips objects younger than an hour, so a publish in flight keeps its image.
-A copy in a crawler's or CDN's cache is outside the deployment.
+`GET /embed/{publicationId}/{version}` is the same canvas, frameable by any origin (`frame-ancestors *`; `security-headers.js` omits `X-Frame-Options` under `/embed/`). It takes `?lang=` and nothing else.
 
-### 3. The public canvas page
+### 4. Old links
 
-`GET /p/:id-:slug`:
+The publications from before editions are converted once by `scripts/migrate-publications-to-editions.js` (§ Converting old publications). After that, `/p/{publishId}-{slug}`, `/p/{publishId}-{slug}/reader` and `/embed/{publishId}-{slug}` answer **301** to the same subresource of the deck's first edition, with `?lang=` carried over. Never to a later edition: a link that was cited keeps showing what it showed on the day of the conversion. The slug is ignored; an old id that was never converted is 404.
 
-1. Resolve the publish id on a cross-organization scope. Unknown id → 404.
-2. Fetch the deck the entry points at, same scope. Gone → 404.
-3. **Canonicalize**: a missing or wrong slug 302s to `/p/<id>-<slug>`. The id is
-   what resolves; the slug is presentation.
-4. Project to a language — `?lang=` or the deck's own setting — and build a
-   `<head>` with `robots`, a canonical link, an alternate pointing at the reader
-   view, Open Graph, Twitter card, and a `PresentationDigitalDocument` JSON-LD
-   block (with `<` escaped so a value cannot break out of the script).
-   Sandbox instances emit `noindex,nofollow`.
-5. Render with `buildStandaloneHtml` in `context: 'published'`, adding the
-   analytics head and tracking script, a language switcher when a second
-   language version exists, and a visible link to the reader view.
+### 5. The feed
 
-`GET /p/:id-:slug/reader` is the same resolution with `buildReaderHtml`: a
-JS-optional, semantic, reflowable projection of the same deck, canonicalized
-back to the canvas URL.
-
-`GET /embed/:id-:slug` is the iframe player. It differs in two deliberate ways:
-a **missing** slug is accepted rather than redirected (simple iframe embeds stay
-working), and a render failure returns a styled HTML page rather than JSON or a
-thrown error, because the result is displayed inside someone else's page.
-
-### 4. The feed
-
-`GET /feed/rss.xml` | `/feed/atom.xml` | `/feed/feed.json` — public, no auth,
-and gated four times before it serves anything:
+`GET /feed/rss.xml` | `/feed/atom.xml` | `/feed/feed.json` — public, no auth, and gated four times before it serves anything:
 
 1. `RSS_FEED_ENABLED` — the instance kill switch. Off → 404.
-2. `MULTI_ORG_ENABLED` → **404**. The feed has no session to resolve an
-   organization from, so it uses the default one, which stops being a defined
-   answer once an instance holds several organizations (org-scoping decision 4 in
-   `tenant-isolation.md`).
+2. `MULTI_ORG_ENABLED` → **404**. The feed has no session to resolve an organization from, so it uses the default one, which stops being a defined answer once an instance holds several organizations (org-scoping decision 4 in `tenant-isolation.md`).
 3. The organization must resolve. Missing → 404.
 4. `organizations.settings.rss.enabled` — the real user-facing toggle. Off → 404.
 
-Then: `listPublishedForFeed` sorts published entries by modified date, enriches
-up to `maxItems` (clamped 1–100, default 50) with deck metadata, and **skips any
-deck with `excludeFromFeed`**. An ETag is computed from the newest modified
-timestamp so `If-None-Match` gets a 304, and the response carries
-`Cache-Control: public, max-age=300`.
+Then `listLatestPublicEditions` lists the newest public edition of each series, newest first, up to `maxItems` (clamped 1–100, default 50), skipping a series whose deck has `excludeFromFeed`. A series whose deck was deleted is still listed: the edition outlives it (D361). Title and description come from each edition's own bytes (`editionSummary`), the link is the edition's canvas and the image its `/og`. The ETag names the listed editions, so `If-None-Match` gets a 304 until an edition is added or revoked; the response carries `Cache-Control: public, max-age=300`.
 
-`buildFeed` emits RSS 2.0, Atom 1.0 or JSON Feed 1 from one item model: title,
-link (`/p/<id>-<slug>`), description, dates, author and image. The base URL is
-`settings.rss.customFeedUrl` when set, otherwise derived from the request.
+**Autodiscovery** is injected into the app shell by `injectFeedDiscovery()` under exactly the same conditions as the routes.
 
-**Autodiscovery** is injected into the app shell by `injectFeedDiscovery()`
-under exactly the same conditions as the routes — kill switch on,
-multi-organization off, organization toggle on — so the `<link>` tags and the
-routes can never disagree.
+### 6. Publishing from the public API
 
-### 5. Publishing from the public API
+`POST` / `GET` / `DELETE /api/v1/presentations/:id/publish` call the same service for an API key, authorized by scope (`write` / `read`) plus deck access. `POST` takes the same body and answers 201 or, for a retry, 200; `GET` answers `{ isPublished: false }` or `{ isPublished: true, publicationId, version, path, publishedAt }`; `DELETE` answers `{ unpublished: true, revoked }`. The shape from before editions (`publishId`, `slug`, `ogImageUrl`, a body-less `POST`) is gone (T1.5), as a documented beta break in `docs/openapi.yaml`.
 
-`POST` / `GET` / `DELETE /api/v1/presentations/:id/publish` do the same work for
-an API key, authorized by scope (`write` / `read`) plus deck access. The response
-shapes match the app's, plus a `GET` that answers `{ isPublished: false }` or
-the full publish state.
+## Converting old publications
+
+`node scripts/migrate-publications-to-editions.js` (dry run) and `--apply`, run once per installation after the release with migration 105, with the server's env and after a database backup. The logic is `server/services/publication-migration.js`:
+
+- **The old index is the truth.** Every `published_presentations` row was public at `/p/` until the release, whatever the deck's own copy said, so every row whose deck can be sealed is converted.
+- **One first edition per deck**, made through `createEdition()` under the key `migration:<deckId>`, at the deck's current revision and with the conversion time as its publication time. Several old ids of one deck all link to it.
+- **Blocked, never skipped**: a row whose deck is gone (`source_missing`), in the trash (`source_trashed`) or now in another organization (`organization_mismatch`), or that a publish gate or the sealing refuses (its own code and details), is reported and stays unconverted. Its old link is a 404 until the operator fixes the deck and runs `--apply` again.
+- **Idempotent**: a second run reports `already_linked`; a run interrupted between the edition and its links finishes them.
+
+The report is JSON on stdout (one line per old id: `outcome`, `reason`, `details`, `edition`) with a summary on stderr; the exit code is 2 while a row is blocked. Afterwards `node scripts/sweep-published-previews.js --check` and `--apply` remove the preview images the old publications left on a remote media origin.
 
 ## The Public tab: two links, not one
 
-The Share dialog's tabs are named after who gets access (D174): **Team**
-(people with an account on this server), **Guests** (people without one, on a
-token link you chose) and **Public** (anyone). Publishing lives on Public, and a
-published deck shows two links there as equal rows (B342):
+The Share dialog's tabs are named after who gets access (D174): **Team**, **Guests** and **Public** (anyone). Publishing lives on Public. Before the first publish it shows **Publish**; afterwards the newest edition's two links as equal rows (B342):
 
-- **Link** — `/p/<id>-<slug>`, a page: findable (`index,follow`), with a social
-  preview, and it refuses to be framed (`frame-ancestors 'none'`,
-  `server/utils/document-csp.js`).
-- **Embed** — `/embed/<id>-<slug>`, the player: `noindex`, frameable by any
-  origin, controls under the slide. This is the URL for Notion or an `<iframe>`.
+- **Link** — `/p/{publicationId}/{version}`, a page: findable, with a social preview, refuses to be framed.
+- **Embed** — `/embed/{publicationId}/{version}`, the same edition, frameable. This is the URL for Notion or an `<iframe>`.
 
-They are not interchangeable: a `/p/` URL pasted into Notion renders an empty
-frame, which is why the embed sits beside the link rather than a level deeper.
-The iframe and embed-SDK snippets fold out underneath. When the deck has more
-than one language version, one `<select>` above the rows sets `?lang=` in both
-URLs and in the snippets, starting on the language being edited; with one
-version there is no picker. The social preview and the slug are managed in
-"Preview and address…"; Unpublish and "Add to Notion page" sit on the tab.
+The iframe snippet folds out underneath. When the deck has more than one language version, one `<select>` above the rows sets `?lang=` in both URLs and the snippet. Below them, **Publish new version** makes the next edition (a refused publish shows its reason inline beside it), "Add to Notion page" embeds the newest edition, and **Unpublish** revokes every edition after a confirmation. The action row wraps whole buttons (`flex-wrap`, 44 px targets).
 
-The Export dialog points here from its HTML row (the offline twin of the
-published page): its hint opens the Share dialog on the Public tab.
+The Export dialog points here from its HTML row (the offline twin of the published page).
 
 ## Config & flags
 
-| Variable / setting                            | Effect                                                                                                                                                                  |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RSS_FEED_ENABLED`                            | Instance kill switch for the feed. **Defaults to on**; set it false to remove the feature.                                                                              |
-| `MULTI_ORG_ENABLED`                           | Disables the feed and its autodiscovery links entirely (404 / omitted).                                                                                                 |
-| `SANDBOX_MODE`                                | Publishing is refused with 403; published pages that do exist emit `noindex,nofollow`.                                                                                  |
-| `organizations.settings.rss.*`                | Per-organization: `enabled` (the real toggle), `title`, `description`, `language`, `copyright`, `authorName`, `customFeedUrl`, `maxItems`.                              |
-| `presentations.settings.excludeFromFeed`      | Per-deck: published, but not listed.                                                                                                                                    |
-| `presentations.settings.ogPreview.showAuthor` | Per-deck: overlay the owner's name and avatar on the generated preview image.                                                                                           |
-| Media provider                                | Preview generation needs an initialized media provider ([`media-library.md`](media-library.md)); without one, publishing still succeeds with a picked or default image. |
+| Variable / setting                       | Effect                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `RSS_FEED_ENABLED`                       | Instance kill switch for the feed. **Defaults to on**; set it false to remove the feature.        |
+| `MULTI_ORG_ENABLED`                      | Disables the feed and its autodiscovery links entirely (404 / omitted).                           |
+| `SANDBOX_MODE`                           | Publishing is refused with 403 on every surface.                                                  |
+| `organizations.settings.rss.*`           | Per-organization: `enabled` (the real toggle), `title`, `description`, `language`, …, `maxItems`. |
+| `presentations.settings.excludeFromFeed` | Per-deck: published, but not listed.                                                              |
+| Render bundle                            | Publishing needs the installation's render bundle ([`renderer-bundle.md`](renderer-bundle.md)).   |
 
 ## Authz & tenancy
 
-- **Publishing and unpublishing require deck _write_ access** — owner, creator,
-  a collaborator with `edit`/`admin`, or an organization member on an organization deck.
-  See [`permission-model.md`](permission-model.md). Publishing is not a separate
-  capability, and there is no reviewer or approval step.
-- **Reading a published deck requires nothing at all.** The three public routes
-  and the feed take no session, no cookie and no header. A published URL handed
-  to anyone works for anyone.
-- **The publish id is the authorization**, so all four read paths declare
-  `crossOrganizationScope(repoRoot, '<reason>')`. Filtering them by organization
-  would 404 every public link the moment an instance holds a second organization.
-  Reads only — such a scope cannot reach a write or a listing.
-- **The feed is the exception that proves it**: it is a _listing_, so it must
-  state an organization, and having nothing but the default one to state is
-  exactly why multi-organization turns it off.
-- **What a published page exposes**: title, description, every slide the
-  `published` visibility filter admits, and the theme. No public surface names
-  the owner from their email address — not the page, not the feed (no item
-  `<author>`), not the og card, which shows an author only when the owner set a
-  profile name (`settings.ogPreview.showAuthor`). A display name for the other
-  surfaces waits on identity decoupling.
+- **Publishing and unpublishing require deck _write_ access**, on both surfaces, through the same service. Publishing is not a separate capability, and there is no reviewer or approval step.
+- **Reading an edition requires nothing at all.** A published URL handed to anyone works for anyone, until it is revoked.
+- **The publication id is the authorization** for the public reads, which run on `crossOrganizationScope`. Writes are always scoped: a series is reached only through a deck of the caller's organization.
+- **The feed is the exception**: it is a _listing_, so it states an organization, and having nothing but the default one to state is why multi-organization turns it off.
+- **What an edition exposes**: the public projection the sealing allows ([`renderer-bundle.md`](renderer-bundle.md) § The edition input). No public surface names the owner from their email address.
 
 ## Implementation status
 
-Normative target: **one publish concept, one set of routes per client kind, one
-public page family.** Where the code stands, as of 2026-08-05:
+As of 2026-10-31 (T1.5):
 
-- **The publish/unpublish flow and the public pages match the target**, and the
-  publish-id-is-the-authorization rule is applied consistently across all four
-  read paths.
-- **Publish state is stored twice**: the `published_presentations` row and the
-  `presentations.published` JSONB mirror. Every write path updates both in the
-  same handler, and the mirror exists so exports and the deck grid need no
-  second query — but it is a denormalization with no constraint behind it, and
-  the explicit-`null` comment in two places is a scar from it drifting once.
-- **The app route and the v1 route have drifted.** `POST /api/v1/…/publish` does
-  **not** apply the sandbox refusal and does **not** fire the
-  `presentation.published` webhook, both of which the app route does. One
-  concept, two behaviours, decided by which client asks — the kind of divergence
-  the beta doctrine says to collapse rather than document as intended. The
-  sandbox half is more than a style point: a sandbox guest counts as
-  authenticated and can mint an API key, so that chain routes around the 403.
-- **The OG-preview block is copied three times** — twice in
-  `server/routes/api/publish.js` (publish and regenerate) and once in
-  `server/routes/public-api/v1/publishing.js` — with the same
-  first-meaningful-slide search, the same author-overlay lookup and the same
-  fallback ladder. It wants to be one function.
-- **The feed serves the default organization or nothing.** The 404 under
-  multi-organization is a deliberate refusal, not a limitation being hidden, and it
-  stands until a per-organization or per-author feed is designed
-  (`tenant-isolation.md`, decision 4).
-- **Unpublishing is silent.** No webhook, no activity event, no notification —
-  while publishing fires a webhook. Whether that asymmetry is intended has not
-  been decided.
+- **One publish concept, one service, two surfaces with the same refusals.** Sandbox, authorization, gates, idempotency and webhook are in `publish-edition.js`; the routes only parse and answer.
+- **Old links resolve to their first edition** after the conversion; there is no path that renders a deck's HEAD publicly any more.
+- **Published pages are not tracked by the analytics cluster.** An edition's HTML is frozen and carries no tracking script; counting edition views is open work. The `published` source type stays for the history it holds.
+- **The live embed player has no route.** `server/utils/embed-html/` and `client/embed-sdk.js` (player options, postMessage controls) served `/embed/{publishId}-{slug}`; the edition embed is the plain canvas. Removing or rebuilding them is open work.
+- **`published_presentations` is still in the schema** until every installation has converted; a later migration drops it.
+- **Unpublishing is silent.** No webhook, no activity event, no notification — while publishing fires a webhook.

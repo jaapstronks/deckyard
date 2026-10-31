@@ -166,19 +166,6 @@ export class LocalProvider extends MediaProvider {
     }
   }
 
-  ownsUrl(url) {
-    return typeof url === 'string' && url.startsWith(this.urlPrefix + '/');
-  }
-
-  /**
-   * Local uploads are served by the app's own routes, which refuse what is no
-   * longer proven safe (`published-preview.js`), so nothing is deleted here.
-   * @returns {Promise<'kept'>}
-   */
-  async withdrawPublicObject() {
-    return 'kept';
-  }
-
   // Private helpers
 
   /**

@@ -4,7 +4,9 @@
  *
  * `tests/export-csp.test.js` covers the meta form on all nine render paths.
  * This file covers the two surfaces this server actually serves over HTTP —
- * `/p/…` and `/embed/…` — where a header is possible and therefore where
+ * an edition at `/p/{publicationId}/{version}` and the same edition at
+ * `/embed/…`, both from `server/routes/static/edition.js` — where a header is
+ * possible and therefore where
  * `frame-ancestors` belongs. Everything the meta can express is already in
  * force on those documents; the header's job is that one directive, plus
  * making `server/utils/document-csp.js`'s own claim true.
@@ -70,20 +72,13 @@ test('frameAncestors has no default — the two surfaces disagree', () => {
   );
 });
 
-test('both served routes set the header on every 200 they write', () => {
-  for (const [rel, expected, count] of [
-    ['server/routes/static/published.js', 'frameAncestors: "\'none\'"', 2],
-    ['server/routes/static/embed.js', "frameAncestors: '*'", 2],
-  ]) {
-    const src = read(rel);
-    const uses = src.split('buildDocumentCspHeader(').length - 1;
-    assert.equal(
-      uses,
-      count,
-      `${rel} should build the header ${count}× (one per 200 it writes)`,
-    );
-    assert.ok(src.includes(expected), `${rel} should ask for ${expected}`);
-  }
+test('the edition route sets the header on the one 200 document it writes', () => {
+  const src = read('server/routes/static/edition.js');
+  // One document writer, `sendDocument`, used by the canvas, the reader and
+  // the embed; only the embed is frameable.
+  assert.equal(src.split('buildDocumentCspHeader(').length - 1, 1);
+  assert.ok(src.includes(`frameAncestors: frameable ? '*' : "'none'"`));
+  assert.match(src, /prefix: '\/embed\/'[\s\S]*?frameable: true/);
 });
 
 test('the CSP and X-Frame-Options agree on who may frame each surface', () => {
@@ -100,7 +95,8 @@ test('the CSP and X-Frame-Options agree on who may frame each surface', () => {
   // A published deck: XFO denies framing, so the CSP must too. `'self'` here
   // would let a same-origin frame through on every modern browser while the
   // (losing) XFO still denied it elsewhere.
-  assert.equal(headersFor('/p/abc123-deck')['X-Frame-Options'], 'DENY');
+  const ADDR = '0b6f0c2e-6a59-4a7e-9d2a-1f0c5e7d9a10/1';
+  assert.equal(headersFor(`/p/${ADDR}`)['X-Frame-Options'], 'DENY');
   assert.match(
     buildDocumentCspHeader({ frameAncestors: "'none'" }),
     /frame-ancestors 'none'$/,
@@ -108,7 +104,7 @@ test('the CSP and X-Frame-Options agree on who may frame each surface', () => {
 
   // The embed: XFO is deliberately omitted, and the CSP says the same thing
   // out loud rather than by absence.
-  assert.equal(headersFor('/embed/abc123')['X-Frame-Options'], undefined);
+  assert.equal(headersFor(`/embed/${ADDR}`)['X-Frame-Options'], undefined);
   assert.match(
     buildDocumentCspHeader({ frameAncestors: '*' }),
     /frame-ancestors \*$/,

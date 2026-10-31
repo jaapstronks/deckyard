@@ -330,7 +330,7 @@ export function createEditorTopbar({
   const syncAnalyticsAvailability = () => {
     // No cluster, no control to show or hide.
     if (!hasAnalytics) return;
-    if (pres?.published?.id) {
+    if (pres?.published) {
       setAnalyticsAvailable(true);
       return;
     }

@@ -1,334 +1,87 @@
 import { notFound } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { escapeHtml } from '../../../shared/slide-types/helpers.js';
-import { getPresentation } from '../../storage/presentations/index.js';
-import { getPublishedById } from '../../storage/published.js';
-import { countDeckView } from '../../storage/instance-health.js';
-import { buildStandaloneHtml } from '../../export/html.js';
-import { buildDocumentCspHeader } from '../../utils/document-csp.js';
-import { buildReaderHtml } from '../../export/reader.js';
-import { loadThemeAssets } from '../../utils/themes.js';
-import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
-import { getAppName } from '../../config/branding.js';
-import { sandboxEnabled } from '../../config/sandbox.js';
-import {
-  projectPresentationForLang,
-  resolveLangModeFromPresOrUrl,
-} from '../../utils/i18n.js';
-import { getLangDisplayName } from '../../../shared/i18n-utils.js';
-import { existingVersionLangs } from '../../../shared/i18n-progress.js';
-import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
-import { isFeatureEnabled } from '../../config/flags-snapshot.js';
+import { resolveLegacyPublication } from '../../storage/editions.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
-import { toIsoOrNull } from '../../utils/normalize.js';
-import { createTranslator } from '../../i18n/index.js';
-import { resolvePublicOgImage } from '../../services/publish-presentation.js';
 
 /**
- * Semantic reflowable "reader" view of a published deck (open web, no auth).
- * A JS-optional, accessible document projection of the same model; the canvas
- * page lives at /p/:id-:slug. Served at /p/:id-:slug/reader.
- * @param {import('./static-files.js').StaticContext} ctx
- * @returns {Promise<boolean>} true if handled.
+ * Where an old address points now: the same subresource of the edition the
+ * conversion made for it (migration 105), with the language query carried
+ * over. Null when the old id was never converted.
+ *
+ * @param {string} repoRoot
+ * @param {string} legacyId
+ * @param {string} prefix - `/p` or `/embed`
+ * @param {string} suffix - `''` or `/reader`
+ * @param {URL} url
+ * @returns {Promise<string|null>}
  */
-async function servePublishedReader(
-  { repoRoot, res, url },
-  publishId,
-  slugSegment,
-) {
-  const reqSlug = String(slugSegment || '').trim();
-  const entry = await getPublishedById(
+async function legacyTarget(repoRoot, legacyId, prefix, suffix, url) {
+  const edition = await resolveLegacyPublication(
     crossOrganizationScope(
       repoRoot,
-      'published-deck: the publish id is the authorization',
+      'published-deck: the old publish id is the authorization',
     ),
-    publishId,
+    legacyId,
   );
-  if (!entry?.presentationId) {
-    notFound(res);
-    return true;
-  }
-
-  const pres = await getPresentation(
-    crossOrganizationScope(
-      repoRoot,
-      'published-deck: the publish id is the authorization',
-    ),
-    entry.presentationId,
-  );
-  if (!pres) {
-    notFound(res);
-    return true;
-  }
-
-  const slug = String(entry.slug || '').trim() || 'presentation';
-  const canonicalCanvasPath = `/p/${publishId}-${slug}`;
-  if (!reqSlug || reqSlug !== slug) {
-    res.writeHead(302, {
-      Location: `${canonicalCanvasPath}/reader`,
-      'Cache-Control': 'no-store',
-    });
-    res.end();
-    return true;
-  }
-
-  countDeckView('published', pres);
-  const modeLang = resolveLangModeFromPresOrUrl(pres, url);
-  const projected = projectPresentationForLang(pres, modeLang);
-  const orgId = pres?.organizationId;
-  const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
-  const readerHeadHtml = `<meta name="robots" content="${
-    sandboxEnabled() ? 'noindex,nofollow' : 'index,follow'
-  }" />`;
-
-  const html = buildReaderHtml(repoRoot, projected, {
-    context: 'published',
-    slideTypes,
-    canonicalUrl: `${canonicalCanvasPath}?lang=${encodeURIComponent(modeLang)}`,
-    headHtml: readerHeadHtml,
-  });
-  res.writeHead(200, {
-    'Content-Type': 'text/html; charset=utf-8',
-    'Cache-Control': 'no-store',
-    // The document already carries this policy as a meta; the header adds the
-    // one directive a meta cannot: `frame-ancestors`. `'none'` mirrors the
-    // `X-Frame-Options: DENY` that security-headers.js already sets here, so
-    // the two agree instead of the (winning) CSP quietly widening framing.
-    'Content-Security-Policy': buildDocumentCspHeader({
-      frameAncestors: "'none'",
-    }),
-  });
-  res.end(html);
-  return true;
+  if (!edition) return null;
+  const lang = url.searchParams.get('lang');
+  const query = lang ? `?lang=${encodeURIComponent(lang)}` : '';
+  return `${prefix}/${edition.publicationId}/${edition.version}${suffix}${query}`;
 }
 
 /**
- * Published public pages (open web, no auth): the canvas deck at /p/:id-:slug
- * with full OG/Twitter metadata, canonical + reader alternates, and JSON-LD.
- * @param {import('./static-files.js').StaticContext} ctx
- * @returns {Promise<boolean>} true if handled.
+ * An old link answers with a permanent redirect to its first edition, never
+ * to a later one: what was cited keeps showing what it showed on the day of
+ * the conversion (D361). The slug is ignored; it never decided identity. A
+ * revoked first edition is a tombstone at its own address.
  */
-async function servePublishedPage(
-  { repoRoot, req, res, url },
-  publishId,
-  slugSegment,
-) {
-  const reqSlug = String(slugSegment || '').trim();
-  const entry = await getPublishedById(
-    crossOrganizationScope(
+function redirectHandler(prefix, suffix) {
+  return async ({ repoRoot, res, url }, legacyId) => {
+    const location = await legacyTarget(
       repoRoot,
-      'published-deck: the publish id is the authorization',
-    ),
-    publishId,
-  );
-  if (!entry?.presentationId) {
-    notFound(res);
-    return true;
-  }
-
-  const pres = await getPresentation(
-    crossOrganizationScope(
-      repoRoot,
-      'published-deck: the publish id is the authorization',
-    ),
-    entry.presentationId,
-  );
-  if (!pres) {
-    notFound(res);
-    return true;
-  }
-
-  const slug = String(entry.slug || '').trim() || 'presentation';
-  const canonicalPath = `/p/${publishId}-${slug}`;
-  if (!reqSlug || reqSlug !== slug) {
-    res.writeHead(302, {
-      Location: canonicalPath,
-      'Cache-Control': 'no-store',
-    });
+      legacyId,
+      prefix,
+      suffix,
+      url,
+    );
+    if (!location) {
+      notFound(res);
+      return true;
+    }
+    res.writeHead(301, { Location: location, 'Cache-Control': 'no-store' });
     res.end();
     return true;
-  }
-
-  countDeckView('published', pres);
-  const proto =
-    (req.headers['x-forwarded-proto'] &&
-      String(req.headers['x-forwarded-proto']).split(',')[0].trim()) ||
-    'http';
-  const host = req.headers.host || 'localhost';
-  const origin = `${proto}://${host}`;
-  const modeLang = resolveLangModeFromPresOrUrl(pres, url);
-  const tr = createTranslator(modeLang);
-  const projected = projectPresentationForLang(pres, modeLang);
-  const canonicalUrl = new URL(
-    `${canonicalPath}?lang=${encodeURIComponent(modeLang)}`,
-    origin,
-  ).href;
-  const ogImageAbs = new URL(
-    await resolvePublicOgImage({
-      repoRoot,
-      pres,
-      storedUrl: entry.ogImageUrl,
-      publishId,
-    }),
-    origin,
-  ).href;
-
-  const presentationTitle =
-    projected.title || tr('published.untitled', 'Presentation');
-  const title = escapeHtml(presentationTitle);
-  const rawDesc =
-    typeof pres?.description === 'string' ? pres.description.trim() : '';
-  const descriptionRaw =
-    rawDesc ||
-    tr('published.description', 'View the presentation “{title}”.', {
-      title: presentationTitle,
-    });
-  const description = escapeHtml(descriptionRaw);
-  const sandboxNoindex = sandboxEnabled();
-  // The plain <meta name="description"> is emitted by buildStandaloneHtml
-  // (via the `description` option below) so exports carry it too; only the
-  // OG/Twitter description variants live here.
-
-  // Semantic reader view of this deck (open web, no-JS a11y surface).
-  const readerPath = `${canonicalPath}/reader`;
-  const readerLabel = tr('published.readerLink', 'Reading view');
-
-  // Structured data: a published deck is a schema.org PresentationDigitalDocument.
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'PresentationDigitalDocument',
-    name: presentationTitle,
-    description: descriptionRaw,
-    url: canonicalUrl,
-    thumbnailUrl: ogImageAbs,
-    inLanguage: modeLang,
   };
-  // Storage projects the column as `created` (B448), a `Date` under Postgres.
-  const datePublished = toIsoOrNull(pres?.created);
-  if (datePublished) jsonLd.datePublished = datePublished;
-  // Escape `<` so a value can never break out of the <script> block.
-  const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(
-    jsonLd,
-  ).replace(/</g, '\\u003c')}</script>`;
-
-  const headHtml = `
-    <meta name="robots" content="${sandboxNoindex ? 'noindex,nofollow' : 'index,follow'}" />
-    <link rel="canonical" href="${canonicalUrl}" />
-    <link rel="alternate" href="${escapeHtml(readerPath)}" title="${escapeHtml(readerLabel)}" />
-
-    <!-- Open Graph -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="${escapeHtml(sandboxNoindex ? `${getAppName()} Sandbox` : getAppName())}" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-    <meta property="og:url" content="${canonicalUrl}" />
-    <meta property="og:image" content="${ogImageAbs}" />
-    <meta property="og:image:width" content="1600" />
-    <meta property="og:image:height" content="900" />
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
-    <meta name="twitter:image" content="${ogImageAbs}" />
-
-    ${jsonLdScript}
-    `.trim();
-  // One link per version the deck actually has, in the order the versions were
-  // written — not a fixed `NL EN` pair, which showed a Dutch deck an English
-  // link it had no version for and hid a German one it did (B182/D72 #6).
-  // Below two versions there is nothing to switch between, so the group is
-  // omitted rather than rendered with a single dead button.
-  const versionLangs = existingVersionLangs(pres);
-  const switchHtml =
-    versionLangs.length > 1
-      ? `
-            <div class="sb-segmented is-lang-switch" role="group" aria-label="Language">
-              ${versionLangs
-                .map(
-                  (lang) =>
-                    `<a class="sb-segmented-btn${lang === modeLang ? ' is-active' : ''}" href="${escapeHtml(
-                      `${canonicalPath}?lang=${encodeURIComponent(lang)}`,
-                    )}" hreflang="${escapeHtml(lang)}" rel="nofollow">${escapeHtml(
-                      getLangDisplayName(lang),
-                    )}</a>`,
-                )
-                .join('\n              ')}
-            </div>
-          `.trim()
-      : '';
-
-  // Visible link to the semantic reader view (discoverable a11y/no-JS surface).
-  const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(
-    readerPath,
-  )}" rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(
-    readerLabel,
-  )}</a>`;
-
-  const theme = await loadThemeAssets(repoRoot, pres?.theme, {
-    repoRoot,
-    organizationId: pres.organizationId,
-  });
-
-  // The tracking script posts to /api/track/*, which is not mounted on an
-  // installation without the analytics cluster (D260): no script at all then.
-  const trackingScript = isFeatureEnabled('analytics')
-    ? generateTrackingScriptHtml({
-        presentationId: entry.presentationId,
-        sourceType: 'published',
-        sourceId: publishId,
-      })
-    : '';
-
-  const orgId = pres?.organizationId;
-  const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
-
-  const html = await buildStandaloneHtml(repoRoot, projected, {
-    headHtml: `${headHtml}\n${trackingScript}`.trim(),
-    topbarRightHtml: `${switchHtml}${readerLinkHtml}`,
-    theme,
-    slideTypes,
-    context: 'published', // Use published visibility filter
-    description: descriptionRaw,
-  });
-  res.writeHead(200, {
-    'Content-Type': 'text/html; charset=utf-8',
-    'Cache-Control': 'no-store',
-    // The document already carries this policy as a meta; the header adds the
-    // one directive a meta cannot: `frame-ancestors`. `'none'` mirrors the
-    // `X-Frame-Options: DENY` that security-headers.js already sets here, so
-    // the two agree instead of the (winning) CSP quietly widening framing.
-    'Content-Security-Policy': buildDocumentCspHeader({
-      frameAncestors: "'none'",
-    }),
-  });
-  res.end(html);
-  return true;
 }
 
 /**
- * The published deck at `/p/:publishId-:slug` and its reader. The publish id
- * is a `published_presentations.id` (`varchar`, not `uuid`) and the slug is
- * redirected to the canonical one, so both are `text`; the `{8}` hex run is
- * what separates id from slug, not a gate.
+ * The old publication addresses, `/p/:publishId-:slug`, its reader and
+ * `/embed/:publishId-:slug`. The eight-hex run is what separates the old id
+ * from the slug; an edition address (`/p/:uuid/:version`) never matches.
  */
 export const ROUTES = [
   {
     method: 'GET',
-    pattern: /^\/p\/([a-f0-9]{8})(?:-([^/]+))?\/reader$/,
-    captures: ['text', 'text'],
-    handler: servePublishedReader,
+    pattern: /^\/p\/([a-f0-9]{8})(?:-[^/]+)?\/reader$/,
+    captures: ['text'],
+    handler: redirectHandler('/p', '/reader'),
   },
   {
     method: 'GET',
-    pattern: /^\/p\/([a-f0-9]{8})(?:-([^/]+))?$/,
-    captures: ['text', 'text'],
-    handler: servePublishedPage,
+    pattern: /^\/p\/([a-f0-9]{8})(?:-[^/]+)?$/,
+    captures: ['text'],
+    handler: redirectHandler('/p', ''),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/embed\/([a-f0-9]{8})(?:-[^/]+)?$/,
+    captures: ['text'],
+    handler: redirectHandler('/embed', ''),
   },
 ];
 
 /**
- * Published public pages (open web, no auth): the canvas deck and its reader.
+ * Old publication links (open web, no auth): redirects to editions.
  * @param {import('./static-files.js').StaticContext} ctx
  * @returns {Promise<boolean>|false} true if handled.
  */

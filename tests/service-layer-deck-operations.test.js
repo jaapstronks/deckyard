@@ -11,8 +11,10 @@
  *     every contract.
  *   - **the cross-deck recent comments** (`listRecentComments`): MCP only, but
  *     the reading rule is the comment service's, not a tool's.
- *   - **unpublishing** (`unpublishPresentation`, `services/publish-presentation.js`):
- *     internal and v1 each carried the three steps.
+ *   - **unpublishing** (`unpublishPresentation`, `services/publish-edition.js`):
+ *     internal and v1 each carried the three steps; since T1.5 it revokes the
+ *     deck's editions. The double runs no raw SQL, so only the refusals are
+ *     asserted here; the revocation itself is pinned against PostgreSQL.
  *   - **switching theme** (`changeTheme`, `services/theme.js`): the editor's
  *     `/change-theme` and v1's PUT; it lived in the storage tree while both
  *     routes decided the deck themselves. A requested slide conversion that
@@ -47,7 +49,6 @@ const DECK_ID = 'd0000575-0000-4000-8000-000000000001';
 const STRANGER_DECK_ID = 'd0000575-0000-4000-8000-000000000002';
 const MIDNIGHT = '11111111-1111-4111-8111-111111111111';
 const AMETHYST = '22222222-2222-4222-8222-222222222222';
-const PUBLISH_ID = 'pub-b575';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -79,7 +80,7 @@ const STRANGER = actor(STRANGER_EMAIL);
 
 // --- The store ----------------------------------------------------------------
 
-function deckRow({ id, owner, published = null }) {
+function deckRow({ id, owner }) {
   return {
     id,
     organization_id: ORG,
@@ -111,7 +112,6 @@ function deckRow({ id, owner, published = null }) {
         parentId: null,
       },
     ],
-    published,
     created_at: '2026-07-01T00:00:00.000Z',
     modified_at: '2026-07-01T00:00:00.000Z',
     trashed_at: null,
@@ -162,37 +162,15 @@ const themeRow = (id, slug) => ({
   config: {},
 });
 
-/** A fresh double: OWNER's published deck with three comments, and STRANGER's deck. */
+/** A fresh double: OWNER's deck with three comments, and STRANGER's deck. */
 async function installDb() {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     users: userRows(OWNER_EMAIL, STRANGER_EMAIL),
     themes: [themeRow(MIDNIGHT, 'midnight'), themeRow(AMETHYST, 'amethyst')],
     presentations: [
-      deckRow({
-        id: DECK_ID,
-        owner: OWNER_EMAIL,
-        published: {
-          id: PUBLISH_ID,
-          slug: 'deck',
-          ogImageUrl: '',
-          created: '2026-07-01T00:00:00.000Z',
-          modified: '2026-07-01T00:00:00.000Z',
-        },
-      }),
+      deckRow({ id: DECK_ID, owner: OWNER_EMAIL }),
       deckRow({ id: STRANGER_DECK_ID, owner: STRANGER_EMAIL }),
-    ],
-    published_presentations: [
-      {
-        id: PUBLISH_ID,
-        organization_id: ORG,
-        presentation_id: DECK_ID,
-        title: 'Published',
-        slug: 'deck',
-        og_image_url: '',
-        created_at: '2026-07-01T00:00:00.000Z',
-        modified_at: '2026-07-01T00:00:00.000Z',
-      },
     ],
     presentation_comments: [
       commentRow({
@@ -228,7 +206,7 @@ function assertUnchanged(db, before, why) {
   const after = storedDeck(db, before.id);
   assert.equal(after.revision, before.revision, `${why} (nothing was written)`);
   assert.equal(after.theme, before.theme, `${why} (theme)`);
-  assert.deepEqual(after.published, before.published, `${why} (published)`);
+  assert.equal(after.modified_at, before.modified_at, `${why} (modified_at)`);
 }
 
 // --- The three contracts ------------------------------------------------------
@@ -439,29 +417,18 @@ test('MCP list_recent_comments: rows carry their deck, an unknown filter is refu
 // unpublishPresentation — internal, v1
 // =============================================================================
 
-test('internal unpublish: the owner takes the link down, a stranger changes nothing', async () => {
+test('internal unpublish: a stranger is refused and nothing is revoked', async () => {
   const db = await installDb();
-  const path = `/api/presentations/${DECK_ID}/publish`;
   const before = structuredClone(storedDeck(db));
-
-  const refused = await internal(handleInternalPublish, 'DELETE', path, {
-    as: STRANGER,
-  });
+  const refused = await internal(
+    handleInternalPublish,
+    'DELETE',
+    `/api/presentations/${DECK_ID}/publish`,
+    { as: STRANGER },
+  );
   assert.equal(refused.statusCode, 403);
   assertUnchanged(db, before, 'a stranger may not unpublish');
-  assert.equal(db.__tables.published_presentations.length, 1);
-
-  const res = await internal(handleInternalPublish, 'DELETE', path, {
-    as: OWNER,
-  });
-  assert.equal(res.statusCode, 200);
-  assert.equal(db.__tables.published_presentations.length, 0);
-  assert.equal(storedDeck(db).published, null);
-  assert.deepEqual(
-    storedDeck(db).slides,
-    before.slides,
-    'only the published column is written',
-  );
+  assert.equal(db.__tables.publication_edition_revocations?.length ?? 0, 0);
 });
 
 test('v1 unpublish: a deck the key owner cannot write is refused and untouched', async () => {
@@ -475,15 +442,7 @@ test('v1 unpublish: a deck the key owner cannot write is refused and untouched',
   );
   assert.equal(res.statusCode, 403);
   assertUnchanged(db, before, 'the key owner may not unpublish it');
-
-  const ok = await v1(
-    handleV1Publishing,
-    'DELETE',
-    `/api/v1/presentations/${DECK_ID}/publish`,
-  );
-  assert.equal(ok.statusCode, 200);
-  assert.equal(storedDeck(db).published, null);
-  assert.equal(db.__tables.published_presentations.length, 0);
+  assert.equal(db.__tables.publication_edition_revocations?.length ?? 0, 0);
 });
 
 // =============================================================================

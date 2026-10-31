@@ -211,7 +211,7 @@ export function projectPresentationForAudience(
     throw new TypeError('Unknown read projection channel');
   }
   if (audience === 'author') return pres;
-  const projected = mapDeckSlideLists(pres, (slides) => {
+  return mapDeckSlideLists(pres, (slides) => {
     const pinned = pinSlideJumps(
       slides.filter((slide) => slide && typeof slide === 'object'),
       slideTypes,
@@ -244,13 +244,4 @@ export function projectPresentationForAudience(
         return out;
       });
   });
-  if (!projected?.published) return projected;
-  // A reader response must not advertise an old author-generated OG URL.
-  // Public metadata resolves the current proven preview at its serving seam.
-  const {
-    ogImageUrl: _ogImageUrl,
-    previewFingerprint: _previewFingerprint,
-    ...published
-  } = projected.published;
-  return { ...projected, published };
 }

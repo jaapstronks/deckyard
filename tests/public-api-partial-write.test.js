@@ -10,8 +10,9 @@
  * what made this invisible for so long.
  *
  * The storage rule these tests pin: a column whose source value is `undefined` stays
- * out of the UPDATE, an explicit `null` still clears it. The second half
- * matters as much as the first — unpublishing says `published: null`.
+ * out of the UPDATE, an explicit `null` still clears it. (The deck's
+ * `published` column, the third victim then, is gone since migration 105: a
+ * deck's publication state is read from its editions.)
  *
  * Postgres-only bug, so these run against the in-memory database double
  * (tests/helpers/fake-db.js), which models Kysely's undefined-dropping. The
@@ -79,13 +80,6 @@ const STORED_I18N = {
   },
 };
 const STORED_SETTINGS = { stepParagraphs: true, revealStyle: 'fade' };
-const STORED_PUBLISHED = {
-  id: 'pub-1',
-  slug: 'a-deck',
-  ogImageUrl: '',
-  created: '2026-07-01T00:00:00.000Z',
-};
-
 /**
  * One deck with every column this bug emptied filled in.
  * @returns {Object} The database double, seeded.
@@ -121,7 +115,6 @@ function seedDb() {
             parentId: null,
           },
         ],
-        published: STORED_PUBLISHED,
         created_at: '2026-07-01T00:00:00.000Z',
         modified_at: '2026-07-01T00:00:00.000Z',
         trashed_at: null,
@@ -242,7 +235,6 @@ test('POST /api/v1/presentations/:id/slides leaves untouched deck columns alone'
     STORED_SETTINGS,
     'settings survives a partial write',
   );
-  assert.deepEqual(row.published, STORED_PUBLISHED, 'the deck stays published');
   assert.equal(
     row.description,
     'Deck description',
@@ -293,7 +285,6 @@ test('DELETE of a slide leaves untouched deck columns alone', async () => {
   assert.deepEqual(row.i18n.versions.nl.slides, row.slides);
   assert.deepEqual(row.i18n.versions['en-GB'], STORED_I18N.versions['en-GB']);
   assert.deepEqual(row.settings, STORED_SETTINGS);
-  assert.deepEqual(row.published, STORED_PUBLISHED);
   assert.equal(row.description, 'Deck description');
 });
 
@@ -337,7 +328,6 @@ test('POST /slides/reorder leaves untouched deck columns alone', async () => {
   assert.deepEqual(row.i18n.versions.nl.slides, row.slides);
   assert.deepEqual(row.i18n.versions['en-GB'], STORED_I18N.versions['en-GB']);
   assert.deepEqual(row.settings, STORED_SETTINGS);
-  assert.deepEqual(row.published, STORED_PUBLISHED);
 });
 
 test('v1 updates the dominant version while retaining a different active language', async () => {
@@ -371,7 +361,6 @@ test('v1 updates the dominant version while retaining a different active languag
   assert.equal(row.i18n.versions['en-GB'].title, 'English title');
   assert.equal(row.title, 'Nederlandse titel');
   assert.deepEqual(row.settings, STORED_SETTINGS);
-  assert.deepEqual(row.published, STORED_PUBLISHED);
 });
 
 test('a sparse i18n block stays sparse after a slide edit', async () => {
@@ -480,7 +469,7 @@ test('an explicit null still clears the column', async () => {
 
   await __store.updatePresentationRow(
     DECK_ID,
-    { description: null, settings: null, i18n: null, published: null },
+    { description: null, settings: null, i18n: null },
     { organizationId: ORG, actorEmail: OWNER },
     {},
     { storageScope: { organizationId: ORG, actorEmail: OWNER } },
@@ -490,7 +479,6 @@ test('an explicit null still clears the column', async () => {
   assert.equal(row.description, null, 'null description clears the column');
   assert.equal(row.settings, null, 'null settings clears the column');
   assert.equal(row.i18n, null, 'null i18n clears the column');
-  assert.equal(row.published, null, 'unpublishing writes NULL');
   assert.equal(row.slides.length, 1, 'slides were not mentioned, so they stay');
 });
 
@@ -509,7 +497,6 @@ test('a body that mentions nothing but the title moves nothing but the title', a
   assert.equal(row.title, 'Andere titel');
   assert.deepEqual(row.i18n, STORED_I18N);
   assert.deepEqual(row.settings, STORED_SETTINGS);
-  assert.deepEqual(row.published, STORED_PUBLISHED);
   assert.equal(row.description, 'Deck description');
   assert.equal(row.slides.length, 1);
 });

@@ -10,14 +10,14 @@ import {
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
 
 /**
- * The public links, embed URL and two snippets for one language version.
+ * The public link, embed URL and iframe snippet for one language version of
+ * the deck's newest edition.
  *
  * @typedef {Object} PublishLangLinks
  * @property {string} lang - the deck language, in axis spelling
- * @property {string} url - the public `/p/…` link
- * @property {string} embedUrl - the `/embed/…` link
+ * @property {string} url - the edition's `/p/{publicationId}/{version}` link
+ * @property {string} embedUrl - the same edition at `/embed/…`, frameable
  * @property {string} iframeSnippet - a ready-to-paste `<iframe>`
- * @property {string} sdkSnippet - a ready-to-paste embed-SDK block
  */
 
 /**
@@ -32,66 +32,53 @@ import { getSlideType } from '../../../../shared/slide-types/registry.js';
  * @param {Object} opts
  * @param {Object} opts.pres - the deck
  * @param {string} opts.currentLang - the language being edited
- * @param {string} opts.path - the public path (`/p/<publishId>-<slug>`)
- * @param {string} opts.publishId
- * @param {string} opts.slug
+ * @param {{publicationId: string, version: number}} opts.edition
  * @returns {PublishLangLinks[]}
  */
-function buildLangLinks({ pres, currentLang, path, publishId, slug }) {
+function buildLangLinks({ pres, currentLang, edition }) {
   const others = existingVersionLangs(pres).filter((l) => l !== currentLang);
-  const embedUrlBase = `${location.origin}/embed/${publishId}-${slug}`;
+  const address = `${edition.publicationId}/${edition.version}`;
   return [currentLang, ...others].map((lang) => {
     const q = encodeURIComponent(lang);
-    const url = `${location.origin}${path}?lang=${q}`;
-    const embedUrl = `${embedUrlBase}?lang=${q}`;
+    const url = `${location.origin}/p/${address}?lang=${q}`;
+    const embedUrl = `${location.origin}/embed/${address}?lang=${q}`;
     return {
       lang,
       url,
       embedUrl,
-      iframeSnippet: `<iframe src="${embedUrl}&controls=1&ui=default&start=0" style="width:100%;aspect-ratio:16/9;border:0;" allowfullscreen></iframe>`,
-      sdkSnippet: `<div id="deck-embed"></div>
-<script src="${location.origin}/client/embed-sdk.js"></script>
-<script>
-  window.PresentationSystemEmbed.createDeckEmbed({
-    el: document.getElementById('deck-embed'),
-    publishId: '${publishId}',
-    options: {
-      baseUrl: '${location.origin}',
-      controls: true,
-      ui: 'default',
-      start: 0,
-      lang: '${lang}',
-      allowedOrigins: [window.location.origin],
-    },
-  });
-</script>`,
+      iframeSnippet: `<iframe src="${embedUrl}" style="width:100%;aspect-ratio:16/9;border:0;" allowfullscreen></iframe>`,
     };
   });
 }
 
 /**
- * The links of a published deck, one set per language version, the one being
- * edited first. The Share dialog's Public tab renders them; the deck must be
- * published (`pres.published.id`).
+ * Whether the deck has a public edition (`pres.published`, read from its
+ * editions by the server).
+ *
+ * @param {Object} pres - the deck
+ * @returns {boolean}
+ */
+export function isPublished(pres) {
+  return !!(
+    typeof pres?.published?.publicationId === 'string' &&
+    pres.published.publicationId &&
+    Number.isInteger(pres.published.version)
+  );
+}
+
+/**
+ * The links of a published deck's newest edition, one set per language
+ * version, the one being edited first. The Share dialog's Public tab renders
+ * them; the deck must be published ({@link isPublished}).
  *
  * @param {Object} pres - the deck
  * @returns {{currentLang: string, langs: PublishLangLinks[]}}
  */
 export function buildPublishedLinks(pres) {
-  const publishId = pres?.published?.id || '';
-  const slug = pres?.published?.slug || '';
-
   const currentLang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-
   return {
     currentLang,
-    langs: buildLangLinks({
-      pres,
-      currentLang,
-      path: `/p/${publishId}-${slug}`,
-      publishId,
-      slug,
-    }),
+    langs: buildLangLinks({ pres, currentLang, edition: pres.published }),
   };
 }
 
@@ -175,8 +162,22 @@ export function incompleteSlidesMessage(err) {
 }
 
 /**
- * Publish the deck, or republish it when it already is. A first publish asks
- * for a description (when missing) and a confirmation; `null` means the author
+ * One idempotency key per deck revision: publishing the same revision again
+ * (a double click, a retry after a dropped response) sends the same key, and
+ * the server answers with the edition it already made instead of a second one.
+ * @type {Map<string, string>}
+ */
+const publishKeys = new Map();
+
+function publishKeyFor(id, revision) {
+  const at = `${id}@${revision}`;
+  if (!publishKeys.has(at)) publishKeys.set(at, crypto.randomUUID());
+  return publishKeys.get(at);
+}
+
+/**
+ * Publish the deck as its next edition. A first publish asks for a
+ * description (when missing) and a confirmation; `null` means the author
  * backed out. The caller renders the resulting links itself
  * ({@link buildPublishedLinks}).
  *
@@ -193,9 +194,7 @@ export async function doPublish({
   // Make sure the latest edits are persisted before publishing.
   await requestSave?.();
 
-  const alreadyPublished = !!(
-    typeof pres?.published?.id === 'string' && pres.published.id
-  );
+  const alreadyPublished = isPublished(pres);
   if (!alreadyPublished) {
     // Require a deck description before publishing (can be AI-generated).
     const hasDesc =
@@ -233,9 +232,15 @@ export async function doPublish({
   // B590), and the caller shows that refusal beside its Publish button
   // ({@link missingAltMessage}, {@link incompleteSlidesMessage}).
 
+  // The edition seals the revision the author just saved; a deck that moved
+  // on since is refused (`conflict`) rather than published unseen.
+  const expectedRevision = Number(pres.revision);
   const pub = await api(`/api/presentations/${id}/publish`, {
     method: 'POST',
-    body: {},
+    body: {
+      expectedRevision,
+      idempotencyKey: publishKeyFor(id, expectedRevision),
+    },
   });
 
   // RSS feed notice (non-blocking info toast, first publish only). After the
@@ -265,9 +270,7 @@ export async function doPublish({
     }
   }
 
-  pres.published = pres.published || {};
-  pres.published.id = pub.publishId;
-  pres.published.slug = pub.slug;
-  pres.published.ogImageUrl = pub.ogImageUrl || '';
+  const { publicationId, version, path, publishedAt } = pub.edition;
+  pres.published = { publicationId, version, path, publishedAt };
   return pub;
 }

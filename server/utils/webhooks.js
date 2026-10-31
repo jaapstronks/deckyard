@@ -7,6 +7,7 @@ import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from './logger.js';
 import { fireAndForget } from './fire-and-forget.js';
 import { normalizeEmail } from '../../shared/email.js';
+import { latestPublicEditionsForDecks } from '../storage/editions.js';
 
 const log = createLogger('webhook');
 
@@ -135,6 +136,7 @@ function buildCommonPayload({
   authedUser = null,
   userSettings = null,
   pres = null,
+  edition = null,
   origin = null,
   extra = null,
 } = {}) {
@@ -144,16 +146,12 @@ function buildCommonPayload({
   const editPath = presentationId ? `/app/${presentationId}` : null;
   const editUrl = editPath ? toAbsoluteUrl(origin, editPath) : null;
 
-  const publishId =
+  // The deck's newest public edition (`server/storage/editions.js`), if any.
+  const published =
     pres?.published && typeof pres.published === 'object'
-      ? String(pres.published.id || '').trim()
-      : '';
-  const publishSlug =
-    pres?.published && typeof pres.published === 'object'
-      ? String(pres.published.slug || '').trim()
-      : '';
-  const publicPath =
-    publishId && publishSlug ? `/p/${publishId}-${publishSlug}` : null;
+      ? pres.published
+      : null;
+  const publicPath = published?.path || null;
   const publicUrl = publicPath ? toAbsoluteUrl(origin, publicPath) : null;
 
   const email = normalizeEmail(authedUser?.email);
@@ -176,15 +174,14 @@ function buildCommonPayload({
       theme: typeof pres?.theme === 'string' ? pres.theme : '',
       visibility:
         typeof pres?.visibility === 'string' ? pres.visibility : 'private',
-      published:
-        publishId && publishSlug
-          ? {
-              id: publishId,
-              slug: publishSlug,
-              path: publicPath,
-              url: publicUrl,
-            }
-          : null,
+      published: published
+        ? {
+            publicationId: published.publicationId,
+            version: published.version,
+            path: publicPath,
+            url: publicUrl,
+          }
+        : null,
     },
     links: {
       editPath,
@@ -192,7 +189,26 @@ function buildCommonPayload({
       publicPath,
       publicUrl,
     },
+    ...(edition ? { edition: editionPayload(edition, origin) } : null),
     ...(extra && typeof extra === 'object' ? { extra } : null),
+  };
+}
+
+/**
+ * The edition a `presentation.published` event announces. Its `id` is the
+ * same on every delivery of that edition, so a receiver can tell a repeat
+ * from a new publication.
+ */
+function editionPayload(edition, origin) {
+  const path = edition.path || null;
+  return {
+    id: edition.id,
+    publicationId: edition.publicationId,
+    version: edition.version,
+    manifestHash: edition.manifestHash,
+    publishedAt: edition.publishedAt,
+    path,
+    url: path ? toAbsoluteUrl(origin, path) : null,
   };
 }
 
@@ -246,6 +262,19 @@ function buildSlideLibraryPayload({
 }
 
 /**
+ * The deck with its publication state, read from its editions when the caller
+ * did not already attach it: a stored deck carries no copy of it.
+ */
+async function withPublication(repoRoot, pres) {
+  if (pres.published !== undefined || !pres.id) return pres;
+  const published = await latestPublicEditionsForDecks(
+    crossOrganizationScope(repoRoot, 'webhook: the deck the event names'),
+    [pres.id],
+  );
+  return { ...pres, published: published.get(pres.id) || null };
+}
+
+/**
  * Fire the configured webhook for an event, if one is set. Best-effort: never
  * blocks the caller on delivery.
  *
@@ -256,7 +285,8 @@ function buildSlideLibraryPayload({
  *
  * @param {string|null} repoRoot
  * @param {string|null} origin - e.g. `https://decks.example.com`
- * @param {Object} [event]
+ * @param {Object} [event] - `edition` names the edition a
+ *   `presentation.published` event announces
  * @returns {Promise<void>}
  */
 export async function maybeFireWebhook(
@@ -267,6 +297,7 @@ export async function maybeFireWebhook(
     pres = null,
     slideItem = null,
     authedUser = null,
+    edition = null,
     extra = null,
   } = {},
 ) {
@@ -311,7 +342,8 @@ export async function maybeFireWebhook(
           event: e,
           authedUser,
           userSettings,
-          pres,
+          pres: pres ? await withPublication(repoRoot, pres) : null,
+          edition,
           origin,
           extra,
         });

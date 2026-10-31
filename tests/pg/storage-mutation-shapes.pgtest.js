@@ -12,9 +12,9 @@
  * B86 pinned the live-session mutations in `live-sessions.pgtest.js` and B91
  * pinned the interaction/feedback cluster in `live-interactions.pgtest.js`.
  * This file holds the last group, which has no domain pgtest file of its own:
- * the presentation trash/duplicate pair, the image-library update/delete pair
- * and `removePublishedEntry` — the two boolean-shaped exports among them being
- * exactly the drift the gate is blind to.
+ * the presentation trash/duplicate pair and the image-library update/delete
+ * pair — the boolean-shaped exports among them being exactly the drift the
+ * gate is blind to.
  *
  * Both directions are pinned per export. A mutation that only ever answered
  * `{ ok: false }` would satisfy a one-sided test while being useless.
@@ -45,10 +45,6 @@ import {
   getImageLibraryItem,
   updateImageLibraryItem,
 } from '../../server/storage/image-library.js';
-import {
-  removePublishedEntry,
-  upsertPublishedEntry,
-} from '../../server/storage/published.js';
 
 const storageScope = testScope();
 const ALICE = 'alice@example.test';
@@ -73,12 +69,7 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    await truncate(
-      db,
-      'organizations',
-      'image_library',
-      'published_presentations',
-    );
+    await truncate(db, 'organizations', 'image_library');
     await seedDefaultOrganization(db);
   });
 
@@ -174,35 +165,6 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
     assert.deepEqual(await deleteImageLibraryItem(storageScope, created.id), {
       ok: false,
       reason: 'not_found',
-    });
-  });
-
-  // ─── publishing: the other boolean the gate cannot see ─────────────────────
-
-  it('removePublishedEntry answers invalid, not_found and ok rather than true/false', async () => {
-    assert.deepEqual(await removePublishedEntry(storageScope, '   '), {
-      ok: false,
-      reason: 'invalid',
-    });
-    assert.deepEqual(
-      await removePublishedEntry(storageScope, 'no-such-entry'),
-      {
-        ok: false,
-        reason: 'not_found',
-      },
-    );
-
-    const pres = await createPresentation(storageScope, {
-      title: 'Published',
-      ownerEmail: ALICE,
-    });
-    await upsertPublishedEntry(storageScope, {
-      publishId: 'pub-1',
-      presentationId: pres.id,
-      title: 'Published',
-    });
-    assert.deepEqual(await removePublishedEntry(storageScope, 'pub-1'), {
-      ok: true,
     });
   });
 });
