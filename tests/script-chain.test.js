@@ -3,7 +3,7 @@
  *
  * Before `server/utils/script-chain.js` there were six independent script
  * assemblers. Five functions were duplicated byte-for-byte between
- * `server/export/html.js` and `server/utils/embed-html/template.js` (bar one
+ * the standalone export and the former live embed player (bar one
  * `catch (e) {}` / `catch {}`), and the Prism/KaTeX initialiser had three
  * spellings: a ready-made tag, the same tag hand-rewritten character for
  * character, and a bare body spliced into somebody else's IIFE.

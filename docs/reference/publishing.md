@@ -144,6 +144,6 @@ As of 2026-10-31 (T1.5):
 - **One publish concept, one service, two surfaces with the same refusals.** Sandbox, authorization, gates, idempotency and webhook are in `publish-edition.js`; the routes only parse and answer.
 - **Old links resolve to their first edition** after the conversion; there is no path that renders a deck's HEAD publicly any more.
 - **Published pages are not tracked by the analytics cluster.** An edition's HTML is frozen and carries no tracking script; counting edition views is open work. The `published` source type stays for the history it holds.
-- **The live embed player has no route.** `server/utils/embed-html/` and `client/embed-sdk.js` (player options, postMessage controls) served `/embed/{publishId}-{slug}`; the edition embed is the plain canvas. Removing or rebuilding them is open work.
+- **The edition embed is the frozen plain canvas.** The unused live player and host-page SDK have been removed; player options and postMessage controls are not part of the edition embed contract.
 - **`published_presentations` is still in the schema** until every installation has converted; a later migration drops it.
 - **Unpublishing is silent.** No webhook, no activity event, no notification — while publishing fires a webhook.

@@ -14,7 +14,7 @@
  *   - `GET /api/presentations/:id` for a view collaborator (and `?lang=`);
  *   - `POST /api/share/:token/verify`, with and without a password;
  *   - `GET /api/follow/:id/presentation` for the audience;
- *   - the embed and the published page, which render server-side;
+ *   - the published canvas, which renders server-side;
  *   - `GET /api/v1/presentations/:id` for a key of a view collaborator.
  *
  * The editor's own read keeps the notes, on the internal route and on v1, or a
@@ -59,7 +59,6 @@ const { handleSharePublicEndpoints } =
   await import('../server/routes/api/share-links/public.js');
 const { handleFollowPresentation } =
   await import('../server/routes/api/follow/presentation.js');
-const { buildEmbedHtml } = await import('../server/utils/embed-html/index.js');
 const { buildStandaloneHtml } = await import('../server/export/html.js');
 const { handlePresentations } =
   await import('../server/routes/public-api/v1/presentations.js');
@@ -346,16 +345,10 @@ describe('GET /api/follow/:id/presentation', () => {
 // Server-rendered public pages
 // ---------------------------------------------------------------------------
 
-describe('embed and published page', () => {
+describe('published page', () => {
   /** The deck as the publish routes load it. */
   const storedDeck = () =>
     structuredClone(db.__tables.presentations.find((r) => r.id === deckId));
-
-  it('the embed renders no note', () => {
-    const html = buildEmbedHtml(REPO_ROOT, storedDeck(), { publishId: 'p1' });
-    assert.match(html, /Eerste/);
-    assert.ok(!html.includes(NOTE));
-  });
 
   it('the published page renders no note', async () => {
     const html = await buildStandaloneHtml(REPO_ROOT, storedDeck(), {

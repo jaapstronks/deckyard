@@ -26,7 +26,6 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildStandaloneHtml } from '../server/export/html.js';
-import { renderEmbedHtmlDocument } from '../server/utils/embed-html/template.js';
 import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,
@@ -261,26 +260,23 @@ test('the init script only initializes the library that was loaded', async () =>
   assert.doesNotMatch(plain, /katex\.render\(/);
 });
 
-test('player.js is left to the lazy loader in both runtimes', async () => {
+test('player.js is left to the lazy loader in the export runtime', async () => {
   const html = await buildStandaloneHtml(
     repoRoot,
     deck([contentSlide('hi')]),
     {},
   );
-  const embed = renderEmbedHtmlDocument({ title: 'T', totalSlides: 1 });
-  for (const doc of [html, embed]) {
-    // No eager <script src> tag …
-    assert.doesNotMatch(
-      doc,
-      /<script src="https:\/\/assets\.mediadelivery\.net/,
-    );
-    // … but the runtime can still fetch it when a video slide needs it.
-    assert.match(doc, /function ensureBunnyPlayerJs/);
-    assert.match(
-      doc,
-      /s\.src = 'https:\/\/assets\.mediadelivery\.net\/playerjs\/player-0\.1\.0\.min\.js'/,
-    );
-  }
+  // No eager <script src> tag …
+  assert.doesNotMatch(
+    html,
+    /<script src="https:\/\/assets\.mediadelivery\.net/,
+  );
+  // … but the runtime can still fetch it when a video slide needs it.
+  assert.match(html, /function ensureBunnyPlayerJs/);
+  assert.match(
+    html,
+    /s\.src = 'https:\/\/assets\.mediadelivery\.net\/playerjs\/player-0\.1\.0\.min\.js'/,
+  );
 });
 
 test('detectPrismKatexNeeds reads the markup the init script queries', () => {

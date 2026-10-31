@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildStandaloneHtml } from '../server/export/html.js';
-import { buildEmbedHtml } from '../server/utils/embed-html/index.js';
 import {
   computeHeadingShifts,
   shiftHeadingLevels,
@@ -15,7 +14,7 @@ const repoRoot = path.resolve(
 );
 
 /**
- * The visual output paths (standalone export / published player / embed) emit a
+ * The visual output paths (standalone export / published canvas) emit a
  * NESTED heading outline: the deck title is the single document <h1>; a
  * chapter-title slide is an <h2> section heading and pushes the slides after it
  * one level deeper (title <h3>, markdown subheading <h4>). Slides before any
@@ -118,14 +117,4 @@ test('export: exactly one <h1> (the deck title) and a nested slide outline', asy
   assert.match(html, /<h4[^>]*>Left<\/h4>/);
   // The pre-chapter title slide must NOT still be an <h1>.
   assert.doesNotMatch(html, /<h1[^>]*>Opening<\/h1>/);
-});
-
-test('embed: a fragment has no <h1>; slide titles nest from <h2>', () => {
-  const html = buildEmbedHtml(repoRoot, outlineDeck());
-  // The embed is embedded in a host page that owns the <h1>.
-  assert.equal((html.match(/<h1[\s>]/g) || []).length, 0);
-  assert.match(html, /<h2[^>]*>Opening<\/h2>/);
-  assert.match(html, /<h2[^>]*>Part One<\/h2>/);
-  assert.match(html, /<h3[^>]*>Compare<\/h3>/);
-  assert.match(html, /<h4[^>]*>Left<\/h4>/);
 });

@@ -5,8 +5,7 @@
  * (server/utils/head-chain.js) took the stylesheet and the document opening.
  * This is the third: the `<script>` block. Before it there were six independent
  * assemblers and roughly eight hundred lines of inline JS, with five functions
- * duplicated between `server/export/html.js` and
- * `server/utils/embed-html/template.js` — `ensureBunnyPlayerJs`,
+ * duplicated between the standalone export and the former live embed player — `ensureBunnyPlayerJs`,
  * `pauseVideoEmbeds`, `activateVideoEmbeds` and `updateStageScale` byte for
  * byte, `initVideoEmbeds` off by a single `catch (e) {}` / `catch {}`.
  *

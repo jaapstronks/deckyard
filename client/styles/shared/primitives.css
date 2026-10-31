@@ -1,9 +1,9 @@
 /* Shared primitives (D266): the controls every bundle renders, defined once.
 
-   `app.css` (the editor), `export.css` (a downloaded or rendered deck) and
-   `embed.css` (the iframe viewer) all import this file right after the
-   tokens. A primitive lives here and nowhere else; a bundle that needs a
-   different look for one scopes an override in its own entry file, it does
+   `app.css` (the editor) and `export.css` (a downloaded or rendered deck)
+   import this file right after the tokens. A primitive lives here and nowhere
+   else; a bundle that needs a different look scopes an override in its own
+   entry file, it does
    not keep a second copy. `tests/css-one-definition.test.js` holds the line.
 
    Editor-only primitives (modals, field labels, `.stack`, `.is-*`) stay in

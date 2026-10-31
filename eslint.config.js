@@ -432,8 +432,7 @@ const instanceAdminRestriction = {
 // SVG tags, and slide-runtime/likert.js builds SVG through a local `svgEl()`
 // helper for the shape attributes h() does not model. Exempt files (each with
 // its own re-statement block below): client/lib/dom/index.js, where the factory
-// lives, and client/embed-sdk.js, the standalone IIFE served to third-party
-// pages, which has no module graph to import from.
+// lives.
 // One teardown word and one element word (B150). A client factory hands back a
 // handle: the DOM node it built, and the function that unwires it again. Both
 // halves had grown a second spelling — `detach` 24 / `destroy` 17 / `teardown`
@@ -692,26 +691,6 @@ export default [
         overlayClassRestriction,
         instanceAdminRestriction,
         teardownKeyRestriction,
-        deckLangLiteralRestriction,
-      ],
-    },
-  },
-
-  // embed-sdk.js is the standalone IIFE served to third-party pages: no
-  // imports at all by design (hence `document.createElement`), and the handle
-  // it returns is a **public contract** — `destroy()` sits beside `next()`,
-  // `prev()`, `goToSlide()` and `getState()` in an embed-SDK vocabulary that
-  // an external page wrote against. Renaming it to `detach` would break every
-  // embedder to make one file agree with an internal convention it does not
-  // participate in, so the teardown-key gate is off here — and only here.
-  {
-    files: ['client/embed-sdk.js'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...clientRestrictedSyntax,
-        overlayClassRestriction,
-        instanceAdminRestriction,
         deckLangLiteralRestriction,
       ],
     },

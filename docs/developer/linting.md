@@ -201,11 +201,7 @@ Boundary: **`document.createElementNS` is untouched**. `h()` itself calls it for
 SVG tags, and `client/lib/slide-runtime/likert.js` builds SVG through a local
 `svgEl()` helper for the shape attributes `h()` does not model.
 
-Two files are exempt, each with its own re-statement block in the config:
-[`client/lib/dom/index.js`](../../client/lib/dom/index.js), where the factory is
-implemented, and [`client/embed-sdk.js`](../../client/embed-sdk.js), the
-standalone IIFE served to third-party pages — it has no imports at all, by
-design.
+Only [`client/lib/dom/index.js`](../../client/lib/dom/index.js), where the factory is implemented, is exempt.
 
 [`tests/create-element-gate.test.js`](../../tests/create-element-gate.test.js)
 pins each restricted shape, the two legal look-alikes, the exact exemption list,
@@ -243,18 +239,11 @@ noun.
 something a caller can undo — a user action on a modal, halting a stream or a
 timer — which a teardown is not.
 
-**One file is exempt**: [`client/embed-sdk.js`](../../client/embed-sdk.js). The
-handle it returns is a public contract, and its `destroy()` sits beside
-`next()`, `prev()`, `goToSlide()` and `getState()` in an embed-SDK vocabulary
-an external page wrote against. Renaming it would break every embedder to make
-one file agree with an internal convention it does not participate in. That
-exemption is a separate config block, so `client/lib/dom/index.js` — its neighbour in
-the `createElement` exemption — does not inherit it.
+There are no exceptions to the teardown-key gate.
 
 [`tests/teardown-vocabulary-gate.test.js`](../../tests/teardown-vocabulary-gate.test.js)
 pins each retired key, the canonical pair, the third-party `.destroy()`
-boundary, the un-gated `close`/`stop`, that the exemption is exactly one file
-and is not stale, and that the client is clean.
+boundary, the un-gated `close`/`stop`, that the DOM factory also follows the teardown vocabulary, and that the client is clean.
 
 ### `no-restricted-syntax` on the `nav` parameter — one router singleton
 

@@ -7,7 +7,6 @@ const paths = [
   'client/views/editor/clear-probe.js',
   'client/lib/dom/modal.js',
   'client/lib/dom/index.js',
-  'client/embed-sdk.js',
   'client/views/editor/index.js',
 ];
 

@@ -8,7 +8,7 @@
  * class. The wrappers:
  *
  *  - `section.deck-slide` — presenter (`deck-controller.js`), standalone and
- *    published export (`server/export/html.js`), embed;
+ *    published export (`server/export/html.js`);
  *  - `section.reader-slide` — the reader projection, which the print handout
  *    emits unchanged (D134): one wrapper for both documents.
  *
@@ -28,7 +28,6 @@ import { fileURLToPath } from 'node:url';
 import { walkFiles } from './helpers/walk-files.js';
 
 import { buildStandaloneHtml } from '../server/export/html.js';
-import { buildEmbedHtml } from '../server/utils/embed-html/index.js';
 import { buildPrintHtml } from '../server/export/print.js';
 import { buildReaderHtml } from '../server/export/reader.js';
 
@@ -61,10 +60,6 @@ const assertMarked = (html, cls) => {
 
 test('export: section.deck-slide carries data-slide-type', async () => {
   assertMarked(await buildStandaloneHtml(repoRoot, deck()), 'deck-slide');
-});
-
-test('embed: section.deck-slide carries data-slide-type', () => {
-  assertMarked(buildEmbedHtml(repoRoot, deck()), 'deck-slide');
 });
 
 test('print: section.reader-slide carries data-slide-type', async () => {
@@ -106,7 +101,7 @@ test('no source spells a slide wrapper without the type marker', () => {
     }
   }
   assert.ok(
-    seen >= 4,
+    seen >= 3,
     `only ${seen} wrapper literals found; the scan is blind`,
   );
   assert.deepEqual(offenders, []);

@@ -6,7 +6,6 @@ import {
 } from '../server/utils/public-output.js';
 import { buildStandaloneHtml } from '../server/export/html.js';
 import { buildReaderHtml } from '../server/export/reader.js';
-import { buildEmbedHtml } from '../server/utils/embed-html/index.js';
 import { seedThemeConfig } from './helpers/theme-seed.js';
 
 const root = process.cwd();
@@ -110,7 +109,6 @@ test('real public builders omit private bytes across all carried languages', asy
   const outputs = [
     await buildStandaloneHtml(root, pres, { context: 'published', theme }),
     buildReaderHtml(root, pres, { context: 'published' }),
-    await buildEmbedHtml(root, pres, { theme }),
   ];
   for (const html of outputs) {
     assertPrivateAbsent(html);

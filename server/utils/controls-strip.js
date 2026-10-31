@@ -1,13 +1,12 @@
 /**
  * The controls strip (`ui=strip`, B268/D102): the stage on top, edge to edge,
  * and one toolbar below it with Previous, Next, the counter and Fullscreen.
- * The standalone export (server/export/html.js) and the hosted embed
- * (server/utils/embed-html/) each lay it out in their own shell, but read the
- * height and the icons from here, so the two strips cannot drift apart.
+ * The standalone export (server/export/canvas-document.js) reads the height
+ * and the icons from here.
  *
  * A host page sizes the iframe as the 16:9 stage plus this height; that is
  * why it is one named custom property on `:root` and not a number repeated
- * in two shells.
+ * across the export shell.
  */
 
 /** Height of the strip below the stage, as a CSS length. */
@@ -15,7 +14,7 @@ export const CONTROLS_STRIP_HEIGHT = '48px';
 
 /**
  * The strip's shared CSS: the height property on `:root` and the icon box.
- * Each shell decides when the icon shows; this only sizes it.
+ * The export shell decides when the icon shows; this only sizes it.
  */
 export const CONTROLS_STRIP_CSS = `
       /* ui=strip: the strip's height. A host page sizes its iframe as the

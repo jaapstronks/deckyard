@@ -1,7 +1,7 @@
 /**
  * The render-path register: every module that assembles a complete deck document.
  *
- * Deckyard emits `<!doctype html>` in seventeen places, but only a handful of
+ * Deckyard emits `<!doctype html>` in several places, but only a handful of
  * those are *render paths* — documents that project a presentation for a reader.
  * The rest are error pages, e-mail bodies and Puppeteer measuring harnesses that
  * happen to be HTML. That distinction used to live nowhere: the closest thing to
@@ -40,7 +40,6 @@ import {
   buildSlidePreviewHtml,
   buildSingleSlidePreviewHtml,
 } from './mcp/preview.js';
-import { buildEmbedHtml } from './utils/embed-html/index.js';
 import { buildReaderHtml } from './export/reader.js';
 import { resolveDocLangFromPresentation } from './utils/doc-lang.js';
 
@@ -143,14 +142,6 @@ export const RENDER_PATHS = Object.freeze([
         ...options,
         repoRoot,
       }),
-  },
-  {
-    name: 'utils/embed-html',
-    module: 'server/utils/embed-html/template.js',
-    kind: 'canvas',
-    scope: 'deck',
-    build: (repoRoot, pres, options = {}) =>
-      buildEmbedHtml(repoRoot, pres, options),
   },
   {
     // The one reflow path: a semantic re-projection with a stylesheet of its

@@ -65,7 +65,7 @@ describe('isSourceFile', () => {
     assert.equal(isSourceFile('shared/slide-types/partials.js'), true);
     // server/ writes class attributes (export, embed, published pages) and owns
     // the enum members that fill client-side holes.
-    assert.equal(isSourceFile('server/utils/embed-html/template.js'), true);
+    assert.equal(isSourceFile('server/export/canvas-document.js'), true);
   });
 
   it('rejects stylesheets and files outside the source tree', () => {

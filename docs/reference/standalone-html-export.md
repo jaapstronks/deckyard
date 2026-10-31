@@ -27,11 +27,7 @@ it combines with the params above (`?ui=min#slide=2`).
 
 ### `ui=min`
 
-Same name and meaning as `buildEmbedHtml`'s `ui` option, so the two runtimes
-share one vocabulary. It exists because `/p/` pages get iframed: with the chrome
-in place a host page cannot size the frame by aspect ratio (it has to add a
-fixed chrome height, which silently rots), and below ~400px wide the topbar and
-the buttons each wrap to two lines and squeeze the slide to a strip.
+This option controls standalone HTML exports. The edition embed serves a frozen plain canvas and does not expose these player options. With the chrome in place, a host page cannot size the frame by aspect ratio (it has to add a fixed chrome height, which silently rots), and below ~400px wide the topbar and the buttons each wrap to two lines and squeeze the slide to a strip.
 
 It is CSS only — `?ui` is parsed by a small script at the top of `<body>` (before
 the shell renders, so no chrome flashes) which puts `.ui-min` on `<html>`. The
@@ -55,9 +51,9 @@ Two deliberate choices about what "min" keeps:
 
 ### `ui=strip`
 
-The stage on top, edge to edge, and one toolbar of `--controls-strip-height` (48px, on `:root`) below it (B268, D102). The hosted embed has the same strip in the same places, so a site that iframes either one can drop its own arrows over the slide.
+The stage on top, edge to edge, and one toolbar of `--controls-strip-height` (48px, on `:root`) below it (B268, D102).
 
-- **What is in it:** Previous, Next and the counter on the left, Fullscreen on the right, as icon buttons. The buttons keep their ids (`btnPrev`, `btnNext`, `btnFs`) and their `aria-label` as the accessible name; the icons are `aria-hidden`. Height and icons come from one module, `server/utils/controls-strip.js`, which the embed reads too.
+- **What is in it:** Previous, Next and the counter on the left, Fullscreen on the right, as icon buttons. The buttons keep their ids (`btnPrev`, `btnNext`, `btnFs`) and their `aria-label` as the accessible name; the icons are `aria-hidden`. Height and icons come from one module, `server/utils/controls-strip.js`.
 - **Loop controls only when the deck loops:** the Loop button and the seconds field show when the deck's auto-advance is on or the URL asks for `?loop=1`/`?autoplay=1`. The default row keeps offering them always.
 - **The progress fill** becomes a 2px line along the strip's top edge; the topbar is gone.
 - **Sizing the iframe:** 16:9 plus the strip, for example `height: calc(var(--w) * 9 / 16 + 48px)`. The strip is a fixed height, so it does not rot the way the default chrome's wrapping rows do.
@@ -107,21 +103,19 @@ a ~1 MB `<style>` block on every download.
 `export.css` is a thin chrome layer: `client/styles/shared/ui-tokens.css` (the
 design tokens the presenter chrome reads unfallbacked) and
 `client/styles/shared/primitives.css`, the one definition of the `.btn` family,
-`.form-input`, `.row` and the segmented control that `app.css` and `embed.css`
-import too. The exported deck nav, the pdf/png/print toolbars and the published
+`.form-input`, `.row` and the segmented control that `app.css`
+imports too. The exported deck nav, the pdf/png/print toolbars and the published
 page's language switch render those. The presenter chrome itself
 (`.presenter-*`, `.deck`, `.deck-slide`, progress bar, start curtain) is the
 viewer layer, `client/styles/viewer.css` (D267), which `export.css` imports
 before `slides.css`, as `app.css` does; `.sr-only` and `.skip-link` stay in
-`slides.css`. `embed.css`, the iframe viewer's entrypoint, drops `app.css` the
-same way and loads no viewer layer: the embed shell styles its own deck box.
+`slides.css`.
 
 The boundary is a maintained line: `tests/export-css-boundary.test.js` fails if
 editor-only selectors creep back in or if a viewer selector the DOM needs goes
 missing, and `tests/css-one-definition.test.js` fails if a primitive is defined
 anywhere but `primitives.css`. A viewer that needs a different look scopes an
-override in its own entry file (`embed.css` sets the toolbar font under
-`.ps-embed-controls`); it keeps no copy. Trimming the
+override in its own entry file; it keeps no copy. Trimming the
 remaining bulk — `slides.css` is ~310 KB of per-slide-type CSS shipped whole —
 is separate, out-of-scope work.
 
@@ -202,8 +196,7 @@ That cost lands only on decks that carry math.
 
 Bunny is not detected at build time at all: the eager `<script>` tag in the head
 was redundant with the runtime's own lazy `ensureBunnyPlayerJs()`, which is what
-the live app has always used. The same applies to the embed runtime
-(`server/utils/embed-html/template.js`).
+the live app has always used.
 
 The render paths that rasterize a deck server-side (PNG, PDF, print) inline what
 the deck needs, for the same reason a download does: `page.setContent()` gives

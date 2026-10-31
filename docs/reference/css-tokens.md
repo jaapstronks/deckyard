@@ -31,7 +31,7 @@ agent's preview — none of which share the app's chrome.
 > This is the only such consumer: the HTML/PNG/PDF export goes through
 > `client/styles/export.css` (`server/export/css-bundle.js`), which imports
 > `ui-tokens.css` and `client/styles/shared/primitives.css` directly — as does the embed
-> shell's `embed.css`.
+> shell's `export.css`.
 >
 > The presenter chrome around the deck reads these tokens freely: it is the
 > **viewer layer**, `client/styles/viewer/` (aggregated in `viewer.css`, D267),
