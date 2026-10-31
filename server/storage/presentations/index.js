@@ -53,6 +53,7 @@ import { extensionNames } from '../../../shared/extension-provenance.js';
 import { translationFieldKey } from '../../../shared/translation-provenance.js';
 import { settleBgTextContrast } from '../../utils/bg-image-contrast.js';
 import { loadDeckTheme } from '../../utils/themes.js';
+import { replaceLibraryLinks } from '../slide-library-links.js';
 const log = createLogger('presentations');
 
 // Only the single-deck read may skip the organization filter, and only for a
@@ -942,6 +943,9 @@ async function createPresentationRow(data, ctx) {
     .executeTakeFirst();
 
   const created = mapPresentationRow(row, await displayNamesFor(row));
+  // A deck composed from the library, or duplicated from one that holds
+  // library copies, is linked from its first write (B904).
+  await replaceLibraryLinks(ctx, created);
   // Every new deck — a create, an import, a duplicate — is written here, so
   // this is where a new deck's types are counted as authored (D247).
   countInstanceHealth(slideTypeEntries('slide_type.authored', created));
@@ -1178,6 +1182,9 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
 
   if (!row) return null;
   const out = mapPresentationRow(row, await displayNamesFor(row));
+  // Only a write that names the slides can change which ones are linked.
+  if (data.slides !== undefined || data.i18n !== undefined)
+    await replaceLibraryLinks(ctx, out);
   // Response-only audit metadata (never stored); the facade logs it to
   // activity_events.
   if (mergeInfo) out._slideMerge = mergeInfo;

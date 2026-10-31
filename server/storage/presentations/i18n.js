@@ -2,6 +2,7 @@ import { normalizeSlides } from './slides.js';
 import { AppError } from '../../utils/errors.js';
 import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
 import { pickVersion } from '../../../shared/i18n-progress.js';
+import { alignLibraryRefs } from '../../../shared/slide-library/library-ref.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -232,6 +233,10 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
     // is the answer.
     v.slides = normalizeFollowInviteSlides(v.slides);
   }
+
+  // A slide's library provenance is one fact for every version (B904): the
+  // version just written decides it.
+  alignLibraryRefs(i18n.versions, active || dominant);
 
   // Always keep top-level title/slides aligned to the dominant language version.
   const dv = i18n.versions[dominant];

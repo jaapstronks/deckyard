@@ -33,7 +33,7 @@ import { levelAllows } from './comment-subscriptions.js';
 import {
   createNotification,
   findUnreadDeckActivityNotification,
-  refreshDeckActivityNotification,
+  refreshCoalescedNotification,
   getUnreadCount,
 } from '../storage/notifications.js';
 import {
@@ -253,7 +253,7 @@ export async function notifyDeckActivity({
 
         let notification = null;
         if (existing) {
-          const res = await refreshDeckActivityNotification(
+          const res = await refreshCoalescedNotification(
             scope,
             existing.id,
             recipientEmail,

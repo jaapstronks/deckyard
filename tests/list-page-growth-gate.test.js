@@ -59,6 +59,8 @@ const BOUNDED = {
     'the digest job: everyone due by definition',
   'share-links/crud.js :: listShareLinks': "one deck's share links",
   'share-links/guests.js :: listGuestsForShareLink': "one link's guests",
+  'slide-library-links.js :: listDecksBehindLibraryItem':
+    "a fan-out job's input: the decks holding one item, read whole to notify each",
   'slide-library-usage.js :: listSlideLibraryUsage':
     "one reader's usage marks, bounded by the library",
   'tags.js :: listTags': "the organization's tag vocabulary",

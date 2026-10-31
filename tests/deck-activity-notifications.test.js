@@ -18,7 +18,7 @@ import {
 } from '../server/services/deck-activity-notifications.js';
 import {
   findUnreadDeckActivityNotification,
-  refreshDeckActivityNotification,
+  refreshCoalescedNotification,
 } from '../server/storage/notifications.js';
 
 describe('buildDeckActivityCandidates', () => {
@@ -164,11 +164,11 @@ describe('deck-activity storage (no-DB contract)', () => {
     );
   });
 
-  it('refreshDeckActivityNotification reports invalid/unavailable without a database', async () => {
-    const bad = await refreshDeckActivityNotification(ORG, '', 'u@x.com', {});
+  it('refreshCoalescedNotification reports invalid/unavailable without a database', async () => {
+    const bad = await refreshCoalescedNotification(ORG, '', 'u@x.com', {});
     assert.strictEqual(bad.ok, false);
     assert.strictEqual(bad.reason, 'invalid');
-    const res = await refreshDeckActivityNotification(ORG, 'n1', 'u@x.com', {
+    const res = await refreshCoalescedNotification(ORG, 'n1', 'u@x.com', {
       title: 'x',
     });
     assert.strictEqual(res.ok, false);

@@ -419,7 +419,47 @@ export async function findUnreadDeckActivityNotification(
 }
 
 /**
- * Refresh a coalesced `deck_activity` notification: update its title/body/data
+ * Find the recipient's unread, unarchived `library_update` notification for
+ * one (deck, library item) pair (B904): a newer revision of the same item
+ * refreshes that row instead of adding a second one.
+ *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} userEmail - Recipient
+ * @param {string} presentationId
+ * @param {string} itemId - The library item
+ * @returns {Promise<Object|null>} The matching notification, or null.
+ */
+export async function findUnreadLibraryUpdateNotification(
+  scope,
+  userEmail,
+  presentationId,
+  itemId,
+) {
+  toStorageContext(scope, 'findUnreadLibraryUpdateNotification');
+  const email = normalizeEmail(userEmail);
+  const pid = String(presentationId || '').trim();
+  const iid = String(itemId || '').trim();
+  if (!email || !pid || !iid) return null;
+
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('user_notifications')
+      .selectAll()
+      .where('user_email', '=', email)
+      .where('organization_id', '=', getOrgId(scope))
+      .where('presentation_id', '=', pid)
+      .where('notification_type', '=', 'library_update')
+      .where(sql`data->>'itemId'`, '=', iid)
+      .where('is_read', '=', false)
+      .where('archived_at', 'is', null)
+      .orderBy('created_at', 'desc')
+      .executeTakeFirst();
+    return row ? formatNotification(row, await actorDisplayNames([row])) : null;
+  });
+}
+
+/**
+ * Refresh a coalesced notification (`deck_activity`, `library_update`): update its title/body/data
  * (the bumped count), move it back to the top (`created_at = now`) and make it
  * unread again. This is the "window extends on each edit" half of the
  * coalesce-on-write bundling.
@@ -430,13 +470,13 @@ export async function findUnreadDeckActivityNotification(
  * @param {{title?: string, body?: string|null, data?: Object}} updates
  * @returns {Promise<Object>} Result with the updated notification.
  */
-export async function refreshDeckActivityNotification(
+export async function refreshCoalescedNotification(
   scope,
   notificationId,
   userEmail,
   updates,
 ) {
-  toStorageContext(scope, 'refreshDeckActivityNotification');
+  toStorageContext(scope, 'refreshCoalescedNotification');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
     return { ok: false, reason: 'invalid' };

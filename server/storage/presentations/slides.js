@@ -14,6 +14,7 @@ import {
 import { normalizeDataSource } from '../../../shared/data-source.js';
 import { textStyleRefusals } from '../../../shared/slide-types/text-styles.js';
 import { bindAiReview } from '../../../shared/ai-review.js';
+import { normalizeLibraryRef } from '../../../shared/slide-library/library-ref.js';
 import { AppError, ValidationError } from '../../utils/errors.js';
 
 // An example canonical id for the error message, read from the registry so it
@@ -145,6 +146,11 @@ export function normalizeSlides(
       typeof s?.parentId === 'string' && s.parentId.trim()
         ? s.parentId.trim()
         : null;
+    // Library provenance (B904): canonical or gone. A malformed ref only
+    // drives a notice, so it is dropped rather than refused.
+    const libraryRef = normalizeLibraryRef(s?.libraryRef);
+    if (libraryRef) normalized.libraryRef = libraryRef;
+    else delete normalized.libraryRef;
     // Preserve author lock flag if present
     if (typeof s?.lockedByAuthor === 'boolean') {
       normalized.lockedByAuthor = s.lockedByAuthor;
