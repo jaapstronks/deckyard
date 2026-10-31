@@ -148,6 +148,18 @@ hears about it; the deck itself never changes until its owner updates it.
   the row stays one until it is read.
 - Clicking opens the deck on the first linked slide (`/app/<id>?slideId=…`).
   `data` carries `{ itemId, itemName, revision, presentationTitle, slideIds }`.
+- **In the editor** (`client/views/editor/library-updates/`): on open the
+  editor reads `GET /api/presentations/:id/library-updates` (deck write access;
+  only items the reader may read, never trashed ones), marks the slides behind
+  on their thumbnail and shows a bar over the canvas with View (deck slide and
+  newest version side by side), Update and Ignore. Every editor sees it, not
+  only the owner. Update and Ignore are ordinary deck edits
+  (`shared/slide-library/library-update.js`): Update takes the item's type and
+  content in every deck language the item has and raises `libraryRef.revision`,
+  keeping id, position, notes, visibility, duration and the type's instance
+  keys; a deck language the item lacks keeps its text and gets a
+  translation-source record per field, so the translate view reports it as
+  changed. Ignore sets `libraryRef.ignoredRevision`.
 
 ## The comment composer
 
