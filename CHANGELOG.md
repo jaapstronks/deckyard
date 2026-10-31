@@ -4,6 +4,26 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.94.0](https://github.com/jaapstronks/deckyard/compare/v1.93.1...v1.94.0) (2026-10-31)
+
+
+### Added
+
+* **publishing:** publish editions and point old links at their first (T1.5) ([#1943](https://github.com/jaapstronks/deckyard/issues/1943)) ([1c3231f](https://github.com/jaapstronks/deckyard/commit/1c3231f5c5860dbb3edfbd07a86f1447873f7986))
+* **publishing:** seal a deck into a frozen edition input (T1.2) ([#1932](https://github.com/jaapstronks/deckyard/issues/1932)) ([cf4dfa2](https://github.com/jaapstronks/deckyard/commit/cf4dfa256cf431cbce92dbc8d114888dfefc5f52))
+* **publishing:** serve editions from their own bytes at /p/:id/:version (T1.4) ([ff18eee](https://github.com/jaapstronks/deckyard/commit/ff18eee84d55ebcf2e56738798b32421841e1f0f))
+* **publishing:** store immutable editions with one atomic publish (T1.3) ([#1935](https://github.com/jaapstronks/deckyard/issues/1935)) ([bd2a7a1](https://github.com/jaapstronks/deckyard/commit/bd2a7a1ae72c1bd63858be121ef0f9ac7718c5ec))
+
+
+### Fixed
+
+* **editor:** "This card" writes into its own item after a remote change (B892) ([#1934](https://github.com/jaapstronks/deckyard/issues/1934)) ([f26c0ce](https://github.com/jaapstronks/deckyard/commit/f26c0ce85775f497270f78bdf1f2da8e30724a44))
+* **editor:** pin the per-language deck title live and keep the pencil (B893) ([#1936](https://github.com/jaapstronks/deckyard/issues/1936)) ([334b238](https://github.com/jaapstronks/deckyard/commit/334b2388c4559ccc443d575605b5a6c80ee1d506))
+* **editor:** the canvas selection follows its item after a remote move (B894) ([#1938](https://github.com/jaapstronks/deckyard/issues/1938)) ([e9503e7](https://github.com/jaapstronks/deckyard/commit/e9503e74a1b614ce708c792a63da154e3ed90d34))
+* **markdown:** no placeholder reaches the output, no exponent in start (B897) ([#1941](https://github.com/jaapstronks/deckyard/issues/1941)) ([5150fe9](https://github.com/jaapstronks/deckyard/commit/5150fe922124400fe454f46db72d4f7bfd8b1ea5))
+* **renderer:** render markdown in editions, escaped by construction ([#1940](https://github.com/jaapstronks/deckyard/issues/1940)) ([98109a3](https://github.com/jaapstronks/deckyard/commit/98109a3df63677ddb5fa0b41ba52162491d3075a))
+* **storage:** a bare i18n write no longer erases a language version (B895) ([#1937](https://github.com/jaapstronks/deckyard/issues/1937)) ([c86bdef](https://github.com/jaapstronks/deckyard/commit/c86bdef16250c8fcd65e4a5169e2fdc650988aaf))
+
 ## [1.93.1](https://github.com/jaapstronks/deckyard/compare/v1.93.0...v1.93.1) (2026-10-30)
 
 
