@@ -10,6 +10,7 @@ import {
   generateSessionId,
   createSessionLogger,
 } from '../../../utils/ai/index.js';
+import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { loadAiThemeContext } from '../../../utils/themes.js';
@@ -78,7 +79,11 @@ export async function handleAiWizardV2Stream({
     // The one progress writer (B758): this route reports nothing itself.
     const progress = createSseProgress(res, { lang });
     // The one generation pipeline (B756); this route only reports on it.
-    const deck = await generateDeck(raw, {
+    // A signed-in user may upload (`POST /api/uploads` asks nothing more).
+    const { text, sourceImages } = offerTextSourceImages(raw, {
+      mayUpload: Boolean(authedUser),
+    });
+    const deck = await generateDeck(text, {
       userName,
       targetLang: lang,
       vendor,
@@ -87,6 +92,7 @@ export async function handleAiWizardV2Stream({
       titleSlideType,
       themeContext,
       slideTypes,
+      sourceImages,
       ...slideTypeOffer,
       signal,
       logger,

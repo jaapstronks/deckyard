@@ -8,7 +8,13 @@ import {
   createPresentation,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
-import { generateDeck, generatedDeckToParts } from '../../../utils/ai/index.js';
+import {
+  generateDeck,
+  generatedDeckToParts,
+  generatedDeckWarnings,
+} from '../../../utils/ai/index.js';
+import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
+import { hasPermission } from '../../../storage/api-keys.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
 import {
@@ -102,9 +108,14 @@ async function handleWizard(ctx) {
   // presentation is written for nobody, as on the editor's routes.
   const signal = clientDisconnectSignal(ctx.res);
   const slideTypes = await buildMergedSlideTypes(storageScope);
+  // Copying an image a text names is an upload, which `ai` alone never grants:
+  // without `write` nothing is fetched (DY-791).
+  const { text, sourceImages } = offerTextSourceImages(raw, {
+    mayUpload: hasPermission(apiKey.permissions, 'write'),
+  });
   let deck;
   try {
-    deck = await generateDeck(raw, {
+    deck = await generateDeck(text, {
       userName: apiKey.name || 'API User',
       targetLang: lang,
       vendor,
@@ -112,6 +123,7 @@ async function handleWizard(ctx) {
       titleSlideType,
       themeContext,
       slideTypes,
+      sourceImages,
       ...(await loadSlideTypeOffer(apiKey)),
       signal,
     });
@@ -146,6 +158,7 @@ async function handleWizard(ctx) {
       lang: created.lang || created.i18n?.dominant || DEFAULT_DECK_LANG,
       ...publicDeckTimestamps(created),
     },
+    warnings: generatedDeckWarnings(deck),
   });
   return true;
 }

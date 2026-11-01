@@ -76,6 +76,18 @@ function actingKey(context) {
 }
 
 /**
+ * May this call do what `permission` guards? A keyless (stdio) call is the
+ * trusted local process; a keyed one has only what its key was given.
+ * @param {Object} [context] - Per-request tool context
+ * @param {string} permission
+ * @returns {boolean}
+ */
+export function callMay(context, permission) {
+  const apiKey = actingKey(context);
+  return !apiKey || hasPermission(apiKey.permissions, permission);
+}
+
+/**
  * Add to the key's daily usage, in the same counters v1 increments.
  * @param {string} apiKeyId - The acting key
  * @param {Object} counters - `{requests, aiRequests, exports}` deltas

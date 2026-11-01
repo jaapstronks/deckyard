@@ -1773,6 +1773,11 @@ paths:
         typical deck); keep your client timeout generous. The deck opens
         with a title slide and is written in the requested `lang`, or in
         the language of your content when you send none.
+
+        Image URLs in `raw` are offered to the generation, and a chosen image
+        is copied into the media library, when uploads are on and the key also
+        has the `write` permission. No image URL is stored as such: an image
+        that cannot be copied leaves an empty field and an entry in `warnings`.
       requestBody:
         required: true
         content:
@@ -1824,6 +1829,20 @@ paths:
                       updatedAt:
                         type: string
                         format: date-time
+                  warnings:
+                    type: array
+                    description: What the generation left out, per slide
+                    items:
+                      type: object
+                      required:
+                        - index
+                        - message
+                      properties:
+                        index:
+                          type: integer
+                          description: The slide's position in the deck, from 0
+                        message:
+                          type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

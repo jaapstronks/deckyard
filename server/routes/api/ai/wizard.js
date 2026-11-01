@@ -6,6 +6,7 @@ import {
 import { loadAiThemeContext } from '../../../utils/themes.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { generateDeck, generatedDeckToParts } from '../../../utils/ai/index.js';
+import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
 import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { log, createDeckFromParts } from './shared.js';
@@ -52,9 +53,13 @@ export async function handleAiWizard({
   // is checked before the presentation is written.
   const signal = clientDisconnectSignal(res);
   const slideTypes = await buildMergedSlideTypes(storageScope);
+  // A signed-in user may upload (`POST /api/uploads` asks nothing more).
+  const { text, sourceImages } = offerTextSourceImages(raw, {
+    mayUpload: Boolean(authedUser),
+  });
   let deck;
   try {
-    deck = await generateDeck(raw, {
+    deck = await generateDeck(text, {
       userName: getDisplayNameForUser(authedUser),
       targetLang: lang,
       vendor,
@@ -62,6 +67,7 @@ export async function handleAiWizard({
       titleSlideType,
       themeContext,
       slideTypes,
+      sourceImages,
       ...(await loadSlideTypeOffer(authedUser)),
       signal,
     });
