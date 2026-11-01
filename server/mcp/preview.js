@@ -7,6 +7,7 @@
  */
 
 import path from 'node:path';
+import { STATIC_GRADIENT_CSS } from '../utils/static-gradient-css.js';
 import { renderSlideHtml } from '../../shared/slide-types.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
@@ -87,9 +88,6 @@ async function getMinimalCss(root) {
   _slidesCssCache.set(root, css);
   return css;
 }
-
-/** Previews are static images in a chat client; no animated gradients. */
-const GRADIENT_OFF_CSS = `.ps-theme { --t-gradient-enabled: 0; }`;
 
 /** The preview page's own chrome (header, frame, scaled stage) for the list view. */
 const PREVIEW_CHROME_CSS = `
@@ -281,7 +279,7 @@ export async function buildSlidePreviewHtml(
       buildCssChain(repoRoot, [
         baseCss,
         themeVars,
-        GRADIENT_OFF_CSS,
+        STATIC_GRADIENT_CSS,
         PREVIEW_CHROME_CSS,
       ]),
     ],
@@ -354,7 +352,7 @@ export async function buildSingleSlidePreviewHtml(
       buildCssChain(repoRoot, [
         baseCss,
         themeVars,
-        GRADIENT_OFF_CSS,
+        STATIC_GRADIENT_CSS,
         SINGLE_PREVIEW_CHROME_CSS,
       ]),
     ],

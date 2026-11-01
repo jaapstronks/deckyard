@@ -1,3 +1,4 @@
+import { STATIC_GRADIENT_CSS } from '../utils/static-gradient-css.js';
 import { renderSlideHtml } from '../utils/render-slide.js';
 import {
   getPuppeteerBrowser,
@@ -34,8 +35,7 @@ import { loadExportDocument } from './load-export-document.js';
 
 /** The 1600x900 canvas this path renders into, plus the static-media gradient gate. */
 const PNG_DOC_CSS = `
-      /* Rendered PNGs are static; keep gradients deterministic and avoid animation timing. */
-      .ps-theme { --t-gradient-enabled: 0; }
+      ${STATIC_GRADIENT_CSS}
       html, body { margin: 0; padding: 0; }
       body { width: 1600px; height: 900px; overflow: hidden; }
       .slide { width: 1600px !important; height: 900px !important; }
