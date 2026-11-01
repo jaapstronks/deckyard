@@ -121,3 +121,7 @@ giving the element an `on-surface-*` class (see
 [`nested-surfaces.md`](nested-surfaces.md)); the unconverted remainder is the
 `:is(.icon-card-body, .matrix-cell)` list in
 `client/styles/slides/01-layout-and-title/00-base.css`.
+
+## Static gradient renders
+
+PNG, raster PPTX, PDF and MCP previews share `STATIC_GRADIENT_CSS` from `server/utils/static-gradient-css.js`. It disables the decorative gradient and clears both gradient text tokens, so headers use the solid surface's text pair. A fork that keeps gradients in PDF must replace the shared gate as a whole; keeping the gradient while clearing its text tokens would select the wrong pair. Live editor and presenter rendering keep the gradient and its text pair.

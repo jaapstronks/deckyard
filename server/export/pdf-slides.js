@@ -1,3 +1,4 @@
+import { STATIC_GRADIENT_CSS } from '../utils/static-gradient-css.js';
 import { renderSlideHtml } from '../utils/render-slide.js';
 import { filterForExport } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
@@ -308,11 +309,7 @@ const PDF_DOC_CSS = `
  * @returns {string}
  */
 export function buildStyleContent(bundle) {
-  return buildExportStyleContent(bundle, [
-    `/* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
-      .ps-theme { --t-gradient-enabled: 0; }`,
-    PDF_DOC_CSS,
-  ]);
+  return buildExportStyleContent(bundle, [STATIC_GRADIENT_CSS, PDF_DOC_CSS]);
 }
 
 export async function buildSlidesPdfHtml(

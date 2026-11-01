@@ -1,3 +1,4 @@
+import { STATIC_GRADIENT_CSS } from '../utils/static-gradient-css.js';
 import { renderSlideHtml } from '../utils/render-slide.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
@@ -20,9 +21,6 @@ import {
   embedSlideImages,
 } from './css-bundle.js';
 import { exportImageEmbedTransform } from './image-compress.js';
-
-/** PNG export is static; disable animated gradients so the result is deterministic. */
-const GRADIENT_OFF_CSS = `.ps-theme { --t-gradient-enabled: 0; }`;
 
 /**
  * The export page's own chrome (toolbar, thumbnail grid) — not deck CSS, but it
@@ -256,7 +254,7 @@ export async function buildSlidesPngExportHtml(
     styles: [
       {
         id: 'pngExportCss',
-        css: buildExportStyleContent(css, [GRADIENT_OFF_CSS, PAGE_CSS]),
+        css: buildExportStyleContent(css, [STATIC_GRADIENT_CSS, PAGE_CSS]),
       },
     ],
   })}
