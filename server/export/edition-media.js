@@ -18,12 +18,21 @@ export function editionMediaProvider() {
  * No network request is made to the supplied URL. The provider reads the key
  * from its configured bucket, even when its public URL points at a CDN.
  * Root-relative /uploads/ refs use that same provider on S3 installations.
+ * A ref may carry the provider's own unencoded spaces or their %20 form.
  * @param {string} ref
  * @param {string} [publicBase] - Operator-configured S3 public URL
  * @returns {string|null}
  */
 export function editionUploadKey(ref, publicBase = getS3Config().publicUrl) {
-  if (typeof ref !== 'string' || /[\\\s?#]/.test(ref)) return null;
+  // A literal U+0020 is allowed: the S3 provider keeps spaces in sanitized
+  // filenames and returns `publicUrl + '/' + key` unencoded (DY-786). Every
+  // other whitespace, a leading/trailing space, query and fragment stay out.
+  if (
+    typeof ref !== 'string' ||
+    ref !== ref.trim() ||
+    /[\\?#]|[^\S ]/.test(ref)
+  )
+    return null;
   let rawPath = ref;
   if (!ref.startsWith('/uploads/')) {
     try {
@@ -62,7 +71,15 @@ export function editionUploadKey(ref, publicBase = getS3Config().publicUrl) {
   if (!key.startsWith('uploads/') || /[%\\\x00-\x1f\x7f]/.test(key))
     return null;
   if (/%(?:2f|5c)/i.test(rawPath)) return null;
-  if (key.split('/').some((part) => !part || part === '.' || part === '..'))
+  // The provider trims names, so a segment never starts or ends with a space.
+  if (
+    key
+      .split('/')
+      .some(
+        (part) =>
+          !part || part === '.' || part === '..' || part !== part.trim(),
+      )
+  )
     return null;
   return key;
 }
