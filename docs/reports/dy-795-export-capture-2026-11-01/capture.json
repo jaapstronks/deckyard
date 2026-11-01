@@ -1,0 +1,17 @@
+{
+  "kind": "screenshot",
+  "base": "http://localhost:4379",
+  "results": [
+    {
+      "id": "export-dropdown-full",
+      "ok": true,
+      "recipeHash": "22671781b1e4c233",
+      "registryPath": "public/images/screenshots/export-dropdown-full.png"
+    }
+  ],
+  "summary": {
+    "total": 1,
+    "ok": 1,
+    "failed": 0
+  }
+}
