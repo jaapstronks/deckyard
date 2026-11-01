@@ -463,6 +463,7 @@
   "settings.apiKeys.revokeModal.title": "API-sleutel intrekken",
   "settings.apiKeys.revokeModal.warning": "Applicaties die deze sleutel gebruiken verliezen direct hun toegang.",
   "settings.apiKeys.revoked": "Ingetrokken",
+  "settings.apiKeys.sandboxOff": "Uit in de sandbox. In je eigen Deckyard maak je hier sleutels aan.",
   "settings.apiKeys.showRevoked": "Ingetrokken sleutels tonen",
   "settings.apiKeys.title": "API-sleutels",
   "settings.apiKeys.usageError": "Ophalen van gebruiksstatistieken mislukt",

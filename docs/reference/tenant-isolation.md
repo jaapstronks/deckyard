@@ -192,7 +192,7 @@ Sandbox mode is safe to expose publicly. Its isolation rests on four things:
 - **Separate storage roots.** Data and uploads live under `SANDBOX_DATA_DIR` /
   `SANDBOX_UPLOADS_DIR` when set (`server/config/storage-paths.js`), keeping
   sandbox content off any real install's disk.
-- **Per-guest unguessable identity.** Each visitor gets a random token in the `sb_sandbox` cookie, mapped to a synthetic email `guest-<digest>@sandbox.local` (`server/auth/sandbox.js`). The guest has a `users.id` resolved from that identity before authorization; private-deck ownership compares that id, so another guest cannot pass the owner check.
+- **Per-guest unguessable identity.** Each visitor gets a signed token with a random id in the `sb_sandbox` cookie, mapped to a synthetic email `guest-<digest>@sandbox.local` (`server/auth/sandbox.js`); a forged token gets a new guest, not an existing one. The guest has a `users.id` resolved from that identity before authorization; private-deck ownership compares that id, so another guest cannot pass the owner check.
 - **Organization decks are intentionally shared, read-only seed content.** In
   sandbox mode `canWritePresentation` returns `false` for organization visibility
   (`server/utils/presentation-authz/presentations.js`), and the sandbox

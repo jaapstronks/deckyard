@@ -9,6 +9,10 @@ services:
 
       # Sandbox mode
       SANDBOX_MODE: '1'
+      # Signs the guest cookies. The app refuses to boot without 32+ characters,
+      # so compose refuses first. Keep it in .env next to this file:
+      # `openssl rand -hex 32`. A new value starts every guest over.
+      AUTH_SECRET: '${AUTH_SECRET:?set AUTH_SECRET in .env (openssl rand -hex 32)}'
 
       # Storage. Sandbox runs on Postgres like every other deploy: the deck TTL
       # sweep and per-guest quota are Postgres queries against the presentations

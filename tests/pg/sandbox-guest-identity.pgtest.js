@@ -32,10 +32,25 @@ import {
 } from '../../server/storage/presentations/index.js';
 import { canReadPresentation } from '../../server/utils/presentation-authz/index.js';
 import { ensureSandboxUserAsync } from '../../server/auth/sandbox.js';
+import { signPayload } from '../../server/utils/signed-payload.js';
 import { sweepExpiredSandboxGuests } from '../../server/jobs/sandbox-cleanup.js';
 import { initializeThemeSeeds } from '../../server/utils/theme-seeds.js';
 
 const DAY = 24 * 60 * 60 * 1000;
+const SECRET = 'sandbox-guest-identity-test-secret-32chars';
+
+/** A token as the server mints it, for a guest id of the test's choosing. */
+function guestToken(sid) {
+  return signPayload(
+    { purpose: 'sandbox_guest', sid, exp: Date.now() + DAY },
+    SECRET,
+  );
+}
+
+/** The token value out of a mint response's Set-Cookie. */
+function mintedToken(res) {
+  return /sb_sandbox=([^;]+)/.exec(String(res.headers['Set-Cookie']))[1];
+}
 
 /** A request carrying the given guest cookie token (or none). */
 function guestReq(token) {
@@ -49,17 +64,22 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
   let db;
   let prevSandboxMode;
+  let prevSecret;
 
   before(async () => {
     db = await openTestDb();
     await installFacadeStorage();
     prevSandboxMode = process.env.SANDBOX_MODE;
     process.env.SANDBOX_MODE = '1';
+    prevSecret = process.env.AUTH_SECRET;
+    process.env.AUTH_SECRET = SECRET;
   });
 
   after(async () => {
     if (prevSandboxMode === undefined) delete process.env.SANDBOX_MODE;
     else process.env.SANDBOX_MODE = prevSandboxMode;
+    if (prevSecret === undefined) delete process.env.AUTH_SECRET;
+    else process.env.AUTH_SECRET = prevSecret;
     await closeTestDb(db);
   });
 
@@ -81,25 +101,24 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
       .execute();
     assert.equal(rowsAfterMint.length, 0, 'a cookieless client leaves no row');
 
-    const back = await ensureSandboxUserAsync(
-      guestReq(first.sandboxId),
-      createMockRes(),
-    );
+    const token = mintedToken(res);
+    const back = await ensureSandboxUserAsync(guestReq(token), createMockRes());
     assert.ok(back.id, 'the returning guest has a users.id');
     const again = await ensureSandboxUserAsync(
-      guestReq(first.sandboxId),
+      guestReq(token),
       createMockRes(),
     );
     assert.equal(again.id, back.id, 'the id is stable across requests');
   });
 
   it('never puts the cookie token in the address other guests can see', async () => {
-    const token = 'cccccccc-guest-carol';
+    const sid = 'cccccccc-guest-carol';
+    const token = guestToken(sid);
     const carol = await ensureSandboxUserAsync(
       guestReq(token),
       createMockRes(),
     );
-    assert.ok(!carol.email.includes(token), carol.email);
+    assert.ok(!carol.email.includes(sid), carol.email);
     assert.match(carol.email, /^guest-[0-9a-f]{32}@sandbox\.local$/);
     const again = await ensureSandboxUserAsync(
       guestReq(token),
@@ -110,11 +129,11 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
 
   it('lets a guest read the deck it created, and keeps another guest out', async () => {
     const alice = await ensureSandboxUserAsync(
-      guestReq('aaaaaaaa-guest-alice'),
+      guestReq(guestToken('aaaaaaaa-guest-alice')),
       createMockRes(),
     );
     const bob = await ensureSandboxUserAsync(
-      guestReq('bbbbbbbb-guest-bob'),
+      guestReq(guestToken('bbbbbbbb-guest-bob')),
       createMockRes(),
     );
 
@@ -131,6 +150,29 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
 
     assert.equal(canReadPresentation({ user: alice, pres }), true);
     assert.equal(canReadPresentation({ user: bob, pres }), false);
+  });
+
+  it('gives a forged token its own guest, never the row of the guest it names', async () => {
+    const aliceSid = 'aaaaaaaa-guest-alice';
+    const alice = await ensureSandboxUserAsync(
+      guestReq(guestToken(aliceSid)),
+      createMockRes(),
+    );
+    assert.ok(alice.id);
+    const [body] = guestToken('dddddddd-guest-mallory').split('.');
+    const aliceSig = guestToken(aliceSid).split('.')[1];
+    const forged = await ensureSandboxUserAsync(
+      guestReq(`${body}.${aliceSig}`),
+      createMockRes(),
+    );
+    assert.equal(forged.id, null, 'a refused token is a first visit');
+    assert.notEqual(forged.email, alice.email);
+    const unsigned = await ensureSandboxUserAsync(
+      guestReq(aliceSid),
+      createMockRes(),
+    );
+    assert.equal(unsigned.id, null);
+    assert.notEqual(unsigned.email, alice.email);
   });
 
   it('sweeps guest rows older than the cookie lifetime and nothing else', async () => {

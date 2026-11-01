@@ -13,6 +13,7 @@ import { showRevokeModal } from './revoke-modal.js';
 import { showEditPermissionsModal } from './edit-permissions-modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { showUsagePanel } from './usage-panel.js';
+import { getFeatures } from '../../../lib/state/features.js';
 
 /**
  * Render the API keys management panel.
@@ -46,9 +47,24 @@ export function renderApiKeysPanel({ user }) {
     }),
   );
 
+  // The server refuses a sandbox guest; greyed out with a reason, not hidden.
+  const keysOff = !!getFeatures()?.sandboxMode;
+  if (keysOff) {
+    titleSection.append(
+      h('div', {
+        class: 'help',
+        text: t(
+          'settings.apiKeys.sandboxOff',
+          'Off in the sandbox. In your own Deckyard you create keys here.',
+        ),
+      }),
+    );
+  }
+
   const createBtn = h('button', {
     class: 'btn btn-primary',
     type: 'button',
+    disabled: keysOff,
     text: t('settings.apiKeys.createKey', 'Create API Key'),
   });
 

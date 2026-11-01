@@ -5,7 +5,8 @@ import { authConfigError, authEnabled } from '../server/auth/auth.js';
 /**
  * Security hardening 3b: a missing AUTH_SECRET makes auth fall back to
  * anonymous admin. authConfigError() must flag that as a startup-blocking
- * misconfiguration UNLESS auth is explicitly disabled or sandbox/demo mode.
+ * misconfiguration UNLESS auth is explicitly disabled or demo mode. Sandbox mode
+ * has no exemption: AUTH_SECRET signs its guest cookies (B501).
  */
 
 function withEnv(env, fn) {
@@ -45,9 +46,25 @@ test('explicit AUTH_ENABLED=false → ok even without secret', () => {
   );
 });
 
-test('sandbox/demo mode → ok even without secret', () => {
-  withEnv({ SANDBOX_MODE: '1' }, () => assert.equal(authConfigError(), null));
+test('demo mode → ok even without secret', () => {
   withEnv({ DEMO_MODE: 'true' }, () => assert.equal(authConfigError(), null));
+});
+
+test('sandbox mode → fatal without a strong secret, whatever else is set', () => {
+  const strong = 'x'.repeat(32);
+  for (const env of [
+    { SANDBOX_MODE: '1' },
+    { SANDBOX_MODE: '1', AUTH_ENABLED: 'false' },
+    { SANDBOX_MODE: '1', AUTH_SECRET: 'x'.repeat(31) },
+    { SANDBOX_MODE: '1', AUTH_SECRET: 'short', DEMO_MODE: 'true' },
+  ]) {
+    withEnv(env, () =>
+      assert.match(String(authConfigError()), /SANDBOX_MODE needs/),
+    );
+  }
+  withEnv({ SANDBOX_MODE: '1', AUTH_SECRET: strong }, () =>
+    assert.equal(authConfigError(), null),
+  );
 });
 
 /**
