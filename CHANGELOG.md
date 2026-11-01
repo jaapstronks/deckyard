@@ -4,6 +4,20 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.96.0](https://github.com/jaapstronks/deckyard/compare/v1.95.0...v1.96.0) (2026-11-01)
+
+
+### Added
+
+* **editor:** lock linked library slides of others with Unlink and edit (B905) ([#1951](https://github.com/jaapstronks/deckyard/issues/1951)) ([e046495](https://github.com/jaapstronks/deckyard/commit/e046495a3eabde257c633f0375178cd0db78f91e))
+* **slide-library:** comment thread on a shared library item (B906) ([#1955](https://github.com/jaapstronks/deckyard/issues/1955)) ([469370e](https://github.com/jaapstronks/deckyard/commit/469370eeeeb3f3db04db4fabb34fbf0c22949c5b))
+
+
+### Fixed
+
+* seal disk-served /uploads/ refs from disk before the S3 bucket ([#1953](https://github.com/jaapstronks/deckyard/issues/1953)) ([3da0f28](https://github.com/jaapstronks/deckyard/commit/3da0f282fef82be5b043f26d0dbbb4c40f602575))
+* seal S3 upload refs with a literal space in the filename (DY-786) ([#1956](https://github.com/jaapstronks/deckyard/issues/1956)) ([6e307f2](https://github.com/jaapstronks/deckyard/commit/6e307f22193fc0b15a33f4971a7c673c3a8259b8))
+
 ## [1.95.0](https://github.com/jaapstronks/deckyard/compare/v1.94.0...v1.95.0) (2026-11-01)
 
 
