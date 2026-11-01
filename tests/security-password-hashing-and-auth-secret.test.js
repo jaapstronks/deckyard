@@ -13,7 +13,7 @@
  *
  * L3 — weak AUTH_SECRET only warned; stale-session sync path.
  *      - authConfigError() now refuses boot below the 32-char floor, with an
- *        explicit AUTH_ALLOW_WEAK_SECRET / sandbox-demo / AUTH_ENABLED=false
+ *        explicit AUTH_ALLOW_WEAK_SECRET / demo / AUTH_ENABLED=false
  *        escape hatch.
  *      - The sync getUserFromRequest takes no authz decision (no callers);
  *        source-verified below.
@@ -230,7 +230,6 @@ test('L3: the weak-secret escape hatches all downgrade the fatal error', () => {
   for (const override of [
     { AUTH_SECRET: WEAK, AUTH_ALLOW_WEAK_SECRET: 'true' },
     { AUTH_SECRET: WEAK, AUTH_ENABLED: 'false' },
-    { AUTH_SECRET: WEAK, SANDBOX_MODE: '1' },
     { AUTH_SECRET: WEAK, DEMO_MODE: 'yes' },
   ]) {
     withAuthEnv(override, () => {

@@ -20,6 +20,8 @@ import {
 } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
 import { isCollabOriginAllowed } from './origin.js';
+import { authConfigError } from '../auth/auth.js';
+import { envBool } from '../config/utils.js';
 
 const log = createLogger('collab');
 
@@ -58,6 +60,8 @@ export async function maybeAttachCollab(
   { repoRoot, authorizationLeaseMs },
 ) {
   if (!isCollabEnabled()) return null;
+  // Also refuse direct transport mounts, before installing an upgrade handler.
+  if (envBool('SANDBOX_MODE')) throw new Error(authConfigError());
   if (active) return active.hocuspocus;
 
   // Lazy imports so disabled installs never load the dependency tree.

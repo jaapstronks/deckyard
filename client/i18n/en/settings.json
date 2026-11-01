@@ -463,6 +463,7 @@
   "settings.apiKeys.revokeModal.title": "Revoke API Key",
   "settings.apiKeys.revokeModal.warning": "Any applications using this key will immediately lose access.",
   "settings.apiKeys.revoked": "Revoked",
+  "settings.apiKeys.sandboxOff": "Off in the sandbox. In your own Deckyard you create keys here.",
   "settings.apiKeys.showRevoked": "Show revoked keys",
   "settings.apiKeys.title": "API Keys",
   "settings.apiKeys.usageError": "Failed to fetch usage stats",

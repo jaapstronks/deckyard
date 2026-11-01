@@ -65,6 +65,7 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
 
 Versus a normal instance:
 
+- **No collaboration transport.** `SANDBOX_MODE` with `COLLAB_ENABLED` is refused at boot and before the WebSocket transport mounts. Collaboration resolves ordinary sessions, not sandbox guest identities. Disable `COLLAB_ENABLED` for sandbox instances.
 - **No login.** Every first HTML/API hit auto-provisions an ephemeral guest via
   an unguessable `sb_sandbox` cookie. Isolation between guests is per-cookie.
 - **AI off.** `enableAi` is forced false (open-ended LLM cost on a public URL).
@@ -72,6 +73,9 @@ Versus a normal instance:
   from the curated `listSandboxMedia()` samples.
 - **Ephemeral decks.** Decks a guest creates get a TTL (default 24 h) and are
   hard-deleted after it. Curated `organization`-scope seed decks are exempt.
+- **No API keys.** `POST /api/api-keys` refuses a guest with a 403: a key would
+  outlive the throwaway session. The settings panel keeps the button, greyed
+  out, with one sentence of why.
 - **Watermarked exports.** Exports carry `SANDBOX_WATERMARK` text.
 - **Quotas.** Per-guest deck-count and stored-byte caps, a lower request-body
   cap, secure cookies, and proxy-trust for rate limiting.
@@ -127,23 +131,29 @@ Isolation is per-cookie / per-owner-email within the one org.
 `server/auth/sandbox.js` provides an **auto-login, throwaway, per-visitor**
 identity — not a shared account:
 
-- Cookie `sb_sandbox` = a `crypto.randomUUID()`; the guest's address is
-  `guest-<first 32 hex of sha256(token)>@sandbox.local`. The address is an
-  identity other guests can see (user search, share modal); the token is the
-  credential and never appears in it.
+- Cookie `sb_sandbox` = a token from `server/utils/signed-payload.js`, signed
+  with `AUTH_SECRET`, carrying `{ purpose: 'sandbox_guest', sid, exp }`. `sid` is
+  a `crypto.randomUUID()`; `exp` is the cookie's own lifetime, so the server
+  enforces it too. The guest's address is
+  `guest-<first 32 hex of sha256(sid)>@sandbox.local`. The address is an identity
+  other guests can see (user search, share modal); no part of the token appears
+  in it or in the guest object `/api/auth/me` returns.
 - `getSandboxUserFromRequest(req)` returns a guest object
   `{ email: guest-<hash>@sandbox.local, role: 'user', name: 'Guest',
-isAdmin: false, isSandboxGuest: true, sandboxId: token }` when the cookie is
-  present and valid.
+isAdmin: false, isSandboxGuest: true }` when the token verifies.
 - `ensureSandboxUser(req, res)` returns the existing guest or mints a new token
-  and sets the cookie (`Path=/; SameSite=Lax; Max-Age` from
-  `SANDBOX_COOKIE_DAYS`; `Secure` when `shouldUseSecureCookies`).
+  and sets the cookie (`Path=/; HttpOnly; SameSite=Lax; Max-Age` from
+  `SANDBOX_COOKIE_DAYS`; `Secure` when `shouldUseSecureCookies`). An unsigned,
+  altered or expired token gets a new guest, never an existing one.
 - Wired in `server/routes/api/index.js` (auto-provision + treat as
   authenticated), `server/routes/api/auth.js` (`/api/auth/me` returns the guest),
   and `server/routes/static/app-shell.js` (assign the cookie on first HTML load).
 
 No password, no session store, no real account. Each browser is its own
-isolated guest; clearing the cookie yields a brand-new guest.
+isolated guest; clearing the cookie yields a brand-new guest. Sandbox mode
+refuses to boot without an `AUTH_SECRET` of at least 32 characters
+([`security-posture.md`](security-posture.md)); it signs the cookies and opens no
+login route. Changing the secret starts every guest over.
 
 ## Config & flags
 
@@ -152,6 +162,7 @@ Central config: `server/config/sandbox.js` (all env-driven).
 | Env var                                    | Controls                                               | Default                                                                  |
 | ------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------ |
 | `SANDBOX_MODE`                             | Master on/off — turns sandbox on                       | off                                                                      |
+| `AUTH_SECRET`                              | Signs the guest cookies; at least 32 characters        | required                                                                 |
 | `SANDBOX_TTL_HOURS`                        | Ephemeral-deck lifetime (the banner states it)         | 24                                                                       |
 | `SANDBOX_DEFAULT_THEME`                    | Neutral default seed slug for new decks that name none | `editorial`                                                              |
 | `SANDBOX_COOKIE_DAYS`                      | Guest cookie Max-Age (capped 365)                      | 30                                                                       |
@@ -168,7 +179,7 @@ export rendering, unrelated to this feature.
 
 **Turning it on:** set `SANDBOX_MODE=1`. In practice, deploy with
 `docker-compose.sandbox.yml` at the repo root, which sets it plus the
-guardrails — bundled `postgres:16`, `SECURE_COOKIES=1`, `TRUST_PROXY=1`,
+guardrails and refuses to start without `AUTH_SECRET` in `.env` — bundled `postgres:16`, `SECURE_COOKIES=1`, `TRUST_PROXY=1`,
 `MAX_REQUEST_BODY_BYTES`, the quota vars, and a Caddy TLS/reverse-proxy service
 (default `DOMAIN=sandbox.deckyard.eu`). The app listens on 4177.
 
