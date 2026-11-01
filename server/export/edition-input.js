@@ -40,6 +40,11 @@ import { managedFontKeyFromUrl } from '../media/managed-fonts.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import { exportImageEmbedTransform } from './image-compress.js';
 import {
+  editionMediaProvider,
+  editionUploadKey,
+  mapEditionImageRefs,
+} from './edition-media.js';
+import {
   collectServedAssetRefs,
   isServedAssetRef,
   rewriteAssetRefs,
@@ -150,7 +155,7 @@ function mapLists(deck, fn) {
 }
 
 /** A served ref inside CSS text: `url('/uploads/…')`, quoted or not. */
-const CSS_SERVED_URL = /url\(\s*(['"]?)(\/[^)'"\s]+)\1\s*\)/g;
+const CSS_ASSET_URL = /url\(\s*(['"]?)([^)'"\s]+)\1\s*\)/g;
 
 /**
  * Map every served ref in a theme record: a value that is one (`assets.logo`)
@@ -163,19 +168,20 @@ const CSS_SERVED_URL = /url\(\s*(['"]?)(\/[^)'"\s]+)\1\s*\)/g;
  * @param {(ref: string) => string|null} mapFn - null keeps the ref
  * @returns {unknown}
  */
-function mapThemeRefs(value, mapFn) {
+function mapThemeRefs(value, mapFn, isRef = isServedAssetRef) {
   if (typeof value === 'string') {
-    if (isServedAssetRef(value)) return mapFn(value) || value;
-    return value.replace(CSS_SERVED_URL, (whole, quote, ref) => {
-      if (!isServedAssetRef(ref)) return whole;
+    if (isRef(value)) return mapFn(value) || value;
+    return value.replace(CSS_ASSET_URL, (whole, quote, ref) => {
+      if (!isRef(ref)) return whole;
       const mapped = mapFn(ref);
       return mapped ? `url(${quote}${mapped}${quote})` : whole;
     });
   }
-  if (Array.isArray(value)) return value.map((v) => mapThemeRefs(v, mapFn));
+  if (Array.isArray(value))
+    return value.map((v) => mapThemeRefs(v, mapFn, isRef));
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [k, mapThemeRefs(v, mapFn)]),
+      Object.entries(value).map(([k, v]) => [k, mapThemeRefs(v, mapFn, isRef)]),
     );
   }
   return value;
@@ -214,21 +220,32 @@ function remoteLoadsIn(text) {
 }
 
 /**
- * Read one served ref into a data URL, through the same image transform the
- * live published page applies, so an edition carries what readers already get.
+ * Read one local or provider-owned ref into a data URL, through the same image
+ * transform the live published page applies, so an edition carries what readers
+ * already get.
  *
  * @returns {Promise<string|null>} null when this installation cannot read it
  */
-async function inlineServedRef(repoRoot, ref, transform) {
-  const resolved = resolveServedAssetPath(repoRoot, ref);
-  if (!resolved) return null;
+async function inlineServedRef(repoRoot, ref, transform, media) {
+  const key = media ? editionUploadKey(ref) : null;
+  const resolved = key ? null : resolveServedAssetPath(repoRoot, ref);
+  if (!key && !resolved) return null;
   let buf;
   try {
-    buf = await readFile(resolved.path);
+    buf = key
+      ? await media.readFile(key, {
+          maxBytes: 20 * 1024 * 1024,
+          timeoutMs: 8000,
+        })
+      : await readFile(resolved.path);
   } catch {
     return null;
   }
-  const ext = path.extname(resolved.path).slice(1).toLowerCase();
+  if (!buf) return null;
+  const ext = path
+    .extname(key || resolved.path)
+    .slice(1)
+    .toLowerCase();
   let mime = mimeFromExt(ext);
   if (transform && mime.startsWith('image/')) {
     const out = await transform(buf, ext, mime, ref);
@@ -290,18 +307,31 @@ export async function prepareEditionInput(
 
   // 3. Closed assets: one read per distinct ref, deck and theme alike.
   const publicTheme = pick(themeSnapshot, THEME_KEYS);
+  const media = editionMediaProvider();
+  const isRef = (ref) =>
+    isServedAssetRef(ref) || !!(media && editionUploadKey(ref));
   const refs = new Set();
-  mapThemeRefs(publicTheme, (ref) => {
-    refs.add(ref);
-    return null;
-  });
+  mapThemeRefs(
+    publicTheme,
+    (ref) => {
+      refs.add(ref);
+      return null;
+    },
+    isRef,
+  );
   for (const { slides } of slideLists(deck)) {
     for (const ref of collectServedAssetRefs({ slides })) refs.add(ref);
+    for (const slide of slides) {
+      mapEditionImageRefs(slide, (ref) => {
+        if (isRef(ref)) refs.add(ref);
+        return null;
+      });
+    }
   }
   const transform = exportImageEmbedTransform();
   const inlined = new Map();
   for (const ref of refs) {
-    const dataUrl = await inlineServedRef(repoRoot, ref, transform);
+    const dataUrl = await inlineServedRef(repoRoot, ref, transform, media);
     if (dataUrl) inlined.set(ref, dataUrl);
     else
       report(
@@ -314,7 +344,10 @@ export async function prepareEditionInput(
     deck,
     (slides) => rewriteAssetRefs({ slides }, toData).slides,
   );
-  const sealedTheme = mapThemeRefs(publicTheme, toData);
+  for (const { slides } of slideLists(deck)) {
+    for (const slide of slides) mapEditionImageRefs(slide, toData);
+  }
+  const sealedTheme = mapThemeRefs(publicTheme, toData, isRef);
 
   // 4. What the input would still fetch from elsewhere.
   const links = Array.isArray(themeSnapshot.externalFontLinks)

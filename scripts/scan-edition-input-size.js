@@ -15,8 +15,9 @@
  *
  * What it leaves out, so the number is a lower bound: the theme record and
  * the embedded font CSS, a second inlining of an image the deck references
- * twice, and assets it cannot read from this installation's disk (S3 or remote
- * URLs, counted as unresolved).
+ * twice, and resources the edition preparer refuses (such as live remote
+ * images). Public uploads in the configured S3 bucket are measured by HEAD;
+ * missing/unreadable served assets are counted as unresolved.
  *
  * Read-only. It writes nothing and exits 0 whatever it finds - it is a
  * measurement, not a gate. It exits 1 only when it cannot read the database.
@@ -38,6 +39,12 @@ import { RUNNER_REQUEST_LIMIT } from '../server/render/renderer-bundle/index.js'
 import { filterForPublished } from '../server/utils/public-output.js';
 import { resolveServedAssetPath } from '../server/utils/served-asset-path.js';
 import { collectServedAssetRefs } from '../shared/slide-types/deck-assets.js';
+import { initializeMediaProvider } from '../server/media/index.js';
+import {
+  editionMediaProvider,
+  editionUploadKey,
+  mapEditionImageRefs,
+} from '../server/export/edition-media.js';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -64,6 +71,19 @@ export async function estimateEditionInput(deck, assetBytes) {
   const refs = new Set(collectServedAssetRefs({ slides: lists.slides }));
   for (const version of Object.values(lists.i18n?.versions || {}))
     for (const ref of collectServedAssetRefs(version)) refs.add(ref);
+  if (editionMediaProvider()) {
+    const slides = [
+      lists.slides,
+      ...Object.values(lists.i18n?.versions || {}).map((v) => v.slides),
+    ];
+    for (const list of slides) {
+      for (const slide of list || [])
+        mapEditionImageRefs(slide, (ref) => {
+          if (editionUploadKey(ref)) refs.add(ref);
+          return null;
+        });
+    }
+  }
   let raw = 0;
   let unresolved = 0;
   for (const ref of refs) {
@@ -99,8 +119,18 @@ export function summarizeSizes(sizes, limit = EDITION_REQUEST_LIMIT) {
   };
 }
 
-/** Byte size of a served ref on this installation's disk. */
+/** Byte size from the configured provider or the installation's static trees. */
 async function diskAssetBytes(ref) {
+  const media = editionMediaProvider();
+  const key = media && editionUploadKey(ref);
+  if (key) {
+    try {
+      const result = await media.confirmUpload(key);
+      return result.exists ? (result.size ?? null) : null;
+    } catch {
+      return null;
+    }
+  }
   const resolved = resolveServedAssetPath(REPO_ROOT, ref);
   if (!resolved) return null;
   try {
@@ -114,7 +144,10 @@ const mib = (n) => `${(n / 1024 / 1024).toFixed(2)} MiB`;
 
 async function main() {
   const { values } = parseArgs({ options: { json: { type: 'boolean' } } });
+  // Provider initialization logs through console.log; stdout is the JSON report.
+  if (values.json) console.log = console.error;
   await loadDotEnv(REPO_ROOT);
+  await initializeMediaProvider(REPO_ROOT);
   const db = await createMigrationDb();
   let rows;
   try {
