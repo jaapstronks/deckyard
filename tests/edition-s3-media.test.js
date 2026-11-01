@@ -52,6 +52,15 @@ test('only public uploads under the exact configured bucket/CDN base resolve', (
     editionUploadKey('/uploads/2026/10/a.png'),
     'uploads/2026/10/a.png',
   );
+  // DY-786: the provider returns keys with literal spaces, unencoded.
+  assert.equal(
+    editionUploadKey(`${BASE}/uploads/2026/05/Saskia Jongma-d4b4f890.jpg`),
+    'uploads/2026/05/Saskia Jongma-d4b4f890.jpg',
+  );
+  assert.equal(
+    editionUploadKey('/uploads/Saskia Jongma-d4b4f890.jpg'),
+    'uploads/Saskia Jongma-d4b4f890.jpg',
+  );
   for (const ref of [
     'https://media.example.test.evil/content/uploads/a.png',
     'http://media.example.test/content/uploads/a.png',
@@ -72,6 +81,17 @@ test('only public uploads under the exact configured bucket/CDN base resolve', (
     '/uploads/../../private/a.png',
     '/uploads/%5cprivate.png',
     '/uploads/bad%.png',
+    `${BASE}/uploads/a\tb.png`,
+    `${BASE}/uploads/a\nb.png`,
+    `${BASE}/uploads/a\u00a0b.png`,
+    ` ${BASE}/uploads/a b.png`,
+    `${BASE}/uploads/a b.png `,
+    `${BASE}/uploads/a b.png?x=1`,
+    `${BASE}/uploads/a b/../../private/a.png`,
+    `${BASE}/uploads/ /a.png`,
+    `${BASE}/uploads/a /b.png`,
+    `${BASE}/uploads/ a.png`,
+    '/uploads/ a.png',
   ])
     assert.equal(editionUploadKey(ref), null, ref);
 });
@@ -176,6 +196,24 @@ test('missing own media and foreign/private URLs refuse without a private read o
     );
   }
   assert.deepEqual(calls, ['uploads/missing.png']);
+});
+
+test('a provider URL with a literal space in the filename seals through the provider (DY-786)', async (t) => {
+  // The provider keeps spaces in sanitized names and returns the key unencoded.
+  const key = `uploads/2026/05/${provider._sanitizeFilename('Saskia Jongma.jpg')}-d4b4f890.png`;
+  const ref = provider._getPublicUrl(key);
+  assert.ok(ref.includes(' '), ref);
+  const calls = [];
+  t.mock.method(provider, 'readFile', async (k) => {
+    calls.push(k);
+    return PHOTO;
+  });
+  const sealed = await prepareEditionInput(process.cwd(), deck(ref), {
+    theme: { label: 'Plain' },
+  });
+  const input = JSON.parse(sealed.inputBytes);
+  assert.equal(input.presentation.slides[0].content.image, DATA);
+  assert.deepEqual(calls, [key]);
 });
 
 test('a root-relative upload the disk still serves seals from disk before the bucket (DY-785)', async (t) => {
