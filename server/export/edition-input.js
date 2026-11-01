@@ -125,7 +125,16 @@ function publicDeck(projected) {
       ),
     };
   }
-  return deck;
+  // The source image used to cache contrast detection is editor bookkeeping.
+  // Keep the measured verdict the renderer reads, without its source URL.
+  return mapLists(deck, (slides) =>
+    slides.map((slide) => {
+      if (!Object.hasOwn(slide.content || {}, 'slideBgAutoFor')) return slide;
+      const content = { ...slide.content };
+      delete content.slideBgAutoFor;
+      return { ...slide, content };
+    }),
+  );
 }
 
 /** Every slide list of a deck, labelled by language (null = main list). */

@@ -233,6 +233,71 @@ test('the sealed input carries no author material, in any language or byte', asy
   ]);
 });
 
+test('sealing omits contrast bookkeeping in every language while preserving source and rendered contrast', async () => {
+  seed();
+  const source = deck();
+  source.i18n.versions.fr = structuredClone(source.i18n.versions.nl);
+  const lists = (pres) => [
+    pres.slides,
+    ...Object.entries(pres.i18n.versions)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v.slides),
+  ];
+  for (const [i, slides] of lists(source).entries()) {
+    Object.assign(slides[0].content, {
+      slideBgImage: '/uploads/photo-1.png',
+      slideBgAutoFor: `https://source.example.com/private-${i}.png`,
+      slideBgText: 'auto',
+      slideBgTextAuto: i % 2 ? 'dark' : 'light',
+      slideBgNeedsScrim: i !== 2,
+    });
+  }
+  const before = structuredClone(source);
+  const { inputBytes } = await prepareEditionInput(repoRoot, source, {
+    scope: scope(),
+    theme: THEME,
+  });
+  const raw = inputBytes.toString('utf8');
+  assert.ok(!raw.includes('slideBgAutoFor'));
+  assert.ok(!raw.includes('source.example.com'));
+  assert.deepEqual(source, before);
+  const sealed = JSON.parse(raw).presentation;
+  const { renderSlideHtml } =
+    await import('../shared/slide-types/presentation.js');
+  for (const [i, slides] of lists(sealed).entries()) {
+    const original = lists(before)[i][0];
+    const slide = slides[0];
+    assert.equal(Object.hasOwn(slide.content, 'slideBgAutoFor'), false);
+    assert.equal(
+      slide.content.slideBgTextAuto,
+      original.content.slideBgTextAuto,
+    );
+    assert.equal(
+      slide.content.slideBgNeedsScrim,
+      original.content.slideBgNeedsScrim,
+    );
+    assert.match(slide.content.slideBgImage, /^data:image\/png;base64,/);
+    const originalHtml = renderSlideHtml(original);
+    const sealedHtml = renderSlideHtml(slide);
+    assert.equal(
+      sealedHtml,
+      originalHtml.replaceAll(
+        original.content.slideBgImage,
+        slide.content.slideBgImage,
+      ),
+      'only the embedded background URL changes in rendered HTML',
+    );
+    assert.match(
+      sealedHtml,
+      new RegExp(`has-slide-bg-${original.content.slideBgTextAuto}-text`),
+    );
+    assert.equal(
+      sealedHtml.includes('slide-bg-overlay-auto'),
+      original.content.slideBgNeedsScrim,
+    );
+  }
+});
+
 test('every served ref, in every language and the theme, becomes an inventoried data URL', async () => {
   seed();
   const { inputBytes, manifest } = await prepareEditionInput(repoRoot, deck(), {
