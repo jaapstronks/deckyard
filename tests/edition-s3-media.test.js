@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { Readable } from 'node:stream';
 
 process.env.MEDIA_STORAGE_MODE = 's3';
@@ -173,6 +176,45 @@ test('missing own media and foreign/private URLs refuse without a private read o
     );
   }
   assert.deepEqual(calls, ['uploads/missing.png']);
+});
+
+test('a root-relative upload the disk still serves seals from disk before the bucket (DY-785)', async (t) => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'dy785-uploads-'));
+  const previous = process.env.UPLOADS_DIR;
+  process.env.UPLOADS_DIR = dir;
+  t.after(async () => {
+    if (previous === undefined) delete process.env.UPLOADS_DIR;
+    else process.env.UPLOADS_DIR = previous;
+    await rm(dir, { recursive: true, force: true });
+  });
+  const onDisk = Buffer.from('disk-served-upload-bytes');
+  // Local uploads are flat: /uploads/<file>, never a subfolder.
+  await writeFile(path.join(dir, 'ondisk.png'), onDisk);
+  const calls = [];
+  t.mock.method(provider, 'readFile', async (key) => {
+    calls.push(key);
+    return null;
+  });
+  const sealed = await prepareEditionInput(
+    process.cwd(),
+    deck('/uploads/ondisk.png'),
+    { theme: { label: 'Plain' } },
+  );
+  const input = JSON.parse(sealed.inputBytes);
+  assert.equal(
+    input.presentation.slides[0].content.image,
+    `data:image/png;base64,${onDisk.toString('base64')}`,
+  );
+  assert.deepEqual(calls, [], 'a file on disk never reaches the bucket');
+
+  // Absent from disk, the same ref still falls through to the bucket key.
+  await assert.rejects(
+    prepareEditionInput(process.cwd(), deck('/uploads/gone.png'), {
+      theme: { label: 'Plain' },
+    }),
+    (err) => err.code === 'renderer_edition_input_unsealable',
+  );
+  assert.deepEqual(calls, ['uploads/gone.png']);
 });
 
 test('bounded S3 reads stop oversized streams and pass a deadline to the SDK', async (t) => {
