@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { authConfigError, authEnabled } from '../server/auth/auth.js';
 
 /**
@@ -10,7 +12,14 @@ import { authConfigError, authEnabled } from '../server/auth/auth.js';
  */
 
 function withEnv(env, fn) {
-  const keys = ['AUTH_SECRET', 'AUTH_ENABLED', 'SANDBOX_MODE', 'DEMO_MODE'];
+  const keys = [
+    'AUTH_SECRET',
+    'AUTH_ENABLED',
+    'SANDBOX_MODE',
+    'DEMO_MODE',
+    'COLLAB_ENABLED',
+    'AUTH_ALLOW_WEAK_SECRET',
+  ];
   const saved = {};
   for (const k of keys) saved[k] = process.env[k];
   for (const k of keys) delete process.env[k];
@@ -75,6 +84,61 @@ test('sandbox mode → fatal without a strong secret, whatever else is set', () 
  * only path to "off" is a recognized falsy token.
  */
 const SECRET = { AUTH_SECRET: 'x'.repeat(32) };
+
+test('sandbox + collab is fatal regardless of auth/demo escape hatches', () => {
+  for (const extra of [
+    {},
+    { AUTH_ENABLED: 'false' },
+    { DEMO_MODE: 'true' },
+    { AUTH_ALLOW_WEAK_SECRET: 'true' },
+  ]) {
+    withEnv(
+      { ...SECRET, SANDBOX_MODE: '1', COLLAB_ENABLED: 'true', ...extra },
+      () => assert.match(authConfigError(), /SANDBOX_MODE cannot be combined/),
+    );
+  }
+  withEnv({ ...SECRET, COLLAB_ENABLED: 'true' }, () =>
+    assert.equal(authConfigError(), null),
+  );
+  for (const value of ['false', '0', 'no', 'off']) {
+    withEnv({ ...SECRET, SANDBOX_MODE: '1', COLLAB_ENABLED: value }, () =>
+      assert.equal(authConfigError(), null),
+    );
+  }
+});
+
+test('sandbox + collab exits before storage or a listener starts', () => {
+  const result = spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL('../server/server.js', import.meta.url))],
+    {
+      encoding: 'utf8',
+      timeout: 10000,
+      env: {
+        ...process.env,
+        NODE_ENV: 'production',
+        AUTH_DEV_BYPASS: 'false',
+        SANDBOX_MODE: '1',
+        COLLAB_ENABLED: 'true',
+        AUTH_ENABLED: 'true',
+        AUTH_SECRET: 'sandbox-boot-regression-secret-at-least-32',
+        DATABASE_URL: 'postgres://unused:unused@127.0.0.1:1/unused',
+        DATABASE_HOST: '127.0.0.1',
+        DATABASE_PORT: '1',
+        DATABASE_NAME: 'unused',
+        DATABASE_USER: 'unused',
+        DATABASE_PASSWORD: 'unused',
+      },
+    },
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /SANDBOX_MODE cannot be combined with COLLAB_ENABLED/,
+  );
+  assert.doesNotMatch(result.stderr, /ECONNREFUSED/);
+});
 
 test('authEnabled: unset or blank AUTH_ENABLED → enabled', () => {
   withEnv({ ...SECRET }, () => assert.equal(authEnabled(), true));

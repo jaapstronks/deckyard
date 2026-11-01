@@ -88,8 +88,7 @@ caps bound the residual. This limitation is recorded in the source.
 
 **Where:** `server/auth/auth.js` (`authConfigError`).
 
-Two auth misconfigurations must stop the process rather than boot an insecure
-instance:
+Auth misconfigurations must stop the process rather than boot an insecure instance:
 
 - **A missing admin/auth configuration** that would silently open an admin
   surface is only acceptable when the operator explicitly opted out
@@ -97,11 +96,8 @@ instance:
 - **A weak `AUTH_SECRET`** (shorter than the minimum length) makes the
   session-signing HMAC brute-forceable, so session tokens could be forged. Boot
   is refused below the floor.
-- **A sandbox without a strong `AUTH_SECRET`.** It signs the guest cookie, the
-  only credential on a public instance, so sandbox mode needs at least the
-  minimum length and neither `AUTH_ALLOW_WEAK_SECRET` nor `AUTH_ENABLED=false`
-  exempts it. With the secret set, `authEnabled()` stays false in sandbox mode:
-  the magic-link and password-reset routes stay closed.
+- **A sandbox without a strong `AUTH_SECRET`.** It signs the guest cookie, the only credential on a public instance, so sandbox mode needs at least the minimum length and neither `AUTH_ALLOW_WEAK_SECRET` nor `AUTH_ENABLED=false` exempts it. With the secret set, `authEnabled()` stays false in sandbox mode: the magic-link and password-reset routes stay closed.
+- **Sandbox with collaboration enabled.** `SANDBOX_MODE` with `COLLAB_ENABLED` is refused at boot and at transport mount, because collaboration authenticates ordinary sessions rather than guests.
 
 **Deliberately not covered / escape hatches:** an operator who accepts the risk
 can set `AUTH_ALLOW_WEAK_SECRET` (an explicit, documented escape hatch that still

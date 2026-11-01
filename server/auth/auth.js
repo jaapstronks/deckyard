@@ -8,7 +8,7 @@ import {
 } from '../storage/identity.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { sessionVersion } from '../utils/session-version.js';
-import { isMultiOrgEnabled } from '../config/features.js';
+import { isCollabEnabled, isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { envBool, envStr } from '../config/utils.js';
 import { createLogger } from '../utils/logger.js';
@@ -91,7 +91,7 @@ export function authEnabled() {
 export const MIN_AUTH_SECRET_LENGTH = 32;
 
 /**
- * Guard against auth misconfiguration at startup. Three fatal cases:
+ * Guard against auth misconfiguration at startup. Four fatal cases:
  *
  * 1. **Fail-open**: authEnabled() returns false when AUTH_SECRET is missing,
  *    which makes getUserFromRequest[/Async] fall back to a hardcoded anonymous
@@ -104,8 +104,10 @@ export const MIN_AUTH_SECRET_LENGTH = 32;
  * 3. **Sandbox without a strong secret**: the guest cookie is the only
  *    credential on a public instance and AUTH_SECRET signs it, so sandbox mode
  *    has no exemption from either rule and no escape hatch.
+ * 4. **Sandbox with collab**: the collab transport resolves ordinary sessions,
+ *    not sandbox guests, so the combination must never accept connections.
  *
- * Both are behaviour that must stop startup rather than expose an insecure
+ * These are behaviours that must stop startup rather than expose an insecure
  * instance.
  *
  * @returns {string|null} an error message when misconfigured, else null.
@@ -116,6 +118,12 @@ export function authConfigError() {
   const secret = envStr('AUTH_SECRET');
 
   if (envBool('SANDBOX_MODE')) {
+    if (isCollabEnabled()) {
+      return (
+        'SANDBOX_MODE cannot be combined with COLLAB_ENABLED: collaboration ' +
+        'does not authenticate sandbox guests. Disable COLLAB_ENABLED.'
+      );
+    }
     if (secret.length >= MIN_AUTH_SECRET_LENGTH) return null;
     return (
       `SANDBOX_MODE needs an AUTH_SECRET of at least ${MIN_AUTH_SECRET_LENGTH} ` +

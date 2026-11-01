@@ -65,6 +65,7 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
 
 Versus a normal instance:
 
+- **No collaboration transport.** `SANDBOX_MODE` with `COLLAB_ENABLED` is refused at boot and before the WebSocket transport mounts. Collaboration resolves ordinary sessions, not sandbox guest identities. Disable `COLLAB_ENABLED` for sandbox instances.
 - **No login.** Every first HTML/API hit auto-provisions an ephemeral guest via
   an unguessable `sb_sandbox` cookie. Isolation between guests is per-cookie.
 - **AI off.** `enableAi` is forced false (open-ended LLM cost on a public URL).
