@@ -369,3 +369,5 @@ Upstream's maintainer steps around a release, moved out of `docs/developer/maint
 - **Not yet:** Deckyard surfaces its own running version nowhere (no
   `/api/version`, no footer). Adding that, then an in-app "update available" check
   against the latest GitHub Release, is a sensible later step — see `ROADMAP.md`.
+
+Release 1.97.0 applies the beta MINOR rule to signed sandbox guest cookies. Before upgrading a sandbox, install a random `AUTH_SECRET` of at least 32 characters and disable `COLLAB_ENABLED`. Existing unsigned guest cookies become invalid and their ephemeral decks become inaccessible.
