@@ -7,7 +7,8 @@ export default {
   id: 'export-dropdown-full',
   output: 'export-dropdown-full.png',
   registryPath: 'public/images/screenshots/export-dropdown-full.png',
-  viewport: TALL_PANE_VIEWPORT,
+  // The content is capped at 70vh; 1200px leaves only 840px for 887px.
+  viewport: { ...TALL_PANE_VIEWPORT, height: 1440 },
   clip: '.modal.export-modal',
   async action(page, ctx) {
     await editor.action(page, ctx);
