@@ -577,6 +577,7 @@ export default [
       '.claude/**',
       '.scratch/**',
       'coverage/**',
+      'renderer-store/**',
       '**/*.min.js',
     ],
   },

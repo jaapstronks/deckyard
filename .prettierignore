@@ -12,6 +12,7 @@ assets
 custom
 .claude
 coverage
+renderer-store
 *.min.js
 
 # Written by tools, not by hand.
