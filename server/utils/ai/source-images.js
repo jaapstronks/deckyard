@@ -65,6 +65,49 @@ export function uploadOnce(upload) {
 }
 
 /**
+ * Every declared image field of a slide's content that holds a string,
+ * `items` entries included.
+ * @param {object} content
+ * @param {object[]} fields - the slide type's field declarations
+ * @returns {Generator<{ holder: object, key: string, value: string }>}
+ */
+function* imageFields(content, fields) {
+  for (const field of fields) {
+    const value = content[field.key];
+    if (field.type === 'image' && typeof value === 'string') {
+      yield { holder: content, key: field.key, value };
+    } else if (field.type === 'items' && Array.isArray(value)) {
+      for (const item of value) {
+        if (item && typeof item === 'object') {
+          yield* imageFields(item, field.itemFields || []);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * The images a batch under revision already shows. Each reached the batch as a
+ * copy or through the author's own pick, and the model hands it back; on a
+ * provider with absolute URLs it would read as remote (DY-793).
+ *
+ * @param {Array<{ type?: string, content?: object }>|null} slides
+ * @param {Record<string, object>} slideTypes - the merged slide-type map
+ * @returns {Set<string>} to pass as `keep` to {@link resolveSourceImages}
+ */
+export function imagesInBatch(slides, slideTypes) {
+  const images = new Set();
+  for (const slide of Array.isArray(slides) ? slides : []) {
+    if (!slide?.content || typeof slide.content !== 'object') continue;
+    const fields = slideTypes[slide.type]?.fields || [];
+    for (const { value } of imageFields(slide.content, fields)) {
+      images.add(value);
+    }
+  }
+  return images;
+}
+
+/**
  * Replace `source-image:N` in declared image fields by the uploaded URL.
  *
  * Only the images a slide references are uploaded, each once. A reference
@@ -78,12 +121,13 @@ export function uploadOnce(upload) {
  * @param {object} [opts]
  * @param {AbortSignal|null} [opts.signal] - checked before every upload
  * @param {Record<string, object>} opts.slideTypes - the merged slide-type map
+ * @param {Set<string>} [opts.keep] - remote URLs that stay, from {@link imagesInBatch}
  * @returns {Promise<{ used: number[] }>} the numbers of the images placed
  */
 export async function resolveSourceImages(
   slides,
   sourceImages = [],
-  { signal = null, slideTypes } = {},
+  { signal = null, slideTypes, keep = new Set() } = {},
 ) {
   if (!slideTypes || typeof slideTypes !== 'object') {
     throw new TypeError('resolveSourceImages: pass the slide-type map');
@@ -117,33 +161,20 @@ export async function resolveSourceImages(
     return '';
   }
 
-  async function resolveFields(content, fields, warnings) {
-    for (const field of fields) {
-      const value = content[field.key];
-      if (field.type === 'image' && typeof value === 'string') {
-        if (SOURCE_IMAGE_REF.test(value)) {
-          content[field.key] = await resolve(value, warnings);
-        } else if (REMOTE_URL.test(value)) {
-          warnings.push(
-            'The generated slide named a remote image that was not copied; the image field was left empty.',
-          );
-          content[field.key] = '';
-        }
-      } else if (field.type === 'items' && Array.isArray(value)) {
-        for (const item of value) {
-          if (item && typeof item === 'object') {
-            await resolveFields(item, field.itemFields || [], warnings);
-          }
-        }
-      }
-    }
-  }
-
   for (const slide of slides) {
     if (!slide?.content || typeof slide.content !== 'object') continue;
     const fields = slideTypes[slide.type]?.fields || [];
     const warnings = [];
-    await resolveFields(slide.content, fields, warnings);
+    for (const { holder, key, value } of imageFields(slide.content, fields)) {
+      if (SOURCE_IMAGE_REF.test(value)) {
+        holder[key] = await resolve(value, warnings);
+      } else if (REMOTE_URL.test(value) && !keep.has(value)) {
+        warnings.push(
+          'The generated slide named a remote image that was not copied; the image field was left empty.',
+        );
+        holder[key] = '';
+      }
+    }
     if (warnings.length) {
       slide._aiWarnings = [...(slide._aiWarnings || []), ...warnings];
     }

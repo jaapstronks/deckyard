@@ -1874,6 +1874,11 @@ paths:
       description: |
         Uses AI to generate new slides based on your content.
         Returns slide objects that can be added to an existing presentation.
+
+        Image URLs in `raw` are offered to the generation, and a chosen image
+        is copied into the media library, when uploads are on and the key also
+        has the `write` permission. No image URL is returned as such: an image
+        that cannot be copied leaves an empty field and an entry in `warnings`.
       requestBody:
         required: true
         content:
@@ -1912,6 +1917,20 @@ paths:
                       $ref: '#/components/schemas/Slide'
                   slideCount:
                     type: integer
+                  warnings:
+                    type: array
+                    description: What the generation left out, per slide
+                    items:
+                      type: object
+                      required:
+                        - index
+                        - message
+                      properties:
+                        index:
+                          type: integer
+                          description: The slide's position in `slides`, from 0
+                        message:
+                          type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

@@ -10,6 +10,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom/index.js';
 import { isAiReviewCurrent, bindAiReview } from '../../../shared/ai-review.js';
 import { canPickMissingPicture } from './media/pick-missing-picture.js';
+import { buildAiWarningsPanel } from './editor-form/ai-slide-notes.js';
 import { insertSlideAfter } from './slide-insert-position.js';
 import { newSlide } from '../../../shared/slide-types/presentation.js';
 
@@ -192,6 +193,8 @@ export function createAiReviewAnnotations({
 
   const annotationFor = (slide) => {
     const parts = reviewParts(slide);
+    const warnings = buildAiWarningsPanel({ slide });
+    if (warnings) parts.push(warnings);
     const missing = missingPictureRow(slide);
     if (missing) parts.push(missing);
     return parts.length ? h('div', {}, parts) : null;

@@ -16,6 +16,12 @@ import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/i
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { attachBatchReviews } from '../../../utils/ai/slide-review.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
+import {
+  imagesInBatch,
+  resolveSourceImages,
+} from '../../../utils/ai/source-images.js';
+import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 
 /**
  * POST /api/ai/append-slides — generate slides to append to an existing
@@ -54,14 +60,20 @@ export async function handleAiAppendSlides({
   // The map the org's types were offered from is the one they are composed and
   // fixed in (B247).
   const slideTypes = await buildMergedSlideTypes(storageScope);
+  // A signed-in user may upload (`POST /api/uploads` asks nothing more).
+  const { text, sourceImages } = offerTextSourceImages(raw, {
+    mayUpload: Boolean(authedUser),
+  });
+  const signal = clientDisconnectSignal(res);
   const { slides: generatedSlides, rationale } =
-    await generateSlidesToAppendFromRawContent(raw, {
+    await generateSlidesToAppendFromRawContent(text, {
       existingDeck,
       targetLang: lang,
       vendor,
       contentOnly,
       verbatim,
       ...slideTypeOffer,
+      sourceImages,
       priorSlides,
       feedback,
     });
@@ -82,6 +94,17 @@ export async function handleAiAppendSlides({
 
   // Validate slides and log any issues (unknown fields, schema mismatches, etc.)
   slides = validateAndFixRefinedSlides(slides, { slideTypes });
+
+  try {
+    await resolveSourceImages(slides, sourceImages, {
+      signal,
+      slideTypes,
+      keep: imagesInBatch(priorSlides, slideTypes),
+    });
+  } catch (e) {
+    if (!signal.aborted) throw e;
+    return true;
+  }
 
   // Attach the per-slide review (normalization strips unknown slide keys).
   // Both arrays map 1:1 by index onto the generated batch.

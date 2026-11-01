@@ -14,6 +14,7 @@ import {
   generatedDeckWarnings,
 } from '../../../utils/ai/index.js';
 import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
+import { resolveSourceImages } from '../../../utils/ai/source-images.js';
 import { hasPermission } from '../../../storage/api-keys.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
@@ -200,16 +201,24 @@ async function handleAppendSlides(ctx) {
 
   // A model failure below is rendered by `withV1ErrorHandler` (B619).
   const slideTypeOffer = await loadSlideTypeOffer(apiKey);
+  // Copying an image a text names is an upload, which `ai` alone never grants:
+  // without `write` nothing is fetched (DY-793).
+  const { text, sourceImages } = offerTextSourceImages(raw, {
+    mayUpload: hasPermission(apiKey.permissions, 'write'),
+  });
+  const signal = clientDisconnectSignal(ctx.res);
   const { slides: generatedSlides } =
-    await generateSlidesToAppendFromRawContent(raw, {
+    await generateSlidesToAppendFromRawContent(text, {
       existingDeck,
       targetLang: lang,
       vendor,
       ...slideTypeOffer,
+      sourceImages,
     });
 
   // Normalize into internal slide format, against the theme of the deck the
   // slides are being appended to.
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   const parts = deckToPresentationParts(generatedSlides, {
     theme: await loadDeckTheme(
       repoRoot,
@@ -217,9 +226,15 @@ async function handleAppendSlides(ctx) {
       storageScope,
     ),
     lang: lang || existingDeck?.lang,
-    slideTypes: await buildMergedSlideTypes(storageScope),
+    slideTypes,
   });
   const slides = Array.isArray(parts?.slides) ? parts.slides : [];
+  try {
+    await resolveSourceImages(slides, sourceImages, { signal, slideTypes });
+  } catch (e) {
+    if (!signal.aborted) throw e;
+    return true;
+  }
 
   await apiSuccess(ctx, {
     slides: slides.map((slide) => ({
@@ -228,6 +243,7 @@ async function handleAppendSlides(ctx) {
       content: slide.content,
     })),
     slideCount: slides.length,
+    warnings: generatedDeckWarnings({ slides }),
   });
   return true;
 }

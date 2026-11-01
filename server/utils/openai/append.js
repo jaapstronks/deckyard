@@ -21,6 +21,9 @@ export async function generateSlidesToAppendFromRawContent(
     verbatim = false,
     disabledSlideTypes = [],
     customSlideTypes = [],
+    // Images in the request, marked in its text (DY-793). The caller resolves
+    // what the model chose once it has composed the slides.
+    sourceImages = [],
     // Revision mode (batch review "Adjust"): the previously generated batch
     // plus the user's feedback on it. The model returns a revised full batch.
     priorSlides = null,
@@ -118,6 +121,12 @@ export async function generateSlidesToAppendFromRawContent(
         ]),
     '- Quote slides are IMPORTANT for interviews and narrative source text.',
     '- Images: when the user asks for a photo/image, use an image type and leave its image field empty (""); the author picks the picture. For a picture that would help between slides, use "imageSuggestionAfter" instead.',
+    ...(sourceImages.length
+      ? [
+          '- SOURCE IMAGES: the request marks its images where they stand, as [IMAGE n: description]. A marker is never copy. When such an image shows what a slide says, choose a type with an image field, put exactly "source-image:n" in that field and write its "alt" from the description.',
+        ]
+      : []),
+    '- Never write an image URL of your own. An image URL already in a prior batch stays as it is.',
     '- For content-slide.body and image-text-slide.body use a safe markdown subset: paragraphs, lists (- or 1.), **bold**, *italic*, links [text](https://...).',
     '- content-slide.layout selection:',
     '  - Use layout:"one-column" for light slides (short paragraph, or ~3–7 bullets). Do NOT default to two-column for tiny content.',
