@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.97.2](https://github.com/jaapstronks/deckyard/compare/v1.97.1...v1.97.2) (2026-11-01)
+
+
+### Fixed
+
+* copy image URLs in the append routes before slides are returned (DY-793) ([#1964](https://github.com/jaapstronks/deckyard/issues/1964)) ([f5f07e9](https://github.com/jaapstronks/deckyard/commit/f5f07e98b6383a5361e30567970c9f58ca14da1a))
+
 ## [1.97.1](https://github.com/jaapstronks/deckyard/compare/v1.97.0...v1.97.1) (2026-11-01)
 
 
