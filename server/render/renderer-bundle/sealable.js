@@ -54,7 +54,7 @@ export function findUnsealableSlides(slides, registry = SLIDE_TYPES) {
         index,
         type: slide?.type ?? null,
         field: null,
-        message: `slide ${index + 1} has type "${slide?.type}", which this render bundle does not carry; a database-backed slide type cannot be frozen into an edition (docs/reference/renderer-bundle.md)`,
+        message: `slide ${index + 1} has type "${slide?.type}", which this render bundle does not carry; a database-backed slide type cannot be frozen into an edition; convert it to a bundled slide type before publishing (docs/reference/renderer-bundle.md)`,
       });
       continue;
     }
