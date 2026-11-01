@@ -222,7 +222,7 @@
   },
   "client/views/editor/editor-controller.js": {
     "no-restricted-syntax": {
-      "count": 24
+      "count": 23
     }
   },
   "client/views/editor/editor-form/background-section.js": {

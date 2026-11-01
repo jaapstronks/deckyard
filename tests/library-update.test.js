@@ -1,7 +1,8 @@
 /**
  * Taking in or setting aside a newer library revision on a deck slide (B904):
  * the item's content in every language it has, the deck's own fields kept
- * (D370), a missing language marked outdated rather than retranslated (D371).
+ * (D370), a missing language marked outdated rather than retranslated (D371);
+ * and unlinking a slide from its item (B905, D368).
  *
  * Run with: node --test tests/library-update.test.js
  */
@@ -14,6 +15,7 @@ import {
   ignoreLibraryRevision,
   libraryItemContentFor,
   slidesBehindLibraryItem,
+  unlinkLibrarySlide,
 } from '../shared/slide-library/library-update.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { slideTextRows } from '../shared/i18n-progress.js';
@@ -219,4 +221,15 @@ test('ignore remembers the revision in every version, so only a later one is new
   assert.deepEqual(slidesBehindLibraryItem(pres, ITEM, 3), []);
   assert.deepEqual(slidesBehindLibraryItem(pres, ITEM, 4), ['s1']);
   assert.equal(ignoreLibraryRevision(pres, 's1', 3), false);
+});
+
+test('unlink drops the ref in every version and keeps the content (D368)', () => {
+  const pres = deck(linked(), linked());
+  assert.equal(unlinkLibrarySlide(pres, 's1'), true);
+  for (const s of [pres.slides[1], pres.i18n.versions['en-GB'].slides[1]]) {
+    assert.equal(Object.hasOwn(s, 'libraryRef'), false);
+    assert.equal(s.content.title, 'Oud');
+  }
+  assert.deepEqual(slidesBehindLibraryItem(pres, ITEM, 9), []);
+  assert.equal(unlinkLibrarySlide(pres, 's1'), false);
 });

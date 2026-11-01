@@ -102,7 +102,7 @@ function isMultiline(meta, ...values) {
  *   ready (collab); always true without collab
  * @param {(fn: Function) => Function} opts.subscribe - the change signal;
  *   returns the unsubscribe
- * @param {(slideId: string) => ('author'|'other'|null)} opts.getSlideLockKind
+ * @param {(slideId: string) => ('author'|'other'|'library'|null)} opts.getSlideLockKind
  * @param {() => boolean} opts.isReadOnly - the deck is read-only right now
  * @param {() => string|null} opts.getSelectedSlideId
  * @param {(slideId: string) => void} opts.selectSlide - the lock-aware
@@ -418,7 +418,12 @@ export function openTranslateView({
           'Someone else is editing this slide.',
         );
 
-  const lockOf = (slideId) => (slideId ? getSlideLockKind?.(slideId) : null);
+  // A library lock (D368) leaves translating open: a deck language the item
+  // lacks is the owner's to translate (D371).
+  const lockOf = (slideId) => {
+    const kind = slideId ? getSlideLockKind?.(slideId) : null;
+    return kind === 'library' ? null : kind;
+  };
 
   // ── writing ──────────────────────────────────────────────────────────────
 

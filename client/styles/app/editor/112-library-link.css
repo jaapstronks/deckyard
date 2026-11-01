@@ -1,12 +1,12 @@
-/* Library updates (`views/editor/library-updates/`, B904): the bar over the
-   canvas when the selected slide's library item has a newer revision, the
-   marker on its thumbnail, and the side-by-side comparison. */
+/* Library links (`views/editor/library-link/`, B904, B905): the bar over the
+   canvas for a slide copied from the library - its lock while the item is
+   someone else's (D368), and its newer revision - plus the marker on the
+   thumbnail and the side-by-side comparison. */
 
-.library-update-bar {
+.library-link-bar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ps-space-2) var(--ps-space-3);
+  flex-direction: column;
+  gap: var(--ps-space-2);
   margin: var(--ps-space-3) var(--ps-space-3) 0;
   padding: var(--ps-space-2) var(--ps-space-3);
   border: 1px solid hsl(var(--app-border-default));
@@ -15,38 +15,46 @@
   color: hsl(var(--app-text-primary));
 }
 
-.library-update-bar[hidden] {
+.library-link-bar[hidden],
+.library-link-bar-row[hidden] {
   display: none;
 }
 
-.library-update-bar-icon {
+.library-link-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-2) var(--ps-space-3);
+}
+
+.library-link-bar-icon {
   flex: none;
   color: hsl(var(--app-accent-text));
 }
 
-.library-update-bar-text {
+.library-link-bar-text {
   flex: 1 1 12rem;
   min-width: 0;
   margin: 0;
   font-size: var(--ps-text-sm);
 }
 
-/* The three actions stay whole: the group wraps under the text when the row
-   is too narrow, and a button wraps to the next line before any label is
-   cut (ui-action-layout gate). */
-.library-update-bar-actions {
+/* The actions stay whole: a group wraps under its text when the row is too
+   narrow, and a button wraps to the next line before any label is cut
+   (ui-action-layout gate). */
+.library-link-bar-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ps-space-2);
 }
 
-.library-update-bar-actions .btn {
+.library-link-bar-actions .btn {
   white-space: nowrap;
   min-height: 44px;
 }
 
 @media (pointer: fine) {
-  .library-update-bar-actions .btn {
+  .library-link-bar-actions .btn {
     min-height: 0;
   }
 }
@@ -87,4 +95,17 @@
 .library-compare-thumb {
   width: 100%;
   aspect-ratio: 16 / 9;
+}
+
+/* A library lock (D368) keeps what belongs to the deck open: the speaker
+   notes (D370). Its banner names the maker, so it may wrap. */
+.editor-shell.is-library-locked-slide .preview-panel textarea {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.editor-shell.is-library-locked-slide .inspector-panel::before {
+  max-width: calc(100% - 16px);
+  white-space: normal;
+  text-align: center;
 }

@@ -50,7 +50,7 @@ import { createEditorTopbar } from './topbar/index.js';
 import { setTopbarTitleText } from './topbar/title-button.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createCanvasTabs } from './canvas-tabs.js';
-import { createLibraryUpdates } from './library-updates/index.js';
+import { createLibraryLink } from './library-link/index.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveRefusal } from './editor-form/save-refusal.js';
 import { createElementAnchor } from './editor-form/element-anchor.js';
@@ -260,6 +260,50 @@ export async function createEditorController({
     return slide ? isSlideLockedForUser(slide, user, pres) : false;
   };
 
+  // The library item that holds a slide its reader may not change (D368);
+  // bound to the library-link component once it exists (below).
+  let libraryLockOf = () => null;
+
+  /**
+   * Mirror a slide's lock onto the shell: the classes that grey out the
+   * inspector, and the banner text over it. Presentation only; editing
+   * surfaces gate on {@link getSlideLockKind}.
+   * @param {string|null} slideId
+   * @param {{heldByOther?: boolean}} [opts] - another editor holds the slide
+   */
+  const applySlideLockShell = (slideId, { heldByOther = false } = {}) => {
+    const authorLocked = isSlideAuthorLockedForUser(slideId);
+    const libraryItem =
+      heldByOther || authorLocked ? null : libraryLockOf(slideId);
+    const bannerText = heldByOther
+      ? t(
+          'editor.slideLocked.banner',
+          'This slide is being edited by someone else',
+        )
+      : authorLocked
+        ? t('editor.authorLocked.banner', 'This slide is locked by the author')
+        : libraryItem
+          ? libraryItem.createdBy?.displayName
+            ? t('editor.libraryLink.banner', 'From the library · {maker}', {
+                maker: libraryItem.createdBy.displayName,
+              })
+            : t('editor.libraryLink.bannerNoMaker', 'From the library')
+          : '';
+    try {
+      shell?.classList?.toggle?.('is-slide-locked', !!bannerText);
+      shell?.classList?.toggle?.('is-author-locked-slide', authorLocked);
+      shell?.classList?.toggle?.('is-library-locked-slide', !!libraryItem);
+      if (bannerText) {
+        shell?.style?.setProperty?.(
+          '--slide-locked-banner-text',
+          `"${bannerText.replace(/["\\]/g, '\\$&')}"`,
+        );
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   // ============================================================
   // SLIDE LOCK MANAGER (for concurrent editing)
   // ============================================================
@@ -283,35 +327,9 @@ export async function createEditorController({
       } catch {
         // ignore
       }
-      // Check for author lock on current slide (in addition to concurrent lock)
-      const authorLocked = isSlideAuthorLockedForUser(selectedSlideId);
-      const isLocked = !!currentSlideIsLocked || authorLocked;
-      // Toggle slide-locked class on shell to disable editing of locked slides
-      try {
-        shell?.classList?.toggle?.('is-slide-locked', isLocked);
-        shell?.classList?.toggle?.('is-author-locked-slide', authorLocked);
-        if (currentSlideIsLocked) {
-          const bannerText = t(
-            'editor.slideLocked.banner',
-            'This slide is being edited by someone else',
-          );
-          shell?.style?.setProperty?.(
-            '--slide-locked-banner-text',
-            `"${bannerText}"`,
-          );
-        } else if (authorLocked) {
-          const bannerText = t(
-            'editor.authorLocked.banner',
-            'This slide is locked by the author',
-          );
-          shell?.style?.setProperty?.(
-            '--slide-locked-banner-text',
-            `"${bannerText}"`,
-          );
-        }
-      } catch {
-        // ignore
-      }
+      applySlideLockShell(selectedSlideId, {
+        heldByOther: !!currentSlideIsLocked,
+      });
     },
     onLockFailed: ({ slideId, lock }) => {
       const name = lock?.holder?.displayName || 'another user';
@@ -350,6 +368,7 @@ export async function createEditorController({
     if (isSlideAuthorLockedForUser(slideId)) return 'author';
     if (!liveEditsActive && slideLockManager.isLockedByOther?.(slideId))
       return 'other';
+    if (libraryLockOf(slideId)) return 'library';
     return null;
   };
 
@@ -371,24 +390,7 @@ export async function createEditorController({
     elementAnchor.set(null);
     syncSlideIdInUrl(v);
     presenceHandle?.setViewSlide?.(v);
-    // Check for author lock on the newly selected slide
-    const authorLocked = isSlideAuthorLockedForUser(v);
-    try {
-      shell?.classList?.toggle?.('is-author-locked-slide', authorLocked);
-      shell?.classList?.toggle?.('is-slide-locked', authorLocked);
-      if (authorLocked) {
-        const bannerText = t(
-          'editor.authorLocked.banner',
-          'This slide is locked by the author',
-        );
-        shell?.style?.setProperty?.(
-          '--slide-locked-banner-text',
-          `"${bannerText}"`,
-        );
-      }
-    } catch {
-      /* ignore */
-    }
+    applySlideLockShell(v);
     // Selecting takes no lock (D112): it releases one held on another slide
     // and shows whether someone else edits this one. Not in live-edit mode:
     // concurrent editing is the point, presence covers awareness.
@@ -1107,9 +1109,10 @@ export async function createEditorController({
   const previewNotesTa = notesStrip.textarea;
   cleanup.register('thumbScale', previewPanel.detachThumbScale);
 
-  // A library copy with a newer revision: the bar over the canvas and the
-  // marker on its thumbnail (B904).
-  const libraryUpdates = createLibraryUpdates({
+  // A library copy: the bar over the canvas, the marker on its thumbnail when
+  // the item has a newer revision (B904), and the lock while the item is
+  // someone else's (B905, D368).
+  const libraryLink = createLibraryLink({
     api,
     pres,
     SLIDE_TYPES,
@@ -1122,16 +1125,24 @@ export async function createEditorController({
         renderVia: { kind: 'deck', id: pres?.id },
         lang: resolveDeckLang(pres),
       }),
+    // The library lock gives way to the library's own choices.
     canEdit: () =>
-      !readOnlyController.isReadOnly() && !getSlideLockKind(selectedSlideId),
+      !readOnlyController.isReadOnly() &&
+      [null, 'library'].includes(getSlideLockKind(selectedSlideId)),
     onChange: () => {
+      applySlideLockShell(selectedSlideId);
       editorState.dirtyRefreshWithItem();
       rerenderSlideList();
     },
-    onLoaded: () => rerenderSlideList(),
+    onLoaded: () => {
+      applySlideLockShell(selectedSlideId);
+      rerenderEditor();
+      rerenderSlideList();
+    },
   });
-  preview.prepend(libraryUpdates.el);
-  cleanup.register('libraryUpdates', libraryUpdates.detach);
+  libraryLockOf = libraryLink.lockOf;
+  preview.prepend(libraryLink.el);
+  cleanup.register('libraryLink', libraryLink.detach);
 
   // ============================================================
   // COLLABORATOR PRESENCE (feature-flagged: collab)
@@ -1465,7 +1476,7 @@ export async function createEditorController({
       });
     },
     getSlideCommentCount: (slideId) => slideCommentCounts?.[slideId] || 0,
-    hasLibraryUpdate: (slideId) => libraryUpdates.hasUpdate(slideId),
+    hasLibraryUpdate: (slideId) => libraryLink.hasUpdate(slideId),
     getSlideLockInfo: (slideId) => slideLockManager.getLockInfo(slideId),
     isSlideLockedByOther: (slideId) =>
       slideLockManager.isLockedByOther(slideId),
@@ -1583,7 +1594,7 @@ export async function createEditorController({
 
   // Load initial comment counts
   commentsPanel?.loadComments?.().catch(() => {});
-  libraryUpdates.load();
+  libraryLink.load();
   commentsPanel?.startPolling?.();
 
   // ============================================================
@@ -1694,6 +1705,9 @@ export async function createEditorController({
     // its badges). The `fields` surface has no toolbar, so sharing this dep
     // is harmless there.
     slideToolbar: previewPanel.slideToolbar,
+    // The type pill offers no conversion on a slide that takes no edits.
+    canEditSlide: (slideId) =>
+      !readOnlyController.isReadOnly() && !getSlideLockKind(slideId),
   };
 
   // Fields: the content form in the canvas column (D335). A second
@@ -1768,7 +1782,7 @@ export async function createEditorController({
   rerenderEditor = () => {
     editorForm.rerender();
     fieldsView.sync();
-    libraryUpdates.sync();
+    libraryLink.sync();
     versionTextSignal.emit();
   };
   // The type pill's menu holds document-level listeners; rerender swaps
@@ -1954,22 +1968,8 @@ export async function createEditorController({
   rerenderPreview();
   if (storage.get(CANVAS_VIEW_KEY) === 'fields') setCanvasView('fields');
 
-  // Apply initial author lock state if the selected slide is locked
-  if (selectedSlideId) {
-    const authorLocked = isSlideAuthorLockedForUser(selectedSlideId);
-    if (authorLocked) {
-      shell?.classList?.add?.('is-slide-locked');
-      shell?.classList?.add?.('is-author-locked-slide');
-      const bannerText = t(
-        'editor.authorLocked.banner',
-        'This slide is locked by the author',
-      );
-      shell?.style?.setProperty?.(
-        '--slide-locked-banner-text',
-        `"${bannerText}"`,
-      );
-    }
-  }
+  // Apply the initial lock state of the selected slide
+  if (selectedSlideId) applySlideLockShell(selectedSlideId);
 
   if (shouldScrollSelectionOnLoad) {
     requestAnimationFrame(() => {

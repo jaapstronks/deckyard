@@ -4,7 +4,22 @@ Per-slide edit exclusivity for the editor when collaborative live edits are
 off (`COLLAB_LIVE_EDITS` unset, the default). With live edits on, slide locks
 are not used at all: CRDT merging replaces exclusivity and presence covers
 awareness (`collab-editor-binder.md`). Author locks (`lockedByAuthor`) are a
-separate, permanent flag and work in both modes.
+separate, permanent flag and work in both modes, and so do library locks
+(below).
+
+## Library locks
+
+A slide copied from the slide library whose item the reader may not change
+(`canEdit`, D170) is locked in the deck editor until it is unlinked (D368): the
+editor's `getSlideLockKind` answers `'library'` after `'author'` and `'other'`.
+The bar over the canvas (`client/views/editor/library-link/`) names the maker
+and offers **Unlink and edit**, which after a confirmation drops
+`slide.libraryRef` in every language version (`unlinkLibrarySlide`); the slide
+is then an ordinary one. What the lock leaves open: the speaker notes (D370),
+the translate view (a language the item lacks is the owner's to translate,
+D371), and the library's own Update and Ignore. The lock guards against a copy
+drifting from its item without anyone noticing, not against access: the
+server does not enforce it, and the deck's editors may still unlink.
 
 ## When a lock is taken
 

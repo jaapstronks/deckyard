@@ -31,7 +31,8 @@ import {
 
 /**
  * Build the type pill: a menu trigger when there is something to offer, a
- * plain label otherwise.
+ * plain label otherwise. `canConvert: false` (a locked or read-only slide)
+ * leaves out Convert and AI Convert; viewing the JSON stays.
  * @returns {{ el: HTMLElement, detach: () => void }}
  */
 export function buildTypeMenu({
@@ -46,6 +47,7 @@ export function buildTypeMenu({
   markDirty,
   rerenderPreview,
   rerenderSlideList,
+  canConvert = true,
 }) {
   const defFor = (type) => SLIDE_TYPES?.[type] || null;
   const typeLabel = (type) => {
@@ -86,9 +88,9 @@ export function buildTypeMenu({
   };
 
   // Build conversion submenu
-  const convertible = getConvertibleSlideTypes(slide, {
-    slideTypes: SLIDE_TYPES,
-  });
+  const convertible = canConvert
+    ? getConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES })
+    : [];
 
   if (convertible.length) {
     const built = createDropdown({
@@ -139,9 +141,10 @@ export function buildTypeMenu({
   // from the same typeLabel() the deterministic Convert submenu uses, so the
   // menu holds no type knowledge. Absent where AI is off (D179): the server
   // does not mount /api/ai/convert-slide there.
-  const aiConvertTargets = featureEnabled('ai')
-    ? getAiConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES })
-    : [];
+  const aiConvertTargets =
+    canConvert && featureEnabled('ai')
+      ? getAiConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES })
+      : [];
   if (aiConvertTargets.length && api) {
     const built = createDropdown({
       triggerClass: 'dropdown-item',
