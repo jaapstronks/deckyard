@@ -4,6 +4,15 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.97.1](https://github.com/jaapstronks/deckyard/compare/v1.97.0...v1.97.1) (2026-11-01)
+
+
+### Fixed
+
+* copy image URLs from source text before a generated deck is saved (DY-791) ([#1963](https://github.com/jaapstronks/deckyard/issues/1963)) ([3e3b6c7](https://github.com/jaapstronks/deckyard/commit/3e3b6c74be9da26d9b1b424b8a1a652fc1c14209))
+* exclude generated renderer store from lint (DY-790) ([#1960](https://github.com/jaapstronks/deckyard/issues/1960)) ([0abc768](https://github.com/jaapstronks/deckyard/commit/0abc7682e735860c69ba2133549e5fc2bc952e0d))
+* restore card header contrast in static exports (DY-792) ([#1962](https://github.com/jaapstronks/deckyard/issues/1962)) ([3ad25c8](https://github.com/jaapstronks/deckyard/commit/3ad25c88f4e4b014c39852a53e94d06aa9ccad3b))
+
 ## [1.97.0](https://github.com/jaapstronks/deckyard/compare/v1.96.0...v1.97.0) (2026-11-01)
 
 
