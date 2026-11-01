@@ -23,6 +23,7 @@ import { createLogger } from '../../utils/logger.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
 import {
   badRequest,
+  forbidden,
   methodNotAllowed,
   notFound,
   requireJsonBody,
@@ -55,6 +56,11 @@ async function handleApiKeyList({ storageScope, res, url, authedUser }) {
 
 // POST /api/api-keys - Create a new API key
 async function handleApiKeyCreate({ storageScope, req, res, authedUser }) {
+  // A key outlives the throwaway session it would be minted from.
+  if (authedUser.isSandboxGuest) {
+    return forbidden(res, 'API keys are off in the sandbox');
+  }
+
   // An empty body is a legitimate "create a key with the defaults".
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;

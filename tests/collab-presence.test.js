@@ -1,6 +1,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import { randomBytes } from 'node:crypto';
 import { testScope } from './helpers/storage-scope.js';
 
 // Enable the collab feature before the mount module reads it. Auth stays in
@@ -59,6 +60,65 @@ async function startCollabServer() {
   const { port } = server.address();
   return { server, url: `ws://127.0.0.1:${port}/collab` };
 }
+
+test('sandbox: refuse the transport before a cookieless upgrade can connect', async (t) => {
+  const saved = {
+    sandbox: process.env.SANDBOX_MODE,
+    secret: process.env.AUTH_SECRET,
+  };
+  process.env.SANDBOX_MODE = '1';
+  process.env.AUTH_SECRET = 'sandbox-collab-regression-secret-at-least-32';
+  t.after(() => {
+    for (const [key, value] of [
+      ['SANDBOX_MODE', saved.sandbox],
+      ['AUTH_SECRET', saved.secret],
+    ]) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const server = http.createServer((req, res) => res.end('No collab endpoint'));
+  t.after(async () => {
+    await shutdownCollab();
+    await new Promise((resolve) => server.close(resolve));
+  });
+  await assert.rejects(
+    maybeAttachCollab(server, { repoRoot: REPO_ROOT }),
+    /SANDBOX_MODE cannot be combined with COLLAB_ENABLED/,
+  );
+  assert.equal(server.listenerCount('upgrade'), 0);
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address();
+  const status = await new Promise((resolve, reject) => {
+    const request = http.request({
+      host: '127.0.0.1',
+      port,
+      path: '/collab',
+      headers: {
+        Connection: 'Upgrade',
+        Upgrade: 'websocket',
+        'Sec-WebSocket-Version': '13',
+        'Sec-WebSocket-Key': randomBytes(16).toString('base64'),
+        Origin: `http://127.0.0.1:${port}`,
+      },
+    });
+    request.on('response', (response) => {
+      response.resume();
+      resolve(response.statusCode);
+    });
+    request.on('upgrade', (response, socket) => {
+      socket.destroy();
+      resolve(response.statusCode);
+    });
+    request.on('error', reject);
+    request.end();
+  });
+  assert.equal(
+    status,
+    200,
+    'cookieless request stays HTTP, never upgrades to 101',
+  );
+});
 
 test('presence: two clients on the same deck see each other', async (t) => {
   const pres = await createPresentation(testScope(), {

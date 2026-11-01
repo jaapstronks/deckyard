@@ -8,7 +8,7 @@ import {
 } from '../storage/identity.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { sessionVersion } from '../utils/session-version.js';
-import { isMultiOrgEnabled } from '../config/features.js';
+import { isCollabEnabled, isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { envBool, envStr } from '../config/utils.js';
 import { createLogger } from '../utils/logger.js';
@@ -71,6 +71,9 @@ export function authEnabled() {
   // envBool's fallback-on-unrecognized is load-bearing here — a typo'd value
   // must leave auth on, never fail open to anonymous admin.
   const enabled = envBool('AUTH_ENABLED', true);
+  // Sandbox mode has no login: AUTH_SECRET signs its guest tokens there, and
+  // does not open the magic-link and password-reset routes on a public URL.
+  if (envBool('SANDBOX_MODE')) return false;
 
   if (enabled && !hasSecret && !warnedAuthMisconfig) {
     warnedAuthMisconfig = true;
@@ -88,7 +91,7 @@ export function authEnabled() {
 export const MIN_AUTH_SECRET_LENGTH = 32;
 
 /**
- * Guard against auth misconfiguration at startup. Two fatal cases:
+ * Guard against auth misconfiguration at startup. Four fatal cases:
  *
  * 1. **Fail-open**: authEnabled() returns false when AUTH_SECRET is missing,
  *    which makes getUserFromRequest[/Async] fall back to a hardcoded anonymous
@@ -97,9 +100,14 @@ export const MIN_AUTH_SECRET_LENGTH = 32;
  * 2. **Weak secret**: a secret shorter than MIN_AUTH_SECRET_LENGTH makes the
  *    session-signing HMAC brute-forceable, so tokens can be forged. Boot is
  *    refused below the floor unless the operator sets AUTH_ALLOW_WEAK_SECRET
- *    (an explicit, documented escape hatch) or is in sandbox/demo mode.
+ *    (an explicit, documented escape hatch) or is in demo mode.
+ * 3. **Sandbox without a strong secret**: the guest cookie is the only
+ *    credential on a public instance and AUTH_SECRET signs it, so sandbox mode
+ *    has no exemption from either rule and no escape hatch.
+ * 4. **Sandbox with collab**: the collab transport resolves ordinary sessions,
+ *    not sandbox guests, so the combination must never accept connections.
  *
- * Both are behaviour that must stop startup rather than expose an insecure
+ * These are behaviours that must stop startup rather than expose an insecure
  * instance.
  *
  * @returns {string|null} an error message when misconfigured, else null.
@@ -109,12 +117,27 @@ export const MIN_AUTH_SECRET_LENGTH = 32;
 export function authConfigError() {
   const secret = envStr('AUTH_SECRET');
 
+  if (envBool('SANDBOX_MODE')) {
+    if (isCollabEnabled()) {
+      return (
+        'SANDBOX_MODE cannot be combined with COLLAB_ENABLED: collaboration ' +
+        'does not authenticate sandbox guests. Disable COLLAB_ENABLED.'
+      );
+    }
+    if (secret.length >= MIN_AUTH_SECRET_LENGTH) return null;
+    return (
+      `SANDBOX_MODE needs an AUTH_SECRET of at least ${MIN_AUTH_SECRET_LENGTH} ` +
+      'random characters: it signs the guest cookies, and a guest cookie that ' +
+      "can be forged is another guest's session."
+    );
+  }
+
   if (!envBool('AUTH_ENABLED', true)) return null;
 
-  const isSandboxOrDemo = envBool('SANDBOX_MODE') || envBool('DEMO_MODE');
+  const isDemo = envBool('DEMO_MODE');
 
   if (!secret) {
-    if (isSandboxOrDemo) return null;
+    if (isDemo) return null;
     return (
       'AUTH_SECRET is missing while authentication is not explicitly disabled. ' +
       'Deckyard refuses to start with anonymous admin access. Set AUTH_SECRET to ' +
@@ -124,7 +147,7 @@ export function authConfigError() {
 
   if (
     secret.length < MIN_AUTH_SECRET_LENGTH &&
-    !isSandboxOrDemo &&
+    !isDemo &&
     !envBool('AUTH_ALLOW_WEAK_SECRET')
   ) {
     return (
@@ -163,8 +186,8 @@ export function devBypassProductionError() {
  * warrant tightening. Returns [] when there is nothing to warn about.
  *
  * The short-secret warning still fires here for the cases that reach boot with
- * a sub-floor secret: an explicit AUTH_ALLOW_WEAK_SECRET override, or
- * sandbox/demo mode.
+ * a sub-floor secret: an explicit AUTH_ALLOW_WEAK_SECRET override, or demo
+ * mode.
  *
  * @returns {string[]}
  */
@@ -172,7 +195,7 @@ export function authConfigWarnings() {
   const warnings = [];
   const secret = envStr('AUTH_SECRET');
   // A short secret weakens the HMAC that signs session tokens. This only
-  // reaches boot when the hard floor was overridden or in sandbox/demo.
+  // reaches boot when the hard floor was overridden or in demo mode.
   if (
     secret &&
     envBool('AUTH_ENABLED', true) &&
