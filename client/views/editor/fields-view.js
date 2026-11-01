@@ -99,7 +99,7 @@ export function createInspectorFollower({
  * @param {() => Object} [opts.getTheme] - the current theme, for the preview
  * @param {Object} [opts.renderVia] - how the preview resolves its theme;
  *   defaults to the deck (`{ kind: 'deck', id: pres.id }`)
- * @param {(slideId: string) => ('author'|'other'|null)} [opts.getSlideLockKind]
+ * @param {(slideId: string) => ('author'|'other'|'library'|null)} [opts.getSlideLockKind]
  *   - the editor's state-driven lock seam; a locked slide's form is inert
  * @param {(formMount: HTMLElement, hooks: { surface: string,
  *   refreshPreview: Function, onRendered: Function }) => Function}
@@ -294,12 +294,17 @@ export function createFieldsView({
     lockedNote.textContent =
       lockKind === 'author'
         ? t('editor.authorLocked.banner', 'This slide is locked by the author')
-        : lockKind
+        : lockKind === 'library'
           ? t(
-              'editor.slideLocked.banner',
-              'This slide is being edited by someone else',
+              'editor.libraryLink.fieldsLocked',
+              'Linked to the library: unlink it above to edit.',
             )
-          : '';
+          : lockKind
+            ? t(
+                'editor.slideLocked.banner',
+                'This slide is being edited by someone else',
+              )
+            : '';
     rerenderForm();
     refreshPreview();
   }

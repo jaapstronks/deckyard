@@ -64,6 +64,9 @@ export function createRerenderEditor({
   // Mount point in the canvas header for the slide-scoped toolbar
   // ({ leftEl }); absent on surfaces without a toolbar mount and in tests.
   slideToolbar,
+  // (slideId) => whether the slide takes edits (lock seam, read-only); the
+  // type pill hides its conversions when not. Absent means editable.
+  canEditSlide,
   // Which surface this form renders on: a name from the declared table in
   // editor-form/surfaces.js ('inspector' | 'bulk' | 'library'). Every part of
   // the form that is not on every surface reads one capability from that row;
@@ -232,6 +235,7 @@ export function createRerenderEditor({
             markDirty,
             rerenderPreview,
             rerenderSlideList,
+            canConvert: canEditSlide?.(slide.id) !== false,
           });
           typeMenuDetach = typeMenu.detach;
           tbLeft.append(typeMenu.el);

@@ -33,11 +33,13 @@ import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { createLogger } from '../../utils/logger.js';
-import { matchesIdentity } from '../../../shared/identity-match.js';
+import {
+  canEditLibraryItem,
+  canEditOrganizationItem,
+} from '../../utils/library-item-authz.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { notifyLibraryItemRevision } from '../../services/library-revision-notifications.js';
 import { parseIfMatchRevision } from './presentations/helpers.js';
-import { sharingEnabled } from '../../config/sandbox.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { isLibrarySlideType } from '../../../shared/slide-types/policy.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
@@ -61,24 +63,6 @@ const log = createLogger('slide-library');
  */
 function mutationError(res, result) {
   return storageError(res, result, result.message);
-}
-
-/**
- * The one predicate for "may this user change this shared item" (D170): its
- * name, description or content, trashing it, and deleting it. An admin, or the
- * creator by `users.id` (T10 PR F2) — the creator keeps the right across a
- * rename, and an item whose creator column is a defined NULL belongs to nobody
- * but an admin. The lists expose it as `canEdit`, so the client derives nothing.
- *
- * @param {object|null} authedUser
- * @param {object} item - A mapped library item
- * @returns {boolean}
- */
-function canEditOrganizationItem(authedUser, item) {
-  // The organization shelf is read-only where sharing is off (D181), for everyone.
-  if (!sharingEnabled()) return false;
-  if (authedUser?.isAdmin) return true;
-  return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
 }
 
 /**
@@ -226,19 +210,6 @@ async function stampLibraryItems(storageScope, items, { canEdit, email }) {
   }));
 }
 
-/**
- * The reader's verdict on an item of a shelf: the personal shelf holds only
- * the caller's own items; the organization shelf follows the one guard.
- * @param {'personal'|'organization'} shelf
- * @param {object|null} authedUser
- * @returns {(item: object) => boolean}
- */
-function canEditOn(shelf, authedUser) {
-  return shelf === 'personal'
-    ? () => true
-    : (item) => canEditOrganizationItem(authedUser, item);
-}
-
 // GET /api/slide-library/{personal|organization} - One page of a shelf, or of
 // its trash (`view=trash`), on the list-page contract (D358, B822):
 // `{ items, nextCursor }`. Filters (`theme`, `type`, `tag`, `lang`, `q`) are
@@ -258,7 +229,7 @@ function shelfList(shelf) {
     );
     serveJson(res, 200, {
       items: await stampLibraryItems(storageScope, items, {
-        canEdit: canEditOn(shelf, authedUser),
+        canEdit: (item) => canEditLibraryItem(authedUser, item),
         email,
       }),
       nextCursor,
@@ -298,7 +269,7 @@ function shelfItem(shelf) {
     );
     if (!item) return notFound(res);
     const [stamped] = await stampLibraryItems(storageScope, [item], {
-      canEdit: canEditOn(shelf, authedUser),
+      canEdit: (item) => canEditLibraryItem(authedUser, item),
       email,
     });
     serveJson(res, 200, stamped);

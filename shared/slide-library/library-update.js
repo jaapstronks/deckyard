@@ -1,6 +1,7 @@
 /**
  * Taking in, or setting aside, a newer revision of a library item on the deck
- * slides that copy it (B904, D223, D370, D371).
+ * slides that copy it, or letting go of the item (B904, B905, D223, D368,
+ * D370, D371).
  *
  * A linked slide (`slide.libraryRef`, ./library-ref.js) is still a copy. When
  * the item has a newer revision, the deck's editor chooses:
@@ -15,8 +16,10 @@
  *   nothing is retranslated.
  * - **Ignore** ({@link ignoreLibraryRevision}): the ref remembers the revision,
  *   so the notice comes back only for a later one.
+ * - **Unlink** ({@link unlinkLibrarySlide}): the ref goes, and the slide is an
+ *   ordinary one: editable, and deaf to the item's revisions (D368).
  *
- * Both work on the deck as the editor holds it: the active version in
+ * All three work on the deck as the editor holds it: the active version in
  * `pres.slides`, the others in `pres.i18n.versions[lang].slides`. Pure apart
  * from mutating the deck they are handed.
  */
@@ -205,6 +208,24 @@ export function ignoreLibraryRevision(pres, slideId, revision) {
     const ref = normalizeLibraryRef(slide?.libraryRef);
     if (!ref || !isNewerLibraryRevision(ref, revision)) continue;
     slide.libraryRef = { ...ref, ignoredRevision: revision };
+    done = true;
+  }
+  return done;
+}
+
+/**
+ * Let one deck slide go of its library item, in every language version: the
+ * ref goes, the content stays as it is (D368).
+ * @param {object} pres - the deck as the editor holds it, mutated
+ * @param {string} slideId
+ * @returns {boolean} whether the slide was linked
+ */
+export function unlinkLibrarySlide(pres, slideId) {
+  let done = false;
+  for (const v of deckVersions(pres)) {
+    const slide = v.slides.find((s) => s?.id === slideId);
+    if (!slide || !Object.hasOwn(slide, 'libraryRef')) continue;
+    delete slide.libraryRef;
     done = true;
   }
   return done;

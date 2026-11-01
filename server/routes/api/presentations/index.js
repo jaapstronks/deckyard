@@ -16,7 +16,7 @@ import {
   handlePresentationRevision,
 } from './presentation.js';
 import { handlePresentationDuplicate } from './duplicate.js';
-import { handlePresentationLibraryUpdates } from './library-updates.js';
+import { handlePresentationLibraryLinks } from './library-links.js';
 import { handlePresentationDescriptionGenerate } from './description.js';
 import { handlePresentationTranslateFields } from './translate-fields.js';
 import { handlePresentationTranslateMissing } from './translate-missing.js';
@@ -421,12 +421,12 @@ export const ROUTES = [
   },
 
   // ============================================================
-  // LIBRARY UPDATES (newer revisions of linked library slides, B904)
+  // LIBRARY LINKS (the items linked slides copy: revisions and lock, B904/B905)
   // ============================================================
   {
-    pattern: /^\/api\/presentations\/([^/]+)\/library-updates$/,
+    pattern: /^\/api\/presentations\/([^/]+)\/library-links$/,
     captures: ['uuid'],
-    handler: handlePresentationLibraryUpdates,
+    handler: handlePresentationLibraryLinks,
   },
 
   // ============================================================
