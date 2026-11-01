@@ -35,6 +35,7 @@ import {
 } from '../lib/config.js';
 import { computePromptVersion } from '../lib/prompt-version.js';
 import { judgeDeck, meanScore } from '../eval/judge.js';
+import { judgeListKinship } from '../eval/judge-lists.js';
 import {
   deckMetrics,
   numberFidelity,
@@ -245,6 +246,7 @@ async function main() {
         : null;
 
       let verdict = null;
+      let listKinship = null;
       if (!options.dryRun) {
         const judged = await judgeDeck({
           testCase,
@@ -260,6 +262,15 @@ async function main() {
         verdict = judged.verdict;
         console.log(
           `    judge: ${meanScore(verdict.scores).toFixed(2)}/5${judged.cached ? ' (cached)' : ''}`,
+        );
+        const kinship = await judgeListKinship({
+          deck,
+          onUsage: (usage) => cost.record('judge', usage, MODEL),
+          refresh: options.refresh,
+        });
+        listKinship = kinship.result;
+        console.log(
+          `    lists of one kind: ${listKinship.judged - listKinship.mixed}/${listKinship.total}${kinship.cached ? ' (cached)' : ''}`,
         );
       }
       if (specialTypes.expected) {
@@ -292,6 +303,7 @@ async function main() {
         numberFidelity: fidelity,
         specialTypes,
         lists,
+        listKinship,
         referenceComparison,
         verdict,
         meanScore: verdict ? meanScore(verdict.scores) : null,
