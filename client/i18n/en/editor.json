@@ -620,6 +620,7 @@
   "editor.layoutVariant.twoColumn": "Text in two columns",
   "editor.libraryLink.banner": "From the library · {maker}",
   "editor.libraryLink.bannerNoMaker": "From the library",
+  "editor.libraryLink.comment": "Comment for the maker",
   "editor.libraryLink.fieldsLocked": "Linked to the library: unlink it above to edit.",
   "editor.libraryLink.locked": "From the library · {maker}. Changes come from the library; unlink to edit this slide here.",
   "editor.libraryLink.lockedNoMaker": "From the library. Changes come from the library; unlink to edit this slide here.",

@@ -39,6 +39,11 @@ import {
 } from '../../utils/library-item-authz.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { notifyLibraryItemRevision } from '../../services/library-revision-notifications.js';
+import {
+  deleteLibraryItemMessage,
+  listLibraryItemThread,
+  postLibraryItemMessage,
+} from '../../services/library-item-comments.js';
 import { parseIfMatchRevision } from './presentations/helpers.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { isLibrarySlideType } from '../../../shared/slide-types/policy.js';
@@ -499,6 +504,42 @@ function itemTagsPut(shelf) {
   };
 }
 
+// GET /api/slide-library/organization/:id/comments - The item's thread
+// (B906, D369), oldest first; 404 for an item the reader may not see.
+async function handleThreadList({ storageScope, res, authedUser }, id) {
+  const items = await listLibraryItemThread(storageScope, authedUser, id);
+  serveJson(res, 200, { items });
+  return true;
+}
+
+// POST /api/slide-library/organization/:id/comments - Write in the thread;
+// the maker and earlier writers are notified.
+async function handleThreadPost({ storageScope, req, res, authedUser }, id) {
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const message = await postLibraryItemMessage(storageScope, authedUser, {
+    itemId: id,
+    body: parsed.body?.body,
+  });
+  serveJson(res, 201, message);
+  return true;
+}
+
+// DELETE /api/slide-library/organization/:id/comments/:messageId - The
+// message's author or an admin.
+async function handleThreadDelete(
+  { storageScope, res, authedUser },
+  id,
+  messageId,
+) {
+  await deleteLibraryItemMessage(storageScope, authedUser, {
+    itemId: id,
+    messageId,
+  });
+  serveJson(res, 200, { ok: true });
+  return true;
+}
+
 /**
  * Declarative route table for `/api/slide-library*` (A7.19 C8). Order matches
  * the previous if-chain; each path group sent an explicit 405, preserved as
@@ -652,6 +693,34 @@ export const ROUTES = [
     pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
     captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/comments$/,
+    captures: ['uuid'],
+    handler: handleThreadList,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/comments$/,
+    captures: ['uuid'],
+    handler: handleThreadPost,
+  },
+  {
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/comments$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/comments\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
+    handler: handleThreadDelete,
+  },
+  {
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/comments\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['DELETE']),
   },
 ];
 

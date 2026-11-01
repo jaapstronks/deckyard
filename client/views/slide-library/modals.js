@@ -20,6 +20,7 @@ import { openEditModal } from './edit-modal.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 import { h } from '../../lib/dom/index.js';
 import { canEditLibraryItem, refuseEdit } from './permissions.js';
+import { createLibraryItemThread } from './item-thread.js';
 
 /**
  * Create modal functions for the slide library
@@ -61,6 +62,7 @@ export function createSlideLibraryModals({
       onClose: () => {
         window.removeEventListener('resize', updateScale);
         tagEditor.detach?.();
+        thread?.detach();
         onSlideClose?.();
       },
     });
@@ -232,6 +234,17 @@ export function createSlideLibraryModals({
     tagsField.append(tagsLabel, tagEditor.el);
 
     metaSection.append(descField, tagsField, metaFailure.el);
+
+    // A shared item has a thread with its maker (B906, D369); a personal
+    // item has one reader and no thread.
+    const thread =
+      shelf === 'organization'
+        ? createLibraryItemThread({ api, item: it })
+        : null;
+    if (thread) {
+      metaSection.append(thread.el);
+      thread.load();
+    }
 
     modal.append(stage, metaSection);
     modal.show(document.body);

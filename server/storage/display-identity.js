@@ -139,6 +139,29 @@ export function toStoredActorIdentity(email, name, lookup = NO_DISPLAY_NAMES) {
 }
 
 /**
+ * The author of a written message (a deck comment, a library-thread
+ * message): a key in `id`, a name to render. A resolved profile name wins;
+ * without one, the name stored at write time is used when it is a name and
+ * not an address; only then is a name derived from the address.
+ *
+ * @param {string|null} [id] - The author's `users.id`, when the row has one.
+ * @param {string|null} [email] - The stored author address.
+ * @param {string|null} [name] - The name stored at write time.
+ * @param {DisplayNameLookup} [lookup] - See {@link toDisplayIdentity}.
+ * @returns {DisplayIdentity|null} See {@link toDisplayIdentity}.
+ */
+export function toAuthorIdentity(id, email, name, lookup = NO_DISPLAY_NAMES) {
+  const identity = toDisplayIdentity(id, email, lookup);
+  if (!identity) return null;
+  const profileName = lookup.forId(id) || lookup.forEmail(email);
+  const stored = String(name || '').trim();
+  if (!profileName && stored && !stored.includes('@')) {
+    identity.displayName = stored;
+  }
+  return identity;
+}
+
+/**
  * How long a resolved (or missing) display name stays good in-process.
  * See the module header for why staleness is the cheaper error here.
  */

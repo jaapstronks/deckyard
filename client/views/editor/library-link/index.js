@@ -5,7 +5,9 @@
  * - **Locked** (D368): an item the reader may not change (`canEdit`, D170)
  *   keeps its copies as they are. The bar names the maker and offers one way
  *   out, **Unlink and edit**: after a confirmation the slide lets go of the
- *   item and is an ordinary slide. The lock itself is the editor's
+ *   item and is an ordinary slide. Next to it, **Comment** opens the item's
+ *   thread with its maker (B906, D369), for a mistake that every deck with
+ *   the slide should lose. The lock itself is the editor's
  *   `getSlideLockKind` seam ('library'), read through {@link lockOf}.
  * - **Newer revision** (B904): the slide's thumbnail is marked and the bar
  *   offers **View** (this deck's slide beside the newest version), **Update**
@@ -37,6 +39,7 @@ import {
   unlinkLibrarySlide,
 } from '../../../../shared/slide-library/library-update.js';
 import { openLibraryCompare } from './compare-modal.js';
+import { openLibraryItemThread } from '../../slide-library/index.js';
 
 /**
  * @param {Object} opts
@@ -101,10 +104,18 @@ export function createLibraryLink({
     text: t('editor.libraryLink.unlink', 'Unlink and edit'),
     onclick: () => unlink(),
   });
+  // Not disabled with the deck's write state: a comment changes the
+  // thread, not this deck.
+  const commentBtn = h('button', {
+    type: 'button',
+    class: 'btn btn-secondary btn-sm',
+    text: t('editor.libraryLink.comment', 'Comment for the maker'),
+    onclick: () => comment(),
+  });
   const lockRow = h('div', { class: 'library-link-bar-row' }, [
     icon('library', { className: 'library-link-bar-icon' }),
     lockText,
-    h('div', { class: 'library-link-bar-actions' }, [unlinkBtn]),
+    h('div', { class: 'library-link-bar-actions' }, [commentBtn, unlinkBtn]),
   ]);
 
   const message = h('p', { class: 'library-link-bar-text' });
@@ -234,6 +245,11 @@ export function createLibraryLink({
     if (!ok || detached) return;
     if (!unlinkLibrarySlide(pres, slide.id)) return;
     onChange();
+  }
+
+  function comment() {
+    const item = lockingItem(slideById(getSelectedSlideId?.()));
+    if (item) openLibraryItemThread({ api, item });
   }
 
   function view() {

@@ -102,6 +102,26 @@ const log = createLogger('comments');
 export const MAX_COMMENT_LENGTH = 5000;
 
 /**
+ * The body a new comment stores: trimmed, non-empty, at most
+ * {@link MAX_COMMENT_LENGTH} characters. Deck comments and the library-item
+ * thread (B906) read it the same way.
+ *
+ * @param {*} body
+ * @returns {string}
+ * @throws {ValidationError}
+ */
+export function commentText(body) {
+  const text = typeof body === 'string' ? body.trim() : '';
+  if (!text) throw new ValidationError('Comment body is required');
+  if (text.length > MAX_COMMENT_LENGTH) {
+    throw new ValidationError(
+      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
+    );
+  }
+  return text;
+}
+
+/**
  * @typedef {import('./actor.js').ServiceIdentity} ServiceIdentity
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
  */
@@ -180,13 +200,7 @@ export async function createComment(
   });
   const author = authorOf(identity);
 
-  const text = typeof body === 'string' ? body.trim() : '';
-  if (!text) throw new ValidationError('Comment body is required');
-  if (text.length > MAX_COMMENT_LENGTH) {
-    throw new ValidationError(
-      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
-    );
-  }
+  const text = commentText(body);
 
   const slideSnapshot = snapshotOfSlide(pres, slideId);
   const parentComment = await threadRoot(scope, pres.id, parentId);
