@@ -393,6 +393,19 @@ export async function generateDeck(
 }
 
 /**
+ * What a caller without an editor has to know about a generated deck: every
+ * slide's `_aiWarnings`, with the slide's position in the deck.
+ *
+ * @param {{ slides?: Array<{ _aiWarnings?: string[] }> }} deck
+ * @returns {Array<{ index: number, message: string }>}
+ */
+export function generatedDeckWarnings(deck) {
+  return (deck.slides || []).flatMap((slide, index) =>
+    (slide._aiWarnings || []).map((message) => ({ index, message })),
+  );
+}
+
+/**
  * Normalize a generated deck into presentation parts, review metadata kept.
  *
  * `deckToPresentationParts` composes every slide afresh and drops the keys

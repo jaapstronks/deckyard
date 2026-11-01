@@ -60,7 +60,13 @@ import {
   inviteCollaborators,
   listCollaboratorsForActor,
 } from '../services/collaborators.js';
-import { generateDeck, generatedDeckToParts } from '../utils/ai/index.js';
+import {
+  generateDeck,
+  generatedDeckToParts,
+  generatedDeckWarnings,
+} from '../utils/ai/index.js';
+import { offerTextSourceImages } from '../utils/ai/text-source-images.js';
+import { callMay } from './authorization.js';
 import {
   validateAndFixRefinedSlides,
   validateRefinedSlidesStrict,
@@ -470,7 +476,7 @@ export function registerTools(
         content: {
           type: 'string',
           description:
-            'Source text to generate presentation from (meeting notes, article, bullet points, etc.)',
+            'Source text to generate presentation from (meeting notes, article, bullet points, etc.). Image URLs in it are offered to the generation and a chosen image is copied into the media library, when uploads are on and the key also has the write permission. No image URL is stored as such; see `warnings` in the result for any image that was dropped.',
         },
         title: {
           type: 'string',
@@ -526,7 +532,12 @@ export function registerTools(
       const slideTypes = await sessionSlideTypes(context);
       // The one generation pipeline the wizard runs too (B756); a caller that
       // hangs up cancels it (`context.signal`, HTTP transport only).
-      const deck = await generateDeck(content, {
+      // Copying an image a text names is an upload, which `ai` alone never
+      // grants: without `write` nothing is fetched (DY-791).
+      const { text, sourceImages } = offerTextSourceImages(content, {
+        mayUpload: callMay(context, 'write'),
+      });
+      const deck = await generateDeck(text, {
         userName: speaker,
         targetLang: lang || null,
         theme,
@@ -534,6 +545,7 @@ export function registerTools(
         themeContext,
         vendor: vendor || null,
         slideTypes,
+        sourceImages,
         ...(await sessionSlideTypeOffer(context)),
         signal: context?.signal || null,
       });
@@ -575,6 +587,7 @@ export function registerTools(
       if (presentUrl) result.presentUrl = presentUrl;
       const reviewUrl = reviewUrlFor(created.id);
       if (reviewUrl) result.reviewUrl = reviewUrl;
+      result.warnings = generatedDeckWarnings(deck);
       return result;
     },
     { permission: 'ai', feature: 'ai' },

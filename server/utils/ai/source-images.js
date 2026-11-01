@@ -27,6 +27,9 @@
 /** What phase 2 writes in an image field to use a source image. */
 const SOURCE_IMAGE_REF = /^\s*source-image:(\d+)\s*$/;
 
+/** An absolute or protocol-relative URL: bytes that live somewhere else. */
+const REMOTE_URL = /^\s*(?:[a-z][a-z0-9+.-]*:)?\/\//i;
+
 /**
  * The description of an image as the model reads it: caption, page, size.
  * @param {Omit<SourceImage, 'upload'>} img
@@ -66,8 +69,9 @@ export function uploadOnce(upload) {
  *
  * Only the images a slide references are uploaded, each once. A reference
  * to an image the source does not have, or one whose upload fails, leaves
- * the field empty and says so in the slide's `_aiWarnings`. Mutates the
- * slides.
+ * the field empty and says so in the slide's `_aiWarnings`. So does a remote
+ * URL the model wrote itself: what comes out of here holds no image that was
+ * not copied. Mutates the slides.
  *
  * @param {Array<{ type?: string, content?: object, _aiWarnings?: string[] }>} slides
  * @param {SourceImage[]} [sourceImages]
@@ -119,6 +123,11 @@ export async function resolveSourceImages(
       if (field.type === 'image' && typeof value === 'string') {
         if (SOURCE_IMAGE_REF.test(value)) {
           content[field.key] = await resolve(value, warnings);
+        } else if (REMOTE_URL.test(value)) {
+          warnings.push(
+            'The generated slide named a remote image that was not copied; the image field was left empty.',
+          );
+          content[field.key] = '';
         }
       } else if (field.type === 'items' && Array.isArray(value)) {
         for (const item of value) {

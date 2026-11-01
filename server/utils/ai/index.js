@@ -6,6 +6,8 @@
  *   pipeline (outline → revise → refine → validate → assemble), B756
  * - generatedDeckToParts: the deck normalized for storage, review metadata
  *   kept (B757)
+ * - generatedDeckWarnings: its per-slide warnings, for a caller without an
+ *   editor (DY-791)
  * - SLIDE_TYPE_CATALOG: For reference
  */
 
@@ -14,6 +16,7 @@ export {
   generateSlides,
   assembleDeck,
   generatedDeckToParts,
+  generatedDeckWarnings,
 } from './generate-deck.js';
 
 export { generateSessionId, createSessionLogger } from './logging.js';
