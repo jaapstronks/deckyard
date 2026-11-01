@@ -2551,6 +2551,25 @@ components:
           type: object
           description: Per-context visibility flags for the slide (empty object = visible everywhere).
           additionalProperties: true
+        libraryRef:
+          type: object
+          description: >-
+            Where a slide inserted from the slide library came from: the item
+            and the item revision its content is a copy of. A newer item
+            revision is reported to the deck owner, never written into the
+            deck. Optional; a malformed value is dropped on write, and the
+            portable deck format never carries it.
+          required: [itemId, revision]
+          properties:
+            itemId:
+              type: string
+              format: uuid
+            revision:
+              type: integer
+              minimum: 0
+            ignoredRevision:
+              type: integer
+              description: The newest item revision the owner chose to ignore.
 
     Comment:
       type: object

@@ -26,13 +26,14 @@ import {
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../shared/i18n-utils.js';
+import { libraryRefForItem } from '../../../shared/slide-library/library-ref.js';
 import { contentLang, hasContentForLang } from './search.js';
 
 /**
  * Build the `slides[]` payload from library items, preserving per-language
- * content where the item has it.
- * @param {Array<Object>} items - Selected library items ({ slideType, content, i18n }).
- * @returns {Array<{type: string, content: Object, contentByLang?: Object}>}
+ * content where the item has it and the item's provenance (`libraryRef`).
+ * @param {Array<Object>} items - Selected library items ({ id, revision, slideType, content, i18n }).
+ * @returns {Array<{type: string, content: Object, contentByLang?: Object, libraryRef?: Object}>}
  */
 export function buildSlidesFromLibraryItems(items) {
   const list = Array.isArray(items) ? items : [];
@@ -52,6 +53,9 @@ export function buildSlidesFromLibraryItems(items) {
         : TRANSLATION_LANGS.map((l) => contentByLang[l]).find(Boolean) || {};
     const slide = { type: item?.slideType, content: flat };
     if (Object.keys(contentByLang).length) slide.contentByLang = contentByLang;
+    // The copy remembers its item and revision (B904, D223).
+    const libraryRef = libraryRefForItem(item);
+    if (libraryRef) slide.libraryRef = libraryRef;
     return slide;
   });
 }

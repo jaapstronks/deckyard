@@ -128,7 +128,9 @@ plus four optional slide keys whose meaning does not depend on the type:
 Portable slides carry **no `id`** — ids are a storage concern and are
 (re)generated on import. A reader must not depend on slide identity across a
 round-trip. For the same reason slide nesting (`parentId`, a reference to
-another slide's id) does not travel.
+another slide's id) does not travel. Nor does a slide's library provenance
+(`libraryRef`): it names a slide-library item on the instance that holds it,
+so an imported slide is an ordinary, unlinked slide.
 
 An **in-deck jump** (a `url`-typed field, at slide level or inside an `items`
 field, that points at another slide) therefore travels in its positional form

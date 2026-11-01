@@ -22,6 +22,7 @@ import {
   liveInviteSlideType,
 } from '../../../shared/slide-types/live-session.js';
 import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
+import { libraryRefForItem } from '../../../shared/slide-library/library-ref.js';
 import {
   followInvitePlacements,
   insertSlideAfter,
@@ -421,6 +422,10 @@ export function createSlidesPanel({
       presentationId: pres?.id || '',
       newId,
     });
+    // Still a copy, but one that remembers its item and revision, so a newer
+    // revision can be reported on this slide (B904, D223).
+    const libraryRef = libraryRefForItem(item);
+    if (libraryRef) s.libraryRef = libraryRef;
     recordLibraryUsage(item);
 
     // Same suggestion as the type picker: a library copy of an interactive

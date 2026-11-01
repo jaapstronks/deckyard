@@ -2303,7 +2303,7 @@
       "callers": ["server/routes/api/notifications.js:126"]
     },
     {
-      "key": "server/storage/notifications.js :: refreshDeckActivityNotification",
+      "key": "server/storage/notifications.js :: refreshCoalescedNotification",
       "line": 420,
       "params": ["scope", "notificationId", "userEmail", "updates"],
       "exception": null,
