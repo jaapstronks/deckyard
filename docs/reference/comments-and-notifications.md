@@ -163,6 +163,40 @@ hears about it; the deck itself never changes until its owner updates it.
   translation-source record per field, so the translate view reports it as
   changed. Ignore sets `libraryRef.ignoredRevision`.
 
+## The thread on a library item
+
+The other direction: someone who uses a colleague's library slide and sees a
+mistake reaches its maker through a comment thread on the item, so every deck
+with a copy can be fixed at the source.
+
+- **Store**: `slide_library_comments` (migration 107), one flat thread per
+  organization-shelf item, oldest first
+  (`server/storage/slide-library-comments.js`). A table of its own, not a
+  target on `presentation_comments`: deck comments are anchored, carry a
+  status, take share-link guests and authorize every path against the deck;
+  a library thread has none of that and authorizes against the item.
+  Deleting the item deletes its thread.
+- **Who** (`server/services/library-item-comments.js`): whoever may read the
+  item reads and writes the thread, which is every member of the organization
+  for an organization-shelf item. A personal item has no thread, and an item
+  in another organization or a missing one answers 404. Writing also needs
+  sharing on (off in the sandbox, D181) and an item outside the trash (409).
+  A message is deleted by its author (`users.id`) or an admin; each message
+  carries the verdict as `canDelete`.
+- **Routes**: `GET`/`POST /api/slide-library/organization/:id/comments`,
+  `DELETE …/comments/:messageId`. The body is a comment body (trimmed,
+  non-empty, at most 5000 characters, `commentText` in
+  `server/services/comments.js`); no mentions, status or replies.
+- **Notifications**: `library_comment`, in-app, to the maker (the current
+  address of `created_by_user_id`, else `created_by`) and everyone who wrote
+  in the thread before; never the writer. One row per message, no bundling.
+  Clicking opens the item in the library (`/app/slide-library/organization/<id>`);
+  `data` carries `{ itemId, itemName, messageId }`.
+- **In the client** (`client/views/slide-library/item-thread.js`): under the
+  description and tags in the library lightbox, and in a modal from the
+  editor's library bar on a locked slide ("Comment for the maker", next to
+  Unlink and edit).
+
 ## The comment composer
 
 All four composers (editor main + reply, share-viewer main + reply) are the

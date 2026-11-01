@@ -887,3 +887,46 @@
   max-width: 100%;
   white-space: normal;
 }
+
+/* The thread on a shared item (B906, D369): under the description and tags
+   in the lightbox, and on its own in the editor's modal. Messages reuse the
+   comment item styles of the comments feature. */
+.ps-lib-thread-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.ps-lib-thread-list:empty {
+  display: none;
+}
+
+.ps-lib-thread .comment-item-header {
+  align-items: center;
+}
+
+.ps-lib-thread-delete {
+  margin-left: auto;
+}
+
+.ps-lib-thread-composer {
+  gap: var(--ps-space-2);
+}
+
+.ps-lib-thread-composer .btn {
+  white-space: nowrap;
+}
+
+.ps-lib-thread-input {
+  width: 100%;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  font-size: var(--ps-text-sm);
+}
+
+.modal.ps-lib-thread-modal {
+  width: min(96vw, 560px);
+}

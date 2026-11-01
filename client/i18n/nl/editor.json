@@ -620,6 +620,7 @@
   "editor.layoutVariant.twoColumn": "Tekst in twee kolommen",
   "editor.libraryLink.banner": "Uit de bibliotheek · {maker}",
   "editor.libraryLink.bannerNoMaker": "Uit de bibliotheek",
+  "editor.libraryLink.comment": "Reageren bij de maker",
   "editor.libraryLink.fieldsLocked": "Gekoppeld aan de bibliotheek: ontkoppel hierboven om te bewerken.",
   "editor.libraryLink.locked": "Uit de bibliotheek · {maker}. Wijzigingen komen uit de bibliotheek; ontkoppel om deze slide hier te bewerken.",
   "editor.libraryLink.lockedNoMaker": "Uit de bibliotheek. Wijzigingen komen uit de bibliotheek; ontkoppel om deze slide hier te bewerken.",

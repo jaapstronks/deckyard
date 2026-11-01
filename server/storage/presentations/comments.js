@@ -17,7 +17,7 @@ import { isAiAuthorEmail } from '../../../shared/constants/ai.js';
 import {
   NO_DISPLAY_NAMES,
   resolveDisplayNames,
-  toDisplayIdentity,
+  toAuthorIdentity,
   toStoredActorIdentity,
 } from '../display-identity.js';
 import { keysetPage, keysetRows } from '../keyset.js';
@@ -896,19 +896,12 @@ export async function getCommentCountsBySlide(scope, presentationId) {
  * @returns {import('../display-identity.js').DisplayIdentity|null}
  */
 function commentAuthor(row, lookup) {
-  const identity = toDisplayIdentity(
+  return toAuthorIdentity(
     row.author_user_id,
     row.author_email,
+    row.author_name,
     lookup,
   );
-  if (!identity) return null;
-  const profileName =
-    lookup.forId(row.author_user_id) || lookup.forEmail(row.author_email);
-  const stored = String(row.author_name || '').trim();
-  if (!profileName && stored && !stored.includes('@')) {
-    identity.displayName = stored;
-  }
-  return identity;
 }
 
 /**

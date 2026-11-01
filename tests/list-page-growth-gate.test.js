@@ -61,6 +61,10 @@ const BOUNDED = {
   'share-links/guests.js :: listGuestsForShareLink': "one link's guests",
   'slide-library-links.js :: listDecksBehindLibraryItem':
     "a fan-out job's input: the decks holding one item, read whole to notify each",
+  'slide-library-comments.js :: listLibraryThread':
+    "one item's thread with its maker: a short conversation, read whole",
+  'slide-library-comments.js :: listLibraryThreadRecipients':
+    "a fan-out job's input: the maker and the writers of one item's thread",
   'slide-library-usage.js :: listSlideLibraryUsage':
     "one reader's usage marks, bounded by the library",
   'tags.js :: listTags': "the organization's tag vocabulary",

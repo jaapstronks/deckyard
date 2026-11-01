@@ -247,6 +247,24 @@ test('slide-library: routes resolve to their named handlers in order', () => {
     '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/tags',
     'handleItemTagsPut',
   );
+  named(
+    SL_ROUTES,
+    'GET',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/comments',
+    'handleThreadList',
+  );
+  named(
+    SL_ROUTES,
+    'POST',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/comments',
+    'handleThreadPost',
+  );
+  named(
+    SL_ROUTES,
+    'DELETE',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/comments/00000000-0000-4000-8000-0000000000d2',
+    'handleThreadDelete',
+  );
 });
 
 test('slide-library: a wrong method 405s with the pinned Allow list', async () => {
@@ -268,6 +286,11 @@ test('slide-library: a wrong method 405s with the pinned Allow list', async () =
       'GET, PATCH, DELETE',
     ],
     ['POST', '/api/slide-library/organization/facets', 'GET'],
+    [
+      'PUT',
+      '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/comments',
+      'GET, POST',
+    ],
     [
       'POST',
       '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1/tags',
