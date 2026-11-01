@@ -4,6 +4,27 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.97.0](https://github.com/jaapstronks/deckyard/compare/v1.96.0...v1.97.0) (2026-11-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* sandbox requires a random AUTH_SECRET of at least 32 characters installed before upgrading. Old unsigned guest cookies are invalid and their ephemeral decks become inaccessible. Disable COLLAB_ENABLED in sandbox mode.
+
+### Fixed
+
+* omit contrast source bookkeeping from sealed editions ([#1958](https://github.com/jaapstronks/deckyard/issues/1958)) ([b9aedff](https://github.com/jaapstronks/deckyard/commit/b9aedff22ab06af7ad260b140a0332d8f56bd0ef))
+
+
+### Security
+
+* sign sandbox guests and refuse sandbox collaboration ([#1957](https://github.com/jaapstronks/deckyard/issues/1957)) ([3d84e2a](https://github.com/jaapstronks/deckyard/commit/3d84e2a264deb4ebcf69973c3197d261e62c28e7))
+
+
+### Changed
+
+* apply beta minor policy to sandbox security release ([56e8125](https://github.com/jaapstronks/deckyard/commit/56e8125c3e3b1058773c57858a89d85047495b78))
+
 ## [1.96.0](https://github.com/jaapstronks/deckyard/compare/v1.95.0...v1.96.0) (2026-11-01)
 
 
