@@ -119,22 +119,25 @@ export function summarizeSizes(sizes, limit = EDITION_REQUEST_LIMIT) {
   };
 }
 
-/** Byte size from the configured provider or the installation's static trees. */
+/**
+ * Byte size in the order the sealer reads it: the installation's static trees
+ * first, then the configured provider's bucket key (DY-785).
+ */
 async function diskAssetBytes(ref) {
-  const media = editionMediaProvider();
-  const key = media && editionUploadKey(ref);
-  if (key) {
+  const resolved = resolveServedAssetPath(REPO_ROOT, ref);
+  if (resolved) {
     try {
-      const result = await media.confirmUpload(key);
-      return result.exists ? (result.size ?? null) : null;
-    } catch {
-      return null;
+      return (await stat(resolved.path)).size;
+    } catch (err) {
+      if (!['ENOENT', 'ENOTDIR'].includes(err?.code)) return null;
     }
   }
-  const resolved = resolveServedAssetPath(REPO_ROOT, ref);
-  if (!resolved) return null;
+  const media = editionMediaProvider();
+  const key = media && editionUploadKey(ref);
+  if (!key) return null;
   try {
-    return (await stat(resolved.path)).size;
+    const result = await media.confirmUpload(key);
+    return result.exists ? (result.size ?? null) : null;
   } catch {
     return null;
   }

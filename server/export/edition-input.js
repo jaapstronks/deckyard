@@ -219,6 +219,40 @@ function remoteLoadsIn(text) {
   return found;
 }
 
+/** A served file that is simply not there, as opposed to one that failed. */
+const MISSING_ON_DISK = new Set(['ENOENT', 'ENOTDIR']);
+
+/**
+ * Read one ref's bytes in the order the live page resolves it: the served
+ * tree first (the `/uploads/` mount still serves the disk on S3
+ * installations, DY-785), and only when the disk has no such file the
+ * provider's bucket key.
+ *
+ * @returns {Promise<{buf: Buffer, file: string}|null>} null when this
+ *   installation cannot read it
+ */
+async function readServedRef(repoRoot, ref, media) {
+  const resolved = resolveServedAssetPath(repoRoot, ref);
+  if (resolved) {
+    try {
+      return { buf: await readFile(resolved.path), file: resolved.path };
+    } catch (err) {
+      if (!MISSING_ON_DISK.has(err?.code)) return null;
+    }
+  }
+  const key = media ? editionUploadKey(ref) : null;
+  if (!key) return null;
+  try {
+    const buf = await media.readFile(key, {
+      maxBytes: 20 * 1024 * 1024,
+      timeoutMs: 8000,
+    });
+    return buf ? { buf, file: key } : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Read one local or provider-owned ref into a data URL, through the same image
  * transform the live published page applies, so an edition carries what readers
@@ -227,25 +261,10 @@ function remoteLoadsIn(text) {
  * @returns {Promise<string|null>} null when this installation cannot read it
  */
 async function inlineServedRef(repoRoot, ref, transform, media) {
-  const key = media ? editionUploadKey(ref) : null;
-  const resolved = key ? null : resolveServedAssetPath(repoRoot, ref);
-  if (!key && !resolved) return null;
-  let buf;
-  try {
-    buf = key
-      ? await media.readFile(key, {
-          maxBytes: 20 * 1024 * 1024,
-          timeoutMs: 8000,
-        })
-      : await readFile(resolved.path);
-  } catch {
-    return null;
-  }
-  if (!buf) return null;
-  const ext = path
-    .extname(key || resolved.path)
-    .slice(1)
-    .toLowerCase();
+  const read = await readServedRef(repoRoot, ref, media);
+  if (!read) return null;
+  let { buf } = read;
+  const ext = path.extname(read.file).slice(1).toLowerCase();
   let mime = mimeFromExt(ext);
   if (transform && mime.startsWith('image/')) {
     const out = await transform(buf, ext, mime, ref);
