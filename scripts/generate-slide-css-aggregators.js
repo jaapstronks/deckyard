@@ -351,6 +351,7 @@ export const APP_FEATURE_LAYER = {
     'editor/109-layout-switcher.css',
     'editor/110-fields-view.css',
     'editor/111-translate-view.css',
+    'editor/112-library-updates.css',
     'shell/110-sandbox-banner.css',
     'list/110-sandbox-examples.css',
     'shell/111-maintenance-banner.css',

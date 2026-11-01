@@ -50,6 +50,7 @@ import { createEditorTopbar } from './topbar/index.js';
 import { setTopbarTitleText } from './topbar/title-button.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createCanvasTabs } from './canvas-tabs.js';
+import { createLibraryUpdates } from './library-updates/index.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveRefusal } from './editor-form/save-refusal.js';
 import { createElementAnchor } from './editor-form/element-anchor.js';
@@ -1106,6 +1107,32 @@ export async function createEditorController({
   const previewNotesTa = notesStrip.textarea;
   cleanup.register('thumbScale', previewPanel.detachThumbScale);
 
+  // A library copy with a newer revision: the bar over the canvas and the
+  // marker on its thumbnail (B904).
+  const libraryUpdates = createLibraryUpdates({
+    api,
+    pres,
+    SLIDE_TYPES,
+    getSelectedSlideId: () => selectedSlideId,
+    renderSlide: (s) =>
+      renderSlideElement(s, {
+        mode: 'thumb',
+        theme,
+        presentationId: pres?.id,
+        renderVia: { kind: 'deck', id: pres?.id },
+        lang: resolveDeckLang(pres),
+      }),
+    canEdit: () =>
+      !readOnlyController.isReadOnly() && !getSlideLockKind(selectedSlideId),
+    onChange: () => {
+      editorState.dirtyRefreshWithItem();
+      rerenderSlideList();
+    },
+    onLoaded: () => rerenderSlideList(),
+  });
+  preview.prepend(libraryUpdates.el);
+  cleanup.register('libraryUpdates', libraryUpdates.detach);
+
   // ============================================================
   // COLLABORATOR PRESENCE (feature-flagged: collab)
   // ============================================================
@@ -1438,6 +1465,7 @@ export async function createEditorController({
       });
     },
     getSlideCommentCount: (slideId) => slideCommentCounts?.[slideId] || 0,
+    hasLibraryUpdate: (slideId) => libraryUpdates.hasUpdate(slideId),
     getSlideLockInfo: (slideId) => slideLockManager.getLockInfo(slideId),
     isSlideLockedByOther: (slideId) =>
       slideLockManager.isLockedByOther(slideId),
@@ -1555,6 +1583,7 @@ export async function createEditorController({
 
   // Load initial comment counts
   commentsPanel?.loadComments?.().catch(() => {});
+  libraryUpdates.load();
   commentsPanel?.startPolling?.();
 
   // ============================================================
@@ -1739,6 +1768,7 @@ export async function createEditorController({
   rerenderEditor = () => {
     editorForm.rerender();
     fieldsView.sync();
+    libraryUpdates.sync();
     versionTextSignal.emit();
   };
   // The type pill's menu holds document-level listeners; rerender swaps
