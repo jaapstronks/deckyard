@@ -113,6 +113,16 @@ pgDescribe('library item thread (real PostgreSQL)', () => {
         })),
       )
       .execute();
+    await db
+      .insertInto('user_organizations')
+      .values(
+        [MAKER, MEMBER, OTHER, ADMIN].map((p) => ({
+          user_id: p.id,
+          organization_id: orgId,
+          role: 'member',
+        })),
+      )
+      .execute();
     const created = await createOrganizationLibraryItem(
       scope,
       { name: 'Team', slideType: 'content-slide', content: { title: 'Team' } },
@@ -180,6 +190,34 @@ pgDescribe('library item thread (real PostgreSQL)', () => {
     await settle();
     assert.equal((await notices(db, 'maker.new@example.com')).length, 1);
     assert.deepEqual(await notices(db, MAKER.email), []);
+  });
+
+  it('earlier writers follow their current address, never a reassigned old address', async () => {
+    await post(MEMBER, item, 'First');
+    await settle();
+    await db
+      .updateTable('users')
+      .set({ email: 'member.new@example.com' })
+      .where('id', '=', MEMBER.id)
+      .execute();
+    await post(OTHER, item, 'Reply');
+    await settle();
+    assert.equal((await notices(db, 'member.new@example.com')).length, 1);
+    assert.equal((await notices(db, MEMBER.email)).length, 0);
+  });
+
+  it('former members receive no new notification, including the maker', async () => {
+    await post(MEMBER, item, 'First');
+    await settle();
+    await db.deleteFrom('user_notifications').execute();
+    await db
+      .deleteFrom('user_organizations')
+      .where('user_id', 'in', [MAKER.id, MEMBER.id])
+      .execute();
+    await post(OTHER, item, 'Private reply');
+    await settle();
+    assert.deepEqual(await notices(db, MAKER.email), []);
+    assert.deepEqual(await notices(db, MEMBER.email), []);
   });
 
   it("someone else's personal item has no thread for the reader", async () => {

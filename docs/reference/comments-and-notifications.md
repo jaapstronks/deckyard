@@ -187,9 +187,7 @@ with a copy can be fixed at the source.
   `DELETE …/comments/:messageId`. The body is a comment body (trimmed,
   non-empty, at most 5000 characters, `commentText` in
   `server/services/comments.js`); no mentions, status or replies.
-- **Notifications**: `library_comment`, in-app, to the maker (the current
-  address of `created_by_user_id`, else `created_by`) and everyone who wrote
-  in the thread before; never the writer. One row per message, no bundling.
+- **Notifications**: `library_comment`, in-app, to the maker and earlier writers, resolved by stable user id to their current address and restricted to current organization members; never the writer. Deleted users and former members receive nothing. One row per message, no bundling.
   Clicking opens the item in the library (`/app/slide-library/organization/<id>`);
   `data` carries `{ itemId, itemName, messageId }`.
 - **In the client** (`client/views/slide-library/item-thread.js`): under the

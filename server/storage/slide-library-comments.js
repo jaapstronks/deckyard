@@ -142,9 +142,8 @@ export async function deleteLibraryThreadMessage(scope, itemId, messageId) {
 }
 
 /**
- * Who hears about a new message on an item: its maker (the current address
- * of `created_by_user_id`, else the stored `created_by`) and everyone who
- * wrote in the thread before. Normalized and unique; the caller drops the
+ * Who hears about a new message on an item: its maker and earlier writers, resolved by user id to current addresses
+ * and restricted to current organization members. Normalized and unique; the caller drops the
  * actor.
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} itemId
@@ -155,25 +154,38 @@ export async function listLibraryThreadRecipients(scope, itemId) {
   if (!isUuid(itemId)) return [];
   const orgId = getOrgId(ctx);
   const db = getDb();
+  // Recipient identity follows the stable user key, never a historic address.
+  // Membership is required even for the maker: former members cannot read it.
   const maker = await db
-    .selectFrom('slide_library as l')
-    .leftJoin('users as u', 'u.id', 'l.created_by_user_id')
-    .select(['u.email as user_email', 'l.created_by'])
-    .where('l.organization_id', '=', orgId)
-    .where('l.id', '=', itemId)
+    .selectFrom('slide_library')
+    .select('created_by_user_id')
+    .where('organization_id', '=', orgId)
+    .where('id', '=', itemId)
     .executeTakeFirst();
   const writers = await db
     .selectFrom('slide_library_comments')
-    .select('author_email')
+    .select('author_user_id')
     .distinct()
     .where('organization_id', '=', orgId)
     .where('item_id', '=', itemId)
     .execute();
-  const emails = [
-    maker?.user_email || maker?.created_by,
-    ...writers.map((w) => w.author_email),
-  ]
-    .map((email) => normalizeEmail(email))
-    .filter(Boolean);
-  return [...new Set(emails)];
+  const ids = [
+    ...new Set(
+      [
+        maker?.created_by_user_id,
+        ...writers.map((w) => w.author_user_id),
+      ].filter(Boolean),
+    ),
+  ];
+  if (!ids.length) return [];
+  const members = await db
+    .selectFrom('users as u')
+    .innerJoin('user_organizations as m', 'm.user_id', 'u.id')
+    .select('u.email')
+    .where('m.organization_id', '=', orgId)
+    .where('u.id', 'in', ids)
+    .execute();
+  return [
+    ...new Set(members.map((u) => normalizeEmail(u.email)).filter(Boolean)),
+  ];
 }
