@@ -1,0 +1,90 @@
+/* Library updates (`views/editor/library-updates/`, B904): the bar over the
+   canvas when the selected slide's library item has a newer revision, the
+   marker on its thumbnail, and the side-by-side comparison. */
+
+.library-update-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-2) var(--ps-space-3);
+  margin: var(--ps-space-3) var(--ps-space-3) 0;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-text-primary));
+}
+
+.library-update-bar[hidden] {
+  display: none;
+}
+
+.library-update-bar-icon {
+  flex: none;
+  color: hsl(var(--app-accent-text));
+}
+
+.library-update-bar-text {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ps-text-sm);
+}
+
+/* The three actions stay whole: the group wraps under the text when the row
+   is too narrow, and a button wraps to the next line before any label is
+   cut (ui-action-layout gate). */
+.library-update-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+}
+
+.library-update-bar-actions .btn {
+  white-space: nowrap;
+  min-height: 44px;
+}
+
+@media (pointer: fine) {
+  .library-update-bar-actions .btn {
+    min-height: 0;
+  }
+}
+
+.slide-library-update-indicator {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+  pointer-events: none;
+}
+
+.modal.library-compare-modal {
+  width: min(96vw, 1100px);
+}
+
+.library-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--ps-space-4);
+  margin-bottom: var(--ps-space-4);
+}
+
+.library-compare-pane {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.library-compare-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
