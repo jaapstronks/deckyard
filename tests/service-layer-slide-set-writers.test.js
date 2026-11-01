@@ -310,6 +310,7 @@ test('the answers describe the stored deck', async (t) => {
     appended: 1,
     insertedAt: 3,
     totalSlides: 4,
+    warnings: [],
     newSlides: [{ type: 'content-slide', title: 'Vier' }],
     // The review the appended slides carry opens from here (B590).
     reviewUrl: `https://deck.example/app/${DECK_ID}?aiReview=1`,

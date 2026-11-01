@@ -81,6 +81,7 @@ import {
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
+import { resolveSourceImages } from '../utils/ai/source-images.js';
 import { attachBatchReviews } from '../utils/ai/slide-review.js';
 import {
   REVIEW_NOTE_MAX_LENGTH,
@@ -1293,7 +1294,8 @@ export function registerTools(
         presentationId: { type: 'string', description: 'Presentation ID' },
         content: {
           type: 'string',
-          description: 'New content to generate slides from',
+          description:
+            'New content to generate slides from. Image URLs in it are offered to the generation and a chosen image is copied into the media library, when uploads are on and the key also has the write permission. No image URL is stored as such; see `warnings` in the result for any image that was dropped, where `index` is the position in `newSlides`.',
         },
         vendor: {
           type: 'string',
@@ -1311,19 +1313,25 @@ export function registerTools(
       const existingDeck = presentationToDeck(pres);
 
       const slideTypeOffer = await sessionSlideTypeOffer(context);
+      // Copying an image a text names is an upload, which `ai` alone never
+      // grants: without `write` nothing is fetched (DY-793).
+      const { text, sourceImages } = offerTextSourceImages(content, {
+        mayUpload: callMay(context, 'write'),
+      });
       const { slides: newSlides } = await generateSlidesToAppendFromRawContent(
-        content,
+        text,
         {
           existingDeck,
           targetLang: lang,
           contentOnly: true,
           vendor: vendor || null,
           ...slideTypeOffer,
+          sourceImages,
         },
       );
 
       if (!newSlides?.length)
-        return { appended: 0, totalSlides: pres.slides.length };
+        return { appended: 0, totalSlides: pres.slides.length, warnings: [] };
 
       // The model answers in the portable deck format: compose its slides the
       // way the editor's append route does (factory defaults, ids, the deck's
@@ -1343,6 +1351,10 @@ export function registerTools(
       const slidesToInsert = validateAndFixRefinedSlides(parts.slides || [], {
         slideTypes,
         theme,
+      });
+      await resolveSourceImages(slidesToInsert, sourceImages, {
+        signal: context?.signal || null,
+        slideTypes,
       });
       // The same review the editor's "add slides" gets (B590): the author
       // opens it from the deck afterwards.
@@ -1385,6 +1397,7 @@ export function registerTools(
       };
       const reviewUrl = reviewUrlFor(presentationId);
       if (reviewUrl) result.reviewUrl = reviewUrl;
+      result.warnings = generatedDeckWarnings({ slides: slidesToInsert });
       return result;
     },
     { permission: 'ai', feature: 'ai' },
