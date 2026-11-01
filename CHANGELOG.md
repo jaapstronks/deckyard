@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.97.3](https://github.com/jaapstronks/deckyard/compare/v1.97.2...v1.97.3) (2026-11-01)
+
+
+### Fixed
+
+* fit the complete export dialog in the capture viewport (DY-795) ([#1966](https://github.com/jaapstronks/deckyard/issues/1966)) ([1801a2b](https://github.com/jaapstronks/deckyard/commit/1801a2b64f3d6b87c6eb2fbeb251559dfe5ec0f9))
+
 ## [1.97.2](https://github.com/jaapstronks/deckyard/compare/v1.97.1...v1.97.2) (2026-11-01)
 
 
