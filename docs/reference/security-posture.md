@@ -52,7 +52,7 @@ access), so a `file://` reference in slide content will not load regardless.
 
 **Where:** `server/utils/ssrf-guard.js`; applied on the export/render path via the
 `embedRemote` option of `server/utils/html-utils.js`, from
-`server/export/pdf-slides.js`, and over the theme-vars block in
+`server/export/pdf-slides.js`, over the theme-vars block in
 `server/export/css-bundle.js`, and directly in `server/export/bulk-export.js`.
 
 A slide can carry a user-controlled image URL. On export/render the server (or
