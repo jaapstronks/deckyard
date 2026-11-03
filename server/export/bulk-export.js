@@ -19,6 +19,7 @@ import {
 import { listThemes } from '../storage/themes.js';
 import { collectServedAssetRefs } from '../../shared/slide-types/deck-assets.js';
 import { resolveServedAssetPath } from '../utils/served-asset-path.js';
+import { safeFetchRemoteImage } from '../utils/ssrf-guard.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
@@ -95,43 +96,6 @@ function deriveExtension(url, contentType) {
   }
 
   return '.bin';
-}
-
-/**
- * Download a single image with timeout.
- * The timeout covers the entire request including body transfer,
- * so large images on slow connections are not left hanging.
- * @param {string} url - Image URL
- * @param {number} timeout - Timeout in ms
- * @returns {Promise<{buffer: Buffer, contentType: string}|null>}
- */
-async function downloadImage(url, timeout = 30000) {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeout);
-
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Deckyard-Bulk-Export/1.0' },
-    });
-
-    if (!response.ok) {
-      clearTimeout(timer);
-      return null;
-    }
-
-    // Keep the abort timer active during body transfer — a server that
-    // sends headers quickly but stalls on the body should still time out.
-    const arrayBuffer = await response.arrayBuffer();
-    clearTimeout(timer);
-
-    return {
-      buffer: Buffer.from(arrayBuffer),
-      contentType: response.headers.get('content-type') || '',
-    };
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -414,7 +378,9 @@ export async function buildBulkExport(opts) {
     remoteUrls.map(async (url) => {
       const release = await acquire();
       try {
-        const result = await downloadImage(url);
+        const result = await safeFetchRemoteImage(url, {
+          headers: { 'User-Agent': 'Deckyard-Bulk-Export/1.0' },
+        });
         if (result) {
           const hash = crypto
             .createHash('sha256')
