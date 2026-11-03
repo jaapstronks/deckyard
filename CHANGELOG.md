@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.97.4](https://github.com/jaapstronks/deckyard/compare/v1.97.3...v1.97.4) (2026-11-03)
+
+
+### Fixed
+
+* cancel long tasks when their view is torn down ([#1971](https://github.com/jaapstronks/deckyard/issues/1971)) ([141d421](https://github.com/jaapstronks/deckyard/commit/141d42109bcbddd1914e266c866bbf85a299f100))
+* write mixed opening summaries as connected prose (DY-801) ([#1969](https://github.com/jaapstronks/deckyard/issues/1969)) ([d2e83bb](https://github.com/jaapstronks/deckyard/commit/d2e83bbd8e320e36f039a35ca582111dc1866cd4))
+
+
+### Security
+
+* guard bulk export image downloads against SSRF ([#1973](https://github.com/jaapstronks/deckyard/issues/1973)) ([1e156f6](https://github.com/jaapstronks/deckyard/commit/1e156f68366d8bbd93bbd7ed3d47dbb29922f2b4))
+
 ## [1.97.3](https://github.com/jaapstronks/deckyard/compare/v1.97.2...v1.97.3) (2026-11-01)
 
 
