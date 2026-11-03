@@ -443,3 +443,11 @@ Next experiment: slide allocation, iterated at the outline stage only
 **Change.** `eval/judge-lists.js` asks the pinned judge model one question per deck: are the items of each list of one kind? The source stays out of the prompt. A list the judge skips counts as not judged, never as alike. It is reported apart from the rubric, so earlier scores stay comparable.
 
 **Not changed.** The generation prompts. Those move only when this judge points at the same fault on more than one source.
+
+## DY-801: opening summaries use connected prose
+
+**Motivated by** DY-800 run `2026-11-01_22-25-02`: an opening mixes background, change and scope as if they were peers. The fresh baseline `2026-11-03_14-48-31` repeats the same four probes three times; branch run `2026-11-03_14-49-03` changes prompt `8b6ed25f8901` to `4193425011a6`.
+
+**Change.** The outline distinguishes a mixed opening summary from a source list, refinement may override a list hint and write connected prose without bullets, and the list-slide catalogue points this opening to a prose body. Homogeneous source lists remain lists.
+
+**Result.** Flagged mixed openings 2/12 → 1/12, declared list fidelity 3/6 → 3/6. Process-timeline improves 1/3 → 0/3; list-homogeneity remains 1/3. Total mixed lists rise 3/36 → 4/35; no claim of overall list-quality improvement or complete resolution. [Comparison and manual checks](runs/2026-11-03_14-49-03/opening-comparison.md). Both full reports and history entries are retained; no confidential source used.
