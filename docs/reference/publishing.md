@@ -139,11 +139,11 @@ The Export dialog points here from its HTML row (the offline twin of the publish
 
 ## Implementation status
 
-As of 2026-10-31 (T1.5):
+As of 2026-11-03 (T1.5, B901):
 
 - **One publish concept, one service, two surfaces with the same refusals.** Sandbox, authorization, gates, idempotency and webhook are in `publish-edition.js`; the routes only parse and answer.
 - **Old links resolve to their first edition** after the conversion; there is no path that renders a deck's HEAD publicly any more.
-- **Published pages are not tracked by the analytics cluster.** An edition's HTML is frozen and carries no tracking script; counting edition views is open work. The `published` source type stays for the history it holds.
+- **Published editions count anonymous completed GET visits.** Successful canvas, reader and embed documents write a completed visit for the source deck, with `source_type` `published` or `embed` and `source_id` `publicationId/version`. No cookie, device id, viewer email, IP address, user agent, attribution, slide journey or reading duration is collected; reloads count again. Subresources, manifests, packages and unsuccessful reads do not count. Installation, instance and deck analytics switches apply; a missing, deleted or cross-organization source deck prevents counting. Frozen HTML carries no tracking script or visitor identifier. See [`analytics.md`](analytics.md) and [`analytics-privacy.md`](analytics-privacy.md).
 - **The edition embed is the frozen plain canvas.** The unused live player and host-page SDK have been removed; player options and postMessage controls are not part of the edition embed contract.
 - **`published_presentations` is still in the schema** until every installation has converted; a later migration drops it.
 - **Unpublishing is silent.** No webhook, no activity event, no notification — while publishing fires a webhook.
