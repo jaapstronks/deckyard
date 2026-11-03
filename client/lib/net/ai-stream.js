@@ -23,9 +23,11 @@ import { t } from '../ui-i18n.js';
  * @param {Function} options.onMessages - Callback when all status messages are available
  * @param {Function} options.onComplete - Callback when complete ({ presentation, sessionId })
  * @param {Function} options.onError - Callback on error ({ error })
+ * @param {AbortSignal} [options.signal] - Cancels client processing.
  * @returns {Promise<Object>} The created presentation
  */
 export async function generatePresentationStreaming({
+  signal,
   raw,
   lang,
   theme,
@@ -57,6 +59,7 @@ export async function generatePresentationStreaming({
     // api()'s parse-the-whole-body contract cannot express.
     // eslint-disable-next-line no-restricted-syntax
     const response = await fetch(url, {
+      signal,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -72,20 +75,25 @@ export async function generatePresentationStreaming({
 
     let result = null;
 
-    await processSSEStream(response.body, {
-      onStatus: (data) => onStatus(data),
-      onMessages: (data) => onMessages(data),
-      onComplete: (data) => {
-        result = data;
-        onComplete(data);
+    await processSSEStream(
+      response.body,
+      {
+        onStatus: (data) => onStatus(data),
+        onMessages: (data) => onMessages(data),
+        onComplete: (data) => {
+          result = data;
+          onComplete(data);
+        },
+        onError: (data) => {
+          onError(data);
+          throw new Error(
+            data.message || t('ai.generationFailed', 'Generation failed'),
+          );
+        },
       },
-      onError: (data) => {
-        onError(data);
-        throw new Error(
-          data.message || t('ai.generationFailed', 'Generation failed'),
-        );
-      },
-    });
+      { signal },
+    );
+    signal?.throwIfAborted();
 
     if (!result) {
       throw new Error(
@@ -95,6 +103,7 @@ export async function generatePresentationStreaming({
 
     return result.presentation;
   } catch (e) {
+    signal?.throwIfAborted();
     onError({ error: e.message });
     throw e;
   }

@@ -128,5 +128,7 @@
 
 /* Cancel: present only for a task that can be stopped (`onCancel`) */
 .loading-modal-cancel {
+  min-height: 44px;
+  min-width: 44px;
   margin-top: var(--ps-space-2);
 }

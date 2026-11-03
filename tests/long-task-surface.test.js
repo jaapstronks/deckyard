@@ -147,3 +147,109 @@ test('closing a finished task is not a cancel', () => {
   modal.cancel();
   assert.equal(cancelled, 0);
 });
+
+const { closeAllOverlays } = await import('../client/lib/dom/modal.js');
+const { openAnalyzeModal } =
+  await import('../client/views/editor/modals/analyze-modal.js');
+
+test('view teardown cancels loading once, even after its DOM was detached', async () => {
+  document.body.replaceChildren();
+  let cancelled = 0;
+  const modal = showLoadingModal({
+    root: document.body,
+    initialMessage: 'Original',
+    onCancel: () => cancelled++,
+  });
+  modal.update('Queued');
+  modal.creepTo(90);
+  modal.el.remove();
+  closeAllOverlays();
+  const markup = modal.el.innerHTML;
+  modal.update('Late', { immediate: true });
+  modal.setTitle('Late title');
+  modal.setProgress(100);
+  modal.creepTo(99);
+  await new Promise((resolve) => setTimeout(resolve, 550));
+  closeAllOverlays();
+  modal.cancel();
+  modal.close();
+  assert.equal(cancelled, 1);
+  assert.equal(
+    modal.el.querySelector('[role="dialog"]').getAttribute('aria-busy'),
+    'false',
+  );
+  assert.equal(
+    modal.el.innerHTML,
+    markup,
+    'closed DOM must never change again',
+  );
+});
+
+test('analysis ignores completion arriving after editor teardown', async () => {
+  document.body.replaceChildren();
+  const originalFetch = globalThis.fetch;
+  let resolveFetch;
+  let signal;
+  let completed = 0;
+  globalThis.fetch = (_url, options) => {
+    signal = options.signal;
+    return new Promise((resolve) => {
+      resolveFetch = resolve;
+    });
+  };
+  try {
+    const result = openAnalyzeModal({
+      root: document.body,
+      id: 'test',
+      onComplete: () => completed++,
+    });
+    [...document.querySelectorAll('button')]
+      .find((button) => button.textContent === 'Analyze')
+      .click();
+    closeAllOverlays();
+    resolveFetch(
+      new Response(
+        'event: complete\ndata: {"suggestionCount":1}\n\nevent: error\ndata: {"message":"late"}\n\n',
+      ),
+    );
+    await result;
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    assert.equal(signal.aborted, true);
+    assert.equal(completed, 0);
+    assert.equal(document.querySelector('.loading-modal-backdrop'), null);
+  } finally {
+    globalThis.fetch = originalFetch;
+    closeAllOverlays();
+  }
+});
+
+test('successful analysis reports completion once and keeps the result until Close', async (t) => {
+  document.body.replaceChildren();
+  let signal;
+  let completed = 0;
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    signal = options.signal;
+    return new Response('event: complete\ndata: {"suggestionCount":1}\n\n');
+  });
+  const result = openAnalyzeModal({
+    root: document.body,
+    id: 'test',
+    onComplete: () => completed++,
+  });
+  [...document.querySelectorAll('button')]
+    .find((b) => b.textContent === 'Analyze')
+    .click();
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  assert.equal(completed, 1);
+  assert.equal(document.querySelector('.loading-modal-backdrop'), null);
+  assert.match(
+    document.querySelector('.analyze-status').textContent,
+    /1 suggestion/,
+  );
+  [...document.querySelectorAll('button')]
+    .find((b) => b.textContent === 'Close')
+    .click();
+  await result;
+  closeAllOverlays();
+  assert.equal(signal.aborted, false);
+});

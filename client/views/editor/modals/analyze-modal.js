@@ -128,10 +128,12 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
         throw new Error(`Analysis failed: ${response.status}`);
       }
 
-      await processSSEStream(response.body, eventHandlers(progress));
+      await processSSEStream(response.body, eventHandlers(progress), {
+        signal: controller.signal,
+      });
     } catch (error) {
       // Cancel aborts the fetch: the dialog is already closing, so stay silent.
-      if (error?.name === 'AbortError') return;
+      if (controller.signal.aborted || error?.name === 'AbortError') return;
       console.error('[analyze] Error:', error);
       showResult(
         t('editor.analyzeModal.error', 'Analysis failed: {message}', {

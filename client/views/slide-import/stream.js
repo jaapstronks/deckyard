@@ -99,30 +99,35 @@ export async function importDeckFiles({
     }
 
     let result = null;
-    await processSSEStream(response.body, {
-      onProgress: (data) => {
-        modal.setProgress(progressOf(data));
-        if (data.message) modal.update(data.message, { immediate: true });
+    await processSSEStream(
+      response.body,
+      {
+        onProgress: (data) => {
+          modal.setProgress(progressOf(data));
+          if (data.message) modal.update(data.message, { immediate: true });
+        },
+        onError: (data) => {
+          throw Object.assign(
+            new Error(
+              data?.message || t('editor.import.failed', 'Import failed'),
+            ),
+            { body: data },
+          );
+        },
+        onComplete: (data) => {
+          result = data;
+        },
       },
-      onError: (data) => {
-        throw Object.assign(
-          new Error(
-            data?.message || t('editor.import.failed', 'Import failed'),
-          ),
-          { body: data },
-        );
-      },
-      onComplete: (data) => {
-        result = data;
-      },
-    });
+      { signal: controller.signal },
+    );
+    controller.signal.throwIfAborted();
     if (!result) throw new Error(t('editor.import.failed', 'Import failed'));
 
     modal.setProgress(100);
     return result;
   } catch (err) {
-    // Cancel aborted the request: the user knows, and the server stopped.
-    if (err?.name === 'AbortError') return null;
+    // Explicit cancel and view teardown both abandon client processing.
+    if (controller.signal.aborted || err?.name === 'AbortError') return null;
     throw err;
   } finally {
     modal.close();
