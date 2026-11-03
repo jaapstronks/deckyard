@@ -2,15 +2,7 @@
 
 ## Purpose & scope
 
-Deckyard records **view analytics** (who looked at a deck, for how long, and
-which slides) for the deck's owner. The viewers being measured are mostly
-**anonymous**: someone opening a share link or a live follow session has no
-account. This document states what analytics stores per viewer, how a viewer
-erases those rows, how long they are kept, and why an anonymous viewer is
-identified by a possessed session token rather than a bare device id. It also
-maps the separate access records made by share-link verification and revoked-link
-notifications, so the analytics controls are not mistaken for controls over
-those records.
+Deckyard records **view analytics** for the deck's owner. Share links and live follow sessions can record browser sessions, their duration and slide visits, with the viewer rules below. Published editions instead count successful canvas, reader and embed GETs as anonymous completed visits, without viewer identity or reading-duration measurement. This document states what each path stores, how viewer-linked rows can be erased, how long records are kept, and why the browser-tracked anonymous viewer proves possession of a session token rather than a bare device id. It also maps the separate access records made by share-link verification and revoked-link notifications, so the analytics controls are not mistaken for controls over those records.
 
 It describes the analytics-privacy seams as they stand after the
 analytics-privacy work. The tenant-isolation rules it leans on live in
@@ -97,28 +89,24 @@ A share link can admit named guests: the author pre-registers an e-mail address,
 
 ## What is recorded, per viewer type
 
-A `view_sessions` row plus its `slide_views` children. The **identity** on the
-row differs by how the viewer arrived:
+### Published edition GET counts
+
+`recordEditionVisit()` in `server/services/edition-analytics.js` writes one anonymous completed `view_sessions` row after a successful canvas, reader or embed GET. The row names the source deck and `publicationId/version`, with source type `published` or `embed`; it has equal start/end timestamps and zero duration. No cookie, device id, viewer email, IP address, user agent, attribution or slide journey is recorded. The storage layer creates a session token internally but never returns it to the visitor or injects it into the frozen response bytes. Reloads count again; these are document GET counts, not unique viewers or reading time. Subresources, manifests, packages and unsuccessful reads do not count.
+
+The installation, instance and deck analytics switches apply; a missing, deleted or cross-organization source deck prevents counting. Signed-in visitors receive the same anonymous count: no account lookup occurs, so a per-user tracking preference cannot select these rows. The configured session retention deletes them normally. They have no visitor identifier that an email- or possessed-token erase request could resolve, so neither visitor erase route selects edition counts.
+
+### Browser sessions on share links and live follow
+
+Browser tracking writes a `view_sessions` row plus its `slide_views` children. The **identity** on that row differs by how the viewer arrived:
 
 | Viewer                                                                               | Identity on the row                                                                                               | How they erase                                                              |
 | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | **Logged-in** (a Deckyard account, e.g. a guest who verified their email to comment) | `viewer_email`                                                                                                    | `DELETE /api/analytics/my-data`, authenticated — see below                  |
 | **Anonymous** (share link or follow, no account)                                     | `device_id` — a random 32-hex value the _browser_ generates and keeps in `localStorage` (`ps.analytics.deviceId`) | `POST /api/track/my-data/erase`, proving possession of a live session token |
 
-The **live follow session records only the first of those two rows**: the
-audience view (`client/views/follow/index.js`) probes `/api/auth/me` before it
-starts a tracker and, for a viewer with an account, starts none at all. The
-audience of an internal deck is colleagues, and their attention is not the
-presenter's to measure — a signed-in follower is therefore absent from the
-deck's analytics rather than present under `viewer_email`. Share links, embeds
-and published pages do not make that distinction. Pinned by
-`tests/follow-audience-smoke.test.js`.
+The **live follow session records only the first of those two rows**: the audience view (`client/views/follow/index.js`) probes `/api/auth/me` before it starts a tracker and, for a viewer with an account, starts none at all. The audience of an internal deck is colleagues, and their attention is not the presenter's to measure - a signed-in follower is therefore absent from the deck's analytics rather than present under `viewer_email`. Share-link browser tracking does not make that distinction. Published edition and embed GET counts follow the separate anonymous contract above. Pinned by `tests/follow-audience-smoke.test.js`.
 
-Also stored: `ip_address` (anonymized on a schedule, below), a truncated
-`user_agent`, timings, and the slides visited. There is **no** cross-organization
-identity: a view session inherits its organization from the presentation it belongs
-to and carries no copy of it (tenant-isolation rule R2); the old
-viewer-claimed organization column was dropped (migration 065).
+For browser sessions, also stored: `ip_address` (anonymized on a schedule, below), a truncated `user_agent`, timings, and the slides visited. There is **no** cross-organization identity: a view session inherits its organization from the presentation it belongs to and carries no copy of it (tenant-isolation rule R2); the old viewer-claimed organization column was dropped (migration 065).
 
 ## The per-deck device label
 

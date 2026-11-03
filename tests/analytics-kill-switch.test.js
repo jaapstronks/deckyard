@@ -25,7 +25,7 @@
 import { createMockStreamRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'analytics-killswitch']
   .join('-')
@@ -104,6 +104,43 @@ test('published editions: no route injects a tracking script (T1.5)', () => {
   ]) {
     const src = readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
     assert.doesNotMatch(src, /tracking-script|generateTrackingScriptHtml/, rel);
+  }
+});
+
+test('published editions: the obsolete browser tracker stays removed', () => {
+  assert.equal(
+    existsSync(
+      new URL('../server/analytics/tracking-script.js', import.meta.url),
+    ),
+    false,
+    'edition visits are counted server-side, without a parallel browser tracker',
+  );
+});
+
+test('edition references describe server-side visits without the obsolete tracker claims', () => {
+  for (const rel of [
+    'docs/reference/analytics.md',
+    'docs/reference/analytics-privacy.md',
+    'docs/reference/publishing.md',
+    'docs/reference/no-third-party-origins.md',
+  ]) {
+    const src = readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(
+      src,
+      /tracking-script\.js|generateTrackingScriptHtml/,
+      rel,
+    );
+    assert.doesNotMatch(
+      src,
+      /counting edition views is open work|Published pages are not tracked by the analytics cluster|This head lands on the app shell, on every published deck/,
+      rel,
+    );
+    assert.match(src, /(?:server-side|server side|GET visits)/, rel);
+    assert.match(
+      src,
+      /completed.*(?:visit|GET)|(?:visit|GET).*completed/s,
+      rel,
+    );
   }
 });
 

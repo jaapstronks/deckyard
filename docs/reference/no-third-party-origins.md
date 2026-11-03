@@ -101,16 +101,7 @@ that the block is the **wanted** end state rather than a bug (D56). The
 injection and both gates are gone; `analyticsHeadHtml()` has one caller left,
 the shell.
 
-The trade is deliberate and it costs something: an operator who wants their own
-Plausible on their own published decks cannot have it. Three things decided it.
-A published deck is where _strangers_ land, and unlike the shell there is no
-consent seam left on it (D47/D50). Widening the policy could not be done at the
-header alone — a browser enforces every policy it is given, so the document meta
-would have to widen too, and that meta is shared with seven render paths that
-must not get the widening. And the surface is already measured: the inline
-`/api/track/*` tracker (`server/analytics/tracking-script.js`) is first-party,
-covered by `connect-src 'self'`, and has a retention policy and a GDPR erase
-route — which no third-party tag on that page would have.
+The trade is deliberate and it costs something: an operator who wants their own Plausible on their own published decks cannot have it. Three things decided it. A published deck is where _strangers_ land, and unlike the shell there is no consent seam left on it (D47/D50). Widening the policy could not be done at the header alone - a browser enforces every policy it is given, so the document meta would have to widen too, and that meta is shared with seven render paths that must not get the widening. Published editions already count successful canvas, reader and embed GETs server-side through `recordEditionVisit()` in `server/services/edition-analytics.js`. Those anonymous completed visits collect no visitor identity, IP address, user agent, slide journey or reading duration and expire under the analytics retention policy ([`analytics-privacy.md`](analytics-privacy.md)). No browser tracking script is injected into the frozen edition bytes.
 
 ## The policy: telling the browser, not just the test suite
 

@@ -2,12 +2,7 @@
 
 ## Purpose & scope
 
-Deckyard measures **how a deck was viewed**: a viewer opens it through a share
-link, a published page, an embed or a live follow session; the browser opens a
-_view session_, heartbeats while the tab is alive, reports each slide it enters,
-and ends the session on exit. The owner reads that back as an overview, a slide
-engagement table, a heatmap, a viewer journey, a session list and a live viewer
-count — and can freeze a date range into a shareable **analytics report**.
+Deckyard measures deck visits through two paths. Share links and live follow sessions use a browser tracker: it opens a view session, sends heartbeats and slide visits, and ends the session on exit. Published editions count successful canvas, reader and embed GETs server-side as anonymous completed visits, without a browser tracker or reading-duration measurement. The owner reads the stored data through the overview, slide engagement, heatmap, journey, session list and live count, and can freeze a date range into a shareable **analytics report**; edition visits add visit counts, not slide engagement or active viewers.
 
 This document covers the subsystem end to end: the public tracking routes, the
 storage and aggregation queries, the authenticated read endpoints, the reports,
@@ -30,13 +25,13 @@ Helpers and config (`server/analytics/`):
 - `server/analytics/head.js` — `analyticsHeadHtml()`: the **third-party** web
   analytics snippet (GTM, Plausible, Umami, Matomo, Google Analytics, or a raw
   custom snippet) injected into the **app shell head, and nowhere else**. A
-  published deck and an embed are first-party-only
-  ([`no-third-party-origins.md`](no-third-party-origins.md)); their visitor
-  measurement is the `/api/track/*` path below. Unrelated to Deckyard's own
-  view tracking beyond the shared name.
-- `server/analytics/tracking-script.js` — `generateTrackingScriptHtml()`: the
-  inline tracker for pages served outside the SPA (`/p/<publishId>` and embeds),
-  which calls the same `/api/track/*` endpoints the SPA tracker uses.
+  published edition and an embed are first-party-only
+  ([`no-third-party-origins.md`](no-third-party-origins.md)); their visits are counted server-side by `recordEditionVisit()` in `server/services/edition-analytics.js`. Unrelated to Deckyard's own view tracking beyond the shared name.
+
+Edition measurement (`server/services/edition-analytics.js`):
+
+- `recordEditionVisit()` runs after successfully serving a canvas, reader or embed document. It writes a completed anonymous `view_sessions` row for the source deck, with `source_type` set to `published` or `embed` and `source_id` set to `publicationId/version`. Start and end times are equal and duration is zero. No cookie, device id, viewer email, IP address, user agent, attribution or slide journey is collected. Each GET counts separately, including reloads; this is not a unique-reader count or inferred reading duration.
+- Subresources, manifests, packages and failed or revoked reads do not count. `ANALYTICS_ENABLED=false`, instance `analytics.enabled` off or deck `analyticsEnabled=false` prevent recording; a missing, deleted or cross-organization source deck also prevents it. The response bytes stay unchanged, with no tracking script or visitor identifier injected.
 
 Storage (`server/storage/analytics/`):
 
@@ -138,7 +133,8 @@ never wired; migration 072 dropped them.)
 
 ## Flows
 
-- **Session start** — `POST /api/track/session/start {presentationId,
+- **Edition visit** - a successful canvas, reader or embed GET calls `recordEditionVisit()` after serving the document, using the anonymous completed-visit contract above.
+- **Browser session start** - `POST /api/track/session/start {presentationId,
 sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
   rate-limits by IP, validates the source type and device-id format, then calls
   `validatePresentationAccess`: the deck must exist and the claimed source must
@@ -172,7 +168,7 @@ sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
 - **Sandbox seed** — in sandbox mode only, opening an example deck writes a
   declared, invented viewing history for the guest's copy
   (`insertSeededViewSessions`, B353; `docs/reference/sandbox-mode.md` § Seed
-  insights). It is the one writer besides the tracking endpoints, and it
+  insights). Alongside the browser tracking endpoints and edition measurement, it writes viewing history, and and it
   refuses outside `SANDBOX_MODE`.
 - **Retention** — the daily job deletes sessions and slide views older than the
   configured session-data window and nulls `ip_address` older than the
@@ -225,18 +221,9 @@ value shows as an empty field. The render path refuses to emit a provider whose
 values fail the same check, which also covers the env vars — those never pass
 through the normalizer.
 
-Escaping is deliberately not the mechanism: several of these values are
-interpolated into a `<script>` block, where HTML entities are not decoded, so
-escaping would corrupt a legitimate id while failing to contain a hostile one.
-This head lands on the app shell, on every published deck and on every embed,
-which is what makes an admin-writable identifier a public surface.
+Escaping is deliberately not the mechanism: several of these values are interpolated into a `<script>` block, where HTML entities are not decoded, so escaping would corrupt a legitimate id while failing to contain a hostile one. This head lands only on the app shell. Published editions and embeds carry no third-party analytics snippet.
 
-Settings, not env: `settings.analytics.enabled` is the **single master switch**
-for Deckyard's own tracking — off means `/api/track/session/start` returns a null
-token and nothing is recorded. `settings.analytics.retention.*` is the retention
-policy the cleanup job applies (the env vars above only seed its defaults).
-Per-user, `settings.privacy.disableAllTracking` opts one authenticated viewer out
-everywhere.
+Settings, not env: `settings.analytics.enabled` controls Deckyard's own browser tracking and server-side edition counting beneath the installation kill switch. When disabled, `/api/track/session/start` returns a null token and `recordEditionVisit()` writes nothing. `settings.analytics.retention.*` is the retention policy the cleanup job applies (the env vars above only seed its defaults). Per-user, `settings.privacy.disableAllTracking` opts an authenticated viewer out of browser tracking; edition GET counts carry no viewer identity and cannot apply a per-user preference.
 
 Rate limits (token buckets, `analytics/helpers.js`): per IP — session start
 10 burst / 0.5 per s, heartbeat 20 / 2, session end 10 / 1, slide view 30 / 3;
