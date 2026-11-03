@@ -53,7 +53,7 @@ access), so a `file://` reference in slide content will not load regardless.
 **Where:** `server/utils/ssrf-guard.js`; applied on the export/render path via the
 `embedRemote` option of `server/utils/html-utils.js`, from
 `server/export/pdf-slides.js`, and over the theme-vars block in
-`server/export/css-bundle.js`.
+`server/export/css-bundle.js`, and directly in `server/export/bulk-export.js`.
 
 A slide can carry a user-controlled image URL. On export/render the server (or
 headless Chrome, via inlined images) may fetch that URL, so an unguarded fetch is
@@ -75,6 +75,8 @@ reached Chrome live. `loadExportCssBundle()` now runs it through the same guard
 unconditionally — every caller either hands the result to `setContent()` or
 ships it as a self-contained `.html`, so there is no path that wants the other
 answer. Pinned by `tests/export-theme-var-assets.test.js`.
+
+Bulk backups apply the same guard to remote image-library URLs and theme logos before adding their bytes to the ZIP. Blocked addresses, redirects, non-image content types and oversized responses count as failed downloads in the existing export statistics and warning. Public images remain included; local served assets still resolve from disk. Bulk downloads use the helper’s default 8-second timeout and 15 MiB size cap. Pinned by `tests/bulk-export-ssrf.test.js`.
 
 **Deliberately not covered:** full DNS-rebinding protection. The guard validates
 resolved addresses and then fetches by hostname, which re-resolves — an attacker
