@@ -4,6 +4,8 @@
  * Shared utilities for parsing SSE event streams.
  */
 
+import { debugLog } from '../state/debug.js';
+
 /**
  * Parse SSE events from a text chunk.
  *
@@ -30,8 +32,8 @@ function parseSSEChunk(chunk) {
     } else if (line === '' && currentEvent && currentData) {
       try {
         events.push({ event: currentEvent, data: JSON.parse(currentData) });
-      } catch {
-        // Invalid JSON, skip this event
+      } catch (err) {
+        debugLog('[sse] Invalid event JSON', err);
       }
       currentEvent = null;
       currentData = '';
@@ -49,34 +51,48 @@ function parseSSEChunk(chunk) {
  * @param {Function} [handlers.onMessages] - Handler for 'messages' events
  * @param {Function} [handlers.onComplete] - Handler for 'complete' events
  * @param {Function} [handlers.onError] - Handler for 'error' events
+ * @param {Object} [options]
+ * @param {AbortSignal} [options.signal] - Stops reading and dispatching on teardown.
  * @returns {Promise<void>}
  */
-export async function processSSEStream(body, handlers = {}) {
+export async function processSSEStream(body, handlers = {}, { signal } = {}) {
+  signal?.throwIfAborted();
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  const abort = () => {
+    reader.cancel().catch((err) => debugLog('[sse] Cancelled reader', err));
+  };
+  signal?.addEventListener('abort', abort, { once: true });
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      signal?.throwIfAborted();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const events = parseSSEChunk(buffer);
+      buffer += decoder.decode(value, { stream: true });
+      const events = parseSSEChunk(buffer);
 
-    // Keep only the unparsed remainder
-    const lastNewline = buffer.lastIndexOf('\n\n');
-    if (lastNewline !== -1) {
-      buffer = buffer.slice(lastNewline + 2);
-    }
+      // Keep only the unparsed remainder
+      const lastNewline = buffer.lastIndexOf('\n\n');
+      if (lastNewline !== -1) {
+        buffer = buffer.slice(lastNewline + 2);
+      }
 
-    for (const evt of events) {
-      const handler =
-        handlers[
-          `on${evt.event.charAt(0).toUpperCase()}${evt.event.slice(1)}`
-        ] || handlers[evt.event];
-      if (handler) {
-        await handler(evt.data);
+      for (const evt of events) {
+        signal?.throwIfAborted();
+        const handler =
+          handlers[
+            `on${evt.event.charAt(0).toUpperCase()}${evt.event.slice(1)}`
+          ] || handlers[evt.event];
+        if (handler) {
+          await handler(evt.data);
+        }
       }
     }
+  } finally {
+    signal?.removeEventListener('abort', abort);
+    reader.releaseLock();
   }
 }

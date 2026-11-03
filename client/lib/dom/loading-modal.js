@@ -24,6 +24,7 @@
 import { spinner } from './spinner.js';
 import { h } from './index.js';
 import { t } from '../ui-i18n.js';
+import { registerOverlayCloser } from './modal.js';
 import { takeEscape } from './escape.js';
 
 /**
@@ -33,7 +34,9 @@ import { takeEscape } from './escape.js';
  * Cancel button (and Escape presses it), closes itself and calls `onCancel`
  * once, where the caller aborts its request. Closing the request is how the
  * server learns to stop (`server/utils/client-disconnect.js`); the modal does
- * not wait for that.
+ * not wait for that. View teardown uses the same cancellation path through
+ * the document overlay registry; normal close only disposes the dialog.
+ * Cancelling client work does not roll back already completed server writes.
  *
  * @param {Object} options
  * @param {HTMLElement} options.root - Root element to append to
@@ -116,9 +119,11 @@ export function showLoadingModal({
 
   // Animate in
   requestAnimationFrame(() => {
-    backdrop.classList.add('is-visible');
+    if (!closed) backdrop.classList.add('is-visible');
   });
 
+  const unregister = registerOverlayCloser(backdrop, cancel);
+  let messageTimer = null;
   let currentMessage = initialMessage;
   /** The newest message that arrived mid-transition, or null. */
   let pendingMessage = null;
@@ -141,9 +146,10 @@ export function showLoadingModal({
    *   presentation…" at 100%. They snap instead.
    */
   const updateMessage = (newMessage, { immediate = false } = {}) => {
-    if (!newMessage || newMessage === currentMessage) return;
+    if (closed || !newMessage || newMessage === currentMessage) return;
 
     if (immediate) {
+      clearTimeout(messageTimer);
       pendingMessage = null;
       isTransitioning = false;
       currentMessage = newMessage;
@@ -163,12 +169,12 @@ export function showLoadingModal({
     // Fade out
     messageEl.classList.add('is-fading');
 
-    setTimeout(() => {
+    messageTimer = setTimeout(() => {
       messageEl.textContent = newMessage;
       messageEl.classList.remove('is-fading');
       messageEl.classList.add('is-appearing');
 
-      setTimeout(() => {
+      messageTimer = setTimeout(() => {
         messageEl.classList.remove('is-appearing');
         isTransitioning = false;
 
@@ -202,6 +208,7 @@ export function showLoadingModal({
    * is ignored, so the bar never walks backwards. Cancels any running creep.
    */
   const setProgress = (percent) => {
+    if (closed) return;
     stopCreep();
     const clamped = Math.max(0, Math.min(100, percent));
     if (clamped <= progress) return;
@@ -219,6 +226,7 @@ export function showLoadingModal({
    * @param {number} [opts.durationMs] - Expected duration of the phase.
    */
   const creepTo = (ceiling, { durationMs = 30000 } = {}) => {
+    if (closed) return;
     stopCreep();
     const target = Math.max(0, Math.min(100, ceiling));
     const start = progress;
@@ -239,6 +247,10 @@ export function showLoadingModal({
   const close = () => {
     if (closed) return;
     closed = true;
+    unregister();
+    backdrop.removeEventListener('keydown', onKeydown);
+    clearTimeout(messageTimer);
+    pendingMessage = null;
     stopCreep();
     modal.setAttribute('aria-busy', 'false');
     backdrop.classList.remove('is-visible');
@@ -260,6 +272,7 @@ export function showLoadingModal({
    * Set the title
    */
   const setTitle = (newTitle) => {
+    if (closed) return;
     titleEl.textContent = newTitle || '';
     titleEl.style.display = newTitle ? '' : 'none';
   };

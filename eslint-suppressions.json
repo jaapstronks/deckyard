@@ -59,11 +59,6 @@
       "count": 2
     }
   },
-  "client/lib/net/sse.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/lib/net/stock-media.js": {
     "no-useless-assignment": {
       "count": 1
@@ -943,11 +938,6 @@
   "server/routes/static/app-shell.js": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "server/routes/static/embed.js": {
-    "no-restricted-syntax": {
-      "count": 1
     }
   },
   "server/routes/static/share-viewer.js": {

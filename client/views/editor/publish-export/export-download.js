@@ -57,6 +57,7 @@ export async function downloadExport(url, fallbackName, signal) {
   const res = await fetch(url, { signal, credentials: 'same-origin' });
   if (!res.ok) throw await failureOf(res);
   const blob = await res.blob();
+  signal?.throwIfAborted();
   downloadBlob(
     blob,
     filenameFromDisposition(
@@ -117,7 +118,10 @@ export async function streamExport({ url, title, fallbackName, timeoutMs }) {
       'editor.export.progress.starting',
       'Preparing the export…',
     ),
-    onCancel: () => controller.abort(),
+    onCancel: () => {
+      clearTimeout(timer);
+      controller.abort();
+    },
   });
   const timer = timeoutMs
     ? setTimeout(() => {
@@ -137,24 +141,29 @@ export async function streamExport({ url, title, fallbackName, timeoutMs }) {
     if (!res.ok || !res.body) throw await failureOf(res);
 
     let downloadUrl = null;
-    await processSSEStream(res.body, {
-      onStatus: (status) => {
-        if (status.progress) modal.setProgress(status.progress);
-        if (status.creepTo) {
-          modal.creepTo(status.creepTo, { durationMs: status.creepMs });
-        }
-        const line = exportStatusLine(status);
-        if (line) modal.update(line, { immediate: true });
+    await processSSEStream(
+      res.body,
+      {
+        onStatus: (status) => {
+          if (status.progress) modal.setProgress(status.progress);
+          if (status.creepTo) {
+            modal.creepTo(status.creepTo, { durationMs: status.creepMs });
+          }
+          const line = exportStatusLine(status);
+          if (line) modal.update(line, { immediate: true });
+        },
+        onComplete: (data) => {
+          downloadUrl = data?.downloadUrl || null;
+        },
+        onError: (data) => {
+          throw new Error(
+            data?.message || t('editor.export.failed', 'Export failed'),
+          );
+        },
       },
-      onComplete: (data) => {
-        downloadUrl = data?.downloadUrl || null;
-      },
-      onError: (data) => {
-        throw new Error(
-          data?.message || t('editor.export.failed', 'Export failed'),
-        );
-      },
-    });
+      { signal: controller.signal },
+    );
+    controller.signal.throwIfAborted();
     if (!downloadUrl) {
       throw new Error(t('editor.export.failed', 'Export failed'));
     }
@@ -170,7 +179,7 @@ export async function streamExport({ url, title, fallbackName, timeoutMs }) {
     modal.setProgress(100);
     return headers;
   } catch (err) {
-    if (err?.name !== 'AbortError') throw err;
+    if (!controller.signal.aborted && err?.name !== 'AbortError') throw err;
     if (!timedOut) return null;
     throw Object.assign(
       new Error(

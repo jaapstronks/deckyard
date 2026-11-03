@@ -74,6 +74,7 @@ function createProgressBinding({ loadingModal, rotator }) {
  * losing the response can mean the deck was saved, so never repeat the POST.
  *
  * @param {Object} opts
+ * @param {AbortSignal} opts.signal
  * @param {string} opts.url
  * @param {Object} opts.body
  * @param {Object} opts.progressBinding
@@ -81,6 +82,7 @@ function createProgressBinding({ loadingModal, rotator }) {
  * @returns {Promise<Object>} The confirmed import result.
  */
 async function createStreamingImport({
+  signal,
   url,
   body,
   progressBinding,
@@ -98,11 +100,13 @@ async function createStreamingImport({
     // SSE progress is consumed incrementally, unlike api()'s JSON contract.
     // eslint-disable-next-line no-restricted-syntax
     response = await fetch(url, {
+      signal,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
   } catch {
+    signal.throwIfAborted();
     throw unconfirmed();
   }
   if (!response.ok) {
@@ -127,22 +131,44 @@ async function createStreamingImport({
   let result;
   let refusal;
   try {
-    await processSSEStream(response.body, {
-      ...progressBinding,
-      onComplete: (data) => {
-        result = data;
+    await processSSEStream(
+      response.body,
+      {
+        ...progressBinding,
+        onComplete: (data) => {
+          result = data;
+        },
+        onError: (data) => {
+          refusal = data?.message || failureMessage;
+        },
       },
-      onError: (data) => {
-        refusal = data?.message || failureMessage;
-      },
-    });
+      { signal },
+    );
   } catch {
+    signal.throwIfAborted();
     // A terminal event remains authoritative if the subsequent read fails.
     if (!result && !refusal) throw unconfirmed();
   }
+  signal.throwIfAborted();
   if (refusal) throw new Error(refusal);
   if (!result?.presentation?.id) throw unconfirmed();
   return result;
+}
+
+/** Keep the completion state briefly visible, but never outlive the view. */
+function pauseAtCompletion(signal) {
+  signal.throwIfAborted();
+  return new Promise((resolve, reject) => {
+    const abort = () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', abort);
+      resolve();
+    }, 500);
+    signal.addEventListener('abort', abort, { once: true });
+  });
 }
 
 /**
@@ -224,7 +250,13 @@ export async function handlePasteText({
   setBusy(true);
   hideBackdrop?.();
 
+  const controller = new AbortController();
   const loadingModal = showLoadingModal({
+    onCancel: () => {
+      controller.abort();
+      rotator.stop();
+      close();
+    },
     root,
     initialMessage: t(
       'list.newPresentation.preparing',
@@ -241,6 +273,7 @@ export async function handlePasteText({
 
   try {
     const created = await generatePresentationStreaming({
+      signal: controller.signal,
       api,
       raw,
       lang: langMode,
@@ -264,12 +297,14 @@ export async function handlePasteText({
     rotator.stop();
     loadingModal.update(t('common.done', 'Done'), { immediate: true });
     loadingModal.setProgress(100);
-    await new Promise((r) => setTimeout(r, 500));
+    await pauseAtCompletion(controller.signal);
+    controller.signal.throwIfAborted();
     loadingModal.close();
     close();
     // The whole-deck review opens on top of the editor, with discard offered.
     openGeneratedDeck(created.id, langMode);
   } catch (e) {
+    if (controller.signal.aborted) return;
     // A failed stream is shown, never retried on another generator (B759):
     // the deck the user gets is the one the pipeline made, or none.
     rotator.stop();
@@ -305,17 +340,14 @@ export async function handleConvertFile({
 
   const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
 
-  let dataUrl;
-  try {
-    dataUrl = await readFileAsDataUrl(selectedFile);
-  } catch (e) {
-    setStatus(String(e.message || e));
-    setBusy(false);
-    return;
-  }
-
   hideBackdrop?.();
+  const controller = new AbortController();
   const loadingModal = showLoadingModal({
+    onCancel: () => {
+      controller.abort();
+      rotator.stop();
+      close();
+    },
     root,
     initialMessage: t('list.fileConverter.converting', 'Converting file…'),
     title: t('list.fileConverter.convertingTitle', 'Converting file'),
@@ -328,7 +360,10 @@ export async function handleConvertFile({
   const progressBinding = createProgressBinding({ loadingModal, rotator });
 
   try {
+    const dataUrl = await readFileAsDataUrl(selectedFile);
+    controller.signal.throwIfAborted();
     const result = await createStreamingImport({
+      signal: controller.signal,
       url: '/api/convert/stream',
       body: { dataUrl, filename: selectedFile.name, lang, theme: themeId },
       progressBinding,
@@ -337,11 +372,13 @@ export async function handleConvertFile({
     rotator.stop();
     loadingModal.update(t('common.done', 'Done'), { immediate: true });
     loadingModal.setProgress(100);
-    await new Promise((r) => setTimeout(r, 500));
+    await pauseAtCompletion(controller.signal);
+    controller.signal.throwIfAborted();
     loadingModal.close();
     close();
     openGeneratedDeck(result.presentation.id, lang);
   } catch (e) {
+    if (controller.signal.aborted) return;
     rotator.stop();
     loadingModal.close();
     showBackdrop?.();
@@ -563,7 +600,13 @@ export async function handleNotion({
   setBusy(true);
   hideBackdrop?.();
 
+  const controller = new AbortController();
   const loadingModal = showLoadingModal({
+    onCancel: () => {
+      controller.abort();
+      rotator.stop();
+      close();
+    },
     root,
     initialMessage: t(
       'list.newPresentation.notion.importing',
@@ -583,6 +626,7 @@ export async function handleNotion({
 
   try {
     const result = await createStreamingImport({
+      signal: controller.signal,
       url: '/api/notion/import/stream',
       body: { url: notionUrl, theme: themeId },
       progressBinding,
@@ -595,11 +639,13 @@ export async function handleNotion({
       DEFAULT_DECK_LANG;
     loadingModal.update(t('common.done', 'Done'), { immediate: true });
     loadingModal.setProgress(100);
-    await new Promise((r) => setTimeout(r, 500));
+    await pauseAtCompletion(controller.signal);
+    controller.signal.throwIfAborted();
     loadingModal.close();
     close();
     openGeneratedDeck(result.presentation.id, detectedLang);
   } catch (e) {
+    if (controller.signal.aborted) return;
     rotator.stop();
     loadingModal.close();
     showBackdrop?.();
