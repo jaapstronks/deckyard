@@ -64,7 +64,7 @@ a server. Deck generation deliberately does _not_ go through the Anthropic SDK;
 it goes through the app's own LLM layer, because testing anything else would
 test something other than what ships.
 
-**Evaluation** has three layers:
+**Evaluation** has four layers:
 
 1. _Deterministic metrics_ (`eval/metrics.js`) — slide count, words and bullets
    per slide, wall-of-text and empty-slide counts, structure. Free.
@@ -76,6 +76,11 @@ test something other than what ships.
    closeness to the human deck for category A. Responses use
    `output_config.format` with a JSON schema, so verdicts are schema-valid by
    construction rather than parsed out of prose.
+
+4. _List judge_ (`eval/judge-lists.js`) — one small call per deck, source left
+   out: does each list hold items of one kind? It catches what the declared
+   `listFidelity` cannot, such as a summary dressed as a list. Reported in its
+   own section, apart from the rubric, so the score scale does not move.
 
 The judge's **rationales matter more than its scores** — they name the specific
 slide that failed and what should have happened instead, which is what the

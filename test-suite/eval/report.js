@@ -351,6 +351,41 @@ export async function writeReport(run, previous, outputPath) {
     lines.push('');
   }
 
+  // Lists the judge found mixed: what listFidelity cannot see, because nobody
+  // declared these lists up front (DY-800).
+  const kinships = run.results.flatMap((result) =>
+    (result.repeats || [])
+      .filter((repeat) => repeat.listKinship)
+      .map((repeat) => ({ result, repeat, kinship: repeat.listKinship })),
+  );
+  if (kinships.length) {
+    const cell = (text) => String(text).replace(/\|/g, '/');
+    lines.push('## Lists of one kind');
+    lines.push('');
+    lines.push(
+      'A list claims its items are alike. Judged per list, apart from the rubric.',
+    );
+    lines.push('');
+    lines.push('| Case | Repeat | Lists | Mixed | Not judged |');
+    lines.push('| --- | ---: | ---: | ---: | ---: |');
+    for (const { result, repeat, kinship } of kinships) {
+      lines.push(
+        `| ${result.caseId} | ${repeat.repeat} | ${kinship.total} | ${kinship.mixed} | ` +
+          `${kinship.total - kinship.judged} |`,
+      );
+    }
+    lines.push('');
+    for (const { result, repeat, kinship } of kinships) {
+      for (const list of kinship.lists.filter((l) => l.judged && !l.alike)) {
+        lines.push(
+          `- **${result.caseId}** repeat ${repeat.repeat}, slide ${list.slide} ` +
+            `("${cell(list.title)}"): ${cell(list.kinds.join(', '))}. ${cell(list.rationale)}`,
+        );
+      }
+    }
+    lines.push('');
+  }
+
   // Lowest-scoring dimensions with rationales — the actionable part.
   const weakest = [...RUBRIC_DIMENSIONS, REFERENCE_DIMENSION]
     .filter((d) => Number.isFinite(scores[d]))

@@ -417,7 +417,7 @@ export function listFidelity(deck, expected = []) {
  * @param {object} slide
  * @returns {string[][]}
  */
-function slideItemGroups(slide) {
+export function slideItemGroups(slide) {
   const groups = [];
   const textOf = (value) =>
     typeof value === 'string'

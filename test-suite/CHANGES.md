@@ -435,3 +435,11 @@ Next experiment: slide allocation, iterated at the outline stage only
 **Change.** The extractor uses the registry's text-field spec and shared value rule at each nesting level. Declared machine fields stay out; text cells containing “on” remain prose. Unknown keys and types follow the existing string-value rule.
 
 **Validation.** Offline replay of all four archived decks removes the standalone toggle from jury text. Regression tests cover the table toggle, genuine “on” cell text, nested configuration and prose with configuration-like keys. No new generation or judge call was made, so there is no revised quality score. Historical verdicts and density metrics remain unchanged and should not be compared as if they used the corrected extractor.
+
+## DY-800 - a judge for lists that are not of one kind (2026-11-01)
+
+**Motivated by** the re-import of a real board paper in the B735 gate. Target groups and organisations came out right in 3 of 3 runs, but the opening slide was each time a summary dressed as a list: goal, status and role as peers. `listFidelity` only sees lists a case declares, so no number moved.
+
+**Change.** `eval/judge-lists.js` asks the pinned judge model one question per deck: are the items of each list of one kind? The source stays out of the prompt. A list the judge skips counts as not judged, never as alike. It is reported apart from the rubric, so earlier scores stay comparable.
+
+**Not changed.** The generation prompts. Those move only when this judge points at the same fault on more than one source.
