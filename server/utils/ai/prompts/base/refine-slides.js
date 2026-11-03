@@ -104,6 +104,12 @@ ${buildLengthContract(disabledSlideTypes, customSlideTypes)}
    - Keep the count of the rough content and the source. Never add items to
      fill the slide; a short list gets density "comfortable" instead where
      the type offers it.
+   - A summary of goal, status, roles and scope is not a list of one kind,
+     even under "Overview" or "Context". For this mixed opening, use one or
+     two connected sentences in a content-slide body, without bullet markers.
+     You may change a list hint from the outline when the items are not peers;
+     do not disguise the same mixed summary as cards or blocks. Keep genuine
+     homogeneous source lists as lists, including short ones.
    - Merging or reordering items is fine; adding a different kind is not.
 
 ${catalogPrompt}

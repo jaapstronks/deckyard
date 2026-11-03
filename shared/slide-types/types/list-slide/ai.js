@@ -74,6 +74,7 @@ export const ai = {
     'Timeline/roadmap with phases over time (use timeline-slide)',
     'Simple bullets without title+text structure (use content-slide)',
     'Padding a short list: a goal, implication or intro sentence is never an item (subheading, aside or notes)',
+    'An opening summary mixing goal, status, roles and scope, even under Overview or Context (use connected prose in content-slide, not items or cards)',
   ],
 };
 

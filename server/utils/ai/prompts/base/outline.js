@@ -167,6 +167,7 @@ A heading with N lines under it tells the audience: there are N things of the ki
 
 - The count follows the source. When the source enumerates N parallel things, the slide has exactly those N lines and the hint says "has-N-items" with that N. Never pad a short list; a slide with three items is fine.
 - Every line answers the question the heading asks. A remark ABOUT the list (its goal, an implication, an ambition, the sentence that introduces it) is not an item: write it as one introducing sentence directly under the heading, ending in a colon, or leave it for the presenter notes.
+- A summary is not a list of one kind. This applies especially to the opening content slide: a goal, current status, who does what and the scope answer different questions, even under a broad title such as "Overview". Write the opening as one or two connected sentences with the main message; do not add "has-N-items" or "is-list-with-explanations" just because it contains several facts. Use a list only when the source supplies actual peers, such as agenda topics, target groups or decisions.
 - Merging or reordering items is fine; adding a different kind of thing is not.
 
 BAD (the source names three target groups):
