@@ -325,8 +325,9 @@ severity order, except that the first is the one to fix first.
    frame that Chromium runs in the page's own origin under the app CSP, and
    any `https:` URL mentioning the host was framed without a sandbox. Stored
    XSS on every app surface for anyone who can write the field: editors,
-   imports, agents, the model. Editions were not affected. A fix that rebuilds
-   the URL from the two ids is open (DY-809).
+   imports, agents, the model. Editions were not affected. Fixed: the helper
+   now rebuilds the URL from the library id and video UUID, and anything else
+   embeds nothing (DY-809).
 2. **Copying a deck gives a reader the author's notes and hidden slides**
    (DY-810). Duplicate loads at read access and copies every field; the
    reader projection is bypassed by one tool call or one click.
