@@ -254,7 +254,8 @@ export function buildPhase2UserPrompt({
   lines.push('');
 
   if (slides.length > 1) {
-    lines.push(`GROUP ID: ${groupId}`);
+    lines.push('GROUP ID:');
+    lines.push(untrustedData(groupId));
     lines.push(
       'These slides should have consistent styling where appropriate.',
     );
@@ -266,9 +267,8 @@ export function buildPhase2UserPrompt({
     const slide = slides[pos];
     lines.push(`--- SLIDE #${pos + 1} (originalIndex: ${slide.index}) ---`);
     lines.push(`Intent: ${slide.intent}`);
-    lines.push(
-      `Hints: ${slide.hints.length ? slide.hints.join(', ') : 'none'}`,
-    );
+    lines.push('Hints:');
+    lines.push(untrustedData(slide.hints.join(', ') || 'none'));
     lines.push('Content:');
     lines.push(untrustedData(slide.roughContent));
     const source = slide.sourceContext;

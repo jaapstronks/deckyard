@@ -125,9 +125,7 @@ test('the model is told about the nested items field', async () => {
   await translatePresentationStrings(deck('nl'), { from: 'nl', to: 'en-GB' });
 
   const meta = JSON.parse(
-    lastUserMessage
-      .slice(lastUserMessage.indexOf('SLIDE META'))
-      .replace(/^SLIDE META[^\n]*\n/, ''),
+    fencedData(lastUserMessage.slice(lastUserMessage.indexOf('SLIDE META'))),
   );
   const rows = meta[0].itemsFields.find((f) => f.key === 'rows');
   assert.ok(rows, 'slideMeta must list the rows items field');

@@ -65,7 +65,8 @@ const deck = {
   id: 'deck-1',
   title: INJECTION,
   lang: 'en-GB',
-  slides: ['a', 'b', 'c', 'd'].map(slide),
+  // A stored slide id is any string its writer chose.
+  slides: [INJECTION, 'b', 'c', 'd'].map(slide),
 };
 
 const FENCED = /<(untrusted-data|starter-request)>[\s\S]*?<\/\1>/g;
@@ -129,12 +130,14 @@ const PATHS = {
   'server/utils/ai/refine-slides.js': () =>
     refineSlideGroup(
       {
-        groupId: 'g',
+        // Hints and the group id are phase 1's own words, so a source can
+        // write them through the model.
+        groupId: INJECTION,
         slides: [
           {
             index: 0,
             intent: 'content',
-            hints: [],
+            hints: [INJECTION],
             roughContent: INJECTION,
             presenterNotes: INJECTION,
             sourceContext: {
@@ -144,6 +147,7 @@ const PATHS = {
             },
             sourceImage: { n: 1, description: INJECTION },
           },
+          { index: 1, intent: 'content', hints: [], roughContent: 'Second.' },
         ],
       },
       {

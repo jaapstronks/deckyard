@@ -144,7 +144,7 @@ export async function translatePresentationStrings(
     ),
     '',
     'SLIDE META (translate keys per slide id):',
-    JSON.stringify(slideMeta, null, 2),
+    untrustedData(JSON.stringify(slideMeta, null, 2)),
   ].join('\n');
 
   const content = await requestChatCompletionContent({
