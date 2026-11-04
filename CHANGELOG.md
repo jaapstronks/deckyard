@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.97.5](https://github.com/jaapstronks/deckyard/compare/v1.97.4...v1.97.5) (2026-11-04)
+
+
+### Security
+
+* rebuild the Bunny embed src from its ids instead of echoing the paste ([#1976](https://github.com/jaapstronks/deckyard/issues/1976)) ([80b3125](https://github.com/jaapstronks/deckyard/commit/80b3125522dc8e903e4da38f0d8a3009f677779f))
+
 ## [1.97.4](https://github.com/jaapstronks/deckyard/compare/v1.97.3...v1.97.4) (2026-11-03)
 
 
