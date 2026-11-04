@@ -12,7 +12,7 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
-import { requestChatCompletionContent } from '../llm/index.js';
+import { requestChatCompletionContent, untrustedData } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import {
   getOfferedSlideTypes,
@@ -461,7 +461,7 @@ export async function refineSlideGroup(
         messages.push({ role: 'assistant', content: rawResponse });
         messages.push({
           role: 'user',
-          content: `Rewrite the complete slides response to fix these length violations: ${err.message}. Keep the meaning, use complete sentences within each declared maxLength, and preserve originalIndex. Do not cut text or append an ellipsis.`,
+          content: `Rewrite the complete slides response to fix these length violations:\n${untrustedData(err.message)}\nKeep the meaning, use complete sentences within each declared maxLength, and preserve originalIndex. Do not cut text or append an ellipsis.`,
         });
       }
       log.warn(`Retry ${retryCount} for group ${groupId}`);

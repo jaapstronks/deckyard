@@ -1,6 +1,6 @@
 import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
-import { requestChatCompletionContent } from '../llm/index.js';
+import { requestChatCompletionContent, untrustedData } from '../llm/index.js';
 import { ValidationError } from '../errors.js';
 import { extractJsonObject } from './json.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
@@ -88,10 +88,10 @@ Rules:
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => `Convert this content slide to a list slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Body:
 ${slide.content?.body || ''}
-Background: ${slide.content?.background || 'lime'}
+Background: ${slide.content?.background || 'lime'}`)}
 
 Return JSON with: { title, subheading, variant, items: [{title, text}, ...], background }`,
     };
@@ -111,9 +111,9 @@ Rules:
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => `Convert this content slide to an icon cards slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Body:
-${slide.content?.body || ''}
+${slide.content?.body || ''}`)}
 
 Return JSON with: { title, subheading, items: [{ icon, title, body }, ...] }`,
     };
@@ -133,9 +133,9 @@ Rules:
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => `Convert this content slide to a text blocks slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Body:
-${slide.content?.body || ''}
+${slide.content?.body || ''}`)}
 
 Return JSON with: { title, subheading, rows: [{ title, color, arrow, blocks: [{ title, body }, ...] }] }`,
     };
@@ -157,9 +157,9 @@ Rules:
         slide,
       ) => `Convert this content slide to a KPI metrics slide. Extract the most important numbers:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Body:
-${slide.content?.body || ''}
+${slide.content?.body || ''}`)}
 
 Return JSON with: { title, background: "mist", metrics: [{ value, unit, label, note }, ...] }`,
     };
@@ -184,9 +184,9 @@ Rules:
           .join('\n');
         return `Convert this list slide to an icon cards slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Items:
-${items}
+${items}`)}
 
 Return JSON with: { title, subheading, items: [{ icon, title, body }, ...] }`;
       },
@@ -210,11 +210,12 @@ Rules:
           .join('\n');
         return `Convert this list slide to a content slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Items:
 ${items}
+Background: ${slide.content?.background || 'lime'}`)}
 
-Return JSON with: { title, body, background: "${slide.content?.background || 'lime'}" }`;
+Return JSON with: { title, body, background }`;
       },
     };
   }
@@ -236,9 +237,9 @@ Rules:
           .join('\n');
         return `Convert this list slide to a text blocks slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Items:
-${items}
+${items}`)}
 
 Return JSON with: { title, subheading, rows: [{ title, color, arrow, blocks: [{ title, body }, ...] }] }`;
       },
@@ -264,9 +265,9 @@ Rules:
           .join('\n');
         return `Convert this icon cards slide to a list slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Cards:
-${cardText}
+${cardText}`)}
 
 Return JSON with: { title, subheading, variant, items: [{title, text}, ...], background: "lime" }`;
       },
@@ -289,9 +290,9 @@ Rules:
           .join('\n\n');
         return `Convert this icon cards slide to a content slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Cards:
-${items}
+${items}`)}
 
 Return JSON with: { title, body, background: "lime" }`;
       },
@@ -315,9 +316,9 @@ Rules:
           .join('\n');
         return `Convert this icon cards slide to a text blocks slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Cards:
-${items}
+${items}`)}
 
 Return JSON with: { title, subheading, rows: [{ title, color, arrow, blocks: [{ title, body }, ...] }] }`;
       },
@@ -360,9 +361,9 @@ Rules:
         }
         return `Convert this text blocks slide to an icon cards slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Blocks:
-${blockText}
+${blockText}`)}
 
 Return JSON with: { title, subheading, items: [{ icon, title, body }, ...] }`;
       },
@@ -392,9 +393,9 @@ Rules:
         }
         return `Convert this text blocks slide to a list slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Blocks:
-${blockText}
+${blockText}`)}
 
 Return JSON with: { title, subheading, variant, items: [{title, text}, ...], background: "lime" }`;
       },
@@ -421,9 +422,9 @@ Rules:
           .join('\n');
         return `Convert this KPI metrics slide to a content slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Metrics:
-${metrics}
+${metrics}`)}
 
 Return JSON with: { title, body, background: "mist" }`;
       },
@@ -450,9 +451,9 @@ Rules:
           .join('\n');
         return `Convert this KPI metrics slide to a list slide:
 
-Title: ${slide.content?.title || ''}
+${untrustedData(`Title: ${slide.content?.title || ''}
 Metrics:
-${metrics}
+${metrics}`)}
 
 Return JSON with: { title, subheading, variant: "bullets", items: [{title, text}, ...], background: "mist" }`;
       },

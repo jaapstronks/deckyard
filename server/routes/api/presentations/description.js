@@ -6,7 +6,10 @@ import {
 import { getOptionalString } from '../../../utils/request-validators.js';
 import { slideProse } from '../../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../../../utils/llm/config.js';
-import { requestChatCompletionContent } from '../../../utils/llm/index.js';
+import {
+  requestChatCompletionContent,
+  untrustedData,
+} from '../../../utils/llm/index.js';
 import { extractJsonObject } from '../../../utils/openai/json.js';
 import {
   DEFAULT_DECK_LANG,
@@ -105,15 +108,17 @@ export async function handlePresentationDescriptionGenerate(
 
   const user = [
     'DECK CONTEXT:',
-    JSON.stringify(
-      {
-        title,
-        theme,
-        slideCount: slides.length,
-        includedSlides: slideSnippets,
-      },
-      null,
-      2,
+    untrustedData(
+      JSON.stringify(
+        {
+          title,
+          theme,
+          slideCount: slides.length,
+          includedSlides: slideSnippets,
+        },
+        null,
+        2,
+      ),
     ),
   ].join('\n');
 

@@ -10,6 +10,7 @@
  * itself overridable is a separate step of the seam.
  */
 
+import { untrustedData } from '../../../llm/untrusted-data.js';
 import {
   SLIDE_TYPES,
   GLOBAL_SLIDE_FIELD_KEYS,
@@ -223,9 +224,18 @@ export function buildPhase2UserPrompt({
 
   if (presentationContext?.title) {
     lines.push('PRESENTATION CONTEXT');
-    lines.push(`Title: ${presentationContext.title}`);
-    if (presentationContext.summary)
-      lines.push(`Summary: ${presentationContext.summary}`);
+    lines.push(
+      untrustedData(
+        [
+          `Title: ${presentationContext.title}`,
+          presentationContext.summary
+            ? `Summary: ${presentationContext.summary}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      ),
+    );
     lines.push(
       'You are creating slides for this presentation. Keep content consistent with the theme.',
     );
@@ -234,7 +244,7 @@ export function buildPhase2UserPrompt({
 
   if (adjacentContext) {
     lines.push('ADJACENT CONTEXT (avoid repetition):');
-    lines.push(adjacentContext);
+    lines.push(untrustedData(adjacentContext));
     lines.push('');
   }
 
@@ -260,18 +270,26 @@ export function buildPhase2UserPrompt({
       `Hints: ${slide.hints.length ? slide.hints.join(', ') : 'none'}`,
     );
     lines.push('Content:');
-    lines.push(slide.roughContent);
+    lines.push(untrustedData(slide.roughContent));
     const source = slide.sourceContext;
     if (source) {
       lines.push('');
-      lines.push(`Source context (section "${source.heading}"):`);
-      for (const point of source.keyPoints || []) lines.push(`- ${point}`);
-      if (source.excerpt) lines.push(`Excerpt: "${source.excerpt}"`);
+      lines.push('Source context:');
+      lines.push(
+        untrustedData(
+          [
+            `Section: ${source.heading}`,
+            ...(source.keyPoints || []).map((point) => `- ${point}`),
+            ...(source.excerpt ? [`Excerpt: "${source.excerpt}"`] : []),
+          ].join('\n'),
+        ),
+      );
     }
     if (slide.sourceImage) {
       const { n, description } = slide.sourceImage;
       lines.push('');
-      lines.push(`Source image offered: source-image:${n} (${description})`);
+      lines.push(`Source image offered: source-image:${n}, described as:`);
+      lines.push(untrustedData(description));
       lines.push(
         `When this image shows what the slide says, choose a type with an image field (image-text-slide, image-slide), put exactly "source-image:${n}" in that field and write its "alt" from the description. Never write any other image reference or URL.`,
       );
@@ -279,7 +297,7 @@ export function buildPhase2UserPrompt({
     if (slide.presenterNotes) {
       lines.push('');
       lines.push('Presenter Notes (preserve for the slide):');
-      lines.push(slide.presenterNotes);
+      lines.push(untrustedData(slide.presenterNotes));
     }
     lines.push('');
   }

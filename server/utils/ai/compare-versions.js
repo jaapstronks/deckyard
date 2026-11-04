@@ -5,7 +5,11 @@
  */
 
 import { getLlmConfig, detectDefaultVendor } from '../llm/config.js';
-import { requestChatCompletionContent, LlmError } from '../llm/index.js';
+import {
+  requestChatCompletionContent,
+  LlmError,
+  untrustedData,
+} from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 
 /**
@@ -99,9 +103,7 @@ function buildCompareUserPrompt({
   snapshotDate,
   diff,
 }) {
-  const lines = [
-    `Analyze the differences between these presentation versions:\n`,
-  ];
+  const lines = [];
 
   // Added slides (in current only)
   if (diff.added.length > 0) {
@@ -141,11 +143,13 @@ function buildCompareUserPrompt({
   lines.push(
     `Total: ${diff.added.length} added, ${diff.removed.length} removed, ${diff.modified.length} modified, ${diff.unchanged.length} unchanged`,
   );
-  lines.push(
-    '\nProvide insights for each changed slide using the exact slide IDs shown above.',
-  );
-
-  return lines.join('\n');
+  return [
+    'Analyze the differences between these presentation versions:',
+    '',
+    untrustedData(lines.join('\n')),
+    '',
+    'Provide insights for each changed slide using the exact slide IDs shown above.',
+  ].join('\n');
 }
 
 /**

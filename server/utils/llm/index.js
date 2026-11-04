@@ -4,8 +4,10 @@ import { requestMistralChatCompletionContent } from './providers/mistral.js';
 import { requestOpenAiChatCompletionContent } from './providers/openai.js';
 import { requestOpenAiCompatChatCompletionContent } from './providers/openai-compat.js';
 import { LlmError } from './error.js';
+import { withDataBoundary } from './untrusted-data.js';
 
 export { LlmError } from './error.js';
+export { starterRequest, untrustedData } from './untrusted-data.js';
 
 /**
  * Request one chat completion from the configured vendor and return its text.
@@ -20,6 +22,10 @@ export { LlmError } from './error.js';
  * without the marker. One prompt, every vendor; the marker only pays off when
  * the marked prefix is byte-identical across calls (B766).
  *
+ * Every user message fences its content (`untrusted-data.js`) and is refused
+ * without a fence; the rule that gives the fence its meaning is added here, so
+ * one prompt can not forget it (DY-814).
+ *
  * @param {Object} params
  * @param {Array<{role: string, content: string, cache?: boolean}>} [params.messages]
  * @param {AbortSignal} [params.signal]
@@ -32,9 +38,10 @@ export async function requestChatCompletionContent({
   temperature = 0.2,
   responseFormat = null,
   maxTokens = 4096,
-  messages = [],
+  messages: promptMessages = [],
   signal,
 } = {}) {
+  const messages = withDataBoundary(promptMessages);
   if (vendor === 'openai') {
     return await requestOpenAiChatCompletionContent({
       apiKey,

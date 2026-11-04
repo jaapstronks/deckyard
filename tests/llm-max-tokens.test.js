@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { transformOpenAiCompatibleRequest } from '../server/utils/llm/provider-base.js';
-import { requestChatCompletionContent } from '../server/utils/llm/index.js';
+import {
+  requestChatCompletionContent,
+  untrustedData,
+} from '../server/utils/llm/index.js';
 
 const build = (params) =>
   transformOpenAiCompatibleRequest({ messages: [], ...params });
@@ -102,7 +105,7 @@ async function captureRequestBody(params) {
   try {
     await requestChatCompletionContent({
       apiKey: 'test-key',
-      messages: [{ role: 'user', content: 'hi' }],
+      messages: [{ role: 'user', content: untrustedData('hi') }],
       ...params,
     });
   } finally {

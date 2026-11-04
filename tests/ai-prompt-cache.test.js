@@ -14,6 +14,10 @@ import assert from 'node:assert/strict';
 
 import { refineAllSlideGroups } from '../server/utils/ai/refine-slides.js';
 import { requestChatCompletionContent } from '../server/utils/llm/index.js';
+import {
+  UNTRUSTED_DATA_RULE,
+  untrustedData,
+} from '../server/utils/llm/untrusted-data.js';
 import { transformOpenAiCompatibleRequest } from '../server/utils/llm/provider-base.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
@@ -117,7 +121,7 @@ test('the first group runs alone before the rest fan out', async (t) => {
   assert.equal(Math.max(...concurrency), 6, 'the rest fan out per batch');
 });
 
-test('an unmarked prompt keeps the plain system string', async (t) => {
+test('a prompt without a cache marker keeps the plain system string', async (t) => {
   let body;
   t.mock.method(globalThis, 'fetch', async (_url, init) => {
     body = JSON.parse(init.body);
@@ -129,11 +133,11 @@ test('an unmarked prompt keeps the plain system string', async (t) => {
     model: 'claude-opus-5',
     messages: [
       { role: 'system', content: 'Rules.' },
-      { role: 'user', content: 'Question.' },
+      { role: 'user', content: untrustedData('Question.') },
     ],
   });
-  assert.equal(body.system, 'Rules.');
-  assert.equal(body.messages[0].content, 'Question.');
+  assert.equal(body.system, `${UNTRUSTED_DATA_RULE}\n\nRules.`);
+  assert.equal(body.messages[0].content, untrustedData('Question.'));
 });
 
 test('OpenAI-compatible vendors get the same messages without the marker', () => {

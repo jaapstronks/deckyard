@@ -8,6 +8,7 @@
  * and passes them in.
  */
 
+import { starterRequest, untrustedData } from '../../../llm/untrusted-data.js';
 import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
 import {
   buildSlideReviewRules,
@@ -75,18 +76,18 @@ export function buildSectionUserPrompt({
 }) {
   return [
     'DECK SUMMARY:',
-    deckSummary,
+    untrustedData(deckSummary),
     '',
     `CONTEXT — SLIDES BEFORE THE SECTION (do not change, do not return):`,
-    JSON.stringify(before.map(slideForPrompt), null, 2),
+    untrustedData(JSON.stringify(before.map(slideForPrompt), null, 2)),
     '',
     'SELECTED SECTION (revise this):',
-    JSON.stringify(selected.map(slideForPrompt), null, 2),
+    untrustedData(JSON.stringify(selected.map(slideForPrompt), null, 2)),
     '',
     'CONTEXT — SLIDES AFTER THE SECTION (do not change, do not return):',
-    JSON.stringify(after.map(slideForPrompt), null, 2),
+    untrustedData(JSON.stringify(after.map(slideForPrompt), null, 2)),
     '',
     'USER FEEDBACK (what should change in the section):',
-    String(feedback || '').trim(),
+    starterRequest(String(feedback || '').trim()),
   ].join('\n');
 }

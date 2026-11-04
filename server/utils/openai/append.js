@@ -1,7 +1,11 @@
 import { ICON_NAMES } from '../../../shared/icon-names.js';
 import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
-import { requestChatCompletionContent } from '../llm/index.js';
+import {
+  requestChatCompletionContent,
+  starterRequest,
+  untrustedData,
+} from '../llm/index.js';
 import { extractJsonObject } from './json.js';
 import { detectDeckLanguage, normalizeLang } from './lang.js';
 import { summarizeDeckForPrompt } from './prompt.js';
@@ -198,27 +202,29 @@ export async function generateSlidesToAppendFromRawContent(
 
   const user = [
     'EXISTING PRESENTATION SUMMARY:',
-    deckSummary,
+    untrustedData(deckSummary),
     '',
     'USER REQUEST (new slides to add):',
-    String(rawContent || ''),
+    starterRequest(rawContent || ''),
     ...(isRevision
       ? [
           '',
           '=== REVISION MODE ===',
           'You previously generated the batch below for this request. The user reviewed it and wants changes.',
           'PRIOR BATCH (JSON):',
-          JSON.stringify(
-            priorSlides.map((s) => ({
-              type: s?.type,
-              content: s?.content || {},
-            })),
-            null,
-            2,
+          untrustedData(
+            JSON.stringify(
+              priorSlides.map((s) => ({
+                type: s?.type,
+                content: s?.content || {},
+              })),
+              null,
+              2,
+            ),
           ),
           '',
           'USER FEEDBACK ON THE BATCH:',
-          String(feedback || '').trim(),
+          starterRequest(String(feedback || '').trim()),
           '',
           'Return the FULL revised batch in the same output format (not a diff).',
           'Keep slides the feedback does not touch as they are; change only what the feedback asks for (content, slide types, count, order).',

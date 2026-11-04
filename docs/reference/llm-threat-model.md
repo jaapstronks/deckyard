@@ -81,8 +81,8 @@ through `custom/ai/prompts.js`.
 | `POST /api/v1/ai/wizard`                               | API key `ai`       | The caller's text                                                                                                                        | New deck                                                       |
 | MCP `create_presentation`                              | Key `ai`, or stdio | Whatever the agent passes, which may be anything the agent read earlier                                                                  | New deck, persisted                                            |
 
-The source text goes into the user message bare, after a `SOURCE:` marker;
-phase 2 feeds phase 1's own output back bare. What bounds the answer:
+The source text goes into the user message fenced as data (§ Findings 6), and
+so does phase 1's own output when phase 2 feeds it back. What bounds the answer:
 `validateAndFixRefinedSlides` repairs structure and refuses overlong text,
 `resolveSourceImages` empties every remote URL the model wrote into a declared
 image field, `normalizeSlides` refuses unknown slide types, and the deck is new,
@@ -92,18 +92,18 @@ and the per-slide review metadata (`_aiReasoning`, `_aiAlternatives`,
 
 ### Editing verbs: the model writes into an existing deck
 
-| Entry                                                                 | Starter                      | Author of the text                                                                                                      | Sink                                                                            |
-| --------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `POST /api/ai/append-slides` (`server/utils/openai/append.js`)        | Auth                         | The starter's request, plus a **deck summary the client sends** (collaborators' titles and bodies, quoted unescaped)    | Returned to the editor, which saves it through the ordinary PUT                 |
-| `POST /api/v1/ai/append-slides`                                       | Key `ai`                     | Same                                                                                                                    | Returned; **skips `validateAndFixRefinedSlides`**, keeps the remote-image scrub |
-| MCP `append_slides`                                                   | Key `ai`                     | The agent's text plus the **stored deck**                                                                               | **Persisted** through `replaceSlides` (field validation runs)                   |
-| `POST /api/ai/refine-section` (`server/utils/ai/refine-section.js`)   | Auth                         | Selected and neighbouring slides from the client (collaborators), the starter's feedback bare                           | Returned; validated and repaired; **no remote-image scrub**                     |
-| `POST /api/ai/iterate` (`server/utils/ai/iterate-deck.js`)            | Auth                         | The starter's command, **interpolated into the system prompt**; one slide or the **whole deck** as JSON (collaborators) | Returned as a plan plus the resulting deck; the editor applies it               |
-| MCP `iterate_presentation`                                            | Key `ai`                     | The agent's command plus the stored deck                                                                                | **Persisted**: the whole slide list is replaced                                 |
-| `POST /api/ai/convert-slide` (`server/utils/openai/convert-slide.js`) | Auth                         | One slide's fields, interpolated bare into a per-type-pair prompt                                                       | Returned as `content` with **no validation**                                    |
-| MCP `convert_slide`                                                   | Key `ai`                     | The stored slide                                                                                                        | Persisted through `updateSlide` (field validation runs)                         |
-| `POST /api/ai/compress-deck` (`server/utils/ai/compress-deck.js`)     | Auth                         | Deck title, headings, the first 100 characters of each body, item titles (collaborators), bare                          | A list of merges and removals; applying it deletes the slides the model chose   |
-| MCP `compress_presentation`                                           | Key `ai`; write when applied | The stored deck, **unfiltered** for the preview (hidden slides included)                                                | With `apply: true`, **persisted** removals                                      |
+| Entry                                                                 | Starter                      | Author of the text                                                                                                               | Sink                                                                            |
+| --------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `POST /api/ai/append-slides` (`server/utils/openai/append.js`)        | Auth                         | The starter's request, plus a **deck summary the client sends** (collaborators' titles and bodies, quoted unescaped)             | Returned to the editor, which saves it through the ordinary PUT                 |
+| `POST /api/v1/ai/append-slides`                                       | Key `ai`                     | Same                                                                                                                             | Returned; **skips `validateAndFixRefinedSlides`**, keeps the remote-image scrub |
+| MCP `append_slides`                                                   | Key `ai`                     | The agent's text plus the **stored deck**                                                                                        | **Persisted** through `replaceSlides` (field validation runs)                   |
+| `POST /api/ai/refine-section` (`server/utils/ai/refine-section.js`)   | Auth                         | Selected and neighbouring slides from the client (collaborators), the starter's feedback bare                                    | Returned; validated and repaired; **no remote-image scrub**                     |
+| `POST /api/ai/iterate` (`server/utils/ai/iterate-deck.js`)            | Auth                         | The starter's command, **in the user message as the starter's request**; one slide or the **whole deck** as JSON (collaborators) | Returned as a plan plus the resulting deck; the editor applies it               |
+| MCP `iterate_presentation`                                            | Key `ai`                     | The agent's command plus the stored deck                                                                                         | **Persisted**: the whole slide list is replaced                                 |
+| `POST /api/ai/convert-slide` (`server/utils/openai/convert-slide.js`) | Auth                         | One slide's fields, fenced, in a per-type-pair prompt                                                                            | Returned as `content` with **no validation**                                    |
+| MCP `convert_slide`                                                   | Key `ai`                     | The stored slide                                                                                                                 | Persisted through `updateSlide` (field validation runs)                         |
+| `POST /api/ai/compress-deck` (`server/utils/ai/compress-deck.js`)     | Auth                         | Deck title, headings, the first 100 characters of each body, item titles (collaborators), bare                                   | A list of merges and removals; applying it deletes the slides the model chose   |
+| MCP `compress_presentation`                                           | Key `ai`; write when applied | The stored deck, **unfiltered** for the preview (hidden slides included)                                                         | With `apply: true`, **persisted** removals                                      |
 
 What bounds these: every replacement slide goes through `validateAndFixSlide`
 (structure, lengths), the persisted MCP paths run `validateSlide` and the
@@ -139,12 +139,10 @@ offer; its content is not.
 | `POST …/translate/missing`                                                                                                                     | Auth with write           | The missing strings as a path map                                                                                                                                           | Written by path; persisted                                                                                 |
 | `POST …/translate/fields`                                                                                                                      | Auth with read            | An **arbitrary field map the client sends**                                                                                                                                 | Returned only                                                                                              |
 
-Translation has the only instruction boundary in the codebase:
-`server/utils/openai/translation-instructions.js` labels the admin's reference
-"data, not instructions" and tells the model to ignore commands inside it, and
-its own comment says what that is worth: "Quoting is not a security boundary
-against malicious text." Deck content, the larger and less trusted input on
-the same call, carries no such label. What bounds the answer is structural:
+Deck content and the admin's reference
+(`server/utils/openai/translation-instructions.js`) are both fenced as data,
+and that module's comment says what that is worth: "Fencing is not a security
+boundary against malicious text." What bounds the answer is structural:
 the writer accepts only strings, only for keys the type declares as text (or
 stores as prose), never a URL, enum, number or image field.
 `translateShortText` in the same module has no callers.
@@ -343,12 +341,14 @@ severity order, except that the first is the one to fix first.
    suggestion", collaboration live edits, the editor's convert-slide answer
    and v1 `append-slides`; `end-slide` renders its three link fields without
    the render-time scheme check the other renderers have.
-6. **Deck content enters every prompt as instructions can** (DY-814). No
-   prompt delimits user text as data or tells the model to ignore commands
-   in it, except the organization's translation reference; the iterate
-   command is interpolated into the system prompt. One shared delimiting
-   and one shared system rule, applied by the transport seam, replaces
-   per-path copy.
+6. **Deck content entered every prompt as instructions can.** No prompt
+   delimited user text as data, and the iterate command stood in the system
+   prompt. Fixed as a first layer of defence, not a boundary: every prompt
+   fences data with `untrustedData()` and the starter's words with
+   `starterRequest()` (`server/utils/llm/untrusted-data.js`); the transport adds
+   the one rule that gives the fences their meaning and refuses a user message
+   without one. `tests/llm-data-boundary.test.js` drives every path against a
+   fake model that obeys what it reads outside a fence (DY-814).
 7. **MCP hands content to the agent unmarked and some descriptions invert
    the trust** (DY-815). Results carry no "user data" marker; `usage` rules
    are described as binding; `preview_slide` asks for an artifact.
@@ -399,6 +399,7 @@ What pins the controls above today, and the gaps per finding:
   `ai-paths-org-registry.test.js`, `append-source-images.test.js`,
   `source-images.test.js`, `digest-generation.test.js`,
   `email-template-escaping.test.js`.
+- Deck content as data on every model path: `llm-data-boundary.test.js`.
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 
@@ -406,7 +407,6 @@ Not pinned by any test, one per finding: a `javascript:` or foreign-host
 video source (added with the fix for finding 1), a reader's copy carrying
 notes, a model-written remote URL surviving iterate or refine, a plan that
 removes an unnamed slide, an applied suggestion with an invalid field, an
-instruction inside deck content changing a translation or an iteration, an
 MCP result for a slide that contains an instruction, a read-permission caller
 spending tokens, a `..` vision path, an oversized digest subject. Each item
 carries its regression test as an acceptance criterion, after the pattern of

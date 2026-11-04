@@ -10,7 +10,11 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
-import { requestChatCompletionContent } from '../llm/index.js';
+import {
+  requestChatCompletionContent,
+  starterRequest,
+  untrustedData,
+} from '../llm/index.js';
 import { extractJsonObject, safeJsonParse } from '../openai/json.js';
 import { buildPhase2CatalogPrompt } from './slide-type-catalog.js';
 import { validateAndFixSlide } from './validate-slides/index.js';
@@ -184,19 +188,20 @@ export async function iterateSlide(
   });
 
   const systemPrompt = prompts.buildSlideIterationPrompt({
-    command,
     strategy,
     lang,
     catalogPrompt,
   });
 
   const contextSection = deckContext.length
-    ? `\nDECK CONTEXT (surrounding slides):\n${deckContext.join('\n')}\n`
+    ? `\nDECK CONTEXT (surrounding slides):\n${untrustedData(deckContext.join('\n'))}\n`
     : '';
 
-  const userPrompt = `${contextSection}
+  const userPrompt = `INSTRUCTION:
+${starterRequest(command)}
+${contextSection}
 SLIDE TO MODIFY:
-${JSON.stringify({ type: slide.type, content: slide.content }, null, 2)}`;
+${untrustedData(JSON.stringify({ type: slide.type, content: slide.content }, null, 2))}`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -261,7 +266,6 @@ export async function iterateDeck(
   });
 
   const systemPrompt = prompts.buildDeckIterationPrompt({
-    command,
     strategy,
     lang,
     catalogPrompt,
@@ -270,7 +274,10 @@ export async function iterateDeck(
   const slides = deck.slides || [];
   const slideSummaries = slides.map((s, i) => summarizeSlide(s, i));
 
-  const userPrompt = `DECK: "${deck.title || 'Untitled'}" (${slides.length} slides)
+  const userPrompt = `INSTRUCTION:
+${starterRequest(command)}
+
+${untrustedData(`DECK: "${deck.title || 'Untitled'}" (${slides.length} slides)
 
 SLIDE OVERVIEW:
 ${slideSummaries.join('\n')}
@@ -284,7 +291,7 @@ ${JSON.stringify(
   })),
   null,
   2,
-)}`;
+)}`)}`;
 
   const messages = [
     { role: 'system', content: systemPrompt },

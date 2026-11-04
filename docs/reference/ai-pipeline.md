@@ -30,6 +30,11 @@ role})`, `getLlmStatus()`. Resolves vendor + model + key, including the
   sandbox's Mistral-only stance and the `role: 'plan'` stronger-model rule.
 - `server/utils/llm/env.js` — `requireEnv` / `optionalEnv`.
 - `server/utils/llm/error.js` — `LlmError`, the normalised vendor failure.
+- `server/utils/llm/untrusted-data.js` — `untrustedData()` and `starterRequest()`,
+  the one marking of user content in a prompt. The transport adds the rule that
+  explains them and refuses a user message without a fence, so a new prompt, and
+  a fork's override in `custom/ai/prompts.js`, must fence what it sends
+  ([threat model](llm-threat-model.md)).
 - `server/utils/llm/provider-base.js` — shared request/response plumbing.
 - `server/utils/llm/providers/openai.js`, `claude.js`, `mistral.js`,
   `deepseek.js`, `openai-compat.js` — one adapter per vendor.

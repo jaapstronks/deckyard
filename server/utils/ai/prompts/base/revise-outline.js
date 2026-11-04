@@ -7,6 +7,8 @@
  * `revise-outline.js`.
  */
 
+import { untrustedData } from '../../../llm/untrusted-data.js';
+
 /**
  * Build the system prompt for the revision pass.
  *
@@ -91,12 +93,6 @@ RULES:
  */
 export function buildRevisionUserPrompt(outline, rawContent) {
   const lines = [
-    'SOURCE DOCUMENT:',
-    String(rawContent || ''),
-    '',
-    '─────────────────────────────────────────',
-    '',
-    'DRAFT PLAN:',
     `Title: ${outline.title}`,
     outline.summary ? `Summary: ${outline.summary}` : '',
     '',
@@ -108,8 +104,12 @@ export function buildRevisionUserPrompt(outline, rawContent) {
     lines.push('');
   }
 
-  lines.push(
+  return [
+    'SOURCE DOCUMENT:',
+    untrustedData(rawContent || ''),
+    '─────────────────────────────────────────',
+    'DRAFT PLAN:',
+    untrustedData(lines.filter((line) => line !== '').join('\n')),
     'Review this plan against the source and return your operations as JSON.',
-  );
-  return lines.filter((line) => line !== '').join('\n');
+  ].join('\n');
 }
