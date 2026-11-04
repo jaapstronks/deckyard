@@ -151,3 +151,45 @@ test("no fork's Bunny library id survives in shared/ or server/", () => {
     `a Bunny library belongs in configuration, not in code:\n${offenders.join('\n')}`,
   );
 });
+
+// ------------------------------------------------ the source is never the src
+
+test('a pasted URL that is not the Bunny player over https embeds nothing', () => {
+  // The `/embed/` branch used to hand the paste back as the iframe `src`
+  // after a substring test on the host, so anything that *mentioned* the host
+  // rendered as a frame in the page's own origin. Every spelling below used
+  // to come out as `src` verbatim.
+  const refused = [
+    `javascript:alert(document.domain)//iframe.mediadelivery.net/embed/`,
+    `https://attacker.example/?leak=1&x=iframe.mediadelivery.net/embed/${LIB}/${UUID}`,
+    `https://iframe.mediadelivery.net.attacker.example/embed/${LIB}/${UUID}`,
+    `http://iframe.mediadelivery.net/embed/${LIB}/${UUID}`,
+    `https://iframe.mediadelivery.net/embed/${LIB}/not-a-uuid`,
+    `https://iframe.mediadelivery.net/embed/${LIB}/${UUID}/../../x`,
+    `https://iframe.mediadelivery.net/other/${LIB}/${UUID}`,
+    `data:text/html,<script>1</script>//iframe.mediadelivery.net/embed/`,
+  ];
+  for (const source of refused) {
+    assert.equal(bunnyEmbedUrlFromInput(source), '', source);
+    assert.equal(renderedSrc({ source, bunnyLibraryId: LIB }), '', source);
+    assert.match(
+      render({ source, bunnyLibraryId: LIB }),
+      /video-empty/,
+      source,
+    );
+  }
+});
+
+test('the embed src is rebuilt from the ids, never copied from the paste', () => {
+  // A query string, a fragment and a trailing slash on a real player URL are
+  // dropped: the slide adds its own player parameters to a canonical URL.
+  const canonical = `https://iframe.mediadelivery.net/embed/${LIB}/${UUID}`;
+  for (const source of [
+    `https://iframe.mediadelivery.net/embed/${LIB}/${UUID}?autoplay=true&foo=bar`,
+    `https://iframe.mediadelivery.net/embed/${LIB}/${UUID}/`,
+    `https://iframe.mediadelivery.net/play/${LIB}/${UUID}#t=10`,
+    `https://IFRAME.MediaDelivery.net/embed/${LIB}/${UUID}`,
+  ]) {
+    assert.equal(bunnyEmbedUrlFromInput(source), canonical, source);
+  }
+});

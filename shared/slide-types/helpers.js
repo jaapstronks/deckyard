@@ -585,31 +585,43 @@ export function bunnyEmbedUrlFromInput(input, { libraryId = '' } = {}) {
   const raw = String(input || '').trim();
   if (!raw) return '';
 
-  // If user pasted the Bunny "play" URL, convert it to an embed URL.
-  // Example: https://iframe.mediadelivery.net/play/<libraryId>/<uuid>
-  if (/iframe\.mediadelivery\.net\/play\//i.test(raw)) {
-    const u = parseUrl(raw);
-    const m = u?.pathname.match(/\/play\/(\d+)\/([0-9a-f-]{36})/i);
-    if (m?.[1] && m?.[2]) {
-      const lib = m[1];
-      const id = m[2];
-      return `https://iframe.mediadelivery.net/embed/${encodeURIComponent(
-        lib,
-      )}/${encodeURIComponent(id)}`;
-    }
-  }
-
-  if (/iframe\.mediadelivery\.net\/embed\//i.test(raw)) {
-    return normalizeUrl(raw);
+  // A pasted play or embed URL is read for its two ids and nothing else: the
+  // scheme has to be https, the host Bunny's player, and the path a library
+  // id followed by a video UUID. The embed URL is then rebuilt from those
+  // ids, never copied from the paste. The `/embed/` branch used to hand the
+  // paste back as the iframe `src` after a substring test on the host, so
+  // `javascript:…//iframe.mediadelivery.net/embed/` rendered as a frame that
+  // ran in the page's own origin (docs/reference/llm-threat-model.md § Sinks).
+  const u = parseUrl(raw);
+  if (u) {
+    if (u.protocol !== 'https:' || !hostMatches(u.hostname, BUNNY_PLAYER_HOST))
+      return '';
+    const m = u.pathname.match(
+      /^\/(?:play|embed)\/(\d+)\/([0-9a-f-]{36})\/?$/i,
+    );
+    return m && looksLikeUuid(m[2]) ? bunnyEmbedUrl(m[1], m[2]) : '';
   }
   if (looksLikeUuid(raw)) {
     const lib = String(libraryId || '').trim();
     if (!lib) return '';
-    return `https://iframe.mediadelivery.net/embed/${encodeURIComponent(
-      lib,
-    )}/${encodeURIComponent(raw)}`;
+    return bunnyEmbedUrl(lib, raw);
   }
   return '';
+}
+
+const BUNNY_PLAYER_HOST = 'iframe.mediadelivery.net';
+
+/**
+ * The one spelling of a Bunny embed URL, built from the two ids that identify
+ * a video. Every Bunny `src` the video slide renders comes out of here.
+ * @param {string} libraryId
+ * @param {string} videoId
+ * @returns {string}
+ */
+function bunnyEmbedUrl(libraryId, videoId) {
+  return `https://${BUNNY_PLAYER_HOST}/embed/${encodeURIComponent(
+    libraryId,
+  )}/${encodeURIComponent(videoId)}`;
 }
 
 export function curlyQuote(raw) {
