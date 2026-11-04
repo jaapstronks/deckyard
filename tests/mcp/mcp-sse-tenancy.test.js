@@ -23,6 +23,7 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
 import { userRows } from '../helpers/identity-fixtures.js';
+import { fencedData } from '../helpers/fenced-data.js';
 
 process.env.AUTH_SECRET = ['amethyst', 'test', 'sse', 'tenancy']
   .join('-')
@@ -223,7 +224,7 @@ describe('MCP over SSE — organization scope', () => {
     );
 
     assert.equal(isError, false, `list_presentations failed: ${text}`);
-    const ids = JSON.parse(text).presentations.map((p) => p.id);
+    const ids = JSON.parse(fencedData(text)).presentations.map((p) => p.id);
     assert.deepEqual(ids, [ownDeckId]);
   });
 
@@ -231,7 +232,7 @@ describe('MCP over SSE — organization scope', () => {
     const { isError, text } = await callTool('list_presentations');
 
     assert.equal(isError, false, `list_presentations failed: ${text}`);
-    const ids = JSON.parse(text).presentations.map((p) => p.id);
+    const ids = JSON.parse(fencedData(text)).presentations.map((p) => p.id);
     assert.deepEqual(ids, [ownDeckId]);
   });
 

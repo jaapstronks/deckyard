@@ -1,5 +1,5 @@
 /**
- * MCP Slide Preview — generates self-contained HTML for rendering in Claude Desktop artifacts.
+ * MCP Slide Preview — generates self-contained HTML for the user to look at.
  *
  * Uses a minimal CSS bundle (slide CSS + theme vars only, no app.css or fonts)
  * to keep the output small enough for inline artifact rendering.
