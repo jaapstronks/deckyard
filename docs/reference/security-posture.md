@@ -31,6 +31,8 @@ The controls fall into three groups: what the **headless browser** and
 gating, login throttle), and what **untrusted request or upload content** can do
 (inert uploads, body cap, path-traversal containment, CSRF).
 
+A fourth group is not on this page: what untrusted text can do once a **language model** reads it and Deckyard acts on the answer (prompt injection). That has its own reference, [`llm-threat-model.md`](llm-threat-model.md), which inventories every path that calls a model, the sinks its output reaches, and the open findings.
+
 ## Headless-browser sandbox posture
 
 **Where:** `server/utils/puppeteer-browser.js`.
