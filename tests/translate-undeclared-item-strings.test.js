@@ -16,6 +16,7 @@
  * Run with: node --test tests/translate-undeclared-item-strings.test.js
  */
 
+import { fencedData } from './helpers/fenced-data.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -104,9 +105,7 @@ function reply(target) {
 
 function promptMeta() {
   return JSON.parse(
-    lastUserMessage
-      .slice(lastUserMessage.indexOf('SLIDE META'))
-      .replace(/^SLIDE META[^\n]*\n/, ''),
+    fencedData(lastUserMessage.slice(lastUserMessage.indexOf('SLIDE META'))),
   );
 }
 
@@ -160,7 +159,7 @@ test('the scan reports the remnants, and the fill job closes them', async () => 
   );
 
   assert.deepEqual(
-    JSON.parse(lastUserMessage),
+    JSON.parse(fencedData(lastUserMessage)),
     { fields: { f0: 'Eerst', f1: 'Terzijde' } },
     'the prompt offers both remnants, and no number',
   );

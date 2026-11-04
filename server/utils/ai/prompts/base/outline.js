@@ -21,6 +21,8 @@
  * transport, JSON parsing, validation) stays in `generate-outline.js`.
  */
 
+import { untrustedData } from '../../../llm/untrusted-data.js';
+
 /** The output-language label both calls write in. */
 function outputLanguageLabel({ detectedLang, requestedLang }) {
   if (requestedLang === 'nl') return 'DUTCH';
@@ -99,7 +101,8 @@ export function buildAnalysisUserPrompt({
   }
 
   if (rawFirstSlideTitle) {
-    lines.push(`ORIGINAL TITLE FROM SOURCE FILE: "${rawFirstSlideTitle}"`);
+    lines.push('ORIGINAL TITLE FROM SOURCE FILE:');
+    lines.push(untrustedData(rawFirstSlideTitle));
     lines.push(
       'This may be an event name, date or contextual title rather than the topic.',
     );
@@ -107,12 +110,13 @@ export function buildAnalysisUserPrompt({
   }
 
   if (userName) {
-    lines.push(`PRESENTER NAME (use as subtitle): ${userName}`);
+    lines.push('PRESENTER NAME (use as subtitle):');
+    lines.push(untrustedData(userName));
     lines.push('');
   }
 
   lines.push('SOURCE:');
-  lines.push(String(rawContent || ''));
+  lines.push(untrustedData(rawContent || ''));
 
   return lines.join('\n');
 }
@@ -214,11 +218,7 @@ All text MUST be in ${langLabel}.`;
  * @param {object} options.analysis - normalized output of the analysis call
  */
 export function buildStructureUserPrompt({ analysis }) {
-  const lines = [
-    'Plan the slides for this presentation.',
-    '',
-    `TITLE: ${analysis.title}`,
-  ];
+  const lines = [`TITLE: ${analysis.title}`];
   if (analysis.subtitle) lines.push(`SUBTITLE: ${analysis.subtitle}`);
   if (analysis.summary) lines.push(`SUMMARY: ${analysis.summary}`);
   lines.push('');
@@ -238,11 +238,18 @@ export function buildStructureUserPrompt({ analysis }) {
     lines.push('');
   });
 
+  const prompt = [
+    'Plan the slides for this presentation.',
+    '',
+    untrustedData(lines.join('\n')),
+  ];
+
   if (analysis.sections.some((section) => section.images?.length)) {
-    lines.push(
+    prompt.push(
+      '',
       'IMAGES: a section may list images from the source. A content slide may show one of them: add "image": <number> to that slide when the image shows what the slide says. Each image on at most one slide; most slides have none.',
     );
   }
 
-  return lines.join('\n');
+  return prompt.join('\n');
 }

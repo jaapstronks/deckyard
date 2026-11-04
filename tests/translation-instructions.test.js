@@ -22,6 +22,7 @@ const {
   translatePresentationStrings,
   translatePresentationStringsFillMissing,
 } = await import('../server/utils/openai/translate.js');
+const { untrustedData } = await import('../server/utils/llm/untrusted-data.js');
 const { translationReferenceLines } =
   await import('../server/utils/openai/translation-instructions.js');
 const { TRANSLATION_INSTRUCTION_MAX_LENGTH: MAX } =
@@ -388,7 +389,7 @@ test('empty instructions stay absent; AI killswitch blocks reads and writes', as
   assert.equal(designerPatch.body.settings.translationInstructions, undefined);
 });
 
-test('empty stored instructions add no reference; reference text is JSON quoted', async () => {
+test('empty stored instructions add no reference; reference text is fenced JSON', async () => {
   await settings('PATCH', {
     translationInstructions: { terminology: ' ', styleByLanguage: { nl: '' } },
   });
@@ -401,7 +402,9 @@ test('empty stored instructions add no reference; reference text is JSON quoted'
   assert.equal(lines.length, 4);
   assert.equal(
     lines[2],
-    JSON.stringify({ terminology: literal, targetLanguageStyle: '' }),
+    untrustedData(
+      JSON.stringify({ terminology: literal, targetLanguageStyle: '' }),
+    ),
   );
 });
 
@@ -427,7 +430,7 @@ test('all four translation paths use the same target-language reference', async 
     assert.match(lastSystem, /Fixed term: Deckyard/);
     assert.match(lastSystem, /Plain English/);
     assert.doesNotMatch(lastSystem, /Formal Dutch/);
-    assert.match(lastSystem, /data, not instructions/);
+    assert.match(lastSystem, /<untrusted-data>/);
   }
   await translateShortText('Hello', {
     from: 'en-GB',

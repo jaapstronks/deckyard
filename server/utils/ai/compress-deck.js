@@ -8,7 +8,11 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
-import { requestChatCompletionContent, LlmError } from '../llm/index.js';
+import {
+  requestChatCompletionContent,
+  LlmError,
+  untrustedData,
+} from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { createLogger } from '../logger.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
@@ -106,12 +110,11 @@ export function buildCompressionUserPrompt({
     }
   });
 
-  lines.push('');
-  lines.push(
+  return [
+    untrustedData(lines.join('\n')),
+    '',
     'Analyze this presentation and identify consolidation opportunities.',
-  );
-
-  return lines.join('\n');
+  ].join('\n');
 }
 
 /**

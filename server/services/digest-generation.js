@@ -5,7 +5,10 @@
 
 import { getFeatureFlags } from '../config/flags-snapshot.js';
 import { getLlmConfig } from '../utils/llm/config.js';
-import { requestChatCompletionContent } from '../utils/llm/index.js';
+import {
+  requestChatCompletionContent,
+  untrustedData,
+} from '../utils/llm/index.js';
 import { formatDuration } from '../storage/analytics/index.js';
 import { createTranslator, normalizeLocale } from '../i18n/index.js';
 import { createLogger } from '../utils/logger.js';
@@ -200,11 +203,11 @@ Avoid:
 function buildDigestUserPrompt(user, formattedData) {
   return `Generate a weekly engagement digest email for:
 
-USER: ${user.name || user.email.split('@')[0]}
+${untrustedData(`USER: ${user.name || user.email.split('@')[0]}
 PERIOD: ${formattedData.weekStart} to ${formattedData.weekEnd}
 
 ANALYTICS DATA:
-${JSON.stringify(formattedData, null, 2)}
+${JSON.stringify(formattedData, null, 2)}`)}
 
 Remember: Output must be valid JSON with the specified fields.`;
 }
@@ -243,11 +246,11 @@ Avoid:
 function buildTeamDigestUserPrompt(admin, analytics) {
   return `Generate a weekly team engagement digest email for:
 
-ADMIN: ${admin.name || admin.email.split('@')[0]}
+${untrustedData(`ADMIN: ${admin.name || admin.email.split('@')[0]}
 ORGANIZATION PERIOD: ${analytics.weekStart} to ${analytics.weekEnd}
 
 TEAM ANALYTICS:
-${JSON.stringify(analytics, null, 2)}
+${JSON.stringify(analytics, null, 2)}`)}
 
 Remember: Output must be valid JSON with the specified fields.`;
 }

@@ -11,12 +11,7 @@
 /**
  * Build the system prompt for slide-level iteration
  */
-export function buildSlideIterationPrompt({
-  command,
-  strategy,
-  lang,
-  catalogPrompt,
-}) {
+export function buildSlideIterationPrompt({ strategy, lang, catalogPrompt }) {
   const langLabel = lang === 'nl' ? 'DUTCH' : 'ENGLISH';
 
   const strategyInstructions = {
@@ -51,9 +46,7 @@ Return an ARRAY of slides.`,
 - Use the same type unless a different one better serves the modified content`,
   };
 
-  return `You are an expert presentation editor. Apply the user's instruction to modify a slide.
-
-INSTRUCTION: "${command}"
+  return `You are an expert presentation editor. Apply the user's instruction, in the user message, to modify a slide.
 
 ${strategyInstructions[strategy] || strategyInstructions.general}
 
@@ -81,12 +74,7 @@ ${
 /**
  * Build the system prompt for deck-level iteration
  */
-export function buildDeckIterationPrompt({
-  command,
-  strategy,
-  lang,
-  catalogPrompt,
-}) {
+export function buildDeckIterationPrompt({ strategy, lang, catalogPrompt }) {
   const langLabel = lang === 'nl' ? 'DUTCH' : 'ENGLISH';
 
   const strategyInstructions = {
@@ -103,9 +91,7 @@ export function buildDeckIterationPrompt({
     general: `GOAL: Apply the user's instruction across the deck.`,
   };
 
-  return `You are an expert presentation editor. Analyze the deck and suggest modifications.
-
-INSTRUCTION: "${command}"
+  return `You are an expert presentation editor. Analyze the deck and suggest modifications according to the user's instruction, in the user message.
 
 ${strategyInstructions[strategy] || strategyInstructions.general}
 

@@ -459,7 +459,7 @@ test('the prompts speak of images only when the source has them', () => {
   assert.doesNotMatch(phase2(null), /source-image/);
   assert.match(
     phase2({ n: 2, description: 'Barn' }),
-    /source-image:2 \(Barn\)/,
+    /source-image:2, described as:\n<untrusted-data>\nBarn/,
   );
 });
 
@@ -565,7 +565,7 @@ test('a PDF with three images: the chosen one on its slide, the others never upl
 
   const analysisCall = bodies.find((b) => b.includes('Analyse this source.'));
   assert.match(analysisCall, /\[IMAGE 3: Map of the planned extension/);
-  assert.ok(bodies.some((b) => b.includes('source-image:2 (The new barn')));
+  assert.ok(bodies.some((b) => b.includes('source-image:2, described as:')));
 
   const [barn, plan] = modelSlides(deck);
   assert.match(barn.content.image, /^\/uploads\/.*report-image-2-.*\.png$/);

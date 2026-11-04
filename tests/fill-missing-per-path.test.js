@@ -17,6 +17,7 @@
  * Run with: node --test tests/fill-missing-per-path.test.js
  */
 
+import { fencedData } from './helpers/fenced-data.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -31,7 +32,7 @@ const realFetch = globalThis.fetch;
 globalThis.fetch = async (_endpoint, opts) => {
   const body = opts?.body ? JSON.parse(opts.body) : null;
   const user = body?.messages?.find((m) => m.role === 'user')?.content || '';
-  const { fields } = JSON.parse(user);
+  const { fields } = JSON.parse(fencedData(user));
   asked.push(fields);
   // A translation that names its source, so a test can see where it came from.
   const translations = Object.fromEntries(

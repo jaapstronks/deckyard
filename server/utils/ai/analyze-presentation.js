@@ -6,7 +6,12 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
-import { requestChatCompletionContent, LlmError } from '../llm/index.js';
+import {
+  requestChatCompletionContent,
+  LlmError,
+  starterRequest,
+  untrustedData,
+} from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import {
   SLIDE_TYPE_CATALOG,
@@ -198,12 +203,13 @@ function buildAnalysisUserPrompt({ slides, categories }) {
   ];
 
   if (categories && categories.length > 0) {
-    lines.push(`Focus on these categories: ${categories.join(', ')}`);
+    lines.push('Focus on these categories:');
+    lines.push(starterRequest(categories.join(', ')));
     lines.push('');
   }
 
   lines.push('PRESENTATION SLIDES:');
-  lines.push(JSON.stringify(slidesJson, null, 2));
+  lines.push(untrustedData(JSON.stringify(slidesJson, null, 2)));
 
   return lines.join('\n');
 }

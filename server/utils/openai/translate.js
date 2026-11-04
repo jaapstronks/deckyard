@@ -7,7 +7,7 @@ import {
 } from '../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
-import { requestChatCompletionContent } from '../llm/index.js';
+import { requestChatCompletionContent, untrustedData } from '../llm/index.js';
 import { ValidationError } from '../errors.js';
 import { slideTextRows } from '../../../shared/i18n-progress.js';
 import { isNonEmptyString } from '../../../shared/i18n-utils.js';
@@ -127,21 +127,24 @@ export async function translatePresentationStrings(
 
   const user = [
     'TRANSLATE THIS PRESENTATION JSON:',
-    JSON.stringify(
-      {
-        title: srcTitle,
-        slides: srcSlides.map((s) => ({
-          id: s?.id,
-          type: s?.type,
-          content: s?.content && typeof s.content === 'object' ? s.content : {},
-        })),
-      },
-      null,
-      2,
+    untrustedData(
+      JSON.stringify(
+        {
+          title: srcTitle,
+          slides: srcSlides.map((s) => ({
+            id: s?.id,
+            type: s?.type,
+            content:
+              s?.content && typeof s.content === 'object' ? s.content : {},
+          })),
+        },
+        null,
+        2,
+      ),
     ),
     '',
     'SLIDE META (translate keys per slide id):',
-    JSON.stringify(slideMeta, null, 2),
+    untrustedData(JSON.stringify(slideMeta, null, 2)),
   ].join('\n');
 
   const content = await requestChatCompletionContent({
@@ -280,7 +283,7 @@ export async function translateShortText(
     maxTokens: 2048,
     messages: [
       { role: 'system', content: system },
-      { role: 'user', content: src },
+      { role: 'user', content: untrustedData(src) },
     ],
   });
 
@@ -326,10 +329,12 @@ export async function translateFieldMap(
     '{ "translations": { "<key>": "<translated text>", ... } }',
   ].join('\n');
 
-  const user = JSON.stringify(
-    { fields: Object.fromEntries(keys.map((k) => [k, input[k]])) },
-    null,
-    2,
+  const user = untrustedData(
+    JSON.stringify(
+      { fields: Object.fromEntries(keys.map((k) => [k, input[k]])) },
+      null,
+      2,
+    ),
   );
 
   const content = await requestChatCompletionContent({

@@ -17,6 +17,7 @@
  * Run with: node --test tests/nested-item-translation.test.js
  */
 
+import { fencedData } from './helpers/fenced-data.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -124,9 +125,7 @@ test('the model is told about the nested items field', async () => {
   await translatePresentationStrings(deck('nl'), { from: 'nl', to: 'en-GB' });
 
   const meta = JSON.parse(
-    lastUserMessage
-      .slice(lastUserMessage.indexOf('SLIDE META'))
-      .replace(/^SLIDE META[^\n]*\n/, ''),
+    fencedData(lastUserMessage.slice(lastUserMessage.indexOf('SLIDE META'))),
   );
   const rows = meta[0].itemsFields.find((f) => f.key === 'rows');
   assert.ok(rows, 'slideMeta must list the rows items field');
@@ -246,7 +245,7 @@ test('fillMissing fills only the empty nested text, from its own source path', a
     { from: 'nl', to: 'en-GB' },
   );
   assert.deepEqual(
-    JSON.parse(lastUserMessage),
+    JSON.parse(fencedData(lastUserMessage)),
     { fields: { f0: 'Tekst B' } },
     'only the source value on the gap path reaches the model',
   );

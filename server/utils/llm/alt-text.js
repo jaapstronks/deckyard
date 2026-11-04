@@ -8,7 +8,7 @@ import {
   normalizeLang,
 } from '../../../shared/i18n-utils.js';
 import { getLlmConfig } from './config.js';
-import { requestChatCompletionContent } from './index.js';
+import { requestChatCompletionContent, untrustedData } from './index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { truncateForPrompt } from '../openai/prompt.js';
 import { resolveImageUrlForVisionInput } from './vision.js';
@@ -99,12 +99,18 @@ export async function generateImageAltTexts({
   const userText = [
     'This may be relevant context to determine the ALT text.',
     '',
-    ctxPresTitle ? `Presentation title: ${ctxPresTitle}` : null,
-    ctxSlideType ? `Slide type: ${ctxSlideType}` : null,
-    ctxSlideTitle ? `Slide title: ${ctxSlideTitle}` : null,
-    desc ? `Image library description: ${desc}` : null,
-    photo ? `Photographer/credit: ${photo}` : null,
-    tg.length ? `Tags: ${tg.join(', ')}` : null,
+    untrustedData(
+      [
+        ctxPresTitle ? `Presentation title: ${ctxPresTitle}` : null,
+        ctxSlideType ? `Slide type: ${ctxSlideType}` : null,
+        ctxSlideTitle ? `Slide title: ${ctxSlideTitle}` : null,
+        desc ? `Image library description: ${desc}` : null,
+        photo ? `Photographer/credit: ${photo}` : null,
+        tg.length ? `Tags: ${tg.join(', ')}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    ),
     '',
     'Provide a concise ALT text that we can use so that blind/visually impaired people have an idea of what is in the image.',
     'Return ONLY the JSON object.',

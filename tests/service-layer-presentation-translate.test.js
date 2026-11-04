@@ -22,6 +22,7 @@
  * Run with: node --test tests/service-layer-presentation-translate.test.js
  */
 
+import { fencedData } from './helpers/fenced-data.js';
 import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -870,11 +871,7 @@ function stubBudgetedModel(
     const user = JSON.parse(options.body).messages.find(
       (m) => m.role === 'user',
     ).content;
-    const source = JSON.parse(
-      user
-        .split('TRANSLATE THIS PRESENTATION JSON:\n')[1]
-        .split('\n\nSLIDE META')[0],
-    );
+    const source = JSON.parse(fencedData(user));
     const answer = JSON.stringify(
       answerFor(
         {

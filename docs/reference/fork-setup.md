@@ -419,6 +419,13 @@ function-valued entries whose key matches a known builder are applied; anything
 else is ignored with a console warning. A missing or broken `custom/ai/prompts.js`
 leaves the OSS base prompts fully in force.
 
+A user prompt you override must fence what it did not write: `untrustedData()`
+for deck content and sources, `starterRequest()` for the request of the person
+who started the task, both from `server/utils/llm/untrusted-data.js`. The
+transport refuses a user message without a fence, and adds the rule that explains
+the fences to your system prompt itself. The iteration builders no longer receive
+`command`; it reaches the model in the user message.
+
 #### 2. Override a core slide type's catalog copy — `custom/ai/catalog.js`
 
 The AI catalog tells the model what each slide type is for. To replace the
