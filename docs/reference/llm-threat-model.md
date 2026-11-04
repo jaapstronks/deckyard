@@ -198,8 +198,9 @@ with the control at each.
   includes `embed-slide` (any `https:` URL in an iframe whose `sandbox` value
   is an enum the model may set to `permissive`), `video-slide` and the
   organization's database custom types (`{{raw}}` through DOMPurify). It does
-  not include the removed `custom-html-slide`; a `markup: true` field exists
-  only on fork types and is refused at publish.
+  not include the raw-HTML type core removed in October 2026 (recorded in
+  `shared/slide-types/removed.js`); a `markup: true` field exists only on fork
+  types and is refused at publish.
 - **URLs the viewer's browser fetches.** The app surfaces (editor, presenter,
   share viewer, follow-along) ship one CSP with `img-src 'self' data: blob:
 https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
