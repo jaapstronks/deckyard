@@ -105,9 +105,7 @@ function reply(target) {
 
 function promptMeta() {
   return JSON.parse(
-    lastUserMessage
-      .slice(lastUserMessage.indexOf('SLIDE META'))
-      .replace(/^SLIDE META[^\n]*\n/, ''),
+    fencedData(lastUserMessage.slice(lastUserMessage.indexOf('SLIDE META'))),
   );
 }
 
