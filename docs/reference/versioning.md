@@ -340,6 +340,25 @@ Upstream's maintainer steps around a release, moved out of `docs/developer/maint
   (open an example deck from the sandbox Home). Host, key and file names live
   in the private runbook, `deckyard-website` `internal/ops/hetzner-sandbox-vps.md`
   § Updates; they do not belong in this public repo.
+- **Release → website captures on the tag.** A release can move the source
+  files behind the website's screenshots and clips, which turns the website's
+  Docs sync check red on that tag. After checking the tag and upgrading the
+  sandbox, the session that merged the Release PR records the tag and the
+  website SHA in the release record and, when Docs sync reports gated drift,
+  requests recovery from `deckyard-website` by briefing. Website owns registry
+  sources, image and text acceptance, and publication; `deckyard-video` owns
+  capture and rendering on dev-server-1; core owns only recipe repairs. A broken
+  recipe comes back as a briefing and needs a regular release, so nobody patches
+  an older tag. The batch is every gated ID on the tag, and the run succeeds on
+  gated zero against the same tag and ID cohort, with accepted images and text,
+  a green deploy and live SHA-256s equal to the merged files. Core attaches the
+  returned record to the release record and checks it against the raw before and
+  after JSON. When capture or review fails, the old baseline stays and the
+  delivery stays open; nothing is baselined on a source hash alone, with a
+  blanket `--update --all`, or by a second scheduler. The weekly
+  `deckyard-capture` timer remains the fallback, and no release is cut only for
+  this. Steps and failure routes: `deckyard-website` `docs-sync/README.md`
+  § Release recovery.
 - **Release → register the renderer on every runner host.** An installation
   with `RENDERER_RUNNER_SOCKET` set renders frozen editions only with a
   renderer its runner has registered, and nearly every release builds a new
