@@ -79,7 +79,7 @@ test('published deck wins: deep-links to the slide by index', () => {
     slideIndex: 6,
   });
   assert.equal(kind, 'deck');
-  assert.equal(url, `https://slides.ciiic.nl${PUB_PATH}#slide=6`);
+  assert.equal(url, `https://slides.ciiic.nl${PUB_PATH}/slides#slide=6`);
 });
 
 test('trailing slash on baseUrl is normalised', () => {
@@ -88,7 +88,7 @@ test('trailing slash on baseUrl is normalised', () => {
     baseUrl: 'https://slides.ciiic.nl/',
     slideIndex: 0,
   });
-  assert.equal(url, `https://slides.ciiic.nl${PUB_PATH}#slide=0`);
+  assert.equal(url, `https://slides.ciiic.nl${PUB_PATH}/slides#slide=0`);
 });
 
 test('published but no base URL falls through to the provider URL', () => {

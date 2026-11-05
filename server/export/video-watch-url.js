@@ -11,7 +11,7 @@
  *      page, anything the author would rather have in print.
  *   1. Published deck — if the presentation is published and a public base URL
  *      is configured, deep-link into the published deck at the video slide
- *      (`/p/<id>-<slug>#slide=<index>`). The reader lands on the video and can
+ *      (`/p/<id>/<version>/slides#slide=<index>`). The reader lands on the video and can
  *      click through the rest of the deck. This is the preferred target.
  *   2. Provider URL — otherwise fall back to the video's own public URL
  *      (YouTube / Vimeo watch page, Bunny player page). Always watchable,
@@ -99,9 +99,10 @@ export function resolveVideoWatchUrl(
   if (path && base) {
     const idx =
       Number.isInteger(slideIndex) && slideIndex >= 0 ? slideIndex : 0;
-    // The published deck reads the initial slide from `#slide=<0-based index>`.
+    // The canvas reads the initial slide from `#slide=<0-based index>`, and it
+    // is the view that plays a video. `/slides` names it on every edition.
     return {
-      url: `${base}${path}#slide=${idx}`,
+      url: `${base}${path}/slides#slide=${idx}`,
       kind: 'deck',
     };
   }
