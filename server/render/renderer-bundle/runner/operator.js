@@ -25,7 +25,7 @@ import {
   CRUN_DIGEST,
   HOST_LIBRARIES,
 } from './build.js';
-import { PATHS, loadInstallation, loadControl } from './paths.js';
+import { PATHS, loadInstallation, loadControl, trustedPath } from './paths.js';
 import { saveLedger } from './ledger.js';
 import { readFrame, OUTPUT_LIMIT, parseRequest } from '../protocol.js';
 
@@ -43,6 +43,21 @@ function freeze(dir) {
   chmodSync(dir, 0o555);
 }
 
+/** Every existing host path the installation writes into or beneath. Each
+ * must be root-owned without a symlink or group/other-writable component (the
+ * services refuse such a unit path later), so the install checks them all
+ * before its first write instead of leaving a half installation behind. */
+export const INSTALL_TARGETS = Object.freeze([
+  path.dirname(PATHS.install),
+  path.dirname(PATHS.state),
+  path.dirname(PATHS.run),
+  path.dirname(PATHS.config),
+  '/etc/systemd/system',
+  '/etc/tmpfiles.d',
+  '/etc/subuid',
+  '/etc/subgid',
+]);
+
 /** Fresh, explicit operator installation. No start/enable, updates or repair
  * defaults. Reserve a dedicated mapping in both subordinate-id registries. */
 export async function installRunner(build, callerUid, callerGid, subid) {
@@ -59,6 +74,7 @@ export async function installRunner(build, callerUid, callerGid, subid) {
     subid + 65536 >= 4294967295
   )
     throw new Error('invalid operator identities');
+  for (const target of INSTALL_TARGETS) trustedPath(target);
   const lock = JSON.parse(readFileSync(`${build}/build.json`, 'utf8'));
   if (
     lock.schema !== 'deckyard.renderer-runner.build/1' ||

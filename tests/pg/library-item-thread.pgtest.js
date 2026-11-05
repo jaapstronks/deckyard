@@ -33,6 +33,7 @@ import {
   listLibraryItemThread,
   postLibraryItemMessage,
 } from '../../server/services/library-item-comments.js';
+import { __settleBackgroundTasks } from '../../server/utils/fire-and-forget.js';
 
 const scope = testScope();
 const MAKER = {
@@ -71,9 +72,12 @@ async function post(actor, item, body) {
   return postLibraryItemMessage(scope, actor, { itemId: item.id, body });
 }
 
-/** The service notifies fire-and-forget; give the fan-out time to land. */
+/**
+ * The service notifies fire-and-forget; wait for that write itself, not for a
+ * fixed time. A 50 ms sleep lost the race on a slow CI runner (DY-858).
+ */
 async function settle() {
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await __settleBackgroundTasks();
 }
 
 pgDescribe('library item thread (real PostgreSQL)', () => {

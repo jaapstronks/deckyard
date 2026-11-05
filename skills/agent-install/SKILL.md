@@ -48,12 +48,17 @@ Docker or Node without asking.
        "deckyard": {
          "command": "node",
          "args": ["server/mcp/index.js"],
-         "cwd": "/absolute/path/to/deckyard",
-         "env": { "DECKYARD_MCP_OWNER_EMAIL": "you@example.com" }
+         "cwd": "/absolute/path/to/deckyard"
        }
      }
    }
    ```
+   That is the whole config with auth off (the default above): there are no
+   users, and the session acts as the local operator who opens every deck.
+   With `--auth=on`, add `"env": { "DECKYARD_MCP_OWNER_EMAIL": "you@example.com" }`
+   with the address of an account that exists (the admin email you set, after
+   signing in once) so the decks are yours in the browser. The server refuses
+   to start on an address no user has.
    For a remote instance use an API key + the SSE transport (`POST /mcp`,
    `Authorization: Bearer dk_live_...`); mint one with
    `node scripts/create-api-key.js --email you@example.com --name "Agent" --scopes read,write,ai`.

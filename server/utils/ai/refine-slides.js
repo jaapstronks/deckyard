@@ -12,7 +12,11 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
-import { requestChatCompletionContent, untrustedData } from '../llm/index.js';
+import {
+  AiQuotaError,
+  requestChatCompletionContent,
+  untrustedData,
+} from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import {
   getOfferedSlideTypes,
@@ -424,6 +428,10 @@ export async function refineSlideGroup(
       // provider fetch the caller just aborted, and the fallback slides would
       // be written for a reader who is already gone.
       if (signal?.aborted) throw err;
+      // The installation's daily ceiling is a refusal, not a failed call: a
+      // retry is refused again, and fallback slides would hide from the
+      // author why the deck came back unrefined (DY-859).
+      if (err instanceof AiQuotaError) throw err;
       if (err instanceof SlideTextLengthError) lengthFailure = err;
       retryCount++;
       if (retryCount > maxRetries) {

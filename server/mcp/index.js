@@ -46,6 +46,7 @@ import { repoRoot } from '../config/paths.js';
 import { envStr } from '../config/utils.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { stdioOwnerError } from './presentation-access.js';
+import { authEnabled } from '../auth/auth.js';
 import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
 /**
@@ -135,6 +136,7 @@ async function main() {
         actorEmail: defaultOwnerEmail,
       }),
       defaultOwnerEmail,
+      { authOn: authEnabled() },
     );
     if (ownerErr) {
       process.stderr.write(`[MCP] ${ownerErr}\n`);

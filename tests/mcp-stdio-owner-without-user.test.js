@@ -113,24 +113,54 @@ test('with a user row the same session reads its own deck', async () => {
 
 test('the stdio check refuses an owner without a user row, by name', async () => {
   await installDb({ withOwner: false });
-  const message = await stdioOwnerError(stdioScope(OWNER), OWNER);
+  const message = await stdioOwnerError(stdioScope(OWNER), OWNER, {
+    authOn: true,
+  });
   assert.match(message, /DECKYARD_MCP_OWNER_EMAIL/);
   assert.match(message, /solo@example\.com/);
   assert.match(message, /no user/);
+  assert.match(message, /Sign in to the web app/);
+});
+
+test('with auth off the refusal names no sign-in, only what works there (DY-857)', async () => {
+  await installDb({ withOwner: false });
+  const message = await stdioOwnerError(stdioScope(OWNER), OWNER, {
+    authOn: false,
+  });
+  assert.match(message, /solo@example\.com/);
+  assert.match(message, /Authentication is off/);
+  assert.match(message, /Unset the variable/);
+  assert.doesNotMatch(message, /Sign in to the web app/);
 });
 
 test('the stdio check passes an existing owner, any letter case', async () => {
   await installDb({ withOwner: true });
-  assert.equal(await stdioOwnerError(stdioScope(OWNER), OWNER), null);
-  assert.equal(
-    await stdioOwnerError(stdioScope('Solo@Example.com'), 'Solo@Example.com'),
-    null,
-  );
+  for (const authOn of [true, false]) {
+    assert.equal(
+      await stdioOwnerError(stdioScope(OWNER), OWNER, { authOn }),
+      null,
+    );
+    assert.equal(
+      await stdioOwnerError(
+        stdioScope('Solo@Example.com'),
+        'Solo@Example.com',
+        {
+          authOn,
+        },
+      ),
+      null,
+    );
+  }
 });
 
 test('the stdio check passes a session without an owner (local operator)', async () => {
   await installDb({ withOwner: false });
-  assert.equal(await stdioOwnerError(stdioScope(null), null), null);
+  for (const authOn of [true, false]) {
+    assert.equal(
+      await stdioOwnerError(stdioScope(null), null, { authOn }),
+      null,
+    );
+  }
 });
 
 test('the stdio entrypoint asks before it builds the server', () => {
@@ -143,5 +173,10 @@ test('the stdio entrypoint asks before it builds the server', () => {
   assert.ok(
     asked < source.indexOf('await buildServer({ defaultOwnerEmail })'),
     'the check runs before the server is built',
+  );
+  assert.match(
+    source.slice(asked, source.indexOf('if (ownerErr)')),
+    /authOn: authEnabled\(\)/,
+    'the refusal is worded for the auth state of this installation',
   );
 });
