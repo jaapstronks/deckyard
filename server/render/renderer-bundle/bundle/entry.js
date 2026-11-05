@@ -179,7 +179,12 @@ export async function renderEdition(bundleRoot, input) {
     docLang,
     deckLang,
     metaDescription,
-    ...canvasChrome(stored, pres, { canonicalUrl, lang, metaDescription }),
+    ...canvasChrome(stored, pres, {
+      canonicalUrl,
+      lang,
+      deckLang,
+      metaDescription,
+    }),
     // An edition carries the Prism/KaTeX bytes of its own bundle inline. Linked,
     // they would come from whatever the serving installation has at
     // `/client/vendor/…` on the day of the visit: renderer bytes from outside
@@ -187,7 +192,12 @@ export async function renderEdition(bundleRoot, input) {
     context: 'export',
   });
 
-  const reader = readerChrome({ canonicalUrl, lang });
+  const reader = readerChrome(pres, {
+    canonicalUrl,
+    lang,
+    deckLang,
+    metaDescription,
+  });
   const readerHtml = renderReaderDocument(bundleRoot, pres, {
     slideTypes: null,
     canonicalUrl: reader.canvasUrl,

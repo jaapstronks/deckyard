@@ -30,7 +30,7 @@ Helpers and config (`server/analytics/`):
 
 Edition measurement (`server/services/edition-analytics.js`):
 
-- `recordEditionVisit()` runs after successfully serving a canvas, reader or embed document. It writes a completed anonymous `view_sessions` row for the source deck, with `source_type` set to `published` or `embed` and `source_id` set to `publicationId/version`. Start and end times are equal and duration is zero. No cookie, device id, viewer email, IP address, user agent, attribution or slide journey is collected. Each GET counts separately, including reloads; this is not a unique-reader count or inferred reading duration.
+- `recordEditionVisit()` runs after successfully serving a canvas, reader or embed document. It writes a completed anonymous `view_sessions` row for the source deck, with `source_type` set to `published` (canvas), `reader` or `embed` and `source_id` set to `publicationId/version`. Start and end times are equal and duration is zero. No cookie, device id, viewer email, IP address, user agent, attribution or slide journey is collected. Each GET counts separately, including reloads; this is not a unique-reader count or inferred reading duration. Visits from before `reader` existed stay under `published`: nothing in those rows tells the two views apart.
 - Subresources, manifests, packages and failed or revoked reads do not count. `ANALYTICS_ENABLED=false`, instance `analytics.enabled` off or deck `analyticsEnabled=false` prevent recording; a missing, deleted or cross-organization source deck also prevents it. The response bytes stay unchanged, with no tracking script or visitor identifier injected.
 
 Storage (`server/storage/analytics/`):
@@ -97,22 +97,22 @@ Table `view_sessions` (`server/db/migrations/014_presentation_analytics.js`;
 `024_analytics_privacy.js` added `attribution_allowed`, `065_…` dropped
 `organization_id`, `066_…` dropped `is_internal`):
 
-| Column                                         | Type           | Notes                                                    |
-| ---------------------------------------------- | -------------- | -------------------------------------------------------- |
-| `id`                                           | uuid           | primary key                                              |
-| `presentation_id`                              | uuid           | NOT NULL, FK → `presentations(id)` **ON DELETE CASCADE** |
-| `session_token`                                | varchar(64)    | unique — 64 hex chars, the viewer's proof of possession  |
-| `source_type`                                  | varchar(20)    | `share_link` \| `follow` \| `embed` \| `published`       |
-| `source_id`                                    | varchar(100)   | share token, publish id, or live-session id              |
-| `viewer_type`                                  | varchar(20)    | `anonymous` \| `guest` \| `authenticated`                |
-| `viewer_email`                                 | varchar(320)   | only for an authenticated viewer                         |
-| `device_id`                                    | varchar(100)   | 32 hex, browser-generated; never leaves the DB raw       |
-| `started_at` / `ended_at` / `last_activity_at` | timestamptz    | `last_activity_at` drives the active-viewer query        |
-| `duration_seconds`                             | integer        |                                                          |
-| `exit_slide_id` / `exit_slide_index`           | uuid / integer | where the viewer left                                    |
-| `ip_address`                                   | varchar(45)    | nulled by the retention sweep                            |
-| `user_agent`                                   | text           | truncated to `MAX_USER_AGENT_LENGTH`                     |
-| `attribution_allowed`                          | boolean        | viewer opted into having their name shown                |
+| Column                                         | Type           | Notes                                                          |
+| ---------------------------------------------- | -------------- | -------------------------------------------------------------- |
+| `id`                                           | uuid           | primary key                                                    |
+| `presentation_id`                              | uuid           | NOT NULL, FK → `presentations(id)` **ON DELETE CASCADE**       |
+| `session_token`                                | varchar(64)    | unique — 64 hex chars, the viewer's proof of possession        |
+| `source_type`                                  | varchar(20)    | `share_link` \| `follow` \| `embed` \| `published` \| `reader` |
+| `source_id`                                    | varchar(100)   | share token, publish id, or live-session id                    |
+| `viewer_type`                                  | varchar(20)    | `anonymous` \| `guest` \| `authenticated`                      |
+| `viewer_email`                                 | varchar(320)   | only for an authenticated viewer                               |
+| `device_id`                                    | varchar(100)   | 32 hex, browser-generated; never leaves the DB raw             |
+| `started_at` / `ended_at` / `last_activity_at` | timestamptz    | `last_activity_at` drives the active-viewer query              |
+| `duration_seconds`                             | integer        |                                                                |
+| `exit_slide_id` / `exit_slide_index`           | uuid / integer | where the viewer left                                          |
+| `ip_address`                                   | varchar(45)    | nulled by the retention sweep                                  |
+| `user_agent`                                   | text           | truncated to `MAX_USER_AGENT_LENGTH`                           |
+| `attribution_allowed`                          | boolean        | viewer opted into having their name shown                      |
 
 The session row carries **no `organization_id`**: it inherits the organization from
 its presentation (tenant-isolation rule R2, migration 065 dropped the column).

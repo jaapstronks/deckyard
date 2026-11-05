@@ -315,7 +315,7 @@ export async function getSourceBreakdown(
     async (db) => {
       const decks = dashboardDeckIds(scope, db, userEmail);
       if (!decks) {
-        return { shareLink: 0, published: 0, follow: 0, embed: 0 };
+        return { shareLink: 0, published: 0, reader: 0, follow: 0, embed: 0 };
       }
 
       let query = db
@@ -331,6 +331,7 @@ export async function getSourceBreakdown(
       const breakdown = {
         shareLink: 0,
         published: 0,
+        reader: 0,
         follow: 0,
         embed: 0,
       };
@@ -345,6 +346,9 @@ export async function getSourceBreakdown(
             break;
           case 'published':
             breakdown.published = count;
+            break;
+          case 'reader':
+            breakdown.reader = count;
             break;
           case 'follow':
             breakdown.follow = count;

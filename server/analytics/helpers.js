@@ -254,7 +254,9 @@ export function logSecurityEvent(event, details = {}) {
 // ============================================================
 
 /**
- * Valid source types for analytics tracking.
+ * The source types a client may report to the tracking route. A served edition
+ * reader is counted by its own route (`recordEditionVisit`): the page has no
+ * script to report anything, so `reader` is deliberately not in this list.
  */
 export const SOURCE_TYPES = {
   SHARE_LINK: 'share_link',

@@ -87,7 +87,13 @@ export async function renderDashboard(root) {
         trend: { percentChange: 0, direction: 'flat' },
         timeline: [],
         topPresentations: [],
-        sourceBreakdown: { shareLink: 0, published: 0, follow: 0, embed: 0 },
+        sourceBreakdown: {
+          shareLink: 0,
+          published: 0,
+          reader: 0,
+          follow: 0,
+          embed: 0,
+        },
       };
     }
   }
@@ -204,6 +210,7 @@ export async function renderDashboard(root) {
     const total =
       breakdown.shareLink +
       breakdown.published +
+      breakdown.reader +
       breakdown.follow +
       breakdown.embed;
 
@@ -217,6 +224,11 @@ export async function renderDashboard(root) {
         key: 'published',
         label: t('dashboard.source.published', 'Published'),
         value: breakdown.published || 0,
+      },
+      {
+        key: 'reader',
+        label: t('dashboard.source.reader', 'Reading view'),
+        value: breakdown.reader || 0,
       },
       {
         key: 'follow',

@@ -46,7 +46,7 @@ function generateSessionToken() {
  * Create a new view session.
  * @param {Object} data - Session data
  * @param {string} data.presentationId - The presentation being viewed
- * @param {string} data.sourceType - 'share_link' | 'follow' | 'embed'
+ * @param {string} data.sourceType - 'share_link' | 'follow' | 'embed' | 'published' | 'reader'
  * @param {string} [data.sourceId] - Share link token or session ID
  * @param {string} [data.viewerType] - 'guest' | 'authenticated' | 'anonymous'
  * @param {string} [data.viewerEmail] - Viewer's email if authenticated

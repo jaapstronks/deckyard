@@ -37,7 +37,53 @@ export function editionAddresses(canonicalUrl, lang) {
 }
 
 /**
- * `<head>` markup and topbar markup for the canvas of one edition view.
+ * The share card of one edition view: Open Graph, Twitter card and JSON-LD. A
+ * shared link unfolds the same whichever view it names; what differs is the
+ * address and what schema.org calls the document.
+ *
+ * @param {object} opts
+ * @param {string} opts.title - Plain text
+ * @param {string} opts.url - The address of this view
+ * @param {string} opts.ogImage
+ * @param {string} opts.description - Plain text; may be empty
+ * @param {string} opts.schemaType - The JSON-LD `@type`
+ * @param {string|null} opts.lang
+ * @returns {string[]} `<head>` lines
+ */
+function shareCardHead({ title, url, ogImage, description, schemaType, lang }) {
+  const text = description.trim();
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': schemaType,
+    name: title,
+    url,
+    thumbnailUrl: ogImage,
+    ...(lang ? { inLanguage: lang } : {}),
+    ...(text ? { description: text } : {}),
+  };
+  const descMeta = text
+    ? [
+        `<meta property="og:description" content="${escapeHtml(text)}" />`,
+        `<meta name="twitter:description" content="${escapeHtml(text)}" />`,
+      ]
+    : [];
+  return [
+    '<meta property="og:type" content="website" />',
+    `<meta property="og:title" content="${escapeHtml(title)}" />`,
+    `<meta property="og:url" content="${escapeHtml(url)}" />`,
+    `<meta property="og:image" content="${escapeHtml(ogImage)}" />`,
+    '<meta name="twitter:card" content="summary_large_image" />',
+    `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
+    `<meta name="twitter:image" content="${escapeHtml(ogImage)}" />`,
+    ...descMeta,
+    // `<` escaped so no value can close the script block.
+    `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
+  ];
+}
+
+/**
+ * `<head>` markup, topbar markup and the no-script way out for the canvas of
+ * one edition view.
  *
  * @param {object} stored - The edition's presentation, as stored (all
  *   language versions)
@@ -45,48 +91,32 @@ export function editionAddresses(canonicalUrl, lang) {
  * @param {object} opts
  * @param {string} opts.canonicalUrl
  * @param {string|null} opts.lang
+ * @param {string|null} [opts.deckLang] - The deck's language: the words of a
+ *   view that names no language
  * @param {string} [opts.metaDescription]
- * @returns {{headHtml: string, topbarRightHtml: string}}
+ * @returns {{headHtml: string, topbarRightHtml: string, noscriptHtml: string}}
  */
 export function canvasChrome(
   stored,
   shown,
-  { canonicalUrl, lang, metaDescription = '' },
+  { canonicalUrl, lang, deckLang = null, metaDescription = '' },
 ) {
-  if (!canonicalUrl) return { headHtml: '', topbarRightHtml: '' };
-  const copy = getSlideCopy(lang);
+  if (!canonicalUrl) {
+    return { headHtml: '', topbarRightHtml: '', noscriptHtml: '' };
+  }
+  const copy = getSlideCopy(lang || deckLang);
   const urls = editionAddresses(canonicalUrl, lang);
-  const title = escapeHtml(shown?.title || copy.readerDocument);
-  const description = escapeHtml(String(metaDescription || '').trim());
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'PresentationDigitalDocument',
-    name: shown?.title || copy.readerDocument,
-    url: urls.canvas,
-    thumbnailUrl: urls.ogImage,
-    ...(lang ? { inLanguage: lang } : {}),
-    ...(description ? { description: String(metaDescription).trim() } : {}),
-  };
-  const descMeta = description
-    ? [
-        `<meta property="og:description" content="${description}" />`,
-        `<meta name="twitter:description" content="${description}" />`,
-      ]
-    : [];
   const headHtml = [
     `<link rel="canonical" href="${escapeHtml(urls.canvas)}" />`,
     `<link rel="alternate" href="${escapeHtml(urls.reader)}" title="${escapeHtml(copy.readerOpen)}" />`,
-    '<meta property="og:type" content="website" />',
-    `<meta property="og:title" content="${title}" />`,
-    `<meta property="og:url" content="${escapeHtml(urls.canvas)}" />`,
-    `<meta property="og:image" content="${escapeHtml(urls.ogImage)}" />`,
-    '<meta name="twitter:card" content="summary_large_image" />',
-    `<meta name="twitter:title" content="${title}" />`,
-    `<meta name="twitter:image" content="${escapeHtml(urls.ogImage)}" />`,
-    ...descMeta,
-    // `<` escaped so no value can close the script block.
-    `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
+    ...shareCardHead({
+      title: shown?.title || copy.readerDocument,
+      url: urls.canvas,
+      ogImage: urls.ogImage,
+      description: String(metaDescription || ''),
+      schemaType: 'PresentationDigitalDocument',
+      lang,
+    }),
   ].join('\n    ');
 
   // One link per version the edition has; below two there is nothing to
@@ -103,23 +133,50 @@ export function canvasChrome(
       : '';
   const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(urls.reader)}" rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(copy.readerOpen)}</a>`;
 
-  return { headHtml, topbarRightHtml: `${switchHtml}${readerLinkHtml}` };
+  // Without JavaScript the canvas never shows a slide. `_top`, because the same
+  // canvas is the frameable embed and the reader refuses to be framed.
+  const noscriptHtml = `<noscript><p class="ps-noscript">${escapeHtml(copy.readerNoScript)} <a href="${escapeHtml(urls.reader)}" target="_top">${escapeHtml(copy.readerOpen)}</a></p></noscript>`;
+
+  return {
+    headHtml,
+    topbarRightHtml: `${switchHtml}${readerLinkHtml}`,
+    noscriptHtml,
+  };
 }
 
 /**
  * `<head>` markup for the reader of one edition view, and the address its
  * "view the slides" link points at.
  *
+ * @param {object} shown - The projection on screen
  * @param {object} opts
  * @param {string} opts.canonicalUrl
  * @param {string|null} opts.lang
+ * @param {string|null} [opts.deckLang] - The deck's language: the words of a
+ *   view that names no language
+ * @param {string} [opts.metaDescription]
  * @returns {{headHtml: string, canvasUrl: string}}
  */
-export function readerChrome({ canonicalUrl, lang }) {
+export function readerChrome(
+  shown,
+  { canonicalUrl, lang, deckLang = null, metaDescription = '' },
+) {
   if (!canonicalUrl) return { headHtml: '', canvasUrl: '' };
+  const copy = getSlideCopy(lang || deckLang);
   const urls = editionAddresses(canonicalUrl, lang);
   return {
-    headHtml: `<link rel="canonical" href="${escapeHtml(urls.reader)}" />`,
+    headHtml: [
+      `<link rel="canonical" href="${escapeHtml(urls.reader)}" />`,
+      `<link rel="alternate" href="${escapeHtml(urls.canvas)}" title="${escapeHtml(copy.readerViewSlides)}" />`,
+      ...shareCardHead({
+        title: shown?.title || copy.readerDocument,
+        url: urls.reader,
+        ogImage: urls.ogImage,
+        description: String(metaDescription || ''),
+        schemaType: 'TextDigitalDocument',
+        lang,
+      }),
+    ].join('\n    '),
     canvasUrl: urls.canvas,
   };
 }

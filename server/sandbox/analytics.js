@@ -43,7 +43,7 @@ import { createLogger } from '../utils/logger.js';
 const log = createLogger('sandbox-analytics');
 
 /** The source types a view session can carry (docs/reference/analytics.md). */
-const SOURCE_TYPES = ['share_link', 'follow', 'embed', 'published'];
+const SOURCE_TYPES = ['share_link', 'follow', 'embed', 'published', 'reader'];
 
 /** Upper bound on one profile, so a typo cannot write a million rows. */
 const MAX_SESSIONS = 500;

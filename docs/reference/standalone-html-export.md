@@ -2,8 +2,17 @@
 
 Deckyard can export a deck as a single self-contained `.html` file (the
 "Download → HTML" action, `buildStandaloneHtml` in `server/export/html.js`).
-The same builder also renders the published `/p/<slug>` page; the `context`
-argument (`'export'` vs `'published'`) selects the visibility filter.
+`buildStandaloneHtml` is the preparer: it applies the visibility filter and reads
+theme CSS, fonts and upload bytes, then hands them to `renderCanvasDocument` in
+`server/export/canvas-document.js`.
+
+A published edition does not go through this builder. Its canvas at
+`/p/{publicationId}/{version}` comes from the same `renderCanvasDocument`, called
+by the edition's renderer bundle on input frozen at publication
+([publication-editions.md](publication-editions.md) § Public read path), so the
+runtime, the URL parameters and the fullscreen contract below are one thing in
+both. An edition adds chrome a file on disk has no address for: canonical links,
+the share card, the language switch, the reader link and a `<noscript>` line.
 
 The design goal for the downloaded file is **works offline**: opening it from
 disk, with no server to resolve app-relative URLs, must still render the deck
@@ -12,8 +21,9 @@ exactly as published.
 ## URL parameters
 
 The runtime reads its options from the URL, so **one exported file serves every
-case** — full-page at `/p/`, chrome-less in an iframe, kiosk loop on a screen —
-without re-exporting. They apply to the downloaded `.html` and to `/p/` alike.
+case** — full-page, chrome-less in an iframe, kiosk loop on a screen — without
+re-exporting. The runtime of an edition's canvas reads them too, but the share
+dialog offers none of them.
 
 | Param      | Values                                                | Effect                                                                                                                                                                            |
 | ---------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -72,6 +82,16 @@ The page shares one fullscreen contract with the in-app presenter (D111). The tw
 - **`ui=min` stays out of it**: there are no bars to show, so the page wires neither the class nor the autohide and only keeps `F`.
 
 A known edge: at a browser zoom below 100% a window that nearly fills the screen can measure as screen-filling. The bars then behave as in fullscreen but stay reachable with the mouse.
+
+## Without JavaScript
+
+The canvas needs its runtime: every slide starts at `opacity: 0` and only the
+script makes one active. An edition's canvas therefore carries a `<noscript>` line
+on the empty stage that links to the reader, in the language of the view
+(`noscriptHtml` from `canvasChrome`). The link targets `_top` because the same
+document is the frameable embed and the reader refuses to be framed. A downloaded
+file has no reader to link to and no such line. An edition published before this
+chrome keeps the document its bundle wrote.
 
 ## What gets inlined
 
@@ -164,10 +184,10 @@ The one exception is **external** managed fonts (Adobe / Monotype / Google via
 ## Third-party requests
 
 There are none. Prism and KaTeX come from `client/vendor/` (pinned by
-`package-lock.json`, hashed in a manifest) and the two contexts reach them
-differently: a published `/p/` page **links** `/client/vendor/…`, so the browser
-caches the files across decks; a downloaded file has no origin to resolve that
-against, so it carries them **inline**. `buildPrismKatexTags({ …needs, mode })`
+`package-lock.json`, hashed in a manifest). A downloaded file has no origin to
+resolve `/client/vendor/…` against, so it carries them **inline**; an edition
+does too, because linked bytes would come from whatever the installation has on
+the day of the visit. `buildPrismKatexTags({ …needs, mode })`
 in `server/utils/prism-katex.js` is the single place that decides. The rule, its
 carve-outs and the two gates that hold it up:
 `docs/reference/no-third-party-origins.md`.

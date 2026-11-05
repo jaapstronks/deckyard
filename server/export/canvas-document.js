@@ -48,6 +48,24 @@ import {
  * (server/utils/css-chain.js).
  */
 const STANDALONE_CSS = `
+      /* Without JavaScript no slide shows: the way out sits on the empty stage,
+         which is black, on a surface of its own. */
+      .export-body .deck { position: relative; }
+      .ps-noscript {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        width: fit-content;
+        max-width: calc(100% - 32px);
+        height: fit-content;
+        margin: auto;
+        padding: 16px 20px;
+        border-radius: 8px;
+        background: #fff;
+        color: #14181f;
+        text-align: center;
+      }
+      .ps-noscript a { color: #0b57d0; white-space: nowrap; }
       /* Standalone published view: scale fixed design (1600×900) to fit viewport, letterboxed. */
       .export-body .deck {
         align-items: stretch;
@@ -566,6 +584,7 @@ export async function renderCanvasDocument(
     metaDescription = '',
     headHtml = '',
     topbarRightHtml = '',
+    noscriptHtml = '',
     context = 'export',
     externalFontCssLinks = '',
     externalFontScripts = '',
@@ -683,6 +702,7 @@ export async function renderCanvasDocument(
         </div>
       </header>
       <main id="deck" class="deck" aria-live="polite">
+        ${noscriptHtml}
         <div id="stageWrap" class="ps-standalone-stage-wrap">
           <div id="stage" class="ps-standalone-stage ps-theme">
             ${css.wmHtml}

@@ -363,6 +363,10 @@
   background: linear-gradient(90deg, hsl(var(--app-success)) 0%, #059669 100%);
 }
 
+.dashboard-source-bar-reader {
+  background: hsl(var(--app-accent-text));
+}
+
 .dashboard-source-bar-follow {
   background: linear-gradient(90deg, hsl(var(--app-warning)) 0%, #d97706 100%);
 }

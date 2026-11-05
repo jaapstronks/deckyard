@@ -91,6 +91,82 @@ test('derives canonical links, card, language switch and reader link from the ad
   assert.ok(!bare.canvas.includes('rel="canonical"'), 'no address, no chrome');
 });
 
+test('the reader carries the same share card as the canvas, for its own address', async () => {
+  const { canvas, reader } = await renderEdition(
+    repoRoot,
+    input({ canonicalUrl: BASE, lang: 'en-GB' }),
+  );
+  const readerUrl = `${BASE}/reader?lang=en-GB`;
+  assert.ok(
+    reader.includes(`<meta property="og:url" content="${readerUrl}" />`),
+  );
+  assert.ok(reader.includes('<meta property="og:title" content="Deck EN" />'));
+  assert.ok(
+    reader.includes(`<meta property="og:image" content="${BASE}/og" />`),
+  );
+  assert.ok(
+    reader.includes(
+      '<meta name="twitter:card" content="summary_large_image" />',
+    ),
+  );
+  assert.ok(reader.includes('content="A &lt;description&gt;"'));
+  assert.ok(
+    reader.includes(`<link rel="alternate" href="${BASE}?lang=en-GB"`),
+    'names the canvas as the other view',
+  );
+
+  const blocks = (html) =>
+    [
+      ...html.matchAll(
+        /<script type="application\/ld\+json">(.*?)<\/script>/gs,
+      ),
+    ].map((m) => JSON.parse(m[1]));
+  const [readerLd] = blocks(reader);
+  assert.equal(readerLd['@type'], 'TextDigitalDocument');
+  assert.equal(readerLd.url, readerUrl);
+  assert.equal(readerLd.inLanguage, 'en-GB');
+  assert.equal(blocks(canvas)[0]['@type'], 'PresentationDigitalDocument');
+
+  // A data block is the only script: the reader still runs nothing.
+  const scripts = [...reader.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
+  assert.deepEqual(scripts, ['<script type="application/ld+json">']);
+});
+
+test('no value can close the share-card script block', async () => {
+  const hostile = '</script><script>alert(1)</script>';
+  const { canvas, reader } = await renderEdition(
+    repoRoot,
+    input({ canonicalUrl: BASE, metaDescription: hostile }),
+  );
+  for (const html of [canvas, reader]) {
+    assert.ok(!html.includes(hostile));
+  }
+});
+
+test('the canvas names a way out for a browser without JavaScript', async () => {
+  const noscript = (html) => html.match(/<noscript>(.*?)<\/noscript>/s)?.[1];
+
+  const en = await renderEdition(
+    repoRoot,
+    input({ canonicalUrl: BASE, lang: 'en-GB' }),
+  );
+  const out = noscript(en.canvas);
+  assert.ok(out.includes('This presentation needs JavaScript to play.'));
+  assert.ok(out.includes(`<a href="${BASE}/reader?lang=en-GB" target="_top">`));
+  assert.ok(out.includes('Reading view'));
+  assert.equal(noscript(en.reader), undefined, 'the reader needs no way out');
+
+  // No language in the address: the deck's own words, not the table's default.
+  const nl = await renderEdition(repoRoot, input({ canonicalUrl: BASE }));
+  assert.ok(noscript(nl.canvas).includes('Leesweergave'));
+  assert.ok(noscript(nl.canvas).includes(`href="${BASE}/reader"`));
+  assert.ok(nl.canvas.includes(`title="Leesweergave"`));
+  assert.ok(nl.reader.includes('title="Bekijk de dia'));
+
+  const bare = await renderEdition(repoRoot, input());
+  assert.equal(noscript(bare.canvas), undefined, 'no address, no way out');
+});
+
 test('carries Prism inline instead of linking the installation', async () => {
   const { canvas } = await renderEdition(repoRoot, input());
   assert.ok(canvas.includes('md-code-block'));
