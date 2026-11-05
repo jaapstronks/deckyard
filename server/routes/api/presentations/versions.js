@@ -181,6 +181,18 @@ export async function handlePresentationVersionCompareAi(
     return methodNotAllowed(res, ['POST']);
   }
 
+  // Spending the installation's model budget asks for write, not read (DY-816),
+  // and the refusal comes first: who may not start this learns nothing about
+  // how the instance is configured.
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
+
   // Check if AI is available. The cause is the sentence, not a payload:
   // `ai_unavailable` carries no `details` (D78), and the client branches on
   // the code alone (`versions-compare.js`).
@@ -192,14 +204,6 @@ export async function handlePresentationVersionCompareAi(
       'AI comparison is not available: no LLM vendor is configured.',
     );
   }
-
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-  });
-  if (!pres) return true;
 
   const version = await getPresentationVersion(storageScope, id, versionId);
   if (!version) return notFound(res);
