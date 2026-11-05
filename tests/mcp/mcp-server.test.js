@@ -15,6 +15,7 @@ import {
 import { createFakeDb } from '../helpers/fake-db.js';
 import { healthKeys } from '../helpers/instance-health.js';
 import { __setTestDb } from '../../server/db/client.js';
+import { fencedData } from '../helpers/fenced-data.js';
 
 // ============================================================================
 // Unit Tests: JSON-RPC Response Helpers
@@ -267,7 +268,10 @@ describe('McpServer', () => {
         }),
       );
 
-      assert.strictEqual(resp.result.content[0].text, 'Hello, World!');
+      assert.strictEqual(
+        fencedData(resp.result.content[0].text),
+        'Hello, World!',
+      );
     });
 
     it('returns object result as JSON text', async () => {
@@ -285,7 +289,7 @@ describe('McpServer', () => {
         }),
       );
 
-      const content = JSON.parse(resp.result.content[0].text);
+      const content = JSON.parse(fencedData(resp.result.content[0].text));
       assert.deepStrictEqual(content, { key: 'value' });
     });
 
@@ -345,7 +349,7 @@ describe('McpServer', () => {
         }),
       );
 
-      assert.strictEqual(resp.result.content[0].text, 'done');
+      assert.strictEqual(fencedData(resp.result.content[0].text), 'done');
     });
   });
 

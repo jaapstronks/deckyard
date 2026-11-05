@@ -225,13 +225,12 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   broadcast; comment links go through the mention allowlist.
 - **Email.** Digest fields are escaped in HTML and header-checked; the
   text/plain part inserts model text as is, which mail clients auto-link.
-- **The user's agent (MCP).** Tool results are `JSON.stringify(result)` in one
-  text block with no marker that says "this is user data". Some descriptions
-  tell the agent the opposite: `get_slide_types` says to treat the
-  organization's `usage` rules, written by a designer, as "binding";
-  `preview_slide` says to display the slide HTML as an artifact. A slide one
-  collaborator wrote therefore reaches the other user's agent as plain text
-  and is acted on with that user's key (§ MCP as both sides).
+- **The user's agent (MCP).** Every tool result is fenced as data on the
+  `tools/call` path, and `initialize` carries the rule. `usage` rules bind the
+  slide content an agent writes and nothing else; `preview_*` returns HTML for
+  the user to look at. A slide one collaborator wrote still reaches the other
+  user's agent, which acts with that user's key, and an agent can be talked out
+  of a marking (§ MCP as both sides).
 - **Review metadata and notes.** `_aiReasoning`, `_aiAlternatives`,
   `_aiWarnings` and model-written `notes` are uncapped free text; they survive
   `normalizeSlides`, render in the editor's review grid, and are stripped from
@@ -349,9 +348,12 @@ severity order, except that the first is the one to fix first.
    the one rule that gives the fences their meaning and refuses a user message
    without one. `tests/llm-data-boundary.test.js` drives every path against a
    fake model that obeys what it reads outside a fence (DY-814).
-7. **MCP hands content to the agent unmarked and some descriptions invert
-   the trust** (DY-815). Results carry no "user data" marker; `usage` rules
-   are described as binding; `preview_slide` asks for an artifact.
+7. **MCP handed content to the agent unmarked and some descriptions inverted
+   the trust.** Fixed as a first layer of defence, not a boundary: every result
+   is fenced on the `tools/call` path, a session starts with the rule, `usage`
+   binds only the content an agent writes, and no description asks for an
+   artifact. `tests/mcp/mcp-result-marking.test.js` reads it as a client does
+   (DY-815).
 8. **AI spend is unmetered inside the app and under-counted on keys**
    (DY-816). No internal quota; three routes spend at read permission; the
    key counter counts requests, not calls; usage is not recorded.
@@ -400,14 +402,15 @@ What pins the controls above today, and the gaps per finding:
   `source-images.test.js`, `digest-generation.test.js`,
   `email-template-escaping.test.js`.
 - Deck content as data on every model path: `llm-data-boundary.test.js`.
+- Tool results as data for the agent: `tests/mcp/mcp-result-marking.test.js`.
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 
 Not pinned by any test, one per finding: a `javascript:` or foreign-host
 video source (added with the fix for finding 1), a reader's copy carrying
 notes, a model-written remote URL surviving iterate or refine, a plan that
-removes an unnamed slide, an applied suggestion with an invalid field, an
-MCP result for a slide that contains an instruction, a read-permission caller
+removes an unnamed slide, an applied suggestion with an invalid field, a
+read-permission caller
 spending tokens, a `..` vision path, an oversized digest subject. Each item
 carries its regression test as an acceptance criterion, after the pattern of
 the faked seam in `tests/translate-undeclared-item-strings.test.js`.

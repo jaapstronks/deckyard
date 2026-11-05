@@ -12,6 +12,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fencedData } from '../helpers/fenced-data.js';
 
 // Resolve the server/mcp directory relative to this test file so the structure
 // checks work from any checkout (not a hardcoded sandbox path).
@@ -67,7 +68,7 @@ describe('MCP SSE Transport — Protocol', () => {
       const parsed = JSON.parse(response);
       assert.equal(parsed.id, 2);
       assert.ok(parsed.result);
-      assert.equal(parsed.result.content[0].text, 'ok');
+      assert.equal(fencedData(parsed.result.content[0].text), 'ok');
     });
 
     it('handleMessage works without context (stdio backward compat)', async () => {

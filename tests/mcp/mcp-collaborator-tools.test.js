@@ -29,6 +29,7 @@
 
 import { test, describe, beforeEach, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { fencedData } from '../helpers/fenced-data.js';
 
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
@@ -232,9 +233,9 @@ async function callTool(name, args, context) {
   const text = result?.content?.[0]?.text || '';
   let data;
   try {
-    data = JSON.parse(text);
+    data = JSON.parse(fencedData(text));
   } catch {
-    // An error result is prose, not JSON.
+    // An error result is prose, not fenced JSON.
     data = null;
   }
   return { isError: result?.isError === true, text, data };

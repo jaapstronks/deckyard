@@ -108,7 +108,7 @@ def mcp_call(method, params=None):
 
 
 def tool_call(tool_name, arguments=None):
-    """Call an MCP tool and return the result text."""
+    """Call an MCP tool and return its text, still marked as data for the agent."""
     result = mcp_call("tools/call", {
         "name": tool_name,
         "arguments": arguments or {},
@@ -122,14 +122,7 @@ def tool_call(tool_name, arguments=None):
     if not content:
         return "{}"
 
-    text = content[0].get("text", "")
-
-    # Try to parse as JSON for pretty output
-    try:
-        parsed = json.loads(text)
-        return json.dumps(parsed, indent=2, ensure_ascii=False)
-    except (json.JSONDecodeError, TypeError):
-        return text
+    return content[0].get("text", "")
 
 
 # ─── Commands ─────────────────────────────────────────────────────────────
