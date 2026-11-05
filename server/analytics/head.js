@@ -188,11 +188,9 @@ function buildGtmHtml({ containerId }) {
  * embed talk to this server and nothing else (D56; see
  * docs/reference/no-third-party-origins.md § *A published deck and an embed
  * are first-party-only*), so there is no context to switch on: external
- * analytics is an operator-surface feature. What used to be
- * `context: 'published' | 'embed' | 'export'` — and the
- * `ANALYTICS_INCLUDE_EMBEDS` / `ANALYTICS_INCLUDE_EXPORTS` gates in front of
- * them — is gone. Visitor measurement on a published deck is the first-party
- * `/api/track/*` path instead, which has a retention and an erasure story.
+ * analytics is an operator-surface feature. Visitor measurement on a published
+ * deck is the first-party `/api/track/*` path instead, which has a retention and
+ * an erasure story.
  *
  * @param {Object} options
  * @param {boolean} options.sandbox - Whether running in sandbox mode

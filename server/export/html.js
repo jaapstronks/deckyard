@@ -1,5 +1,5 @@
 /**
- * The standalone/published canvas path: prepare, then render.
+ * The canvas of a download: prepare, then render.
  *
  * This module is the **preparer**. It reads what only an installation can
  * answer - the visibility filter, the theme's CSS and fonts, the upload bytes
@@ -10,7 +10,7 @@
  * (`server/render/renderer-bundle/`, `docs/reference/renderer-bundle.md`).
  */
 
-import { filterForExport, filterForPublished } from '../utils/public-output.js';
+import { filterForExport } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { embedImgSrcDataUrls } from '../utils/html-utils.js';
@@ -62,37 +62,22 @@ export async function buildStandaloneHtml(
     topbarRightHtml = '',
     theme = null,
     watermark = null,
-    context = 'export',
     slideTypes = null,
-    description = null,
   } = {},
 ) {
-  // Apply the appropriate visibility filter based on context
-  pres =
-    context === 'published'
-      ? filterForPublished(pres, { slideTypes })
-      : filterForExport(pres, { slideTypes });
+  pres = filterForExport(pres, { slideTypes });
   const docLang = resolveDocLangFromPresentation(pres);
   // The deck's own language, for slide types that render built-in copy. Not
   // the same value as docLang: that one always answers (falling back to nl for
   // <html lang>), this one stays null when the deck names no language so the
   // copy table can apply its own documented default.
   const deckLang = resolveDeckLang(pres);
-  // Meta description: use the caller-supplied string (the published route
-  // passes one with its own fallback), else the deck's own description. The
-  // reader view already emits this; the visual export/published head didn't.
-  const metaDescription = (
-    typeof description === 'string' && description.trim()
-      ? description
-      : typeof pres?.description === 'string'
-        ? pres.description
-        : ''
-  ).trim();
+  const metaDescription =
+    typeof pres?.description === 'string' ? pres.description.trim() : '';
   // Images are downsampled as they are inlined, with the same flat cap as the
   // PDF and PNG routes (B302): a deck of 48 full-resolution photos made a
-  // 307 MB download and a 322 MB published page per visitor (B717). No
-  // display-aware pass here: that one measures in headless Chrome, and this
-  // document is built without a browser, per visitor for a /p/ page.
+  // 307 MB download (B717). No display-aware pass here: that one measures in
+  // headless Chrome, and this document is built without a browser.
   const imageTransform = exportImageEmbedTransform();
   const embedCache = new Map();
   const css = await loadExportCssBundle(repoRoot, theme, watermark, {
@@ -134,7 +119,6 @@ export async function buildStandaloneHtml(
     metaDescription,
     headHtml,
     topbarRightHtml,
-    context,
     externalFontCssLinks: externalFonts.cssLinks,
     externalFontScripts: externalFonts.scripts,
     htmlTransform: (html) =>

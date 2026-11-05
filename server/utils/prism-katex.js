@@ -8,17 +8,14 @@
  * is the same copy the app shell loads. There is therefore no version literal
  * in this file: the version is whatever the lockfile resolves.
  *
- * A document reaches those bytes one of two ways, and the caller knows which:
- *
- * - **`mode: 'linked'`** — the document is served by this server, so
- *   `/client/vendor/…` resolves against its own origin. The browser caches the
- *   files across decks.
- * - **`mode: 'inlined'`** — the document has no origin to resolve against: a
- *   downloaded `*.html` opened from disk, or a string handed to
- *   `page.setContent()`. The vendor files are read from disk and emitted as
- *   `<style>`/`<script>` bodies, and KaTeX's fonts are base64'd into its CSS
- *   (decision D46) — a relative `url(fonts/…)` has nothing to resolve against
- *   in such a document, so the formulas would render in a fallback face.
+ * Every document this module serves carries those bytes inline: a downloaded
+ * `*.html` opened from disk and a string handed to `page.setContent()` have no
+ * origin to resolve against, and a sealed edition may not depend on what the
+ * serving installation has at `/client/vendor/…` on the day of the visit. The
+ * vendor files are read from disk and emitted as `<style>`/`<script>` bodies,
+ * and KaTeX's fonts are base64'd into its CSS (decision D46): a relative
+ * `url(fonts/…)` has nothing to resolve against in such a document, so the
+ * formulas would render in a fallback face.
  *
  * Callers pass what the rendered slides actually need
  * (`detectPrismKatexNeeds()`), so a deck without code or math carries nothing
@@ -47,12 +44,6 @@ const VENDOR_DIR = path.resolve(
   'client',
   'vendor',
 );
-
-/** The URL prefix the same directory is served at (`SHARED_PUBLIC_DIRS`). */
-const VENDOR_URL = '/client/vendor';
-
-/** The two ways a document can reach the vendored bytes. */
-export const PRISM_KATEX_MODES = Object.freeze(['linked', 'inlined']);
 
 /**
  * Work out which of Prism/KaTeX a rendered deck actually needs, by looking at
@@ -198,18 +189,14 @@ function escapeClosingTag(text, tag) {
 }
 
 /**
- * Generate the `<link>`/`<script>` (or `<style>`/`<script>`) tags for Prism.js
- * and KaTeX, from the vendored copies.
+ * Generate the `<style>`/`<script>` tags for Prism.js and KaTeX, from the
+ * vendored copies.
  *
  * Returns one tag per line at column zero: the head chain
  * (server/utils/head-chain.js) owns indentation, so a fragment that
  * hand-indents for one caller's template shape lands ragged in the next.
  *
  * @param {object} options
- * @param {'linked'|'inlined'} options.mode Required — see the module docstring.
- *   There is no default: a caller that guesses wrong either ships a dead
- *   reference or an unnecessary megabyte, and only the caller knows whether its
- *   document has an origin.
  * @param {boolean} [options.prism=true] Emit the Prism tags.
  * @param {boolean} [options.katex=true] Emit the KaTeX tags.
  * @param {string[]|null} [options.languages=null] Deck languages; null loads
@@ -217,27 +204,14 @@ function escapeClosingTag(text, tag) {
  * @returns {string} Head markup, or '' when neither library is wanted.
  */
 export function buildPrismKatexTags({
-  mode,
   prism = true,
   katex = true,
   languages = null,
 } = {}) {
-  if (!PRISM_KATEX_MODES.includes(mode)) {
-    throw new Error(
-      `buildPrismKatexTags: unknown mode "${mode}" — one of ${PRISM_KATEX_MODES.join('/')}`,
-    );
-  }
-
   const parts = [];
   for (const file of vendorFilesFor(prism, katex, languages)) {
     if (file.label) parts.push(`<!-- ${file.label} (self-hosted) -->`);
-    if (mode === 'linked') {
-      parts.push(
-        file.kind === 'css'
-          ? `<link rel="stylesheet" href="${VENDOR_URL}/${file.rel}" />`
-          : `<script src="${VENDOR_URL}/${file.rel}"></script>`,
-      );
-    } else if (file.kind === 'css') {
+    if (file.kind === 'css') {
       parts.push(
         `<style>${escapeClosingTag(readVendorCssForInlining(file.rel), 'style')}</style>`,
       );

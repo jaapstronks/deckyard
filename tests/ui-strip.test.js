@@ -75,9 +75,7 @@ async function run(t, html, url) {
 }
 
 async function exportPage(t, query = '', pres = deck) {
-  const html = await buildStandaloneHtml(repoRoot, pres, {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, pres);
   return run(t, html, `http://localhost/p/abcd1234-strip${query}`);
 }
 
