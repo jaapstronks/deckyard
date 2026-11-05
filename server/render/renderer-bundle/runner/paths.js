@@ -18,23 +18,32 @@ export const PATHS = Object.freeze({
   supervisor: '/run/deckyard-render/private/supervisor.sock',
 });
 
-/** Walk all trusted parent components. No symlink or caller-writable path. */
+/** Walk all trusted parent components. No symlink or caller-writable path.
+ * The refusal names the component and the reason; these are fixed host
+ * paths, and every service caller of this check discards the message. */
 export function trustedPath(absolute, mode = null) {
   let current = '';
   for (const part of absolute.split('/').filter(Boolean)) {
     current += `/${part}`;
     const s = lstatSync(current);
-    if (
-      s.isSymbolicLink() ||
-      s.uid !== 0 ||
-      s.mode & (current === absolute && s.isSocket() ? 0o002 : 0o022) ||
-      s.nlink < 1
-    )
-      throw new Error('unsafe runner path');
+    const writable =
+      s.mode & (current === absolute && s.isSocket() ? 0o002 : 0o022);
+    const reason = s.isSymbolicLink()
+      ? 'symlink'
+      : s.uid !== 0
+        ? `owner uid ${s.uid}`
+        : writable
+          ? `mode ${(s.mode & 0o7777).toString(8)}`
+          : s.nlink < 1
+            ? 'unlinked'
+            : null;
+    if (reason) throw new Error(`unsafe runner path: ${current} (${reason})`);
   }
   const s = lstatSync(absolute);
   if (mode !== null && (s.mode & 0o777) !== mode)
-    throw new Error('unsafe runner mode');
+    throw new Error(
+      `unsafe runner mode: ${absolute} (mode ${(s.mode & 0o777).toString(8)}, expected ${mode.toString(8)})`,
+    );
   return s;
 }
 
