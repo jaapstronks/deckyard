@@ -697,6 +697,15 @@ export function registerTools(
       // offer (D88).
       const slideTypes = await sessionSlideTypes(context);
 
+      // One name per type from here on (DY-840): validation resolves every
+      // accepted spelling (`title`, `eu.deckyard.slide.title`), but
+      // `newSlide` and the title check below read registry keys. An unknown
+      // spelling stays as sent, so validation refuses it by that name.
+      inputSlides = inputSlides.map((s) => ({
+        ...s,
+        type: resolveSlideTypeName(s.type, slideTypes) || s.type,
+      }));
+
       // Optional escape hatch: prepend an empty title slide if missing.
       if (auto_prepend_title) {
         const titleSlideType = themeTitleSlideType(themeObj, slideTypes);
