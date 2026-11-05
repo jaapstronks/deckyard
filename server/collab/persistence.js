@@ -15,7 +15,8 @@
  *   invalidation, deckUpdated SSE and throttled auto-snapshots all apply).
  *   If serialization fails, the binary is kept and the JSON is left
  *   untouched (at most one debounce window stale), never clobbered. A field
- *   the validation refuses keeps its stored value in the JSON, and everything
+ *   the validation refuses keeps its stored value in the JSON (inside a list,
+ *   a refused item sub-field is left out of its item), and everything
  *   else in the store is written: the binary is a cache that a write from
  *   outside the doc deletes, so holding back more would risk losing it. The
  *   editor's link field shows that problem at the field.
@@ -128,19 +129,30 @@ export function createCollabPersistence({
   } = deps;
 
   /**
-   * One line per refused value, not per store: a refused field stays in the doc
+   * One line per refused value, not per store: a refused value stays in the doc
    * and comes back on every store until a peer fixes it. A value shared by the
-   * language versions is one value. Names the field, never the value.
+   * language versions is one value, and so is an item sub-field's value while
+   * its list is reordered or grows: the key is the slide, the field, the
+   * sub-field and the value, without the item index. Names where, never the
+   * value.
    */
   function logRefusals(documentName, id, refused) {
     const seen = loggedRefusals.get(documentName);
     const current = new Set();
-    for (const { slideId, field, errors, value } of refused) {
-      const key = canonicalJson([slideId, field, value]);
+    for (const { slideId, field, path = [], errors, value } of refused) {
+      const subField = path.filter((step) => typeof step === 'string');
+      const key = canonicalJson([slideId, field, subField, value]);
       if (!current.has(key) && !seen?.has(key)) {
+        const where = path.length
+          ? `field ${JSON.stringify(field)} item ${path
+              .map((step) =>
+                typeof step === 'number' ? `[${step}]` : `.${step}`,
+              )
+              .join('')}`
+          : `field ${JSON.stringify(field)}`;
         log.warn(
-          `[collab] ${id}: field ${JSON.stringify(field)} of slide ` +
-            `${JSON.stringify(slideId)} stays out of the deck JSON: ${errors.join('; ')}`,
+          `[collab] ${id}: ${where} of slide ${JSON.stringify(slideId)} ` +
+            `stays out of the deck JSON: ${errors.join('; ')}`,
         );
       }
       current.add(key);

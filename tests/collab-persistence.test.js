@@ -532,6 +532,263 @@ describe('collab persistence hooks', () => {
       assert.equal((await storedContent(id)).title, '');
       assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
     });
+
+    describe('inside a list, per item sub-field', () => {
+      const ANNA = {
+        name: 'Anna',
+        linkedin: 'https://www.linkedin.com/in/anna',
+      };
+      /** A deck with one team-cards slide open in a doc, and a way to change it. */
+      async function openTeam(members) {
+        const { id } = await createPresentation(testScope(), {
+          title: 'Team',
+          ownerEmail: 'owner@example.com',
+          lang: 'nl',
+        });
+        const stored = await getPresentation(testScope(), id);
+        const slide = {
+          id: 't-1',
+          type: 'team-cards-slide',
+          content: { title: 'Team', members },
+        };
+        await updatePresentation(testScope(), id, {
+          ...stored,
+          slides: [slide],
+          i18n: {
+            ...stored.i18n,
+            versions: {
+              ...stored.i18n?.versions,
+              nl: { ...stored.i18n?.versions?.nl, slides: [slide] },
+            },
+          },
+        });
+        const doc = new Y.Doc();
+        await hooks.onLoadDocument({
+          documentName: docName(id),
+          document: doc,
+        });
+        const mutate = async (fn) => {
+          const base = deckYdocCodec.projectDocToPresentation(doc);
+          const next = structuredClone(base);
+          fn(next.slides[0].content);
+          next.i18n.versions.nl.slides[0] = structuredClone(next.slides[0]);
+          deckYdocCodec.applyPresentationToDoc(next, doc, { base });
+          await hooks.onStoreDocument({
+            documentName: docName(id),
+            document: doc,
+          });
+        };
+        return { id, doc, mutate };
+      }
+      const storedMembers = async (id) =>
+        (await getPresentation(testScope(), id)).slides[0].content.members;
+
+      it('another item, a new item and a removed item land beside a refused item link', async () => {
+        const { id, mutate } = await openTeam([
+          ANNA,
+          { name: 'Bob' },
+          { name: 'Dirk' },
+        ]);
+
+        await mutate((c) => {
+          c.members[1].linkedin = 'linkedin.com/in/bob';
+        });
+        await mutate((c) => {
+          c.members[0].name = 'Anna de Vries';
+        });
+        await mutate((c) => {
+          c.members.push({ name: 'Carla', byline: 'Nieuw' });
+        });
+        await mutate((c) => {
+          c.members.splice(2, 1);
+        });
+        await mutate((c) => {
+          c.title = 'Ons team';
+        });
+
+        const stored = await getPresentation(testScope(), id);
+        const members = stored.slides[0].content.members;
+        assert.equal(stored.slides[0].content.title, 'Ons team');
+        assert.deepEqual(
+          members.map((m) => m.name),
+          ['Anna de Vries', 'Bob', 'Carla'],
+        );
+        assert.equal(members[0].linkedin, ANNA.linkedin);
+        assert.equal(
+          'linkedin' in members[1],
+          false,
+          'the refused link is left out',
+        );
+        assert.equal(members[2].byline, 'Nieuw');
+        assert.deepEqual(stored.i18n.versions.nl.slides, stored.slides);
+        assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+        assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+        assert.match(log.lines.warn[0], /"members" item \[1\]\.linkedin/);
+        assert.doesNotMatch(log.lines.warn[0], /linkedin\.com\/in\/bob/);
+      });
+
+      it('a write from outside the doc afterwards loses at most that link', async () => {
+        const { id, mutate } = await openTeam([ANNA, { name: 'Bob' }]);
+        await mutate((c) => {
+          c.members[1].linkedin = 'linkedin.com/in/bob';
+          c.members[0].name = 'Anna de Vries';
+          c.members.push({ name: 'Carla' });
+        });
+
+        const cold = await getPresentation(testScope(), id);
+        await updatePresentation(testScope(), id, {
+          ...cold,
+          title: 'Hernoemd',
+        });
+        await new Promise((r) => setTimeout(r, 50));
+
+        assert.equal(await getYDocState(testScope(), id), null);
+        const members = await storedMembers(id);
+        assert.deepEqual(
+          members.map((m) => m.name),
+          ['Anna de Vries', 'Bob', 'Carla'],
+        );
+        assert.equal('linkedin' in members[1], false);
+      });
+
+      it('after a reorder no stored link sits on another item', async () => {
+        const { id, mutate } = await openTeam([ANNA, { name: 'Bob' }]);
+
+        await mutate((c) => {
+          c.members.reverse();
+          c.members[0].linkedin = 'linkedin.com/in/bob';
+        });
+
+        const members = await storedMembers(id);
+        assert.deepEqual(
+          members.map((m) => m.name),
+          ['Bob', 'Anna'],
+        );
+        assert.equal(
+          'linkedin' in members[0],
+          false,
+          "Anna's stored link at index 0 does not move onto Bob",
+        );
+        assert.equal(members[1].linkedin, ANNA.linkedin);
+      });
+
+      it('an old stored bad item link does not hold back an edit to another item and logs nothing', async () => {
+        const { id, mutate } = await openTeam([
+          ANNA,
+          { name: 'Bob', linkedin: 'linkedin.com/in/bob' },
+        ]);
+
+        await mutate((c) => {
+          c.members[0].name = 'Anna de Vries';
+        });
+
+        const members = await storedMembers(id);
+        assert.equal(members[0].name, 'Anna de Vries');
+        assert.equal(members[1].linkedin, 'linkedin.com/in/bob');
+        assert.equal(log.lines.warn.length, 0, log.lines.warn.join('\n'));
+        assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+      });
+
+      it('several stores of a changing list log one line for one refused value', async () => {
+        const { id, mutate } = await openTeam([ANNA, { name: 'Bob' }]);
+
+        await mutate((c) => {
+          c.members[1].linkedin = 'linkedin.com/in/bob';
+        });
+        await mutate((c) => {
+          c.members[0].name = 'Anna de Vries';
+        });
+        await mutate((c) => {
+          c.members.unshift({ name: 'Carla' });
+        });
+
+        assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+        const members = await storedMembers(id);
+        assert.deepEqual(
+          members.map((m) => m.name),
+          ['Carla', 'Anna de Vries', 'Bob'],
+        );
+        assert.equal('linkedin' in members[2], false);
+      });
+
+      it('a refusal of the list itself keeps the stored list', async () => {
+        const stored = {
+          slides: [
+            {
+              id: 't-1',
+              type: 'team-cards-slide',
+              content: { title: 'Team', members: [ANNA] },
+            },
+          ],
+        };
+        const { deck: written, refused } = await holdBackRefusedSlideFields(
+          testScope(),
+          stored,
+          {
+            slides: [
+              {
+                id: 't-1',
+                type: 'team-cards-slide',
+                content: { title: 'Team', members: [ANNA, 'not an object'] },
+              },
+            ],
+          },
+        );
+        assert.deepEqual(written.slides[0].content.members, [ANNA]);
+        assert.equal(refused.length, 1);
+        assert.deepEqual(refused[0].path, []);
+      });
+
+      it('a list inside an item holds back the nested sub-field only', async () => {
+        const row = (title) => ({
+          blocks: [{ title: 'Eerste', body: 'Tekst' }, { title }],
+        });
+        const slide = (rows) => ({
+          id: 'tb-1',
+          type: 'text-blocks-slide',
+          content: { rows },
+        });
+        const { deck: written, refused } = await holdBackRefusedSlideFields(
+          testScope(),
+          { slides: [slide([row('Oud')])] },
+          { slides: [slide([row('x'.repeat(500)), row('Nieuwe rij')])] },
+        );
+        const rows = written.slides[0].content.rows;
+        assert.equal(rows.length, 2, 'the new row lands');
+        assert.equal(rows[0].blocks[0].title, 'Eerste');
+        assert.equal('title' in rows[0].blocks[1], false);
+        assert.equal(rows[1].blocks[1].title, 'Nieuwe rij');
+        assert.deepEqual(
+          refused.map((r) => r.path),
+          [[0, 'blocks', 1, 'title']],
+        );
+      });
+
+      it('a new slide keeps its list without the refused sub-field', async () => {
+        const { deck: written } = await holdBackRefusedSlideFields(
+          testScope(),
+          { slides: [] },
+          {
+            slides: [
+              {
+                id: 't-2',
+                type: 'team-cards-slide',
+                content: {
+                  title: 'Team',
+                  members: [ANNA, { name: 'Bob', linkedin: 'javascript:x' }],
+                },
+              },
+            ],
+          },
+        );
+        const members = written.slides[0].content.members;
+        assert.deepEqual(
+          members.map((m) => m.name),
+          ['Anna', 'Bob'],
+        );
+        assert.equal('linkedin' in members[1], false);
+      });
+    });
   });
 
   it('never stores an unpopulated doc over a real deck', async () => {

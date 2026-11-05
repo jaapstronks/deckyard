@@ -146,6 +146,19 @@ persistence hooks (`server/collab/persistence.js`):
   the doc. A store that changes only a refused field writes nothing and moves no
   revision, and the server logs one `warn` line per refused value. Prose may be
   empty while someone retypes it. The author sees the hint at the field.
+- **Inside a list** (`items`) the hold is per item sub-field. The validator
+  reports where in the items each refusal sits as data (`parts` on the problem,
+  `fieldChangeProblems()` in `shared/slide-types/field-change-validation.js`),
+  never as a sentence to parse. A refused sub-field is left out of its item, not
+  restored: items have no identity beyond their index (`deck-ydoc.js` matches
+  them by position), so after a reorder a stored value would land on another
+  item. The item's other sub-fields, the other items, added and removed items
+  and the order are written; a list inside an item follows the same rule. A
+  sub-value equal to the stored one at the same index stops nothing and logs
+  nothing. A refusal of the list itself (not an array, a count outside its
+  limits, an item that is not an object) keeps the stored list. One `warn` line
+  per refused value, keyed on slide, field, sub-field and value without the
+  index, so a list that grows or reorders around it does not log again.
 
 **Storage**: `getYDocState`/`setYDocState`/`deleteYDocState` on the
 adapter — Postgres table `presentation_ydocs` (one merged update per deck,

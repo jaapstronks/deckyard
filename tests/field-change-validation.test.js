@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateFieldChange } from '../shared/slide-types/field-change-validation.js';
+import {
+  fieldChangeProblems,
+  validateFieldChange,
+} from '../shared/slide-types/field-change-validation.js';
 import { validateSlideFields } from '../shared/slide-types/presentation.js';
 const prose = { key: 'title', type: 'string', required: true, maxLength: 5 };
 
@@ -64,6 +67,38 @@ test('each existing nested text is compared by its stored path, and new items ar
   assert.match(
     validateFieldChange(after, before, field)[0],
     /rows\[0\].cells\[1\].title exceeds/,
+  );
+});
+
+test('a refusal inside a list carries its item index and sub-field as data', () => {
+  const field = {
+    key: 'rows',
+    type: 'items',
+    maxItems: 3,
+    itemFields: [
+      { key: 'link', type: 'url' },
+      { key: 'cells', type: 'items', itemFields: [prose] },
+    ],
+  };
+  const before = [{ link: 'https://example.com/', cells: [{ title: 'Kort' }] }];
+  const after = [
+    { link: 'javascript:alert(1)', cells: [{ title: 'Kort' }, { title: '' }] },
+  ];
+  assert.deepEqual(
+    fieldChangeProblems(after, before, field).map((p) => p.path),
+    [
+      [0, 'link'],
+      [0, 'cells', 1, 'title'],
+    ],
+  );
+  assert.deepEqual(
+    fieldChangeProblems([...after, {}, {}, {}], before, field)[0].path,
+    [],
+    'a refusal of the list itself has an empty path',
+  );
+  assert.deepEqual(
+    fieldChangeProblems(after, before, field).flatMap((p) => p.errors),
+    validateFieldChange(after, before, field),
   );
 });
 
