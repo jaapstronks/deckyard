@@ -7,18 +7,20 @@ document that stays readable with JavaScript — and author CSS — turned off.
 
 ## Where it lives
 
-- **Published URL:** `/p/{publicationId}/{version}/reader`, next to the canvas at
-  `/p/{publicationId}/{version}`. Both come from one call of the edition's own
-  renderer bundle (`server/render/renderer-bundle/bundle/entry.js`), so `?lang=`
-  picks the same language version and neither needs auth; see
+- **Published URL:** the bare `/p/{publicationId}/{version}` of a new edition, and
+  `/p/{publicationId}/{version}/reader` on every edition, next to the canvas at
+  `…/slides`. Both views come from one call of the edition's own renderer bundle
+  (`server/render/renderer-bundle/bundle/entry.js`), so `?lang=` picks the same
+  language version and neither needs auth; see
   [publication-editions.md](publication-editions.md) § Public read path.
 - **Assembler:** `server/export/reader-document.js` → `renderReaderDocument(bundleRoot, filtered, opts)`,
   pure and frozen with the bundle. `server/export/reader.js` →
   `buildReaderHtml(repoRoot, pres, opts)` is the preparer for a live deck: it
   applies the visibility filter and calls the assembler. An edition has no use
   for it, since its input was filtered when it was sealed.
-- **Chrome:** the canonical and alternate links and the share card of an edition's
-  reader come from `readerChrome` in
+- **Chrome:** the canonical and alternate links, the share card, the language
+  switch and the declaration that this is the default view of an edition's reader
+  come from `readerChrome` in
   `server/render/renderer-bundle/bundle/edition-chrome.js`, frozen per edition.
 - **Projection:** `shared/slide-types/semantic-projection.js` — a pure,
   field-vocabulary-driven projection of each slide's content.
@@ -240,6 +242,10 @@ missing_alt` when a drawn `image` field, at slide or item level, is not
   Graph and Twitter card as its canvas, with its own address, plus JSON-LD
   (`TextDigitalDocument`, where the canvas says `PresentationDigitalDocument`).
   An edition published before this chrome keeps the head its bundle wrote.
+- **The slides are the main action.** The link to the canvas is the one button in
+  the header; a language switch sits under it when the edition has versions.
+- **A canvas link still lands.** An edition's section also carries an element with
+  the id `slide=N`, 0-based, so a `#slide=N` link needs no script.
 
 ## Contract
 

@@ -1828,15 +1828,16 @@ export function imagesMissingAlt(slide, def) {
  *
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved slide-type definition
- * @param {{ index?: number, lang?: string, slideJumps?: SlideJumps }} [opts] -
- *   0-based position in the document, the deck language, and the deck and
- *   document order (for links that jump to a slide)
+ * @param {{ index?: number, lang?: string, slideJumps?: SlideJumps, canvasDeepLinks?: boolean }} [opts] -
+ *   0-based position in the document, the deck language, the deck and document
+ *   order (for links that jump to a slide), and whether this section also
+ *   answers the canvas's `#slide=N` fragment
  * @returns {string}
  */
 export function renderSlideSectionHtml(
   slide,
   def,
-  { index = 0, lang, slideJumps } = {},
+  { index = 0, lang, slideJumps, canvasDeepLinks = false } = {},
 ) {
   const n = index + 1;
   const heading = slideHeading(slide, def, { index, lang });
@@ -1861,6 +1862,8 @@ export function renderSlideSectionHtml(
   const enums = def ? semanticEnumAttrs(def.fields, content, def.defaults) : '';
   return [
     `<section id="slide-${n}" class="reader-slide" data-slide-type="${escapeHtml(str(slide?.type))}"${enums} ${label}>`,
+    // The canvas's own fragment, 0-based as it counts: a target, no script.
+    canvasDeepLinks ? `<span id="slide=${index}"></span>` : '',
     `<h2 id="${titleId}"${headingAttrs}>${escapeHtml(heading.text)}</h2>`,
     inner,
     '</section>',

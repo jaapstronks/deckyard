@@ -14,6 +14,8 @@
  *   5. A render failure is an error, not the current renderer.
  *   6. The downloaded packages verify offline: valid bytes, corruption and a
  *      missing chain link are reported apart.
+ *   7. The bare address answers the view the edition's own bundle declares; a
+ *      bundle from before the reader default keeps the canvas there.
  *
  * Rendering runs each bundle in a separate process from its own verified
  * store (`tests/helpers/renderer-bundle-process.js`): the bytes the operator
@@ -144,6 +146,8 @@ async function get(pathname, { host } = {}) {
 const SUBRESOURCES = [
   '',
   '?lang=en',
+  '/slides',
+  '/slides?lang=en',
   '/reader',
   '/reader?lang=en',
   '/manifest.json',
@@ -152,7 +156,7 @@ const SUBRESOURCES = [
 ];
 
 pgDescribe('publication edition reads (PostgreSQL)', () => {
-  let db, orgA, deck, scopeA, identity, storeA, storeB, renders;
+  let db, orgA, deck, scopeA, identity, storeA, storeB, storeOld, renders;
 
   before(async () => {
     db = await openTestDb();
@@ -183,6 +187,38 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
       ),
     );
     await buildRendererBundle({ storeDir: storeB, sourceRoot: sourceB });
+
+    // Renderer Old: the same tree with the chrome a bundle had before the
+    // reader became the default, built the way a release was. A patched copy,
+    // because a real old bundle would pin this test to a tag.
+    storeOld = path.join(tmp, 'store-old');
+    const sourceOld = path.join(tmp, 'source-old');
+    await fs.cp(path.join(storeA, a.rendererHash, 'files'), sourceOld, {
+      recursive: true,
+    });
+    const chrome = path.join(
+      sourceOld,
+      'server/render/renderer-bundle/bundle/edition-chrome.js',
+    );
+    const chromeCode = await fs.readFile(chrome, 'utf8');
+    const oldChrome = chromeCode
+      .replace(
+        'canvas: withLang(`${canonicalUrl}/slides`, lang),',
+        'canvas: withLang(canonicalUrl, lang),',
+      )
+      .replace(
+        'reader: withLang(canonicalUrl, lang),',
+        'reader: withLang(`${canonicalUrl}/reader`, lang),',
+      )
+      .replace('      READER_IS_DEFAULT_META,\n', '')
+      .replace(
+        '`<link rel="canonical" href="${escapeHtml(urls.reader)}" />`,\n    `<link rel="alternate" href="${escapeHtml(urls.reader)}"',
+        '`<link rel="canonical" href="${escapeHtml(urls.canvas)}" />`,\n    `<link rel="alternate" href="${escapeHtml(urls.reader)}"',
+      );
+    assert.notEqual(oldChrome, chromeCode);
+    assert.ok(!oldChrome.includes('      READER_IS_DEFAULT_META,'));
+    await fs.writeFile(chrome, oldChrome);
+    await buildRendererBundle({ storeDir: storeOld, sourceRoot: sourceOld });
   });
   after(async () => {
     __setEditionRendererForTests(null);
@@ -220,7 +256,7 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
     renders = 0;
     __setEditionRendererForTests(async (hash, input) => {
       renders++;
-      for (const store of [storeA, storeB]) {
+      for (const store of [storeA, storeB, storeOld]) {
         const bundle = await openRendererBundle(store, hash).catch(() => null);
         if (bundle) return renderTrustedEditionForProof(bundle, input);
       }
@@ -260,7 +296,7 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
   it('keeps an old edition identical through every change, and shows them in the next', async () => {
     const v1 = (await publish('v1')).edition;
     const before1 = await snapshot(v1.publicationId, 1);
-    const canvas = before1[''].toString('utf8');
+    const canvas = before1['/slides'].toString('utf8');
     assert.ok(canvas.includes('Opening NL'));
     assert.ok(before1['?lang=en'].toString('utf8').includes('Opening EN'));
     assert.ok(!canvas.includes('Private speaker note'));
@@ -311,7 +347,7 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
     );
 
     const after2 = await snapshot(v1.publicationId, 2);
-    const canvas2 = after2[''].toString('utf8');
+    const canvas2 = after2['/slides'].toString('utf8');
     assert.ok(canvas2.includes('Rewritten NL'), 'v2 shows the deck edit');
     assert.ok(after2['?lang=en'].toString('utf8').includes('Rewritten EN'));
     assert.ok(canvas2.includes('typecode-b'), 'v2 renders with renderer B');
@@ -322,7 +358,7 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
     assert.notEqual(m1.theme.sha256, m2.theme.sha256, 'v2 has the new theme');
   });
 
-  it('takes the canvas address from the edition record, not from the input', async () => {
+  it('takes the address from the edition record, not from the input', async () => {
     const v1 = (await publish('addr')).edition;
     const stored = await getEdition(scopeA, v1.publicationId, 1);
     assert.equal(
@@ -331,17 +367,68 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
     );
     const base = `${ORIGIN}/p/${v1.publicationId}/1`;
     const canvas = (
-      await get(`/p/${v1.publicationId}/1?lang=en`)
+      await get(`/p/${v1.publicationId}/1/slides?lang=en`)
     ).body.toString();
     assert.ok(
       canvas.includes(`<link rel="canonical" href="${base}?lang=en-GB" />`),
     );
     assert.ok(canvas.includes(`content="${base}/og"`));
-    assert.ok(canvas.includes(`href="${base}/reader?lang=en-GB"`));
-    const reader = (
-      await get(`/p/${v1.publicationId}/1/reader`)
-    ).body.toString();
-    assert.ok(reader.includes(`href="${base}?lang=nl"`));
+    assert.ok(canvas.includes(`href="${base}?lang=en-GB"`));
+    const reader = (await get(`/p/${v1.publicationId}/1`)).body.toString();
+    assert.ok(reader.includes(`href="${base}/slides?lang=nl"`));
+  });
+
+  it('answers the bare address with the view the bundle declares', async () => {
+    const edition = (await publish('default-new')).edition;
+    const address = `${edition.publicationId}/1`;
+    const bare = await get(`/p/${address}`);
+    const named = await get(`/p/${address}/reader`);
+    const slides = await get(`/p/${address}/slides`);
+    const embed = await get(`/embed/${address}`);
+    assert.deepEqual(bare.body, named.body, 'the bare address is the reader');
+    assert.ok(bare.body.toString().includes('class="reader-main"'));
+    assert.ok(slides.body.toString().includes('id="deck"'));
+    assert.deepEqual(embed.body, slides.body, 'the embed is the same canvas');
+    assert.match(
+      slides.headers['Content-Security-Policy'],
+      /frame-ancestors 'none'/,
+    );
+  });
+
+  it('keeps the canvas on the bare address of an edition from an older bundle', async () => {
+    const old = (await publish('default-old', storeOld)).edition;
+    const address = `${old.publicationId}/1`;
+    const base = `${ORIGIN}/p/${address}`;
+    const bare = await get(`/p/${address}`);
+    const html = bare.body.toString();
+    assert.ok(html.includes('id="deck"'), 'the bare address is the canvas');
+    assert.ok(html.includes(`<link rel="canonical" href="${base}?lang=nl" />`));
+    assert.ok(
+      html.includes(`href="${base}/reader?lang=nl"`),
+      'it links its reader',
+    );
+    assert.ok(!html.includes(`${base}/slides`), 'and knows no /slides');
+    const reader = (await get(`/p/${address}/reader`)).body.toString();
+    assert.ok(reader.includes('class="reader-main"'));
+    assert.ok(
+      reader.includes(`<link rel="canonical" href="${base}/reader?lang=nl" />`),
+    );
+    assert.ok(
+      reader.includes(`href="${base}?lang=nl"`),
+      'the link back is the canvas',
+    );
+    assert.ok(!reader.includes('deckyard:default-view'));
+    // `/slides` names the canvas here too, so a link needs no bundle knowledge.
+    assert.deepEqual((await get(`/p/${address}/slides`)).body, bare.body);
+
+    const next = (await publish('default-next')).edition;
+    assert.ok(
+      (await get(`/p/${next.publicationId}/2`)).body
+        .toString()
+        .includes('class="reader-main"'),
+      'the next edition follows its own bundle',
+    );
+    assert.deepEqual((await get(`/p/${address}`)).body, bare.body);
   });
 
   it('builds the address on the configured URL, whatever Host is sent', async () => {
@@ -402,7 +489,7 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
     const repeated = await get(`/p/${address}`);
     assert.deepEqual(first.body, repeated.body, 'counting never injects bytes');
     assert.doesNotMatch(first.body.toString(), /ps\.analytics|session\/start/);
-    await get(`/p/${address}/reader`);
+    await get(`/p/${address}/slides`);
     await get(`/embed/${address}`);
     await get(`/p/${v2.publicationId}/2`);
     await __settleBackgroundTasks();
@@ -421,8 +508,9 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
       1,
     );
     assert.equal(items.filter((s) => s.sourceType === 'embed').length, 1);
-    assert.equal(items.filter((s) => s.sourceType === 'reader').length, 1);
-    assert.equal(items.filter((s) => s.sourceType === 'published').length, 3);
+    // What is counted is what was served: the bare address is the reader here.
+    assert.equal(items.filter((s) => s.sourceType === 'reader').length, 3);
+    assert.equal(items.filter((s) => s.sourceType === 'published').length, 1);
     assert.deepEqual(
       (
         await listViewSessions({ ...scopeA, organizationId: ORG_B }, deck, {

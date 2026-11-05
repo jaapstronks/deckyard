@@ -117,7 +117,7 @@ convenience, not authentication; the signature is the authentication.
     "published": {
       "id": "…",
       "slug": "…",
-      "path": "/p/<id>-<slug>",
+      "path": "/p/<publicationId>/<version>",
       "url": "https://…"
     }
   },
