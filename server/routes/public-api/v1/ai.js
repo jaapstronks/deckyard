@@ -17,6 +17,8 @@ import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
 import { resolveSourceImages } from '../../../utils/ai/source-images.js';
 import { hasPermission } from '../../../storage/api-keys.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
+import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
+import { assertValidModelSlides } from '../../../services/slide-field-validation.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
 import {
   deckToPresentationParts,
@@ -228,7 +230,13 @@ async function handleAppendSlides(ctx) {
     lang: lang || existingDeck?.lang,
     slideTypes,
   });
-  const slides = Array.isArray(parts?.slides) ? parts.slides : [];
+  // The same steps as the editor route and MCP `append_slides`, plus the
+  // refusal: nobody reviews this answer before an integration uses it.
+  const slides = validateAndFixRefinedSlides(
+    Array.isArray(parts?.slides) ? parts.slides : [],
+    { slideTypes },
+  );
+  assertValidModelSlides(slides, slideTypes, { phase: 'append' });
   try {
     await resolveSourceImages(slides, sourceImages, { signal, slideTypes });
   } catch (e) {

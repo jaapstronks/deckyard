@@ -19,6 +19,8 @@ export class LlmError extends AppError {
    * @param {string} [options.phase] - Processing phase (e.g., 'outline', 'refine', 'translate')
    * @param {boolean} [options.retryable=true] - Whether the operation can be retried
    * @param {Object} [options.context] - Additional context for debugging
+   * @param {Object} [options.details] - What the envelope names, within the
+   *   `bad_gateway` entry of `error-details.js`
    */
   constructor(
     message,
@@ -30,9 +32,10 @@ export class LlmError extends AppError {
       phase = null,
       retryable = true,
       context = null,
+      details = null,
     } = {},
   ) {
-    super(message, statusCode);
+    super(message, statusCode, details);
     this.vendor = vendor;
     this.model = model;
     this.response = response ? String(response).slice(0, 5000) : null;

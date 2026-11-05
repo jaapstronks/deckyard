@@ -33,10 +33,7 @@
  * @module server/services/save-presentation
  */
 
-import {
-  updatePresentation,
-  refuseNonCanonicalVersionKeys,
-} from '../storage/presentations/index.js';
+import { updatePresentation } from '../storage/presentations/index.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
   AppError,
@@ -61,9 +58,7 @@ import {
   PresentationEventTypes,
 } from './comment-events.js';
 
-import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
-import { canonicalJson } from '../../shared/slide-fingerprint.js';
-import { assertValidSlideFields } from './slide-field-validation.js';
+import { assertChangedSlideFields } from './slide-field-validation.js';
 import { normalizeEmail } from '../../shared/email.js';
 
 const log = createLogger('save-presentation');
@@ -72,47 +67,6 @@ const log = createLogger('save-presentation');
  * @typedef {import('./actor.js').Actor} Actor
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
  */
-
-/** Check only new or changed submitted slides, in each submitted language, the active one first. */
-async function assertChangedSlideFields(scope, pres, changes) {
-  const versions = changes.i18n?.versions || {};
-  refuseNonCanonicalVersionKeys(versions);
-  const active = normalizeLang(changes.i18n?.active);
-  const dominant = normalizeLang(pres.i18n?.dominant || pres.lang);
-  const buffers = Object.entries(versions)
-    .filter(([lang]) => lang !== active || !Array.isArray(changes.slides))
-    .map(([lang, version]) => ({
-      slides: version?.slides,
-      before: pres.i18n?.versions?.[lang]?.slides || [],
-      lang,
-    }));
-  if (Array.isArray(changes.slides)) {
-    buffers.push({
-      slides: changes.slides,
-      before: active
-        ? pres.i18n?.versions?.[active]?.slides || []
-        : pres.slides,
-      ...(active ? { lang: active } : {}),
-    });
-  }
-  if (!buffers.some(({ slides }) => Array.isArray(slides))) return;
-  // The author reads the version on screen: a value every version shares (a
-  // link) is refused there, not in the first version that carries it (B879).
-  buffers.sort((a, b) => (b.lang === active) - (a.lang === active));
-  const slideTypes = await buildMergedSlideTypes(scope);
-  for (const { slides, before, lang } of buffers) {
-    const stored = new Map((before || []).map((s) => [s.id, s]));
-    for (const slide of Array.isArray(slides) ? slides : []) {
-      if (canonicalJson(stored.get(slide?.id)) === canonicalJson(slide))
-        continue;
-      assertValidSlideFields(slide, slideTypes, {
-        ...(lang ? { lang } : {}),
-        allowMissingTranslationText: !!lang && lang !== dominant,
-        previousSlide: stored.get(slide?.id),
-      });
-    }
-  }
-}
 
 /**
  * Ids of slides this actor added in a save: present in the submitted deck,

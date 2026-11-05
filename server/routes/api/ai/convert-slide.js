@@ -12,6 +12,8 @@ import {
 } from '../../../utils/request-validators.js';
 import { convertSlideWithAi } from '../../../utils/openai/convert-slide.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import { assertValidModelSlides } from '../../../services/slide-field-validation.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/convert-slide — convert a slide to a different type using AI.
@@ -19,7 +21,7 @@ import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
  */
 export const handleAiConvertSlide = withErrorHandler(
   'ai-convert-slide',
-  async ({ req, res }) => {
+  async ({ req, res, storageScope }) => {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -39,6 +41,13 @@ export const handleAiConvertSlide = withErrorHandler(
       vendor,
       lang,
     });
+    // The editor renders this answer at once and saves it later: the model's
+    // links are refused here, as MCP `convert_slide` refuses them on its write.
+    assertValidModelSlides(
+      [converted],
+      await buildMergedSlideTypes(storageScope),
+      { phase: 'convert-slide', vendor },
+    );
     serveJson(res, 200, { slide: converted });
     return true;
   },

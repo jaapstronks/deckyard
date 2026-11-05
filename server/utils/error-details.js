@@ -32,7 +32,9 @@
  *   `field_in_use` the removed fields stored content still carries and where
  *   (`usage`);
  *   `unsupported_conversion` the refused type pair and the types the source
- *   does convert to (`from`, `to`, `convertible`).
+ *   does convert to (`from`, `to`, `convertible`);
+ *   `bad_gateway` the field of a model answer the validation refuses (`field`,
+ *   `errors`, `slideId`).
  *
  * Enforcement sits at the two emission points that know the code —
  * `jsonError()` (`server/utils/http.js`) and `AppError.toJSON()`
@@ -77,6 +79,8 @@ export const PAYLOAD_KEYS = Object.freeze({
     'retryable',
   ]),
   translation_instructions_invalid: Object.freeze(['field']),
+  // A model answer the field validation refuses names the field (DY-813).
+  bad_gateway: Object.freeze(['field', 'errors', 'slideId']),
   // Strict slide validation groups field errors under one named list (B572).
   bad_request: Object.freeze(['errors']),
   // The change-password form names the input it refuses (B674).

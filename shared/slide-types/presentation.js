@@ -20,7 +20,7 @@ import { SLIDE_TYPES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
-import { validateFieldChange } from './field-change-validation.js';
+import { fieldChangeProblems } from './field-change-validation.js';
 import { isTextField } from './text-fields.js';
 import { undeclaredContentKeys } from './declared-keys.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
@@ -690,7 +690,8 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
  * Item-field checks remain owned by validateFieldValue, at every write surface.
  * @param {Object} slide
  * @param {{slideTypes?: Record<string, Object>, allowMissingTranslationText?: boolean, previousSlide?: Object}} [opts]
- * @returns {Array<{field: string, errors: string[], code?: 'unknown_field'}>}
+ * @returns {Array<{field: string, errors: string[], code?: 'unknown_field', parts?: import('./field-change-validation.js').FieldPartProblem[]}>}
+ *   `parts` on a list field: where in its items each refusal sits.
  */
 export function validateSlideFields(
   slide,
@@ -739,14 +740,23 @@ function declaredFieldProblems(
     const definition = allowMissingTranslationText
       ? translationFieldDefinition(field)
       : field;
+    const value = slide?.content?.[field.key];
+    const parts = fieldChangeProblems(
+      value,
+      previousSlide ? previousSlide.content?.[field.key] : undefined,
+      definition,
+    );
     const errors = previousSlide
-      ? validateFieldChange(
-          slide?.content?.[field.key],
-          previousSlide?.content?.[field.key],
-          definition,
-        )
-      : validateFieldValue(slide?.content?.[field.key], definition);
-    return errors.length ? [{ field: field.key, errors }] : [];
+      ? parts.flatMap((part) => part.errors)
+      : validateFieldValue(value, definition);
+    if (!errors.length) return [];
+    // A list says which item's sub-field it refuses, as data, so a caller can
+    // hold back that sub-field and not the list.
+    return [
+      field.type === 'items' && Array.isArray(value)
+        ? { field: field.key, errors, parts }
+        : { field: field.key, errors },
+    ];
   });
 }
 

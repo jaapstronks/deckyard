@@ -14,7 +14,13 @@
  *   the doc IS the merge — but validation, normalization, cache
  *   invalidation, deckUpdated SSE and throttled auto-snapshots all apply).
  *   If serialization fails, the binary is kept and the JSON is left
- *   untouched (at most one debounce window stale), never clobbered.
+ *   untouched (at most one debounce window stale), never clobbered. A field
+ *   the validation refuses keeps its stored value in the JSON (inside a list,
+ *   a refused item value is left out of its item, and a list refused as a
+ *   list keeps the stored list of its field), and everything
+ *   else in the store is written: the binary is a cache that a write from
+ *   outside the doc deletes, so holding back more would risk losing it. The
+ *   editor's link field shows that problem at the field.
  *
  * Dependencies are injectable for tests; production wiring is
  * `createCollabPersistence({ repoRoot })` from mount.js, gated by
@@ -39,7 +45,40 @@ import {
   setYDocState as defaultSetYDocState,
 } from '../storage/presentations/index.js';
 import { singleOrganizationScope } from '../storage/scope.js';
+import { holdBackRefusedSlideFields } from '../services/slide-field-validation.js';
 import { migratePresentation } from '../../shared/slide-types/schema-version.js';
+import { canonicalJson } from '../../shared/slide-fingerprint.js';
+
+/**
+ * A deck as far as a store could change it. The doc's envelope carries the
+ * revision and modification stamp of when it was last applied, which a write
+ * moves on without the doc hearing of it, and a projection adds an empty `notes`
+ * to a slide that has none.
+ * @param {Object} pres
+ * @returns {string} Canonical JSON: a stored date and its string compare equal.
+ */
+function writtenContent(pres) {
+  const { revision, modified, updatedBy, ...content } = pres;
+  const slidesOf = (slides) =>
+    Array.isArray(slides)
+      ? slides.map(({ notes, ...slide }) =>
+          notes ? { ...slide, notes } : slide,
+        )
+      : slides;
+  content.slides = slidesOf(pres.slides);
+  if (pres.i18n?.versions) {
+    content.i18n = {
+      ...pres.i18n,
+      versions: Object.fromEntries(
+        Object.entries(pres.i18n.versions).map(([lang, version]) => [
+          lang,
+          { ...version, slides: slidesOf(version?.slides) },
+        ]),
+      ),
+    };
+  }
+  return canonicalJson(JSON.parse(JSON.stringify(content)));
+}
 
 /**
  * Create the Hocuspocus persistence hooks.
@@ -61,6 +100,8 @@ export function createCollabPersistence({
 }) {
   /** Organization per open document, learned on the first (bootstrap) read. */
   const documentOrganizations = new Map();
+  /** The values each open document has refused and logged, per document. */
+  const loggedRefusals = new Map();
 
   /**
    * The storage scope for one collab document. Preferred source is the
@@ -87,6 +128,45 @@ export function createCollabPersistence({
     setYDocState = defaultSetYDocState,
     log = console,
   } = deps;
+
+  /**
+   * One line per refused value, not per store: a refused value stays in the doc
+   * and comes back on every store until a peer fixes it. A value shared by the
+   * language versions is one value, and so is an item sub-field's value while
+   * its list is reordered or grows: the key is the slide, the field, the
+   * sub-field and the value, without the item index. A list refused as a list
+   * is keyed on its errors instead of the list, which every further edit in it
+   * changes. Names where, never the value.
+   */
+  function logRefusals(documentName, id, refused) {
+    const seen = loggedRefusals.get(documentName);
+    const current = new Set();
+    for (const { slideId, field, path = [], kind, errors, value } of refused) {
+      const subField = path.filter((step) => typeof step === 'string');
+      const key = canonicalJson([
+        slideId,
+        field,
+        subField,
+        kind === 'list' ? { errors } : { value },
+      ]);
+      if (!current.has(key) && !seen?.has(key)) {
+        const where = path.length
+          ? `field ${JSON.stringify(field)} item ${path
+              .map((step) =>
+                typeof step === 'number' ? `[${step}]` : `.${step}`,
+              )
+              .join('')}`
+          : `field ${JSON.stringify(field)}`;
+        log.warn(
+          `[collab] ${id}: ${where} of slide ${JSON.stringify(slideId)} ` +
+            `stays out of the deck JSON: ${errors.join('; ')}`,
+        );
+      }
+      current.add(key);
+    }
+    if (current.size) loggedRefusals.set(documentName, current);
+    else loggedRefusals.delete(documentName);
+  }
 
   /** A doc is ours once bootstrap/load populated meta (guards empty docs). */
   function isPopulated(document) {
@@ -165,6 +245,7 @@ export function createCollabPersistence({
   /** Drop the per-document organization when Hocuspocus unloads the doc. */
   function afterUnloadDocument({ documentName }) {
     documentOrganizations.delete(documentName);
+    loggedRefusals.delete(documentName);
   }
 
   async function onStoreDocument({ documentName, document }) {
@@ -223,15 +304,29 @@ export function createCollabPersistence({
         // them (an unoffered text style, B464). Folding here is what every read
         // of the stored JSON does too.
         const projected = migratePresentation(projectedSnapshot);
-        // Skip the JSON write when the doc already equals the stored deck —
-        // notably right after the server-as-collaborator seam applied a fresh
-        // server save to the doc (live-apply.js flushes this hook on
-        // disconnect). Storing anyway would bump the revision and fire SSE
-        // for a byte-identical deck.
         const storageScope = storageScopeFor(documentName);
         const current = await getPresentation(storageScope, id);
-        if (current && isDeepStrictEqual(projected, current)) return;
-        const result = await updatePresentation(storageScope, id, projected, {
+        // The doc is what peers typed, so it passes the same field validation
+        // as an editor save before it becomes the deck JSON that shared and
+        // published surfaces read, field by field: a refused value stays in the
+        // binary and out of the JSON, and the rest of this store is written.
+        let deck = projected;
+        if (current) {
+          const held = await holdBackRefusedSlideFields(
+            storageScope,
+            current,
+            projected,
+          );
+          deck = held.deck;
+          logRefusals(documentName, id, held.refused);
+        }
+        // Skip the JSON write when what would be written equals the stored deck
+        // — notably right after the server-as-collaborator seam applied a fresh
+        // server save to the doc (live-apply.js flushes this hook on
+        // disconnect), or when only a refused field changed. Storing anyway
+        // would bump the revision and fire SSE for a byte-identical deck.
+        if (current && writtenContent(deck) === writtenContent(current)) return;
+        const result = await updatePresentation(storageScope, id, deck, {
           bypassLockCheck: true,
           reason: 'collab',
         });
