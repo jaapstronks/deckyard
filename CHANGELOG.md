@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.98.0](https://github.com/jaapstronks/deckyard/compare/v1.97.5...v1.98.0) (2026-11-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* The text of an MCP tool result is no longer bare JSON or HTML: it is one line followed by an <untrusted-data> fence, so a client that parses content[0].text reads what stands between the two tags. A user prompt in a fork's custom/ai/prompts.js must fence its content with untrustedData() or starterRequest(), because a user message without a fence is refused, and iteration prompt builders no longer receive command.
+
+### Security
+
+* fence user content in every model prompt ([#1978](https://github.com/jaapstronks/deckyard/issues/1978)) ([9e2e8f4](https://github.com/jaapstronks/deckyard/commit/9e2e8f4cf9904feb8290669d4ce72febf6d1ef55))
+* mark every MCP tool result as data for the agent ([#1980](https://github.com/jaapstronks/deckyard/issues/1980)) ([917ef2b](https://github.com/jaapstronks/deckyard/commit/917ef2b3a1b803d07062b4a4a71a9d2a7cef7db8))
+
+
+### Changed
+
+* release the two fence fixes as a beta minor ([02d1cc7](https://github.com/jaapstronks/deckyard/commit/02d1cc7efe1c183836257f1c2b2b9fb95dd44e4a))
+
 ## [1.97.5](https://github.com/jaapstronks/deckyard/compare/v1.97.4...v1.97.5) (2026-11-04)
 
 
