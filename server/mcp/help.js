@@ -48,7 +48,8 @@ CONFIG:
   Storage uses PostgreSQL, configured through DATABASE_URL.
 
   DECKYARD_MCP_OWNER_EMAIL  Set to filter presentations by owner and
-                            assign ownership to new presentations.
+                            assign ownership to new presentations. Must
+                            be an existing user, or the server won't start.
 
 CONNECT (Claude Desktop):
   Add to claude_desktop_config.json:
