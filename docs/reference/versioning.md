@@ -275,6 +275,8 @@ Release 1.91.0 applies this beta rule to strict content-key writes and migration
 
 Release 1.98.0 applies it to two security fixes under a plain `security:` title: an MCP tool result is no longer bare JSON, and a user prompt in `custom/ai/prompts.js` must be fenced. A fork or client has to change something on upgrade, so the title does not decide the digit; the Release PR's version is reviewed.
 
+Release 1.101.0 applies it to a `fix:` title: the stdio MCP server now refuses to start on a `DECKYARD_MCP_OWNER_EMAIL` no user has, which an auth-off install with the documented example config did not do before. It also carries the removal of the `context` and `mode` options from the export builders, under a `refactor:` title the changelog drops.
+
 When editing the Release PR body, preserve the generated robot introduction, separators and Release Please footer. The bot parses that wrapper to recognize the merged PR and publish its tag; correct version files and green CI alone do not establish that publication will run. If the wrapper was removed, restore it on the merged PR, close any duplicate release PR and rerun the release-please job before deploying.
 
 During a lane handoff, a release claim may be transferred explicitly by the maintainer. Record the new owner in the shared queue before continuing the release review and its deployment steps.
