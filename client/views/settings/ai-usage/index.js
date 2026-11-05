@@ -78,27 +78,24 @@ export function createAiUsageCard() {
 
   function render(data) {
     const total = data.today?.total || {};
-    const ceiling = data.ceiling || {};
+    const ceiling = data.ceiling;
     summary.textContent = t(
       'settings.admin.aiUsage.today',
       'Today: {calls} calls, {tokens} tokens.',
       { calls: formatCount(total.calls || 0), tokens: tokensOf(total) },
     );
-    const ceilingText =
-      ceiling.limit > 0
-        ? t(
-            'settings.admin.aiUsage.ceiling',
-            'Installation today: {used} of {limit} calls.',
-            {
-              used: formatCount(ceiling.used || 0),
-              limit: formatCount(ceiling.limit),
-            },
-          )
-        : t(
-            'settings.admin.aiUsage.noCeiling',
-            'Installation today: {used} calls, no daily limit.',
-            { used: formatCount(ceiling.used || 0) },
-          );
+    // Only the share of the ceiling crosses, never the installation's count:
+    // that is every organization's calls together (DY-860).
+    const ceilingText = ceiling
+      ? t(
+          'settings.admin.aiUsage.ceiling',
+          'Installation today: {percent}% of the daily limit used.',
+          { percent: formatCount(ceiling.usedPercent || 0) },
+        )
+      : t(
+          'settings.admin.aiUsage.noCeiling',
+          'This installation has no daily limit.',
+        );
     summary.append(' ', ceilingText);
 
     const calls = t('settings.admin.aiUsage.calls', 'Calls');

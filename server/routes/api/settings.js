@@ -130,9 +130,13 @@ async function handleOrgSettingsGet({ res, authedUser }) {
 }
 
 // GET /api/settings/organization/ai-usage — the organization's model calls
-// and tokens per day, today's per person, and the installation's daily ceiling
-// (DY-844). The same readers as the translation instructions: the people who
-// administer this organization's AI settings.
+// and tokens per day, today's per person, and how far the installation is
+// towards its daily ceiling (DY-844). The same readers as the translation
+// instructions: the people who administer this organization's AI settings.
+//
+// The installation total is every organization's calls together, so it never
+// crosses as a count (DY-860): without a ceiling `ceiling` is null, with one
+// it is only the share used, floored, so 100 means the ceiling is reached.
 async function handleOrgAiUsageGet({ res, url, authedUser, storageScope }) {
   if (!isFeatureEnabled('ai')) return notFound(res);
   const orgId = storageScope?.organizationId;
@@ -141,16 +145,30 @@ async function handleOrgAiUsageGet({ res, url, authedUser, storageScope }) {
   const days = Number(url.searchParams.get('days')) || 30;
   const usage = await listOrganizationAiUsage(storageScope, { today, days });
   if (!usage.ok) return storageError(res, usage);
-  const used = await getInstanceAiCalls(
-    crossOrganizationScope(storageScope.repoRoot, 'instance AI call ceiling'),
-    { day: today },
-  );
   serveJson(res, 200, {
     days: usage.days,
     today: usage.today,
-    ceiling: { limit: aiDailyCallLimit(), used },
+    ceiling: await instanceCeilingShare(storageScope.repoRoot, today),
   });
   return true;
+}
+
+/**
+ * The installation's progress towards its daily ceiling as a whole percentage,
+ * or null when no ceiling is set (DY-860).
+ *
+ * @param {string} repoRoot
+ * @param {string} day
+ * @returns {Promise<{usedPercent: number}|null>}
+ */
+async function instanceCeilingShare(repoRoot, day) {
+  const limit = aiDailyCallLimit();
+  if (!(limit > 0)) return null;
+  const used = await getInstanceAiCalls(
+    crossOrganizationScope(repoRoot, 'instance AI call ceiling'),
+    { day },
+  );
+  return { usedPercent: Math.min(100, Math.floor((used / limit) * 100)) };
 }
 
 // PATCH /api/settings/organization — disabledSlideTypes by designers, other keys admin

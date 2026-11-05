@@ -333,7 +333,10 @@ says what it touches; the exact form follows with its fix.
 8. **AI spend was unmetered inside the app and under-counted on keys.**
    Fixed: every model call is counted on the transport per organization and
    person, and the installation's daily ceiling refuses with 429;
-   `tests/ai-usage-meter.test.js` pins both (DY-844). The per-key counter
+   `tests/ai-usage-meter.test.js` pins both (DY-844). An organization's
+   admin reads its own counts, but of the installation only the share of the
+   ceiling used, and nothing without a ceiling: the installation total is every
+   organization's calls together (DY-860). The per-key counter
    still counts requests, not calls. The permission half is fixed too: `compare-ai`, `description/generate` and
    `translate/fields` ask for write, so a view or comment collaborator cannot
    start a model call. `tests/ai-spend-write-permission.test.js` pins it through
