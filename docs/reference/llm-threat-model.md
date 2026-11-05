@@ -326,7 +326,10 @@ says what it touches; the exact form follows with its fix.
    (DY-815).
 8. **AI spend is unmetered inside the app and under-counted on keys**, and not
    every route that spends asks for the right permission (DY-816, DY-844).
-9. **The vision helper's resolving of local paths needs containment** (DY-817).
+9. **The vision helper read local paths without containment.** Fixed: it reads
+   only what the installation serves as an asset, through the resolver the
+   exports use, and refuses any other local path. `tests/llm-vision-input.test.js`
+   pins this (DY-817).
 10. **Digest output was uncapped and the team digest shipped colleagues'
     identities to the vendor.** Fixed: every model field is typed and bounded
     with the template as fallback, the greeting is the template's, and the team

@@ -34,6 +34,7 @@ const CALLERS = [
   'server/export/bulk-export.js',
   'server/export/deck-install.js',
   'server/utils/html-utils.js',
+  'server/utils/llm/vision.js',
 ];
 
 test('no caller keeps a prefix table of its own', () => {
