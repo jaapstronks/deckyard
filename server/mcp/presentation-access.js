@@ -84,19 +84,28 @@ export function mcpActor(storageScope, ownerEmail) {
  * `forbidden` with no hint why. The stdio entrypoint asks this before it
  * serves, with the same lookup the create uses, and refuses to start.
  *
+ * The way out it names depends on the installation: with auth on, signing in
+ * once creates the user; with auth off there is no sign-in, so it names only
+ * what works there (DY-857).
+ *
  * @param {Object} storageScope - The scope the session's tools act in
  * @param {string|null} ownerEmail - DECKYARD_MCP_OWNER_EMAIL, or null
+ * @param {{authOn: boolean}} installation - whether sign-in exists here
  * @returns {Promise<string|null>} the refusal text, or null when it can act
  */
-export async function stdioOwnerError(storageScope, ownerEmail) {
+export async function stdioOwnerError(storageScope, ownerEmail, { authOn }) {
   if (!ownerEmail) return null;
   const resolution = await resolveIdentityByEmail(storageScope, ownerEmail);
   if (resolution?.userId) return null;
-  return (
+  const problem =
     `DECKYARD_MCP_OWNER_EMAIL is ${JSON.stringify(ownerEmail)}, but no user ` +
     'with that address exists in this installation. Decks created in this ' +
-    'session would belong to nobody who can open them. Sign in to the web ' +
-    'app once with that address, set the variable to an existing user, or ' +
-    'unset it to act as the local operator.'
-  );
+    'session would belong to nobody who can open them. ';
+  const wayOut = authOn
+    ? 'Sign in to the web app once with that address, set the variable to ' +
+      'an existing user, or unset it to act as the local operator.'
+    : 'Authentication is off, so signing in cannot create that user. Unset ' +
+      'the variable to act as the local operator (the usual setup without ' +
+      'auth), or set it to a user that already exists.';
+  return problem + wayOut;
 }
