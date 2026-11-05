@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.98.1](https://github.com/jaapstronks/deckyard/compare/v1.98.0...v1.98.1) (2026-11-05)
+
+
+### Security
+
+* bound digest text and keep colleagues out of the team prompt ([#1981](https://github.com/jaapstronks/deckyard/issues/1981)) ([b3808b4](https://github.com/jaapstronks/deckyard/commit/b3808b46fd2cf40fa22918bceedd11f2d34f8197))
+
 ## [1.98.0](https://github.com/jaapstronks/deckyard/compare/v1.97.5...v1.98.0) (2026-11-05)
 
 
