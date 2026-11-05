@@ -33,6 +33,7 @@ import { testScope } from '../helpers/storage-scope.js';
 import { sessions } from '../../server/storage/live-sessions/state.js';
 import { createLiveSession } from '../../server/storage/live-sessions/sessions.js';
 import { closeSession } from '../../server/storage/live-sessions/close.js';
+import { __settleBackgroundTasks } from '../../server/utils/fire-and-forget.js';
 import { TTL_MS } from '../../server/storage/live-sessions/constants.js';
 import { sweepExpiredLiveSessions } from '../../server/jobs/live-session-cleanup.js';
 import {
@@ -686,8 +687,8 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     });
 
     assert.equal(closeSession(testScope(), sessionId, 'closed'), true);
-    // The delete is fire-and-forget; give it the event-loop turn it needs.
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // The delete is fire-and-forget; wait for it, not for a fixed time (DY-858).
+    await __settleBackgroundTasks();
 
     for (const table of [
       'questions',

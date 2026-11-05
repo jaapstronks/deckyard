@@ -468,8 +468,9 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
       embed.headers['Content-Security-Policy'],
       /frame-ancestors \*/,
     );
-    // The counter is fire-and-forget; let it land.
-    await new Promise((r) => setTimeout(r, 100));
+    // The counter is fire-and-forget; wait for it, not for a fixed time
+    // (DY-858).
+    await __settleBackgroundTasks();
     const rows = await db
       .selectFrom('instance_health')
       .select(['axis', 'key', 'count'])

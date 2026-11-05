@@ -30,6 +30,8 @@ process.env.EXPORT_IMAGE_COMPRESSION = 'false';
 delete process.env.SANDBOX_MODE;
 
 const repoRoot = process.cwd();
+const { __settleBackgroundTasks } =
+  await import('../../server/utils/fire-and-forget.js');
 const { __setTestDb } = await import('../../server/db/client.js');
 const { openTestDb, closeTestDb, installFacadeStorage, pgDescribe, truncate } =
   await import('./helpers/harness.js');
@@ -323,8 +325,9 @@ pgDescribe('publication cutover (PostgreSQL)', () => {
       });
       assert.equal(replay.replayed, true);
       assert.equal(replay.edition.id, first.edition.id);
-      // The webhook is fire-and-forget; let it land.
-      await new Promise((r) => setTimeout(r, 50));
+      // The webhook is fire-and-forget; wait for it, not for a fixed time
+      // (DY-858).
+      await __settleBackgroundTasks();
       assert.equal(posted.length, 1, 'a replay announces nothing');
       assert.equal(posted[0].body.edition.id, first.edition.id);
       assert.equal(posted[0].body.edition.version, 1);
