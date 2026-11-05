@@ -18,7 +18,11 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
-import { requestChatCompletionContent, LlmError } from '../llm/index.js';
+import {
+  AiQuotaError,
+  requestChatCompletionContent,
+  LlmError,
+} from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
@@ -211,7 +215,8 @@ export function applyRevisionOperations(
  * @param {Function|null} [options.onLog]
  * @param {AbortSignal|null} [options.signal] - Reaches the provider fetch. A
  *   cancelled caller is not a failed revision: the abort is thrown, not
- *   swallowed into "keep the draft".
+ *   swallowed into "keep the draft". Neither is the installation's daily
+ *   ceiling: an `AiQuotaError` is thrown too.
  * @returns {Promise<{outline: object, revision: object|null}>}
  */
 export async function reviseOutline(
@@ -242,6 +247,9 @@ export async function reviseOutline(
     parsed = extractJsonObject(content);
   } catch (err) {
     if (signal?.aborted) throw err;
+    // The daily ceiling refuses the whole generation: keeping the draft would
+    // only move the refusal to phase 2 behind fallback slides (DY-859).
+    if (err instanceof AiQuotaError) throw err;
     const message =
       err instanceof LlmError ? err.message : String(err?.message || err);
     log.warn(`Outline revision failed, keeping the draft: ${message}`);
