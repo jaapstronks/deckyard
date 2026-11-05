@@ -120,7 +120,7 @@ async function resolve({ repoRoot, res }, publicationId, versionText) {
   return edition;
 }
 
-function viewHandler(view, { frameable = false } = {}) {
+function viewHandler(view, sourceType, { frameable = false } = {}) {
   return async (ctx, publicationId, versionText) => {
     const edition = await resolve(ctx, publicationId, versionText);
     if (!edition) return true;
@@ -141,7 +141,7 @@ function viewHandler(view, { frameable = false } = {}) {
     ]);
     const handled = sendDocument(ctx.res, views[view], { frameable });
     fireAndForget(
-      recordEditionVisit(ctx.repoRoot, edition, { embedded: frameable }),
+      recordEditionVisit(ctx.repoRoot, edition, sourceType),
       'edition visit analytics',
     );
     return handled;
@@ -209,10 +209,10 @@ export const ROUTES = [
   {
     prefix: '/embed/',
     suffix: '',
-    handler: viewHandler('canvas', { frameable: true }),
+    handler: viewHandler('canvas', 'embed', { frameable: true }),
   },
-  { suffix: '', handler: viewHandler('canvas') },
-  { suffix: '/reader', handler: viewHandler('reader') },
+  { suffix: '', handler: viewHandler('canvas', 'published') },
+  { suffix: '/reader', handler: viewHandler('reader', 'reader') },
   { suffix: '/manifest.json', handler: serveManifest },
   { suffix: '/edition.zip', handler: servePackage },
   { suffix: '/og', handler: serveOgImage },

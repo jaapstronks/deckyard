@@ -258,7 +258,9 @@ function createSessionRow(session) {
       : '-';
 
   // Edition visits carry the canonical series/version in the existing source id.
-  const editionVersion = ['published', 'embed'].includes(session.sourceType)
+  const editionVersion = ['published', 'reader', 'embed'].includes(
+    session.sourceType,
+  )
     ? session.sourceId?.match(/^[0-9a-f-]{36}\/([1-9][0-9]*)$/i)?.[1]
     : null;
   const sourceLabel = getSourceLabel(session.sourceType);

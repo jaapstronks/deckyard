@@ -49,21 +49,24 @@ test.afterEach(() => {
 
 test('records anonymous completed visits in the existing session list, with edition identity', async () => {
   const db = seed();
-  await recordEditionVisit(scope.repoRoot, edition);
+  await recordEditionVisit(scope.repoRoot, edition, 'published');
+  await recordEditionVisit(scope.repoRoot, { ...edition, version: 2 }, 'embed');
   await recordEditionVisit(
     scope.repoRoot,
-    { ...edition, version: 2 },
-    { embedded: true },
+    { ...edition, version: 3 },
+    'reader',
   );
-  assert.equal(db.__tables.view_sessions.length, 2);
+  assert.equal(db.__tables.view_sessions.length, 3);
   const { items } = await listViewSessions(scope, deck, { limit: 10 });
   assert.deepEqual(items.map((s) => s.sourceId).sort(), [
     `${publicationId}/1`,
     `${publicationId}/2`,
+    `${publicationId}/3`,
   ]);
   assert.deepEqual(items.map((s) => s.sourceType).sort(), [
     'embed',
     'published',
+    'reader',
   ]);
   for (const session of items) {
     assert.equal(session.presentationId, deck);
@@ -97,7 +100,7 @@ for (const [name, options] of [
 ]) {
   test(`does not record with ${name}`, async () => {
     const db = seed(options);
-    await recordEditionVisit(scope.repoRoot, edition);
+    await recordEditionVisit(scope.repoRoot, edition, 'published');
     assert.equal(db.__tables.view_sessions.length, 0);
   });
 }
@@ -105,5 +108,5 @@ for (const [name, options] of [
 test('the installation kill switch prevents all analytics storage reads', async () => {
   process.env.ANALYTICS_ENABLED = 'false';
   __setTestDb(null);
-  await recordEditionVisit(scope.repoRoot, edition);
+  await recordEditionVisit(scope.repoRoot, edition, 'published');
 });

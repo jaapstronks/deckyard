@@ -12,14 +12,11 @@ import { crossOrganizationScope } from '../storage/scope.js';
  * Call only after serving canvas/reader/embed, never for subresources/errors.
  * @param {string} repoRoot
  * @param {{publicationId: string, version: number}} edition - Resolved by the public route
- * @param {{embedded?: boolean}} [options]
+ * @param {'published'|'reader'|'embed'} sourceType - The view served: the
+ *   canvas, the reader or the frameable canvas
  * @returns {Promise<void>}
  */
-export async function recordEditionVisit(
-  repoRoot,
-  edition,
-  { embedded = false } = {},
-) {
+export async function recordEditionVisit(repoRoot, edition, sourceType) {
   if (!isFeatureEnabled('analytics')) return;
   const publicScope = crossOrganizationScope(
     repoRoot,
@@ -37,7 +34,7 @@ export async function recordEditionVisit(
   if (!deck || deck.settings?.analyticsEnabled === false) return;
   await createViewSession(scope, {
     presentationId: source.presentationId,
-    sourceType: embedded ? 'embed' : 'published',
+    sourceType,
     sourceId: `${edition.publicationId}/${edition.version}`,
     completed: true,
   });

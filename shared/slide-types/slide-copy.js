@@ -93,6 +93,7 @@ export const SLIDE_COPY = {
     readerViewSlides: "Bekijk de dia's",
     // The canvas link to the reader, and the language group around its links.
     readerOpen: 'Leesweergave',
+    readerNoScript: 'Deze presentatie heeft JavaScript nodig om af te spelen.',
     readerLanguages: 'Taal',
     readerSlideCountOne: '{n} dia.',
     readerSlideCountOther: "{n} dia's.",
@@ -246,6 +247,7 @@ export const SLIDE_COPY = {
     readerSlidesLabel: 'Slides',
     readerViewSlides: 'View the slides',
     readerOpen: 'Reading view',
+    readerNoScript: 'This presentation needs JavaScript to play.',
     readerLanguages: 'Language',
     readerSlideCountOne: '{n} slide.',
     readerSlideCountOther: '{n} slides.',

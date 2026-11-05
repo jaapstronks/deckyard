@@ -279,7 +279,7 @@ pgDescribe('analytics dashboard decks in SQL (real PostgreSQL)', () => {
         avgDurationSeconds: 0,
         previousViews: 0,
         timelineViews: 0,
-        sources: { shareLink: 0, published: 0, follow: 0, embed: 0 },
+        sources: { shareLink: 0, published: 0, reader: 0, follow: 0, embed: 0 },
         completionRate: 0,
         topIds: [],
       };
@@ -311,10 +311,17 @@ pgDescribe('analytics dashboard decks in SQL (real PostgreSQL)', () => {
     const name = {
       share_link: 'shareLink',
       published: 'published',
+      reader: 'reader',
       follow: 'follow',
       embed: 'embed',
     };
-    const sources = { shareLink: 0, published: 0, follow: 0, embed: 0 };
+    const sources = {
+      shareLink: 0,
+      published: 0,
+      reader: 0,
+      follow: 0,
+      embed: 0,
+    };
     for (const row of bySource.rows) {
       sources[name[row.source_type]] = Number(row.n);
     }

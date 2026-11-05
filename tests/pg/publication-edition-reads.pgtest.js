@@ -421,6 +421,8 @@ pgDescribe('publication edition reads (PostgreSQL)', () => {
       1,
     );
     assert.equal(items.filter((s) => s.sourceType === 'embed').length, 1);
+    assert.equal(items.filter((s) => s.sourceType === 'reader').length, 1);
+    assert.equal(items.filter((s) => s.sourceType === 'published').length, 3);
     assert.deepEqual(
       (
         await listViewSessions({ ...scopeA, organizationId: ORG_B }, deck, {
