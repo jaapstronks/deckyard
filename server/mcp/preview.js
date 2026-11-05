@@ -20,6 +20,7 @@ import {
 } from '../utils/css-type-scope.js';
 import { themeVarsCssText } from '../utils/theme-vars-css.js';
 import { embedSlideImages } from '../export/css-bundle.js';
+import { embedImgSrcDataUrls, embedLocalCssUrls } from '../utils/html-utils.js';
 import { compressImageForEmbed } from '../export/image-compress.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -84,6 +85,27 @@ const PREVIEW_IMAGE = { maxPx: 960, quality: 70 };
 /** The `transform` hook `embedSlideImages()` applies to each local image. */
 const previewImageTransform = (buf, ext, mime) =>
   compressImageForEmbed(buf, ext, mime, PREVIEW_IMAGE);
+
+/**
+ * Inline what the rendered markup and the theme vars still point at by path.
+ * `embedSlideImages()` covers a slide's image fields, but the renderer adds
+ * images of its own (the theme logo, the logo placeholder) and a theme var
+ * may hold `url('/uploads/…')`. A preview lands in a client frame without a
+ * Deckyard origin, where a root-relative path loads nothing (DY-853). Local
+ * assets only, at preview resolution; a remote URL stays as written.
+ *
+ * @param {string} repoRoot
+ * @param {string} markup - rendered slides
+ * @param {string} themeVars - `themeVarsCssText()` output
+ * @returns {Promise<[string, string]>}
+ */
+async function embedPreviewAssets(repoRoot, markup, themeVars) {
+  const opts = { transform: previewImageTransform, cache: new Map() };
+  return Promise.all([
+    embedImgSrcDataUrls(repoRoot, markup, opts),
+    embedLocalCssUrls(repoRoot, themeVars, opts),
+  ]);
+}
 
 /** repoRoot -> minimal CSS text. Keyed so a test can point at a fixture root. */
 const _slidesCssCache = new Map();
@@ -268,7 +290,7 @@ export async function buildSlidePreviewHtml(
   } = {},
 ) {
   const baseCss = await getMinimalCss(repoRoot);
-  const themeVars = theme ? themeVarsCssText(theme) : '';
+  const rawThemeVars = theme ? themeVarsCssText(theme) : '';
 
   // Embed local images as data URLs
   const embeddedSlides = await embedSlideImages(repoRoot, slides, {
@@ -297,7 +319,11 @@ export async function buildSlidePreviewHtml(
     `;
   });
 
-  const markup = slideHtmls.join('\n');
+  const [markup, themeVars] = await embedPreviewAssets(
+    repoRoot,
+    slideHtmls.join('\n'),
+    rawThemeVars,
+  );
   const highlightNeeds = detectPrismKatexNeeds(markup);
   return `${buildDocumentHead({
     lang: docLang || resolveDocLangFromPresentation({ slides }),
@@ -365,18 +391,18 @@ export async function buildSingleSlidePreviewHtml(
   } = {},
 ) {
   const baseCss = await getMinimalCss(repoRoot);
-  const themeVars = theme ? themeVarsCssText(theme) : '';
+  const rawThemeVars = theme ? themeVarsCssText(theme) : '';
 
   // Embed local images
   const [embeddedSlide] = await embedSlideImages(repoRoot, [slide], {
     transform: previewImageTransform,
   });
 
-  const html = renderSlideHtml(embeddedSlide, {
-    theme,
-    stripEditorAttrs: true,
-    lang,
-  });
+  const [html, themeVars] = await embedPreviewAssets(
+    repoRoot,
+    renderSlideHtml(embeddedSlide, { theme, stripEditorAttrs: true, lang }),
+    rawThemeVars,
+  );
 
   // No <title>: a single-slide preview is rendered inside a host artifact frame.
   const highlightNeeds = detectPrismKatexNeeds(html);
