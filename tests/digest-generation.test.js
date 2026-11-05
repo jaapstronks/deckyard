@@ -563,6 +563,11 @@ test('team: the prompt has titles and counts, the mail still has the people', as
   }
   assert.match(prompt, /Team Deck 1/);
   assert.match(prompt, /"presentationCount": 3/);
-  assert.equal(digest.topPresentations[0].ownerEmail, 'a@example.com');
+  // The mail lists a deck by title and views; the owner's address is
+  // analytics input only, never part of what the digest carries (DY-845).
+  assert.deepEqual(digest.topPresentations[0], {
+    title: 'Team Deck 1',
+    views: 200,
+  });
   assert.equal(digest.topPresenters[0].name, 'Alice');
 });

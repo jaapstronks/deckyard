@@ -484,7 +484,6 @@ function validatedTeam(parsed, admin, analytics, tr) {
     topPresentations: analytics.topPresentations.slice(0, 5).map((p) => ({
       title: p.title,
       views: p.views,
-      ownerEmail: p.ownerEmail,
     })),
     topPresentersIntro:
       modelText(parsed.topPresentersIntro, MAX_LENGTH.intro) ||
@@ -737,7 +736,6 @@ function generateFallbackTeamDigest(admin, analytics, tr) {
     topPresentations: analytics.topPresentations.slice(0, 5).map((p) => ({
       title: p.title,
       views: p.views,
-      ownerEmail: p.ownerEmail,
     })),
     topPresentersIntro: tr(
       'email.digest.team.topPresentersIntro',
