@@ -50,6 +50,7 @@ CONFIG:
   DECKYARD_MCP_OWNER_EMAIL  Set to filter presentations by owner and
                             assign ownership to new presentations. Must
                             be an existing user, or the server won't start.
+                            With auth off (the local default) leave it out.
 
 CONNECT (Claude Desktop):
   Add to claude_desktop_config.json:
