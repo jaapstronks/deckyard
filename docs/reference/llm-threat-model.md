@@ -162,10 +162,10 @@ the vendor. The preview route takes that URL from the request body.
 
 ### Background
 
-| Entry                                                                               | Starter  | Author of the text                                                                                | Sink                                                       |
-| ----------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Weekly user digest, `generateDigestWithAI` (`server/services/digest-generation.js`) | Cron job | The recipient's name and **deck titles** (which a collaborator may have written) with view counts | Email: subject, greeting, highlights, up to three insights |
-| Weekly team digest, `generateTeamDigestWithAI`                                      | Cron job | **Other members' deck titles** with view and presenter counts; no names or addresses              | Email to the organization admin                            |
+| Entry                                                                               | Starter  | Author of the text                                                                              | Sink                                             |
+| ----------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Weekly user digest, `generateDigestWithAI` (`server/services/digest-generation.js`) | Cron job | **Deck titles** (which a collaborator may have written) with view counts; no names or addresses | Email: subject, highlights, up to three insights |
+| Weekly team digest, `generateTeamDigestWithAI`                                      | Cron job | **Other members' deck titles** with view and presenter counts; no names or addresses            | Email to the organization admin                  |
 
 What bounds it: the HTML template escapes every field, the only `href` is the
 preferences link and the dashboard link is built from `APP_URL`, so the model
@@ -173,9 +173,10 @@ cannot place a link. `sendEmail` refuses a subject with a control character, so
 the subject cannot inject a header. Audience questions, comments and poll
 answers are in no prompt anywhere. Every text field from the model must be a string
 within a maximum, and the subject a single line, or the template says it
-instead. The team prompt lists its fields, so colleagues' names and email
-addresses stay out of it; the mail adds them from the analytics. A deck title
-can still hold a name.
+instead. The greeting is the template's in both digests, so the recipient's name
+stays out of the prompt. The team prompt lists its fields, so colleagues' names
+and email addresses stay out of it; the mail lists the presenters' names from
+the analytics. A deck title can still hold a name.
 
 ## Sinks: what an answer can reach
 
@@ -363,8 +364,9 @@ severity order, except that the first is the one to fix first.
    the preview route takes the path from the request.
 10. **Digest output was uncapped and the team digest shipped colleagues'
     identities to the vendor.** Fixed: every model field is typed and bounded
-    with the template as fallback, and the team prompt carries titles and
-    counts. `tests/digest-generation.test.js` pins both (DY-818).
+    with the template as fallback, the greeting is the template's, and the team
+    prompt carries titles and counts. `tests/digest-generation.test.js` pins
+    these (DY-818).
 
 ### What the review did not find
 

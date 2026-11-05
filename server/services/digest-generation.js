@@ -61,7 +61,7 @@ async function composeDigest(user, analytics, locale) {
   const formattedData = formatAnalyticsForPrompt(analytics);
 
   const systemPrompt = buildDigestSystemPrompt(locale);
-  const userPrompt = buildDigestUserPrompt(user, formattedData);
+  const userPrompt = buildDigestUserPrompt(formattedData);
 
   try {
     const content = await requestChatCompletionContent({
@@ -178,7 +178,6 @@ Your task is to create a brief, encouraging email digest that helps the user und
 Output MUST be valid JSON with these exact fields:
 {
   "subject": "Your weekly engagement insights - brief highlight",
-  "greeting": "Hi {name},",
   "highlights": "One paragraph (2-3 sentences) summarizing the key highlight from this week's data.",
   "topPresentationsIntro": "Brief intro sentence for the top performers section.",
   "insights": ["Array of 2-3 actionable insight strings based on the data."],
@@ -201,11 +200,10 @@ Avoid:
 - Being overly promotional`;
 }
 
-function buildDigestUserPrompt(user, formattedData) {
-  return `Generate a weekly engagement digest email for:
+function buildDigestUserPrompt(formattedData) {
+  return `Generate a weekly engagement digest email:
 
-${untrustedData(`USER: ${user.name || user.email.split('@')[0]}
-PERIOD: ${formattedData.weekStart} to ${formattedData.weekEnd}
+${untrustedData(`PERIOD: ${formattedData.weekStart} to ${formattedData.weekEnd}
 
 ANALYTICS DATA:
 ${JSON.stringify(formattedData, null, 2)}`)}
@@ -223,7 +221,6 @@ Your task is to create a brief, informative digest showing how all presentations
 Output MUST be valid JSON with these exact fields:
 {
   "subject": "Your team's weekly engagement - brief highlight",
-  "greeting": "Hi {name},",
   "highlights": "One paragraph summarizing the team's overall performance this week.",
   "topPresentationsIntro": "Brief intro for top performing presentations section.",
   "topPresentersIntro": "Brief intro for most active presenters section.",
@@ -334,7 +331,6 @@ function formatAnalyticsForPrompt(analytics) {
 /** The longest model text a field takes; beyond it the template says it. */
 const MAX_LENGTH = {
   subject: 150,
-  greeting: 120,
   highlights: 1500,
   intro: 300,
   insight: 400,
@@ -423,9 +419,7 @@ function validated(parsed, user, analytics, tr, locale) {
         'Your weekly engagement insights - {views} views',
         { views: analytics.totalViews },
       ),
-    greeting: (
-      modelText(parsed.greeting, MAX_LENGTH.greeting) || greeting(tr, name)
-    ).replace('{name}', name),
+    greeting: greeting(tr, name),
     highlights:
       modelText(parsed.highlights, MAX_LENGTH.highlights) ||
       tr(
@@ -473,9 +467,7 @@ function validatedTeam(parsed, admin, analytics, tr) {
         "Your team's weekly engagement - {views} views",
         { views: analytics.totalViews },
       ),
-    greeting: (
-      modelText(parsed.greeting, MAX_LENGTH.greeting) || greeting(tr, name)
-    ).replace('{name}', name),
+    greeting: greeting(tr, name),
     highlights:
       modelText(parsed.highlights, MAX_LENGTH.highlights) ||
       tr(

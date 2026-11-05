@@ -223,8 +223,6 @@ test('solo: AI success merges model prose with server-owned metrics', async () =
   assert.equal(digest.subject, 'Great week');
   assert.equal(digest.highlights, 'Model highlight paragraph.');
   assert.equal(digest.closing, 'Model closing.');
-  // {name} placeholder is resolved.
-  assert.equal(digest.greeting, 'Hi Author,');
   // Insights capped at 3.
   assert.deepEqual(digest.insights, ['A', 'B', 'C']);
   // topPresentations come from analytics (capped at 3), never the model.
@@ -504,7 +502,6 @@ test('a field of the wrong type or length falls back per field', async () => {
   resetSeam();
   aiResponse = JSON.stringify({
     subject: 'Good subject',
-    greeting: { name: 'nope' },
     highlights: 'y'.repeat(1501),
     topPresentationsIntro: 42,
     closing: ['nope'],
@@ -513,7 +510,6 @@ test('a field of the wrong type or length falls back per field', async () => {
   const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
 
   assert.equal(digest.subject, 'Good subject');
-  assert.equal(digest.greeting, 'Hi Author,');
   assert.match(digest.highlights, /^Your presentations received 120 views/);
   assert.equal(
     digest.topPresentationsIntro,
@@ -531,6 +527,25 @@ test('an unusable insight is dropped and the others stay', async () => {
   const digest = await generateTeamDigestWithAI(admin, teamAnalytics(), 'en');
 
   assert.deepEqual(digest.insights, ['one', 'two', 'three']);
+});
+
+test('the greeting is the template, whatever the model writes', async () => {
+  for (const [generate, recipient, analytics, expected] of [
+    [generateDigestWithAI, user, soloAnalytics, 'Hallo Author,'],
+    [generateTeamDigestWithAI, admin, teamAnalytics, 'Hallo Boss,'],
+  ]) {
+    resetSeam();
+    aiResponse = JSON.stringify({ greeting: 'Hoi {naam},' });
+
+    const digest = await generate(recipient, analytics(), 'nl');
+
+    assert.equal(digest.greeting, expected);
+    const prompt = lastFetch.body.messages
+      .map((message) => message.content)
+      .join('\n');
+    assert.ok(!prompt.includes(recipient.name), recipient.name);
+    assert.ok(!prompt.includes('{name}'));
+  }
 });
 
 test('team: the prompt has titles and counts, the mail still has the people', async () => {
