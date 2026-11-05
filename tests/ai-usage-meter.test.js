@@ -240,7 +240,25 @@ test("the organization's admin reads today's spend per day and per person", asyn
     !JSON.stringify(body).includes('@'),
     'no address crosses the boundary',
   );
-  assert.deepEqual(body.ceiling, { limit: 0, used: 3 });
+  // No ceiling: the installation's total (every organization's calls) does
+  // not cross at all (DY-860).
+  assert.equal(body.ceiling, null);
+});
+
+test('with a ceiling the admin reads only the share used, not the installation count', async (t) => {
+  seed();
+  process.env.AI_DAILY_CALL_LIMIT = '8';
+  t.after(() => delete process.env.AI_DAILY_CALL_LIMIT);
+  countModelCalls(t);
+  await generateDescription(OWNER);
+  await generateDescription(OWNER);
+  await generateDescription(EDITOR);
+
+  const res = await readUsage(OWNER);
+
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  // 3 of 8 is 37.5%, floored: 100 only once the ceiling is reached.
+  assert.deepEqual(res.json().ceiling, { usedPercent: 37 });
 });
 
 test('a member who does not administer the organization is refused the read', async () => {
