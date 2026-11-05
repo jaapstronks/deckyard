@@ -239,6 +239,100 @@ describe('collab persistence hooks', () => {
     assert.match(doc2.getMap('meta').get('title').get('nl').toString(), /!!!$/);
   });
 
+  describe('field validation on the store (DY-813)', () => {
+    /** A deck with one end slide, open in a doc, and a way to edit that slide. */
+    async function openEndSlide(others = []) {
+      const { id } = await createPresentation(testScope(), {
+        title: 'Eindslide',
+        ownerEmail: 'owner@example.com',
+        lang: 'nl',
+      });
+      const stored = await getPresentation(testScope(), id);
+      const slide = {
+        id: 'end-1',
+        type: 'end-slide',
+        content: { title: 'Bedankt', contactUrl: 'https://example.com/' },
+      };
+      await updatePresentation(testScope(), id, {
+        ...stored,
+        slides: [slide, ...others],
+        i18n: {
+          ...stored.i18n,
+          versions: {
+            ...stored.i18n?.versions,
+            nl: { ...stored.i18n?.versions?.nl, slides: [slide, ...others] },
+          },
+        },
+      });
+      const doc = new Y.Doc();
+      await hooks.onLoadDocument({ documentName: docName(id), document: doc });
+      const edit = async (fields) => {
+        const base = deckYdocCodec.projectDocToPresentation(doc);
+        const next = structuredClone(base);
+        Object.assign(next.slides[0].content, fields);
+        const version = next.i18n?.versions?.nl?.slides?.[0];
+        if (version) Object.assign(version.content, fields);
+        deckYdocCodec.applyPresentationToDoc(next, doc, { base });
+        await hooks.onStoreDocument({
+          documentName: docName(id),
+          document: doc,
+        });
+      };
+      return { id, doc, edit };
+    }
+    const storedContent = async (id) =>
+      (await getPresentation(testScope(), id)).slides[0].content;
+
+    it('a javascript: link stays out of the JSON, the binary keeps the work, a fix lands', async () => {
+      const { id, doc, edit } = await openEndSlide();
+
+      await edit({ contactUrl: 'javascript:alert(1)' });
+
+      assert.equal(
+        (await storedContent(id)).contactUrl,
+        'https://example.com/',
+      );
+      assert.deepEqual(
+        await getYDocState(testScope(), id),
+        Y.encodeStateAsUpdate(doc),
+        'the binary holds the refused state, so nothing typed is lost',
+      );
+      assert.equal(log.lines.error.length, 1);
+      assert.match(log.lines.error[0], /contactUrl/);
+
+      await edit({ contactUrl: 'https://example.org/' });
+
+      assert.equal(
+        (await storedContent(id)).contactUrl,
+        'https://example.org/',
+      );
+    });
+
+    it('an old bad link on a slide nobody touches does not hold back other edits', async () => {
+      const { id, edit } = await openEndSlide([
+        {
+          id: 'end-2',
+          type: 'end-slide',
+          content: { title: 'Oud', contactUrl: 'example.com' },
+        },
+      ]);
+
+      await edit({ title: 'Nieuw' });
+
+      assert.equal((await storedContent(id)).title, 'Nieuw');
+      assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+    });
+
+    it('an empty required field on its way to a new value is not a refusal', async () => {
+      const { id, edit } = await openEndSlide();
+
+      await edit({ title: '' });
+
+      assert.equal((await storedContent(id)).title, '');
+      assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+    });
+  });
+
   it('never stores an unpopulated doc over a real deck', async () => {
     const before = await getPresentation(testScope(), deckId);
     await hooks.onStoreDocument({

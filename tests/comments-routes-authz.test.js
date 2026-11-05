@@ -840,6 +840,25 @@ test('the owner can apply an AI suggestion, inserting the proposed slide', async
   );
 });
 
+test('a suggestion proposing a javascript: link is refused and stays open (DY-813)', async () => {
+  const db2 = await seed();
+  commentById('cm-ai').proposed_slide = {
+    type: 'end-slide',
+    content: { title: 'Thanks', contactUrl: 'javascript:alert(1)' },
+  };
+  const before = structuredClone(db2.__tables.presentations[0].slides);
+
+  const { res } = await call(handlePresentationCommentApply, 'POST', {
+    as: ACTORS.owner,
+    args: [DECK, 'cm-ai'],
+  });
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.json().details.field, 'contactUrl');
+  assert.deepEqual(db2.__tables.presentations[0].slides, before);
+  assert.equal(commentById('cm-ai').status, 'open');
+});
+
 test('an applied suggestion is composed by the slide factory (B272)', async () => {
   const db2 = await seed();
   const { res } = await call(handlePresentationCommentApply, 'POST', {

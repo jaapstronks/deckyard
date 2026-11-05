@@ -182,8 +182,7 @@ export async function handlePresentationVersionCompareAi(
   }
 
   // Spending the installation's model budget asks for write, not read (DY-816),
-  // and the refusal comes first: who may not start this learns nothing about
-  // how the instance is configured.
+  // and that refusal is the first answer a caller gets from this handler.
   const pres = await withPresentationAuth({
     storageScope,
     id,

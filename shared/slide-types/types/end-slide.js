@@ -1,4 +1,4 @@
-import { bgClass, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, safeHref, BACKGROUND_FIELD } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
@@ -142,13 +142,13 @@ export default {
     const name = String(content?.contactName || '').trim();
     const email = String(content?.contactEmail || '').trim();
     const phone = String(content?.contactPhone || '').trim();
-    const url = String(content?.contactUrl || '').trim();
+    const url = safeHref(content?.contactUrl);
 
     // Generic social links (label + url pairs)
     const social1Label = String(content?.social1Label || '').trim();
-    const social1Url = String(content?.social1Url || '').trim();
+    const social1Url = safeHref(content?.social1Url);
     const social2Label = String(content?.social2Label || '').trim();
-    const social2Url = String(content?.social2Url || '').trim();
+    const social2Url = safeHref(content?.social2Url);
 
     const hasContact = name || email || phone || url;
     const hasSocial =

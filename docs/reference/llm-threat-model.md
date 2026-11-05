@@ -123,7 +123,7 @@ the MCP paths it is saved first and the agent is told afterwards.
 The comment sink matters: a slide written by one collaborator can make the
 model post a suggestion that every other collaborator sees as "the AI's", and
 "Apply suggestion" (`server/routes/api/presentations/comments-actions.js`)
-writes the proposed content into the deck (finding 5).
+writes the proposed content into the deck, after the field validation.
 
 ### Translation
 
@@ -182,8 +182,11 @@ with the control at each.
   (no scheme or host check), `enum` fields by option list. Keys inside `items`
   entries are not refused except by the strict Zod schema MCP
   `create_presentation_from_slides` uses. It runs on the editor PUT, the v1
-  writes, the MCP slide tools, every create and every import. Not every write
-  path has it yet: finding 5.
+  writes, the MCP slide tools, every create and every import; on the collab
+  store, where a refused value keeps the doc binary but stays out of the deck
+  JSON and prose may be empty while someone retypes it; on "Apply suggestion";
+  and on two answers that write nothing, editor `convert-slide` and v1
+  `append-slides`.
 - **Slide type.** The model picks from the organization's offer. That offer
   includes `embed-slide` (any `https:` URL in an iframe whose `sandbox` value
   is an enum the model may set to `permissive`), `video-slide` and the
@@ -204,8 +207,7 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   blocks private and metadata addresses and accepts public hosts, so a public
   attacker URL is requested from the server's own address.
 - **Links.** Markdown links allow `https?:` only and no images; `url` fields
-  are checked at write time, and renderers re-check the scheme at render time
-  (finding 5).
+  are checked at write time, and renderers re-check the scheme at render time.
 - **Destructive edits.** Iteration and compression plans can remove slides: finding 4.
 - **Comments.** Analysis suggestions are persisted under the AI identity and
   broadcast; comment links go through the mention allowlist.
@@ -309,8 +311,12 @@ says what it touches; the exact form follows with its fix.
 3. **A URL the model writes can load in a viewer's browser without a click**
    (DY-811). The scrub for such URLs does not cover every path yet.
 4. **A plan can reach further than the slides the starter named** (DY-812).
-5. **Not every path that writes slide content runs the declared-field
-   validation, and not every renderer re-checks a link** (DY-813).
+5. **Not every path that wrote slide content ran the declared-field validation,
+   and the end slide did not re-check a link.** Fixed: the four paths refuse
+   (§ Sinks) and the end slide renders a link only through `safeHref`. Editor
+   `append-slides`, `refine-section` and `iterate` still answer unvalidated
+   links for a human to review; the save refuses them and every renderer
+   re-checks (DY-813).
 6. **Deck content entered every prompt as instructions can.** No prompt
    delimited user text as data, and the iterate command stood in the system
    prompt. Fixed as a first layer of defence, not a boundary: every prompt
@@ -367,7 +373,10 @@ What pins the controls above today, and the gaps per finding:
 - Escaping and links: `tests/markdown-escaped-by-construction.test.js`,
   `security-slide-template-xss.test.js`, `field-types.test.js`,
   `field-change-validation.test.js`, `service-layer-presentation-save.test.js`
-  (a `javascript:` link is refused on save), `content-schema-links.test.js`.
+  (a `javascript:` link is refused on save), `content-schema-links.test.js`,
+  `ai-output-field-validation.test.js` (two model answers and the end slide),
+  `collab-persistence.test.js` and `comments-routes-authz.test.js` (the collab
+  store and "Apply suggestion").
 - CSP, SSRF and origins: `export-csp.test.js`, `export-ssrf-strip.test.js`,
   `ssrf-guard.test.js`, `bulk-export-ssrf.test.js`, `edition-input.test.js`,
   `no-third-party-origins.test.js`.
@@ -383,6 +392,6 @@ What pins the controls above today, and the gaps per finding:
 
 Not pinned by any test, one per finding: a `javascript:` or foreign-host
 video source (added with the fix for finding 1), and the open findings 2, 3, 4,
-5, 8 and 9. Each item
+8 and 9. Each item
 carries its regression test as an acceptance criterion, after the pattern of
 the faked seam in `tests/translate-undeclared-item-strings.test.js`.

@@ -14,7 +14,9 @@
  *   the doc IS the merge — but validation, normalization, cache
  *   invalidation, deckUpdated SSE and throttled auto-snapshots all apply).
  *   If serialization fails, the binary is kept and the JSON is left
- *   untouched (at most one debounce window stale), never clobbered.
+ *   untouched (at most one debounce window stale), never clobbered. A field
+ *   the validation refuses holds the JSON back until a peer fixes the value;
+ *   the editor's link field shows that problem at the field.
  *
  * Dependencies are injectable for tests; production wiring is
  * `createCollabPersistence({ repoRoot })` from mount.js, gated by
@@ -39,6 +41,7 @@ import {
   setYDocState as defaultSetYDocState,
 } from '../storage/presentations/index.js';
 import { singleOrganizationScope } from '../storage/scope.js';
+import { assertChangedSlideFields } from '../services/slide-field-validation.js';
 import { migratePresentation } from '../../shared/slide-types/schema-version.js';
 
 /**
@@ -231,6 +234,14 @@ export function createCollabPersistence({
         const storageScope = storageScopeFor(documentName);
         const current = await getPresentation(storageScope, id);
         if (current && isDeepStrictEqual(projected, current)) return;
+        // The doc is what peers typed, so it passes the same field validation
+        // as an editor save before it becomes the deck JSON that shared and
+        // published surfaces read. A refusal lands in the catch below: the
+        // binary stays, and the next store retries once the value is fixed.
+        if (current)
+          await assertChangedSlideFields(storageScope, current, projected, {
+            live: true,
+          });
         const result = await updatePresentation(storageScope, id, projected, {
           bypassLockCheck: true,
           reason: 'collab',
