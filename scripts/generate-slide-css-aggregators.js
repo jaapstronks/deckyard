@@ -330,6 +330,7 @@ export const APP_FEATURE_LAYER = {
     'settings/87-slide-type-curation.css',
     'settings/87-settings-analytics.css',
     'settings/87-settings-instance-health.css',
+    'settings/87-settings-ai-usage.css',
     'settings/88-theme-editor.css',
     'settings/89-slide-type-editor.css',
     'follow/90-public-poll.css',

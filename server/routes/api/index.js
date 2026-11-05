@@ -75,6 +75,7 @@ import { handleJobs } from './jobs.js';
 import { handleOrganizations } from './organizations.js';
 import { handleOrganizationMembers } from './organization-members.js';
 import { handleDataSources } from './data-sources.js';
+import { runWithAiAttribution } from '../../utils/llm/meter.js';
 
 /** GET /api/maintenance — see the mount below for why it is public. */
 function handleMaintenanceState({ res }) {
@@ -280,7 +281,10 @@ export async function handleApi({ repoRoot, req, res, url }) {
 
   const ctx = { repoRoot, storageScope, req, res, url, authedUser };
 
-  if (await dispatchMounts(MOUNTS, ctx)) return;
+  // Every model call a route makes is counted for this scope (DY-844).
+  return runWithAiAttribution(storageScope, async () => {
+    if (await dispatchMounts(MOUNTS, ctx)) return;
 
-  return notFound(res);
+    return notFound(res);
+  });
 }

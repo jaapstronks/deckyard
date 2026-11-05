@@ -99,6 +99,9 @@ export const PAYLOAD_KEYS = Object.freeze({
   conversion_failed: Object.freeze(['report']),
   maintenance: Object.freeze(['active', 'reason', 'retryAfter']),
   sandbox_quota_exceeded: Object.freeze(['resource', 'limit', 'used']),
+  // The installation's daily ceiling on model calls (`AiQuotaError`,
+  // server/utils/llm/meter.js; DY-844).
+  ai_quota_exceeded: Object.freeze(['limit', 'used', 'retryAfter']),
   in_use: Object.freeze(['usage']),
   field_in_use: Object.freeze(['usage']),
   // The pair a slide-type change refused and what the source type does

@@ -237,6 +237,9 @@ export function registerTools(
         });
   }
 
+  // Every model call a tool makes counts for the session's scope (DY-844).
+  server.attributeCallsWith(storageScopeOf);
+
   /**
    * The slide-type registry this MCP call validates against: core and
    * file-based types plus the session organization's published custom ones.

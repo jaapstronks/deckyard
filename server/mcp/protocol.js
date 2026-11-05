@@ -21,6 +21,7 @@ import {
   isInternalFailure,
 } from '../utils/errors.js';
 import { untrustedData } from '../utils/llm/untrusted-data.js';
+import { runWithAiAttribution } from '../utils/llm/meter.js';
 import { logError } from '../utils/logger.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
@@ -133,6 +134,32 @@ export class McpServer {
     this.tools = new Map();
     this.prompts = new Map();
     this.initialized = false;
+    /** @type {((context: Object) => Object|null)|null} */
+    this.callScopeOf = null;
+  }
+
+  /**
+   * Say whose storage scope a `tools/call` acts in, so every model call a tool
+   * makes is counted for that organization and actor (DY-844). Set once by
+   * `registerTools()`, which owns the scope rule for both transports.
+   * @param {(context: Object) => Object|null} scopeOf
+   */
+  attributeCallsWith(scopeOf) {
+    this.callScopeOf = typeof scopeOf === 'function' ? scopeOf : null;
+  }
+
+  /**
+   * The scope a call is counted for. A session that cannot name one (stdio on
+   * a multi-organization instance) counts on the instance total only; the
+   * tool's own storage calls refuse it as before.
+   */
+  #callScope(context) {
+    if (!this.callScopeOf) return null;
+    try {
+      return this.callScopeOf(context);
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -346,7 +373,10 @@ export class McpServer {
     countInstanceHealth([{ axis: 'mcp', key: tool.name }]);
 
     try {
-      const result = await tool.handler(args || {}, context);
+      const scope = this.#callScope(context);
+      const result = await runWithAiAttribution(scope, () =>
+        tool.handler(args || {}, context),
+      );
       return jsonRpcResponse(id, {
         content: [{ type: 'text', text: markToolResult(result) }],
       });

@@ -5,8 +5,9 @@
  * With no subscribers this is a no-op, so normal request paths are unaffected.
  *
  * This exists because the provider layer returns only the completion string —
- * usage is discarded. The AI test suite needs per-run token counts to report
- * API cost, and cost reporting is useful beyond it.
+ * usage is discarded. The meter (`meter.js`, DY-844) subscribes to record
+ * each call's tokens next to it; the AI test suite subscribes for per-run
+ * cost reports.
  */
 
 import { createLogger } from '../logger.js';

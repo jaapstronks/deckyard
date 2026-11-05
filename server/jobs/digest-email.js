@@ -24,6 +24,7 @@ import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
 import { createIntervalJob } from './interval-job.js';
+import { runWithAiAttribution } from '../utils/llm/meter.js';
 
 const log = createLogger('digest-email');
 
@@ -127,12 +128,14 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
 async function processUserDigest(user, repoRoot) {
   log.info(`Processing digest for ${user.email}`);
 
+  const scope = {
+    repoRoot,
+    organizationId: user.organizationId,
+    actorEmail: user.email,
+  };
+
   // Get weekly analytics
-  const analytics = await getWeeklyAnalyticsForUser(
-    { repoRoot, organizationId: user.organizationId, actorEmail: user.email },
-    user.id,
-    user.email,
-  );
+  const analytics = await getWeeklyAnalyticsForUser(scope, user.id, user.email);
 
   // Skip if no activity and no presentations
   if (!analytics.hasActivity && analytics.presentationCount === 0) {
@@ -141,10 +144,14 @@ async function processUserDigest(user, repoRoot) {
   }
 
   // Generate digest content, in the language the recipient reads (B390)
-  const digest = await generateDigestWithAI(
-    { email: user.email, name: analytics.userName },
-    analytics,
-    await resolveRecipientLocale({ repoRoot, email: user.email }),
+  const locale = await resolveRecipientLocale({ repoRoot, email: user.email });
+  // Counted for the recipient's organization; the digest is theirs (DY-844).
+  const digest = await runWithAiAttribution(scope, () =>
+    generateDigestWithAI(
+      { email: user.email, name: analytics.userName },
+      analytics,
+      locale,
+    ),
   );
 
   // Send email
@@ -179,9 +186,15 @@ async function processTeamDigest(admin, repoRoot) {
 
   log.info(`Processing team digest for ${admin.email}`);
 
+  const scope = {
+    repoRoot,
+    organizationId: admin.organizationId,
+    actorEmail: admin.email,
+  };
+
   // Get team-wide analytics
   const teamAnalytics = await getTeamWeeklyAnalytics(
-    { repoRoot, organizationId: admin.organizationId, actorEmail: admin.email },
+    scope,
     admin.organizationId,
   );
 
@@ -192,10 +205,13 @@ async function processTeamDigest(admin, repoRoot) {
   }
 
   // Generate team digest content
-  const digest = await generateTeamDigestWithAI(
-    { email: admin.email, name: admin.email.split('@')[0] },
-    teamAnalytics,
-    await resolveRecipientLocale({ repoRoot, email: admin.email }),
+  const locale = await resolveRecipientLocale({ repoRoot, email: admin.email });
+  const digest = await runWithAiAttribution(scope, () =>
+    generateTeamDigestWithAI(
+      { email: admin.email, name: admin.email.split('@')[0] },
+      teamAnalytics,
+      locale,
+    ),
   );
 
   // Send email

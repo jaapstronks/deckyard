@@ -2,7 +2,9 @@ import {
   createOptionalBearerHeaders,
   transformOpenAiCompatibleRequest,
   parseOpenAiCompatibleResponse,
+  parseOpenAiCompatibleUsage,
 } from '../provider-base.js';
+import { emitLlmUsage } from '../usage.js';
 import { LlmError } from '../error.js';
 import { ValidationError } from '../../errors.js';
 import { envStr } from '../../../config/utils.js';
@@ -42,6 +44,11 @@ export async function requestOpenAiCompatChatCompletionContent(params = {}) {
       bodyText,
       params.model,
     );
+  }
+
+  const usage = parseOpenAiCompatibleUsage(bodyText);
+  if (usage) {
+    emitLlmUsage({ vendor: 'openai-compat', model: params.model, ...usage });
   }
 
   return parseOpenAiCompatibleResponse(bodyText);
