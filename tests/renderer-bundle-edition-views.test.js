@@ -128,7 +128,7 @@ test('the reader carries the same share card as the canvas, for its own address'
   assert.equal(blocks(canvas)[0]['@type'], 'PresentationDigitalDocument');
 
   // A data block is the only script: the reader still runs nothing.
-  const scripts = [...reader.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
+  const scripts = [...reader.matchAll(/<script\b[^>]*>/gi)].map((m) => m[0]);
   assert.deepEqual(scripts, ['<script type="application/ld+json">']);
 });
 
