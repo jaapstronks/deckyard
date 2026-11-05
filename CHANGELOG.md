@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.100.0](https://github.com/jaapstronks/deckyard/compare/v1.99.0...v1.100.0) (2026-11-05)
+
+
+### Added
+
+* the bare edition address answers the reader for new editions ([#1987](https://github.com/jaapstronks/deckyard/issues/1987)) ([a1fb466](https://github.com/jaapstronks/deckyard/commit/a1fb4665e7c34e4c7cb474edbf39b1ae435de53c))
+
 ## [1.99.0](https://github.com/jaapstronks/deckyard/compare/v1.98.1...v1.99.0) (2026-11-05)
 
 
