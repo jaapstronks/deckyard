@@ -4,6 +4,34 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.101.0](https://github.com/jaapstronks/deckyard/compare/v1.100.0...v1.101.0) (2026-11-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* The stdio MCP server refuses to start when DECKYARD_MCP_OWNER_EMAIL names an address no user has. An auth-off install has no users, so leave the variable out there; otherwise set it to an existing user. In server/export, buildStandaloneHtml, buildReaderHtml and renderCanvasDocument no longer take context 'published' and the description option is gone with it. buildPrismKatexTags in server/utils/prism-katex.js no longer takes mode and always inlines, and its export PRISM_KATEX_MODES is removed. A fork that calls these builds a published page with prepareEditionInput and renderEdition.
+
+### Fixed
+
+* a bulk create accepts every slide-type spelling it validates ([#1988](https://github.com/jaapstronks/deckyard/issues/1988)) ([48a8628](https://github.com/jaapstronks/deckyard/commit/48a8628868f277d309612c8d770883248e38b2bf))
+* an export inlines a fork image under a root the markup carries ([#1998](https://github.com/jaapstronks/deckyard/issues/1998)) ([864693f](https://github.com/jaapstronks/deckyard/commit/864693f9774cef0646a0fa97652c265803a589d6))
+* an MCP preview is small enough for a client to show it ([#1994](https://github.com/jaapstronks/deckyard/issues/1994)) ([f1dce10](https://github.com/jaapstronks/deckyard/commit/f1dce10db1a1b8f8f065b79668e4eca43d966d48))
+* an MCP preview shows the theme logo without a network ([#1997](https://github.com/jaapstronks/deckyard/issues/1997)) ([bc142e2](https://github.com/jaapstronks/deckyard/commit/bc142e2e751387271740145f821fd3b8e0f97ff1))
+* deckyard.py get sends presentationId ([#1990](https://github.com/jaapstronks/deckyard/issues/1990)) ([59938b8](https://github.com/jaapstronks/deckyard/commit/59938b820e2c2a35845a7d81ebb309948c68188d))
+* links in an embed's top bar leave the frame ([#1993](https://github.com/jaapstronks/deckyard/issues/1993)) ([3d25f8d](https://github.com/jaapstronks/deckyard/commit/3d25f8df7285dd752b5f5138d8724d76655f6760))
+* the stdio MCP server refuses an owner with no user row ([#1991](https://github.com/jaapstronks/deckyard/issues/1991)) ([b5fc73f](https://github.com/jaapstronks/deckyard/commit/b5fc73fe7485b2bbbe10d8fd65ad515eee362923))
+* the team digest no longer carries an owner address it never shows ([#1995](https://github.com/jaapstronks/deckyard/issues/1995)) ([0332bfa](https://github.com/jaapstronks/deckyard/commit/0332bfabb87bd38ae81282c4cc6aee50c1fc610b))
+
+
+### Security
+
+* three AI actions in the editor ask for write permission on the deck ([4ac489a](https://github.com/jaapstronks/deckyard/commit/4ac489a018476155ff902ea7ed16682b070c4437))
+
+
+### Changed
+
+* release the stdio owner refusal as a beta minor ([5fc3838](https://github.com/jaapstronks/deckyard/commit/5fc38384f417d9a8bdd6f89eb002d0ac01892e80))
+
 ## [1.100.0](https://github.com/jaapstronks/deckyard/compare/v1.99.0...v1.100.0) (2026-11-05)
 
 
