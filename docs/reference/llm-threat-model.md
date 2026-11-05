@@ -268,8 +268,8 @@ share links are outside MCP**, which is the one reason an injected agent
 cannot make a private deck public.
 
 **What a reader can get out.** The reader projection
-([`viewer-read-data.md`](viewer-read-data.md)) bounds what a reader sees. Where
-that does not hold yet: finding 2.
+([`viewer-read-data.md`](viewer-read-data.md)) bounds what a reader sees, and
+a copy by a reader is the same projection (finding 2).
 
 **Fork tools.** `custom/mcp-tools.js` is imported once per process from the
 filesystem, runs with the server's full rights, and must still declare a
@@ -316,8 +316,10 @@ says what it touches; the exact form follows with its fix.
    imports, agents, the model. Editions were not affected. Fixed: the helper
    now rebuilds the URL from the library id and video UUID, and anything else
    embeds nothing (DY-809).
-2. **What a reader can get out of a deck is wider than the reader projection**
-   (DY-810).
+2. **What a reader can get out of a deck was wider than the reader
+   projection.** Fixed: a copy by an actor who may not write the source is the
+   reader projection, on the editor, v1 and MCP alike;
+   `tests/duplicate-reader-projection.test.js` pins it (DY-810).
 3. **A URL the model writes can load in a viewer's browser without a click**
    (DY-811). The scrub for such URLs does not cover every path yet.
 4. **A plan can reach further than the slides the starter named** (DY-812).

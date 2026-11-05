@@ -16,6 +16,10 @@ Follow-along uses the same private-field removal and also excludes slides with `
 
 Follow responses, including Q&A state and both SSE streams, omit the live-session id. That id is the notes companion's bearer capability and stays server-side when serving the audience. The presenter receives it through the authorized session-creation route; follow clients address the presentation and visible slide instead. An already issued companion link remains valid under the existing session lifetime.
 
+## Copies
+
+A copy holds what its maker may read (D373). An actor without deck-write rights who copies a deck (`POST /api/presentations/:id/duplicate`, v1 `POST /api/v1/presentations/:id/duplicate`, MCP `duplicate_presentation`) gets the reader projection as their own deck, in every carried language list, without the display-only `_isDraft` badge; a draft keeps its own `visibility`. An in-deck jump is pinned before slides are left out and then follows its slide into the copy; a jump to a left-out slide lands nowhere. Owners and edit collaborators copy the whole source.
+
 ## Exports
 
 Internal and public v1 deck exports apply the same actor-based reader projection before any builder receives `pres` or `filteredPres`. It covers every carried language list, including portable JSON and `.deck`. Every rendered format then builds from `filteredPres`: the projection without live-only, `hideInExport` and incomplete slides, for the author and a reader alike ([incomplete-slides.md](incomplete-slides.md)). The portable formats build from `pres` and keep every slide. Owners and edit collaborators keep the author input; portable v1 preserves notes, visibility and its supported translations, while AI working metadata is not part of that portable format.

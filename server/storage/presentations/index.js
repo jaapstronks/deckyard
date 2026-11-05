@@ -51,6 +51,7 @@ import { createLogger } from '../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { extensionNames } from '../../../shared/extension-provenance.js';
 import { translationFieldKey } from '../../../shared/translation-provenance.js';
+import { slideJumpTarget } from '../../../shared/slide-types/helpers.js';
 import { settleBgTextContrast } from '../../utils/bg-image-contrast.js';
 import { loadDeckTheme } from '../../utils/themes.js';
 import { replaceLibraryLinks } from '../slide-library-links.js';
@@ -593,6 +594,11 @@ export async function listTrashedPresentationsBefore(scope, cutoffIso) {
  * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [opts]
+ * @param {string|null} [opts.actorEmail] - Who copies; the copy is theirs.
+ * @param {(pres: Object) => Object|Promise<Object>} [opts.projectSource] -
+ *   What of the source the copy may carry. Applied to the source as read,
+ *   before slide ids are minted; the service passes the reader projection for
+ *   an actor who may not write the source (DY-810). Absent: the whole source.
  * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
  *   `not_found` when the source deck is not visible in this organization.
  */
@@ -606,7 +612,7 @@ export async function duplicatePresentation(scope, id, opts) {
       // A duplicate mints a new deck, so it counts against the guest's sandbox
       // quota — refuse (typed 4xx) once they are at the cap. No-op outside sandbox.
       await assertSandboxQuotaForCreate(ctx, opts?.actorEmail);
-      return duplicatePresentationRow(id, ctx);
+      return duplicatePresentationRow(id, ctx, opts?.projectSource);
     },
   );
 }
@@ -1324,15 +1330,45 @@ async function listTrashedPresentationRowsBefore(cutoffIso, _ctx) {
 }
 
 /**
+ * Re-point every `#slide:<id>` jump in a copied slide's content at the copy's
+ * slide (DY-810). A jump is a whole string value (`slideJumpTarget`); a jump to
+ * a slide the copy does not carry keeps its id and lands nowhere, as on a read.
+ * @param {unknown} value - Copied content, changed in place.
+ * @param {Map<string, string>} slideIdMap - Source slide id to copy slide id.
+ * @returns {unknown} The same value.
+ */
+function repointSlideJumps(value, slideIdMap) {
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => {
+      value[i] = repointSlideJumps(item, slideIdMap);
+    });
+    return value;
+  }
+  if (value && typeof value === 'object') {
+    for (const key of Object.keys(value))
+      value[key] = repointSlideJumps(value[key], slideIdMap);
+    return value;
+  }
+  if (typeof value !== 'string') return value;
+  const jump = slideJumpTarget(value);
+  return jump && 'id' in jump && slideIdMap.has(jump.id)
+    ? `#slide:${slideIdMap.get(jump.id)}`
+    : value;
+}
+
+/**
  * @param {string} id
  * @param {object} ctx - Storage context
+ * @param {(pres: Object) => Object|Promise<Object>} [projectSource] - See
+ *   {@link duplicatePresentation}.
  * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
  */
-async function duplicatePresentationRow(id, ctx) {
+async function duplicatePresentationRow(id, ctx, projectSource) {
   // A copy is a read followed by a new write: use the same canonical shape
   // a normal deck read answers, including every language version (B800).
-  const existing = migratePresentation(await getPresentationRow(id, ctx));
-  if (!existing) return { ok: false, reason: 'not_found' };
+  const read = migratePresentation(await getPresentationRow(id, ctx));
+  if (!read) return { ok: false, reason: 'not_found' };
+  const existing = projectSource ? await projectSource(read) : read;
 
   // One new id per *source* slide id, shared by every language version of it
   // (they are one slide) and used to re-point a nested slide at its copied
@@ -1359,10 +1395,11 @@ async function duplicatePresentationRow(id, ctx) {
         id: mapped || crypto.randomUUID(),
         parentId: (s?.parentId && slideIdMap.get(s.parentId)) || null,
         // Deep-copied: the rekey pass writes into it, and the row we read from
-        // is not ours to change.
+        // is not ours to change. An in-deck jump by id follows its slide into
+        // the copy, as `parentId` does.
         content:
           s?.content && typeof s.content === 'object'
-            ? structuredClone(s.content)
+            ? repointSlideJumps(structuredClone(s.content), slideIdMap)
             : {},
       };
     });
