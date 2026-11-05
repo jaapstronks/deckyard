@@ -90,6 +90,8 @@ import { assertValidNewDeckSlides } from './slide-field-validation.js';
 import { listPageResult, parseListPage } from './list-page.js';
 import { actorIdentity } from '../../shared/identity-match.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
+import { projectReaderPresentation } from '../utils/reader-presentation.js';
+import { mapDeckSlideLists } from '../utils/public-output.js';
 
 /**
  * @typedef {import('./actor.js').Actor} Actor
@@ -741,13 +743,30 @@ export async function createPresentation(scope, { actor }, input = {}) {
 }
 
 /**
+ * The reader projection of a deck, as a copy stores it: what a reader reads
+ * (`docs/reference/viewer-read-data.md`), without the `_isDraft` badge the
+ * read adds for display. A draft keeps its own `visibility`.
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {Object} pres - The source deck as storage read it.
+ * @returns {Promise<Object>}
+ */
+async function copyableReaderDeck(scope, pres) {
+  const projected = await projectReaderPresentation(scope, pres);
+  return mapDeckSlideLists(projected, (slides) =>
+    slides.map(({ _isDraft, ...slide }) => slide),
+  );
+}
+
+/**
  * Copy a deck for an actor, on every contract.
  *
  * Whoever may read a deck may copy it: the source is loaded with
  * {@link loadPresentationForActor} at `access: 'read'`, so the refusal is the
  * loader's (404 absent, 403 unreadable; D255). The copy is the actor's, not
  * the source owner's, and leaves the same `presentation.created` row a create
- * leaves: to the activity feed a copy is a new deck. The copy itself (slide
+ * leaves: to the activity feed a copy is a new deck. An actor who may not
+ * write the source copies the reader projection: no speaker notes, no slide
+ * hidden from viewers, no AI working metadata (DY-810, D373). The copy itself (slide
  * ids, rekeying, the title prefix, the sandbox quota) is storage's (D252).
  *
  * @param {StorageScope} scope - The caller's storage scope.
@@ -765,8 +784,15 @@ export async function duplicatePresentation(scope, identity, presentationId) {
     presentationId,
   );
   const { actor } = identity;
+  // The copy carries what its maker may read of the source: an actor who may
+  // not write it reads the reader projection, so that is what the copy holds,
+  // on every contract (DY-810, D373).
+  const mayWrite = await mayOnPresentation(source, identity, 'write');
   const duplicated = await storeDuplicate(scope, source.id, {
     actorEmail: actor?.email || null,
+    ...(mayWrite
+      ? {}
+      : { projectSource: (pres) => copyableReaderDeck(scope, pres) }),
   });
   if (!duplicated.ok) throwStorageFailure(duplicated);
 
