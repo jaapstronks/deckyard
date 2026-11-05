@@ -148,8 +148,9 @@ stores as prose), never a URL, enum, number or image field.
 | `POST /api/image-library/generate-alts`, `POST /api/image-library/:id/generate-alts` (`server/utils/llm/alt-text.js`) | Auth; OpenAI as the resolved vendor | The **image itself** (vision: text inside a picture is an instruction channel), plus description, tags and photographer from the request or the library item, which another member may have written | Alt text per language, truncated; preview only, the human saves it |
 
 `resolveImageUrlForVisionInput` (`server/utils/llm/vision.js`) passes an
-`http(s)` URL to the vendor to fetch and inlines a local `/uploads/…` or
-`/assets/…` path as base64. How it resolves that path is finding 9.
+`http(s)` URL to the vendor to fetch and inlines a local `/uploads/…`,
+`/assets/…` or `/custom/assets/…` path as base64. How it resolves that path is
+finding 9.
 
 ### Background
 
