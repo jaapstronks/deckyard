@@ -117,6 +117,14 @@ the deck (migration 022, which widened the `check_collaborator_permission`
 constraint). It is unrelated to the instance-wide `isAdmin` flag and to an
 organization role — see _Authz & tenancy_ below.
 
+Read also lets someone copy a deck, and the copy is theirs; it carries what
+its maker may read. A `view` or `comment` collaborator, or an organization
+member on a deck they may not write, copies the reader projection
+([viewer-read-data.md](viewer-read-data.md)): no speaker notes, no slide hidden
+from viewers, no AI working metadata. Whoever may write the source copies all
+of it. One rule for the editor, v1 and MCP, in `duplicatePresentation`
+(`server/services/presentations.js`; D373, `tests/duplicate-reader-projection.test.js`).
+
 Above the ladder sit two positions that are not levels because they are not
 handed out per deck:
 
