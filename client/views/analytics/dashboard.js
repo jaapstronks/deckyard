@@ -222,7 +222,7 @@ export async function renderDashboard(root) {
       },
       {
         key: 'published',
-        label: t('dashboard.source.published', 'Published'),
+        label: t('dashboard.source.published', 'Slides view'),
         value: breakdown.published || 0,
       },
       {

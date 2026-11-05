@@ -71,13 +71,13 @@ The editor sends one key per deck revision (`publishKeyFor` in `publish.js`), so
 
 ### 3. The public pages
 
-An edition is served as described in [`publication-editions.md`](publication-editions.md) § Public read path: canvas, `/reader`, `/manifest.json`, `/edition.zip` and `/og`, all from the edition's own bytes, `Cache-Control: no-store`. The canvas refuses to be framed (`frame-ancestors 'none'`).
+An edition is served as described in [`publication-editions.md`](publication-editions.md) § Public read path: the bare address (the reader for a new edition, the canvas for one from an older bundle), `/slides`, `/reader`, `/manifest.json`, `/edition.zip` and `/og`, all from the edition's own bytes, `Cache-Control: no-store`. They refuse to be framed (`frame-ancestors 'none'`).
 
-`GET /embed/{publicationId}/{version}` is the same canvas, frameable by any origin (`frame-ancestors *`; `security-headers.js` omits `X-Frame-Options` under `/embed/`). It takes `?lang=` and nothing else.
+`GET /embed/{publicationId}/{version}` is the canvas, frameable by any origin (`frame-ancestors *`; `security-headers.js` omits `X-Frame-Options` under `/embed/`). It takes `?lang=` and nothing else.
 
 ### 4. Old links
 
-The publications from before editions are converted once by `scripts/migrate-publications-to-editions.js` (§ Converting old publications). After that, `/p/{publishId}-{slug}`, `/p/{publishId}-{slug}/reader` and `/embed/{publishId}-{slug}` answer **301** to the same subresource of the deck's first edition, with `?lang=` carried over. Never to a later edition: a link that was cited keeps showing what it showed on the day of the conversion. The slug is ignored; an old id that was never converted is 404.
+The publications from before editions are converted once by `scripts/migrate-publications-to-editions.js` (§ Converting old publications). After that, `/p/{publishId}-{slug}`, `/p/{publishId}-{slug}/reader` and `/embed/{publishId}-{slug}` answer **301** to the same view of the deck's first edition (`/slides` for the old canvas link, `/reader`, `/embed/…`), with `?lang=` carried over. Never to a later edition: a link that was cited keeps showing what it showed on the day of the conversion. The slug is ignored; an old id that was never converted is 404.
 
 ### 5. The feed
 
@@ -111,8 +111,8 @@ The report is JSON on stdout (one line per old id: `outcome`, `reason`, `details
 
 The Share dialog's tabs are named after who gets access (D174): **Team**, **Guests** and **Public** (anyone). Publishing lives on Public. Before the first publish it shows **Publish**; afterwards the newest edition's two links as equal rows (B342):
 
-- **Link** — `/p/{publicationId}/{version}`, a page: findable, with a social preview, refuses to be framed.
-- **Embed** — `/embed/{publicationId}/{version}`, the same edition, frameable. This is the URL for Notion or an `<iframe>`.
+- **Link** — `/p/{publicationId}/{version}`, a page: findable, with a social preview, refuses to be framed. A new edition opens as the reader, with the slides one click away.
+- **Embed** — `/embed/{publicationId}/{version}`, the slides of the same edition, frameable. This is the URL for Notion or an `<iframe>`.
 
 The iframe snippet folds out underneath. When the deck has more than one language version, one `<select>` above the rows sets `?lang=` in both URLs and the snippet. Below them, **Publish new version** makes the next edition (a refused publish shows its reason inline beside it), "Add to Notion page" embeds the newest edition, and **Unpublish** revokes every edition after a confirmation. The action row wraps whole buttons (`flex-wrap`, 44 px targets).
 
@@ -143,7 +143,7 @@ As of 2026-11-03 (T1.5, B901):
 
 - **One publish concept, one service, two surfaces with the same refusals.** Sandbox, authorization, gates, idempotency and webhook are in `publish-edition.js`; the routes only parse and answer.
 - **Old links resolve to their first edition** after the conversion; there is no path that renders a deck's HEAD publicly any more.
-- **Published editions count anonymous completed GET visits.** Successful canvas, reader and embed documents write a completed visit for the source deck, with `source_type` `published` or `embed` and `source_id` `publicationId/version`. No cookie, device id, viewer email, IP address, user agent, attribution, slide journey or reading duration is collected; reloads count again. Subresources, manifests, packages and unsuccessful reads do not count. Installation, instance and deck analytics switches apply; a missing, deleted or cross-organization source deck prevents counting. Frozen HTML carries no tracking script or visitor identifier. See [`analytics.md`](analytics.md) and [`analytics-privacy.md`](analytics-privacy.md).
+- **Published editions count anonymous completed GET visits.** Successful canvas, reader and embed documents write a completed visit for the source deck, with `source_type` `published` (canvas), `reader` or `embed` and `source_id` `publicationId/version`. No cookie, device id, viewer email, IP address, user agent, attribution, slide journey or reading duration is collected; reloads count again. Subresources, manifests, packages and unsuccessful reads do not count. Installation, instance and deck analytics switches apply; a missing, deleted or cross-organization source deck prevents counting. Frozen HTML carries no tracking script or visitor identifier. See [`analytics.md`](analytics.md) and [`analytics-privacy.md`](analytics-privacy.md).
 - **The edition embed is the frozen plain canvas.** The unused live player and host-page SDK have been removed; player options and postMessage controls are not part of the edition embed contract.
 - **`published_presentations` is still in the schema** until every installation has converted; a later migration drops it.
 - **Unpublishing is silent.** No webhook, no activity event, no notification — while publishing fires a webhook.

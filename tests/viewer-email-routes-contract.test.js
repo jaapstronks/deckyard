@@ -214,7 +214,7 @@ test('a converted id is a 301 to its edition, whatever the slug', async () => {
       `/p/${PUBLISH_ID}${slug}`,
     );
     assert.equal(res.statusCode, 301);
-    assert.equal(res.headers.Location, `/p/${PUB}/1`);
+    assert.equal(res.headers.Location, `/p/${PUB}/1/slides`);
   }
 });
 

@@ -17,6 +17,8 @@ const { EDITION_INPUT_SCHEMA, RENDERER_BUNDLE_ERRORS } =
   await import('../server/render/renderer-bundle/index.js');
 const { renderEdition, assertSealableEdition } =
   await import('../server/render/renderer-bundle/bundle/entry.js');
+const { READER_IS_DEFAULT_META, declaredDefaultView } =
+  await import('../server/render/renderer-bundle/default-view.js');
 
 const repoRoot = process.cwd();
 const BASE =
@@ -65,27 +67,33 @@ test('renders the language version asked for, and the main list without one', as
   assert.ok(main.canvas.includes('Hallo'));
 });
 
-test('derives canonical links, card, language switch and reader link from the address', async () => {
+test('derives canonical links, card, language switch and view links from the address', async () => {
   const { canvas, reader } = await renderEdition(
     repoRoot,
     input({ canonicalUrl: BASE, lang: 'en-GB' }),
   );
   assert.ok(
     canvas.includes(`<link rel="canonical" href="${BASE}?lang=en-GB" />`),
+    'the canvas names the bare address as canonical',
   );
   assert.ok(
     canvas.includes(`<meta property="og:image" content="${BASE}/og" />`),
   );
   assert.ok(canvas.includes('content="A &lt;description&gt;"'));
-  assert.ok(canvas.includes(`href="${BASE}?lang=nl"`), 'switch to Dutch');
-  assert.ok(canvas.includes(`href="${BASE}/reader?lang=en-GB"`));
+  assert.ok(
+    canvas.includes(`href="${BASE}/slides?lang=nl"`),
+    'the switch stays on the canvas',
+  );
+  assert.ok(canvas.includes(`href="${BASE}?lang=en-GB"`));
   assert.ok(canvas.includes('Reading view'));
   assert.ok(
-    reader.includes(
-      `<link rel="canonical" href="${BASE}/reader?lang=en-GB" />`,
-    ),
+    reader.includes(`<link rel="canonical" href="${BASE}?lang=en-GB" />`),
   );
-  assert.ok(reader.includes(`href="${BASE}?lang=en-GB"`));
+  assert.ok(reader.includes(`href="${BASE}/slides?lang=en-GB"`));
+  assert.ok(
+    reader.includes(`class="reader-lang" href="${BASE}?lang=nl"`),
+    'the switch stays on the reader',
+  );
 
   const bare = await renderEdition(repoRoot, input());
   assert.ok(!bare.canvas.includes('rel="canonical"'), 'no address, no chrome');
@@ -96,7 +104,7 @@ test('the reader carries the same share card as the canvas, for its own address'
     repoRoot,
     input({ canonicalUrl: BASE, lang: 'en-GB' }),
   );
-  const readerUrl = `${BASE}/reader?lang=en-GB`;
+  const readerUrl = `${BASE}?lang=en-GB`;
   assert.ok(
     reader.includes(`<meta property="og:url" content="${readerUrl}" />`),
   );
@@ -111,7 +119,7 @@ test('the reader carries the same share card as the canvas, for its own address'
   );
   assert.ok(reader.includes('content="A &lt;description&gt;"'));
   assert.ok(
-    reader.includes(`<link rel="alternate" href="${BASE}?lang=en-GB"`),
+    reader.includes(`<link rel="alternate" href="${BASE}/slides?lang=en-GB"`),
     'names the canvas as the other view',
   );
 
@@ -152,19 +160,69 @@ test('the canvas names a way out for a browser without JavaScript', async () => 
   );
   const out = noscript(en.canvas);
   assert.ok(out.includes('This presentation needs JavaScript to play.'));
-  assert.ok(out.includes(`<a href="${BASE}/reader?lang=en-GB" target="_top">`));
+  assert.ok(out.includes(`<a href="${BASE}?lang=en-GB" target="_top">`));
   assert.ok(out.includes('Reading view'));
   assert.equal(noscript(en.reader), undefined, 'the reader needs no way out');
 
   // No language in the address: the deck's own words, not the table's default.
   const nl = await renderEdition(repoRoot, input({ canonicalUrl: BASE }));
   assert.ok(noscript(nl.canvas).includes('Leesweergave'));
-  assert.ok(noscript(nl.canvas).includes(`href="${BASE}/reader"`));
+  assert.ok(noscript(nl.canvas).includes(`href="${BASE}"`));
   assert.ok(nl.canvas.includes(`title="Leesweergave"`));
   assert.ok(nl.reader.includes('title="Bekijk de dia'));
 
   const bare = await renderEdition(repoRoot, input());
   assert.equal(noscript(bare.canvas), undefined, 'no address, no way out');
+});
+
+test('the bundle declares the reader as what the bare address answers', async () => {
+  const { reader, canvas } = await renderEdition(
+    repoRoot,
+    input({ canonicalUrl: BASE }),
+  );
+  assert.equal(declaredDefaultView(reader), 'reader');
+  assert.equal(declaredDefaultView(canvas), 'canvas', 'only a reader declares');
+  assert.equal(
+    declaredDefaultView(reader.replace(READER_IS_DEFAULT_META, '')),
+    'canvas',
+    'a bundle from before the declaration keeps the canvas there',
+  );
+  assert.equal(
+    declaredDefaultView(`<head></head><body>${READER_IS_DEFAULT_META}</body>`),
+    'canvas',
+    'text in the body declares nothing',
+  );
+});
+
+test('a #slide=N link for the canvas lands on that section of the reader, without script', async () => {
+  const { reader, canvas } = await renderEdition(
+    repoRoot,
+    input({ canonicalUrl: BASE }),
+  );
+  const target = (n) =>
+    reader.match(new RegExp(`<section id="slide-${n + 1}"[^>]*>\\s*(.*)`))[1];
+  assert.equal(target(0), '<span id="slide=0"></span>');
+  assert.equal(target(1), '<span id="slide=1"></span>');
+  assert.equal(
+    [...canvas.matchAll(/<section class="deck-slide"/g)].length,
+    2,
+    'the canvas counts the same slides',
+  );
+});
+
+test('the reader has a language switch only with versions to switch between', async () => {
+  const pres = { title: 'Deck', lang: 'en', slides: [title('One')] };
+  const single = await renderEdition(repoRoot, {
+    ...input({ canonicalUrl: BASE }),
+    presentation: pres,
+  });
+  assert.ok(!single.reader.includes('class="reader-langs"'));
+  const { reader } = await renderEdition(
+    repoRoot,
+    input({ canonicalUrl: BASE, lang: 'nl' }),
+  );
+  assert.ok(reader.includes('class="reader-langs"'));
+  assert.ok(reader.includes('aria-current="true"'));
 });
 
 test('carries Prism inline instead of linking the installation', async () => {

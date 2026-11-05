@@ -120,7 +120,15 @@ async function resolve({ repoRoot, res }, publicationId, versionText) {
   return edition;
 }
 
-function viewHandler(view, sourceType, { frameable = false } = {}) {
+/**
+ * Serve one view of an edition. `null` is the bare address: the view the
+ * edition's own bundle declares, so an old edition keeps answering what its
+ * frozen chrome says it does. What is counted follows what is served.
+ *
+ * @param {'canvas'|'reader'|null} named
+ * @param {{frameable?: boolean}} [opts] - The embed
+ */
+function viewHandler(named, { frameable = false } = {}) {
   return async (ctx, publicationId, versionText) => {
     const edition = await resolve(ctx, publicationId, versionText);
     if (!edition) return true;
@@ -139,7 +147,13 @@ function viewHandler(view, sourceType, { frameable = false } = {}) {
     countInstanceHealth([
       { axis: 'surface', key: frameable ? 'embed' : 'published' },
     ]);
+    const view = named || views.defaultView;
     const handled = sendDocument(ctx.res, views[view], { frameable });
+    const sourceType = frameable
+      ? 'embed'
+      : view === 'reader'
+        ? 'reader'
+        : 'published';
     fireAndForget(
       recordEditionVisit(ctx.repoRoot, edition, sourceType),
       'edition visit analytics',
@@ -201,18 +215,20 @@ const EDITION =
 
 /**
  * One edition of a publication at `/p/:publicationId/:version`, and its
- * subresources; `/embed/:publicationId/:version` is the same canvas, frameable.
- * The version is part of the address: there is no route that resolves "the
+ * subresources; `/embed/:publicationId/:version` is the canvas, frameable.
+ * `/slides` and `/reader` name a view on every edition, whichever one the bare
+ * address answers. The version is part of the address: there is no route that resolves "the
  * latest" edition, and none that reaches the deck.
  */
 export const ROUTES = [
   {
     prefix: '/embed/',
     suffix: '',
-    handler: viewHandler('canvas', 'embed', { frameable: true }),
+    handler: viewHandler('canvas', { frameable: true }),
   },
-  { suffix: '', handler: viewHandler('canvas', 'published') },
-  { suffix: '/reader', handler: viewHandler('reader', 'reader') },
+  { suffix: '', handler: viewHandler(null) },
+  { suffix: '/slides', handler: viewHandler('canvas') },
+  { suffix: '/reader', handler: viewHandler('reader') },
   { suffix: '/manifest.json', handler: serveManifest },
   { suffix: '/edition.zip', handler: servePackage },
   { suffix: '/og', handler: serveOgImage },

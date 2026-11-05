@@ -111,7 +111,7 @@ export function getSourceLabel(type) {
     case 'follow':
       return t('analytics.sourceFollow', 'Follow');
     case 'published':
-      return t('analytics.sourcePublished', 'Published');
+      return t('analytics.sourcePublished', 'Slides view');
     case 'reader':
       return t('analytics.sourceReader', 'Reading view');
     case 'embed':

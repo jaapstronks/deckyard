@@ -97,9 +97,9 @@ export function assertSealableEdition(presentation, registry = SLIDE_TYPES) {
  * @param {object} [input.css] - Frozen CSS layers the bundle cannot derive:
  *   `{ fontCss, wmCss, wmHtml }`
  * @param {string} [input.metaDescription] - `<meta name="description">`
- * @param {string} [input.canonicalUrl] - The edition's canvas address, from
+ * @param {string} [input.canonicalUrl] - The edition's bare address, from
  *   which its chrome (canonical links, the card, the language switch, the
- *   reader link) is derived; none without it
+ *   links between the views) is derived; none without it
  * @param {string} [input.lang] - The language version to render; the stored
  *   main list without it
  * @returns {Promise<{canvas: string, reader: string}>}
@@ -192,7 +192,7 @@ export async function renderEdition(bundleRoot, input) {
     context: 'export',
   });
 
-  const reader = readerChrome(pres, {
+  const reader = readerChrome(stored, pres, {
     canonicalUrl,
     lang,
     deckLang,
@@ -202,6 +202,10 @@ export async function renderEdition(bundleRoot, input) {
     slideTypes: null,
     canonicalUrl: reader.canvasUrl,
     headHtml: reader.headHtml,
+    languagesHtml: reader.languagesHtml,
+    // The bare address used to be the canvas: a `#slide=N` link made for it
+    // has to arrive here too, and this document runs no script to read it.
+    canvasDeepLinks: true,
   });
 
   return { canvas, reader: readerHtml };

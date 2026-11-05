@@ -42,3 +42,4 @@ export {
   verifyEditionInput,
 } from './edition-manifest.js';
 export { findUnsealableSlides } from './sealable.js';
+export { declaredDefaultView } from './default-view.js';

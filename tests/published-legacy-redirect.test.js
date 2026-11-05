@@ -69,7 +69,7 @@ test('an old canvas link redirects to its first edition, slug ignored', async ()
   const { handled, res } = await get('/p/abcd1234-whatever-slug');
   assert.equal(handled, true);
   assert.equal(res.status, 301);
-  assert.equal(res.headers.Location, `/p/${PUB}/1`);
+  assert.equal(res.headers.Location, `/p/${PUB}/1/slides`);
 });
 
 test('the reader and the embed go to the same edition, with ?lang= kept', async () => {

@@ -11,7 +11,7 @@ import { crossOrganizationScope } from '../../storage/scope.js';
  * @param {string} repoRoot
  * @param {string} legacyId
  * @param {string} prefix - `/p` or `/embed`
- * @param {string} suffix - `''` or `/reader`
+ * @param {string} suffix - `''`, `/slides` or `/reader`
  * @param {URL} url
  * @returns {Promise<string|null>}
  */
@@ -32,8 +32,10 @@ async function legacyTarget(repoRoot, legacyId, prefix, suffix, url) {
 /**
  * An old link answers with a permanent redirect to its first edition, never
  * to a later one: what was cited keeps showing what it showed on the day of
- * the conversion (D361). The slug is ignored; it never decided identity. A
- * revoked first edition is a tombstone at its own address.
+ * the conversion (D361). That goes for the view too: an old `/p/` link showed
+ * the canvas, so it names the canvas, whichever view the edition's bare address
+ * answers. The slug is ignored; it never decided identity. A revoked first
+ * edition is a tombstone at its own address.
  */
 function redirectHandler(prefix, suffix) {
   return async ({ repoRoot, res, url }, legacyId) => {
@@ -70,7 +72,7 @@ export const ROUTES = [
     method: 'GET',
     pattern: /^\/p\/([a-f0-9]{8})(?:-[^/]+)?$/,
     captures: ['text'],
-    handler: redirectHandler('/p', ''),
+    handler: redirectHandler('/p', '/slides'),
   },
   {
     method: 'GET',
