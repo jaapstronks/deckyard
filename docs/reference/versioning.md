@@ -273,6 +273,8 @@ The override commit can be documentation-only; let release-please update the gen
 
 Release 1.91.0 applies this beta rule to strict content-key writes and migration 102. Before upgrading, review the breaking notes for removed stored keys, collaboration-state invalidation and custom-field removal.
 
+Release 1.98.0 applies it to two security fixes under a plain `security:` title: an MCP tool result is no longer bare JSON, and a user prompt in `custom/ai/prompts.js` must be fenced. A fork or client has to change something on upgrade, so the title does not decide the digit; the Release PR's version is reviewed.
+
 When editing the Release PR body, preserve the generated robot introduction, separators and Release Please footer. The bot parses that wrapper to recognize the merged PR and publish its tag; correct version files and green CI alone do not establish that publication will run. If the wrapper was removed, restore it on the merged PR, close any duplicate release PR and rerun the release-please job before deploying.
 
 During a lane handoff, a release claim may be transferred explicitly by the maintainer. Record the new owner in the shared queue before continuing the release review and its deployment steps.
