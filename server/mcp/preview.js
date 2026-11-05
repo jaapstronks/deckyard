@@ -269,7 +269,7 @@ export async function buildSlidePreviewHtml(
       LIST_SCALE_SCRIPT,
       // A preview is rendered inside a host artifact frame, with no Deckyard
       // origin behind it — everything it needs travels in the string.
-      buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' }),
+      buildPrismKatexTags(highlightNeeds),
     ],
     styles: [
       // themeVars after baseCss: its generated `.slide.slide-bg-<id>` rules
@@ -343,10 +343,7 @@ export async function buildSingleSlidePreviewHtml(
   const highlightNeeds = detectPrismKatexNeeds(html);
   return `${buildDocumentHead({
     lang: docLang || resolveDocLangFromPresentation({ slides: [slide] }),
-    head: [
-      SINGLE_SCALE_SCRIPT,
-      buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' }),
-    ],
+    head: [SINGLE_SCALE_SCRIPT, buildPrismKatexTags(highlightNeeds)],
     styles: [
       // Same ordering reason as the list preview above.
       buildCssChain(repoRoot, [

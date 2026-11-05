@@ -37,9 +37,7 @@ import { resetRateLimitBuckets } from '../server/utils/rate-limit.js';
 import { openPdf } from '../server/utils/pdf-extract/pdfjs.js';
 import { McpServer } from '../server/mcp/protocol.js';
 import { registerTools } from '../server/mcp/tools.js';
-import { buildStandaloneHtml } from '../server/export/html.js';
-import { buildReaderHtml } from '../server/export/reader.js';
-import { seedThemeConfig } from './helpers/theme-seed.js';
+import { renderPublishedDocuments } from './helpers/edition-documents.js';
 
 const MARK = 'INCOMPLETE-B590';
 /** Markers no rendered export may carry: incomplete, draft, `hideInExport`. */
@@ -269,15 +267,9 @@ test('a view-only read, a share link and follow-along leave it out in every lang
 });
 
 test('published canvas and reader leave it out', async () => {
-  const theme = await seedThemeConfig('brand');
   const pres = structuredClone(fixture.row);
-  for (const html of [
-    await buildStandaloneHtml(process.cwd(), pres, {
-      context: 'published',
-      theme,
-    }),
-    buildReaderHtml(process.cwd(), pres, { context: 'published' }),
-  ]) {
+  const { canvas, reader } = await renderPublishedDocuments(pres);
+  for (const html of [canvas, reader]) {
     absent(html, [MARK], 'published');
     assert.ok(html.includes('VISIBLE-B769'));
   }

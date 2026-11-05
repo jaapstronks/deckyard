@@ -25,9 +25,7 @@ function deck() {
 }
 
 test('export scaffold exposes header/main/nav/footer landmarks', async () => {
-  const html = await buildStandaloneHtml(repoRoot, deck(), {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, deck());
   assert.match(html, /<header class="presenter-topbar">/);
   assert.match(html, /<main id="deck" class="deck"/);
   assert.match(

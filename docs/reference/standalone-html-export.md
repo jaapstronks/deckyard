@@ -187,7 +187,7 @@ There are none. Prism and KaTeX come from `client/vendor/` (pinned by
 `package-lock.json`, hashed in a manifest). A downloaded file has no origin to
 resolve `/client/vendor/…` against, so it carries them **inline**; an edition
 does too, because linked bytes would come from whatever the installation has on
-the day of the visit. `buildPrismKatexTags({ …needs, mode })`
+the day of the visit. `buildPrismKatexTags(needs)`
 in `server/utils/prism-katex.js` is the single place that decides. The rule, its
 carve-outs and the two gates that hold it up:
 `docs/reference/no-third-party-origins.md`.

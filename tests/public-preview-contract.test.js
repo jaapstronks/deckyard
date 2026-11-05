@@ -4,9 +4,7 @@ import {
   firstPublicSlide,
   filterForPublished,
 } from '../server/utils/public-output.js';
-import { buildStandaloneHtml } from '../server/export/html.js';
-import { buildReaderHtml } from '../server/export/reader.js';
-import { seedThemeConfig } from './helpers/theme-seed.js';
+import { renderPublishedDocuments } from './helpers/edition-documents.js';
 
 const root = process.cwd();
 const slide = (id, visibility = {}) => ({
@@ -105,12 +103,8 @@ test('preview channels choose distinct visibility flags and drop live-only openi
 
 test('real public builders omit private bytes across all carried languages', async () => {
   const pres = deck();
-  const theme = await seedThemeConfig('brand');
-  const outputs = [
-    await buildStandaloneHtml(root, pres, { context: 'published', theme }),
-    buildReaderHtml(root, pres, { context: 'published' }),
-  ];
-  for (const html of outputs) {
+  const { canvas, reader } = await renderPublishedDocuments(pres);
+  for (const html of [canvas, reader]) {
     assertPrivateAbsent(html);
     assert.ok(html.includes('PUBLIC_ALLOWED'));
   }

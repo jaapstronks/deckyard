@@ -9,7 +9,7 @@
  * (`docs/reference/renderer-bundle.md`).
  */
 
-import { filterForExport, filterForPublished } from '../utils/public-output.js';
+import { filterForExport } from '../utils/public-output.js';
 import { renderReaderDocument } from './reader-document.js';
 
 /**
@@ -19,7 +19,6 @@ import { renderReaderDocument } from './reader-document.js';
  *   `custom/styles/` under it (server/utils/css-chain.js)
  * @param {object} pres
  * @param {object} [opts]
- * @param {'export'|'published'} [opts.context='export'] - visibility filter
  * @param {Record<string, object>|null} [opts.slideTypes=null] - merged registry
  * @param {string} [opts.canonicalUrl=''] - link to the canvas presentation view
  * @param {string} [opts.headHtml=''] - extra <head> markup (canonical/robots/OG)
@@ -28,17 +27,9 @@ import { renderReaderDocument } from './reader-document.js';
 export function buildReaderHtml(
   repoRoot,
   pres,
-  {
-    context = 'export',
-    slideTypes = null,
-    canonicalUrl = '',
-    headHtml = '',
-  } = {},
+  { slideTypes = null, canonicalUrl = '', headHtml = '' } = {},
 ) {
-  const filtered =
-    context === 'published'
-      ? filterForPublished(pres, { slideTypes })
-      : filterForExport(pres, { slideTypes });
+  const filtered = filterForExport(pres, { slideTypes });
   return renderReaderDocument(repoRoot, filtered, {
     storedSlides: Array.isArray(pres?.slides) ? pres.slides : null,
     slideTypes,
