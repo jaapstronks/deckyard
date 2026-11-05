@@ -434,7 +434,7 @@ export async function buildSlidesPdfHtml(
   return `${buildDocumentHead({
     lang: docLang,
     title: rawTitle,
-    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
+    head: [buildPrismKatexTags(highlightNeeds)],
     styles: [`${buildStyleContent(css)}\n\n${gradients.extraCss}`],
   })}
   <body>

@@ -67,9 +67,7 @@ function resize(window, { width, height }, { dispatch = true } = {}) {
 }
 
 async function publishedPage(t, { query = '' } = {}) {
-  const html = await buildStandaloneHtml(repoRoot, deck, {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, deck);
   const dom = new JSDOM(html, {
     url: `http://localhost/p/abcd1234-fullscreen${query}`,
     runScripts: 'dangerously',
@@ -96,9 +94,7 @@ test('the published page inlines the presenter modules, not a copy', async () =>
     'presenter-fullscreen',
     'chrome-autohide',
   ]);
-  const html = await buildStandaloneHtml(repoRoot, deck, {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, deck);
   assert.match(
     html,
     /const createPresenterFullscreenController = \(\(\) => \{/,
@@ -116,9 +112,7 @@ test('the published page inlines the presenter modules, not a copy', async () =>
 });
 
 test('fullscreen CSS keys on html.is-fullscreen only, both bars as overlays', async () => {
-  const html = await buildStandaloneHtml(repoRoot, deck, {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, deck);
   assert.doesNotMatch(
     html,
     /[\w\])]:fullscreen\b/,
@@ -337,9 +331,7 @@ const countdownDeck = {
 };
 
 test('in-slide presenter chrome: the countdown row declares it, the CSS keys on the bars signal', async () => {
-  const html = await buildStandaloneHtml(repoRoot, countdownDeck, {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, countdownDeck);
   assert.match(
     html,
     /<div class="cd-controls" data-countdown-controls="1" data-presenter-chrome hidden>/,
@@ -367,9 +359,7 @@ test('in-slide presenter chrome: the countdown row declares it, the CSS keys on 
 });
 
 test('in-slide presenter chrome on /p/: focus reveals the bars, a resting pointer holds them', async (t) => {
-  const html = await buildStandaloneHtml(repoRoot, countdownDeck, {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, countdownDeck);
   const dom = new JSDOM(html, {
     url: 'http://localhost/p/abcd1234-countdown',
     runScripts: 'dangerously',

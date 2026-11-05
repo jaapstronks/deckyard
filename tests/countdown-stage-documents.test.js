@@ -146,7 +146,6 @@ test('published page: auto-start waits for its slide, then runs', async (t) => {
   const html = await RENDER_PATHS.find((p) => p.name === 'export/html').build(
     repoRoot,
     COUNTDOWN_DECK,
-    { context: 'published' },
   );
   const dom = new JSDOM(html, {
     url: 'http://localhost/p/abcd1234-rondes',

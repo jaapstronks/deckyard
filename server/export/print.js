@@ -239,7 +239,7 @@ export async function buildPrintHtml(
   return `${buildDocumentHead({
     lang: docLang,
     title: rawTitle,
-    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
+    head: [buildPrismKatexTags(highlightNeeds)],
     styles: [
       buildCssChain(
         repoRoot,
