@@ -207,7 +207,9 @@ const PATHS = {
         hasActivity: true,
         weekStart: '2026-10-26',
         weekEnd: '2026-11-01',
+        weekOverWeek: { views: {} },
         topPresentations: [{ title: INJECTION }],
+        topPresenters: [],
       },
       'en-GB',
     );

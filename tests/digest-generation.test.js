@@ -223,8 +223,6 @@ test('solo: AI success merges model prose with server-owned metrics', async () =
   assert.equal(digest.subject, 'Great week');
   assert.equal(digest.highlights, 'Model highlight paragraph.');
   assert.equal(digest.closing, 'Model closing.');
-  // {name} placeholder is resolved.
-  assert.equal(digest.greeting, 'Hi Author,');
   // Insights capped at 3.
   assert.deepEqual(digest.insights, ['A', 'B', 'C']);
   // topPresentations come from analytics (capped at 3), never the model.
@@ -464,4 +462,107 @@ test('fields the model leaves out are filled in the digest language', async () =
   assert.equal(digest.subject, 'Goede week');
   assert.equal(digest.closing, 'Blijf mooie presentaties maken!');
   assert.equal(digest.greeting, 'Hallo Author,');
+});
+
+// ---------------------------------------------------------------------------
+// Model text is bounded, and the team prompt carries no identities (DY-818).
+// ---------------------------------------------------------------------------
+test('solo: a subject that is too long falls back to the template', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({
+    subject: 'x'.repeat(151),
+    highlights: 'Fine.',
+  });
+
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
+
+  assert.equal(digest.subject, 'Your weekly engagement insights - 120 views');
+  assert.equal(digest.highlights, 'Fine.');
+});
+
+test('team: a subject that is too long falls back to the template', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({ subject: 'x'.repeat(151) });
+
+  const digest = await generateTeamDigestWithAI(admin, teamAnalytics(), 'en');
+
+  assert.equal(digest.subject, "Your team's weekly engagement - 500 views");
+});
+
+test('a subject with a line break falls back, so the mail is not refused', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({ subject: 'Week\nBcc: x@example.com' });
+
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
+
+  assert.equal(digest.subject, 'Your weekly engagement insights - 120 views');
+});
+
+test('a field of the wrong type or length falls back per field', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({
+    subject: 'Good subject',
+    highlights: 'y'.repeat(1501),
+    topPresentationsIntro: 42,
+    closing: ['nope'],
+  });
+
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
+
+  assert.equal(digest.subject, 'Good subject');
+  assert.match(digest.highlights, /^Your presentations received 120 views/);
+  assert.equal(
+    digest.topPresentationsIntro,
+    'Here are your top performing presentations:',
+  );
+  assert.equal(digest.closing, 'Keep creating great presentations!');
+});
+
+test('an unusable insight is dropped and the others stay', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({
+    insights: ['one', 7, 'z'.repeat(401), '  ', 'two', 'three', 'four'],
+  });
+
+  const digest = await generateTeamDigestWithAI(admin, teamAnalytics(), 'en');
+
+  assert.deepEqual(digest.insights, ['one', 'two', 'three']);
+});
+
+test('the greeting is the template, whatever the model writes', async () => {
+  for (const [generate, recipient, analytics, expected] of [
+    [generateDigestWithAI, user, soloAnalytics, 'Hallo Author,'],
+    [generateTeamDigestWithAI, admin, teamAnalytics, 'Hallo Boss,'],
+  ]) {
+    resetSeam();
+    aiResponse = JSON.stringify({ greeting: 'Hoi {naam},' });
+
+    const digest = await generate(recipient, analytics(), 'nl');
+
+    assert.equal(digest.greeting, expected);
+    const prompt = lastFetch.body.messages
+      .map((message) => message.content)
+      .join('\n');
+    assert.ok(!prompt.includes(recipient.name), recipient.name);
+    assert.ok(!prompt.includes('{name}'));
+  }
+});
+
+test('team: the prompt has titles and counts, the mail still has the people', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({ subject: 'Team week' });
+
+  const digest = await generateTeamDigestWithAI(admin, teamAnalytics(), 'en');
+
+  const prompt = lastFetch.body.messages
+    .map((message) => message.content)
+    .join('\n');
+  assert.doesNotMatch(prompt, /@example\.com/);
+  for (const person of ['Alice', 'Finn', 'Boss', 'boss']) {
+    assert.ok(!prompt.includes(person), person);
+  }
+  assert.match(prompt, /Team Deck 1/);
+  assert.match(prompt, /"presentationCount": 3/);
+  assert.equal(digest.topPresentations[0].ownerEmail, 'a@example.com');
+  assert.equal(digest.topPresenters[0].name, 'Alice');
 });

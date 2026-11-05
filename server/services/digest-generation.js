@@ -11,6 +11,7 @@ import {
 } from '../utils/llm/index.js';
 import { formatDuration } from '../storage/analytics/index.js';
 import { createTranslator, normalizeLocale } from '../i18n/index.js';
+import { validMailHeader } from '../integrations/email/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('digest-generation');
@@ -60,7 +61,7 @@ async function composeDigest(user, analytics, locale) {
   const formattedData = formatAnalyticsForPrompt(analytics);
 
   const systemPrompt = buildDigestSystemPrompt(locale);
-  const userPrompt = buildDigestUserPrompt(user, formattedData);
+  const userPrompt = buildDigestUserPrompt(formattedData);
 
   try {
     const content = await requestChatCompletionContent({
@@ -113,7 +114,7 @@ async function composeTeamDigest(admin, teamAnalytics, locale) {
   const { vendor, apiKey, model } = getLlmConfig({});
 
   const systemPrompt = buildTeamDigestSystemPrompt(locale);
-  const userPrompt = buildTeamDigestUserPrompt(admin, teamAnalytics);
+  const userPrompt = buildTeamDigestUserPrompt(teamAnalytics);
 
   try {
     const content = await requestChatCompletionContent({
@@ -177,7 +178,6 @@ Your task is to create a brief, encouraging email digest that helps the user und
 Output MUST be valid JSON with these exact fields:
 {
   "subject": "Your weekly engagement insights - brief highlight",
-  "greeting": "Hi {name},",
   "highlights": "One paragraph (2-3 sentences) summarizing the key highlight from this week's data.",
   "topPresentationsIntro": "Brief intro sentence for the top performers section.",
   "insights": ["Array of 2-3 actionable insight strings based on the data."],
@@ -200,11 +200,10 @@ Avoid:
 - Being overly promotional`;
 }
 
-function buildDigestUserPrompt(user, formattedData) {
-  return `Generate a weekly engagement digest email for:
+function buildDigestUserPrompt(formattedData) {
+  return `Generate a weekly engagement digest email:
 
-${untrustedData(`USER: ${user.name || user.email.split('@')[0]}
-PERIOD: ${formattedData.weekStart} to ${formattedData.weekEnd}
+${untrustedData(`PERIOD: ${formattedData.weekStart} to ${formattedData.weekEnd}
 
 ANALYTICS DATA:
 ${JSON.stringify(formattedData, null, 2)}`)}
@@ -222,7 +221,6 @@ Your task is to create a brief, informative digest showing how all presentations
 Output MUST be valid JSON with these exact fields:
 {
   "subject": "Your team's weekly engagement - brief highlight",
-  "greeting": "Hi {name},",
   "highlights": "One paragraph summarizing the team's overall performance this week.",
   "topPresentationsIntro": "Brief intro for top performing presentations section.",
   "topPresentersIntro": "Brief intro for most active presenters section.",
@@ -232,7 +230,7 @@ Output MUST be valid JSON with these exact fields:
 
 Writing guidelines:
 1. Focus on team achievements and collective performance
-2. Highlight top performers without singling anyone out negatively
+2. Do not name people: you get titles and counts, and the email lists the presenters itself
 3. Be concise and professional
 4. Only reference actual metrics provided
 5. Keep subject line under 60 characters
@@ -243,14 +241,13 @@ Avoid:
 - Making up statistics`;
 }
 
-function buildTeamDigestUserPrompt(admin, analytics) {
-  return `Generate a weekly team engagement digest email for:
+function buildTeamDigestUserPrompt(analytics) {
+  return `Generate a weekly team engagement digest email:
 
-${untrustedData(`ADMIN: ${admin.name || admin.email.split('@')[0]}
-ORGANIZATION PERIOD: ${analytics.weekStart} to ${analytics.weekEnd}
+${untrustedData(`ORGANIZATION PERIOD: ${analytics.weekStart} to ${analytics.weekEnd}
 
 TEAM ANALYTICS:
-${JSON.stringify(analytics, null, 2)}`)}
+${JSON.stringify(formatTeamAnalyticsForPrompt(analytics), null, 2)}`)}
 
 Remember: Output must be valid JSON with the specified fields.`;
 }
@@ -258,6 +255,35 @@ Remember: Output must be valid JSON with the specified fields.`;
 // ============================================================
 // DATA FORMATTING
 // ============================================================
+
+/**
+ * What the team prompt may carry: titles and counts. It lists its fields so a
+ * new analytics field cannot reach the vendor by accident, and leaves out who
+ * owns or presents what; the mail adds those itself.
+ * @param {Object} analytics - Weekly analytics from getTeamWeeklyAnalytics
+ * @returns {Object}
+ */
+function formatTeamAnalyticsForPrompt(analytics) {
+  const { current, previous, percentChange, direction } =
+    analytics.weekOverWeek.views;
+  return {
+    totalViews: analytics.totalViews,
+    uniqueViewers: analytics.uniqueViewers,
+    activePresenters: analytics.activePresenters,
+    presentationCount: analytics.presentationCount,
+    weekOverWeekViews: { current, previous, percentChange, direction },
+    topPresentations: analytics.topPresentations.map(({ title, views }) => ({
+      title,
+      views,
+    })),
+    topPresenters: analytics.topPresenters.map(
+      ({ totalViews, presentationCount }) => ({
+        totalViews,
+        presentationCount,
+      }),
+    ),
+  };
+}
 
 function formatAnalyticsForPrompt(analytics) {
   return {
@@ -302,6 +328,53 @@ function formatAnalyticsForPrompt(analytics) {
 // RESPONSE PARSING & VALIDATION
 // ============================================================
 
+/** The longest model text a field takes; beyond it the template says it. */
+const MAX_LENGTH = {
+  subject: 150,
+  highlights: 1500,
+  intro: 300,
+  insight: 400,
+  closing: 400,
+};
+
+/**
+ * A text field from the model, or null when the template must say it instead:
+ * the model's answer can be steered by a deck title, so its type and length are
+ * not taken on trust.
+ * @param {unknown} value
+ * @param {number} max
+ * @returns {string|null}
+ */
+function modelText(value, max) {
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  return text && text.length <= max ? text : null;
+}
+
+/**
+ * The subject, on one line: `sendEmail` refuses a control character, which
+ * would cost the whole mail.
+ * @param {unknown} value
+ * @returns {string|null}
+ */
+function modelSubject(value) {
+  const text = modelText(value, MAX_LENGTH.subject);
+  return text && validMailHeader(text) ? text : null;
+}
+
+/**
+ * Up to three usable insights; an unusable entry is dropped, not the others.
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+function modelInsights(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((insight) => modelText(insight, MAX_LENGTH.insight))
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
 function parseDigestResponse(content) {
   // Try to parse JSON from the response
   const raw = String(content || '').trim();
@@ -340,22 +413,22 @@ function validated(parsed, user, analytics, tr, locale) {
   // Ensure all required fields exist with reasonable defaults
   return {
     subject:
-      parsed.subject ||
+      modelSubject(parsed.subject) ||
       tr(
         'email.digest.weekly.subjectWithViews',
         'Your weekly engagement insights - {views} views',
         { views: analytics.totalViews },
       ),
-    greeting: (parsed.greeting || greeting(tr, name)).replace('{name}', name),
+    greeting: greeting(tr, name),
     highlights:
-      parsed.highlights ||
+      modelText(parsed.highlights, MAX_LENGTH.highlights) ||
       tr(
         'email.digest.weekly.highlights',
         'Your presentations received {views} views from {viewers} unique viewers this week.',
         { views: analytics.totalViews, viewers: analytics.uniqueViewers },
       ),
     topPresentationsIntro:
-      parsed.topPresentationsIntro ||
+      modelText(parsed.topPresentationsIntro, MAX_LENGTH.intro) ||
       tr(
         'email.digest.weekly.topPresentationsIntro',
         'Here are your top performing presentations:',
@@ -365,14 +438,14 @@ function validated(parsed, user, analytics, tr, locale) {
       views: p.views,
       avgDuration: formatDuration(p.avgDurationSeconds),
     })),
-    insights: Array.isArray(parsed.insights) ? parsed.insights.slice(0, 3) : [],
+    insights: modelInsights(parsed.insights),
     weekOverWeek: {
       views: `${analytics.weekOverWeek.views.current} (${analytics.weekOverWeek.views.direction === 'up' ? '+' : ''}${analytics.weekOverWeek.views.direction === 'down' ? '-' : ''}${analytics.weekOverWeek.views.percentChange}%)`,
       uniqueViewers: `${analytics.weekOverWeek.uniqueViewers.current} (${analytics.weekOverWeek.uniqueViewers.direction === 'up' ? '+' : ''}${analytics.weekOverWeek.uniqueViewers.direction === 'down' ? '-' : ''}${analytics.weekOverWeek.uniqueViewers.percentChange}%)`,
       avgDuration: `${formatDuration(analytics.weekOverWeek.avgDuration.current)} (${analytics.weekOverWeek.avgDuration.direction === 'up' ? '+' : ''}${analytics.weekOverWeek.avgDuration.direction === 'down' ? '-' : ''}${analytics.weekOverWeek.avgDuration.percentChange}%)`,
     },
     closing:
-      parsed.closing ||
+      modelText(parsed.closing, MAX_LENGTH.closing) ||
       tr('email.digest.weekly.closing', 'Keep creating great presentations!'),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,
@@ -388,22 +461,22 @@ function validatedTeam(parsed, admin, analytics, tr) {
 
   return {
     subject:
-      parsed.subject ||
+      modelSubject(parsed.subject) ||
       tr(
         'email.digest.team.subjectWithViews',
         "Your team's weekly engagement - {views} views",
         { views: analytics.totalViews },
       ),
-    greeting: (parsed.greeting || greeting(tr, name)).replace('{name}', name),
+    greeting: greeting(tr, name),
     highlights:
-      parsed.highlights ||
+      modelText(parsed.highlights, MAX_LENGTH.highlights) ||
       tr(
         'email.digest.team.highlights',
         "Your team's presentations received {views} views from {viewers} unique viewers this week.",
         { views: analytics.totalViews, viewers: analytics.uniqueViewers },
       ),
     topPresentationsIntro:
-      parsed.topPresentationsIntro ||
+      modelText(parsed.topPresentationsIntro, MAX_LENGTH.intro) ||
       tr(
         'email.digest.team.topPresentationsIntro',
         'Top performing presentations across your team:',
@@ -414,19 +487,19 @@ function validatedTeam(parsed, admin, analytics, tr) {
       ownerEmail: p.ownerEmail,
     })),
     topPresentersIntro:
-      parsed.topPresentersIntro ||
+      modelText(parsed.topPresentersIntro, MAX_LENGTH.intro) ||
       tr('email.digest.team.topPresentersIntro', 'Most active presenters:'),
     topPresenters: analytics.topPresenters.slice(0, 5).map((p) => ({
       name: p.name,
       totalViews: p.totalViews,
       presentationCount: p.presentationCount,
     })),
-    insights: Array.isArray(parsed.insights) ? parsed.insights.slice(0, 3) : [],
+    insights: modelInsights(parsed.insights),
     weekOverWeek: {
       views: `${analytics.weekOverWeek.views.current} (${analytics.weekOverWeek.views.direction === 'up' ? '+' : ''}${analytics.weekOverWeek.views.percentChange}%)`,
     },
     closing:
-      parsed.closing ||
+      modelText(parsed.closing, MAX_LENGTH.closing) ||
       tr('email.digest.team.closing', 'Keep your team engaged!'),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,

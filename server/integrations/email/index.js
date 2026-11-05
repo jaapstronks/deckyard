@@ -32,3 +32,4 @@ export {
   sendWeeklyDigestEmail,
   sendTeamDigestEmail,
 } from './senders-digests.js';
+export { validMailHeader } from './config.js';

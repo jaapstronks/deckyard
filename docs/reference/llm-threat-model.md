@@ -162,19 +162,21 @@ the vendor. The preview route takes that URL from the request body.
 
 ### Background
 
-| Entry                                                                               | Starter  | Author of the text                                                                                  | Sink                                                       |
-| ----------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Weekly user digest, `generateDigestWithAI` (`server/services/digest-generation.js`) | Cron job | The recipient's name and **deck titles** (which a collaborator may have written) with view counts   | Email: subject, greeting, highlights, up to three insights |
-| Weekly team digest, `generateTeamDigestWithAI`                                      | Cron job | The organization's analytics object as JSON: **other members' deck titles, names and owner emails** | Email to the organization admin                            |
+| Entry                                                                               | Starter  | Author of the text                                                                              | Sink                                             |
+| ----------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Weekly user digest, `generateDigestWithAI` (`server/services/digest-generation.js`) | Cron job | **Deck titles** (which a collaborator may have written) with view counts; no names or addresses | Email: subject, highlights, up to three insights |
+| Weekly team digest, `generateTeamDigestWithAI`                                      | Cron job | **Other members' deck titles** with view and presenter counts; no names or addresses            | Email to the organization admin                  |
 
 What bounds it: the HTML template escapes every field, the only `href` is the
 preferences link and the dashboard link is built from `APP_URL`, so the model
 cannot place a link. `sendEmail` refuses a subject with a control character, so
 the subject cannot inject a header. Audience questions, comments and poll
-answers are in no prompt anywhere. What does not: `validated()` checks neither
-type nor length of `subject`, `highlights` or the `insights` entries, and the
-team digest sends colleagues' names and email addresses to the vendor to
-produce a mail about view counts.
+answers are in no prompt anywhere. Every text field from the model must be a string
+within a maximum, and the subject a single line, or the template says it
+instead. The greeting is the template's in both digests, so the recipient's name
+stays out of the prompt. The team prompt lists its fields, so colleagues' names
+and email addresses stay out of it; the mail lists the presenters' names from
+the analytics. A deck title can still hold a name.
 
 ## Sinks: what an answer can reach
 
@@ -360,10 +362,11 @@ severity order, except that the first is the one to fix first.
 9. **The vision helper reads outside the uploads directory** (DY-817).
    `/uploads/../…` with an image extension is joined and sent to the vendor;
    the preview route takes the path from the request.
-10. **Digest output is uncapped and the team digest ships colleagues'
-    identities to the vendor** (DY-818). `subject`, `highlights` and
-    `insights` are not typed or bounded; the team prompt carries names and
-    owner emails that the mail does not need.
+10. **Digest output was uncapped and the team digest shipped colleagues'
+    identities to the vendor.** Fixed: every model field is typed and bounded
+    with the template as fallback, the greeting is the template's, and the team
+    prompt carries titles and counts. `tests/digest-generation.test.js` pins
+    these (DY-818).
 
 ### What the review did not find
 
@@ -411,6 +414,6 @@ video source (added with the fix for finding 1), a reader's copy carrying
 notes, a model-written remote URL surviving iterate or refine, a plan that
 removes an unnamed slide, an applied suggestion with an invalid field, a
 read-permission caller
-spending tokens, a `..` vision path, an oversized digest subject. Each item
+spending tokens, a `..` vision path. Each item
 carries its regression test as an acceptance criterion, after the pattern of
 the faked seam in `tests/translate-undeclared-item-strings.test.js`.
