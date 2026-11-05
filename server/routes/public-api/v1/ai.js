@@ -18,7 +18,7 @@ import { resolveSourceImages } from '../../../utils/ai/source-images.js';
 import { hasPermission } from '../../../storage/api-keys.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
-import { assertValidNewDeckSlides } from '../../../services/slide-field-validation.js';
+import { assertValidModelSlides } from '../../../services/slide-field-validation.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
 import {
   deckToPresentationParts,
@@ -236,7 +236,7 @@ async function handleAppendSlides(ctx) {
     Array.isArray(parts?.slides) ? parts.slides : [],
     { slideTypes },
   );
-  assertValidNewDeckSlides([{ slides }], slideTypes);
+  assertValidModelSlides(slides, slideTypes, { phase: 'append' });
   try {
     await resolveSourceImages(slides, sourceImages, { signal, slideTypes });
   } catch (e) {

@@ -295,6 +295,7 @@ test('every registered code passes with exactly its keys', () => {
       to: 'quote-slide',
       convertible: ['text-slide'],
     },
+    bad_gateway: { field: 'actions', errors: ['Not a link'], slideId: 's1' },
     current_password_incorrect: { field: 'currentPassword' },
     translation_instructions_invalid: { field: 'terminology' },
     missing_alt: {

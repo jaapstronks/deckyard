@@ -137,6 +137,15 @@ persistence hooks (`server/collab/persistence.js`):
   (`reason: 'collab'`) all apply. If serialization fails, the binary is kept
   and the JSON is left untouched (at most one debounce window stale). An
   unpopulated doc is never stored over a real deck.
+- **Field validation on the store** — a changed slide passes the declared-field
+  validation per field (`holdBackRefusedSlideFields`). A refused field keeps its
+  stored value in the JSON, or is left out when it has none; everything else in
+  the store is written. The refused value stays in the doc and the binary, and
+  never reaches the JSON. Holding back more would lose work, because the binary
+  is a cache (below): only the refused field can be lost to a write from outside
+  the doc. A store that changes only a refused field writes nothing and moves no
+  revision, and the server logs one `warn` line per refused value. Prose may be
+  empty while someone retypes it. The author sees the hint at the field.
 
 **Storage**: `getYDocState`/`setYDocState`/`deleteYDocState` on the
 adapter — Postgres table `presentation_ydocs` (one merged update per deck,

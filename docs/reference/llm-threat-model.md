@@ -183,10 +183,12 @@ with the control at each.
   entries are not refused except by the strict Zod schema MCP
   `create_presentation_from_slides` uses. It runs on the editor PUT, the v1
   writes, the MCP slide tools, every create and every import; on the collab
-  store, where a refused value keeps the doc binary but stays out of the deck
-  JSON and prose may be empty while someone retypes it; on "Apply suggestion";
-  and on two answers that write nothing, editor `convert-slide` and v1
-  `append-slides`.
+  store, per field: a refused value stays in the doc binary, the field keeps its
+  stored value in the deck JSON, the rest of the store is written and prose may
+  be empty while someone retypes it; on "Apply suggestion"; and on two answers
+  that write nothing, editor `convert-slide` and v1 `append-slides`, where a
+  refusal is a 502 `bad_gateway` that names the field, because the model failed
+  and not the caller.
 - **Slide type.** The model picks from the organization's offer. That offer
   includes `embed-slide` (any `https:` URL in an iframe whose `sandbox` value
   is an enum the model may set to `permissive`), `video-slide` and the

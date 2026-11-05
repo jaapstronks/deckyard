@@ -3,8 +3,9 @@
  * receives it (DY-813). `POST /api/ai/convert-slide` hands the editor a slide it
  * renders at once and `POST /api/v1/ai/append-slides` hands an integration a
  * batch nobody reviews; neither route writes, so no write seam stood between
- * the model and a `javascript:` link. The end slide closes the same hole on the
- * other side: a value already stored renders as no link at all.
+ * the model and a `javascript:` link. Such an answer is the model's failure, not
+ * the caller's, so it is a 502. The end slide closes the same hole on the other
+ * side: a value already stored renders as no link at all.
  *
  * Run with: node --test tests/ai-output-field-validation.test.js
  */
@@ -98,7 +99,8 @@ test('convert-slide refuses a model answer with a javascript: link', async (t) =
     actions: [{ label: 'Open', url: EVIL }],
   });
   const res = await convert();
-  assert.equal(res.statusCode, 400);
+  assert.equal(res.statusCode, 502);
+  assert.equal(res.json().error, 'bad_gateway');
   assert.equal(res.json().details.field, 'actions');
   assert.equal(res.json().slide, undefined, 'no slide reaches the editor');
 });
@@ -147,7 +149,8 @@ const endSlideBatch = (contactUrl) => ({
 test('v1 append-slides refuses a batch with a javascript: link', async (t) => {
   stubModel(t, endSlideBatch(EVIL));
   const res = await appendV1();
-  assert.equal(res.statusCode, 400);
+  assert.equal(res.statusCode, 502);
+  assert.equal(res.json().error, 'bad_gateway');
   assert.equal(res.json().details.field, 'contactUrl');
   assert.equal(res.json().slides, undefined, 'no slides reach the integration');
 });

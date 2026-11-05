@@ -27,6 +27,8 @@ const { getYDocState, setYDocState, deleteYDocState } =
   await import('../server/storage/presentations/ydocs.js');
 const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
+const { holdBackRefusedSlideFields } =
+  await import('../server/services/slide-field-validation.js');
 
 // The collab hooks still take a `repoRoot` for their scope shape; storage
 // ignores it entirely now that PostgreSQL is the only backend.
@@ -266,11 +268,11 @@ describe('collab persistence hooks', () => {
       });
       const doc = new Y.Doc();
       await hooks.onLoadDocument({ documentName: docName(id), document: doc });
-      const edit = async (fields) => {
+      const edit = async (fields, index = 0) => {
         const base = deckYdocCodec.projectDocToPresentation(doc);
         const next = structuredClone(base);
-        Object.assign(next.slides[0].content, fields);
-        const version = next.i18n?.versions?.nl?.slides?.[0];
+        Object.assign(next.slides[index].content, fields);
+        const version = next.i18n?.versions?.nl?.slides?.[index];
         if (version) Object.assign(version.content, fields);
         deckYdocCodec.applyPresentationToDoc(next, doc, { base });
         await hooks.onStoreDocument({
@@ -280,8 +282,13 @@ describe('collab persistence hooks', () => {
       };
       return { id, doc, edit };
     }
-    const storedContent = async (id) =>
-      (await getPresentation(testScope(), id)).slides[0].content;
+    const storedContent = async (id, index = 0) =>
+      (await getPresentation(testScope(), id)).slides[index].content;
+    const OTHER_SLIDE = {
+      id: 'other-1',
+      type: 'end-slide',
+      content: { title: 'Oud' },
+    };
 
     it('a javascript: link stays out of the JSON, the binary keeps the work, a fix lands', async () => {
       const { id, doc, edit } = await openEndSlide();
@@ -297,8 +304,10 @@ describe('collab persistence hooks', () => {
         Y.encodeStateAsUpdate(doc),
         'the binary holds the refused state, so nothing typed is lost',
       );
-      assert.equal(log.lines.error.length, 1);
-      assert.match(log.lines.error[0], /contactUrl/);
+      assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+      assert.equal(log.lines.warn.length, 1);
+      assert.match(log.lines.warn[0], /contactUrl/);
+      assert.doesNotMatch(log.lines.warn[0], /alert\(1\)/);
 
       await edit({ contactUrl: 'https://example.org/' });
 
@@ -321,6 +330,198 @@ describe('collab persistence hooks', () => {
 
       assert.equal((await storedContent(id)).title, 'Nieuw');
       assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+    });
+
+    it('an edit on another slide lands while one field is refused', async () => {
+      const { id, edit } = await openEndSlide([OTHER_SLIDE]);
+
+      await edit({ contactUrl: 'www.example.com' });
+      await edit({ title: 'Een uur werk' }, 1);
+
+      assert.equal((await storedContent(id, 1)).title, 'Een uur werk');
+      assert.equal(
+        (await storedContent(id)).contactUrl,
+        'https://example.com/',
+      );
+      const stored = await getPresentation(testScope(), id);
+      assert.deepEqual(
+        stored.i18n.versions.nl.slides,
+        stored.slides,
+        'the language version gets the same held-back slides',
+      );
+    });
+
+    it('another field on the same slide lands beside the refused one', async () => {
+      const { id, edit } = await openEndSlide();
+
+      await edit({ contactUrl: 'www.example.com', title: 'Nieuw' });
+
+      const content = await storedContent(id);
+      assert.equal(content.title, 'Nieuw');
+      assert.equal(content.contactUrl, 'https://example.com/');
+    });
+
+    it('a write from outside the doc afterwards loses at most the refused field', async () => {
+      const { id, edit } = await openEndSlide([OTHER_SLIDE]);
+      await edit({ contactUrl: 'www.example.com' });
+      await edit({ title: 'Een uur werk' }, 1);
+
+      const cold = await getPresentation(testScope(), id);
+      await updatePresentation(testScope(), id, { ...cold, title: 'Hernoemd' });
+      await new Promise((r) => setTimeout(r, 50));
+
+      assert.equal(await getYDocState(testScope(), id), null);
+      assert.equal((await storedContent(id, 1)).title, 'Een uur werk');
+      assert.equal(
+        (await storedContent(id)).contactUrl,
+        'https://example.com/',
+      );
+    });
+
+    it('a title that is too long holds back only that title', async () => {
+      const { id, edit } = await openEndSlide([OTHER_SLIDE]);
+
+      await edit({ title: 'x'.repeat(130) });
+      await edit({ title: 'Later werk' }, 1);
+
+      assert.equal((await storedContent(id)).title, 'Bedankt');
+      assert.equal((await storedContent(id, 1)).title, 'Later werk');
+    });
+
+    it('a half-typed e-mail address holds back only that address', async () => {
+      const { id, edit } = await openEndSlide([OTHER_SLIDE]);
+
+      await edit({ contactEmail: 'jaap@' });
+      await edit({ title: 'Later werk' }, 1);
+
+      assert.equal((await storedContent(id)).contactEmail, undefined);
+      assert.equal((await storedContent(id, 1)).title, 'Later werk');
+    });
+
+    it('a new slide is stored without its refused field', async () => {
+      const { id, doc } = await openEndSlide();
+      const base = deckYdocCodec.projectDocToPresentation(doc);
+      const next = structuredClone(base);
+      const added = {
+        id: 'new-1',
+        type: 'end-slide',
+        content: { title: 'Nieuw', contactUrl: 'javascript:alert(1)' },
+        notes: '',
+      };
+      next.slides.push(added);
+      next.i18n.versions.nl.slides.push(structuredClone(added));
+      deckYdocCodec.applyPresentationToDoc(next, doc, { base });
+
+      await hooks.onStoreDocument({ documentName: docName(id), document: doc });
+
+      const content = await storedContent(id, 1);
+      assert.equal(content.title, 'Nieuw');
+      assert.equal(content.contactUrl, undefined);
+    });
+
+    it('a store that changes only a refused field writes nothing and logs once', async () => {
+      const { id, doc, edit } = await openEndSlide([OTHER_SLIDE]);
+      await edit({ title: 'Eerst iets echts' }, 1);
+      const before = await getPresentation(testScope(), id);
+
+      await edit({ contactUrl: 'www.example.com' });
+      await hooks.onStoreDocument({ documentName: docName(id), document: doc });
+      await hooks.onStoreDocument({ documentName: docName(id), document: doc });
+
+      const stored = await getPresentation(testScope(), id);
+      assert.equal(stored.revision, before.revision, 'no revision bump');
+      assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+      assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+
+      await edit({ contactUrl: 'www.example.org' });
+      assert.equal(log.lines.warn.length, 2, 'a new value gets its own line');
+    });
+
+    it('an old bad value on a slide someone edits stops nothing and logs nothing', async () => {
+      const { id, edit } = await openEndSlide([
+        {
+          id: 'end-2',
+          type: 'end-slide',
+          content: { title: 'Oud', contactUrl: 'example.com' },
+        },
+      ]);
+
+      await edit({ title: 'Nieuw' }, 1);
+
+      const content = await storedContent(id, 1);
+      assert.equal(content.title, 'Nieuw');
+      assert.equal(content.contactUrl, 'example.com');
+      assert.equal(log.lines.warn.length, 0, log.lines.warn.join('\n'));
+    });
+
+    it('holds a value back in every language version and reports it per version', async () => {
+      const slide = (title, contactUrl) => ({
+        id: 'end-1',
+        type: 'end-slide',
+        content: { title, contactUrl },
+      });
+      const deck = (nl, en) => ({
+        slides: [nl],
+        i18n: {
+          active: 'nl',
+          dominant: 'nl',
+          versions: { nl: { slides: [nl] }, 'en-GB': { slides: [en] } },
+        },
+      });
+      const stored = deck(
+        slide('Bedankt', 'https://example.com/'),
+        slide('Thanks', 'https://example.com/'),
+      );
+
+      const { deck: written, refused } = await holdBackRefusedSlideFields(
+        testScope(),
+        stored,
+        deck(
+          slide('Bedankt', 'javascript:alert(1)'),
+          slide('Thank you', 'javascript:alert(1)'),
+        ),
+      );
+
+      assert.equal(
+        written.slides[0].content.contactUrl,
+        'https://example.com/',
+      );
+      assert.equal(
+        written.i18n.versions.nl.slides[0],
+        written.slides[0],
+        'the active version is the top-level buffer',
+      );
+      const en = written.i18n.versions['en-GB'].slides[0].content;
+      assert.equal(en.contactUrl, 'https://example.com/');
+      assert.equal(en.title, 'Thank you');
+      assert.equal(refused.length, 2);
+    });
+
+    it('a slide whose type changed does not get the stored value of its old type', async () => {
+      const stored = {
+        slides: [
+          {
+            id: 's1',
+            type: 'content-slide',
+            content: { title: 'Oud', contactUrl: 'https://example.com/' },
+          },
+        ],
+      };
+      const { deck: written } = await holdBackRefusedSlideFields(
+        testScope(),
+        stored,
+        {
+          slides: [
+            {
+              id: 's1',
+              type: 'end-slide',
+              content: { title: 'Nieuw', contactUrl: 'javascript:alert(1)' },
+            },
+          ],
+        },
+      );
+      assert.equal(written.slides[0].content.title, 'Nieuw');
+      assert.equal('contactUrl' in written.slides[0].content, false);
     });
 
     it('an empty required field on its way to a new value is not a refusal', async () => {

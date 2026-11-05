@@ -12,7 +12,7 @@ import {
 } from '../../../utils/request-validators.js';
 import { convertSlideWithAi } from '../../../utils/openai/convert-slide.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
-import { assertValidSlideFields } from '../../../services/slide-field-validation.js';
+import { assertValidModelSlides } from '../../../services/slide-field-validation.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
@@ -43,9 +43,10 @@ export const handleAiConvertSlide = withErrorHandler(
     });
     // The editor renders this answer at once and saves it later: the model's
     // links are refused here, as MCP `convert_slide` refuses them on its write.
-    assertValidSlideFields(
-      converted,
+    assertValidModelSlides(
+      [converted],
       await buildMergedSlideTypes(storageScope),
+      { phase: 'convert-slide', vendor },
     );
     serveJson(res, 200, { slide: converted });
     return true;
