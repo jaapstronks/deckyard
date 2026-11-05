@@ -44,6 +44,7 @@ import {
   resolveSlideTypeName,
 } from '../../../../shared/slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { runWithAiAttribution } from '../../../utils/llm/meter.js';
 import {
   deckJsonSchema,
   slideTypeContentSchema,
@@ -356,7 +357,13 @@ export const handlePublicApiV1 = withV1ErrorHandler(
     // Track the request (don't await - fire and forget)
     fireAndForget(trackRequest(ctx), 'v1 request tracking');
 
-    if (await dispatchMounts(V1_MOUNTS, ctx)) return true;
+    // Every model call is counted for the key's organization and owner (DY-844).
+    if (
+      await runWithAiAttribution(ctx.storageScope, () =>
+        dispatchMounts(V1_MOUNTS, ctx),
+      )
+    )
+      return true;
 
     return v1NotFound(ctx.res);
   },

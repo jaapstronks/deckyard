@@ -9,6 +9,7 @@ import {
   badRequest,
   jsonError,
   notFound,
+  storageError,
 } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
@@ -31,6 +32,13 @@ import { TRANSLATION_INSTRUCTION_MAX_LENGTH } from '../../../shared/constants/tr
 import { getThemeRecord } from '../../storage/themes.js';
 import { UUID_RE } from '../../utils/uuid.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import {
+  getInstanceAiCalls,
+  listOrganizationAiUsage,
+  usageDay,
+} from '../../storage/ai-usage.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
+import { aiDailyCallLimit } from '../../utils/llm/meter.js';
 
 /** Organization theme settings store one lowercase UUID spelling. */
 function isCanonicalThemeId(id) {
@@ -117,6 +125,30 @@ async function handleOrgSettingsGet({ res, authedUser }) {
     isFeatureEnabled('ai') && (await canWriteOrgAdminKeys(authedUser, orgId));
   serveJson(res, 200, {
     settings: mayReadInstructions ? settings : publicOrgSettings(settings),
+  });
+  return true;
+}
+
+// GET /api/settings/organization/ai-usage — the organization's model calls
+// and tokens per day, today's per person, and the installation's daily ceiling
+// (DY-844). The same readers as the translation instructions: the people who
+// administer this organization's AI settings.
+async function handleOrgAiUsageGet({ res, url, authedUser, storageScope }) {
+  if (!isFeatureEnabled('ai')) return notFound(res);
+  const orgId = storageScope?.organizationId;
+  if (!(await canWriteOrgAdminKeys(authedUser, orgId))) return forbidden(res);
+  const today = usageDay();
+  const days = Number(url.searchParams.get('days')) || 30;
+  const usage = await listOrganizationAiUsage(storageScope, { today, days });
+  if (!usage.ok) return storageError(res, usage);
+  const used = await getInstanceAiCalls(
+    crossOrganizationScope(storageScope.repoRoot, 'instance AI call ceiling'),
+    { day: today },
+  );
+  serveJson(res, 200, {
+    days: usage.days,
+    today: usage.today,
+    ceiling: { limit: aiDailyCallLimit(), used },
   });
   return true;
 }
@@ -331,6 +363,15 @@ export const ROUTES = [
   {
     pattern: '/api/settings/organization',
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/settings/organization/ai-usage',
+    handler: handleOrgAiUsageGet,
+  },
+  {
+    pattern: '/api/settings/organization/ai-usage',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
   },
   { pattern: '/api/settings/me', handler: handleMySettings },
 ];

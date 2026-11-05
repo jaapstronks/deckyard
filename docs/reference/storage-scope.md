@@ -47,7 +47,10 @@ boundary decision:
    jobs and pre-auth routes read them cross-organization because an
    organization never enters the query. Seed themes (`themes` rows without an
    organization) are instance configuration too: their reads accept an
-   organization scope or a reasoned instance scope and return the same seeds.
+   organization scope or a reasoned instance scope and return the same seeds. The instance AI call counter
+   (`ai_usage_instance_daily`, keyed by the date alone) is read and written
+   the same way: the daily ceiling holds every call against it, and no
+   organization's row is read to answer it (DY-844).
 4. **Instance-wide aggregates for the instance admin** — the instance-health
    census (`server/storage/instance-census.js`, B516) reads organization-owned
    rows (`presentations`, `custom_slide_types`) across the instance and answers

@@ -32,6 +32,8 @@ const STORAGE = join(repoRoot, 'server', 'storage');
  * list pages, or argues its place here in review.
  */
 const BOUNDED = {
+  'ai-usage.js :: listOrganizationAiUsage':
+    "one organization's day counters, at most 90 days of its people",
   'api-keys.js :: listApiKeys': 'the keys of one organization',
   'collaborators.js :: listCollaborators': "one deck's collaborators",
   'custom-slide-types.js :: listCustomSlideTypes':

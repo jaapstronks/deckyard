@@ -5,9 +5,11 @@ import { requestOpenAiChatCompletionContent } from './providers/openai.js';
 import { requestOpenAiCompatChatCompletionContent } from './providers/openai-compat.js';
 import { LlmError } from './error.js';
 import { withDataBoundary } from './untrusted-data.js';
+import { meterLlmCall } from './meter.js';
 
 export { LlmError } from './error.js';
 export { starterRequest, untrustedData } from './untrusted-data.js';
+export { AiQuotaError, runWithAiAttribution } from './meter.js';
 
 /**
  * Request one chat completion from the configured vendor and return its text.
@@ -26,6 +28,10 @@ export { starterRequest, untrustedData } from './untrusted-data.js';
  * without a fence; the rule that gives the fence its meaning is added here, so
  * one prompt can not forget it (DY-814).
  *
+ * Every call is counted here and refused once the installation's daily
+ * ceiling is reached (`meter.js`, DY-844): an {@link AiQuotaError} before
+ * anything is sent.
+ *
  * @param {Object} params
  * @param {Array<{role: string, content: string, cache?: boolean}>} [params.messages]
  * @param {AbortSignal} [params.signal]
@@ -42,8 +48,9 @@ export async function requestChatCompletionContent({
   signal,
 } = {}) {
   const messages = withDataBoundary(promptMessages);
-  if (vendor === 'openai') {
-    return await requestOpenAiChatCompletionContent({
+  if (!PROVIDERS[vendor]) throw LlmError.unsupportedVendor(vendor);
+  return meterLlmCall(() =>
+    PROVIDERS[vendor]({
       apiKey,
       model,
       temperature,
@@ -51,52 +58,18 @@ export async function requestChatCompletionContent({
       maxTokens,
       messages,
       signal,
-    });
-  }
-  if (vendor === 'claude') {
-    // Claude doesn't support OpenAI's response_format; rely on the prompt.
-    return await requestClaudeMessagesContent({
-      apiKey,
-      model,
-      temperature,
-      maxTokens,
-      messages,
-      signal,
-    });
-  }
-  if (vendor === 'mistral') {
-    return await requestMistralChatCompletionContent({
-      apiKey,
-      model,
-      temperature,
-      responseFormat,
-      maxTokens,
-      messages,
-      signal,
-    });
-  }
-  if (vendor === 'deepseek') {
-    return await requestDeepSeekChatCompletionContent({
-      apiKey,
-      model,
-      temperature,
-      responseFormat,
-      maxTokens,
-      messages,
-      signal,
-    });
-  }
-  if (vendor === 'openai-compat') {
-    return await requestOpenAiCompatChatCompletionContent({
-      apiKey,
-      model,
-      temperature,
-      responseFormat,
-      maxTokens,
-      messages,
-      signal,
-    });
-  }
-
-  throw LlmError.unsupportedVendor(vendor);
+    }),
+  );
 }
+
+/**
+ * The request function per vendor. Claude has no OpenAI `response_format`; its
+ * provider ignores the field and relies on the prompt.
+ */
+const PROVIDERS = Object.freeze({
+  openai: requestOpenAiChatCompletionContent,
+  claude: requestClaudeMessagesContent,
+  mistral: requestMistralChatCompletionContent,
+  deepseek: requestDeepSeekChatCompletionContent,
+  'openai-compat': requestOpenAiCompatChatCompletionContent,
+});

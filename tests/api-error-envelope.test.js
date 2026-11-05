@@ -273,6 +273,7 @@ test('every registered code passes with exactly its keys', () => {
       retryable: true,
     },
     held: { lock: { slideId: 's1' } },
+    ai_quota_exceeded: { limit: 2000, used: 2000, retryAfter: 3600 },
     invalid: { field: 'themeId', use: 'theme' },
     conflict: { id: 'p1', revision: 4, modified: 'now', updatedBy: 'a@b.c' },
     locked: { slideId: 's1', lockKind: 'author', holder: null },

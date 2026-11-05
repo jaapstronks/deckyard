@@ -331,9 +331,13 @@ Honest gaps:
   by one (`openai/append.js`, `openai/translate.js`, …); unlike `utils/ai/`
   there is no `index.js` barrel over them, so no single import tells you what
   they offer.
-- **Token usage is observable but not recorded.** `usage.js` publishes per-call
-  counts, and with no subscriber in the server they are discarded — there is no
-  spend log, no per-org accounting and no budget enforcement.
+- **Spend is counted per call, budgeted per installation only.** Every model
+  call goes through the meter on the transport (`llm/meter.js`, DY-844): it is
+  counted per organization and person per day, with the tokens the vendor
+  reported, and refused with `ai_quota_exceeded` (429) past
+  `AI_DAILY_CALL_LIMIT`. There is no budget per organization or per person,
+  and a call outside a request that binds attribution counts on the instance
+  total only.
 - **`type-ai.js` is generated, not authored.** It must be regenerated with
   `node scripts/generate-slide-ai-aggregator.js` after a slide type's `ai.js`
   changes; nothing in the test suite fails loudly if it drifts.

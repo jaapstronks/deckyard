@@ -14,6 +14,7 @@ import { getFeatures, featureEnabled } from '../../../lib/state/features.js';
 import { createOrganizationThemePolicy } from '../organization-theme-policy.js';
 import { createOrganizationRssPolicy } from '../organization-rss-policy.js';
 import { createTranslationInstructionsCard } from '../translation-instructions/index.js';
+import { createAiUsageCard } from '../ai-usage/index.js';
 import { getSupportedLangs } from '../../../lib/format/i18n.js';
 
 /**
@@ -44,6 +45,8 @@ export function createOrganizationTab({ user }) {
     canWritePolicy && featureEnabled('ai')
       ? createTranslationInstructionsCard()
       : null;
+  const aiUsage =
+    canWritePolicy && featureEnabled('ai') ? createAiUsageCard() : null;
 
   const load = () => {
     translationPolicy?.syncSupportedLanguages(getSupportedLangs());
@@ -56,9 +59,11 @@ export function createOrganizationTab({ user }) {
       container.append(themePolicy.el);
       if (translationPolicy) container.append(translationPolicy.el);
       container.append(rssPolicy.el);
+      if (aiUsage) container.append(aiUsage.el);
       themePolicy.load();
       translationPolicy?.load();
       rssPolicy.load();
+      aiUsage?.load();
     }
   };
 
