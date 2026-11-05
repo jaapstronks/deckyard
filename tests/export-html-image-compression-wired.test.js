@@ -7,17 +7,17 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 import { buildStandaloneHtml } from '../server/export/html.js';
+import { renderPublishedDocuments } from './helpers/edition-documents.js';
 
 /**
  * Regression guard for the *seam*, not the transform (B717).
  *
  * `tests/export-pdf-image-compression-wired.test.js` pins the PDF route; this
- * pins the standalone HTML document, which serves two outputs: the HTML
- * download (`context: 'export'`) and the published `/p/` page
- * (`context: 'published'`). Both inlined every image at source resolution: a
- * deck of 48 photos of 4.8 MB came out at 307 MB as a download and 322 MB per
- * visitor as a published page. The difference is entirely whether
- * `buildStandaloneHtml`'s embed passes still pass `transform`.
+ * pins the standalone HTML download. It inlined every image at source
+ * resolution: a deck of 48 photos of 4.8 MB came out at 307 MB. The difference
+ * is entirely whether `buildStandaloneHtml`'s embed passes still pass
+ * `transform`. A published page has its own seam, the seal in
+ * `prepareEditionInput`, and every visitor pays for what it leaves uncompressed.
  */
 
 const repoRoot = path.resolve(
@@ -74,39 +74,60 @@ function photoDeck(id, url) {
   };
 }
 
-for (const context of ['export', 'published']) {
-  test(`standalone HTML (${context}) applies image compression to embedded slide images`, async () => {
-    const raw = await bigOpaquePng(3000);
-    const [url, cleanup] = await withUpload(raw);
-    try {
-      const html = await buildStandaloneHtml(
-        repoRoot,
-        photoDeck(`compress-${context}`, url),
-        { context },
-      );
+test('standalone HTML applies image compression to embedded slide images', async () => {
+  const raw = await bigOpaquePng(3000);
+  const [url, cleanup] = await withUpload(raw);
+  try {
+    const html = await buildStandaloneHtml(
+      repoRoot,
+      photoDeck('compress-export', url),
+      {},
+    );
 
-      assert.ok(
-        !html.includes(url),
-        'image src should be inlined, not left as a path',
-      );
+    assert.ok(
+      !html.includes(url),
+      'image src should be inlined, not left as a path',
+    );
 
+    const jpegs = dataUrlPayloads(html, 'image/jpeg');
+    assert.ok(
+      jpegs.length > 0,
+      'opaque photo should be embedded as JPEG, not PNG',
+    );
+
+    const rawBase64Len = raw.toString('base64').length;
+    const biggest = Math.max(...jpegs.map((p) => p.length));
+    assert.ok(
+      biggest < rawBase64Len * 0.5,
+      `embedded payload ${biggest} not substantially smaller than raw ${rawBase64Len}`,
+    );
+  } finally {
+    await cleanup();
+  }
+});
+
+test('a published edition applies image compression to its sealed images', async () => {
+  const raw = await bigOpaquePng(3000);
+  const [url, cleanup] = await withUpload(raw);
+  try {
+    const { canvas, reader } = await renderPublishedDocuments(
+      photoDeck('compress-edition', url),
+      repoRoot,
+    );
+    const rawBase64Len = raw.toString('base64').length;
+    for (const html of [canvas, reader]) {
+      assert.ok(!html.includes(url), 'the sealed image is inlined');
       const jpegs = dataUrlPayloads(html, 'image/jpeg');
+      assert.ok(jpegs.length > 0, 'an opaque photo is sealed as JPEG');
       assert.ok(
-        jpegs.length > 0,
-        'opaque photo should be embedded as JPEG, not PNG',
+        Math.max(...jpegs.map((p) => p.length)) < rawBase64Len * 0.5,
+        'the sealed payload is substantially smaller than the source',
       );
-
-      const rawBase64Len = raw.toString('base64').length;
-      const biggest = Math.max(...jpegs.map((p) => p.length));
-      assert.ok(
-        biggest < rawBase64Len * 0.5,
-        `embedded payload ${biggest} not substantially smaller than raw ${rawBase64Len}`,
-      );
-    } finally {
-      await cleanup();
     }
-  });
-}
+  } finally {
+    await cleanup();
+  }
+});
 
 test('compression can be switched off for the standalone HTML', async () => {
   const prev = process.env.EXPORT_IMAGE_COMPRESSION;
@@ -146,46 +167,44 @@ async function embeddedJpegLongestEdges(html) {
  * A six-up gallery grid: rendered `<img src>` that the PDF route would measure
  * in Chrome and cap near its ~480px display size. Here they get the flat cap,
  * so a 2400px source stays at 2400px. If this starts failing because the items
- * shrink, a measurement pass came in: that starts Chrome on a route that builds
- * a /p/ page per visitor, and keeps every test process that builds HTML alive.
+ * shrink, a measurement pass came in: that starts Chrome on the download route
+ * and keeps every test process that builds HTML alive.
  */
-for (const context of ['export', 'published']) {
-  test(`standalone HTML (${context}) gives rendered <img src> the flat cap, without Chrome`, async () => {
-    const cleanups = [];
-    try {
-      const images = [];
-      for (let i = 0; i < 6; i++) {
-        const raw = await sharp(await bigOpaquePng(2400))
-          .jpeg({ quality: 92 })
-          .toBuffer();
-        const [url, cleanup] = await withUpload(raw);
-        cleanups.push(cleanup);
-        images.push({ src: url, caption: '', alt: '' });
-      }
-      const html = await buildStandaloneHtml(
-        repoRoot,
-        {
-          id: `grid-${context}`,
-          title: 'Grid',
-          theme: 'default',
-          lang: 'en',
-          slides: [
-            {
-              id: 'g',
-              type: 'gallery-slide',
-              content: { layout: 'grid', images },
-            },
-          ],
-        },
-        { context },
-      );
-      const edges = await embeddedJpegLongestEdges(html);
-      assert.equal(edges.length, 6, 'six grid items, each recompressed');
-      for (const e of edges) {
-        assert.ok(e >= 2000, `grid item embedded at ${e}px, expected flat cap`);
-      }
-    } finally {
-      for (const c of cleanups) await c();
+test('standalone HTML gives rendered <img src> the flat cap, without Chrome', async () => {
+  const cleanups = [];
+  try {
+    const images = [];
+    for (let i = 0; i < 6; i++) {
+      const raw = await sharp(await bigOpaquePng(2400))
+        .jpeg({ quality: 92 })
+        .toBuffer();
+      const [url, cleanup] = await withUpload(raw);
+      cleanups.push(cleanup);
+      images.push({ src: url, caption: '', alt: '' });
     }
-  });
-}
+    const html = await buildStandaloneHtml(
+      repoRoot,
+      {
+        id: 'grid-export',
+        title: 'Grid',
+        theme: 'default',
+        lang: 'en',
+        slides: [
+          {
+            id: 'g',
+            type: 'gallery-slide',
+            content: { layout: 'grid', images },
+          },
+        ],
+      },
+      {},
+    );
+    const edges = await embeddedJpegLongestEdges(html);
+    assert.equal(edges.length, 6, 'six grid items, each recompressed');
+    for (const e of edges) {
+      assert.ok(e >= 2000, `grid item embedded at ${e}px, expected flat cap`);
+    }
+  } finally {
+    for (const c of cleanups) await c();
+  }
+});

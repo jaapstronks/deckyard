@@ -31,6 +31,7 @@ import {
   detectPrismKatexNeeds,
 } from '../server/utils/prism-katex.js';
 import { RENDER_PATHS, buildAllRenderPaths } from '../server/render-paths.js';
+import { resolvePrismComponents } from '../shared/prism-languages.js';
 import { closePuppeteerBrowser } from '../server/utils/puppeteer-browser.js';
 import { initSanitizer } from '../shared/sanitize.js';
 
@@ -191,7 +192,7 @@ test('a deck with no code, math or video makes zero third-party requests', async
   );
 });
 
-test('a downloaded file carries Prism inline; a published page links it', async () => {
+test('a downloaded file carries Prism inline, with only the languages it uses', async () => {
   const download = await buildStandaloneHtml(
     repoRoot,
     deck([contentSlide(codeBlock('python'))]),
@@ -200,32 +201,9 @@ test('a downloaded file carries Prism inline; a published page links it', async 
   // No origin to resolve against: the library travels in the document.
   assert.doesNotMatch(download, /<script src="\/client\/vendor/);
   assert.match(download, /Prism\.languages\.python/);
-  // Only the languages the deck uses, exactly as with the linked form.
   assert.doesNotMatch(download, /Prism\.languages\.sql/);
   // No math on any slide, so KaTeX stays out either way.
   assert.equal(carriesKatex(download), false);
-
-  const published = await buildStandaloneHtml(
-    repoRoot,
-    deck([contentSlide(codeBlock('python'))]),
-    { context: 'published' },
-  );
-  assert.match(
-    published,
-    /<script src="\/client\/vendor\/prism\/components\/prism-core\.min\.js">/,
-  );
-  assert.match(
-    published,
-    /<script src="\/client\/vendor\/prism\/components\/prism-python\.min\.js">/,
-  );
-  assert.doesNotMatch(
-    published,
-    /<script src="\/client\/vendor\/prism\/components\/prism-sql\.min\.js">/,
-  );
-  assert.match(
-    published,
-    /<link rel="stylesheet" href="\/client\/vendor\/prism\/themes\/prism-tomorrow\.min\.css" \/>/,
-  );
 });
 
 test('an inlined KaTeX carries its own fonts, so a formula is not laid out in a fallback face', async () => {
@@ -309,29 +287,29 @@ test('detectPrismKatexNeeds reads the markup the init script queries', () => {
 });
 
 test('language packs resolve through aliases and dependencies', () => {
-  const tags = (languages) =>
-    buildPrismKatexTags({ mode: 'linked', katex: false, languages });
-  // The four base components replicate the CDN bundle Deckyard used to load,
-  // so they are always there; the interesting part is what a deck adds.
-  const base = ['markup', 'css', 'clike', 'javascript'];
-  const extra = (languages) =>
-    [...tags(languages).matchAll(/prism-([\w-]+)\.min\.js/g)]
-      .map((m) => m[1])
-      .filter((n) => n !== 'core' && !base.includes(n));
-
-  assert.deepEqual(extra(['ts']), ['typescript']);
-  assert.deepEqual(extra(['tsx']), ['jsx', 'typescript', 'tsx']);
-  assert.deepEqual(extra(['php']), ['markup-templating', 'php']);
+  // The four base components are always there; a deck adds on top of them.
+  assert.deepEqual(resolvePrismComponents(['ts']), ['typescript']);
+  assert.deepEqual(resolvePrismComponents(['tsx']), [
+    'jsx',
+    'typescript',
+    'tsx',
+  ]);
+  assert.deepEqual(resolvePrismComponents(['php']), [
+    'markup-templating',
+    'php',
+  ]);
   // Already in the base bundle — asking for a component would be a wasted tag.
-  assert.deepEqual(extra(['js', 'html', 'css']), []);
+  assert.deepEqual(resolvePrismComponents(['js', 'html', 'css']), []);
   // Unknown language: no script, code block just renders unhighlighted.
-  assert.deepEqual(extra(['brainfuck']), []);
+  assert.deepEqual(resolvePrismComponents(['brainfuck']), []);
   // Deduped across slides.
-  assert.deepEqual(extra(['python', 'py', 'python']), ['python']);
+  assert.deepEqual(resolvePrismComponents(['python', 'py', 'python']), [
+    'python',
+  ]);
 });
 
 test('callers that pass no languages keep the default set', () => {
-  const tags = buildPrismKatexTags({ mode: 'linked' });
+  const tags = buildPrismKatexTags();
   for (const lang of [
     'typescript',
     'python',
@@ -341,18 +319,9 @@ test('callers that pass no languages keep the default set', () => {
     'bash',
     'markdown',
   ]) {
-    assert.match(tags, new RegExp(`prism-${lang}\\.min\\.js`));
+    assert.match(tags, new RegExp(`languages\\.${lang}\\b`), lang);
   }
-  assert.match(tags, /katex\.min\.js/);
-});
-
-test('the mode is not guessable, so it has to be stated', () => {
-  assert.throws(() => buildPrismKatexTags(), /unknown mode/);
-  assert.throws(() => buildPrismKatexTags({}), /unknown mode/);
-  assert.throws(
-    () => buildPrismKatexTags({ mode: 'cdn' }),
-    /unknown mode "cdn"/,
-  );
+  assert.equal(carriesKatex(tags), true);
 });
 
 test('no version literal survives in the server tree', () => {
@@ -360,6 +329,6 @@ test('no version literal survives in the server tree', () => {
   // version in an export head is how the exports ended up two security
   // releases behind the app shell (Prism 1.29.0 / KaTeX 0.16.9 vs 1.30.0 /
   // 0.18.4).
-  const tags = buildPrismKatexTags({ mode: 'linked' });
+  const tags = buildPrismKatexTags();
   assert.doesNotMatch(tags, /@\d+\.\d+\.\d+/);
 });

@@ -98,9 +98,7 @@ test('shiftHeadingLevels: floors to h2 and descends, preserving attributes', () 
 });
 
 test('export: exactly one <h1> (the deck title) and a nested slide outline', async () => {
-  const html = await buildStandaloneHtml(repoRoot, outlineDeck(), {
-    context: 'published',
-  });
+  const html = await buildStandaloneHtml(repoRoot, outlineDeck());
   // The deck title is the single document <h1>.
   assert.equal((html.match(/<h1[\s>]/g) || []).length, 1);
   assert.match(
