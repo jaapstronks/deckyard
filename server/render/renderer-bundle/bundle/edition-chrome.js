@@ -18,6 +18,13 @@ import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../../shared/i18n-progress.js';
 import { READER_IS_DEFAULT_META } from '../default-view.js';
 
+/**
+ * Every link out of the canvas. The same canvas is the frameable embed, and
+ * every address these links name refuses to be framed, so inside an iframe they
+ * have to replace the whole window. Outside one, `_top` is the page itself.
+ */
+const LEAVE_THE_FRAME = ' target="_top"';
+
 /** `base?lang=xx`, or `base` when there is no language to name. */
 function withLang(base, lang) {
   return lang ? `${base}?lang=${encodeURIComponent(lang)}` : base;
@@ -50,15 +57,16 @@ export function editionAddresses(canonicalUrl, lang) {
  * @param {string|null} lang - The language version on screen
  * @param {(lang: string) => string} urlFor - The address of a language version
  * @param {string} linkClass
+ * @param {string} [extraAttrs] - Rendered after the href, with a leading space
  * @returns {string} The anchors; empty below two versions
  */
-function languageLinks(stored, lang, urlFor, linkClass) {
+function languageLinks(stored, lang, urlFor, linkClass, extraAttrs = '') {
   const langs = existingVersionLangs(stored);
   if (langs.length < 2) return '';
   return langs
     .map(
       (l) =>
-        `<a class="${linkClass}${l === lang ? ' is-active' : ''}" href="${escapeHtml(urlFor(l))}" hreflang="${escapeHtml(l)}" rel="nofollow"${l === lang ? ' aria-current="true"' : ''}>${escapeHtml(getLangDisplayName(l))}</a>`,
+        `<a class="${linkClass}${l === lang ? ' is-active' : ''}" href="${escapeHtml(urlFor(l))}"${extraAttrs} hreflang="${escapeHtml(l)}" rel="nofollow"${l === lang ? ' aria-current="true"' : ''}>${escapeHtml(getLangDisplayName(l))}</a>`,
     )
     .join('');
 }
@@ -153,15 +161,15 @@ export function canvasChrome(
     lang,
     (l) => editionAddresses(canonicalUrl, l).canvas,
     'sb-segmented-btn',
+    LEAVE_THE_FRAME,
   );
   const switchHtml = switchLinks
     ? `<div class="sb-segmented is-lang-switch" role="group" aria-label="${escapeHtml(copy.readerLanguages)}">${switchLinks}</div>`
     : '';
-  const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(urls.reader)}" rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(copy.readerOpen)}</a>`;
+  const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(urls.reader)}"${LEAVE_THE_FRAME} rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(copy.readerOpen)}</a>`;
 
-  // Without JavaScript the canvas never shows a slide. `_top`, because the same
-  // canvas is the frameable embed and the reader refuses to be framed.
-  const noscriptHtml = `<noscript><p class="ps-noscript">${escapeHtml(copy.readerNoScript)} <a href="${escapeHtml(urls.reader)}" target="_top">${escapeHtml(copy.readerOpen)}</a></p></noscript>`;
+  // Without JavaScript the canvas never shows a slide.
+  const noscriptHtml = `<noscript><p class="ps-noscript">${escapeHtml(copy.readerNoScript)} <a href="${escapeHtml(urls.reader)}"${LEAVE_THE_FRAME}>${escapeHtml(copy.readerOpen)}</a></p></noscript>`;
 
   return {
     headHtml,
