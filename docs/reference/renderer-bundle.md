@@ -217,7 +217,7 @@ else is in the bundle. `server/render/renderer-bundle/edition-input.js` is the
 contract: the public projection of the deck with every asset reference already an
 inline data URL, the effective theme record with the dynamic `default` resolved,
 the frozen font CSS and the meta description. Two fields are request values of
-the read path and never stored: `canonicalUrl`, the edition's canvas address
+the read path and never stored: `canonicalUrl`, the edition's bare address
 from its record, from which the entry derives every link and the card in the
 document; and `lang`, the language version to render. The entry checks every
 language list for slides it cannot seal, not only the main one, since the input

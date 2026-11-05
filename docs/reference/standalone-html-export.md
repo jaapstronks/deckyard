@@ -7,7 +7,7 @@ theme CSS, fonts and upload bytes, then hands them to `renderCanvasDocument` in
 `server/export/canvas-document.js`.
 
 A published edition does not go through this builder. Its canvas at
-`/p/{publicationId}/{version}` comes from the same `renderCanvasDocument`, called
+`/p/{publicationId}/{version}/slides` comes from the same `renderCanvasDocument`, called
 by the edition's renderer bundle on input frozen at publication
 ([publication-editions.md](publication-editions.md) § Public read path), so the
 runtime, the URL parameters and the fullscreen contract below are one thing in

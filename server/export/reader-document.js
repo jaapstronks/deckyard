@@ -73,7 +73,14 @@ body {
 }
 .reader-header h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.15; margin: 0 0 0.5rem; }
 .reader-desc { font-size: 1.05rem; opacity: 0.85; margin: 0.25rem 0 0.75rem; }
-.reader-viewlink { font-size: 0.9rem; }
+.reader-viewlink { margin: 0.75rem 0 0.5rem; }
+.reader-viewlink a {
+  display: inline-block; min-height: 44px; padding: 0.6rem 1rem; border-radius: 6px;
+  background: #0b57d0; color: #fff; text-decoration: none; font-weight: 600; line-height: 1.5;
+}
+.reader-langs { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin: 0.5rem 0; font-size: 0.95rem; }
+.reader-lang { display: inline-block; padding-block: 0.6rem; white-space: nowrap; }
+.reader-lang.is-active { font-weight: 600; color: inherit; text-decoration: none; }
 .reader-toc { padding-block: 0.75rem 0.5rem; }
 .reader-toc h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; margin: 0 0 0.4rem; }
 .reader-toc ol { margin: 0; padding-left: 1.4rem; }
@@ -137,6 +144,7 @@ img { max-width: 100%; height: auto; }
   .reader-table th, .reader-table td { border-color: rgba(255,255,255,0.2); }
   .reader-code { background: rgba(255,255,255,0.08); }
   a { color: #8ab4ff; }
+  .reader-viewlink a { background: #8ab4ff; color: #14181f; }
 }
 `.trim();
 
@@ -173,6 +181,9 @@ const SR_ONLY_CSS = (() => {
  * @param {Record<string, object>|null} [opts.slideTypes=null] - merged registry
  * @param {string} [opts.canonicalUrl=''] - link to the canvas presentation view
  * @param {string} [opts.headHtml=''] - extra <head> markup (canonical/robots/OG)
+ * @param {string} [opts.languagesHtml=''] - links to the other language versions
+ * @param {boolean} [opts.canvasDeepLinks=false] - answer the canvas's
+ *   `#slide=N` fragment as well, for a document at an address the canvas had
  * @returns {string} a complete HTML document
  */
 export function renderReaderDocument(
@@ -183,6 +194,8 @@ export function renderReaderDocument(
     slideTypes = null,
     canonicalUrl = '',
     headHtml = '',
+    languagesHtml = '',
+    canvasDeepLinks = false,
   } = {},
 ) {
   const registry =
@@ -224,6 +237,7 @@ export function renderReaderDocument(
         index: i,
         lang: docLang,
         slideJumps,
+        canvasDeepLinks,
       }),
     )
     .join('\n      ');
@@ -253,6 +267,7 @@ export function renderReaderDocument(
       <h1>${escapeHtml(title)}</h1>
       ${descHtml}
       ${viewLink}
+      ${languagesHtml}
     </header>
     <nav class="reader-toc" aria-label="${escapeHtml(copy.readerSlidesLabel)}">
       <h2>${escapeHtml(copy.readerContents)}</h2>

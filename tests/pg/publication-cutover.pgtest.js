@@ -286,7 +286,10 @@ pgDescribe('publication cutover (PostgreSQL)', () => {
 
     const canvas = await get('/p/aaaa0001-old-slug?lang=en&x=1');
     assert.equal(canvas.status, 301);
-    assert.equal(canvas.headers.Location, `/p/${publicationId}/1?lang=en`);
+    assert.equal(
+      canvas.headers.Location,
+      `/p/${publicationId}/1/slides?lang=en`,
+    );
     const reader = await get('/p/aaaa0001-other/reader');
     assert.equal(reader.headers.Location, `/p/${publicationId}/1/reader`);
     const embed = await get('/embed/aaaa0001');
