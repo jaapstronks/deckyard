@@ -401,6 +401,49 @@ test('an input over the renderer limit is refused before it is sealed', async ()
   await fs.rm(big);
 });
 
+test('a theme record without a logo seals the default mark on a title slide (DY-854)', async () => {
+  seed();
+  const { buildThemeConfig } = await import('../server/utils/theme-builder.js');
+  // A stored record as the theme editor leaves it after the logo is cleared:
+  // both logo columns null. Every theme an edition is prepared against goes
+  // through buildThemeConfig (loadThemeAssets), never a bare `assets: {}`.
+  const theme = normalizeTheme(
+    buildThemeConfig({
+      id: 'theme-without-logo',
+      organizationId: ORG,
+      slug: 'bare',
+      label: 'Bare',
+      logoUrl: null,
+      logoSmallUrl: null,
+      colors: {
+        primary: '#7c3aed',
+        background: '#ffffff',
+        textLight: '#ffffff',
+        textDark: '#111827',
+      },
+      fonts: { heading: 'Inter', body: 'Inter' },
+      config: {},
+    }),
+  );
+  const pres = {
+    ...deck(),
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Bare' } }],
+    i18n: { active: 'en' },
+  };
+  const { inputBytes } = await prepareEditionInput(repoRoot, pres, {
+    scope: scope(),
+    theme,
+  });
+  const input = JSON.parse(inputBytes.toString('utf8'));
+  for (const key of ['logo', 'titleLogo']) {
+    assert.match(input.theme.assets[key], /^data:image\/svg\+xml/);
+  }
+  assert.ok(
+    !inputBytes.toString('utf8').includes('/assets/images/'),
+    'no served logo path is left for the renderer to fetch',
+  );
+});
+
 test('an edition is sealed against its effective theme, never without one', async () => {
   await assert.rejects(
     prepareEditionInput(repoRoot, deck(), { scope: scope(), theme: null }),
