@@ -106,6 +106,8 @@ Deckyard speaks [MCP](https://modelcontextprotocol.io/) natively. Any MCP-compat
 }
 ```
 
+Use the email of an existing Deckyard user: the server refuses to start on an address no user has. With auth off (`AUTH_ENABLED=false`) leave `env` out.
+
 ### Connect remotely (SSE transport)
 
 For remote agents, CI/CD pipelines, or platforms like [OpenClaw](https://openclaw.ai):
