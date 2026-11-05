@@ -84,8 +84,8 @@ export function buildAiIteratePanel({
       const vendor = readPreferredLlmVendor() || null;
       const lang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
 
-      // This panel edits one slide: tell the server which slide so refine
-      // scopes to it (faster) unless the command names another slide.
+      // This panel edits one slide: the server rewrites only this slide,
+      // whatever the command or the deck's text names (DY-812).
       const currentSlideIndex = pres.slides.findIndex((s) => s.id === slide.id);
 
       const resp = await api('/api/ai/iterate', {

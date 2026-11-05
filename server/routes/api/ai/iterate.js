@@ -42,10 +42,12 @@ export const handleAiIterate = withErrorHandler(
     const lang = getLang(body) || 'en';
     const applyChanges = getBoolean(body, 'applyChanges', true);
 
-    // Per-slide refine sends the index of the slide being edited so the LLM
-    // works on that slide instead of the whole deck (validated in the util).
+    // Per-slide refine sends the index of the slide being edited: that slide
+    // is the one the starter pointed at, and the plan writes nothing else,
+    // whatever the command or the deck's text asks (DY-812). Without it the
+    // command is deck-wide; a removal is then still only proposed.
     const rawIndex = Number(body?.currentSlideIndex);
-    const currentSlideIndex = Number.isInteger(rawIndex) ? rawIndex : null;
+    const targetSlideIndexes = Number.isInteger(rawIndex) ? [rawIndex] : null;
 
     const slideTypeOffer = await loadSlideTypeOffer(authedUser);
 
@@ -58,7 +60,7 @@ export const handleAiIterate = withErrorHandler(
     } = await iteratePresentation(presentation, command, {
       lang,
       vendor,
-      currentSlideIndex,
+      targetSlideIndexes,
       ...slideTypeOffer,
       slideTypes: await buildMergedSlideTypes(storageScope),
     });

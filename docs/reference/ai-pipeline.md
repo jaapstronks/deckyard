@@ -78,9 +78,12 @@ Pipeline (`server/utils/ai/`). The top level:
 - `server/utils/ai/refine-section.js` — revise a contiguous range of
   slides from user feedback (the review grid's "Adjust section").
 - `server/utils/ai/iterate-deck.js` — natural-language deck edits
-  ("make this punchier", "split slide 3").
-- `server/utils/ai/compress-deck.js` — `analyzeForCompression`,
-  `applyCompression`: find mergeable/low-value slides.
+  ("make this punchier", "split slide 3"); `scopePlan` bounds a plan to the
+  slides the starter pointed at and turns every removal into a proposal
+  (DY-812).
+- `server/utils/ai/compress-deck.js` — `analyzeForCompression`: find
+  mergeable/low-value slides. It only recommends; removing is the starter's
+  own write (MCP `compress_presentation` with `apply`).
 - `server/utils/ai/analyze-presentation.js` — improvement
   suggestions delivered through the comments system, optionally with a proposed
   slide.
@@ -233,8 +236,9 @@ validation-event logs alongside them.
 - **Append / refine / iterate / compress** — the editing verbs. Append generates
   slides for an existing deck; section refine revises a contiguous range with a
   couple of neighbouring slides as context; iterate applies a natural-language
-  command to a deck or a slide; compress proposes merges and removals, applied
-  in a second step.
+  command to a deck or a slide and writes only the slides the starter pointed
+  at, never removing one; compress proposes merges and removals, and the
+  starter removes the ones they choose in a second step.
 - **Analyze / compare** — analysis writes suggestions into the comments table
   (`comment_type = 'ai-suggestion'`); version compare renders a readable diff of
   two snapshots.

@@ -109,12 +109,18 @@ function detectCommandPattern(command) {
 }
 
 /**
- * Detect if the command targets a specific slide (by index or by content reference)
+ * Detect whether the starter's command names one slide by its number
+ * ("slide 3", "slide #3", "the 3rd slide") or by its type ("the kpi slide").
+ * Only the command is read: a slide's own title never decides the target,
+ * because collaborators write titles and the starter does not (DY-812).
+ *
+ * @param {string} command - The starter's instruction
+ * @param {Array} slides - The deck's slides
+ * @returns {number|null} 0-based index, or null for no named slide
  */
-function detectTargetSlide(command, slides) {
+export function detectTargetSlide(command, slides) {
   const lower = command.toLowerCase();
 
-  // Match "slide 3", "slide #3", "the 3rd slide"
   const indexMatch =
     lower.match(/slide\s*#?\s*(\d+)/i) ||
     lower.match(/(\d+)(?:st|nd|rd|th)\s+slide/i);
@@ -123,19 +129,57 @@ function detectTargetSlide(command, slides) {
     if (idx >= 0 && idx < slides.length) return idx;
   }
 
-  // Match "the title slide", "the KPI slide", etc.
   const typeMatch = lower.match(/the\s+([\w-]+)\s+slide/i);
   if (typeMatch) {
     const typeName = typeMatch[1].toLowerCase();
-    const idx = slides.findIndex(
-      (s) =>
-        s.type?.toLowerCase().includes(typeName) ||
-        s.content?.title?.toLowerCase().includes(typeName),
+    const idx = slides.findIndex((s) =>
+      String(s?.type || '')
+        .toLowerCase()
+        .includes(typeName),
     );
     if (idx >= 0) return idx;
   }
 
-  return null; // Deck-scoped
+  return null;
+}
+
+/**
+ * Bound a model's plan to what the starter authorized (DY-812). A plan is
+ * the model's answer, and the model read collaborator text, so it may ask
+ * for anything; what it may write is decided here, not in the prompt.
+ *
+ * - `remove` is never written: it becomes a proposal the starter acts on
+ *   with their own write (MCP `remove_slide`, the editor).
+ * - With `allowed`, a modification of a slide outside that set becomes a
+ *   proposal too. `allowed` null means the starter gave a deck-wide command.
+ * - A modification with no valid index or an unknown action is dropped.
+ *
+ * @param {{ modifications?: Array, summary?: string }} plan
+ * @param {Set<number>|null} allowed - Indexes the starter pointed at
+ * @param {number} slideCount
+ * @returns {{ modifications: Array, proposals: Array, summary: string }}
+ */
+export function scopePlan(plan, allowed, slideCount) {
+  const modifications = [];
+  const proposals = [];
+  for (const mod of plan?.modifications || []) {
+    const idx = mod?.slideIndex;
+    if (!Number.isInteger(idx) || idx < 0 || idx >= slideCount) continue;
+    if (mod.action === 'remove') {
+      proposals.push(mod);
+    } else if (mod.action !== 'replace' && mod.action !== 'split') {
+      continue;
+    } else if (allowed && !allowed.has(idx)) {
+      proposals.push(mod);
+    } else {
+      modifications.push(mod);
+    }
+  }
+  return {
+    modifications,
+    proposals,
+    summary: plan?.summary || 'No changes suggested.',
+  };
 }
 
 /**
@@ -328,10 +372,11 @@ ${JSON.stringify(
 }
 
 /**
- * Apply a modification plan to a deck, producing a new deck
+ * Apply a scoped plan to a deck, producing a new deck. Only `replace` and
+ * `split` exist here: a plan never deletes a slide (`scopePlan`).
  *
  * @param {Object} deck - Original deck
- * @param {Object} plan - Modification plan from iterateDeck()
+ * @param {Object} plan - A plan from `scopePlan()`
  * @returns {Object} New deck with modifications applied
  */
 export function applyIterationPlan(deck, plan) {
@@ -359,10 +404,6 @@ export function applyIterationPlan(deck, plan) {
         }
         break;
 
-      case 'remove':
-        newDeck.slides.splice(idx, 1);
-        break;
-
       case 'split':
         if (mod.slides?.length) {
           const originalSlide = newDeck.slides[idx];
@@ -385,31 +426,46 @@ export function applyIterationPlan(deck, plan) {
 /**
  * High-level: iterate on a deck or slide based on a command
  *
+ * The starter decides which slides the plan may write (DY-812):
+ * `targetSlideIndexes` lists the slides they pointed at (the editor's open
+ * slide, MCP `apply`); null means they gave a deck-wide command. One pointed
+ * slide is the target; otherwise a slide the command names by number or type
+ * is, when it is in the set. The plan is then bounded by `scopePlan`.
+ *
  * @param {Object} deck - The deck
  * @param {string} command - Natural language command
  * @param {Object} options
+ * @param {number[]|null} [options.targetSlideIndexes] - 0-based indexes
  * @returns {Promise<Object>} { deck, plan, targetSlideIndex }
  */
 export async function iteratePresentation(deck, command, options = {}) {
   const slides = deck.slides || [];
+  const { targetSlideIndexes = null, ...iterateOptions } = options;
+  const allowed = Array.isArray(targetSlideIndexes)
+    ? new Set(
+        targetSlideIndexes.filter(
+          (i) => Number.isInteger(i) && i >= 0 && i < slides.length,
+        ),
+      )
+    : null;
 
-  // The refine panel is per-slide: it passes the slide currently being edited
-  // as `currentSlideIndex`. A command that explicitly names another slide
-  // ("make slide 3 punchier") still wins; otherwise we scope to the edited
-  // slide instead of sending the whole deck to the LLM — much faster, and it
-  // matches what "make this punchier" means in a per-slide box.
-  const { currentSlideIndex, ...iterateOptions } = options;
-  const explicitTarget = detectTargetSlide(command, slides);
-  const hintedTarget =
-    Number.isInteger(currentSlideIndex) &&
-    currentSlideIndex >= 0 &&
-    currentSlideIndex < slides.length
-      ? currentSlideIndex
-      : null;
-  const targetIndex = explicitTarget !== null ? explicitTarget : hintedTarget;
+  const named = detectTargetSlide(command, slides);
+  let targetIndex = null;
+  if (allowed && allowed.size === 1) {
+    [targetIndex] = allowed;
+  } else if (named !== null && (!allowed || allowed.has(named))) {
+    targetIndex = named;
+  }
+  if (allowed && allowed.size === 0) {
+    return {
+      deck,
+      plan: scopePlan(null, allowed, slides.length),
+      targetSlideIndex: null,
+    };
+  }
 
+  let rawPlan;
   if (targetIndex !== null) {
-    // Slide-scoped iteration
     const slide = slides[targetIndex];
     const contextWindow = 2;
     const start = Math.max(0, targetIndex - contextWindow);
@@ -424,42 +480,37 @@ export async function iteratePresentation(deck, command, options = {}) {
       deckContext,
     });
 
-    // Build a plan from the single-slide result
-    let plan;
-    if (Array.isArray(result)) {
-      // Split
-      plan = {
-        modifications: [
-          {
-            slideIndex: targetIndex,
-            action: 'split',
-            slides: result,
-            reasoning: result[0]?.reasoning || command,
-          },
-        ],
-        summary: `Split slide ${targetIndex + 1} into ${result.length} slides.`,
-      };
-    } else {
-      plan = {
-        modifications: [
-          {
-            slideIndex: targetIndex,
-            action: 'replace',
-            slide: result,
-            reasoning: result?.reasoning || command,
-          },
-        ],
-        summary: `Modified slide ${targetIndex + 1}.`,
-      };
-    }
-
-    const newDeck = applyIterationPlan(deck, plan);
-    return { deck: newDeck, plan, targetSlideIndex: targetIndex };
+    rawPlan = Array.isArray(result)
+      ? {
+          modifications: [
+            {
+              slideIndex: targetIndex,
+              action: 'split',
+              slides: result,
+              reasoning: result[0]?.reasoning || command,
+            },
+          ],
+          summary: `Split slide ${targetIndex + 1} into ${result.length} slides.`,
+        }
+      : {
+          modifications: [
+            {
+              slideIndex: targetIndex,
+              action: 'replace',
+              slide: result,
+              reasoning: result?.reasoning || command,
+            },
+          ],
+          summary: `Modified slide ${targetIndex + 1}.`,
+        };
   } else {
-    // Deck-scoped iteration (no explicit target and no per-slide hint, e.g. a
-    // deck-level surface).
-    const plan = await iterateDeck(deck, command, iterateOptions);
-    const newDeck = applyIterationPlan(deck, plan);
-    return { deck: newDeck, plan, targetSlideIndex: null };
+    rawPlan = await iterateDeck(deck, command, iterateOptions);
   }
+
+  const plan = scopePlan(rawPlan, allowed, slides.length);
+  return {
+    deck: applyIterationPlan(deck, plan),
+    plan,
+    targetSlideIndex: targetIndex,
+  };
 }

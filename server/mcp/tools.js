@@ -74,10 +74,7 @@ import {
   RawSlideValidationError,
 } from '../utils/ai/validate-slides/index.js';
 import { iteratePresentation } from '../utils/ai/iterate-deck.js';
-import {
-  analyzeForCompression,
-  applyCompression,
-} from '../utils/ai/compress-deck.js';
+import { analyzeForCompression } from '../utils/ai/compress-deck.js';
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
@@ -156,6 +153,35 @@ function presentationUrl(id, mode = 'edit', { slideId } = {}) {
  * @param {Object} c - A collaborator from `services/collaborators.js`
  * @returns {Object}
  */
+/**
+ * The slide indexes a starter names in a tool's `apply` (DY-812): integers
+ * within the deck, at least one, no repeats. Anything else is refused before
+ * a model call or a write.
+ *
+ * @param {unknown} value
+ * @param {number} slideCount
+ * @param {string} field - Parameter name for the message
+ * @returns {number[]}
+ */
+function slideIndexList(value, slideCount, field) {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new ValidationError(
+      `${field} must be a non-empty array of slide indexes`,
+    );
+  }
+  for (const idx of value) {
+    if (!Number.isInteger(idx) || idx < 0 || idx >= slideCount) {
+      throw new ValidationError(
+        `${field}: slide index ${idx} out of range (0-${slideCount - 1})`,
+      );
+    }
+  }
+  if (new Set(value).size !== value.length) {
+    throw new ValidationError(`${field} lists a slide index twice`);
+  }
+  return value;
+}
+
 function collaboratorView(c) {
   return {
     email: c.userEmail,
@@ -1035,7 +1061,7 @@ export function registerTools(
 
   server.tool(
     'iterate_presentation',
-    'Modify a presentation using natural language commands. Examples: "make slide 3 punchier", "split the KPI slide", "more visual variety", "shorten everything". Can target a specific slide or the whole deck.',
+    'Modify a presentation using natural language commands. Examples: "make slide 3 punchier", "split the KPI slide", "more visual variety", "shorten everything". Without `apply` it returns the plan and writes nothing. With `apply` it writes only the slides listed there; a change to any other slide, and every removal, comes back under `proposals` and is never written (remove a slide yourself with remove_slide).',
     {
       type: 'object',
       properties: {
@@ -1045,6 +1071,12 @@ export function registerTools(
           description:
             'Natural language instruction (e.g. "make this punchier", "split slide 3")',
         },
+        apply: {
+          type: 'array',
+          items: { type: 'integer' },
+          description:
+            'The 0-based indexes of the slides this call may rewrite. Omit to preview the plan without writing.',
+        },
         vendor: {
           type: 'string',
           description: 'LLM vendor override (e.g. "openai", "anthropic")',
@@ -1052,10 +1084,14 @@ export function registerTools(
       },
       required: ['presentationId', 'command'],
     },
-    async ({ presentationId, command, vendor }, context) => {
+    async ({ presentationId, command, apply, vendor }, context) => {
       const pres = await getCheckedPresentation(presentationId, context, {
         access: 'write',
       });
+      const targetSlideIndexes =
+        apply === undefined
+          ? null
+          : slideIndexList(apply, pres.slides.length, 'apply');
 
       const lang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
 
@@ -1066,27 +1102,46 @@ export function registerTools(
       } = await iteratePresentation(pres, command, {
         lang,
         vendor: vendor || null,
+        targetSlideIndexes,
         slideTypes: await sessionSlideTypes(context),
         ...(await sessionSlideTypeOffer(context)),
       });
 
-      const { presentation } = await replaceSlides(
-        storageScopeOf(context),
-        { actor: actorOf(context) },
-        { presentationId, slides: newDeck.slides },
-      );
+      const applied =
+        targetSlideIndexes !== null && plan.modifications.length > 0;
+      let totalSlides = pres.slides.length;
+      if (applied) {
+        const { presentation } = await replaceSlides(
+          storageScopeOf(context),
+          { actor: actorOf(context) },
+          { presentationId, slides: newDeck.slides },
+        );
+        totalSlides = presentation.slides.length;
+      }
 
+      const describe = (m) => ({
+        slideIndex: m.slideIndex,
+        action: m.action,
+        reasoning: m.reasoning,
+        ...(m.slide
+          ? { slide: { type: m.slide.type, content: m.slide.content } }
+          : {}),
+        ...(m.slides
+          ? {
+              slides: m.slides.map((x) => ({
+                type: x.type,
+                content: x.content,
+              })),
+            }
+          : {}),
+      });
       return {
-        applied: true,
+        applied,
         targetSlideIndex,
         summary: plan.summary,
-        modifications:
-          plan.modifications?.map((m) => ({
-            slideIndex: m.slideIndex,
-            action: m.action,
-            reasoning: m.reasoning,
-          })) || [],
-        totalSlides: presentation.slides.length,
+        modifications: plan.modifications.map(describe),
+        proposals: plan.proposals.map(describe),
+        totalSlides,
       };
     },
     { permission: 'ai', feature: 'ai' },
@@ -1419,14 +1474,16 @@ export function registerTools(
 
   server.tool(
     'compress_presentation',
-    'Analyze a presentation for compression opportunities: merge similar slides, remove redundancy, tighten content. Can preview changes or apply them directly.',
+    'Analyze a presentation for compression opportunities: merge similar slides, remove redundancy, tighten content. Without `apply` it returns the recommendations and writes nothing. With `apply` it removes exactly the slides listed there, without asking the model again; nothing the model recommended is removed unless you list it.',
     {
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
         apply: {
-          type: 'boolean',
-          description: 'Apply changes (default: false = preview only)',
+          type: 'array',
+          items: { type: 'integer' },
+          description:
+            'The 0-based indexes of the slides to remove, chosen from a preview. Omit to preview.',
         },
         intensity: {
           type: 'string',
@@ -1441,12 +1498,45 @@ export function registerTools(
       required: ['presentationId'],
     },
     async (
-      { presentationId, apply = false, intensity = 'moderate', vendor },
+      { presentationId, apply, intensity = 'moderate', vendor },
       context,
     ) => {
       const pres = await getCheckedPresentation(presentationId, context, {
-        access: apply ? 'write' : 'read',
+        access: apply === undefined ? 'read' : 'write',
       });
+
+      if (apply !== undefined) {
+        const remove = new Set(
+          slideIndexList(apply, pres.slides.length, 'apply'),
+        );
+        const slideTypes = await sessionSlideTypes(context);
+        const lang = resolveDocLangFromPresentation(pres);
+        const removed = [...remove]
+          .sort((a, b) => a - b)
+          .map((slideIndex) => {
+            const slide = pres.slides[slideIndex];
+            return {
+              slideIndex,
+              type: slide.type,
+              title: slideTitle(slide, getSlideType(slide.type, slideTypes), {
+                lang,
+              }),
+            };
+          });
+        const { presentation } = await replaceSlides(
+          storageScopeOf(context),
+          { actor: actorOf(context) },
+          {
+            presentationId,
+            slides: pres.slides.filter((_, idx) => !remove.has(idx)),
+          },
+        );
+        return {
+          applied: true,
+          removed,
+          slidesAfter: presentation.slides.length,
+        };
+      }
 
       const recommendations = await analyzeForCompression(pres, {
         targetReduction: intensity,
@@ -1454,29 +1544,11 @@ export function registerTools(
         slideTypes: await sessionSlideTypes(context),
       });
 
-      let slidesAfter = pres.slides.length;
-      if (
-        apply &&
-        (recommendations.merges.length > 0 ||
-          recommendations.removals.length > 0)
-      ) {
-        const { presentation } = await replaceSlides(
-          storageScopeOf(context),
-          { actor: actorOf(context) },
-          {
-            presentationId,
-            slides: applyCompression(pres, recommendations).slides,
-          },
-        );
-        slidesAfter = presentation.slides.length;
-      }
-
       return {
-        applied: apply,
+        applied: false,
         merges: recommendations.merges?.length || 0,
         removals: recommendations.removals?.length || 0,
         recommendations,
-        slidesAfter: apply ? slidesAfter : undefined,
       };
     },
     { permission: 'ai', feature: 'ai' },
