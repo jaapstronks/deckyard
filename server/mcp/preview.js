@@ -1,18 +1,26 @@
 /**
  * MCP Slide Preview — generates self-contained HTML for the user to look at.
  *
- * Uses a minimal CSS bundle (slide CSS + theme vars only, no app.css or fonts)
- * to keep the output small enough for inline artifact rendering.
+ * Uses a minimal CSS bundle (slide CSS + theme vars only, no app.css or fonts),
+ * pruned to the rules the rendered slides can match, to keep the output small
+ * enough for a client to show inline (DY-842: the whole slide chain made one
+ * title slide ~350 KB, which Claude Code writes to a file instead).
  * Slides are rendered at a 1600×900 canvas and scaled to fit the preview frame.
  */
 
 import path from 'node:path';
 import { STATIC_GRADIENT_CSS } from '../utils/static-gradient-css.js';
-import { renderSlideHtml } from '../../shared/slide-types.js';
+import { SLIDE_TYPES, renderSlideHtml } from '../../shared/slide-types.js';
+import { slideRootClass } from '../../shared/slide-types/validate-definition.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
+import {
+  pruneUnmatchableRules,
+  rootClassesInMarkup,
+} from '../utils/css-type-scope.js';
 import { themeVarsCssText } from '../utils/theme-vars-css.js';
 import { embedSlideImages } from '../export/css-bundle.js';
+import { compressImageForEmbed } from '../export/image-compress.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import {
@@ -66,6 +74,17 @@ const INCOMPLETE_NOTE =
 const incompleteMark = (className) =>
   `<p class="${className}" data-incomplete="true">${escapeHtml(INCOMPLETE_NOTE)}</p>`;
 
+/**
+ * Image cap for a preview. A preview frame is a chat column, not a projector:
+ * the 1600px stage is drawn at well under 1000px, so an image embedded at
+ * export resolution (2600px) only adds base64 the client has to carry.
+ */
+const PREVIEW_IMAGE = { maxPx: 960, quality: 70 };
+
+/** The `transform` hook `embedSlideImages()` applies to each local image. */
+const previewImageTransform = (buf, ext, mime) =>
+  compressImageForEmbed(buf, ext, mime, PREVIEW_IMAGE);
+
 /** repoRoot -> minimal CSS text. Keyed so a test can point at a fixture root. */
 const _slidesCssCache = new Map();
 
@@ -87,6 +106,21 @@ async function getMinimalCss(root) {
   );
   _slidesCssCache.set(root, css);
   return css;
+}
+
+/**
+ * The slide CSS a preview of `markup` needs: the chain without comments and
+ * without the rules scoped to a type root the markup does not carry. A title
+ * slide does not ship the timeline's or the team cards' rules.
+ *
+ * @param {string} css - from `getMinimalCss()`
+ * @param {string} markup - the rendered slides
+ * @returns {string}
+ */
+function slideCssFor(css, markup) {
+  const roots = new Set(Object.keys(SLIDE_TYPES).map(slideRootClass));
+  const used = rootClassesInMarkup(markup, roots);
+  return pruneUnmatchableRules(css, (cls) => roots.has(cls) && !used.has(cls));
 }
 
 /** The preview page's own chrome (header, frame, scaled stage) for the list view. */
@@ -237,7 +271,9 @@ export async function buildSlidePreviewHtml(
   const themeVars = theme ? themeVarsCssText(theme) : '';
 
   // Embed local images as data URLs
-  const embeddedSlides = await embedSlideImages(repoRoot, slides);
+  const embeddedSlides = await embedSlideImages(repoRoot, slides, {
+    transform: previewImageTransform,
+  });
 
   // Render each slide at 1600×900
   const slideHtmls = embeddedSlides.map((slide, i) => {
@@ -261,7 +297,8 @@ export async function buildSlidePreviewHtml(
     `;
   });
 
-  const highlightNeeds = detectPrismKatexNeeds(slideHtmls.join('\n'));
+  const markup = slideHtmls.join('\n');
+  const highlightNeeds = detectPrismKatexNeeds(markup);
   return `${buildDocumentHead({
     lang: docLang || resolveDocLangFromPresentation({ slides }),
     title: title || 'Slide Preview',
@@ -277,7 +314,7 @@ export async function buildSlidePreviewHtml(
       // a variant's authored colours must outrank that generic default. See
       // the note in server/export/css-bundle.js.
       buildCssChain(repoRoot, [
-        baseCss,
+        slideCssFor(baseCss, markup),
         themeVars,
         STATIC_GRADIENT_CSS,
         PREVIEW_CHROME_CSS,
@@ -290,12 +327,12 @@ export async function buildSlidePreviewHtml(
       <p>${slides.length} slide${slides.length !== 1 ? 's' : ''}</p>
     </div>
     <div class="preview-list">
-      ${slideHtmls.join('\n')}
+      ${markup}
     </div>
     ${buildScriptChain({
       needs: highlightNeeds,
       // A static sheet: the layout runtimes only, never the countdown.
-      slideNeeds: detectLayoutRuntimeNeeds(slideHtmls.join('\n')),
+      slideNeeds: detectLayoutRuntimeNeeds(markup),
     })}
   </body>
 </html>`;
@@ -331,7 +368,9 @@ export async function buildSingleSlidePreviewHtml(
   const themeVars = theme ? themeVarsCssText(theme) : '';
 
   // Embed local images
-  const [embeddedSlide] = await embedSlideImages(repoRoot, [slide]);
+  const [embeddedSlide] = await embedSlideImages(repoRoot, [slide], {
+    transform: previewImageTransform,
+  });
 
   const html = renderSlideHtml(embeddedSlide, {
     theme,
@@ -350,7 +389,7 @@ export async function buildSingleSlidePreviewHtml(
     styles: [
       // Same ordering reason as the list preview above.
       buildCssChain(repoRoot, [
-        baseCss,
+        slideCssFor(baseCss, html),
         themeVars,
         STATIC_GRADIENT_CSS,
         SINGLE_PREVIEW_CHROME_CSS,
