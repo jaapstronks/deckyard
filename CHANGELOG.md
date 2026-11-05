@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.99.0](https://github.com/jaapstronks/deckyard/compare/v1.98.1...v1.99.0) (2026-11-05)
+
+
+### Added
+
+* make an edition's canvas and reader equal views ([#1986](https://github.com/jaapstronks/deckyard/issues/1986)) ([ba6ca95](https://github.com/jaapstronks/deckyard/commit/ba6ca951d2163639ff33890dc2db4c287e1e95cb))
+
+
+### Security
+
+* confine the vision helper to served assets ([#1984](https://github.com/jaapstronks/deckyard/issues/1984)) ([f0c490c](https://github.com/jaapstronks/deckyard/commit/f0c490c4484d7b5500e3e38c6a915e736ef821cc))
+
 ## [1.98.1](https://github.com/jaapstronks/deckyard/compare/v1.98.0...v1.98.1) (2026-11-05)
 
 
