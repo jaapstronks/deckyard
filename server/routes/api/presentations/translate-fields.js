@@ -25,11 +25,13 @@ export async function handlePresentationTranslateFields(
   if (!parsed.ok) return true;
   const body = parsed.body;
   const vendor = getOptionalString(body, 'vendor');
+  // Spending the installation's model budget asks for write, not read (DY-816).
   const pres = await withPresentationAuth({
     storageScope,
     id,
     authedUser,
     res,
+    permission: 'write',
   });
   if (!pres) return true;
 
