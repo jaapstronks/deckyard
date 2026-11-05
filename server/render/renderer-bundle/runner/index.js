@@ -35,8 +35,17 @@ if (
 ) {
   try {
     await runnerCommand(process.argv.slice(2));
-  } catch {
-    process.stderr.write('renderer runner refused\n');
+  } catch (error) {
+    // Operator commands run as root at a terminal: name the refusal. The
+    // service commands keep their journal line fixed.
+    const operator = ['build', 'install', 'register', 'call'].includes(
+      process.argv[2],
+    );
+    process.stderr.write(
+      operator
+        ? `renderer runner refused: ${error.message}\n`
+        : 'renderer runner refused\n',
+    );
     process.exitCode = 1;
   }
 }
