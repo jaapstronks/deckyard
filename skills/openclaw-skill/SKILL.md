@@ -19,7 +19,7 @@ You have access to a Deckyard presentation engine. You can create full presentat
 python3 SKILL_DIR/scripts/deckyard.py create \
   --content "Your raw content, meeting notes, bullet points, etc." \
   --title "Presentation Title" \
-  --theme "default" \
+  --theme "brand" \
   --lang "en-GB"
 ```
 
@@ -29,7 +29,7 @@ Returns: presentation ID, title, slide count, edit URL, and present URL.
 
 **Languages:** `en-GB` (English), `nl` (Dutch), or omit for auto-detect.
 
-**Themes:** Use `list-themes` to see available themes. Default is `deckyard`.
+**Themes:** Use `list-themes` to see available themes. Omit `--theme` for this installation's default.
 
 ### Listing Presentations
 

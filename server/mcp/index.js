@@ -44,6 +44,8 @@ import { assertExtensionDeclared } from '../export/extension-name.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
 import { envStr } from '../config/utils.js';
+import { singleOrganizationScope } from '../storage/scope.js';
+import { stdioOwnerError } from './presentation-access.js';
 import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
 /**
@@ -127,6 +129,18 @@ async function main() {
 
   // Default owner for presentations (can be set via env or CLI)
   const defaultOwnerEmail = envStr('DECKYARD_MCP_OWNER_EMAIL') || null;
+  {
+    const ownerErr = await stdioOwnerError(
+      singleOrganizationScope(repoRoot, 'MCP stdio session', {
+        actorEmail: defaultOwnerEmail,
+      }),
+      defaultOwnerEmail,
+    );
+    if (ownerErr) {
+      process.stderr.write(`[MCP] ${ownerErr}\n`);
+      process.exit(1);
+    }
+  }
   const server = await buildServer({ defaultOwnerEmail });
 
   // Log startup to stderr (stdout is for MCP protocol)
