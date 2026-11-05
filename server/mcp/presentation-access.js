@@ -17,6 +17,7 @@
  */
 
 import { loadPresentationForActor } from '../services/presentations.js';
+import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import { ValidationError } from '../utils/errors.js';
 
 /**
@@ -72,4 +73,30 @@ export function mcpActor(storageScope, ownerEmail) {
         organizationId: storageScope?.organizationId || null,
       }
     : { email: null, unrestricted: true };
+}
+
+/**
+ * Why a stdio session cannot act as its configured owner, or `null` (DY-843).
+ *
+ * A deck is created with the owner's `users.id` beside the address; an owner
+ * with no `users` row resolves `external` and the deck is stamped without
+ * one. Ownership is decided on that id, so every later read of the deck was
+ * `forbidden` with no hint why. The stdio entrypoint asks this before it
+ * serves, with the same lookup the create uses, and refuses to start.
+ *
+ * @param {Object} storageScope - The scope the session's tools act in
+ * @param {string|null} ownerEmail - DECKYARD_MCP_OWNER_EMAIL, or null
+ * @returns {Promise<string|null>} the refusal text, or null when it can act
+ */
+export async function stdioOwnerError(storageScope, ownerEmail) {
+  if (!ownerEmail) return null;
+  const resolution = await resolveIdentityByEmail(storageScope, ownerEmail);
+  if (resolution?.userId) return null;
+  return (
+    `DECKYARD_MCP_OWNER_EMAIL is ${JSON.stringify(ownerEmail)}, but no user ` +
+    'with that address exists in this installation. Decks created in this ' +
+    'session would belong to nobody who can open them. Sign in to the web ' +
+    'app once with that address, set the variable to an existing user, or ' +
+    'unset it to act as the local operator.'
+  );
 }

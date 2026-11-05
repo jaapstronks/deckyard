@@ -126,7 +126,7 @@ export async function buildSlidePngHtml(
   // never a tab, a bookmark or a share target.
   return `${buildDocumentHead({
     lang: resolvedDocLang,
-    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
+    head: [buildPrismKatexTags(highlightNeeds)],
     styles: [styleContent],
   })}
   <body>

@@ -67,6 +67,19 @@ test('renders the language version asked for, and the main list without one', as
   assert.ok(main.canvas.includes('Hallo'));
 });
 
+test('every link out of the canvas leaves the frame, because the canvas is also the embed', async () => {
+  const { canvas } = await renderEdition(
+    repoRoot,
+    input({ canonicalUrl: BASE, lang: 'en-GB' }),
+  );
+  const anchors = canvas.match(/<a\s[^>]*>/g) ?? [];
+  const outward = anchors.filter((a) => !/href="#/.test(a));
+  // The two language links, the reading view and its noscript twin.
+  assert.equal(outward.length, 4, outward.join('\n'));
+  for (const anchor of outward)
+    assert.ok(anchor.includes('target="_top"'), anchor);
+});
+
 test('derives canonical links, card, language switch and view links from the address', async () => {
   const { canvas, reader } = await renderEdition(
     repoRoot,

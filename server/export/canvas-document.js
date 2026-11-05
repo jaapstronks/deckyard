@@ -561,8 +561,6 @@ function deckRuntimeJs({ autoAdvanceJson }) {
  * @param {string} [opts.metaDescription] - `<meta name="description">`
  * @param {string} [opts.headHtml] - Extra `<head>` markup
  * @param {string} [opts.topbarRightHtml] - Extra topbar markup
- * @param {'export'|'published'} [opts.context] - Decides whether Prism/KaTeX
- *   are linked (served by this installation) or inlined (self-contained file)
  * @param {string} [opts.externalFontCssLinks] - Managed-font `<link>` tags
  * @param {string} [opts.externalFontScripts] - Managed-font `<script>` tags
  * @param {((html: string) => Promise<string>)|null} [opts.htmlTransform] - Pass
@@ -585,7 +583,6 @@ export async function renderCanvasDocument(
     headHtml = '',
     topbarRightHtml = '',
     noscriptHtml = '',
-    context = 'export',
     externalFontCssLinks = '',
     externalFontScripts = '',
     htmlTransform = null,
@@ -640,10 +637,10 @@ export async function renderCanvasDocument(
 
   // Prism/KaTeX come from client/vendor/, and only when the rendered slides
   // actually contain a code block or math — Prism then loads just the language
-  // packs this deck uses. The two contexts reach the same bytes differently:
-  // a published /p/ page is served by this server, so it links them and the
-  // browser caches them across decks; a downloaded file has no origin to
-  // resolve `/client/vendor/…` against, so it carries them inline.
+  // packs this deck uses. A downloaded file has no origin to resolve
+  // `/client/vendor/…` against, and an edition may not depend on what the
+  // serving installation has there on the day of the visit, so both carry them
+  // inline.
   const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
 
   return `${buildDocumentHead({
@@ -654,10 +651,7 @@ export async function renderCanvasDocument(
       extraHead,
       externalFontCssLinks,
       externalFontScripts,
-      buildPrismKatexTags({
-        ...highlightNeeds,
-        mode: context === 'published' ? 'linked' : 'inlined',
-      }),
+      buildPrismKatexTags(highlightNeeds),
     ],
     styles: [
       buildCssChain(

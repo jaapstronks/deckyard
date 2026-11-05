@@ -185,11 +185,6 @@ export async function renderEdition(bundleRoot, input) {
       deckLang,
       metaDescription,
     }),
-    // An edition carries the Prism/KaTeX bytes of its own bundle inline. Linked,
-    // they would come from whatever the serving installation has at
-    // `/client/vendor/…` on the day of the visit: renderer bytes from outside
-    // the edition.
-    context: 'export',
   });
 
   const reader = readerChrome(stored, pres, {

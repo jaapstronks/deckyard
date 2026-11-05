@@ -18,7 +18,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 import sharp from 'sharp';
 
@@ -86,6 +86,34 @@ test('a PDF export of a deck with the type embeds its image', async () => {
   assert.ok(!html.includes(GROUND), 'the used rule is inlined');
 });
 
+test('a PDF export of only likert sliders embeds the shared likert image', async () => {
+  // Its own root: the seam is read once per root, and this rule sits on a
+  // root a likert slider carries next to its own (DY-852).
+  const likert = createCoreFixtureRoot('deckyard-seam-likert-');
+  try {
+    mkdirSync(path.join(likert.root, 'custom', 'styles'), { recursive: true });
+    mkdirSync(path.join(likert.root, 'custom', 'assets'), { recursive: true });
+    writeFileSync(
+      path.join(likert.root, 'custom', 'assets', 'ground.png'),
+      readFileSync(path.join(root, 'custom', 'assets', 'ground.png')),
+    );
+    writeFileSync(
+      path.join(likert.root, 'custom', 'styles', '10-likert.css'),
+      `.slide-likert .slide-inner { background: ${GROUND}; }`,
+      'utf8',
+    );
+    const html = await buildSlidesPdfHtml(likert.root, {
+      title: 'Sliders',
+      theme: 'default',
+      slides: [{ id: 's3', type: 'likert-slider-slide', content: {} }],
+    });
+    assert.match(html, /url\('data:image\/png;base64,/);
+    assert.ok(!html.includes(GROUND), 'the likert rule is inlined');
+  } finally {
+    await likert.remove();
+  }
+});
+
 test('what is not scoped to an unused type is inlined as before', async () => {
   const css = [
     `@font-face { font-family: F; src: url('/custom/assets/ground.png'); }`,
@@ -112,6 +140,16 @@ test('a slide type resolves through any accepted spelling', async () => {
   const css = `.slide-callout .x { background: ${GROUND}; }`;
   const out = await seam(css, [{ ...CALLOUT, type: 'core/callout-slide' }]);
   assert.match(out, /data:image\/png;base64,/);
+});
+
+test("a rule under another type's root is inlined when the markup carries it", async () => {
+  // A likert slider renders as `.slide-likert.slide-likert-slider`; deriving
+  // the roots from slide types alone withheld a rule under `.slide-likert`
+  // in an export of only sliders (DY-852).
+  const css = `.slide-likert .x { background: ${GROUND}; }`;
+  const slider = { id: 's3', type: 'likert-slider-slide', content: {} };
+  assert.match(await seam(css, [slider]), /data:image\/png;base64,/);
+  assert.equal(await seam(css, [TITLE]), css);
 });
 
 test('the bundle refuses a call without the slides it renders', async () => {

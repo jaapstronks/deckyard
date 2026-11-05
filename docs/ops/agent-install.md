@@ -151,7 +151,7 @@ edit decks. For a Claude Desktop-style config:
 
 `DECKYARD_MCP_OWNER_EMAIL` stamps the owner on decks the agent creates. With
 **auth enabled** set it to your account email so the decks are yours in the
-browser. With **auth off** (the local default) it is optional — the single local
+browser; the server refuses to start when no user has that address. With **auth off** (the local default) it is optional — the single local
 operator can open every deck regardless of owner, so you can drop it or leave it.
 
 For a remote instance, create an API key and use the SSE transport instead:

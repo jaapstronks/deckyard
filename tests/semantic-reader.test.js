@@ -55,7 +55,6 @@ const pres = {
 };
 
 const html = buildReaderHtml('/repo', pres, {
-  context: 'published',
   canonicalUrl: '/p/abc-x',
 });
 

@@ -21,14 +21,11 @@ Three reasons, in the order they bite:
 
 ## How a document reaches the bytes
 
-`server/utils/prism-katex.js` is the shape to copy. Its `mode` argument is the
-whole design, and it has no default — only the caller knows which kind of
-document it is building:
-
-| `mode`      | For                                               | Emits                                                      |
-| ----------- | ------------------------------------------------- | ---------------------------------------------------------- |
-| `'linked'`  | pages this server serves (`/p/…`, embeds)         | `<link>`/`<script src="/client/vendor/…">`, browser-cached |
-| `'inlined'` | downloads, `setContent()` documents, MCP previews | `<style>`/`<script>` bodies read from `client/vendor/`     |
+`server/utils/prism-katex.js` is the shape to copy. Downloads, `setContent()`
+documents, MCP previews and sealed editions all carry `<style>`/`<script>` bodies
+read from `client/vendor/`: the first three have no origin to resolve against,
+and an edition may not depend on what the serving installation has there on the
+day of the visit.
 
 Inlining is not free, so it is conditional: `detectPrismKatexNeeds()` reads the
 **rendered slide markup** (not the deck model, so custom slide types come for

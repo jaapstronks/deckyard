@@ -31,6 +31,7 @@ import { createMockReq, createMockRes } from './helpers/http-mocks.js';
 import { testScope } from './helpers/storage-scope.js';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
+import { renderPublishedDocuments } from './helpers/edition-documents.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -59,7 +60,6 @@ const { handleSharePublicEndpoints } =
   await import('../server/routes/api/share-links/public.js');
 const { handleFollowPresentation } =
   await import('../server/routes/api/follow/presentation.js');
-const { buildStandaloneHtml } = await import('../server/export/html.js');
 const { handlePresentations } =
   await import('../server/routes/public-api/v1/presentations.js');
 const { AI_REVIEW_KEYS, stripAiReviewMeta } =
@@ -351,11 +351,11 @@ describe('published page', () => {
     structuredClone(db.__tables.presentations.find((r) => r.id === deckId));
 
   it('the published page renders no note', async () => {
-    const html = await buildStandaloneHtml(REPO_ROOT, storedDeck(), {
-      context: 'published',
-    });
-    assert.match(html, /Eerste/);
-    assert.ok(!html.includes(NOTE));
+    const { canvas, reader } = await renderPublishedDocuments(storedDeck());
+    for (const html of [canvas, reader]) {
+      assert.match(html, /Eerste/);
+      assert.ok(!html.includes(NOTE));
+    }
   });
 });
 
