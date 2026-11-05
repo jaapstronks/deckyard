@@ -788,6 +788,211 @@ describe('collab persistence hooks', () => {
         );
         assert.equal('linkedin' in members[1], false);
       });
+
+      /** A deck with one slide open in a doc; peers edit its content. */
+      async function openSlide(slide) {
+        const { id } = await createPresentation(testScope(), {
+          title: 'Lijst',
+          ownerEmail: 'owner@example.com',
+          lang: 'nl',
+        });
+        const stored = await getPresentation(testScope(), id);
+        await updatePresentation(testScope(), id, {
+          ...stored,
+          slides: [slide],
+          i18n: {
+            ...stored.i18n,
+            versions: {
+              ...stored.i18n?.versions,
+              nl: { ...stored.i18n?.versions?.nl, slides: [slide] },
+            },
+          },
+        });
+        const doc = new Y.Doc();
+        await hooks.onLoadDocument({
+          documentName: docName(id),
+          document: doc,
+        });
+        const edit = (target, fn) => {
+          const base = deckYdocCodec.projectDocToPresentation(target);
+          const next = structuredClone(base);
+          fn(next.slides[0].content);
+          next.i18n.versions.nl.slides[0] = structuredClone(next.slides[0]);
+          deckYdocCodec.applyPresentationToDoc(next, target, { base });
+        };
+        const store = () =>
+          hooks.onStoreDocument({ documentName: docName(id), document: doc });
+        /** A peer that starts from the doc as it is now. */
+        const peer = (fn) => {
+          const other = new Y.Doc();
+          Y.applyUpdate(other, Y.encodeStateAsUpdate(doc));
+          edit(other, fn);
+          return other;
+        };
+        const mutate = async (fn) => {
+          edit(doc, fn);
+          await store();
+        };
+        const content = async () =>
+          (await getPresentation(testScope(), id)).slides[0].content;
+        return { id, doc, peer, store, mutate, content };
+      }
+      const block = (n) => ({ title: `B${n}`, body: 'Tekst' });
+      const blocksSlide = (rows) => ({
+        id: 'tb-1',
+        type: 'text-blocks-slide',
+        content: { rows },
+      });
+
+      it('two peers who each add a block to a row at five of six keep the stored five blocks', async () => {
+        const five = [1, 2, 3, 4, 5].map(block);
+        const { id, doc, peer, store, mutate, content } = await openSlide(
+          blocksSlide([{ title: 'Rij', blocks: five }]),
+        );
+        const anna = peer((c) => c.rows[0].blocks.push(block('Anna')));
+        const bob = peer((c) => c.rows[0].blocks.push(block('Bob')));
+        Y.applyUpdate(doc, Y.encodeStateAsUpdate(anna));
+        Y.applyUpdate(doc, Y.encodeStateAsUpdate(bob));
+        assert.equal(
+          deckYdocCodec.projectDocToPresentation(doc).slides[0].content.rows[0]
+            .blocks.length,
+          7,
+          'the doc holds both inserts',
+        );
+
+        await store();
+        assert.deepEqual((await content()).rows[0].blocks, five);
+        assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+        assert.match(log.lines.warn[0], /"rows" item \[0\]\.blocks/);
+
+        const cold = await getPresentation(testScope(), id);
+        await updatePresentation(testScope(), id, { ...cold, title: 'Koud' });
+        await new Promise((r) => setTimeout(r, 50));
+        assert.equal(await getYDocState(testScope(), id), null);
+        assert.deepEqual((await content()).rows[0].blocks, five);
+
+        await mutate((c) => c.rows[0].blocks.pop());
+        const landed = (await content()).rows[0].blocks.map((b) => b.title);
+        assert.equal(landed.length, 6, 'below the limit the list lands');
+        assert.deepEqual(landed.slice(0, 5), ['B1', 'B2', 'B3', 'B4', 'B5']);
+      });
+
+      it('a nested list stored over its count stops nothing, also after its item moves', async () => {
+        const seven = [1, 2, 3, 4, 5, 6, 7].map(block);
+        const { mutate, content } = await openSlide(
+          blocksSlide([{ title: 'Oud', blocks: seven }]),
+        );
+
+        await mutate((c) => {
+          c.rows[0].title = 'Hernoemd';
+        });
+        await mutate((c) => {
+          c.rows.unshift({ title: 'Nieuw', blocks: [block(1)] });
+        });
+
+        const rows = (await content()).rows;
+        assert.deepEqual(
+          rows.map((r) => r.title),
+          ['Nieuw', 'Hernoemd'],
+        );
+        assert.deepEqual(rows[1].blocks, seven);
+        assert.equal(log.lines.warn.length, 0, log.lines.warn.join('\n'));
+      });
+
+      it('an old over-long text and an old bad link stay stored after an insert, a removal and a reorder', async () => {
+        const OLD = {
+          name: 'N'.repeat(200),
+          byline: 'Oud',
+          linkedin: 'linkedin.com/in/bob',
+        };
+        const { mutate, content } = await openSlide({
+          id: 't-1',
+          type: 'team-cards-slide',
+          content: { title: 'Team', members: [ANNA, OLD] },
+        });
+        const old = async () =>
+          (await content()).members.find((m) => m.byline === 'Oud');
+
+        await mutate((c) => c.members.unshift({ name: 'Carla' }));
+        assert.deepEqual(await old(), OLD, 'after an insert before it');
+        await mutate((c) => c.members.splice(1, 1));
+        assert.deepEqual(await old(), OLD, 'after a removal before it');
+        await mutate((c) => c.members.reverse());
+        assert.deepEqual(await old(), OLD, 'after a reorder');
+        assert.deepEqual(
+          (await content()).members.map((m) => m.name),
+          [OLD.name, 'Carla'],
+        );
+        assert.equal(log.lines.warn.length, 0, log.lines.warn.join('\n'));
+        assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
+      });
+
+      it('a bad value the stored list does not hold is still left out after the same edits', async () => {
+        const { mutate, content } = await openSlide({
+          id: 't-1',
+          type: 'team-cards-slide',
+          content: {
+            title: 'Team',
+            members: [ANNA, { name: 'Bob', linkedin: 'linkedin.com/in/bob' }],
+          },
+        });
+
+        await mutate((c) => {
+          c.members.unshift({ name: 'Carla', linkedin: 'linkedin.com/in/c' });
+          c.members[2].name = 'X'.repeat(200);
+        });
+        await mutate((c) => c.members.splice(1, 1));
+        await mutate((c) => c.members.reverse());
+
+        const members = (await content()).members;
+        assert.deepEqual(
+          members.map((m) => m.name ?? null),
+          [null, 'Carla'],
+          "Bob's new over-long name is left out, Anna is removed",
+        );
+        assert.equal(members[0].linkedin, 'linkedin.com/in/bob');
+        assert.equal('linkedin' in members[1], false);
+        assert.equal(log.lines.warn.length, 2, log.lines.warn.join('\n'));
+      });
+
+      it('a list over its count logs one line across several stores', async () => {
+        const rows = [1, 2, 3, 4].map((n) => ({
+          title: `Rij ${n}`,
+          blocks: [block(n)],
+        }));
+        const { mutate, content } = await openSlide(blocksSlide(rows));
+
+        await mutate((c) => {
+          c.rows.push({ title: 'Rij 5', blocks: [block(5)] });
+        });
+        for (const t of ['a', 'ab', 'abc']) {
+          await mutate((c) => {
+            c.rows[0].title = t;
+          });
+        }
+
+        assert.deepEqual((await content()).rows, rows);
+        assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+      });
+
+      it('a nested list over its count logs one line across several stores', async () => {
+        const five = [1, 2, 3, 4, 5].map(block);
+        const { mutate, content } = await openSlide(
+          blocksSlide([{ title: 'Rij', blocks: five }]),
+        );
+
+        await mutate((c) => {
+          c.rows[0].blocks.push(block(6), block(7));
+        });
+        for (const t of ['a', 'ab', 'abc']) {
+          await mutate((c) => {
+            c.rows[0].blocks[0].body = t;
+          });
+        }
+
+        assert.deepEqual((await content()).rows[0].blocks, five);
+        assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+      });
     });
   });
 

@@ -117,6 +117,48 @@ function valueAt(value, path) {
 }
 
 /**
+ * Every value a list holds under a sub-field path, at any index: `['blocks',
+ * 'body']` reads the `body` of each block of each item. An empty path is the
+ * list itself.
+ * @param {unknown} list
+ * @param {string[]} keys
+ * @returns {unknown[]}
+ */
+function valuesUnder(list, keys) {
+  if (!keys.length) return [list];
+  if (!Array.isArray(list)) return [];
+  const [key, ...rest] = keys;
+  return list.flatMap((item) =>
+    item && typeof item === 'object' && Object.hasOwn(item, key)
+      ? valuesUnder(item[key], rest)
+      : [],
+  );
+}
+
+/** Equal as stored JSON; a missing value equals only a missing value. */
+const sameValue = (a, b) =>
+  a === undefined || b === undefined
+    ? a === b
+    : canonicalJson(a) === canonicalJson(b);
+
+/**
+ * A refused part the stored list already holds stops nothing: the same value
+ * in the same sub-field, at any index (for a list inside an item: the same
+ * sub-field path without its indexes). Items have no identity, so after an
+ * insert, a removal or a reorder the old value can only be recognized by
+ * itself. A peer may copy a stored value to another item; it is in the deck
+ * JSON already.
+ * @param {{path: Array<number|string>}} part
+ * @param {Array<Object>} list - The list as the doc holds it.
+ * @param {unknown} stored - The stored list of this field, if its type held.
+ */
+function storedAlready({ path }, list, stored) {
+  const value = valueAt(list, path);
+  const keys = path.filter((step) => typeof step === 'string');
+  return valuesUnder(stored, keys).some((old) => sameValue(old, value));
+}
+
+/**
  * Leave the leaf at `path` out of a copy of `list`, copying only the objects on
  * the way to it.
  * @param {Array<Object>} list
@@ -138,25 +180,23 @@ function withoutLeaf(list, path) {
 }
 
 /**
- * A list field with its refused item sub-fields left out. A refused sub-field
- * is dropped from its item, never restored from the stored list: items have
- * no identity beyond their index, so after a reorder a stored value would land
- * on another item. A sub-value equal to the stored one at the same place stops
- * nothing.
+ * A list field with its refused item values left out. A refused value is
+ * dropped from its item, never restored from the stored list: items have no
+ * identity beyond their index, so after a reorder a stored value would land on
+ * another item.
  * @param {Array<Object>} list - The list as the doc holds it.
- * @param {unknown} stored - The stored list of this field, if its type held.
- * @param {Array<{path: Array<number|string>, errors: string[]}>} parts
+ * @param {Array<import('../../shared/slide-types/field-change-validation.js').FieldPartProblem>} parts
+ *   Refused values the stored list does not hold.
  * @param {(part: {path: Array<number|string>, errors: string[], value: unknown}) => void} refuse
  * @returns {Array<Object>}
  */
-function holdBackItemParts(list, stored, parts, refuse) {
+function holdBackItemValues(list, parts, refuse) {
   let held = list;
   for (const { path, errors } of parts) {
     const value = valueAt(list, path);
-    if (canonicalJson(value) === canonicalJson(valueAt(stored, path))) continue;
-    held = withoutLeaf(held, path);
     // A required sub-field nobody filled in is already absent: nothing held.
     if (value === undefined) continue;
+    held = withoutLeaf(held, path);
     refuse({ path, errors, value });
   }
   return held;
@@ -165,9 +205,11 @@ function holdBackItemParts(list, stored, parts, refuse) {
 /**
  * One slide of a collab projection with its refused fields held back: a refused
  * field keeps its stored value, and without one (a new slide, a changed type)
- * it is left out. Inside a list the hold is per item sub-field
- * ({@link holdBackItemParts}); a refusal of the list itself keeps the stored
- * list.
+ * it is left out. Inside a list the hold is per item value
+ * ({@link holdBackItemValues}); a refusal of a list as a list, at any depth,
+ * keeps the stored list of the field, because no single value can be left out
+ * for it. A refused part the stored list already holds stops nothing
+ * ({@link storedAlready}).
  *
  * @param {Object} slide
  * @param {Object|undefined} previous - The stored slide with this id.
@@ -187,18 +229,24 @@ function holdBackSlideFields(slide, previous, slideTypes, refused) {
   const stored = previous?.type === slide.type ? previous.content : null;
   const content = { ...slide.content };
   for (const { field, errors, parts } of problems) {
-    if (parts?.length && parts.every((part) => part.path.length)) {
-      content[field] = holdBackItemParts(
-        slide.content[field],
-        stored?.[field],
-        parts,
-        ({ path, errors: partErrors, value }) =>
+    const value = slide.content?.[field];
+    const open = parts?.length
+      ? parts.filter((part) => !storedAlready(part, value, stored?.[field]))
+      : null;
+    if (open && !open.length) continue;
+    const lists = open?.filter((part) => part.kind === 'list') ?? [];
+    if (open && !lists.length) {
+      content[field] = holdBackItemValues(
+        value,
+        open,
+        ({ path, errors: partErrors, value: partValue }) =>
           refused.push({
             slideId: slide.id,
             field,
             path,
+            kind: 'value',
             errors: partErrors,
-            value,
+            value: partValue,
           }),
       );
       continue;
@@ -207,14 +255,14 @@ function holdBackSlideFields(slide, previous, slideTypes, refused) {
     else delete content[field];
     // A stored value that no longer passes, or a required field nobody filled
     // in, stops nothing: the JSON gets what the doc holds.
-    if (canonicalJson(content[field]) === canonicalJson(slide.content?.[field]))
-      continue;
+    if (sameValue(content[field], value)) continue;
     refused.push({
       slideId: slide.id,
       field,
-      path: [],
-      errors,
-      value: slide.content?.[field],
+      path: lists[0]?.path ?? [],
+      kind: lists.length ? 'list' : 'value',
+      errors: lists.length ? lists.flatMap((part) => part.errors) : errors,
+      value,
     });
   }
   return { ...slide, content };
@@ -235,8 +283,9 @@ function holdBackSlideFields(slide, previous, slideTypes, refused) {
  * @param {import('../storage/scope.js').StorageScope} scope
  * @param {Object} pres - The deck as stored.
  * @param {Object} projected - The doc's projection.
- * @returns {Promise<{deck: Object, refused: Array<{slideId: string, field: string, path: Array<number|string>, errors: string[], value: unknown}>}>}
- *   `path` is empty for a field, item index and sub-field inside a list.
+ * @returns {Promise<{deck: Object, refused: Array<{slideId: string, field: string, path: Array<number|string>, kind: 'list'|'value', errors: string[], value: unknown}>}>}
+ *   `path` is empty for a field, item index and sub-field inside a list;
+ *   `kind` is `'list'` when a list was refused as a list.
  */
 export async function holdBackRefusedSlideFields(scope, pres, projected) {
   const buffers = submittedSlideBuffers(pres, projected);

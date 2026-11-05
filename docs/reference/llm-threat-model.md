@@ -186,8 +186,10 @@ with the control at each.
   writes, the MCP slide tools, every create and every import; on the collab
   store, per field: a refused value stays in the doc binary, the field keeps its
   stored value in the deck JSON, the rest of the store is written and prose may
-  be empty while someone retypes it; inside a list per item sub-field, which is
-  left out of its item and never restored by index; on "Apply suggestion"; and on two answers
+  be empty while someone retypes it; inside a list per item value, which is
+  left out of its item and never restored by index, while a list refused as a
+  list keeps the field's stored list and a value the stored list already holds
+  stops nothing; on "Apply suggestion"; and on two answers
   that write nothing, editor `convert-slide` and v1 `append-slides`, where a
   refusal is a 502 `bad_gateway` that names the field, because the model failed
   and not the caller.

@@ -3,12 +3,14 @@ import { validateFieldValue } from './field-types.js';
 import { isTextField } from './text-fields.js';
 
 /**
- * Where a refusal sits inside one field, and what it says. An empty `path` is
- * the field itself (for a list: not an array, a count outside its limits, an
- * item that is not an object); otherwise it alternates item index and
- * sub-field key, `[1, 'linkedin']`, `[0, 'blocks', 2, 'body']` for a list
- * inside an item.
- * @typedef {{path: Array<number|string>, errors: string[]}} FieldPartProblem
+ * Where a refusal sits inside one field, what kind of part it refuses and what
+ * it says. An empty `path` is the field itself; otherwise it alternates item
+ * index and sub-field key, `[1, 'linkedin']`, `[0, 'blocks', 2, 'body']` for a
+ * list inside an item. `kind` is `'list'` when a list is refused as a list (not
+ * an array, a count outside its limits, an item that is not an object), at any
+ * depth, and `'value'` for one value; it comes from where the walk produced
+ * the errors, never from the shape of the value.
+ * @typedef {{path: Array<number|string>, kind: 'list'|'value', errors: string[]}} FieldPartProblem
  */
 
 /**
@@ -23,7 +25,9 @@ import { isTextField } from './text-fields.js';
 export function fieldChangeProblems(value, previous, field) {
   if (field.type === 'items' && Array.isArray(value)) {
     const own = validateFieldValue(value, { ...field, itemFields: [] });
-    const problems = own.length ? [{ path: [], errors: own }] : [];
+    const problems = own.length
+      ? [{ path: [], kind: 'list', errors: own }]
+      : [];
     value.forEach((item, index) => {
       if (!item || typeof item !== 'object') return;
       const before =
@@ -32,13 +36,22 @@ export function fieldChangeProblems(value, previous, field) {
           : null;
       for (const child of field.itemFields || []) {
         const prefix = `Slide.content.${child.key}`;
+        // A new item is checked as the list validator checks it: each
+        // sub-field as one value, a list inside it included.
         const childProblems = before
           ? fieldChangeProblems(item[child.key], before[child.key], child)
-          : [{ path: [], errors: validateFieldValue(item[child.key], child) }];
-        for (const { path, errors } of childProblems) {
+          : [
+              {
+                path: [],
+                kind: 'value',
+                errors: validateFieldValue(item[child.key], child),
+              },
+            ];
+        for (const { path, kind, errors } of childProblems) {
           if (!errors.length) continue;
           problems.push({
             path: [index, child.key, ...path],
+            kind,
             errors: errors.map(
               (error) =>
                 `Slide.content.${field.key}[${index}].${child.key}${error.slice(prefix.length)}`,
@@ -57,7 +70,11 @@ export function fieldChangeProblems(value, previous, field) {
     value,
     unchangedText ? { ...field, required: false, maxLength: undefined } : field,
   );
-  return errors.length ? [{ path: [], errors }] : [];
+  if (!errors.length) return [];
+  // A list that is not an array is refused as a list.
+  return [
+    { path: [], kind: field.type === 'items' ? 'list' : 'value', errors },
+  ];
 }
 
 /**

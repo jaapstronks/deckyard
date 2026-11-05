@@ -146,19 +146,37 @@ persistence hooks (`server/collab/persistence.js`):
   the doc. A store that changes only a refused field writes nothing and moves no
   revision, and the server logs one `warn` line per refused value. Prose may be
   empty while someone retypes it. The author sees the hint at the field.
-- **Inside a list** (`items`) the hold is per item sub-field. The validator
-  reports where in the items each refusal sits as data (`parts` on the problem,
+- **Inside a list** (`items`) the hold is per item value. The validator
+  reports where in the items each refusal sits and what kind of part it
+  refuses as data (`path` and `kind` on each of the problem's `parts`,
   `fieldChangeProblems()` in `shared/slide-types/field-change-validation.js`),
-  never as a sentence to parse. A refused sub-field is left out of its item, not
+  never as a sentence to parse. A refused value is left out of its item, not
   restored: items have no identity beyond their index (`deck-ydoc.js` matches
   them by position), so after a reorder a stored value would land on another
   item. The item's other sub-fields, the other items, added and removed items
-  and the order are written; a list inside an item follows the same rule. A
-  sub-value equal to the stored one at the same index stops nothing and logs
-  nothing. A refusal of the list itself (not an array, a count outside its
-  limits, an item that is not an object) keeps the stored list. One `warn` line
-  per refused value, keyed on slide, field, sub-field and value without the
-  index, so a list that grows or reorders around it does not log again.
+  and the order are written; a value inside a list inside an item follows the
+  same rule.
+- **A list refused as a list** (not an array, a count outside its limits, an
+  item that is not an object) keeps the stored list of the field, at every
+  depth: no single value can be left out for it, so a list inside an item that
+  peers merged past its count freezes its field just as the field's own count
+  does. Without a stored list (a new slide, a changed type) the field is left
+  out. A new item, one without a stored item at its index, has its nested list
+  checked as one value: a refusal in it leaves that nested list out of the
+  item and the rest of the field lands.
+- **Already stored stops nothing.** A refused part that the stored list already
+  holds in the same sub-field, at any index (for a nested list: the same
+  sub-field path without its indexes), stops nothing and logs nothing; this
+  holds for a value and for a list refused as a list. Since items have no
+  identity, an old value is recognized by itself, so an insert, a removal or a
+  reorder before it does not take it out of the JSON. A peer may copy a stored
+  value to another item of the same list; it is in the deck JSON already and
+  the renderers re-check it.
+- **One `warn` line** per refused value, keyed on slide, field, sub-field and
+  value without the index, so a list that grows or reorders around it does not
+  log again. A list refused as a list is keyed on slide, field, sub-field and
+  its errors instead of the list, so a list that stays over its count logs
+  once.
 
 **Storage**: `getYDocState`/`setYDocState`/`deleteYDocState` on the
 adapter — Postgres table `presentation_ydocs` (one merged update per deck,
