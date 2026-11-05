@@ -117,8 +117,8 @@ the MCP paths it is saved first and the agent is told afterwards.
 | --------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `POST /api/presentations/:id/analyze` (`server/utils/ai/analyze-presentation.js`) | Auth with write | The **whole stored deck** as JSON (every collaborator); the client's categories | **Comments** persisted under the AI identity and broadcast to every collaborator, each optionally carrying a `proposedSlide` |
 | MCP `analyze_presentation`                                                        | Key `ai`, read  | The stored deck, reader view                                                    | Returned to the agent as free text                                                                                           |
-| `POST …/versions/:vid/compare-ai` (`server/utils/ai/compare-versions.js`)         | Auth            | Current deck and an older snapshot, titles quoted unescaped, bodies capped      | Returned; insights filtered to known slide ids and categories, the summary free text                                         |
-| `POST …/description/generate` (`server/routes/api/presentations/description.js`)  | Auth            | The stored deck's prose                                                         | Returned; the human edits it in a textarea before saving                                                                     |
+| `POST …/versions/:vid/compare-ai` (`server/utils/ai/compare-versions.js`)         | Auth with write | Current deck and an older snapshot, titles quoted unescaped, bodies capped      | Returned; insights filtered to known slide ids and categories, the summary free text                                         |
+| `POST …/description/generate` (`server/routes/api/presentations/description.js`)  | Auth with write | The stored deck's prose                                                         | Returned; the human edits it in a textarea before saving                                                                     |
 
 The comment sink matters: a slide written by one collaborator can make the
 model post a suggestion that every other collaborator sees as "the AI's", and
@@ -131,7 +131,7 @@ writes the proposed content into the deck (finding 5).
 | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `POST /api/presentations/:id/translate`, `POST /api/v1/presentations/:id/translate`, the translate queue worker (dormant: nothing enqueues it) | Auth with write; key `ai` | The **whole stored deck** as JSON, one call per batch (`server/utils/openai/translate.js`), plus the **organization admin's translation instructions** in the system prompt | Only translated values for declared per-language keys are accepted; persisted through `updatePresentation` |
 | `POST …/translate/missing`                                                                                                                     | Auth with write           | The missing strings as a path map                                                                                                                                           | Written by path; persisted                                                                                 |
-| `POST …/translate/fields`                                                                                                                      | Auth                      | A **field map the client sends**                                                                                                                                            | Returned only                                                                                              |
+| `POST …/translate/fields`                                                                                                                      | Auth with write           | A **field map the client sends**                                                                                                                                            | Returned only                                                                                              |
 
 Deck content and the admin's reference
 (`server/utils/openai/translation-instructions.js`) are both fenced as data,
@@ -325,8 +325,11 @@ says what it touches; the exact form follows with its fix.
    binds only the content an agent writes, and no description asks for an
    artifact. `tests/mcp/mcp-result-marking.test.js` reads it as a client does
    (DY-815).
-8. **AI spend is unmetered inside the app and under-counted on keys**, and not
-   every route that spends asks for the right permission (DY-816, DY-844).
+8. **AI spend is unmetered inside the app and under-counted on keys** (DY-844).
+   The permission half is fixed: `compare-ai`, `description/generate` and
+   `translate/fields` ask for write, so a view or comment collaborator cannot
+   start a model call. `tests/ai-spend-write-permission.test.js` pins it through
+   the route table and the real authorization, with the model call counted.
 9. **The vision helper read local paths without containment.** Fixed: it reads
    only what the installation serves as an asset, through the resolver the
    exports use, and refuses any other local path. `tests/llm-vision-input.test.js`

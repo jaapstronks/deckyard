@@ -250,7 +250,7 @@ export async function buildSlidesPngExportHtml(
   return `${buildDocumentHead({
     lang: docLang,
     title: titleRaw,
-    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
+    head: [buildPrismKatexTags(highlightNeeds)],
     styles: [
       {
         id: 'pngExportCss',

@@ -30,7 +30,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-The `DECKYARD_MCP_OWNER_EMAIL` sets who owns presentations created via MCP. This should match your Deckyard user email. Without it, presentations are created without an owner and may show "Access Denied" in the web UI. The create tools take no `ownerEmail` of their own: a new deck belongs to the session owner, as it does on every other contract, and an `ownerEmail` argument is refused (B521).
+The `DECKYARD_MCP_OWNER_EMAIL` sets who owns presentations created via MCP. It must be the email of an existing Deckyard user: the stdio server refuses to start when no user has that address, since decks it created would belong to nobody who can open them (DY-843). Without it, presentations are created without an owner and may show "Access Denied" in the web UI. The create tools take no `ownerEmail` of their own: a new deck belongs to the session owner, as it does on every other contract, and an `ownerEmail` argument is refused (B521).
 
 It also determines what the session may touch: every tool that fetches a deck by id enforces per-deck access for this owner (read for read-only tools; collaborator-aware write access for mutating tools; delete is owner-only). When the variable is unset, the stdio session is treated as a trusted local single-user process and per-deck checks are skipped.
 
@@ -156,6 +156,8 @@ so the new scope applies from the next call.
 | `export_presentation`  | Get a download URL for a finished export (PDF, pixel-perfect or editable PPTX, HTML, JSON, or zipped per-slide PNGs) |
 
 `export_presentation` returns a URL the user opens in a browser signed in to Deckyard; the server renders the file on demand (PDF/PPTX/PNG take a few seconds for large decks). Use `preview_presentation` instead when you want an inline visual preview rather than a downloadable file.
+
+A preview carries only what its slides can draw: the slide CSS rules that match the rendered types (a rule scoped to another type's root class is left out), without comments, and each local image, the theme logo and any asset a theme var points at included, inlined and re-encoded at 960px at most, so the preview loads nothing from a Deckyard origin the client frame does not have (`server/mcp/preview.js`, `server/utils/css-type-scope.js`). One slide comes to roughly 40k characters, inside Claude Code's default cap of 25,000 tokens for a tool result; above that cap the client writes the result to a file instead of showing it. A gallery of many different types can still pass it, so preview a long deck in `slideRange` pieces (DY-842).
 
 Both previews show every slide, so `preview_slide` addresses slides by their stored index; a slide whose essential image is still empty carries an "Incomplete" note (`data-incomplete="true"`), because presenting, every export and publishing leave it out ([incomplete-slides.md](incomplete-slides.md)).
 

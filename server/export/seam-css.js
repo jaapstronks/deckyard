@@ -17,18 +17,23 @@
  * anything in it, so its `url()`s stay as written; everything else is inlined
  * as before. That includes `@font-face` sources, and any rule not scoped to a
  * type root: the pass only ever withholds what provably cannot be drawn.
+ * "Renders" is read from each slide's markup, not only from its type: a type
+ * may carry another type's root next to its own (DY-852).
  *
- * Deliberately conservative where CSS is ambiguous: a class inside a
- * functional pseudo-class (`:is()`, `:not()`, `:has()`) is not a requirement,
- * and a selector the scanner cannot read keeps its images inlined.
+ * The rule scanner and its conservative reading of selectors live in
+ * `server/utils/css-type-scope.js`, which the MCP preview shares.
  */
 
-import { resolveSlideTypeName } from '../../shared/slide-types.js';
+import {
+  renderSlideHtml,
+  resolveSlideTypeName,
+} from '../../shared/slide-types.js';
 import { slideRootClass } from '../../shared/slide-types/validate-definition.js';
 import { embedLocalCssUrls } from '../utils/html-utils.js';
-
-/** Group at-rules whose body is itself a list of rules. */
-const GROUP_AT_RULE_RE = /^@(media|supports|container|layer|document|scope)\b/i;
+import {
+  rootClassesInMarkup,
+  unmatchableRuleRanges,
+} from '../utils/css-type-scope.js';
 
 /**
  * Inline the seam's local `url()`s, except inside rules that can only match a
@@ -54,12 +59,18 @@ export async function embedSeamCssUrls(
   const usedRoots = new Set();
   for (const slide of slides) {
     const key = resolveSlideTypeName(slide?.type, slideTypes);
-    if (key) usedRoots.add(slideRootClass(key));
+    if (!key) continue;
+    usedRoots.add(slideRootClass(key));
+    for (const cls of rootsInRender(
+      { ...slide, type: key },
+      slideTypes,
+      allRoots,
+    ))
+      usedRoots.add(cls);
   }
   const unused = (cls) => allRoots.has(cls) && !usedRoots.has(cls);
 
-  const withheld = [];
-  collectWithheldBodies(text, 0, text.length, unused, withheld);
+  const withheld = unmatchableRuleRanges(text, unused, { part: 'body' });
   if (!withheld.length) {
     return embedLocalCssUrls(repoRoot, text, { transform, cache });
   }
@@ -79,120 +90,31 @@ export async function embedSeamCssUrls(
 }
 
 /**
- * Walk the rules in `css[from, to)` and push the `[start, end)` body range of
- * every style rule that cannot match. Recurses into group at-rules.
+ * The type roots a slide's markup carries besides its own: a likert slider is
+ * also `.slide-likert`, a feedback slide also `.slide-follow-invite`. Read
+ * from a render rather than declared per type, the same way the MCP preview
+ * reads them (`rootClassesInMarkup`), so a fork rule under a shared root
+ * keeps its image (DY-852). A render that throws adds nothing; the slide's
+ * own root is already counted.
  *
- * @param {string} css
- * @param {number} from
- * @param {number} to
- * @param {(cls: string) => boolean} unused
- * @param {Array<[number, number]>} out
+ * @param {Object} slide - with `type` resolved to a registry key
+ * @param {Record<string, object>} slideTypes
+ * @param {Set<string>} allRoots
+ * @returns {Set<string>}
  */
-function collectWithheldBodies(css, from, to, unused, out) {
-  let preludeStart = from;
-  let i = from;
-  while (i < to) {
-    const c = css[i];
-    if (c === '/' && css[i + 1] === '*') {
-      const close = css.indexOf('*/', i + 2);
-      i = close < 0 ? to : close + 2;
-    } else if (c === '"' || c === "'") {
-      i = skipString(css, i, to);
-    } else if (c === ';' || c === '}') {
-      preludeStart = i + 1;
-      i++;
-    } else if (c === '{') {
-      const end = matchingBrace(css, i, to);
-      const prelude = stripComments(css.slice(preludeStart, i)).trim();
-      if (GROUP_AT_RULE_RE.test(prelude)) {
-        collectWithheldBodies(css, i + 1, end, unused, out);
-      } else if (!prelude.startsWith('@') && cannotMatch(prelude, unused)) {
-        out.push([i + 1, end]);
-      }
-      i = end + 1;
-      preludeStart = i;
-    } else {
-      i++;
-    }
+function rootsInRender(slide, slideTypes, allRoots) {
+  try {
+    return rootClassesInMarkup(
+      // No deck language: which root classes a slide carries does not
+      // depend on the copy it renders, only on its type and content.
+      renderSlideHtml(slide, {
+        slideTypes,
+        stripEditorAttrs: true,
+        lang: null,
+      }),
+      allRoots,
+    );
+  } catch {
+    return new Set();
   }
-}
-
-/**
- * True when every selector in the list requires an unused type root class.
- *
- * @param {string} selectorList
- * @param {(cls: string) => boolean} unused
- * @returns {boolean}
- */
-function cannotMatch(selectorList, unused) {
-  const selectors = splitTopLevelCommas(selectorList);
-  return selectors.every((sel) => {
-    const required = dropParenthesized(sel).match(/\.[\w-]+/g) || [];
-    return required.some((cls) => unused(cls.slice(1)));
-  });
-}
-
-/** Split a selector list on commas outside parentheses. */
-function splitTopLevelCommas(s) {
-  const parts = [];
-  let depth = 0;
-  let buf = '';
-  for (const c of s) {
-    if (c === '(') depth++;
-    else if (c === ')') depth = Math.max(0, depth - 1);
-    if (c === ',' && depth === 0) {
-      parts.push(buf);
-      buf = '';
-    } else {
-      buf += c;
-    }
-  }
-  parts.push(buf);
-  return parts;
-}
-
-/** A selector without its parenthesized arguments (`:not(.x)` → `:not`). */
-function dropParenthesized(s) {
-  let depth = 0;
-  let out = '';
-  for (const c of s) {
-    if (c === '(') depth++;
-    else if (c === ')') depth = Math.max(0, depth - 1);
-    else if (depth === 0) out += c;
-  }
-  return out;
-}
-
-function stripComments(s) {
-  return s.replace(/\/\*[\s\S]*?\*\//g, '');
-}
-
-/** Index just past the string literal opening at `i`. */
-function skipString(css, i, to) {
-  const quote = css[i];
-  let j = i + 1;
-  while (j < to && css[j] !== quote) j += css[j] === '\\' ? 2 : 1;
-  return j + 1;
-}
-
-/** Index of the `}` closing the `{` at `open` (or `to` when unbalanced). */
-function matchingBrace(css, open, to) {
-  let depth = 0;
-  let i = open;
-  while (i < to) {
-    const c = css[i];
-    if (c === '/' && css[i + 1] === '*') {
-      const close = css.indexOf('*/', i + 2);
-      i = close < 0 ? to : close + 2;
-      continue;
-    }
-    if (c === '"' || c === "'") {
-      i = skipString(css, i, to);
-      continue;
-    }
-    if (c === '{') depth++;
-    else if (c === '}' && --depth === 0) return i;
-    i++;
-  }
-  return to;
 }

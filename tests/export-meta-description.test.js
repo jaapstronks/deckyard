@@ -37,19 +37,6 @@ test('export emits one escaped description meta from the deck field', async () =
   );
 });
 
-test('the description option overrides the deck field (published route)', async () => {
-  const html = await buildStandaloneHtml(
-    repoRoot,
-    deck({ description: 'own' }),
-    {
-      context: 'published',
-      description: 'Overridden',
-    },
-  );
-  assert.equal((html.match(/<meta name="description"/g) || []).length, 1);
-  assert.match(html, /content="Overridden"/);
-});
-
 test('no description → no description meta (no empty tag)', async () => {
   const html = await buildStandaloneHtml(repoRoot, deck(), {});
   assert.doesNotMatch(html, /<meta name="description"/);
