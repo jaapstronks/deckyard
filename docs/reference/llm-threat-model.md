@@ -62,7 +62,8 @@ assumes it is on.
 
 Thirty-one entry points reach the model. "Auth" means any signed-in user of
 the instance; no path requires a designer or admin role. "Internal" routes are
-cookie-authenticated and carry no rate limit or quota; "v1" and "MCP over
+cookie-authenticated and carry no rate limit or quota of their own, though
+every model call counts against the installation's daily ceiling; "v1" and "MCP over
 HTTP" are API-key routes with the per-key daily AI counter (§ Cost and abuse).
 
 ### Generation: a new deck from text
@@ -270,16 +271,20 @@ load.
 
 ## Cost and abuse
 
-- **No internal route is metered.** Every cookie-authenticated AI route has
-  no rate limit and no quota; the only inbound buckets exist in demo and
-  sandbox mode, where AI is off. Who may start a call is finding 8.
+- **Every model call is metered on the transport** (`server/utils/llm/meter.js`,
+  DY-844): counted per organization and person per day, whichever route,
+  key, MCP session or job started it, and refused with 429
+  `ai_quota_exceeded` past the installation's `AI_DAILY_CALL_LIMIT`. The
+  organization's admins see the count under Settings > Organization. There is
+  no per-route rate limit and no budget per organization or person; who may
+  start a call is finding 8.
 - **API keys are metered per request, not per call.** `aiCallsPerDay` is 10,
   100 or unlimited by tier (`server/storage/api-keys.js`), counted once per
   request, while a wizard run is three plus _n_ model calls and a translation
   one per batch. Keyless stdio MCP has no quota.
-- **Token usage is observable, not recorded.** `server/utils/llm/usage.js`
-  publishes per-call counts for OpenAI and Claude only; no production code
-  subscribes, so there is no spend log or per-organization accounting
+- **Tokens are recorded next to the calls** where the vendor reports them
+  (`usage.js`; every vendor's usage shape is now read). The ceiling counts
+  calls, not tokens: a call is known before it goes out, its tokens only after
   ([`ai-pipeline.md`](ai-pipeline.md) § Honest gaps).
 - **Injection can lengthen a call** but not loop it: `maxTokens` caps each
   answer, phase 2 retries once on a length refusal and then fails, and no path
@@ -325,8 +330,11 @@ says what it touches; the exact form follows with its fix.
    binds only the content an agent writes, and no description asks for an
    artifact. `tests/mcp/mcp-result-marking.test.js` reads it as a client does
    (DY-815).
-8. **AI spend is unmetered inside the app and under-counted on keys** (DY-844).
-   The permission half is fixed: `compare-ai`, `description/generate` and
+8. **AI spend was unmetered inside the app and under-counted on keys.**
+   Fixed: every model call is counted on the transport per organization and
+   person, and the installation's daily ceiling refuses with 429;
+   `tests/ai-usage-meter.test.js` pins both (DY-844). The per-key counter
+   still counts requests, not calls. The permission half is fixed too: `compare-ai`, `description/generate` and
    `translate/fields` ask for write, so a view or comment collaborator cannot
    start a model call. `tests/ai-spend-write-permission.test.js` pins it through
    the route table and the real authorization, with the model call counted.

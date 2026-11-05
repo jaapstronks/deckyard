@@ -1,0 +1,36 @@
+/* Organization AI usage card (DY-844) */
+
+.ai-usage-summary {
+  font-size: var(--ps-text-sm);
+}
+
+.ai-usage-section {
+  overflow-x: auto;
+}
+
+.ai-usage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ps-text-sm);
+}
+
+.ai-usage-table th,
+.ai-usage-table td {
+  text-align: left;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.ai-usage-table th {
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+}
+
+.ai-usage-table .is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-usage-table tr:last-child td {
+  border-bottom: none;
+}

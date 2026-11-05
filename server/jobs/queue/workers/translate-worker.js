@@ -15,6 +15,7 @@ import { registerWorker, QUEUE_NAMES } from '../connection.js';
 import { translatePresentation } from '../../../services/translate.js';
 import { jobScope } from '../../../storage/scope.js';
 import { createLogger } from '../../../utils/logger.js';
+import { runWithAiAttribution } from '../../../utils/llm/meter.js';
 
 const log = createLogger('translate-worker');
 
@@ -86,10 +87,13 @@ export async function processTranslateJob(job) {
 
   const scope = jobScope(job.data, 'translate job');
   const actor = { email: actorEmail, organizationId: scope.organizationId };
-  const translated = await translatePresentation(
-    scope,
-    { actor },
-    { presentationId, from, to, overwrite, fillMissing },
+  // The model calls count for the organization and person who queued it (DY-844).
+  const translated = await runWithAiAttribution(scope, () =>
+    translatePresentation(
+      scope,
+      { actor },
+      { presentationId, from, to, overwrite, fillMissing },
+    ),
   );
 
   await job.updateProgress(100);
