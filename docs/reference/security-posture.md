@@ -173,6 +173,13 @@ filesystem access. A traversal key such as `../auth/auth.js` cannot be used as a
 existence/size oracle for arbitrary files on disk — a key that escapes the uploads
 directory resolves to "not found" rather than touching the target.
 
+The vision helper (`server/utils/llm/vision.js`) reads a local image to send its
+bytes to the vendor, on a URL from a request body. It goes through
+`resolveServedAssetPath()` (`server/utils/served-asset-path.js`), the resolver
+the exports use: an upload, `/assets/` or `/custom/assets/`, contained in the
+directory it is served from. Any other local path is refused with a 400 before a
+file is touched.
+
 ## CSRF: origin/referer check on cookie-authenticated writes
 
 **Where:** `server/utils/csrf.js`, applied in `server/routes/api/index.js`.

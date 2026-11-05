@@ -1070,11 +1070,6 @@
       "count": 1
     }
   },
-  "server/utils/llm/vision.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "server/utils/markdown-import/parse.js": {
     "no-useless-assignment": {
       "count": 1
