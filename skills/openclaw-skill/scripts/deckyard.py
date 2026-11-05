@@ -131,12 +131,14 @@ def cmd_create(args):
     """Create a presentation from content."""
     content = get_arg(args, '--content', required=True)
     title = get_arg(args, '--title')
-    theme = get_arg(args, '--theme', default='default')
+    theme = get_arg(args, '--theme')
     lang = get_arg(args, '--lang')
 
-    arguments = {'content': content, 'theme': theme}
+    arguments = {'content': content}
     if title:
         arguments['title'] = title
+    if theme:
+        arguments['theme'] = theme
     if lang:
         arguments['lang'] = lang
 
@@ -155,7 +157,7 @@ def cmd_list(args):
 def cmd_get(args):
     """Get a presentation's full data."""
     pres_id = get_arg(args, '--id', required=True)
-    result = tool_call('get_presentation', {'id': pres_id})
+    result = tool_call('get_presentation', {'presentationId': pres_id})
     print(result)
 
 
