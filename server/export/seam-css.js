@@ -17,15 +17,23 @@
  * anything in it, so its `url()`s stay as written; everything else is inlined
  * as before. That includes `@font-face` sources, and any rule not scoped to a
  * type root: the pass only ever withholds what provably cannot be drawn.
+ * "Renders" is read from each slide's markup, not only from its type: a type
+ * may carry another type's root next to its own (DY-852).
  *
  * The rule scanner and its conservative reading of selectors live in
  * `server/utils/css-type-scope.js`, which the MCP preview shares.
  */
 
-import { resolveSlideTypeName } from '../../shared/slide-types.js';
+import {
+  renderSlideHtml,
+  resolveSlideTypeName,
+} from '../../shared/slide-types.js';
 import { slideRootClass } from '../../shared/slide-types/validate-definition.js';
 import { embedLocalCssUrls } from '../utils/html-utils.js';
-import { unmatchableRuleRanges } from '../utils/css-type-scope.js';
+import {
+  rootClassesInMarkup,
+  unmatchableRuleRanges,
+} from '../utils/css-type-scope.js';
 
 /**
  * Inline the seam's local `url()`s, except inside rules that can only match a
@@ -51,7 +59,14 @@ export async function embedSeamCssUrls(
   const usedRoots = new Set();
   for (const slide of slides) {
     const key = resolveSlideTypeName(slide?.type, slideTypes);
-    if (key) usedRoots.add(slideRootClass(key));
+    if (!key) continue;
+    usedRoots.add(slideRootClass(key));
+    for (const cls of rootsInRender(
+      { ...slide, type: key },
+      slideTypes,
+      allRoots,
+    ))
+      usedRoots.add(cls);
   }
   const unused = (cls) => allRoots.has(cls) && !usedRoots.has(cls);
 
@@ -72,4 +87,34 @@ export async function embedSeamCssUrls(
   }
   parts.push(embedLocalCssUrls(repoRoot, text.slice(at), { transform, cache }));
   return (await Promise.all(parts)).join('');
+}
+
+/**
+ * The type roots a slide's markup carries besides its own: a likert slider is
+ * also `.slide-likert`, a feedback slide also `.slide-follow-invite`. Read
+ * from a render rather than declared per type, the same way the MCP preview
+ * reads them (`rootClassesInMarkup`), so a fork rule under a shared root
+ * keeps its image (DY-852). A render that throws adds nothing; the slide's
+ * own root is already counted.
+ *
+ * @param {Object} slide - with `type` resolved to a registry key
+ * @param {Record<string, object>} slideTypes
+ * @param {Set<string>} allRoots
+ * @returns {Set<string>}
+ */
+function rootsInRender(slide, slideTypes, allRoots) {
+  try {
+    return rootClassesInMarkup(
+      // No deck language: which root classes a slide carries does not
+      // depend on the copy it renders, only on its type and content.
+      renderSlideHtml(slide, {
+        slideTypes,
+        stripEditorAttrs: true,
+        lang: null,
+      }),
+      allRoots,
+    );
+  } catch {
+    return new Set();
+  }
 }
