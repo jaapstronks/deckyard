@@ -9,7 +9,7 @@
  *
  *   - canvas and reader come from one render of the stored input in the
  *     edition's own renderer bundle (`renderEditionInBundle`), with the
- *     canvas address taken from the edition record, never from the input;
+ *     address taken from the edition record, never from the input;
  *   - the manifest is the stored manifest bytes;
  *   - the package is built from the stored bytes (`server/export/edition-package.js`);
  *   - the preview image is the first image the edition itself shows.
@@ -20,11 +20,12 @@
  * every request, before any cache is consulted, and drops the cache.
  *
  * Rendered HTML is a disposable derivative: a bounded in-memory cache keyed by
- * edition, language and canvas address, rebuilt from the same bytes when it is
+ * edition, language and address, rebuilt from the same bytes when it is
  * gone.
  */
 
 import {
+  declaredDefaultView,
   decodeDataUrl,
   renderEditionInBundle,
 } from '../render/renderer-bundle/index.js';
@@ -44,10 +45,10 @@ const META_CACHE_ENTRIES = 256;
 /** And at most this many preview-image bytes across them, as for renders. */
 const META_CACHE_BYTES = 64 * 1024 * 1024;
 
-/** @type {Map<string, {canvas: string, reader: string, size: number, editionId: string}>} */
+/** @type {Map<string, {canvas: string, reader: string, defaultView: 'canvas'|'reader', size: number, editionId: string}>} */
 const renders = new Map();
 let renderBytes = 0;
-/** @type {Map<string, Promise<{canvas: string, reader: string}>>} */
+/** @type {Map<string, Promise<{canvas: string, reader: string, defaultView: 'canvas'|'reader'}|null>>} */
 const inflight = new Map();
 /** @type {Map<string, {title: string, description: string, langs: string[], defaultLang: string|null, ogImage: {mediaType: string, bytes: Buffer}|null, size: number}>} */
 const metas = new Map();
@@ -101,12 +102,12 @@ const publicScope = (repoRoot) =>
   );
 
 /**
- * The edition's canvas address on this installation.
+ * The edition's bare address on this installation.
  *
  * @param {string} origin - `https://host`, no trailing slash
  * @param {{publicationId: string, version: number}} edition
  */
-export function editionCanvasUrl(origin, { publicationId, version }) {
+export function editionAddress(origin, { publicationId, version }) {
   return `${origin}/p/${publicationId}/${version}`;
 }
 
@@ -228,13 +229,14 @@ function store(key, editionId, views) {
 }
 
 /**
- * Canvas and reader of one edition view.
+ * Canvas and reader of one edition view, and which of them its bare address
+ * answers, as the edition's own bundle declares it.
  *
  * @param {string} repoRoot
  * @param {import('../storage/editions.js').PublicEdition} edition - A
  *   non-revoked edition from {@link findPublicEdition}
  * @param {{origin: string, lang?: string|null}} request
- * @returns {Promise<{canvas: string, reader: string, lang: string|null}|null>}
+ * @returns {Promise<{canvas: string, reader: string, defaultView: 'canvas'|'reader', lang: string|null}|null>}
  *   null when the edition was revoked meanwhile
  * @throws {import('../render/renderer-bundle/errors.js').RendererBundleError}
  *   The runner refused or is unavailable; there is no other renderer
@@ -243,7 +245,7 @@ export async function renderEditionViews(repoRoot, edition, { origin, lang }) {
   const meta = await editionMeta(repoRoot, edition);
   if (!meta) return null;
   const viewLang = pickLang(meta, lang);
-  const canonicalUrl = editionCanvasUrl(origin, edition);
+  const canonicalUrl = editionAddress(origin, edition);
   const key = `${edition.id}\n${viewLang ?? ''}\n${canonicalUrl}`;
 
   const cached = renders.get(key);
@@ -251,7 +253,12 @@ export async function renderEditionViews(repoRoot, edition, { origin, lang }) {
     // Most recently used goes last.
     renders.delete(key);
     renders.set(key, cached);
-    return { canvas: cached.canvas, reader: cached.reader, lang: viewLang };
+    return {
+      canvas: cached.canvas,
+      reader: cached.reader,
+      defaultView: cached.defaultView,
+      lang: viewLang,
+    };
   }
 
   let pending = inflight.get(key);
@@ -266,7 +273,11 @@ export async function renderEditionViews(repoRoot, edition, { origin, lang }) {
         canonicalUrl,
         ...(viewLang ? { lang: viewLang } : {}),
       });
-      const out = { canvas: views.canvas, reader: views.reader };
+      const out = {
+        canvas: views.canvas,
+        reader: views.reader,
+        defaultView: declaredDefaultView(views.reader),
+      };
       // A revocation that landed during the render must not be cached over.
       const now = await getPublicEdition(
         publicScope(repoRoot),

@@ -16,6 +16,7 @@ import { escapeHtml } from '../../../../shared/slide-types/helpers.js';
 import { getSlideCopy } from '../../../../shared/slide-types/slide-copy.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../../shared/i18n-progress.js';
+import { READER_IS_DEFAULT_META } from '../default-view.js';
 
 /** `base?lang=xx`, or `base` when there is no language to name. */
 function withLang(base, lang) {
@@ -25,15 +26,41 @@ function withLang(base, lang) {
 /**
  * The addresses of one edition view.
  *
- * @param {string} canonicalUrl - The edition's canvas address, no query
+ * The bare address answers the reader; this bundle says so with
+ * {@link READER_IS_DEFAULT_META}. A bundle from before that kept the canvas
+ * there, and its own copy of this function says so.
+ *
+ * @param {string} canonicalUrl - The edition's bare address, no query
  * @param {string|null} lang - The language version on screen
  */
 export function editionAddresses(canonicalUrl, lang) {
   return {
-    canvas: withLang(canonicalUrl, lang),
-    reader: withLang(`${canonicalUrl}/reader`, lang),
+    canvas: withLang(`${canonicalUrl}/slides`, lang),
+    reader: withLang(canonicalUrl, lang),
     ogImage: `${canonicalUrl}/og`,
   };
+}
+
+/**
+ * The links to the language versions of one view, for the versions the edition
+ * has; below two there is nothing to switch between (the live page's rule,
+ * B182/D72 #6).
+ *
+ * @param {object} stored - The edition's presentation, as stored
+ * @param {string|null} lang - The language version on screen
+ * @param {(lang: string) => string} urlFor - The address of a language version
+ * @param {string} linkClass
+ * @returns {string} The anchors; empty below two versions
+ */
+function languageLinks(stored, lang, urlFor, linkClass) {
+  const langs = existingVersionLangs(stored);
+  if (langs.length < 2) return '';
+  return langs
+    .map(
+      (l) =>
+        `<a class="${linkClass}${l === lang ? ' is-active' : ''}" href="${escapeHtml(urlFor(l))}" hreflang="${escapeHtml(l)}" rel="nofollow"${l === lang ? ' aria-current="true"' : ''}>${escapeHtml(getLangDisplayName(l))}</a>`,
+    )
+    .join('');
 }
 
 /**
@@ -107,7 +134,8 @@ export function canvasChrome(
   const copy = getSlideCopy(lang || deckLang);
   const urls = editionAddresses(canonicalUrl, lang);
   const headHtml = [
-    `<link rel="canonical" href="${escapeHtml(urls.canvas)}" />`,
+    // The document is the work, the slides are a view of it (D374).
+    `<link rel="canonical" href="${escapeHtml(urls.reader)}" />`,
     `<link rel="alternate" href="${escapeHtml(urls.reader)}" title="${escapeHtml(copy.readerOpen)}" />`,
     ...shareCardHead({
       title: shown?.title || copy.readerDocument,
@@ -119,18 +147,16 @@ export function canvasChrome(
     }),
   ].join('\n    ');
 
-  // One link per version the edition has; below two there is nothing to
-  // switch between (the live page's rule, B182/D72 #6).
-  const langs = existingVersionLangs(stored);
-  const switchHtml =
-    langs.length > 1
-      ? `<div class="sb-segmented is-lang-switch" role="group" aria-label="${escapeHtml(copy.readerLanguages)}">${langs
-          .map(
-            (l) =>
-              `<a class="sb-segmented-btn${l === lang ? ' is-active' : ''}" href="${escapeHtml(withLang(canonicalUrl, l))}" hreflang="${escapeHtml(l)}" rel="nofollow">${escapeHtml(getLangDisplayName(l))}</a>`,
-          )
-          .join('')}</div>`
-      : '';
+  // A switch stays on the view it is on.
+  const switchLinks = languageLinks(
+    stored,
+    lang,
+    (l) => editionAddresses(canonicalUrl, l).canvas,
+    'sb-segmented-btn',
+  );
+  const switchHtml = switchLinks
+    ? `<div class="sb-segmented is-lang-switch" role="group" aria-label="${escapeHtml(copy.readerLanguages)}">${switchLinks}</div>`
+    : '';
   const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(urls.reader)}" rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(copy.readerOpen)}</a>`;
 
   // Without JavaScript the canvas never shows a slide. `_top`, because the same
@@ -145,9 +171,11 @@ export function canvasChrome(
 }
 
 /**
- * `<head>` markup for the reader of one edition view, and the address its
- * "view the slides" link points at.
+ * `<head>` markup for the reader of one edition view, the address its "view the
+ * slides" link points at, and its language switch.
  *
+ * @param {object} stored - The edition's presentation, as stored (all
+ *   language versions)
  * @param {object} shown - The projection on screen
  * @param {object} opts
  * @param {string} opts.canonicalUrl
@@ -155,17 +183,25 @@ export function canvasChrome(
  * @param {string|null} [opts.deckLang] - The deck's language: the words of a
  *   view that names no language
  * @param {string} [opts.metaDescription]
- * @returns {{headHtml: string, canvasUrl: string}}
+ * @returns {{headHtml: string, canvasUrl: string, languagesHtml: string}}
  */
 export function readerChrome(
+  stored,
   shown,
   { canonicalUrl, lang, deckLang = null, metaDescription = '' },
 ) {
-  if (!canonicalUrl) return { headHtml: '', canvasUrl: '' };
+  if (!canonicalUrl) return { headHtml: '', canvasUrl: '', languagesHtml: '' };
   const copy = getSlideCopy(lang || deckLang);
   const urls = editionAddresses(canonicalUrl, lang);
+  const languagesHtml = languageLinks(
+    stored,
+    lang,
+    (l) => editionAddresses(canonicalUrl, l).reader,
+    'reader-lang',
+  );
   return {
     headHtml: [
+      READER_IS_DEFAULT_META,
       `<link rel="canonical" href="${escapeHtml(urls.reader)}" />`,
       `<link rel="alternate" href="${escapeHtml(urls.canvas)}" title="${escapeHtml(copy.readerViewSlides)}" />`,
       ...shareCardHead({
@@ -178,5 +214,8 @@ export function readerChrome(
       }),
     ].join('\n    '),
     canvasUrl: urls.canvas,
+    languagesHtml: languagesHtml
+      ? `<p class="reader-langs" role="group" aria-label="${escapeHtml(copy.readerLanguages)}">${languagesHtml}</p>`
+      : '',
   };
 }

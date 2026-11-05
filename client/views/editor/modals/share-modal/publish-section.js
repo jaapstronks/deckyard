@@ -228,7 +228,7 @@ export function createPublishSection({
           label: t('share.publish.linkLabel', 'Link'),
           help: t(
             'share.publish.linkHelp',
-            'A page to open and share. Findable, with a social preview.',
+            'Opens as a document, with the slides one click away. Findable, with a social preview.',
           ),
           value: links.url,
           openHref: links.url,
@@ -238,7 +238,7 @@ export function createPublishSection({
           label: t('share.publish.embedLabel', 'Embed'),
           help: t(
             'share.publish.embedHelp',
-            'Paste this URL into Notion or your own site.',
+            'Shows the slides. Paste this URL into Notion or your own site.',
           ),
           value: links.embedUrl,
         }),

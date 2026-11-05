@@ -56,7 +56,8 @@ take the same path, so every provider ends up as inlined bytes.
 1. **Published deck deep-link** — if the presentation is published
    (`pres.published.id`) **and** a public base URL is configured, the link
    points at the published deck at that slide:
-   `<baseUrl>/p/<publishId>-<slug>#slide=<index>`. The reader lands on the
+   `<baseUrl>/p/<publicationId>/<version>/slides#slide=<index>`, the canvas of the
+   newest edition, whichever view its bare address answers. The reader lands on the
    video slide and can click through the rest of the deck. The published viewer
    reads the initial slide from the `#slide=<0-based index>` hash.
 2. **Provider URL** — otherwise, the video's own public URL:
