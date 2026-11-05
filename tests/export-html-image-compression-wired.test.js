@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 import { buildStandaloneHtml } from '../server/export/html.js';
+import { renderPublishedDocuments } from './helpers/edition-documents.js';
 
 /**
  * Regression guard for the *seam*, not the transform (B717).
@@ -14,8 +15,9 @@ import { buildStandaloneHtml } from '../server/export/html.js';
  * `tests/export-pdf-image-compression-wired.test.js` pins the PDF route; this
  * pins the standalone HTML download. It inlined every image at source
  * resolution: a deck of 48 photos of 4.8 MB came out at 307 MB. The difference
- * is entirely whether
- * `buildStandaloneHtml`'s embed passes still pass `transform`.
+ * is entirely whether `buildStandaloneHtml`'s embed passes still pass
+ * `transform`. A published page has its own seam, the seal in
+ * `prepareEditionInput`, and every visitor pays for what it leaves uncompressed.
  */
 
 const repoRoot = path.resolve(
@@ -99,6 +101,29 @@ test('standalone HTML applies image compression to embedded slide images', async
       biggest < rawBase64Len * 0.5,
       `embedded payload ${biggest} not substantially smaller than raw ${rawBase64Len}`,
     );
+  } finally {
+    await cleanup();
+  }
+});
+
+test('a published edition applies image compression to its sealed images', async () => {
+  const raw = await bigOpaquePng(3000);
+  const [url, cleanup] = await withUpload(raw);
+  try {
+    const { canvas, reader } = await renderPublishedDocuments(
+      photoDeck('compress-edition', url),
+      repoRoot,
+    );
+    const rawBase64Len = raw.toString('base64').length;
+    for (const html of [canvas, reader]) {
+      assert.ok(!html.includes(url), 'the sealed image is inlined');
+      const jpegs = dataUrlPayloads(html, 'image/jpeg');
+      assert.ok(jpegs.length > 0, 'an opaque photo is sealed as JPEG');
+      assert.ok(
+        Math.max(...jpegs.map((p) => p.length)) < rawBase64Len * 0.5,
+        'the sealed payload is substantially smaller than the source',
+      );
+    }
   } finally {
     await cleanup();
   }
