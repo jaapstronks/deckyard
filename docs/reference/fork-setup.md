@@ -302,7 +302,7 @@ than silently shipping without your CSS.
 
 |                       | **Canvas chain**                                                                | **Reader chain**                               |
 | --------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Paths                 | PDF, PNG, standalone HTML, print, single-slide render, embed, both MCP previews | the reflow reader at `/p/:id-:slug/reader`     |
+| Paths                 | PDF, PNG, standalone HTML, print, single-slide render, embed, both MCP previews | the reflow reader of an edition                |
 | Layers above the seam | core bundle → theme vars → theme → slide CSS → per-path document CSS            | one reflow stylesheet                          |
 | Vocabulary            | `.slide`, `.deck-slide`, `--t-*`, a fixed 1600×900 stage                        | `.reader-*`, relative units, no fixed geometry |
 | Your seam             | last                                                                            | last                                           |
