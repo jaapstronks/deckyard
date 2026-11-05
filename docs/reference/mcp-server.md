@@ -30,7 +30,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-The `DECKYARD_MCP_OWNER_EMAIL` sets who owns presentations created via MCP. This should match your Deckyard user email. Without it, presentations are created without an owner and may show "Access Denied" in the web UI. The create tools take no `ownerEmail` of their own: a new deck belongs to the session owner, as it does on every other contract, and an `ownerEmail` argument is refused (B521).
+The `DECKYARD_MCP_OWNER_EMAIL` sets who owns presentations created via MCP. It must be the email of an existing Deckyard user: the stdio server refuses to start when no user has that address, since decks it created would belong to nobody who can open them (DY-843). Without it, presentations are created without an owner and may show "Access Denied" in the web UI. The create tools take no `ownerEmail` of their own: a new deck belongs to the session owner, as it does on every other contract, and an `ownerEmail` argument is refused (B521).
 
 It also determines what the session may touch: every tool that fetches a deck by id enforces per-deck access for this owner (read for read-only tools; collaborator-aware write access for mutating tools; delete is owner-only). When the variable is unset, the stdio session is treated as a trusted local single-user process and per-deck checks are skipped.
 
