@@ -320,8 +320,9 @@ const PARSER = new JSDOM('').window.document;
 // The render runs the slide sanitizer. Every importer gets it running, so no
 // path judges the escaped fallback. Where it cannot start (a test that fakes
 // a browser without DOMPurify), dropForeignMedia refuses to run.
-await initSanitizer().catch(() => {
-  // Ignorable here: sanitizerReady() stays false and the rule refuses.
+let sanitizerFailure = null;
+await initSanitizer().catch((err) => {
+  sanitizerFailure = err;
 });
 
 /**
@@ -608,7 +609,7 @@ export function dropForeignMedia(
   if (!Array.isArray(slides)) return unusable;
   if (!sanitizerReady()) {
     throw new Error(
-      'dropForeignMedia: the slide sanitizer is not initialized (initSanitizer())',
+      `dropForeignMedia: the slide sanitizer is not initialized (initSanitizer()${sanitizerFailure ? `: ${sanitizerFailure.message}` : ''})`,
     );
   }
   foldAsRead(slides.filter((slide) => slide && typeof slide === 'object'));
