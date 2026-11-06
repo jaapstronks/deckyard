@@ -277,6 +277,8 @@ Release 1.98.0 applies it to two security fixes under a plain `security:` title:
 
 Release 1.101.0 applies it to a `fix:` title: the stdio MCP server now refuses to start on a `DECKYARD_MCP_OWNER_EMAIL` no user has, which an auth-off install with the documented example config did not do before. It also carries the removal of the `context` and `mode` options from the export builders, under a `refactor:` title the changelog drops.
 
+Release 1.103.0 applies it the other way round: a `security!:` title made the Release PR propose 2.0.0, and the beta rule takes it back to the next MINOR. The breaking note stays: an MCP client or fork that let a model's plan write without naming the slides has to pass `apply` with indexes.
+
 When editing the Release PR body, preserve the generated robot introduction, separators and Release Please footer. The bot parses that wrapper to recognize the merged PR and publish its tag; correct version files and green CI alone do not establish that publication will run. If the wrapper was removed, restore it on the merged PR, close any duplicate release PR and rerun the release-please job before deploying.
 
 During a lane handoff, a release claim may be transferred explicitly by the maintainer. Record the new owner in the shared queue before continuing the release review and its deployment steps.
