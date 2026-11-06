@@ -29,6 +29,7 @@ import { reviseOutline as reviseOutlineStep } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides/index.js';
 import { resolveSourceImages } from './source-images.js';
+import { leaveOut } from './model-media.js';
 import { AI_REVIEW_KEYS } from '../public-output.js';
 import { attachSlideReview } from './slide-review.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
@@ -225,9 +226,9 @@ async function runPhases(
   const allSlides = [...structuralSlides, ...refinedContentSlides].sort(
     (a, b) => a.originalIndex - b.originalIndex,
   );
-  const slides = validateAndFixRefinedSlides(allSlides, { slideTypes });
+  const fixedSlides = validateAndFixRefinedSlides(allSlides, { slideTypes });
 
-  for (const slide of slides) {
+  for (const slide of fixedSlides) {
     const source = outline.slides.find(
       (item) => item.index === slide.originalIndex,
     );
@@ -240,10 +241,14 @@ async function runPhases(
   }
 
   // ── Source images: upload the ones a slide uses (B775) ──────────────────
-  const { used } = await resolveSourceImages(slides, sourceImages, {
-    signal,
-    slideTypes,
-  });
+  const { used, unusable } = await resolveSourceImages(
+    fixedSlides,
+    sourceImages,
+    { signal, slideTypes },
+  );
+  // An embed or video the model built a slide around is not the model's to
+  // name (DY-811): that slide is left out, and its neighbour says so.
+  const slides = leaveOut(fixedSlides, unusable);
 
   const meta = {
     sessionId: logger.sessionId,

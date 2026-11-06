@@ -24,6 +24,59 @@ export function nonEmpty(s) {
 }
 
 /**
+ * A media field's value as the slide uses it: the one reading of an `image`
+ * field, a slide background, an embed page and a video source (DY-811).
+ *
+ * A string, trimmed the way JavaScript trims (Unicode white space included, so
+ * more than the browser's URL parser strips); anything else is no media at
+ * all. Every renderer of such a field reads it through here, and so does the
+ * rule that keeps a model's answer from naming a host of its own
+ * (`server/utils/ai/model-media.js`): what the rule judges is exactly what
+ * the browser is handed, so the two cannot drift apart.
+ *
+ * @param {unknown} raw
+ * @returns {string}
+ */
+export function mediaValue(raw) {
+  return typeof raw === 'string' ? raw.trim() : '';
+}
+
+/** The host a media value is resolved against: this installation. */
+export const MEDIA_OWN_HOST = 'installation.invalid';
+
+/** Two bases, because `https:host` is a path under https and a host under http. */
+const MEDIA_BASES = [`https://${MEDIA_OWN_HOST}/`, `http://${MEDIA_OWN_HOST}/`];
+
+/**
+ * A media value resolved the way a page on this installation resolves it,
+ * once under https and once under http, or `null` when the URL parser refuses
+ * it on either base (DY-811).
+ *
+ * `null` is not "loads nothing". An attribute (`src`, an iframe, a video)
+ * loads nothing from such a value, but a CSS `url()` loads it anyway from the
+ * host it names, query included (Chrome: `https://host\uff1a/p`, and
+ * `https:://host/p` on an http page). So every reader that decides whether a
+ * value may be used treats a refused value as unusable: the AI media rule
+ * (`server/utils/ai/model-media.js`) as another host, the background layer as
+ * no background. A conforming browser fetches nothing from it where it is a
+ * URL, so nothing legitimate is lost.
+ *
+ * @param {string} value - as {@link mediaValue} reads it
+ * @returns {URL[]|null}
+ */
+export function resolveMediaUrl(value) {
+  const urls = [];
+  for (const base of MEDIA_BASES) {
+    try {
+      urls.push(new URL(value, base));
+    } catch {
+      return null;
+    }
+  }
+  return urls;
+}
+
+/**
  * Standard background field definition for slide types.
  * Use this constant instead of duplicating the field definition.
  *
@@ -419,7 +472,7 @@ export function pickAltText({
 }
 
 export function normalizeUrl(s) {
-  const t = String(s || '').trim();
+  const t = mediaValue(s);
   if (!t) return '';
   // Allow protocol-relative URLs too (//...)
   if (/^https?:\/\//i.test(t) || t.startsWith('//')) return t;
@@ -493,7 +546,7 @@ function looksLikeUuid(s) {
 }
 
 export function youtubeEmbedUrl(input) {
-  const raw = String(input || '').trim();
+  const raw = mediaValue(input);
   if (!raw) return '';
   const u = parseUrl(raw);
   if (!u) return '';
@@ -529,7 +582,7 @@ export function youtubeEmbedUrl(input) {
 }
 
 export function vimeoEmbedUrl(input) {
-  const raw = String(input || '').trim();
+  const raw = mediaValue(input);
   if (!raw) return '';
   const u = parseUrl(raw);
   if (u && hostMatches(u.hostname, 'vimeo.com')) {
@@ -582,7 +635,7 @@ export function appendQuery(url, params) {
  * @returns {string} The embed URL, or `''` when there is nothing to embed.
  */
 export function bunnyEmbedUrlFromInput(input, { libraryId = '' } = {}) {
-  const raw = String(input || '').trim();
+  const raw = mediaValue(input);
   if (!raw) return '';
 
   // A pasted play or embed URL is read for its two ids and nothing else: the

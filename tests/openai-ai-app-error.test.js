@@ -21,6 +21,7 @@ import { walkFiles } from './helpers/walk-files.js';
 import { convertSlideWithAi } from '../server/utils/openai/convert-slide.js';
 import { translateShortText } from '../server/utils/openai/translate.js';
 import { LlmError } from '../server/utils/llm/error.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { ValidationError, isAppError } from '../server/utils/errors.js';
 
 const repoRoot = path.resolve(
@@ -33,11 +34,14 @@ const isValidationError = (err) =>
 
 test('convert-slide input validation throws 400 ValidationError', async () => {
   await assert.rejects(
-    () => convertSlideWithAi({}, 'list-slide'),
+    () => convertSlideWithAi({}, 'list-slide', { slideTypes: SLIDE_TYPES }),
     isValidationError,
   );
   await assert.rejects(
-    () => convertSlideWithAi({ type: 'content-slide' }, 'no-such-type'),
+    () =>
+      convertSlideWithAi({ type: 'content-slide' }, 'no-such-type', {
+        slideTypes: SLIDE_TYPES,
+      }),
     isValidationError,
   );
 });

@@ -85,8 +85,10 @@ through `custom/ai/prompts.js`.
 The source text goes into the user message fenced as data (§ Findings 6), and
 so does phase 1's own output when phase 2 feeds it back. What bounds the answer:
 `validateAndFixRefinedSlides` repairs structure and refuses overlong text,
-`resolveSourceImages` empties every remote URL the model wrote into a declared
-image field, `normalizeSlides` refuses unknown slide types, and the deck is new,
+`resolveSourceImages` copies the images a slide chose and then holds every
+media field to the rule in § Sinks (an image the model named is emptied, a
+slide built around an embed or video it named is left out),
+`normalizeSlides` refuses unknown slide types, and the deck is new,
 so the model cannot touch anything the starter already had. Presenter `notes`
 and the per-slide review metadata (`_aiReasoning`, `_aiAlternatives`,
 `_aiWarnings`) are free text outside the schema.
@@ -112,7 +114,9 @@ storage layer refuses unknown types. The scope of a plan is bounded in code,
 not in the prompt (`scopePlan`, finding 4): a plan writes only the slides the
 starter pointed at (the editor's open slide, the indexes in MCP `apply`) or,
 for a deck-wide command, any slide; a removal is never written, only
-proposed. MCP returns the plan before anything is stored.
+proposed. MCP returns the plan before anything is stored. Every one of these
+answers keeps, in a field the viewer's browser loads, only what the slides the
+model was shown already held (§ Sinks, finding 3).
 
 ### Analysis: the model talks about a deck
 
@@ -126,7 +130,9 @@ proposed. MCP returns the plan before anything is stored.
 The comment sink matters: a slide written by one collaborator can make the
 model post a suggestion that every other collaborator sees as "the AI's", and
 "Apply suggestion" (`server/routes/api/presentations/comments-actions.js`)
-writes the proposed content into the deck, after the field validation.
+writes the proposed content into the deck, after the field validation. A
+proposed slide is held to the media rule before it becomes a comment, so it
+can reuse an image or embed the deck holds and bring none of its own.
 
 ### Translation
 
@@ -196,8 +202,10 @@ with the control at each.
   refusal is a 502 `bad_gateway` that names the field, because the model failed
   and not the caller.
 - **Slide type.** The model picks from the organization's offer. That offer
-  includes `embed-slide` (any `https:` URL in an iframe whose `sandbox` value
-  is an enum the model may set to `permissive`), `video-slide` and the
+  includes `embed-slide` and `video-slide`, but the model cannot name a URL
+  for what they frame (next point): an embed survives only where the model
+  rewrote one that already had its page, a video also with a bare id in the
+  installation's library. It also includes the
   organization's database custom types (`{{raw}}` through DOMPurify). It does
   not include the raw-HTML type core removed in October 2026 (recorded in
   `shared/slide-types/removed.js`); a `markup: true` field exists only on fork
@@ -206,14 +214,37 @@ with the control at each.
   share viewer, follow-along) ship one CSP with `img-src 'self' data: blob:
 https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   `https:` host ([`document-csp.js`](../../server/utils/document-csp.js) says
-  itself that it is a host allowlist for code, not an XSS defence). A remote
-  URL the model writes into an image field, a background image, an embed or a
-  video loads from every viewer's browser with no click, which `resolveSourceImages`
-  covers on part of the paths: finding 3. **Published editions are closed**:
+  itself that it is a host allowlist for code, not an XSS defence, and why the
+  content directives stay open: an author chooses where a deck's media lives).
+  So what a field holds is the control, and for a model's answer that is
+  `dropForeignMedia` (`server/utils/ai/model-media.js`): in an image field, a
+  slide background, an embed and a video, declared as `type: 'image'` or
+  `mediaRef`, the answer keeps only a value the slides the model was given
+  already held there, or one that names no other host (a served path, a bare
+  video id in the installation's library), read the way the browser resolves
+  it. A value the URL parser refuses counts as another host: an attribute
+  loads nothing from it, but a CSS `url()` still loads it from the host it
+  names. The rule judges what the slide will use: the value as every renderer
+  reads it (`mediaValue()` in `shared/slide-types/helpers.js`; anything but a
+  string is emptied), on the slide as a read yields it (the read funnel's
+  legacy keys folded first). No sink changes that value after the rule: the
+  background layer writes it unchanged and HTML-escaped into `url('...')`, and
+  renders no background for a value its CSS string cannot carry (a quote, a
+  backslash, a control character) or the URL parser refuses
+  (`resolveMediaUrl()`, the one question the rule and the layer share). A media field belongs in a `src`; a fork
+  type that writes one into CSS `url()` needs more than `mediaValue()` and
+  `escapeHtml`. Anything else is emptied with a warning, and a
+  slide left without a field its type requires is not in the answer. A URL in
+  the source text is data and does not count as held. One known slack: for a
+  slide whose type the installation does not know, the held set is wider than
+  that slide's media fields; it holds only values the deck already has. It runs after composition on every path that
+  turns an answer into slide content (finding 3). A person or an agent with
+  write access can still put any `https:` URL in such a field: that is their
+  own write. **Published editions are closed**:
   `server/export/edition-input.js` refuses any frame and any non-`data:` URL
   at publish time. **Exports fetch server-side** through the SSRF guard, which
   blocks private and metadata addresses and accepts public hosts, so a public
-  attacker URL is requested from the server's own address.
+  URL an author chose is requested from the server's own address.
 - **Links.** Markdown links allow `https?:` only and no images; `url` fields
   are checked at write time, and renderers re-check the scheme at render time.
 - **Destructive edits.** A model's plan never removes a slide and writes
@@ -324,8 +355,18 @@ says what it touches; the exact form follows with its fix.
    projection.** Fixed: a copy by an actor who may not write the source is the
    reader projection, on the editor, v1 and MCP alike;
    `tests/duplicate-reader-projection.test.js` pins it (DY-810).
-3. **A URL the model writes can load in a viewer's browser without a click**
-   (DY-811). The scrub for such URLs does not cover every path yet.
+3. **A URL the model wrote could load in a viewer's browser without a click.**
+   The scrub for remote images ran on four generation and append paths and
+   read image fields only, so section refine, iterate, convert and an
+   analysis's proposed slide returned or stored whatever the model put in an
+   image, a background, an embed or a video, with the deck's text in its
+   query if a slide asked for that. Fixed: every path that turns an answer
+   into slide content holds it to one rule, `dropForeignMedia` (§ Sinks), and
+   `tests/ai-model-media.test.js` drives each path with a model that plants a
+   URL and fails on a call to the transport it has not filed (DY-811). Two
+   things are outside that rule and open (DY-863): text that an
+   organization's own slide type renders as markup, and a field a type
+   withholds from the model, which an answer can still set.
 4. **A plan could reach further than the slides the starter named.** A
    deck-wide iteration and a compression plan applied `remove` and `replace`
    on any index, MCP stored that before the agent saw it, and a slide title
@@ -395,9 +436,9 @@ model-written URL cannot run or beacon.
 Is this threat model a launch condition for the public sandbox? **Not while
 the sandbox offers no AI.** `SANDBOX_MODE` forces `enableAi` off, so none of
 the paths above exist there and the findings do not change its posture. The
-day the sandbox offers AI, findings 3 and 8 become launch conditions first
-(a beacon from a public deck and unmetered spend on a public URL), and the sandbox's Mistral-only rule stops
-being belt and braces.
+day the sandbox offers AI, the open part of finding 3 becomes a launch
+condition first (a beacon from a public deck), and the sandbox's Mistral-only
+rule stops being belt and braces.
 
 ## Tests
 
@@ -421,10 +462,16 @@ What pins the controls above today, and the gaps per finding:
 - Deck content as data on every model path: `llm-data-boundary.test.js`.
 - Tool results as data for the agent: `tests/mcp/mcp-result-marking.test.js`.
 - The scope of a plan: `tests/ai-plan-scope.test.js`.
+- Media a model's answer may hold, on every writing path:
+  `tests/ai-model-media.test.js` drives every path with planted media in every
+  known spelling, and renders every media field of every type and every legacy
+  key the read funnel folds into one, resolving what a browser would fetch
+  (attributes through an HTML parser, CSS with its escapes; a CSS address the
+  parser refuses and that names the host counts as a load).
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 
-Not pinned by any test, one per finding: a `javascript:` or foreign-host
-video source (added with the fix for finding 1), and the open finding 3. Each item
+Not pinned by any test: a `javascript:` or foreign-host video source (added
+with the fix for finding 1), and the two open points under finding 3. Each item
 carries its regression test as an acceptance criterion, after the pattern of
 the faked seam in `tests/translate-undeclared-item-strings.test.js`.

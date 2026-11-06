@@ -112,7 +112,7 @@ const PATHS = {
       vendor: 'openai',
     }),
   'server/utils/ai/analyze-presentation.js': () =>
-    analyzePresentation(deck, { vendor: 'openai' }),
+    analyzePresentation(deck, { vendor: 'openai', slideTypes: SLIDE_TYPES }),
   'server/utils/ai/compare-versions.js': () =>
     compareVersionsWithAi({
       currentSlides: deck.slides,
@@ -179,7 +179,7 @@ const PATHS = {
       feedback: COMMAND,
     }),
   'server/utils/openai/convert-slide.js': () =>
-    convertSlideWithAi(slide('a'), 'list-slide'),
+    convertSlideWithAi(slide('a'), 'list-slide', { slideTypes: SLIDE_TYPES }),
   'server/services/digest-generation.js': async () => {
     await generateDigestWithAI(
       { name: INJECTION, email: 'nel@example.com' },

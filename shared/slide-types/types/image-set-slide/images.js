@@ -17,6 +17,7 @@
  */
 
 import { clamp } from '../../../number-utils.js';
+import { mediaValue } from '../../helpers.js';
 
 /**
  * Type-level image config for image-set (the ImageRef defaults, right-hand side
@@ -50,7 +51,7 @@ export const IMAGE_SET_MIN_IMAGES = 2;
 function sanitizeItem(raw) {
   const it = raw && typeof raw === 'object' ? raw : {};
   return {
-    src: typeof it.src === 'string' ? it.src.trim() : '',
+    src: mediaValue(it.src),
     alt: typeof it.alt === 'string' ? it.alt : '',
     fit: it.fit === 'contain' || it.fit === 'cover' ? it.fit : '',
     focusX: it.focusX ?? '',

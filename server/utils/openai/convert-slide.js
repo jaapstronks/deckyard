@@ -6,6 +6,7 @@ import { extractJsonObject } from './json.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { GLOBAL_SLIDE_FIELD_KEYS } from '../../../shared/slide-types/registry.js';
 import { getAiConvertibleSlideTypes } from '../../../shared/slide-types/convert.js';
+import { dropForeignMedia, mediaInSlides } from '../ai/model-media.js';
 
 /**
  * The prompt for one conversion pair, or null when the pair has none.
@@ -463,11 +464,27 @@ Return JSON with: { title, subheading, variant: "bullets", items: [{title, text}
   return null;
 }
 
+/**
+ * Convert one slide to another type with a model call.
+ *
+ * @param {Object} slide - The slide to convert
+ * @param {string} toType - The target type
+ * @param {Object} options
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map; the answer keeps only the media the slide already held,
+ *   read off the target type's declaration (DY-811)
+ * @param {string|null} [options.vendor]
+ * @param {string} [options.lang]
+ * @returns {Promise<Object>} The converted slide
+ */
 export async function convertSlideWithAi(
   slide,
   toType,
-  { vendor = null, lang = 'nl' } = {},
+  { vendor = null, lang = 'nl', slideTypes } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError('convertSlideWithAi: pass the slide-type map');
+  }
   const fromType = slide?.type;
   if (!fromType) {
     throw new ValidationError('Slide must have a type');
@@ -532,5 +549,15 @@ export async function convertSlideWithAi(
     }
   }
 
+  const unusable = dropForeignMedia([converted], {
+    slideTypes,
+    keep: mediaInSlides([slide], slideTypes),
+  });
+  if (unusable.size) {
+    throw new LlmError(
+      'The model answered a slide that cannot be used: it was built around an embed or video the slide does not hold.',
+      { vendor: llmConfig.vendor, phase: 'convert-slide' },
+    );
+  }
   return converted;
 }

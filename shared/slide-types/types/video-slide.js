@@ -8,6 +8,7 @@ import {
   vimeoEmbedUrl,
   youtubeEmbedUrl,
   BACKGROUND_FIELD,
+  mediaValue,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 import { bunnyPlayerColors } from './video-slide/player-colors.js';
@@ -149,7 +150,7 @@ export default {
         ? `<h2 class="heading" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
 
-    const sourceRaw = String(content?.source || '').trim();
+    const sourceRaw = mediaValue(content?.source);
 
     const yt = youtubeEmbedUrl(sourceRaw);
     const vm = vimeoEmbedUrl(sourceRaw);

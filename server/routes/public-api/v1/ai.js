@@ -15,6 +15,7 @@ import {
 } from '../../../utils/ai/index.js';
 import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
 import { resolveSourceImages } from '../../../utils/ai/source-images.js';
+import { leaveOut } from '../../../utils/ai/model-media.js';
 import { hasPermission } from '../../../storage/api-keys.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
@@ -232,13 +233,18 @@ async function handleAppendSlides(ctx) {
   });
   // The same steps as the editor route and MCP `append_slides`, plus the
   // refusal: nobody reviews this answer before an integration uses it.
-  const slides = validateAndFixRefinedSlides(
+  const fixedSlides = validateAndFixRefinedSlides(
     Array.isArray(parts?.slides) ? parts.slides : [],
     { slideTypes },
   );
-  assertValidModelSlides(slides, slideTypes, { phase: 'append' });
+  assertValidModelSlides(fixedSlides, slideTypes, { phase: 'append' });
+  let slides;
   try {
-    await resolveSourceImages(slides, sourceImages, { signal, slideTypes });
+    const { unusable } = await resolveSourceImages(fixedSlides, sourceImages, {
+      signal,
+      slideTypes,
+    });
+    slides = leaveOut(fixedSlides, unusable);
   } catch (e) {
     if (!signal.aborted) throw e;
     return true;

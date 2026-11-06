@@ -79,6 +79,7 @@ import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
 import { resolveSourceImages } from '../utils/ai/source-images.js';
+import { LEFT_OUT_WARNING, leaveOut } from '../utils/ai/model-media.js';
 import { attachBatchReviews } from '../utils/ai/slide-review.js';
 import {
   REVIEW_NOTE_MAX_LENGTH,
@@ -1026,6 +1027,7 @@ export function registerTools(
       const result = await convertSlideWithAi(slide, targetType, {
         vendor: vendor || null,
         lang,
+        slideTypes: await sessionSlideTypes(context),
       });
 
       if (!result?.content)
@@ -1415,20 +1417,33 @@ export function registerTools(
         lang,
         slideTypes,
       });
-      const slidesToInsert = validateAndFixRefinedSlides(parts.slides || [], {
+      const fixedSlides = validateAndFixRefinedSlides(parts.slides || [], {
         slideTypes,
         theme,
       });
-      await resolveSourceImages(slidesToInsert, sourceImages, {
-        signal: context?.signal || null,
-        slideTypes,
-      });
+      const { unusable } = await resolveSourceImages(
+        fixedSlides,
+        sourceImages,
+        {
+          signal: context?.signal || null,
+          slideTypes,
+        },
+      );
       // The same review the editor's "add slides" gets (B590): the author
       // opens it from the deck afterwards.
-      attachBatchReviews(slidesToInsert, newSlides, {
+      attachBatchReviews(fixedSlides, newSlides, {
         slideTypes,
         disabledSlideTypes: slideTypeOffer.disabledSlideTypes,
       });
+      // A slide built around an embed or video the model named cannot be
+      // stored (DY-811); the agent adds it with its own write.
+      const slidesToInsert = leaveOut(fixedSlides, unusable);
+      if (!slidesToInsert.length)
+        return {
+          appended: 0,
+          totalSlides: pres.slides.length,
+          warnings: [{ message: LEFT_OUT_WARNING }],
+        };
 
       // Find insert position: before structural closing slides (payoff, end).
       // The follow-along invite used to be listed here too, against its own
@@ -1575,14 +1590,15 @@ export function registerTools(
 
       // analyzePresentation auto-detects language from slide content; it
       // proposes from the session organization's offer (B660)
+      const slideTypes = await sessionSlideTypes(context);
       const result = await analyzePresentation(pres, {
         vendor: vendor || null,
+        slideTypes,
         ...(await sessionSlideTypeOffer(context)),
       });
 
       // analyzePresentation returns { suggestions: [...], metadata: {...} }
       const suggestions = result?.suggestions || [];
-      const slideTypes = await sessionSlideTypes(context);
 
       return {
         slideCount: pres.slides.length,

@@ -37,17 +37,18 @@ export const handleAiConvertSlide = withErrorHandler(
     const vendor = getOptionalString(body, 'vendor');
     const lang = getLang(body) || DEFAULT_DECK_LANG;
 
+    const slideTypes = await buildMergedSlideTypes(storageScope);
     const converted = await convertSlideWithAi(slide, toType, {
       vendor,
       lang,
+      slideTypes,
     });
     // The editor renders this answer at once and saves it later: the model's
     // links are refused here, as MCP `convert_slide` refuses them on its write.
-    assertValidModelSlides(
-      [converted],
-      await buildMergedSlideTypes(storageScope),
-      { phase: 'convert-slide', vendor },
-    );
+    assertValidModelSlides([converted], slideTypes, {
+      phase: 'convert-slide',
+      vendor,
+    });
     serveJson(res, 200, { slide: converted });
     return true;
   },

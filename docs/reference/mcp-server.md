@@ -139,6 +139,18 @@ API Keys → **Edit permissions**, or `PATCH /api/api-keys/:id` with
 `{ "permissions": [...] }` (B813). The gate re-reads the key on every request,
 so the new scope applies from the next call.
 
+### A model's answer brings no media of its own
+
+`create_presentation`, `append_slides`, `iterate_presentation`, `convert_slide` and
+`analyze_presentation` run a model over text that others wrote. What that
+model puts in an image field, a slide background, an embed or a video is not
+stored when it names another host, unless the slides it was given already
+held it (DY-811): an image is copied when the source offered it and emptied
+otherwise, and a slide built around an embed or a video URL the model named
+is left out, with a line in `warnings`. To place one, write the slide yourself with
+`add_slide` or `update_slide`: your own write is checked as your input, not
+as a model's answer.
+
 ### A model's plan writes only what you named
 
 `iterate_presentation` and `compress_presentation` hand you the model's plan

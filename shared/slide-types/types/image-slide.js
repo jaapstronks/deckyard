@@ -9,6 +9,7 @@ import {
   BACKGROUND_FIELD,
   IMAGE_ROLE_FIELD,
   bgClass,
+  mediaValue,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 import {
@@ -269,13 +270,14 @@ export default {
     const imageRole =
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
     const alt = imageSlideAltText(content);
-    const img = content?.image
+    const src = mediaValue(content?.image);
+    const img = src
       ? (() => {
           // For cover layouts this controls the crop focus; for contain layout this controls alignment.
           const focusStyle = objectPositionStyleAttrFromFocus(content);
           const ariaDecorative =
             imageRole === 'decorative' ? ' aria-hidden="true"' : '';
-          return `<img class="image" data-inline-photo="0" src="${escapeHtml(content.image)}" alt="${escapeHtml(
+          return `<img class="image" data-inline-photo="0" src="${escapeHtml(src)}" alt="${escapeHtml(
             alt,
           )}"${ariaDecorative}${focusStyle} />`;
         })()

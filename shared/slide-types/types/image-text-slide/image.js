@@ -12,7 +12,7 @@
  * `fit` follows the type default.
  */
 
-import { pickAltText } from '../../helpers.js';
+import { mediaValue, pickAltText } from '../../helpers.js';
 
 /**
  * Type-level image config for image-text (the ImageRef defaults, right-hand
@@ -57,7 +57,7 @@ export function resolveImageTextImage(content) {
   const c = content && typeof content === 'object' ? content : {};
   const fitExplicit = c.fit === 'cover' || c.fit === 'contain';
   return {
-    src: typeof c.image === 'string' ? c.image.trim() : '',
+    src: mediaValue(c.image),
     alt: typeof c.alt === 'string' ? c.alt.trim() : '',
     fit: fitExplicit ? c.fit : IMAGE_TEXT_IMAGE_DEFAULTS.fit,
     fitExplicit,

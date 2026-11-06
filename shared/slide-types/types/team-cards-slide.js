@@ -13,6 +13,7 @@ import {
   objectPositionStyleAttrFromFocus,
   imagePlaceholderHtml,
   safeHref,
+  mediaValue,
 } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
@@ -342,7 +343,7 @@ export default {
 
     // Helper to build a single card HTML from a member object
     const buildCard = (member, idx) => {
-      const img = nonEmpty(member.image);
+      const img = mediaValue(member.image);
       const altExplicit = nonEmpty(member.alt || member.name);
       const focusX = member.imageFocusX;
       const focusY = member.imageFocusY;

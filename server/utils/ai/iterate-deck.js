@@ -10,6 +10,7 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
+import { LlmError } from '../llm/error.js';
 import {
   requestChatCompletionContent,
   starterRequest,
@@ -18,6 +19,7 @@ import {
 import { extractJsonObject, safeJsonParse } from '../openai/json.js';
 import { buildPhase2CatalogPrompt } from './slide-type-catalog.js';
 import { validateAndFixSlide } from './validate-slides/index.js';
+import { dropForeignMedia, leaveOut, mediaInSlides } from './model-media.js';
 import { prompts } from './prompts/index.js';
 
 /**
@@ -274,11 +276,50 @@ ${untrustedData(JSON.stringify({ type: slide.type, content: slide.content }, nul
       result = obj?.slides || (obj ? [obj] : []);
     }
     // Validate each split slide
-    return result.map((s) => validateAndFixSlide(s, { slideTypes }));
+    const parts = ownMediaOnly(
+      result.map((s) => validateAndFixSlide(s, { slideTypes })),
+      [slide],
+      slideTypes,
+    );
+    if (result.length && !parts.length) throw unusableAnswer(resolvedVendor);
+    return parts;
   } else {
     result = extractJsonObject(rawResponse);
-    return validateAndFixSlide(result, { slideTypes });
+    const [fixed] = ownMediaOnly(
+      [validateAndFixSlide(result, { slideTypes })],
+      [slide],
+      slideTypes,
+    );
+    if (!fixed) throw unusableAnswer(resolvedVendor);
+    return fixed;
   }
+}
+
+/**
+ * Hold a model's slides to the media the slides it was shown already held
+ * (DY-811): it rewrites text and structure, it does not choose what a
+ * viewer's browser loads. A slide left without a reference its type requires
+ * is not in the answer.
+ *
+ * @param {Object[]} written - Slides out of `validateAndFixSlide`
+ * @param {Object[]} shown - The slides the model was given
+ * @param {Record<string, Object>} slideTypes
+ * @returns {Object[]} The slides that can be stored, mutated
+ */
+function ownMediaOnly(written, shown, slideTypes) {
+  const unusable = dropForeignMedia(written, {
+    slideTypes,
+    keep: mediaInSlides(shown, slideTypes),
+  });
+  return leaveOut(written, unusable);
+}
+
+/** The one slide the starter pointed at came back unusable: the model failed. */
+function unusableAnswer(vendor) {
+  return new LlmError(
+    'The model answered a slide that cannot be used: it was built around an embed or video the slide does not hold.',
+    { phase: 'iterate', vendor },
+  );
 }
 
 /**
@@ -356,17 +397,34 @@ ${JSON.stringify(
     return { modifications: [], summary: 'No changes suggested.' };
   }
 
-  // Validate all replacement slides in the plan
+  // Validate all replacement slides in the plan. A modification whose slides
+  // cannot be stored is not in the plan: the slide it named stays as it is.
+  const usable = [];
   for (const mod of plan.modifications) {
     if (mod.action === 'replace' && mod.slide) {
-      mod.slide = validateAndFixSlide(mod.slide, { slideTypes });
+      [mod.slide] = ownMediaOnly(
+        [validateAndFixSlide(mod.slide, { slideTypes })],
+        slides,
+        slideTypes,
+      );
+      if (!mod.slide) continue;
     }
     if (mod.action === 'split' && mod.slides) {
-      mod.slides = mod.slides.map((s) =>
-        validateAndFixSlide(s, { slideTypes }),
+      const written = mod.slides.length;
+      mod.slides = ownMediaOnly(
+        mod.slides.map((s) => validateAndFixSlide(s, { slideTypes })),
+        slides,
+        slideTypes,
       );
+      if (written && !mod.slides.length) continue;
     }
+    usable.push(mod);
   }
+  if (usable.length < plan.modifications.length) {
+    plan.summary =
+      `${plan.summary || ''} A change built around an embed or video the deck does not hold was left out.`.trim();
+  }
+  plan.modifications = usable;
 
   return plan;
 }
