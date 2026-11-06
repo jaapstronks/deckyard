@@ -38,7 +38,9 @@ jobs:
   test:
     needs: classify
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
+    # PostgreSQL 16 ships on the 24.04 image; ubuntu-latest became 26.04
+    # (PostgreSQL 18) on 2026-11-06. See .github/actions/postgres.
+    runs-on: ubuntu-24.04
     # PostgreSQL and Redis come from the runner image and apt, not from service
     # containers: anonymous registry pulls hit a quota shared per runner IP
     # (B736, see .github/actions/postgres/action.yml).
@@ -161,7 +163,9 @@ jobs:
   test-fork:
     needs: classify
     if: ${{ !cancelled() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true') }}
-    runs-on: ubuntu-latest
+    # PostgreSQL 16 ships on the 24.04 image; ubuntu-latest became 26.04
+    # (PostgreSQL 18) on 2026-11-06. See .github/actions/postgres.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/postgres
@@ -269,7 +273,9 @@ jobs:
   migrations:
     needs: classify
     if: ${{ !cancelled() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true') }}
-    runs-on: ubuntu-latest
+    # PostgreSQL 16 ships on the 24.04 image; ubuntu-latest became 26.04
+    # (PostgreSQL 18) on 2026-11-06. See .github/actions/postgres.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/postgres
@@ -334,7 +340,9 @@ jobs:
   test-postgres:
     needs: classify
     if: ${{ !cancelled() && (needs.classify.result != 'success' || needs.classify.outputs.doc_only != 'true') }}
-    runs-on: ubuntu-latest
+    # PostgreSQL 16 ships on the 24.04 image; ubuntu-latest became 26.04
+    # (PostgreSQL 18) on 2026-11-06. See .github/actions/postgres.
+    runs-on: ubuntu-24.04
     env:
       # Read by server/config/database.js for every connection this job opens
       # (the migrate step and the suite alike). Shared at job level here because
