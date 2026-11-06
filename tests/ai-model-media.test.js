@@ -205,7 +205,7 @@ const {
   leaveOut,
   loadsFromAnotherHost,
   heldInSlides,
-  MAX_JUDGED_BY_RENDER,
+  MAX_SEARCH_CHARS,
 } = await import('../server/utils/ai/model-media.js');
 const { SLIDE_TYPES, canonicalSlideType } =
   await import('../shared/slide-types/registry.js');
@@ -1255,7 +1255,7 @@ test('KaTeX renders formulas without trust, so data-math loads nothing', () => {
   // passes `trust` (or a renderer of formulas this does not know) makes
   // that false: then the rule must read the formula as an address.
   const calls = [];
-  for (const dir of ['client', 'shared']) {
+  for (const dir of ['client', 'shared', 'server']) {
     for (const file of walkFiles(path.join(REPO_ROOT, dir), {
       extensions: ['.js'],
       skipDirs: ['vendor'],
@@ -1278,8 +1278,10 @@ test('KaTeX renders formulas without trust, so data-math loads nothing', () => {
     [
       'client/lib/slide-runtime/slide-render.js',
       'client/lib/slide-runtime/slide-render.js',
+      'server/utils/prism-katex.js',
+      'server/utils/prism-katex.js',
     ],
-    'every KaTeX call is the runtime that renders data-math',
+    'every KaTeX call is a runtime that renders data-math (the editor, the export page)',
   );
   for (const { where, args } of calls) {
     assert.equal(args.length, 3, where);
@@ -1298,7 +1300,12 @@ const MEDIA_TEMPLATES = {
   'a double-quoted CSS url()': `<div class="slide" style='background-image:url("{{esc photo}}")'><h2>{{esc title}}</h2></div>`,
   'an image with a srcset': `<div class="slide"><h2>{{esc title}}</h2><img src="{{esc photo}}" srcset="{{esc photo}} 2x" alt=""></div>`,
   'a picture source': `<div class="slide"><h2>{{esc title}}</h2><picture><source srcset="{{esc photo}}"><img src="/own.png" alt=""></picture></div>`,
+  'a srcset with width variants': `<div class="slide"><h2>{{esc title}}</h2><img src="/own.png" srcset="{{esc photo}}?w=800 800w, {{esc photo}}?w=1600 1600w" sizes="100vw" alt=""></div>`,
+  'a srcset, second candidate': `<div class="slide"><h2>{{esc title}}</h2><img src="/own.png" srcset="/own.png 1x, {{esc photo}} 2x" alt=""></div>`,
   'an image': `<div class="slide"><h2>{{esc title}}</h2><img src="{{esc photo}}" alt=""></div>`,
+  'an image without quotes, raw': `<div class="slide"><h2>{{esc title}}</h2><img alt="" src={{raw photo}}></div>`,
+  'raw as markup': `<div class="slide"><h2>{{esc title}}</h2><p>{{raw photo}}</p></div>`,
+  'a srcset, raw': `<div class="slide"><h2>{{esc title}}</h2><img src="/own.png" srcset="{{raw photo}}" alt=""></div>`,
 };
 
 /** Own paths that end a CSS string or `url()`, or split a `srcset`. */
@@ -1311,6 +1318,21 @@ const SECOND_ADDRESS_FORMS = {
   'a second srcset candidate': `/own.png 1x, ${IMAGE}`,
   'a srcset candidate behind a comma': `/own.png 1x,${IMAGE}`,
   'a srcset candidate behind a tab': `/own.png\t1x,${IMAGE}`,
+  'a leading comma': `,${IMAGE}`,
+  'a leading comma, scheme-relative': `,//${HOST}/pixel.png?d=deck-text`,
+  'two leading commas': `,,${IMAGE}`,
+  'markup without space or quote': `<img/src=//${HOST}/pixel.png?d=deck-text>`,
+  'closes the tag, markup follows': `/own.png><img/src=//${HOST}/pixel.png?d=deck-text>`,
+  'a character reference for the space': `/own.png&#32;1x,&#32;${IMAGE}`,
+};
+
+/** What a model may write in a media field the slides did not hold. */
+const ONE_ADDRESS_FORMS = {
+  'an own path': '/uploads/x.png',
+  'an own path with a query': '/uploads/x.png?w=800',
+  'a png as data': 'data:image/png;base64,iVBORw0KGgo=',
+  'an svg as data, percent-encoded':
+    'data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22/%3E',
 };
 
 function heroTypes(template) {
@@ -1354,10 +1376,14 @@ test("a database type's image field loads one address on this host, wherever the
         `${where}, ${form}`,
       );
     }
+    for (const [form, photo] of Object.entries(ONE_ADDRESS_FORMS)) {
+      const own = hero(photo);
+      dropForeignMedia([own], { slideTypes: types });
+      assert.equal(own.content.photo, photo, `${where}: ${form}`);
+      assert.equal(own._aiWarnings, undefined, `${where}: ${form}`);
+    }
     const own = hero('/uploads/x.png');
     dropForeignMedia([own], { slideTypes: types });
-    assert.equal(own.content.photo, '/uploads/x.png', `${where}: own path`);
-    assert.equal(own._aiWarnings, undefined);
     assert.ok(
       renderSlideHtml(own, { slideTypes: types }).includes('/uploads/x.png'),
     );
@@ -1374,6 +1400,25 @@ test("a database type's image field loads one address on this host, wherever the
   assert.ok(
     plantedLoads(renderSlideHtml(glued, { slideTypes: srcset })).length > 0,
   );
+  for (const form of ['a leading comma', 'two leading commas']) {
+    const leading = {
+      type: 'custom-hero',
+      content: { title: 'x', photo: SECOND_ADDRESS_FORMS[form] },
+    };
+    for (const where of [
+      'an image with a srcset',
+      'a srcset with width variants',
+      'a srcset, second candidate',
+      'a picture source',
+    ]) {
+      const types = heroTypes(MEDIA_TEMPLATES[where]);
+      assert.ok(
+        plantedLoads(renderSlideHtml(leading, { slideTypes: types })).length >
+          0,
+        `the oracle reads ${form} in ${where}`,
+      );
+    }
+  }
   const css = heroTypes(MEDIA_TEMPLATES['a quoted CSS url()']);
   const layered = {
     type: 'custom-hero',
@@ -1423,23 +1468,19 @@ const feed = (n) => ({
   },
 });
 
-test('many values that each load are judged in time, and past the limit all go', () => {
+test('many values that each load are judged in time, and past the budget the rest goes', () => {
   const types = feedTypes();
-  // Under the limit: each body goes, each head stays.
-  const some = feed(100);
-  let started = performance.now();
+  // Within the budget: each body goes, each head stays.
+  const some = feed(30);
   dropForeignMedia([some], { slideTypes: types });
-  let ms = performance.now() - started;
-  assert.ok(ms < 8000, `100 rows took ${Math.round(ms)} ms`);
   assert.ok(some.content.rows.every((row) => row.body === ''));
   assert.ok(some.content.rows.every((row, i) => row.head === `Kop ${i}`));
 
-  // Past the limit, and a deck of such slides: every judged value goes
-  // without a render per value.
+  // Past it, and a deck of such slides: in time, and nothing loads.
   const many = [feed(300), feed(100), feed(100), feed(100)];
-  started = performance.now();
+  const started = performance.now();
   dropForeignMedia(many, { slideTypes: types });
-  ms = performance.now() - started;
+  const ms = performance.now() - started;
   assert.ok(ms < 8000, `four slides of 600 rows took ${Math.round(ms)} ms`);
   for (const slide of many) {
     assert.ok(slide.content.rows.every((row) => row.body === ''));
@@ -1448,7 +1489,105 @@ test('many values that each load are judged in time, and past the limit all go',
       [],
     );
   }
-  assert.ok(MAX_JUDGED_BY_RENDER < 300 * 2);
+  assert.ok(MAX_SEARCH_CHARS > 0);
+});
+
+/** `bytes` of the densest markup there is, eight bytes an element. */
+const dense = (bytes) => '<b>x</b>'.repeat(Math.floor(bytes / 8));
+
+test('a heavy slide where only the last value loads is judged in bounded time', () => {
+  // Review 2 of DY-863, probe R: the cost of a render is the slide, so a
+  // search that renders the whole slide per value grows with values × size.
+  const types = feedTypes();
+  const rows = 124;
+  const slide = {
+    type: 'custom-feed',
+    content: {
+      title: 'Feed',
+      rows: Array.from({ length: rows }, (_, i) => ({
+        head: `Kop ${i}`,
+        body:
+          dense((24 * 1024) / rows) +
+          (i === rows - 1 ? `<img src="https://${HOST}/p">` : ''),
+      })),
+    },
+  };
+  const written = structuredClone(slide.content.rows);
+  const started = performance.now();
+  dropForeignMedia([slide], { slideTypes: types });
+  const ms = performance.now() - started;
+  assert.ok(ms < 3000, `24 KB in 124 rows took ${Math.round(ms)} ms`);
+  assert.equal(slide.content.rows.at(-1).body, '');
+  assert.deepEqual(slide.content.rows.slice(0, -1), written.slice(0, -1));
+  assert.equal(slide.content.rows.at(-1).head, `Kop ${rows - 1}`);
+  assert.deepEqual(
+    plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+    [],
+  );
+});
+
+test("a person's large slide with a few short rows added is judged in bounded time", () => {
+  const types = feedTypes();
+  const person = {
+    type: 'custom-feed',
+    content: {
+      title: 'Feed',
+      rows: Array.from({ length: 40 }, (_, i) => ({
+        head: `Eigen ${i}`,
+        body: dense((24 * 1024) / 40) + `<i>${i}</i>`,
+      })),
+    },
+  };
+  const keep = heldInSlides([person], types);
+  const slide = structuredClone(person);
+  for (let i = 0; i < 124; i += 1) {
+    slide.content.rows.push({
+      head: `Nieuw ${i}`,
+      body: i === 123 ? `<img src="https://${HOST}/p">` : `tekst ${i}`,
+    });
+  }
+  const started = performance.now();
+  dropForeignMedia([slide], { slideTypes: types, keep });
+  const ms = performance.now() - started;
+  assert.ok(ms < 3000, `a held 24 KB slide took ${Math.round(ms)} ms`);
+  assert.deepEqual(slide.content.rows.slice(0, 40), person.content.rows);
+  assert.equal(slide.content.rows.at(-1).body, '');
+  assert.equal(slide.content.rows.at(-2).body, 'tekst 122');
+  assert.ok(
+    slide.content.rows.slice(40).every((row, i) => row.head === `Nieuw ${i}`),
+  );
+});
+
+test('values that load only together are all emptied', () => {
+  // The search renders each group on its own; two values that pass apart
+  // and load together fail the render of the slide as kept.
+  const split = toRuntimeSlideType({
+    id: 'cst-split2',
+    slug: 'split2',
+    label: 'Split',
+    fields: [
+      { key: 'a', type: 'string', label: 'a' },
+      { key: 'b', type: 'string', label: 'b' },
+      { key: 'c', type: 'string', label: 'c' },
+      { key: 'd', type: 'string', label: 'd' },
+    ],
+    defaults: {},
+    template:
+      '<div class="slide"><img src="{{raw a}}{{raw b}}{{raw c}}{{raw d}}" alt=""></div>',
+  });
+  const types = { ...TYPES, 'custom-split2': split };
+  const slide = {
+    type: 'custom-split2',
+    content: { a: 'https:', b: '/', c: `/${HOST}`, d: '/p.png' },
+  };
+  dropForeignMedia([slide], { slideTypes: types });
+  // `https:` loads on its own; `/`, `/host` and `/p.png` pass apart, and
+  // together with nothing else make `//host/p.png`.
+  assert.deepEqual(slide.content, { a: '', b: '', c: '', d: '' });
+  assert.deepEqual(
+    plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+    [],
+  );
 });
 
 test('a list the type keeps from the model stays when it was held there', () => {
@@ -1484,6 +1623,27 @@ test('a list the type keeps from the model stays when it was held there', () => 
   dropForeignMedia([handedBack], { slideTypes: types, keep });
   assert.deepEqual(handedBack.content.sponsors, shown.content.sponsors);
   assert.equal(handedBack._aiWarnings, undefined);
+
+  // The same list with the keys of an entry in another order is the same list.
+  const reordered = structuredClone(shown);
+  reordered.content.sponsors = [{ name: 'Gemeente' }, { name: 'Fonds' }].map(
+    (sponsor) => ({ note: '', ...sponsor }),
+  );
+  const shownWithNote = structuredClone(shown);
+  shownWithNote.content.sponsors = shownWithNote.content.sponsors.map(
+    (sponsor) => ({ ...sponsor, note: '' }),
+  );
+  const keepWithNote = heldInSlides([shownWithNote], types);
+  dropForeignMedia([reordered], { slideTypes: types, keep: keepWithNote });
+  assert.deepEqual(
+    reordered.content.sponsors,
+    [
+      { note: '', name: 'Gemeente' },
+      { note: '', name: 'Fonds' },
+    ],
+    'keys in another order',
+  );
+  assert.equal(reordered._aiWarnings, undefined);
 
   const changed = structuredClone(shown);
   changed.content.sponsors.push({ name: 'Een eigen sponsor' });
