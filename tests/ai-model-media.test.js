@@ -458,6 +458,20 @@ const URL_ATTRIBUTES = [
   'data-src',
 ];
 
+/** Attributes a browser reads as CSS. */
+const CSS_ATTRIBUTES = [
+  'style',
+  'fill',
+  'stroke',
+  'filter',
+  'mask',
+  'clip-path',
+  'marker-start',
+  'marker-mid',
+  'marker-end',
+  'cursor',
+];
+
 /** Attributes that load on render except on a link, where they wait for a click. */
 const HREF_ATTRIBUTES = ['href', 'xlink:href'];
 
@@ -496,8 +510,12 @@ function addressesIn(html) {
       attributes.push(...inner.attributes);
       css.push(...inner.css);
     }
-    const style = el.getAttribute('style');
-    if (style) css.push(...cssAddresses(style));
+    // CSS: `style`, and an SVG presentation attribute that takes a `url()`
+    // (Chrome fetches `fill="url(https://…#p)"`, probe K).
+    for (const name of CSS_ATTRIBUTES) {
+      const value = el.getAttribute(name);
+      if (value != null) css.push(...cssAddresses(value));
+    }
     if (el.localName === 'style') css.push(...cssAddresses(el.textContent));
   }
   return { attributes, css };
@@ -894,15 +912,12 @@ const PLANTED_MARKUP_FORMS = {
 };
 
 /**
- * Forms the rule refuses without Chrome loading them: a comment between
- * `url` and `(` makes no function, and Chrome resolves an SVG paint server
- * only in its own document. The rule reads CSS conservatively (a comment or
- * an escape counts, and so does any function it does not know), so these go
- * too; Firefox does fetch an external paint server.
+ * A form the rule refuses without a browser loading it: a comment between
+ * `url` and `(` makes no function. The rule reads CSS conservatively (a
+ * comment or an escape counts, and so does any function it does not know).
  */
 const REFUSED_THOUGH_CHROME_LOADS_NOTHING = new Set([
   'a style background behind a comment',
-  'an SVG fill',
 ]);
 
 /** A notes slide with these values, as a model hands it back. */
@@ -1064,8 +1079,12 @@ test('the load reader counts what loads and nothing that does not', () => {
   assert.equal(
     count('<div style="x: \\75 rl(/own.png)">x</div>'),
     1,
-    'an escape counts',
+    'an escaped function name counts',
   );
+  // An escape or a comment counts even inside a function that loads nothing:
+  // either can spell a name the reader does not see.
+  assert.equal(count('<div style="width: calc(1px \\9)">x</div>'), 1);
+  assert.equal(count('<div style="color: red /* x */">x</div>'), 1);
   assert.equal(count(`<template><img src="${IMAGE}"></template>`), 1);
 });
 
