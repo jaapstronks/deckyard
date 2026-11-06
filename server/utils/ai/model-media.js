@@ -8,8 +8,9 @@
  * held there, or a value that names no other host: a path this installation
  * serves, a bare video id in the library the installation configured.
  * Everything else is emptied, and the slide says so in `_aiWarnings`. So is
- * a value the model wrote that would read as more than one address where a
- * template may put it (a CSS `url()`, a `srcset`).
+ * a value the model wrote that holds more than the characters of one address
+ * (a comma, a quote, `<`, white space): where a template puts it, in a CSS
+ * `url()`, a `srcset` or `{{raw}}` markup, it could read as a second one.
  *
  * Which fields those are is the type's declaration, never a field name: an
  * `image` field, and any field that declares `mediaRef` (the string is a
@@ -192,11 +193,27 @@ function heldKey(type, path, value) {
 }
 
 /**
- * How a whole `ai: false` field is held, a list included: its value as JSON,
- * marked so no string a leaf holds spells the same key.
+ * A value as JSON with the keys of every object in order, so the same list
+ * handed back with its keys in another order reads the same.
+ */
+function sortedJson(value) {
+  return JSON.stringify(value, (_, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.keys(v)
+            .sort()
+            .map((key) => [key, v[key]]),
+        )
+      : v,
+  );
+}
+
+/**
+ * How a whole `ai: false` field is held, a list included: its value as JSON
+ * ({@link sortedJson}), marked so no string a leaf holds spells the same key.
  */
 function heldWholeKey(type, path, value) {
-  return heldKey(type, path, `\u0001${JSON.stringify(value)}`);
+  return heldKey(type, path, `\u0001${sortedJson(value)}`);
 }
 
 /**
@@ -251,24 +268,35 @@ const NOTHING_HELD = Object.freeze({
 function isForeign(value, held) {
   if (typeof value !== 'string') return true;
   const used = mediaValue(value);
-  return (
-    !held.has(used) &&
-    (loadsFromAnotherHost(used) || MORE_THAN_ONE_ADDRESS.test(used))
-  );
+  return !held.has(used) && (loadsFromAnotherHost(used) || !isOneAddress(used));
 }
 
 /**
- * Characters that let one value read as more than one address where a
- * template puts it: a quote or a parenthesis ends a CSS string or `url()`, a
- * backslash escapes inside one, white space splits a `srcset` candidate from
- * the next, and a control character does either (DY-863). A type from the
- * database or a fork may write its media field there (`url('{{esc photo}}')`,
- * `srcset="{{esc photo}} 2x"`), so a value the model wrote holds none of
- * them; core's background layer refuses the same ones. A comma alone splits
- * nothing (a `srcset` candidate ends at white space) and a `data:` value
- * needs it.
+ * Whether a value the model wrote reads as one address wherever a template
+ * may put it (DY-863). A type from the database or a fork may write its media
+ * field into a CSS `url()`, a `srcset`, an attribute without quotes or, with
+ * `{{raw}}`, into the markup itself (`url('{{esc photo}}')`,
+ * `srcset="{{esc photo}} 2x"`, `src={{raw photo}}`). A list of characters to
+ * refuse keeps missing a reading there: a `srcset` skips a leading comma
+ * before its next candidate, and `{{raw}}` decodes `&#32;` into the space
+ * that splits one. So the value is checked for what it may hold:
+ *
+ * - a `data:` value of base64 and percent-encoded characters (a comma or a
+ *   colon in it stays inside the one address: a `srcset` candidate ends at
+ *   white space only);
+ * - otherwise characters a URL carries unencoded and no template reads as a
+ *   boundary: letters, digits, `-._~/%?=#:+`. No comma, quote, parenthesis,
+ *   backslash, `&`, `<`, `>`, `;`, white space or control character.
+ *
+ * A path this installation serves, a bare video id and an absolute URL on
+ * this host fit; a value that needs more is written by a person, or held.
  */
-const MORE_THAN_ONE_ADDRESS = /['"()\\\s\x00-\x1f\x7f]/u;
+function isOneAddress(value) {
+  return (
+    /^data:[A-Za-z0-9+/=;,.%_:-]*$/.test(value) ||
+    /^[A-Za-z0-9\-._~/%?=#:+]*$/.test(value)
+  );
+}
 
 /**
  * Fold the slides the way every read does, in place, so the rule sees the
@@ -342,7 +370,7 @@ function resetWithheld(slide, type, def, keep, warnings) {
 }
 
 function isSameValue(a, b) {
-  return a === b || JSON.stringify(a) === JSON.stringify(b);
+  return a === b || sortedJson(a) === sortedJson(b);
 }
 
 // ── What a render loads ─────────────────────────────────────────────────────
@@ -527,13 +555,11 @@ function addedLoads(surfaces, base) {
   return { count, which: which.sort().join('\u0001') };
 }
 
-/** The slide as a viewer gets it, read for loads. */
-function slideLoads(slide, type, slideTypes) {
+/** The slide as a viewer gets it. */
+function renderForLoads(slide, type, slideTypes) {
   // No deck language: the rule judges one slide, and what a render loads does
   // not change with the language of its copy.
-  return loadSurfaces(
-    renderSlideHtml({ ...slide, type }, { slideTypes, lang: null }),
-  );
+  return renderSlideHtml({ ...slide, type }, { slideTypes, lang: null });
 }
 
 /**
@@ -553,14 +579,20 @@ function isDeclaredOption(def, path, value) {
 }
 
 /**
- * How many values one call may judge by rendering them one by one. A slide
- * that loads more than its base when its values outnumber what is left has
- * every judged value emptied without that search: one render costs the whole
- * slide, so the search is quadratic in the slide's size, and it runs
- * synchronously (DY-863). Only a slide that loads more than its base spends
- * from it; core text loads nothing, so a core deck never does.
+ * How many characters the search for the values that load may render per
+ * call, all slides together (DY-863). One render costs the slide's size in
+ * time, and its heap stays until the call returns: the slide sanitizer walks
+ * its document with a NodeIterator, which jsdom holds through a WeakRef, and
+ * a WeakRef keeps its target until the synchronous job ends. So the budget
+ * counts the work, not the values. A render is charged its length plus
+ * {@link RENDER_CHARGE}, the cost of a document whatever it holds. Measured
+ * on dev, the densest markup (`<b>x</b>`) costs about 1,3 µs and 270 bytes of
+ * heap per character rendered, so the budget stays near 0,5 s and 100 MB.
  */
-export const MAX_JUDGED_BY_RENDER = 250;
+export const MAX_SEARCH_CHARS = 384 * 1024;
+
+/** What one render costs beyond its length, in characters. */
+const RENDER_CHARGE = 512;
 
 /**
  * Empty every value the model wrote that makes the rendered slide load
@@ -568,17 +600,24 @@ export const MAX_JUDGED_BY_RENDER = 250;
  *
  * The values judged are the slide's leaves outside its media fields (judged
  * by their own rule), outside its `ai: false` fields (reset by theirs), that
- * are not a declared option and that the given slides did not hold in the
- * same field. The render with all of them empty is the base: what the type,
- * the installation and the held values load. The slide as written is
- * rendered once; when it loads no more than the base, every value stays.
- * Otherwise each value in turn is emptied, and stays empty when the slide
- * then loads less or something else (an address split over two values: the
- * first half gone, the second loads on its own), until the slide loads no
- * more than the base. If it still does after one pass,
- * or a render throws, or the slide has more values to judge than `budget`
- * has left ({@link MAX_JUDGED_BY_RENDER} per call), every judged value is
- * emptied. At most one render per judged value plus two.
+ * are not a declared option, not empty, and that the given slides did not
+ * hold in the same field. The render with all of them empty is the base:
+ * what the type, the installation and the held values load. The slide as
+ * written is rendered once; when it loads no more than the base, every value
+ * stays.
+ *
+ * Otherwise a search halves the values: a group is rendered with only its
+ * own values filled in, the held ones empty too, so a render costs the group
+ * rather than the slide. A group that loads nothing more than that bare
+ * render keeps its values; one that does is halved, down to the single value,
+ * which goes. A group the budget ({@link MAX_SEARCH_CHARS}) cannot pay for
+ * any more goes as well. One value that loads among 248 costs about sixteen
+ * small renders.
+ *
+ * Then the slide is rendered as it will be kept, the held values and the
+ * values that passed together: when that loads no more than the base, it is
+ * the answer, otherwise (values that only load together, across groups)
+ * every judged value is emptied. So is every one when a render throws.
  */
 function emptyLoadingText(
   slide,
@@ -587,12 +626,13 @@ function emptyLoadingText(
   { keep, skip, slideTypes, budget },
 ) {
   const judged = [];
+  const held = [];
   const skipped = (holder, key) => Boolean(skip.get(holder)?.has(key));
   for (const leaf of contentLeaves(slide.content, '', skipped)) {
     const { value, path } = leaf;
-    if (keep.fields.has(heldKey(type, path, value))) continue;
     if (!path.includes('.') && isDeclaredOption(def, path, value)) continue;
-    judged.push(leaf);
+    if (keep.fields.has(heldKey(type, path, value))) held.push(leaf);
+    else if (value !== '') judged.push(leaf);
   }
   if (!judged.length) return [];
   const empty = (leaf) => {
@@ -602,30 +642,50 @@ function emptyLoadingText(
   const restore = (leaf) => {
     leaf.holder[leaf.key] = leaf.value;
   };
+  const loads = () => loadSurfaces(renderForLoads(slide, type, slideTypes));
+  const charged = () => {
+    const html = renderForLoads(slide, type, slideTypes);
+    budget.left -= html.length + RENDER_CHARGE;
+    return loadSurfaces(html);
+  };
   const emptyAll = () => {
+    held.forEach(restore);
     judged.forEach(empty);
     return judged;
   };
   try {
+    const written = loads();
+    if (written.size === 0) return [];
     judged.forEach(empty);
-    const base = slideLoads(slide, type, slideTypes);
+    const base = loads();
     judged.forEach(restore);
-    const added = () => addedLoads(slideLoads(slide, type, slideTypes), base);
-    let now = added();
-    if (now.count === 0) return [];
-    if (judged.length > budget.left) return emptyAll();
-    budget.left -= judged.length;
-    const emptied = [];
-    for (const leaf of judged) {
-      empty(leaf);
-      const after = added();
-      if (after.count < now.count || after.which !== now.which) {
-        emptied.push(leaf);
-        now = after;
-        if (now.count === 0) return emptied;
-      } else restore(leaf);
-    }
-    return emptyAll();
+    if (addedLoads(written, base).count === 0) return [];
+    if (judged.length === 1) return emptyAll();
+
+    judged.forEach(empty);
+    held.forEach(empty);
+    const bare = charged();
+    const passed = [];
+    const search = (group) => {
+      if (budget.left <= 0) return;
+      group.forEach(restore);
+      const adds = addedLoads(charged(), bare).count > 0;
+      group.forEach(empty);
+      if (!adds) passed.push(...group);
+      else if (group.length > 1) halve(group);
+    };
+    const halve = (group) => {
+      const middle = Math.ceil(group.length / 2);
+      search(group.slice(0, middle));
+      search(group.slice(middle));
+    };
+    halve(judged);
+
+    held.forEach(restore);
+    passed.forEach(restore);
+    if (passed.length && addedLoads(loads(), base).count > 0) return emptyAll();
+    const kept = new Set(passed);
+    return judged.filter((leaf) => !kept.has(leaf));
   } catch {
     return emptyAll();
   }
@@ -674,7 +734,7 @@ export function dropForeignMedia(
     );
   }
   foldAsRead(slides.filter((slide) => slide && typeof slide === 'object'));
-  const budget = { left: MAX_JUDGED_BY_RENDER };
+  const budget = { left: MAX_SEARCH_CHARS };
   for (const slide of slides) {
     if (!slide?.content || typeof slide.content !== 'object') continue;
     const warnings = [];
