@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   fieldChangeProblems,
+  newFieldProblems,
   validateFieldChange,
 } from '../shared/slide-types/field-change-validation.js';
+import { validateFieldValue } from '../shared/slide-types/field-types.js';
 import { validateSlideFields } from '../shared/slide-types/presentation.js';
 const prose = { key: 'title', type: 'string', required: true, maxLength: 5 };
 
@@ -130,4 +132,75 @@ test('the registry decides type identity across the public id and its storage ke
   const slide = { ...previousSlide, type: 'eu.deckyard.slide.title' };
   assert.ok(validateSlideFields(slide).length);
   assert.deepEqual(validateSlideFields(slide, { previousSlide }), []);
+});
+
+test('a nested value gets the same outcome on a new item, an item of a new slide and a stored item', () => {
+  const field = {
+    key: 'rows',
+    type: 'items',
+    itemFields: [
+      {
+        key: 'blocks',
+        type: 'items',
+        maxItems: 2,
+        itemFields: [
+          { key: 'title', type: 'string', maxLength: 5 },
+          { key: 'body', type: 'markdown', maxLength: 5 },
+          { key: 'tone', type: 'enum', options: ['a', 'b'] },
+        ],
+      },
+    ],
+  };
+  const stored = [{ blocks: [{ title: 'Ok' }] }];
+  const cases = [
+    { blocks: [{ title: 'Ok' }, { body: 'Te lange body' }] },
+    { blocks: [{ title: 'Ok', tone: 'c' }] },
+    { blocks: [{}, {}, {}] },
+  ];
+  for (const row of cases) {
+    // The same row on index 0 (a stored neighbour) and on index 1 (new).
+    const onStored = fieldChangeProblems([row], stored, field);
+    const onNew = fieldChangeProblems([stored[0], row], stored, field);
+    const ofNewSlide = newFieldProblems([row], field);
+    const strip = (problems) =>
+      problems.map(({ path, kind }) => [kind, ...path.slice(1)]).map(String);
+    assert.ok(onStored.length, JSON.stringify(row));
+    assert.deepEqual(strip(onNew), strip(onStored), JSON.stringify(row));
+    assert.deepEqual(strip(ofNewSlide), strip(onStored), JSON.stringify(row));
+    assert.deepEqual(
+      newFieldProblems([row], field)
+        .flatMap((p) => p.errors)
+        .sort(),
+      validateFieldValue([row], field).sort(),
+      'the list validator refuses what the walk refuses',
+    );
+  }
+});
+
+test('a new slide with seven blocks in a row is refused like a stored one', () => {
+  const rows = [
+    { title: 'Rij', blocks: Array.from({ length: 7 }, () => ({ title: 'B' })) },
+  ];
+  const slide = {
+    id: 's',
+    type: 'text-blocks-slide',
+    content: { title: 'T', rows },
+  };
+  const fresh = validateSlideFields(slide);
+  assert.match(
+    fresh[0]?.errors.join(' ') ?? '',
+    /rows\[0\]\.blocks must have at most 6/,
+  );
+  assert.deepEqual(
+    fresh[0].parts.map((p) => [p.kind, ...p.path]),
+    [['list', 0, 'blocks']],
+  );
+  const previousSlide = {
+    ...slide,
+    content: { rows: [{ title: 'Rij', blocks: [] }] },
+  };
+  assert.deepEqual(
+    validateSlideFields(slide, { previousSlide })[0].errors,
+    fresh[0].errors,
+  );
 });

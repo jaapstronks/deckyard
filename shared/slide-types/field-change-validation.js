@@ -23,32 +23,55 @@ import { isTextField } from './text-fields.js';
  * @returns {FieldPartProblem[]}
  */
 export function fieldChangeProblems(value, previous, field) {
+  return walkField(value, { value: previous }, field);
+}
+
+/**
+ * {@link fieldChangeProblems} for a value nothing is stored for: a new slide,
+ * or a field of a slide whose type changed. Every part meets its own
+ * validator, a list inside an item included, the way an item without a stored
+ * neighbour on its index is checked inside a stored list.
+ * @param {unknown} value
+ * @param {Object} field
+ * @returns {FieldPartProblem[]}
+ */
+export function newFieldProblems(value, field) {
+  return walkField(value, null, field);
+}
+
+/**
+ * The one walk. `stored` is `{ value }` where something is stored at this
+ * place (its value may be missing), `null` where nothing is: then no unchanged
+ * prose is retained and every part is checked as new. A list is walked item by
+ * item at every depth, so a refusal deep in a new item carries its path.
+ * @param {unknown} value
+ * @param {{value: unknown}|null} stored
+ * @param {Object} field
+ * @returns {FieldPartProblem[]}
+ */
+function walkField(value, stored, field) {
   if (field.type === 'items' && Array.isArray(value)) {
     const own = validateFieldValue(value, { ...field, itemFields: [] });
     const problems = own.length
       ? [{ path: [], kind: 'list', errors: own }]
       : [];
+    const previous = stored?.value;
     value.forEach((item, index) => {
       if (!item || typeof item !== 'object') return;
       const before =
-        previous?.[index] && typeof previous[index] === 'object'
+        Array.isArray(previous) &&
+        previous[index] &&
+        typeof previous[index] === 'object'
           ? previous[index]
           : null;
       for (const child of field.itemFields || []) {
         const prefix = `Slide.content.${child.key}`;
-        // A new item is checked as the list validator checks it: each
-        // sub-field as one value, a list inside it included.
-        const childProblems = before
-          ? fieldChangeProblems(item[child.key], before[child.key], child)
-          : [
-              {
-                path: [],
-                kind: 'value',
-                errors: validateFieldValue(item[child.key], child),
-              },
-            ];
+        const childProblems = walkField(
+          item[child.key],
+          before ? { value: before[child.key] } : null,
+          child,
+        );
         for (const { path, kind, errors } of childProblems) {
-          if (!errors.length) continue;
           problems.push({
             path: [index, child.key, ...path],
             kind,
@@ -63,8 +86,9 @@ export function fieldChangeProblems(value, previous, field) {
     return problems;
   }
   const unchangedText =
+    stored !== null &&
     isTextField(field) &&
-    value === previous &&
+    value === stored.value &&
     (value == null || typeof value === 'string');
   const errors = validateFieldValue(
     value,

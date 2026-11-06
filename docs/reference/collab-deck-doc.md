@@ -161,9 +161,11 @@ persistence hooks (`server/collab/persistence.js`):
   depth: no single value can be left out for it, so a list inside an item that
   peers merged past its count freezes its field just as the field's own count
   does. Without a stored list (a new slide, a changed type) the field is left
-  out. A new item, one without a stored item at its index, has its nested list
-  checked as one value: a refusal in it leaves that nested list out of the
-  item and the rest of the field lands.
+  out. A new item, one without a stored item at its index, is walked the same
+  way as a stored one, a list inside it included: each part meets its own
+  field's validator at every depth (`newFieldProblems()` for a new slide, and
+  the list validator `validateItems` refuses the same), so what a store holds
+  back never depends on the index an item lands on.
 - **Already stored stops nothing.** A refused part that the stored list already
   holds in the same sub-field, at any index (for a nested list: the same
   sub-field path without its indexes), stops nothing and logs nothing; this

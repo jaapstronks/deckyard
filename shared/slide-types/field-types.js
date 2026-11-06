@@ -183,12 +183,6 @@ function validateEmail(val, field) {
   return errors;
 }
 
-/**
- * Field types whose value is a link target, and therefore validated wherever
- * it sits: a `url` inside an item is the same promise as one on the slide.
- */
-const LINK_FIELD_TYPES = new Set(['url', 'email']);
-
 function validateColor(val, field) {
   const errors = [];
   const path = pathOf(field);
@@ -290,34 +284,16 @@ function validateItems(val, field) {
       errors.push(`${path}[${i}] must be an object`);
       continue;
     }
+    // Each sub-field meets its own type's validator, at any depth: what a
+    // list refuses never depends on whether its item is new or stored (the
+    // walk in field-change-validation.js checks a new item the same way).
     for (const f of itemFields) {
       if (!f || typeof f.key !== 'string') continue;
-      const iv = it[f.key];
-      if (f.required && !isNonEmptyString(iv)) {
-        errors.push(`${path}[${i}].${f.key} is required`);
-      }
-      // A link type validates in full at any depth: its value becomes an
-      // `href`, and a sub-field that skipped the check would be the one place
-      // a `javascript:` target could be stored. The rest of nested item
-      // validation stays shallow (string only).
-      if (LINK_FIELD_TYPES.has(f.type)) {
-        const prefix = pathOf(f);
-        for (const e of FIELD_TYPES[f.type].validate(iv, {
-          ...f,
-          required: false,
-        })) {
-          errors.push(`${path}[${i}].${f.key}${e.slice(prefix.length)}`);
-        }
-      }
-      if (f.type === 'string') {
-        if (iv != null && typeof iv !== 'string') {
-          errors.push(`${path}[${i}].${f.key} must be a string`);
-        }
-        if (f.maxLength && typeof iv === 'string' && iv.length > f.maxLength) {
-          errors.push(
-            `${path}[${i}].${f.key} exceeds max length (${f.maxLength})`,
-          );
-        }
+      const spec = FIELD_TYPES[f.type];
+      if (!spec) continue;
+      const prefix = pathOf(f);
+      for (const e of spec.validate(it[f.key], f)) {
+        errors.push(`${path}[${i}].${f.key}${e.slice(prefix.length)}`);
       }
     }
   }

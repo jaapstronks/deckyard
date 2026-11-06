@@ -1025,6 +1025,62 @@ describe('collab persistence hooks', () => {
         assert.equal(log.lines.warn.length, 2, log.lines.warn.join('\n'));
       });
 
+      it('an old over-long block title stays stored when its row moves past the stored rows and is edited', async () => {
+        const long = { title: 'L'.repeat(300), body: 'Lang' };
+        const { mutate, content } = await openSlide(
+          blocksSlide([{ title: 'Rij', blocks: [block(1), long] }]),
+        );
+
+        await mutate((c) => {
+          c.rows.unshift({ title: 'Nieuw', blocks: [block(7)] });
+          c.rows[1].blocks[0].body = 'Bewerkt';
+        });
+        let rows = (await content()).rows;
+        assert.deepEqual(rows[1].blocks, [
+          { ...block(1), body: 'Bewerkt' },
+          long,
+        ]);
+
+        await mutate((c) => {
+          c.rows[1].blocks[0].body = 'Nog eens';
+        });
+        rows = (await content()).rows;
+        assert.deepEqual(rows[1].blocks, [
+          { ...block(1), body: 'Nog eens' },
+          long,
+        ]);
+        assert.equal(log.lines.warn.length, 0, log.lines.warn.join('\n'));
+      });
+
+      it('a new over-long block title in a moved row is still left out', async () => {
+        const { mutate, content } = await openSlide(
+          blocksSlide([{ title: 'Rij', blocks: [block(1), block(2)] }]),
+        );
+
+        await mutate((c) => {
+          c.rows.unshift({ title: 'Nieuw', blocks: [block(7)] });
+          c.rows[1].blocks[1].title = 'X'.repeat(300);
+        });
+        const blocks = (await content()).rows[1].blocks;
+        assert.deepEqual(blocks[0], block(1));
+        assert.equal('title' in blocks[1], false);
+        assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+      });
+
+      it('a new row with seven blocks is held back like a stored row', async () => {
+        const rows = [{ title: 'Rij', blocks: [block(1)] }];
+        const { mutate, content } = await openSlide(blocksSlide(rows));
+
+        await mutate((c) => {
+          c.rows.push({
+            title: 'Nieuw',
+            blocks: [1, 2, 3, 4, 5, 6, 7].map(block),
+          });
+        });
+        assert.deepEqual((await content()).rows, rows);
+        assert.equal(log.lines.warn.length, 1, log.lines.warn.join('\n'));
+      });
+
       it('a list over its count logs one line across several stores', async () => {
         const rows = [1, 2, 3, 4].map((n) => ({
           title: `Rij ${n}`,
