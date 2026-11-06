@@ -926,8 +926,14 @@ test('append, the editor: the answer holds no URL the model wrote', async (t) =>
   assertLeftOutNotice(slides, 'editor append');
 });
 
-/** A planted slide whose required embed is not a string at all. */
-const isListedEmbed = (s) => Array.isArray(s.content?.embedUrl);
+/**
+ * A planted slide with a list where its type declares a string (the embed,
+ * a member's portrait): v1 checks the schema, items included (DY-862), and
+ * refuses it before the rule runs.
+ */
+const breaksSchema = (s) =>
+  Array.isArray(s.content?.embedUrl) ||
+  (s.content?.members || []).some((m) => Array.isArray(m?.image));
 
 test('append, public v1: the answer holds no URL the model wrote', async (t) => {
   await setup();
@@ -935,7 +941,7 @@ test('append, public v1: the answer holds no URL the model wrote', async (t) => 
   // (the next test); the rest of the planted set goes through the rule.
   stubModel(t, () => ({
     ...appendAnswer(),
-    slides: planted().filter((s) => !isListedEmbed(s)),
+    slides: planted().filter((s) => !breaksSchema(s)),
   }));
   const { slides } = await callV1('append-slides', {
     raw: 'Add four slides.',
