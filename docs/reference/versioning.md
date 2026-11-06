@@ -279,6 +279,8 @@ Release 1.101.0 applies it to a `fix:` title: the stdio MCP server now refuses t
 
 Release 1.103.0 applies it the other way round: a `security!:` title made the Release PR propose 2.0.0, and the beta rule takes it back to the next MINOR. The breaking note stays: an MCP client or fork that let a model's plan write without naming the slides has to pass `apply` with indexes.
 
+Release 1.104.0 applies it again to a `security!:` title: a model's answer keeps no remote media of its own. A fork that imported `imagesInBatch`, calls `convertSlideWithAi` or `analyzePresentation` without `slideTypes`, or writes a media field into CSS `url()` with its own reading has to change something on upgrade.
+
 When editing the Release PR body, preserve the generated robot introduction, separators and Release Please footer. The bot parses that wrapper to recognize the merged PR and publish its tag; correct version files and green CI alone do not establish that publication will run. If the wrapper was removed, restore it on the merged PR, close any duplicate release PR and rerun the release-please job before deploying.
 
 During a lane handoff, a release claim may be transferred explicitly by the maintainer. Record the new owner in the shared queue before continuing the release review and its deployment steps.
