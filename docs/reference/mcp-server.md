@@ -152,7 +152,10 @@ tools decide what is written, not the prompt.
   slides. One index makes it a single-slide edit of that slide, whatever the
   command names. A removal is never written, with or without `apply`: it
   comes back under `proposals`, and you remove the slide yourself with
-  `remove_slide`. `applied` is true only when something was stored.
+  `remove_slide`. `applied` is true only when something was stored. A call
+  with `apply` asks the model again, so it writes that second answer for
+  the listed slides, not the content an earlier preview showed; to store a
+  previewed slide as shown, write it yourself with `update_slide`.
 - **`compress_presentation`** without `apply` returns the recommendations
   (read access is enough). With `apply: [0-based indexes]` it removes exactly
   those slides and asks the model nothing; the answer lists them under

@@ -55,7 +55,7 @@ Use the "nl" language setting. After creating, show me:
 - Run the AI analysis for improvement suggestions
 
 ### Step 4: Iterate
-Apply these changes using natural language commands (one at a time, show me the result after each):
+Make these changes using natural language commands (one at a time). For each, first call `iterate_presentation` without `apply` and show me the plan, then call it again with `apply` listing the 0-based indexes of the slides to write, and show me the result:
 1. "Make the financial slide more visual — use a KPI grid instead of a list"
 2. "Slide 2 is too text-heavy, make it punchier"
 3. "Add more variety — too many content slides in a row"
