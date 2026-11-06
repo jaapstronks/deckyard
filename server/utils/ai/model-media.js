@@ -160,11 +160,23 @@ function isForeign(value, keep) {
 
 /**
  * Fold the slides the way every read does, in place, so the rule sees the
- * keys a read will render. The steps edit slides and their content in place
- * (a type rename included), so the caller's objects are the folded ones.
+ * keys a read will render. The steps edit slides in place (a type rename and
+ * a new `content` object included), so the caller's slide objects are the
+ * folded ones. A step that hands back other slide objects would leave the
+ * rule judging the unfolded originals, so that throws instead of passing
+ * them (fail-closed).
  */
 function foldAsRead(slides) {
-  migratePresentation({ slides });
+  const folded = migratePresentation({ slides: [...slides] }).slides;
+  const same =
+    Array.isArray(folded) &&
+    folded.length === slides.length &&
+    folded.every((slide, i) => slide === slides[i]);
+  if (!same) {
+    throw new Error(
+      'dropForeignMedia: a migration step replaced a slide object; fold in place or judge its result',
+    );
+  }
 }
 
 /**

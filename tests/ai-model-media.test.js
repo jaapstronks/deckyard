@@ -31,6 +31,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
+import { JSDOM } from 'jsdom';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import { createMockReq, createMockRes } from './helpers/http-mocks.js';
@@ -57,11 +58,17 @@ const IMAGE = `https://${HOST}/pixel.png?d=deck-text`;
 const BACKGROUND = `//${HOST}/bg.png?d=deck-text`;
 const EMBED = `https://${HOST}/frame?d=deck-text`;
 const VIDEO = `https://${HOST}/watch?v=deck-text`;
+/** A planted URL with its scheme spelled out, so a form can hide it. */
+const withScheme = (url) => (url.startsWith('//') ? `https:${url}` : url);
+
 /**
  * Every spelling a model can hide a URL behind. JavaScript's `trim()` takes
  * the Unicode white space, the URL parser leaves it standing, so a rule that
  * parses the stored value reads a path where the renderer reads a host; an
- * array is a string to `String()`.
+ * array is a string to `String()`. The rest read as a path on this host as
+ * written, and name the planted host only to a sink that repairs the value
+ * (strips a character) or writes it where the browser decodes it again (a
+ * character reference in an attribute, an escape in CSS).
  */
 const HOSTILE_FORMS = {
   'as written': (url) => url,
@@ -72,8 +79,30 @@ const HOSTILE_FORMS = {
   'behind U+2029 and a space': (url) => `\u2029 ${url}`,
   'in an array': (url) => [url],
   'in a nested array': (url) => [[url]],
+  'a double quote in the scheme': (url) => withScheme(url).replace(/^h/, 'h"'),
+  'an apostrophe in the scheme': (url) => withScheme(url).replace(/^h/, "h'"),
+  'a backslash in the scheme': (url) => withScheme(url).replace(/^h/, 'h\\'),
+  'a parenthesis before': (url) => `(${url}`,
+  'in angle brackets': (url) => `<${url}>`,
+  'a double quote before': (url) => `"${url}`,
+  'a double quote and U+00A0 before': (url) => `"\u00a0${url}`,
+  'a line feed in the scheme': (url) => withScheme(url).replace(/^h/, 'h\n'),
+  'the colon as &#58;': (url) => withScheme(url).replace(':', '&#58;'),
+  'the colon as &colon;': (url) => withScheme(url).replace(':', '&colon;'),
+  'the slashes as &sol;&sol;': (url) =>
+    withScheme(url).replace(/^[a-z]+:\/\//, '&sol;&sol;'),
+  'the slashes as &#x2f;&#x2f;': (url) =>
+    withScheme(url).replace(/^[a-z]+:\/\//, '&#x2f;&#x2f;'),
+  'the colon as a CSS escape': (url) => withScheme(url).replace(':', '\\3a '),
 };
 const hostile = (name, url) => HOSTILE_FORMS[name](url);
+
+/** The forms the rule reads as a path on this host, so it keeps them. */
+const localAsWritten = () =>
+  Object.keys(HOSTILE_FORMS).filter((name) => {
+    const value = hostile(name, BACKGROUND);
+    return typeof value === 'string' && !namesPlantedHost(value);
+  });
 
 /** What the deck already held: an absolute copy, an embed the author chose. */
 const HELD_IMAGE = 'https://bucket.s3.test/uploads/held.png';
@@ -105,6 +134,7 @@ const { SLIDE_TYPES, canonicalSlideType } =
   await import('../shared/slide-types/registry.js');
 const { newSlide, renderSlideHtml } =
   await import('../shared/slide-types/presentation.js');
+const { mediaValue } = await import('../shared/slide-types/helpers.js');
 const { SCHEMA_MIGRATIONS, migratePresentation } =
   await import('../shared/slide-types/schema-version.js');
 
@@ -262,18 +292,43 @@ const planted = () => [
     },
     why: 'White space.',
   },
+  // A background the rule reads as a path on this host: it stays, and must
+  // load nothing, because the layer writes what the rule read.
+  ...localAsWritten().map((form) => ({
+    type: 'content-slide',
+    content: {
+      title: 'A local-looking background',
+      body: form,
+      slideBgImage: hostile(form, BACKGROUND),
+    },
+    why: 'A background.',
+  })),
 ];
 
 /** The planted slides that can be stored once their media is gone. */
 const plantedThatStay = () =>
   planted().filter((s) => !['embed-slide', 'video-slide'].includes(s.type));
 
-/** No value anywhere in `value` names the planted host. */
+/**
+ * No value anywhere in `value` names the planted host as the slide reads it.
+ * A string that holds the host and reads as a path on this host may stay
+ * (the rule keeps it, see localAsWritten); what it renders is checked by
+ * {@link assertRendersNothingPlanted}.
+ */
 function assertNothingPlanted(value, where) {
   const json = JSON.stringify(value);
   assert.ok(json.length > 2, `${where}: nothing came back`);
-  assert.ok(
-    !json.includes(HOST),
+  const named = [];
+  (function walk(v) {
+    if (typeof v === 'string') {
+      if (v.includes(HOST) && namesPlantedHost(v)) named.push(v);
+    } else if (v && typeof v === 'object') {
+      for (const inner of Object.values(v)) walk(inner);
+    }
+  })(value);
+  assert.deepEqual(
+    named,
+    [],
     `${where} holds a URL the model wrote: ${json.slice(0, 1500)}`,
   );
 }
@@ -281,46 +336,127 @@ function assertNothingPlanted(value, where) {
 /** Two bases, as in the rule: `https:host` is a path under one, a host under the other. */
 const PAGE_BASES = ['https://deckyard.invalid/', 'http://deckyard.invalid/'];
 
+const PARSER = new JSDOM('').window.document;
+
+/** Attributes whose value a browser fetches or frames. */
+const URL_ATTRIBUTES = [
+  'src',
+  'srcset',
+  'poster',
+  'data-embed-url',
+  'data-src',
+];
+
 /**
- * Every address the rendered HTML makes a browser fetch or frame: `src`,
- * `srcset`, `poster`, the embed's `data-embed-url` and every CSS `url(...)`,
- * entity-decoded the way the browser reads the attribute.
+ * Every address the rendered HTML makes a browser fetch or frame, read the
+ * way the browser reads it: the attributes through an HTML parser (so every
+ * character reference is decoded), and in every `style` attribute and
+ * element each `url(...)` and each CSS string with its escapes resolved.
+ * A string counts too, because `image-set()` loads one.
  */
 function addressesIn(html) {
-  const decode = (v) =>
-    v
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&');
+  const template = PARSER.createElement('template');
+  template.innerHTML = html;
   const found = [];
-  for (const m of html.matchAll(
-    /\s(?:src|srcset|poster|data-embed-url|data-src)="([^"]*)"/g,
-  )) {
-    found.push(
-      ...decode(m[1])
-        .split(/,\s+/)
-        .map((part) => part.split(/\s+/)[0]),
-    );
-  }
-  for (const m of decode(html).matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/g)) {
-    found.push(m[2]);
+  for (const el of template.content.querySelectorAll('*')) {
+    for (const name of URL_ATTRIBUTES) {
+      const value = el.getAttribute(name);
+      if (value == null) continue;
+      found.push(
+        ...value.split(/,\s+/).map((part) => part.trim().split(/\s+/)[0]),
+      );
+    }
+    const style = el.getAttribute('style');
+    if (style) found.push(...cssAddresses(style));
+    if (el.localName === 'style') found.push(...cssAddresses(el.textContent));
   }
   return found;
 }
 
+/**
+ * The `url(...)` tokens and strings of a piece of CSS, with escapes resolved
+ * as CSS Syntax Level 3 resolves them (preprocessing included: NUL becomes
+ * U+FFFD, CR and FF a line feed). A function name may itself be escaped
+ * (`\75 rl(`), so idents are decoded before they are compared.
+ */
+function cssAddresses(css) {
+  const src = css.replace(/\r\n?|\f/g, '\n').replace(/\0/g, '\ufffd');
+  const found = [];
+  let i = 0;
+  const isHex = (c) => /^[0-9a-f]$/i.test(c);
+  const escape = () => {
+    // At a backslash; returns the decoded code point and moves past it.
+    i += 1;
+    let hex = '';
+    while (hex.length < 6 && isHex(src[i] || '')) hex += src[i++];
+    if (hex) {
+      if (/[ \t\n]/.test(src[i] || '')) i += 1;
+      const cp = parseInt(hex, 16);
+      return cp === 0 || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)
+        ? '\ufffd'
+        : String.fromCodePoint(cp);
+    }
+    return i < src.length ? src[i++] : '\ufffd';
+  };
+  const string = (quote) => {
+    let out = '';
+    i += 1;
+    while (i < src.length && src[i] !== quote) {
+      if (src[i] === '\n') return out; // a bad string; the browser drops it
+      if (src[i] === '\\') {
+        if (src[i + 1] === '\n') i += 2;
+        else out += escape();
+      } else out += src[i++];
+    }
+    i += 1;
+    return out;
+  };
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '"' || c === "'") {
+      found.push(string(c));
+    } else if (/[a-z_\\-]/i.test(c) || c.charCodeAt(0) >= 0x80) {
+      let name = '';
+      while (i < src.length) {
+        if (src[i] === '\\' && src[i + 1] !== '\n') name += escape();
+        else if (/[a-z0-9_-]/i.test(src[i]) || src.charCodeAt(i) >= 0x80) {
+          name += src[i++];
+        } else break;
+      }
+      if (src[i] === '(' && name.toLowerCase() === 'url') {
+        i += 1;
+        while (/[ \t\n]/.test(src[i] || '')) i += 1;
+        if (src[i] === '"' || src[i] === "'") continue; // read as a string
+        let out = '';
+        while (i < src.length && src[i] !== ')') {
+          out += src[i] === '\\' ? escape() : src[i++];
+        }
+        found.push(out.trim());
+      }
+    } else i += 1;
+  }
+  return found;
+}
+
+/** Whether the value as every renderer reads it resolves to the planted host. */
+function namesPlantedHost(value) {
+  const used = mediaValue(value);
+  return Boolean(used) && resolvesToPlantedHost(used);
+}
+
+function resolvesToPlantedHost(address) {
+  return PAGE_BASES.some((base) => {
+    try {
+      return new URL(address, base).host === HOST;
+    } catch {
+      return false;
+    }
+  });
+}
+
 /** The addresses in `html` a browser resolves to the planted host. */
 function plantedLoads(html) {
-  return addressesIn(html).filter((address) =>
-    PAGE_BASES.some((base) => {
-      try {
-        return new URL(address, base).host === HOST;
-      } catch {
-        return false;
-      }
-    }),
-  );
+  return addressesIn(html).filter(resolvesToPlantedHost);
 }
 
 /**
@@ -596,7 +732,20 @@ test('every media field of every type renders nothing a model planted, in any fo
         `${name}: the render oracle does not see the planted host`,
       );
       for (const form of Object.keys(HOSTILE_FORMS)) {
-        const slide = slideWith(type, path, hostile(form, url));
+        const value = hostile(form, url);
+        // Unguarded, the render loads the planted host only where the value
+        // the rule reads names it: no sink repairs or re-decodes a value.
+        const loads = plantedLoads(
+          renderSlideHtml(
+            migratePresentation({ slides: [slideWith(type, path, value)] })
+              .slides[0],
+          ),
+        );
+        assert.ok(
+          !loads.length || namesPlantedHost(value),
+          `${name}, ${form}: the render loads ${loads} from a value the rule reads as local`,
+        );
+        const slide = slideWith(type, path, value);
         dropForeignMedia([slide], { slideTypes: SLIDE_TYPES });
         assertRendersNothingPlanted([slide], `${name}, ${form}`);
       }
@@ -684,11 +833,26 @@ const FOLDS_INTO_MEDIA = {
   ],
 };
 
+test('a migration step that replaces a slide object stops the rule instead of passing it', (t) => {
+  SCHEMA_MIGRATIONS.push((pres) => ({
+    ...pres,
+    slides: pres.slides.map((slide) => ({ ...slide })),
+  }));
+  t.after(() => SCHEMA_MIGRATIONS.pop());
+  assert.throws(
+    () =>
+      dropForeignMedia([{ type: 'image-slide', content: { image: IMAGE } }], {
+        slideTypes: SLIDE_TYPES,
+      }),
+    /replaced a slide object/,
+  );
+});
+
 test('a legacy key the read funnel folds into a media field is judged after the fold', () => {
   assert.equal(
     SCHEMA_MIGRATIONS.length,
     24,
-    'a new step: if it moves a key into a media field, give it a case in FOLDS_INTO_MEDIA',
+    'a new step: if it moves a key into a media field, give it a case in FOLDS_INTO_MEDIA; and it must edit slides in place, or foldAsRead throws',
   );
   for (const [step, answers] of Object.entries(FOLDS_INTO_MEDIA)) {
     for (const answer of answers) {
@@ -908,7 +1072,12 @@ test('iterate, one slide: the rewritten slide keeps its own image only', async (
       const [slide] = answer.presentation.slides;
       assert.equal(slide.content.body, 'Shorter.');
       assert.equal(slide.content.image, HELD_IMAGE, 'its own image stays');
-      assert.ok(!slide.content.slideBgImage, 'the planted background is gone');
+      if (namesPlantedHost(background.slideBgImage ?? background.bgImage)) {
+        assert.ok(
+          !slide.content.slideBgImage,
+          'the planted background is gone',
+        );
+      }
       assertRendersNothingPlanted([slide], `editor iterate, ${form}`);
     });
   }

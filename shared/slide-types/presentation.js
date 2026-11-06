@@ -273,11 +273,21 @@ function clampPercent(value, fallback) {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-// Keep only characters safe inside a CSS url('...') / HTML attribute context.
-function sanitizeBgUrl(url) {
-  return String(url)
-    .replace(/["'()\\<>\n\r]/g, '')
-    .trim();
+// What a single-quoted CSS string cannot carry as written: the quote that
+// ends it, the backslash that starts an escape, and the control characters
+// CSS rewrites or ends a string on (a NUL becomes U+FFFD, CR and FF become a
+// line feed, a line feed ends the string).
+const CSS_STRING_UNSAFE = /['\\\u0000-\u001f\u007f]/;
+
+// The background as the layer writes it into `url('...')`: the value every
+// renderer reads (mediaValue()), unchanged, or '' when the string cannot carry
+// it. Never repaired: the AI media rule (server/utils/ai/model-media.js)
+// judges this value, so a sink that strips or rewrites characters would load
+// a URL the rule never saw (DY-811). The caller HTML-escapes it into the
+// attribute, so the browser's attribute decoding gives this value back.
+function slideBgUrl(value) {
+  const url = mediaValue(value);
+  return url && !CSS_STRING_UNSAFE.test(url) ? url : '';
 }
 
 // Resolve which text-contrast class (if any) to apply for a background image.
@@ -330,11 +340,11 @@ function resolveBgOverlayVariant(content, textClass) {
 }
 
 // The slide's background image as a usable URL, or '' when there is none (no
-// value, or nothing left after sanitizing). Shared so the variant-contrast
-// pass below tests for an image the same way the injector does.
+// value, or one the layer cannot carry, see slideBgUrl). Shared so the
+// variant-contrast pass below tests for an image the same way the injector
+// does.
 function resolveSlideBgImageUrl(content) {
-  const raw = mediaValue(content?.slideBgImage);
-  return raw ? sanitizeBgUrl(raw) : '';
+  return slideBgUrl(content?.slideBgImage);
 }
 
 // Inject an optional per-slide background image as a layer behind the slide
@@ -350,7 +360,7 @@ function injectSlideBackground(html, content) {
   const textClass = resolveBgTextClass(content);
   const overlayVariant = resolveBgOverlayVariant(content, textClass);
   const layer =
-    `<div class="slide-bg-layer" aria-hidden="true" style="background-image:url('${url}');background-size:${fit};background-position:${focusX}% ${focusY}%;"></div>` +
+    `<div class="slide-bg-layer" aria-hidden="true" style="background-image:url('${escapeHtml(url)}');background-size:${fit};background-position:${focusX}% ${focusY}%;"></div>` +
     (overlayVariant
       ? `<div class="slide-bg-overlay slide-bg-overlay-${overlayVariant}" aria-hidden="true"></div>`
       : '');
@@ -423,7 +433,7 @@ function injectSemanticEnumAttrs(html, content, def) {
 function injectSlideLogo(html, content, ctx) {
   if (content?.slideLogo !== 'top-right') return html;
   const theme = ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
-  const src = sanitizeBgUrl(resolveThemeLogo(theme, content));
+  const src = escapeHtml(resolveThemeLogo(theme, content).trim());
   if (!src) return html;
   const alt = escapeHtml(String(theme?.assets?.logoAlt || 'Logo'));
   const node =

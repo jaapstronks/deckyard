@@ -225,7 +225,12 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   it. The rule judges what the slide will use: the value as every renderer
   reads it (`mediaValue()` in `shared/slide-types/helpers.js`; anything but a
   string is emptied), on the slide as a read yields it (the read funnel's
-  legacy keys folded first). Anything else is emptied with a warning, and a
+  legacy keys folded first). No sink changes that value after the rule: the
+  background layer writes it unchanged and HTML-escaped into `url('...')`, and
+  renders no background for a value its CSS string cannot carry (a quote, a
+  backslash, a control character). A media field belongs in a `src`; a fork
+  type that writes one into CSS `url()` needs more than `mediaValue()` and
+  `escapeHtml`. Anything else is emptied with a warning, and a
   slide left without a field its type requires is not in the answer. A URL in
   the source text is data and does not count as held. One known slack: for a
   slide whose type the installation does not know, the held set is wider than
@@ -457,7 +462,8 @@ What pins the controls above today, and the gaps per finding:
 - Media a model's answer may hold, on every writing path:
   `tests/ai-model-media.test.js` drives every path with planted media in every
   known spelling, and renders every media field of every type and every legacy
-  key the read funnel folds into one, resolving what a browser would fetch.
+  key the read funnel folds into one, resolving what a browser would fetch
+  (attributes through an HTML parser, CSS with its escapes).
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 
