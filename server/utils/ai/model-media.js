@@ -38,13 +38,13 @@
  * every media field of every type with every hostile form it knows.
  */
 
-import { mediaValue } from '../../../shared/slide-types/helpers.js';
+import {
+  MEDIA_OWN_HOST,
+  mediaValue,
+  resolveMediaUrl,
+} from '../../../shared/slide-types/helpers.js';
 import { resolveSlideTypeName } from '../../../shared/slide-types/registry.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
-
-/** Two bases, because `https:host` is a path under https and a host under http. */
-const BASES = ['https://installation.invalid/', 'http://installation.invalid/'];
-const OWN_HOST = 'installation.invalid';
 
 const IMAGE_WARNING =
   'The generated slide named a remote image that was not copied; the image field was left empty.';
@@ -58,20 +58,19 @@ export const LEFT_OUT_WARNING =
  * host. Parsed the way the browser parses it, so `/\host`, `https:/host`,
  * a tab inside the scheme and a userinfo prefix read as what they load.
  *
+ * A value the URL parser refuses counts as another host: a CSS `url()` loads
+ * it anyway, from the host it names (see `resolveMediaUrl()`). A bare video
+ * id, a path this installation serves and a `data:` value all parse, so they
+ * stay.
+ *
  * @param {string} value
  * @returns {boolean}
  */
 export function loadsFromAnotherHost(value) {
-  return BASES.some((base) => {
-    let url;
-    try {
-      url = new URL(value, base);
-    } catch {
-      // The browser cannot resolve it either, so it loads nothing.
-      return false;
-    }
-    return url.host !== '' && url.host !== OWN_HOST;
-  });
+  const urls = resolveMediaUrl(value);
+  return (
+    !urls || urls.some((url) => url.host !== '' && url.host !== MEDIA_OWN_HOST)
+  );
 }
 
 /** A field whose value the viewer's browser loads without a click. */

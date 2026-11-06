@@ -65,10 +65,12 @@ const withScheme = (url) => (url.startsWith('//') ? `https:${url}` : url);
  * Every spelling a model can hide a URL behind. JavaScript's `trim()` takes
  * the Unicode white space, the URL parser leaves it standing, so a rule that
  * parses the stored value reads a path where the renderer reads a host; an
- * array is a string to `String()`. The rest read as a path on this host as
- * written, and name the planted host only to a sink that repairs the value
- * (strips a character) or writes it where the browser decodes it again (a
- * character reference in an attribute, an escape in CSS).
+ * array is a string to `String()`. Most of the rest read as a path on this
+ * host as written, and name the planted host only to a sink that repairs the
+ * value (strips a character) or writes it where the browser decodes it again
+ * (a character reference in an attribute, an escape in CSS). The last seven
+ * the URL parser refuses: an attribute loads nothing from them, a CSS `url()`
+ * loads them from the planted host anyway (Chrome 152, DY-811 round 3).
  */
 const HOSTILE_FORMS = {
   'as written': (url) => url,
@@ -94,6 +96,20 @@ const HOSTILE_FORMS = {
   'the slashes as &#x2f;&#x2f;': (url) =>
     withScheme(url).replace(/^[a-z]+:\/\//, '&#x2f;&#x2f;'),
   'the colon as a CSS escape': (url) => withScheme(url).replace(':', '\\3a '),
+  'U+FF1A after the host': (url) =>
+    withScheme(url).replace(`//${HOST}`, `//${HOST}\uff1a`),
+  'U+FE55 after the host': (url) =>
+    withScheme(url).replace(`//${HOST}`, `//${HOST}\ufe55`),
+  'schemaless, U+FF1A after the host': (url) =>
+    withScheme(url).replace(`https://${HOST}`, `//${HOST}\uff1a`),
+  'a second colon after the scheme': (url) =>
+    withScheme(url).replace('://', ':://'),
+  'a colon between the slashes': (url) =>
+    withScheme(url).replace('://', ':/:/'),
+  'an at sign after the scheme': (url) =>
+    withScheme(url).replace('://', ':@//'),
+  'an at sign between the slashes': (url) =>
+    withScheme(url).replace('://', ':/@/'),
 };
 const hostile = (name, url) => HOSTILE_FORMS[name](url);
 
@@ -102,6 +118,13 @@ const localAsWritten = () =>
   Object.keys(HOSTILE_FORMS).filter((name) => {
     const value = hostile(name, BACKGROUND);
     return typeof value === 'string' && !namesPlantedHost(value);
+  });
+
+/** The forms the URL parser refuses on a base: the rule empties them. */
+const refusedByTheParser = () =>
+  Object.keys(HOSTILE_FORMS).filter((name) => {
+    const value = hostile(name, BACKGROUND);
+    return typeof value === 'string' && !parsesOnEveryBase(mediaValue(value));
   });
 
 /** What the deck already held: an absolute copy, an embed the author chose. */
@@ -293,8 +316,9 @@ const planted = () => [
     why: 'White space.',
   },
   // A background the rule reads as a path on this host: it stays, and must
-  // load nothing, because the layer writes what the rule read.
-  ...localAsWritten().map((form) => ({
+  // load nothing, because the layer writes what the rule read. And one the
+  // URL parser refuses, which a CSS url() loads anyway: it is emptied.
+  ...[...localAsWritten(), ...refusedByTheParser()].map((form) => ({
     type: 'content-slide',
     content: {
       title: 'A local-looking background',
@@ -310,18 +334,21 @@ const plantedThatStay = () =>
   planted().filter((s) => !['embed-slide', 'video-slide'].includes(s.type));
 
 /**
- * No value anywhere in `value` names the planted host as the slide reads it.
- * A string that holds the host and reads as a path on this host may stay
- * (the rule keeps it, see localAsWritten); what it renders is checked by
- * {@link assertRendersNothingPlanted}.
+ * No string anywhere in `value` mentions the planted host, except exactly the
+ * backgrounds {@link localAsWritten} plants: the rule reads those as a path on
+ * this host and keeps them; what they render is checked by
+ * {@link assertRendersNothingPlanted}. A URL in a sentence or a warning fails.
  */
 function assertNothingPlanted(value, where) {
   const json = JSON.stringify(value);
   assert.ok(json.length > 2, `${where}: nothing came back`);
+  const kept = new Set(
+    localAsWritten().map((form) => hostile(form, BACKGROUND)),
+  );
   const named = [];
   (function walk(v) {
     if (typeof v === 'string') {
-      if (v.includes(HOST) && namesPlantedHost(v)) named.push(v);
+      if (v.includes(HOST) && !kept.has(v)) named.push(v);
     } else if (v && typeof v === 'object') {
       for (const inner of Object.values(v)) walk(inner);
     }
@@ -350,34 +377,40 @@ const URL_ATTRIBUTES = [
 /**
  * Every address the rendered HTML makes a browser fetch or frame, read the
  * way the browser reads it: the attributes through an HTML parser (so every
- * character reference is decoded), and in every `style` attribute and
- * element each `url(...)` and each CSS string with its escapes resolved.
- * A string counts too, because `image-set()` loads one.
+ * character reference is decoded; only a `srcset` is a list), and in every
+ * `style` attribute and element each `url(...)` and each CSS string with its
+ * escapes resolved. A string counts too, because `image-set()` loads one.
+ *
+ * @returns {{ attributes: string[], css: string[] }}
  */
 function addressesIn(html) {
   const template = PARSER.createElement('template');
   template.innerHTML = html;
-  const found = [];
+  const attributes = [];
+  const css = [];
   for (const el of template.content.querySelectorAll('*')) {
     for (const name of URL_ATTRIBUTES) {
       const value = el.getAttribute(name);
       if (value == null) continue;
-      found.push(
-        ...value.split(/,\s+/).map((part) => part.trim().split(/\s+/)[0]),
-      );
+      if (name === 'srcset') {
+        attributes.push(
+          ...value.split(/,\s+/).map((part) => part.trim().split(/\s+/)[0]),
+        );
+      } else attributes.push(value);
     }
     const style = el.getAttribute('style');
-    if (style) found.push(...cssAddresses(style));
-    if (el.localName === 'style') found.push(...cssAddresses(el.textContent));
+    if (style) css.push(...cssAddresses(style));
+    if (el.localName === 'style') css.push(...cssAddresses(el.textContent));
   }
-  return found;
+  return { attributes, css };
 }
 
 /**
  * The `url(...)` tokens and strings of a piece of CSS, with escapes resolved
  * as CSS Syntax Level 3 resolves them (preprocessing included: NUL becomes
  * U+FFFD, CR and FF a line feed). A function name may itself be escaped
- * (`\75 rl(`), so idents are decoded before they are compared.
+ * (`\75 rl(`), so idents are decoded before they are compared. Comments are
+ * skipped, so an apostrophe in one opens no string.
  */
 function cssAddresses(css) {
   const src = css.replace(/\r\n?|\f/g, '\n').replace(/\0/g, '\ufffd');
@@ -413,7 +446,10 @@ function cssAddresses(css) {
   };
   while (i < src.length) {
     const c = src[i];
-    if (c === '"' || c === "'") {
+    if (c === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2);
+      i = end < 0 ? src.length : end + 2;
+    } else if (c === '"' || c === "'") {
       found.push(string(c));
     } else if (/[a-z_\\-]/i.test(c) || c.charCodeAt(0) >= 0x80) {
       let name = '';
@@ -422,6 +458,10 @@ function cssAddresses(css) {
         else if (/[a-z0-9_-]/i.test(src[i]) || src.charCodeAt(i) >= 0x80) {
           name += src[i++];
         } else break;
+      }
+      if (!name) {
+        i += 1; // a backslash before a line feed starts no ident
+        continue;
       }
       if (src[i] === '(' && name.toLowerCase() === 'url') {
         i += 1;
@@ -438,12 +478,21 @@ function cssAddresses(css) {
   return found;
 }
 
-/** Whether the value as every renderer reads it resolves to the planted host. */
+/**
+ * Whether the value as every renderer reads it reaches the planted host from
+ * a CSS `url()`, the widest sink: the rule has to empty it.
+ */
 function namesPlantedHost(value) {
   const used = mediaValue(value);
-  return Boolean(used) && resolvesToPlantedHost(used);
+  return Boolean(used) && cssLoadsPlantedHost(used);
 }
 
+/** Whether the URL parser takes the address on both page bases. */
+function parsesOnEveryBase(address) {
+  return PAGE_BASES.every((base) => URL.canParse(address, base));
+}
+
+/** Whether an attribute with this address loads from the planted host. */
 function resolvesToPlantedHost(address) {
   return PAGE_BASES.some((base) => {
     try {
@@ -454,9 +503,27 @@ function resolvesToPlantedHost(address) {
   });
 }
 
-/** The addresses in `html` a browser resolves to the planted host. */
+/**
+ * Whether a CSS `url()` or string with this address loads from the planted
+ * host. One the URL parser refuses on a base, Chrome still fetches from the
+ * host it names; no parser in Node does what Chrome does there, so an address
+ * that names the host and does not parse counts as a load (the conservative
+ * reading).
+ */
+function cssLoadsPlantedHost(address) {
+  return (
+    resolvesToPlantedHost(address) ||
+    (address.includes(HOST) && !parsesOnEveryBase(address))
+  );
+}
+
+/** The addresses in `html` a browser loads from the planted host. */
 function plantedLoads(html) {
-  return addressesIn(html).filter(resolvesToPlantedHost);
+  const { attributes, css } = addressesIn(html);
+  return [
+    ...attributes.filter(resolvesToPlantedHost),
+    ...css.filter(cssLoadsPlantedHost),
+  ];
 }
 
 /**
@@ -584,6 +651,12 @@ test('a value is remote when the browser would fetch it from another host', () =
     `http:${HOST}/x.png`,
     `HTTPS://${HOST.toUpperCase()}/x.png`,
     `ftp://${HOST}/x.png`,
+    // The URL parser refuses these on a base; a CSS url() loads them anyway.
+    `https://${HOST}\uff1a/x.png`,
+    `//${HOST}\ufe55/x.png`,
+    `https:://${HOST}/x.png`,
+    `https:/@/${HOST}/x.png`,
+    'https://',
   ]) {
     assert.equal(loadsFromAnotherHost(remote), true, JSON.stringify(remote));
   }
@@ -595,7 +668,7 @@ test('a value is remote when the browser would fetch it from another host', () =
     'source-image:3',
     'data:image/png;base64,AAAA',
     'blob:abc',
-    'https://',
+    'a-bare-video-id',
     '',
   ]) {
     assert.equal(loadsFromAnotherHost(local), false, JSON.stringify(local));
@@ -707,6 +780,24 @@ function slideWith(type, path, value) {
   return slide;
 }
 
+test('the render oracle reads what the browser reads', () => {
+  // A comment opens no string, so the second address is still seen.
+  assert.deepEqual(cssAddresses(`a:url(/x) /* ' */; b:url(//${HOST}/p)`), [
+    '/x',
+    `//${HOST}/p`,
+  ]);
+  // A backslash before a line feed outside a string ends; it does not hang.
+  assert.deepEqual(cssAddresses(`\\\nb:url(//${HOST}/p)`), [`//${HOST}/p`]);
+  // Only a srcset is a list: a tab in a src hides nothing.
+  assert.deepEqual(
+    plantedLoads(`<img src="/a\t//${HOST}/p"><img src="https:\t//${HOST}/p">`),
+    [`https:\t//${HOST}/p`],
+  );
+  // A CSS address the parser refuses and that names the host counts as a load.
+  assert.equal(cssLoadsPlantedHost(`https://${HOST}\uff1a/p`), true);
+  assert.equal(resolvesToPlantedHost(`https://${HOST}\uff1a/p`), false);
+});
+
 /**
  * A field whose value as written loads nothing, with or without the rule. The
  * video player frames only YouTube, Vimeo and Bunny; which video an id names
@@ -734,15 +825,17 @@ test('every media field of every type renders nothing a model planted, in any fo
       for (const form of Object.keys(HOSTILE_FORMS)) {
         const value = hostile(form, url);
         // Unguarded, the render loads the planted host only where the value
-        // the rule reads names it: no sink repairs or re-decodes a value.
+        // the rule reads resolves to it: no sink repairs or re-decodes a
+        // value, and none writes one the URL parser refuses.
         const loads = plantedLoads(
           renderSlideHtml(
             migratePresentation({ slides: [slideWith(type, path, value)] })
               .slides[0],
           ),
         );
+        const used = mediaValue(value);
         assert.ok(
-          !loads.length || namesPlantedHost(value),
+          !loads.length || (Boolean(used) && resolvesToPlantedHost(used)),
           `${name}, ${form}: the render loads ${loads} from a value the rule reads as local`,
         );
         const slide = slideWith(type, path, value);

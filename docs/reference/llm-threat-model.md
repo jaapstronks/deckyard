@@ -222,13 +222,16 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   `mediaRef`, the answer keeps only a value the slides the model was given
   already held there, or one that names no other host (a served path, a bare
   video id in the installation's library), read the way the browser resolves
-  it. The rule judges what the slide will use: the value as every renderer
+  it. A value the URL parser refuses counts as another host: an attribute
+  loads nothing from it, but a CSS `url()` still loads it from the host it
+  names. The rule judges what the slide will use: the value as every renderer
   reads it (`mediaValue()` in `shared/slide-types/helpers.js`; anything but a
   string is emptied), on the slide as a read yields it (the read funnel's
   legacy keys folded first). No sink changes that value after the rule: the
   background layer writes it unchanged and HTML-escaped into `url('...')`, and
   renders no background for a value its CSS string cannot carry (a quote, a
-  backslash, a control character). A media field belongs in a `src`; a fork
+  backslash, a control character) or the URL parser refuses
+  (`resolveMediaUrl()`, the one question the rule and the layer share). A media field belongs in a `src`; a fork
   type that writes one into CSS `url()` needs more than `mediaValue()` and
   `escapeHtml`. Anything else is emptied with a warning, and a
   slide left without a field its type requires is not in the answer. A URL in
@@ -463,7 +466,8 @@ What pins the controls above today, and the gaps per finding:
   `tests/ai-model-media.test.js` drives every path with planted media in every
   known spelling, and renders every media field of every type and every legacy
   key the read funnel folds into one, resolving what a browser would fetch
-  (attributes through an HTML parser, CSS with its escapes).
+  (attributes through an HTML parser, CSS with its escapes; a CSS address the
+  parser refuses and that names the host counts as a load).
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 

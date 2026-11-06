@@ -41,6 +41,41 @@ export function mediaValue(raw) {
   return typeof raw === 'string' ? raw.trim() : '';
 }
 
+/** The host a media value is resolved against: this installation. */
+export const MEDIA_OWN_HOST = 'installation.invalid';
+
+/** Two bases, because `https:host` is a path under https and a host under http. */
+const MEDIA_BASES = [`https://${MEDIA_OWN_HOST}/`, `http://${MEDIA_OWN_HOST}/`];
+
+/**
+ * A media value resolved the way a page on this installation resolves it,
+ * once under https and once under http, or `null` when the URL parser refuses
+ * it on either base (DY-811).
+ *
+ * `null` is not "loads nothing". An attribute (`src`, an iframe, a video)
+ * loads nothing from such a value, but a CSS `url()` loads it anyway from the
+ * host it names, query included (Chrome: `https://host\uff1a/p`, and
+ * `https:://host/p` on an http page). So every reader that decides whether a
+ * value may be used treats a refused value as unusable: the AI media rule
+ * (`server/utils/ai/model-media.js`) as another host, the background layer as
+ * no background. A conforming browser fetches nothing from it where it is a
+ * URL, so nothing legitimate is lost.
+ *
+ * @param {string} value - as {@link mediaValue} reads it
+ * @returns {URL[]|null}
+ */
+export function resolveMediaUrl(value) {
+  const urls = [];
+  for (const base of MEDIA_BASES) {
+    try {
+      urls.push(new URL(value, base));
+    } catch {
+      return null;
+    }
+  }
+  return urls;
+}
+
 /**
  * Standard background field definition for slide types.
  * Use this constant instead of duplicating the field definition.

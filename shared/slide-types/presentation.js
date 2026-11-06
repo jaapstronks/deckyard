@@ -5,6 +5,7 @@ import {
   cryptoUuid,
   escapeHtml,
   mediaValue,
+  resolveMediaUrl,
 } from './helpers.js';
 import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
 import {
@@ -283,13 +284,15 @@ const CSS_STRING_UNSAFE = /['\\\u0000-\u001f\u007f]/;
 
 // The background as the layer writes it into `url('...')`: the value every
 // renderer reads (mediaValue()), unchanged, or '' when the string cannot carry
-// it. Never repaired: the AI media rule (server/utils/ai/model-media.js)
-// judges this value, so a sink that strips or rewrites characters would load
-// a URL the rule never saw (DY-811). The caller HTML-escapes it into the
-// attribute, so the browser's attribute decoding gives this value back.
+// it or the URL parser refuses it. Never repaired: the AI media rule
+// (server/utils/ai/model-media.js) judges this value, so a sink that strips or
+// rewrites characters would load a URL the rule never saw (DY-811). A refused
+// value is no background, because a CSS url() still loads it from the host it
+// names (resolveMediaUrl()). The caller HTML-escapes it into the attribute, so
+// the browser's attribute decoding gives this value back.
 function slideBgUrl(value) {
   const url = mediaValue(value);
-  return url && !CSS_STRING_UNSAFE.test(url) ? url : '';
+  return url && !CSS_STRING_UNSAFE.test(url) && resolveMediaUrl(url) ? url : '';
 }
 
 // Resolve which text-contrast class (if any) to apply for a background image.
