@@ -91,10 +91,16 @@ export async function maybeAttachCollab(
     organizationId: documentOrganizations.get(documentName) ?? undefined,
   });
 
+  // The Hocuspocus hooks, plus the one call `connected` makes: a new
+  // connection hears which fields its document holds back (DY-856).
   let persistence = {};
+  let sendRefusedFields = null;
   if (liveEdits) {
     const { createCollabPersistence } = await import('./persistence.js');
-    persistence = createCollabPersistence({ repoRoot, documentScope });
+    ({ sendRefusedFields, ...persistence } = createCollabPersistence({
+      repoRoot,
+      documentScope,
+    }));
   }
 
   // Write permission can end while a socket stays open, so each connection
@@ -150,8 +156,9 @@ export async function maybeAttachCollab(
     // Attach the lease as soon as the connection exists. Whichever of these
     // two runs first does it: Hocuspocus hands queued messages over before
     // it calls `connected`.
-    async connected({ connection }) {
+    async connected({ connection, documentName }) {
       leaseOf(connection);
+      sendRefusedFields?.(connection, documentName);
     },
     async beforeHandleMessage({ connection }) {
       // A throw makes Hocuspocus close the connection before the message

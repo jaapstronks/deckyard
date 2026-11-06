@@ -45,6 +45,7 @@ export function createSaveFeedback({
   let error = null;
   let target = null;
   let normalized = [];
+  let refused = [];
   const notice = h('p');
   const go = h('button', {
     type: 'button',
@@ -133,6 +134,15 @@ export function createSaveFeedback({
         if (!known) normalized.push(issue);
       }
     },
+    /**
+     * The fields the collab store holds back (DY-856): every peer sees the
+     * value, the deck keeps the stored one. Replaces the previous set; they
+     * stay listed until a store accepts them.
+     * @param {Array<{slideId: string, field: string, errors: string[], lang?: string}>} fields
+     */
+    setRefused(fields) {
+      refused = Array.isArray(fields) ? fields : [];
+    },
     setError(next) {
       error = next;
       diagnostic.open = false;
@@ -164,14 +174,29 @@ export function createSaveFeedback({
         !failed && status === 'saved'
           ? savedQualityIssues(pres, slideTypes)
           : [];
-      target = failed ? error?.details : normalized[0] || quality[0];
+      target = failed
+        ? error?.details
+        : refused[0] || normalized[0] || quality[0];
       const located = target?.slideId && target?.field;
       go.hidden = !located || !onReveal;
       diagnostic.hidden = !failed || !error;
       notice.textContent = located ? describe(target) : '';
       if (located && target.errors?.length)
         notice.textContent += ': ' + target.errors.join('; ');
-      if (!failed && normalized.length)
+      if (!failed && refused.length)
+        notice.textContent +=
+          ' ' +
+          (refused.length > 1
+            ? t(
+                'editor.save.collabRefusedMany',
+                'Not saved: {count} fields keep their previous value until they are corrected.',
+                { count: refused.length },
+              )
+            : t(
+                'editor.save.collabRefused',
+                'Not saved: this field keeps its previous value until it is corrected.',
+              ));
+      else if (!failed && normalized.length)
         notice.textContent +=
           ' ' +
           t(

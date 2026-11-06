@@ -698,6 +698,8 @@
   "editor.remoteMerge.title": "Changes merged in",
   "editor.save.autosaveEnabled": "Changes are saved automatically…",
   "editor.save.bugReport": "Bug report",
+  "editor.save.collabRefused": "Not saved: this field keeps its previous value until it is corrected.",
+  "editor.save.collabRefusedMany": "Not saved: {count} fields keep their previous value until they are corrected.",
   "editor.save.conflict": "Conflict: this presentation was changed elsewhere. Reload to continue.",
   "editor.save.connectionLost": "Connection lost. Changes are waiting to sync; check your connection.",
   "editor.save.copyReport": "Copy bug report",

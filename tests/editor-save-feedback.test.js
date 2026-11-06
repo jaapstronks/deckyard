@@ -193,3 +193,45 @@ test('a shortened description stays noted across later saves until reviewed (B87
   assert.equal(status.el.hidden, true, 'reviewed: the notice is gone');
   status.detach();
 });
+
+test('a field the collab store holds back shows for every peer until a store accepts it (DY-856)', () => {
+  const navigations = [];
+  const status = createSaveStatus({
+    pres: {
+      id: 'p1',
+      slides: [{ id: 's1', type: 'text-slide', content: { title: 'Dutch' } }],
+      i18n: { active: 'nl', dominant: 'nl', versions: { nl: { slides: [] } } },
+    },
+    slideTypes,
+    onReveal: (target) => navigations.push(target),
+  });
+  document.body.append(status.el);
+  status.setStatus('saved');
+  assert.equal(status.el.hidden, true, 'a peer who typed nothing sees no line');
+
+  const refused = {
+    slideId: 's1',
+    field: 'title',
+    path: [],
+    errors: ['Too long'],
+    lang: 'nl',
+  };
+  status.setRefused([refused]);
+  assert.equal(status.el.hidden, false);
+  assert.equal(status.el.getAttribute('aria-live'), 'polite');
+  assert.match(status.el.textContent, /slide 1.*title.*Too long/);
+  assert.match(status.el.textContent, /keeps its previous value/);
+  const go = [...status.el.querySelectorAll('button')].find(
+    (b) => !b.hidden && /Go to field/.test(b.textContent),
+  );
+  go.click();
+  assert.deepEqual(navigations, [refused]);
+  assert.equal(status.el.hidden, false, 'going there does not clear it');
+
+  status.setRefused([refused, { ...refused, field: 'body' }]);
+  assert.match(status.el.textContent, /2 fields keep their previous value/);
+
+  status.setRefused([]);
+  assert.equal(status.el.hidden, true, 'an accepted store clears the line');
+  status.detach();
+});

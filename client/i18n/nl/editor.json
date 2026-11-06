@@ -698,6 +698,8 @@
   "editor.remoteMerge.title": "Wijzigingen samengevoegd",
   "editor.save.autosaveEnabled": "Wijzigingen worden automatisch opgeslagen…",
   "editor.save.bugReport": "Bugrapport",
+  "editor.save.collabRefused": "Niet opgeslagen: dit veld houdt zijn vorige waarde tot het is verbeterd.",
+  "editor.save.collabRefusedMany": "Niet opgeslagen: {count} velden houden hun vorige waarde tot ze zijn verbeterd.",
   "editor.save.conflict": "Conflict: deze presentatie is elders gewijzigd. Herlaad om verder te gaan.",
   "editor.save.connectionLost": "Verbinding verbroken. Wijzigingen wachten op synchronisatie; controleer je verbinding.",
   "editor.save.copyReport": "Bugrapport kopiëren",

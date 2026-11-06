@@ -16,6 +16,8 @@
  */
 
 import { HocuspocusProvider, WebSocketStatus } from '../../../vendor/collab.js';
+import { decodeRefusedFields } from '../../../../shared/collab/refused-fields.js';
+import { debugLog } from '../../../lib/state/debug.js';
 
 /**
  * Saturated, theme-safe colors for presence rings/outlines. Order matters:
@@ -89,6 +91,10 @@ export function createPresenceSession({
 
   const peerListeners = new Set();
   const statusListeners = new Set();
+  const refusalListeners = new Set();
+  // The server sends the set on connect, which can be before the live-edit
+  // module subscribes; a new subscriber gets the last one.
+  let refusedFields = [];
   let detached = false;
 
   /** Remote peers with a valid presence state (one entry per client/tab). */
@@ -131,6 +137,21 @@ export function createPresenceSession({
   };
   provider.on('status', onStatus);
 
+  // The store says which fields it held back; the whole set each time.
+  const onStateless = ({ payload }) => {
+    const fields = decodeRefusedFields(payload);
+    if (!fields) return;
+    refusedFields = fields;
+    for (const fn of refusalListeners) {
+      try {
+        fn(fields);
+      } catch (err) {
+        debugLog('[collab] refused-fields listener failed:', err);
+      }
+    }
+  };
+  provider.on('stateless', onStateless);
+
   // Best-effort teardown so peers see us leave immediately instead of after
   // the awareness timeout.
   const onPageHide = () => detach();
@@ -158,6 +179,7 @@ export function createPresenceSession({
     try {
       awareness.off('change', notifyPeers);
       provider.off('status', onStatus);
+      provider.off('stateless', onStateless);
       awareness.setLocalState(null);
     } catch {
       // ignore
@@ -178,6 +200,16 @@ export function createPresenceSession({
     onPeersChange(fn) {
       peerListeners.add(fn);
       return () => peerListeners.delete(fn);
+    },
+    /**
+     * Subscribe to the fields the collab store holds back, as the whole
+     * current set, starting with the last one received; returns an
+     * unsubscribe function.
+     */
+    onRefusedFieldsChange(fn) {
+      refusalListeners.add(fn);
+      fn(refusedFields);
+      return () => refusalListeners.delete(fn);
     },
     /** Subscribe to connection status (boolean connected). */
     onConnectionChange(fn) {

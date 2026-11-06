@@ -15,6 +15,7 @@ import assert from 'node:assert';
 import * as Y from 'yjs';
 import { createCollabPersistence } from '../server/collab/persistence.js';
 import { deckYdocCodec } from '../server/collab/deck-doc.js';
+import { REFUSED_FIELDS_MESSAGE } from '../shared/collab/refused-fields.js';
 import { testScope } from './helpers/storage-scope.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
@@ -315,6 +316,75 @@ describe('collab persistence hooks', () => {
         (await storedContent(id)).contactUrl,
         'https://example.org/',
       );
+    });
+
+    describe('every peer hears which field stays out (DY-856)', () => {
+      const listen = (doc) => {
+        const sent = [];
+        doc.broadcastStateless = (message) => sent.push(JSON.parse(message));
+        return sent;
+      };
+      const connection = () => {
+        const sent = [];
+        return { sent, sendStateless: (m) => sent.push(JSON.parse(m)) };
+      };
+
+      it('a refusal is broadcast once, named without its value, and a fix clears it', async () => {
+        const { id, doc, edit } = await openEndSlide();
+        const sent = listen(doc);
+
+        await edit({ contactUrl: 'javascript:alert(1)' });
+        await edit({ title: 'Nog steeds' });
+
+        assert.equal(sent.length, 1, 'an unchanged set is not sent again');
+        assert.equal(sent[0].type, REFUSED_FIELDS_MESSAGE);
+        assert.equal(sent[0].fields.length, 1, 'one entry for both versions');
+        assert.deepEqual(
+          { ...sent[0].fields[0], errors: undefined },
+          {
+            slideId: 'end-1',
+            field: 'contactUrl',
+            path: [],
+            lang: 'nl',
+            errors: undefined,
+          },
+        );
+        assert.ok(sent[0].fields[0].errors.length);
+        assert.doesNotMatch(JSON.stringify(sent), /alert\(1\)/);
+
+        const late = connection();
+        hooks.sendRefusedFields(late, docName(id));
+        assert.deepEqual(late.sent, [sent[0]], 'a later peer hears it too');
+
+        await edit({ contactUrl: 'https://example.org/' });
+        assert.equal(sent.length, 2);
+        assert.deepEqual(sent[1].fields, []);
+        const after = connection();
+        hooks.sendRefusedFields(after, docName(id));
+        assert.deepEqual(after.sent[0].fields, [], 'a reconnect clears it');
+      });
+
+      it('a refused value in a stored binary is known on the next load, before any store', async () => {
+        const { id, edit } = await openEndSlide();
+        await edit({ contactUrl: 'javascript:alert(1)' });
+        await hooks.afterUnloadDocument({ documentName: docName(id) });
+
+        const reopened = createCollabPersistence({
+          repoRoot: REPO_ROOT,
+          deps: { log },
+        });
+        await reopened.onLoadDocument({
+          documentName: docName(id),
+          document: new Y.Doc(),
+        });
+        const peer = connection();
+        reopened.sendRefusedFields(peer, docName(id));
+
+        assert.deepEqual(
+          peer.sent[0].fields.map((f) => [f.slideId, f.field]),
+          [['end-1', 'contactUrl']],
+        );
+      });
     });
 
     it('an old bad link on a slide nobody touches does not hold back other edits', async () => {
