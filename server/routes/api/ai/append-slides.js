@@ -18,7 +18,7 @@ import { attachBatchReviews } from '../../../utils/ai/slide-review.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
 import { resolveSourceImages } from '../../../utils/ai/source-images.js';
-import { leaveOut, mediaInSlides } from '../../../utils/ai/model-media.js';
+import { leaveOut, heldInSlides } from '../../../utils/ai/model-media.js';
 import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 
 /**
@@ -98,7 +98,7 @@ export async function handleAiAppendSlides({
     ({ unusable } = await resolveSourceImages(slides, sourceImages, {
       signal,
       slideTypes,
-      keep: mediaInSlides(priorSlides, slideTypes),
+      keep: heldInSlides(priorSlides, slideTypes),
     }));
   } catch (e) {
     if (!signal.aborted) throw e;

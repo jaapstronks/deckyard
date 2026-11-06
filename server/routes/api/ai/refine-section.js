@@ -21,7 +21,7 @@ import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.
 import {
   dropForeignMedia,
   leaveOut,
-  mediaInSlides,
+  heldInSlides,
 } from '../../../utils/ai/model-media.js';
 import { LlmError } from '../../../utils/llm/error.js';
 
@@ -98,7 +98,7 @@ export const handleAiRefineSection = withErrorHandler(
     // holds and nothing it wrote itself (DY-811).
     const unusable = dropForeignMedia(slides, {
       slideTypes,
-      keep: mediaInSlides(presentation.slides, slideTypes),
+      keep: heldInSlides(presentation.slides, slideTypes),
     });
     attachBatchReviews(slides, revisedRaw, {
       slideTypes,

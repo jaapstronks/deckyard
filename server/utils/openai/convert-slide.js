@@ -6,7 +6,7 @@ import { extractJsonObject } from './json.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { GLOBAL_SLIDE_FIELD_KEYS } from '../../../shared/slide-types/registry.js';
 import { getAiConvertibleSlideTypes } from '../../../shared/slide-types/convert.js';
-import { dropForeignMedia, mediaInSlides } from '../ai/model-media.js';
+import { dropForeignMedia, heldInSlides } from '../ai/model-media.js';
 
 /**
  * The prompt for one conversion pair, or null when the pair has none.
@@ -551,7 +551,7 @@ export async function convertSlideWithAi(
 
   const unusable = dropForeignMedia([converted], {
     slideTypes,
-    keep: mediaInSlides([slide], slideTypes),
+    keep: heldInSlides([slide], slideTypes),
   });
   if (unusable.size) {
     throw new LlmError(

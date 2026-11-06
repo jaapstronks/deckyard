@@ -13,7 +13,7 @@ import {
   untrustedData,
 } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
-import { dropForeignMedia, mediaInSlides } from './model-media.js';
+import { dropForeignMedia, heldInSlides } from './model-media.js';
 import {
   SLIDE_TYPE_CATALOG,
   getOfferedSlideTypes,
@@ -378,7 +378,7 @@ export async function analyzePresentation(
   // media the deck holds and bring none of its own.
   const unusable = dropForeignMedia(
     output.suggestions.map((s) => s.proposedSlide).filter(Boolean),
-    { slideTypes, keep: mediaInSlides(slides, slideTypes) },
+    { slideTypes, keep: heldInSlides(slides, slideTypes) },
   );
   for (const suggestion of output.suggestions) {
     // The advice stays; a slide that cannot be stored is not proposed.

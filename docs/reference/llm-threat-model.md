@@ -240,7 +240,24 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   that slide's media fields; it holds only values the deck already has. It runs after composition on every path that
   turns an answer into slide content (finding 3). A person or an agent with
   write access can still put any `https:` URL in such a field: that is their
-  own write. **Published editions are closed**:
+  own write. Two loads are not a media field, and the same call holds them
+  to the same rule (DY-863). **Text a renderer turns into a load**: a
+  database type writes a field into its markup as it is (`{{raw}}`) or into
+  an attribute (`<img src="{{esc photo}}">`), a fork type may do the same,
+  and the sanitizer keeps `<img src="https://…">` for every writer. So the
+  rule renders each slide as a viewer gets it, reads what the markup asks a
+  browser to load (every attribute but a link's `href` and a short list of
+  names and sizes, read as an address and word by word, and as CSS, where an
+  escape, a comment or any function that is not arithmetic, colour, gradient,
+  shape, transform or filter counts), and empties a value the model wrote
+  that adds a load the render without its values does not have. A value the
+  given slides held in the same field of the same type stays; a choice among
+  a field's declared options is no writing. **A field the type withholds**
+  (`ai: false`, such as a video's Bunny library): an answer that fills it
+  gets back what the given slides held there, or the type's default, which
+  carries the installation's configuration. The sanitizer itself was not
+  narrowed: a person's markup that loads a partner's picture is their own
+  write. **Published editions are closed**:
   `server/export/edition-input.js` refuses any frame and any non-`data:` URL
   at publish time. **Exports fetch server-side** through the SSRF guard, which
   blocks private and metadata addresses and accepts public hosts, so a public
@@ -363,10 +380,12 @@ says what it touches; the exact form follows with its fix.
    query if a slide asked for that. Fixed: every path that turns an answer
    into slide content holds it to one rule, `dropForeignMedia` (§ Sinks), and
    `tests/ai-model-media.test.js` drives each path with a model that plants a
-   URL and fails on a call to the transport it has not filed (DY-811). Two
-   things are outside that rule and open (DY-863): text that an
-   organization's own slide type renders as markup, and a field a type
-   withholds from the model, which an answer can still set.
+   URL and fails on a call to the transport it has not filed (DY-811). The
+   same call holds the two loads that are not a media field: a text the
+   model wrote that a type renders into a load (markup through `{{raw}}`, a
+   value in an attribute) is emptied, read off the rendered slide, and a
+   field a type withholds from the model gets back what was held or the
+   type's default (DY-863).
 4. **A plan could reach further than the slides the starter named.** A
    deck-wide iteration and a compression plan applied `remove` and `replace`
    on any index, MCP stored that before the agent saw it, and a slide title
@@ -436,8 +455,9 @@ model-written URL cannot run or beacon.
 Is this threat model a launch condition for the public sandbox? **Not while
 the sandbox offers no AI.** `SANDBOX_MODE` forces `enableAi` off, so none of
 the paths above exist there and the findings do not change its posture. The
-day the sandbox offers AI, the open part of finding 3 becomes a launch
-condition first (a beacon from a public deck), and the sandbox's Mistral-only
+day the sandbox offers AI, the release with the fixes for finding 3 (DY-811,
+DY-863) becomes a launch condition first (a beacon from a public deck), and
+the sandbox's Mistral-only
 rule stops being belt and braces.
 
 ## Tests
@@ -466,12 +486,15 @@ What pins the controls above today, and the gaps per finding:
   `tests/ai-model-media.test.js` drives every path with planted media in every
   known spelling, and renders every media field of every type and every legacy
   key the read funnel folds into one, resolving what a browser would fetch
-  (attributes through an HTML parser, CSS with its escapes; a CSS address the
-  parser refuses and that names the host counts as a load).
+  (attributes through an HTML parser, CSS with its escapes; any CSS address
+  the parser refuses counts as a load). The planted set carries markup into
+  a database type's text and attribute and a Bunny library of the model's
+  own onto every path that offers such a type, and every form of planted
+  markup is rendered through the sanitizer.
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 
 Not pinned by any test: a `javascript:` or foreign-host video source (added
-with the fix for finding 1), and the two open points under finding 3. Each item
+with the fix for finding 1). Each item
 carries its regression test as an acceptance criterion, after the pattern of
 the faked seam in `tests/translate-undeclared-item-strings.test.js`.
