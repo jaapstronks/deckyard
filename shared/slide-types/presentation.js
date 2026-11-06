@@ -19,8 +19,10 @@ import { applyLocksToContent } from '../theme-locks.js';
 import { SLIDE_TYPES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
-import { validateFieldValue } from './field-types.js';
-import { fieldChangeProblems } from './field-change-validation.js';
+import {
+  fieldChangeProblems,
+  newFieldProblems,
+} from './field-change-validation.js';
 import { isTextField } from './text-fields.js';
 import { undeclaredContentKeys } from './declared-keys.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
@@ -687,7 +689,8 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
  * `unknown_field` (D359): every write holds content to the list strict
  * validation and the import read (`declaredContentKeys()`), and stored decks
  * were stripped to it by migration 102, so a stray key is the caller's.
- * Item-field checks remain owned by validateFieldValue, at every write surface.
+ * Each part of a list meets its own field's validator at every depth, for a
+ * new and a stored item alike (`field-change-validation.js`).
  * @param {Object} slide
  * @param {{slideTypes?: Record<string, Object>, allowMissingTranslationText?: boolean, previousSlide?: Object}} [opts]
  * @returns {Array<{field: string, errors: string[], code?: 'unknown_field', parts?: import('./field-change-validation.js').FieldPartProblem[]}>}
@@ -741,14 +744,16 @@ function declaredFieldProblems(
       ? translationFieldDefinition(field)
       : field;
     const value = slide?.content?.[field.key];
-    const parts = fieldChangeProblems(
-      value,
-      previousSlide ? previousSlide.content?.[field.key] : undefined,
-      definition,
-    );
-    const errors = previousSlide
-      ? parts.flatMap((part) => part.errors)
-      : validateFieldValue(value, definition);
+    // One walk for a stored and a new slide: what a new slide refuses is what
+    // a stored one refuses for a value it does not hold yet.
+    const parts = previousSlide
+      ? fieldChangeProblems(
+          value,
+          previousSlide.content?.[field.key],
+          definition,
+        )
+      : newFieldProblems(value, definition);
+    const errors = parts.flatMap((part) => part.errors);
     if (!errors.length) return [];
     // A list says which item's sub-field it refuses, as data, so a caller can
     // hold back that sub-field and not the list.
