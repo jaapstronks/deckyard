@@ -246,18 +246,34 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   an attribute (`<img src="{{esc photo}}">`), a fork type may do the same,
   and the sanitizer keeps `<img src="https://…">` for every writer. So the
   rule renders each slide as a viewer gets it, reads what the markup asks a
-  browser to load (every attribute but a link's `href` and a short list of
-  names and sizes, read as an address and word by word, and as CSS, where an
-  escape, a comment or any function that is not arithmetic, colour, gradient,
-  shape, transform or filter counts), and empties a value the model wrote
-  that adds a load the render without its values does not have. A value the
-  given slides held in the same field of the same type stays; a choice among
-  a field's declared options is no writing. **A field the type withholds**
+  browser to load (every attribute but a link's `href`, a short list of
+  names and sizes and `data-math`, read as an address and word by word; and
+  `style` plus every attribute of an SVG or MathML element read as CSS too,
+  where an escape, a comment or any function that is not arithmetic, colour,
+  gradient, shape, transform or filter counts), and empties a value the
+  model wrote that adds a load the render without its values does not have.
+  `data-math` is a formula: KaTeX renders it without `trust`, so nothing in
+  it fetches, and a test fails when a KaTeX call passes `trust`. The search
+  costs at most one render per judged value plus two, and a call judges at
+  most 250 values that way; past that, a slide that loads more than its base
+  has every judged value emptied. A value the given slides held in the same
+  field of the same type stays; a choice among a field's declared options is
+  no writing. The render the rule reads is the server's (parse5 under
+  jsdom, DOMPurify on it), and that is what a viewer gets: a database type
+  and a fork type always render on the server (`triggerServerRender`,
+  `OVERRIDDEN_CORE_SLIDE_TYPE_NAMES`). The browser's sanitizer reads some
+  markup differently (the content of a `<select>`, which Chrome's parser
+  keeps and parse5 drops), so a type that rendered model text in the browser
+  would need its own judgment. **A media value that holds more than one
+  address**: a type that writes its own image field into a CSS `url()` or a
+  `srcset` reads a second address after a quote, a parenthesis, a backslash,
+  white space or a control character, so a media value the model wrote and
+  the slides did not hold holds none of them. **A field the type withholds**
   (`ai: false`, such as a video's Bunny library): an answer that fills it
-  gets back what the given slides held there, or the type's default, which
-  carries the installation's configuration. The sanitizer itself was not
-  narrowed: a person's markup that loads a partner's picture is their own
-  write. **Published editions are closed**:
+  gets back what the given slides held there (a list included), or the
+  type's default, which carries the installation's configuration. The
+  sanitizer itself was not narrowed: a person's markup that loads a
+  partner's picture is their own write. **Published editions are closed**:
   `server/export/edition-input.js` refuses any frame and any non-`data:` URL
   at publish time. **Exports fetch server-side** through the SSRF guard, which
   blocks private and metadata addresses and accepts public hosts, so a public
