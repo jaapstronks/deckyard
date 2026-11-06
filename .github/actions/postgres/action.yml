@@ -1,6 +1,6 @@
 name: PostgreSQL from the runner image
 description: >-
-  Start the PostgreSQL 16 that ships preinstalled on ubuntu-latest and create
+  Start the PostgreSQL 16 that ships preinstalled on ubuntu-24.04 and create
   the role and database a job connects to. Replaces a `services: postgres`
   container, whose anonymous image pull counts against a registry quota shared
   per runner IP (B736).
@@ -10,6 +10,11 @@ description: >-
 # most main runs failed on `toomanyrequests` before a single test ran. The
 # runner image already carries PostgreSQL (disabled by default); starting it
 # needs no network and no secret.
+#
+# The jobs that use this pin `runs-on: ubuntu-24.04`: each image ships one
+# PostgreSQL major (24.04: 16, 26.04: 18), and ubuntu-latest moved to 26.04 on
+# 2026-11-06. Move the pin and `major` together, to the major the compose files
+# run (`postgres:16`).
 #
 # The role is a superuser, like the POSTGRES_USER of the official image the
 # jobs used before, so migrations that create extensions behave the same.
