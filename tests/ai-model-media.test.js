@@ -7,9 +7,18 @@
  * of them, on every path that turns an answer into slide content. No path may
  * hand that URL back or store it; what the slides already held stays.
  *
- * The list of paths is closed against the transport: a new file that calls
- * the model fails the inventory test until it is filed below as a path that
- * writes slide content (with a test) or one that does not.
+ * The model plants each URL in more than one spelling: as written, behind
+ * white space JavaScript trims and the URL parser keeps (U+00A0, U+FEFF,
+ * U+3000, U+2028), wrapped in an array, and under a legacy key the read
+ * funnel folds into a media field (`bgImage`). A second set of tests renders
+ * every media field of every type with every such form, and every legacy key
+ * a step of `SCHEMA_MIGRATIONS` moves into a media field, and resolves what a
+ * browser would fetch: string checks on an answer miss what the renderer and
+ * the funnel make of it.
+ *
+ * The list of paths is closed against the transport: a new file that imports
+ * it fails the inventory test until it is filed below as a path that writes
+ * slide content (with a test) or one that does not.
  *
  * Run with: node --test tests/ai-model-media.test.js
  */
@@ -48,6 +57,24 @@ const IMAGE = `https://${HOST}/pixel.png?d=deck-text`;
 const BACKGROUND = `//${HOST}/bg.png?d=deck-text`;
 const EMBED = `https://${HOST}/frame?d=deck-text`;
 const VIDEO = `https://${HOST}/watch?v=deck-text`;
+/**
+ * Every spelling a model can hide a URL behind. JavaScript's `trim()` takes
+ * the Unicode white space, the URL parser leaves it standing, so a rule that
+ * parses the stored value reads a path where the renderer reads a host; an
+ * array is a string to `String()`.
+ */
+const HOSTILE_FORMS = {
+  'as written': (url) => url,
+  'behind U+00A0': (url) => `\u00a0${url}`,
+  'behind U+FEFF': (url) => `\ufeff${url}`,
+  'behind U+3000': (url) => `\u3000${url}`,
+  'behind U+2028': (url) => `\u2028${url}`,
+  'behind U+2029 and a space': (url) => `\u2029 ${url}`,
+  'in an array': (url) => [url],
+  'in a nested array': (url) => [[url]],
+};
+const hostile = (name, url) => HOSTILE_FORMS[name](url);
+
 /** What the deck already held: an absolute copy, an embed the author chose. */
 const HELD_IMAGE = 'https://bucket.s3.test/uploads/held.png';
 const HELD_EMBED = 'https://dashboard.example/board';
@@ -76,6 +103,10 @@ const { dropForeignMedia, leaveOut, loadsFromAnotherHost, mediaInSlides } =
   await import('../server/utils/ai/model-media.js');
 const { SLIDE_TYPES, canonicalSlideType } =
   await import('../shared/slide-types/registry.js');
+const { newSlide, renderSlideHtml } =
+  await import('../shared/slide-types/presentation.js');
+const { SCHEMA_MIGRATIONS, migratePresentation } =
+  await import('../shared/slide-types/schema-version.js');
 
 let db;
 let deckId;
@@ -174,7 +205,68 @@ const planted = () => [
     content: { title: 'A film', source: VIDEO },
     why: 'A video.',
   },
+  // The same URLs in the spellings the rule once read differently from the
+  // renderer, and under a key the read funnel folds into a media field.
+  {
+    type: 'image-text-slide',
+    content: {
+      title: 'Spaced',
+      body: 'A picture behind white space.',
+      image: hostile('behind U+00A0', IMAGE),
+      slideBgImage: hostile('behind U+FEFF', BACKGROUND),
+    },
+    why: 'White space.',
+  },
+  {
+    type: 'team-cards-slide',
+    content: {
+      title: 'The team',
+      members: [{ name: 'Ann', image: hostile('in an array', IMAGE) }],
+    },
+    why: 'An array.',
+  },
+  {
+    type: 'logo-wall-slide',
+    content: {
+      title: 'Partners',
+      logos: [{ name: 'Acme', image: hostile('behind U+3000', IMAGE) }],
+    },
+    why: 'White space.',
+  },
+  {
+    type: 'content-slide',
+    content: { title: 'Old key', body: 'A legacy key.', bgImage: IMAGE },
+    why: 'A key the funnel folds.',
+  },
+  {
+    type: 'embed-slide',
+    content: {
+      title: 'A spaced page',
+      embedUrl: hostile('behind U+3000', EMBED),
+    },
+    why: 'White space.',
+  },
+  {
+    type: 'embed-slide',
+    content: {
+      title: 'A listed page',
+      embedUrl: hostile('in an array', EMBED),
+    },
+    why: 'An array.',
+  },
+  {
+    type: 'video-slide',
+    content: {
+      title: 'A spaced film',
+      source: hostile('behind U+2028', VIDEO),
+    },
+    why: 'White space.',
+  },
 ];
+
+/** The planted slides that can be stored once their media is gone. */
+const plantedThatStay = () =>
+  planted().filter((s) => !['embed-slide', 'video-slide'].includes(s.type));
 
 /** No value anywhere in `value` names the planted host. */
 function assertNothingPlanted(value, where) {
@@ -184,6 +276,63 @@ function assertNothingPlanted(value, where) {
     !json.includes(HOST),
     `${where} holds a URL the model wrote: ${json.slice(0, 1500)}`,
   );
+}
+
+/** Two bases, as in the rule: `https:host` is a path under one, a host under the other. */
+const PAGE_BASES = ['https://deckyard.invalid/', 'http://deckyard.invalid/'];
+
+/**
+ * Every address the rendered HTML makes a browser fetch or frame: `src`,
+ * `srcset`, `poster`, the embed's `data-embed-url` and every CSS `url(...)`,
+ * entity-decoded the way the browser reads the attribute.
+ */
+function addressesIn(html) {
+  const decode = (v) =>
+    v
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+  const found = [];
+  for (const m of html.matchAll(
+    /\s(?:src|srcset|poster|data-embed-url|data-src)="([^"]*)"/g,
+  )) {
+    found.push(
+      ...decode(m[1])
+        .split(/,\s+/)
+        .map((part) => part.split(/\s+/)[0]),
+    );
+  }
+  for (const m of decode(html).matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/g)) {
+    found.push(m[2]);
+  }
+  return found;
+}
+
+/** The addresses in `html` a browser resolves to the planted host. */
+function plantedLoads(html) {
+  return addressesIn(html).filter((address) =>
+    PAGE_BASES.some((base) => {
+      try {
+        return new URL(address, base).host === HOST;
+      } catch {
+        return false;
+      }
+    }),
+  );
+}
+
+/**
+ * Render the slides the way a viewer gets them (a read folds them through the
+ * funnel first) and fail on anything that loads from the planted host.
+ */
+function assertRendersNothingPlanted(slides, where) {
+  const deck = migratePresentation({ slides: structuredClone(slides) });
+  for (const slide of deck.slides) {
+    const loads = plantedLoads(renderSlideHtml(slide));
+    assert.deepEqual(loads, [], `${where}: ${slide.type} loads ${loads}`);
+  }
 }
 
 /**
@@ -394,6 +543,171 @@ test('a type named by its published id is read off its declaration', () => {
   assert.equal(slides[0].content.embedUrl, '');
 });
 
+// ── What the slide renders ──────────────────────────────────────────────────
+
+/** A field the viewer's browser loads, as the rule reads the declaration. */
+const isMediaField = (f) => f?.type === 'image' || Boolean(f?.mediaRef);
+
+/** Every media field of a type, as a path: `['image']`, `['logos', 'image']`. */
+function* mediaPaths(fields, prefix = []) {
+  for (const field of fields) {
+    if (isMediaField(field)) yield { path: [...prefix, field.key], field };
+    else if (field.type === 'items')
+      yield* mediaPaths(field.itemFields || [], [...prefix, field.key]);
+  }
+}
+
+/** A new slide of `type` with `value` in the media field at `path`. */
+function slideWith(type, path, value) {
+  const slide = newSlide({ type, slideTypes: SLIDE_TYPES });
+  const [key, itemKey] = path;
+  if (!itemKey) {
+    slide.content[key] = value;
+    return slide;
+  }
+  if (!Array.isArray(slide.content[key]) || !slide.content[key].length)
+    slide.content[key] = [{}];
+  for (const item of slide.content[key]) item[itemKey] = value;
+  return slide;
+}
+
+/**
+ * A field whose value as written loads nothing, with or without the rule. The
+ * video player frames only YouTube, Vimeo and Bunny; which video an id names
+ * is DY-863.
+ */
+const LOADS_NOTHING_AS_WRITTEN = new Set(['video-slide source']);
+
+test('every media field of every type renders nothing a model planted, in any form', () => {
+  let fields = 0;
+  for (const [type, def] of Object.entries(SLIDE_TYPES)) {
+    for (const { path, field } of mediaPaths(def.fields || [])) {
+      fields += 1;
+      const name = `${type} ${path.join('.')}`;
+      const url = field.mediaRef ? EMBED : IMAGE;
+      // The oracle sees the planted host when no rule runs.
+      const bare = slideWith(type, path, url);
+      const unguarded = plantedLoads(
+        renderSlideHtml(migratePresentation({ slides: [bare] }).slides[0]),
+      );
+      assert.equal(
+        unguarded.length > 0,
+        !LOADS_NOTHING_AS_WRITTEN.has(name),
+        `${name}: the render oracle does not see the planted host`,
+      );
+      for (const form of Object.keys(HOSTILE_FORMS)) {
+        const slide = slideWith(type, path, hostile(form, url));
+        dropForeignMedia([slide], { slideTypes: SLIDE_TYPES });
+        assertRendersNothingPlanted([slide], `${name}, ${form}`);
+      }
+    }
+  }
+  assert.ok(fields > 40, `only ${fields} media fields found`);
+});
+
+test('a media field with anything but a string is emptied, and a required one leaves its slide out', () => {
+  const slides = [
+    {
+      type: 'team-cards-slide',
+      content: { members: [{ name: 'Ann', image: ['/uploads/own.png'] }] },
+    },
+    { type: 'embed-slide', content: { embedUrl: { href: HELD_EMBED } } },
+  ];
+  const unusable = dropForeignMedia(slides, {
+    slideTypes: SLIDE_TYPES,
+    keep: mediaInSlides(heldSlides(), SLIDE_TYPES),
+  });
+  assert.equal(slides[0].content.members[0].image, '');
+  assert.equal(slides[1].content.embedUrl, '');
+  assert.deepEqual([...unusable], [slides[1]]);
+  assert.match(slides[0]._aiWarnings[0], /remote image/);
+});
+
+test('a held value is held in every spelling the slide uses it in', () => {
+  const slides = [
+    { type: 'image-slide', content: { image: `\u00a0${HELD_IMAGE}\u3000` } },
+  ];
+  dropForeignMedia(slides, {
+    slideTypes: SLIDE_TYPES,
+    keep: mediaInSlides(heldSlides(), SLIDE_TYPES),
+  });
+  assert.equal(slides[0].content.image, `\u00a0${HELD_IMAGE}\u3000`);
+});
+
+/**
+ * Every step of `SCHEMA_MIGRATIONS` that moves a key into a media field, with
+ * one model answer per move. The rule folds before it judges, so each comes
+ * back without the planted host however the funnel spells it. A step index is
+ * the version it migrates from.
+ */
+const FOLDS_INTO_MEDIA = {
+  // v7 -> v8: numbered slots into team-cards `members[]`, logo-wall `logos[]`.
+  7: [
+    {
+      type: 'team-cards-slide',
+      content: { members: [], card1Name: 'Ann', card1Image: IMAGE },
+    },
+    {
+      type: 'logo-wall-slide',
+      content: { logos: [], logo1Name: 'Acme', logo1Image: IMAGE },
+    },
+  ],
+  // v14 -> v15: image-text's retired `images[]`, into its flat `image` or,
+  // under a plural layout, into image-set's `images[].src`.
+  14: [
+    {
+      type: 'image-text-slide',
+      content: { title: 'One', images: [{ src: IMAGE }] },
+    },
+    {
+      type: 'image-text-slide',
+      content: { title: 'Two', layout: 'duo', images: [{ src: IMAGE }] },
+    },
+  ],
+  // v16 -> v17: quote-slide's flat quote and an item's first portrait.
+  16: [
+    {
+      type: 'quote-slide',
+      content: { quote: 'Hi.', authorName: 'Ann', authorImage1: IMAGE },
+    },
+    {
+      type: 'quote-slide',
+      content: {
+        quotes: [{ quote: 'Hi.', authorName: 'Ann', authorImage: IMAGE }],
+      },
+    },
+  ],
+  // v21 -> v22: the legacy `bgImage` into `slideBgImage`, on every type.
+  21: [
+    { type: 'content-slide', content: { title: 'Old', bgImage: IMAGE } },
+    { type: 'image-slide', content: { title: 'Old', bgImage: BACKGROUND } },
+  ],
+};
+
+test('a legacy key the read funnel folds into a media field is judged after the fold', () => {
+  assert.equal(
+    SCHEMA_MIGRATIONS.length,
+    24,
+    'a new step: if it moves a key into a media field, give it a case in FOLDS_INTO_MEDIA',
+  );
+  for (const [step, answers] of Object.entries(FOLDS_INTO_MEDIA)) {
+    for (const answer of answers) {
+      const name = `v${step} -> v${Number(step) + 1}, ${answer.type}`;
+      // Unguarded, the read moves the planted URL where the slide loads it.
+      const bare = migratePresentation({ slides: [structuredClone(answer)] });
+      assert.notDeepEqual(
+        plantedLoads(renderSlideHtml(bare.slides[0])),
+        [],
+        `${name}: the funnel no longer moves this key into a media field`,
+      );
+      const slides = [structuredClone(answer)];
+      dropForeignMedia(slides, { slideTypes: SLIDE_TYPES });
+      assertNothingPlanted(slides, name);
+      assertRendersNothingPlanted(slides, name);
+    }
+  }
+});
+
 // ── Every path that writes slide content ────────────────────────────────────
 
 /** Phase 1 and phase 2 of generation, answered from one object. */
@@ -431,6 +745,7 @@ test('generation: a new deck holds no URL the model wrote', async (t) => {
   });
   assertPlantedTypes(deck.slides, 'generation');
   assertNothingPlanted(deck.slides, 'generation');
+  assertRendersNothingPlanted(deck.slides, 'generation');
   assertLeftOutNotice(deck.slides, 'generation');
 });
 
@@ -443,18 +758,40 @@ test('append, the editor: the answer holds no URL the model wrote', async (t) =>
   });
   assertPlantedTypes(slides, 'editor append');
   assertNothingPlanted(slides, 'editor append');
+  assertRendersNothingPlanted(slides, 'editor append');
   assertLeftOutNotice(slides, 'editor append');
 });
 
+/** A planted slide whose required embed is not a string at all. */
+const isListedEmbed = (s) => Array.isArray(s.content?.embedUrl);
+
 test('append, public v1: the answer holds no URL the model wrote', async (t) => {
   await setup();
-  stubModel(t, appendAnswer);
+  // v1 refuses a slide that breaks its type's schema before the rule runs
+  // (the next test); the rest of the planted set goes through the rule.
+  stubModel(t, () => ({
+    ...appendAnswer(),
+    slides: planted().filter((s) => !isListedEmbed(s)),
+  }));
   const { slides } = await callV1('append-slides', {
     raw: 'Add four slides.',
     lang: 'en',
   });
   assertPlantedTypes(slides, 'v1 append');
   assertNothingPlanted(slides, 'v1 append');
+  assertRendersNothingPlanted(slides, 'v1 append');
+});
+
+test('append, public v1: an embed that is not a string refuses the answer', async (t) => {
+  await setup();
+  stubModel(t, appendAnswer);
+  t.mock.method(console, 'error', () => {});
+  const answer = await callV1('append-slides', {
+    raw: 'Add four slides.',
+    lang: 'en',
+  });
+  assert.equal(answer.slides, undefined, 'nothing comes back');
+  assertNothingPlanted(answer, 'v1 append, refused');
 });
 
 test('append, MCP: the stored deck holds no URL the model wrote', async (t) => {
@@ -464,9 +801,14 @@ test('append, MCP: the stored deck holds no URL the model wrote', async (t) => {
     presentationId: deckId,
     content: 'Add four slides.',
   });
-  assert.equal(answer.appended, 2, 'the embed and the video are left out');
+  assert.equal(
+    answer.appended,
+    plantedThatStay().length,
+    'the embeds and the videos are left out',
+  );
   assertPlantedTypes(stored().slides, 'MCP append');
   assertNothingPlanted(stored(), 'MCP append');
+  assertRendersNothingPlanted(stored().slides, 'MCP append');
   assert.ok(
     answer.warnings.some(({ message }) => /was left out/.test(message)),
     JSON.stringify(answer.warnings),
@@ -506,6 +848,7 @@ test('refine-section: a revised section holds what the deck held, nothing new', 
   });
   assertPlantedTypes(slides, 'refine-section');
   assertNothingPlanted(slides, 'refine-section');
+  assertRendersNothingPlanted(slides, 'refine-section');
   assert.equal(slides.at(-1).content.embedUrl, HELD_EMBED, 'the held embed');
 });
 
@@ -534,27 +877,69 @@ test('refine-section: a section of only a planted embed is a failed answer', asy
   assert.equal(res.json().error, 'bad_gateway');
 });
 
+/** One planted background per form, and one under the legacy key. */
+const plantedBackgrounds = () => [
+  ...Object.keys(HOSTILE_FORMS).map((name) => [
+    name,
+    { slideBgImage: hostile(name, BACKGROUND) },
+  ]),
+  ['under the legacy key bgImage', { bgImage: IMAGE }],
+];
+
 test('iterate, one slide: the rewritten slide keeps its own image only', async (t) => {
-  const deck = await setup();
-  stubModel(t, () => ({
-    type: 'image-text-slide',
-    content: {
-      title: 'The barn',
-      body: 'Shorter.',
-      image: HELD_IMAGE,
-      slideBgImage: BACKGROUND,
-    },
-  }));
-  const answer = await callRoute(handleAiIterate, {
-    presentation: deck,
-    command: 'Make this shorter',
-    currentSlideIndex: 0,
-  });
-  assertNothingPlanted(answer, 'editor iterate');
-  const [slide] = answer.presentation.slides;
-  assert.equal(slide.content.body, 'Shorter.');
-  assert.equal(slide.content.image, HELD_IMAGE, 'its own image stays');
-  assert.ok(!slide.content.slideBgImage, 'the planted background is gone');
+  for (const [form, background] of plantedBackgrounds()) {
+    await t.test(form, async (st) => {
+      const deck = await setup();
+      stubModel(st, () => ({
+        type: 'image-text-slide',
+        content: {
+          title: 'The barn',
+          body: 'Shorter.',
+          image: HELD_IMAGE,
+          ...background,
+        },
+      }));
+      const answer = await callRoute(handleAiIterate, {
+        presentation: deck,
+        command: 'Make this shorter',
+        currentSlideIndex: 0,
+      });
+      assertNothingPlanted(answer, `editor iterate, ${form}`);
+      const [slide] = answer.presentation.slides;
+      assert.equal(slide.content.body, 'Shorter.');
+      assert.equal(slide.content.image, HELD_IMAGE, 'its own image stays');
+      assert.ok(!slide.content.slideBgImage, 'the planted background is gone');
+      assertRendersNothingPlanted([slide], `editor iterate, ${form}`);
+    });
+  }
+});
+
+test('iterate, one slide: an embed behind white space or in an array is a failed answer', async (t) => {
+  for (const form of ['behind U+3000', 'in an array']) {
+    await t.test(form, async (st) => {
+      const deck = await setup();
+      stubModel(st, () => ({
+        type: 'embed-slide',
+        content: { title: 'A page', embedUrl: hostile(form, EMBED) },
+      }));
+      st.mock.method(console, 'error', () => {});
+      const res = createMockRes();
+      await handleAiIterate({
+        storageScope: scope(),
+        req: createMockReq({
+          method: 'POST',
+          body: {
+            presentation: deck,
+            command: 'Make this an embed',
+            currentSlideIndex: 2,
+          },
+        }),
+        res,
+        authedUser: AUTHED,
+      });
+      assert.equal(res.statusCode, 502);
+    });
+  }
 });
 
 test('iterate, one slide: a rewrite into a planted embed is a failed answer', async (t) => {
@@ -587,7 +972,11 @@ const planAnswer = () => {
     modifications: [
       { slideIndex: 0, action: 'replace', slide: image, reasoning: 'r' },
       { slideIndex: 1, action: 'replace', slide: embed, reasoning: 'r' },
-      { slideIndex: 2, action: 'split', slides: [gallery, video] },
+      {
+        slideIndex: 2,
+        action: 'split',
+        slides: [gallery, video, ...planted().slice(4)],
+      },
     ],
   };
 };
@@ -608,6 +997,7 @@ test('iterate, deck-wide: no replacement or split holds a URL the model wrote', 
   assert.equal(answer.presentation.slides[1].content.embedUrl, HELD_EMBED);
   assertPlantedTypes(answer.presentation.slides, 'deck-wide iterate');
   assertNothingPlanted(answer, 'deck-wide iterate');
+  assertRendersNothingPlanted(answer.presentation.slides, 'deck-wide iterate');
 });
 
 test('iterate, MCP: neither the plan nor the stored deck holds one', async (t) => {
@@ -628,6 +1018,7 @@ test('iterate, MCP: neither the plan nor the stored deck holds one', async (t) =
   assert.equal(applied.applied, true);
   assertPlantedTypes(stored().slides, 'MCP iterate');
   assertNothingPlanted(stored(), 'MCP iterate');
+  assertRendersNothingPlanted(stored().slides, 'MCP iterate');
 });
 
 /** A conversion's content: the target type's fields plus a planted background. */
@@ -642,15 +1033,21 @@ const convertAnswer = () => ({
 });
 
 test('convert-slide, the editor: the converted slide brings no background', async (t) => {
-  const deck = await setup();
-  stubModel(t, convertAnswer);
-  const { slide } = await callRoute(handleAiConvertSlide, {
-    slide: deck.slides[2],
-    toType: 'list-slide',
-    lang: 'en',
-  });
-  assert.equal(slide.type, 'list-slide');
-  assertNothingPlanted(slide, 'editor convert');
+  for (const [form, background] of plantedBackgrounds()) {
+    await t.test(form, async (st) => {
+      const deck = await setup();
+      const { slideBgImage: _planted, ...fields } = convertAnswer();
+      stubModel(st, () => ({ ...fields, ...background }));
+      const { slide } = await callRoute(handleAiConvertSlide, {
+        slide: deck.slides[2],
+        toType: 'list-slide',
+        lang: 'en',
+      });
+      assert.equal(slide.type, 'list-slide');
+      assertNothingPlanted(slide, `editor convert, ${form}`);
+      assertRendersNothingPlanted([slide], `editor convert, ${form}`);
+    });
+  }
 });
 
 test('convert-slide keeps the background the slide already had', async (t) => {
@@ -668,15 +1065,21 @@ test('convert-slide keeps the background the slide already had', async (t) => {
 });
 
 test('convert-slide, MCP: the stored slide brings no background', async (t) => {
-  await setup();
-  stubModel(t, convertAnswer);
-  await callTool('convert_slide', {
-    presentationId: deckId,
-    slideIndex: 2,
-    targetType: 'list-slide',
-  });
-  assert.equal(stored().slides[2].type, 'list-slide');
-  assertNothingPlanted(stored(), 'MCP convert');
+  for (const [form, background] of plantedBackgrounds()) {
+    await t.test(form, async (st) => {
+      await setup();
+      const { slideBgImage: _planted, ...fields } = convertAnswer();
+      stubModel(st, () => ({ ...fields, ...background }));
+      await callTool('convert_slide', {
+        presentationId: deckId,
+        slideIndex: 2,
+        targetType: 'list-slide',
+      });
+      assert.equal(stored().slides[2].type, 'list-slide');
+      assertNothingPlanted(stored(), `MCP convert, ${form}`);
+      assertRendersNothingPlanted(stored().slides, `MCP convert, ${form}`);
+    });
+  }
 });
 
 test('analysis: a proposed slide holds what the deck held, nothing new', async (t) => {
@@ -705,17 +1108,33 @@ test('analysis: a proposed slide holds what the deck held, nothing new', async (
           content: { title: 'Board', embedUrl: HELD_EMBED },
         },
       },
+      ...planted()
+        .slice(4)
+        .map((proposedSlide) => ({
+          slideId: deck.slides[2].id,
+          category: 'visual-balance',
+          body: 'Another picture.',
+          proposedSlide,
+        })),
     ],
   }));
   const { suggestions } = await analyzePresentation(deck, {
     vendor: 'openai',
     slideTypes: SLIDE_TYPES,
   });
-  assert.equal(suggestions.length, 3, 'the advice stays');
+  assert.equal(
+    suggestions.length,
+    3 + planted().length - 4,
+    'the advice stays',
+  );
   assert.equal(suggestions[0].proposedSlide.content.image, '');
   assert.equal(suggestions[1].proposedSlide, null, 'no embed without a page');
   assertNothingPlanted(suggestions, 'analysis');
   assert.equal(suggestions[2].proposedSlide.content.embedUrl, HELD_EMBED);
+  assertRendersNothingPlanted(
+    suggestions.map((s) => s.proposedSlide).filter(Boolean),
+    'analysis',
+  );
 });
 
 // ── The list is closed ──────────────────────────────────────────────────────
@@ -747,9 +1166,13 @@ function callSiteFiles(dir = path.join(REPO_ROOT, 'server')) {
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) return callSiteFiles(file);
     if (!entry.name.endsWith('.js')) return [];
-    const calls = /await requestChatCompletionContent\(/.test(
-      readFileSync(file, 'utf8'),
-    );
+    // On the import, not on a call: a call without `await`, or one passed on
+    // as a value, still reaches the model.
+    const source = readFileSync(file, 'utf8');
+    const calls =
+      /\bimport\s*\{[^}]*\brequestChatCompletionContent\b[^}]*\}\s*from/.test(
+        source,
+      ) || /\.requestChatCompletionContent\b/.test(source);
     return calls ? [path.relative(REPO_ROOT, file)] : [];
   });
 }

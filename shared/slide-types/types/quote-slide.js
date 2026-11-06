@@ -6,6 +6,7 @@ import {
   pickAltText,
   styleAttrFromVars,
   imagePlaceholderHtml,
+  mediaValue,
 } from '../helpers.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
@@ -105,7 +106,7 @@ function portraitParts(item, i, editMode = false) {
   let firstEmpty = 0;
   for (let n = 1; n <= PORTRAIT_SLOTS; n++) {
     const raw = item?.[`authorImage${n}`];
-    const src = typeof raw === 'string' ? raw.trim() : '';
+    const src = mediaValue(raw);
     if (!src) {
       if (!firstEmpty) firstEmpty = n;
       continue;

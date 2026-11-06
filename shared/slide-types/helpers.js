@@ -24,6 +24,24 @@ export function nonEmpty(s) {
 }
 
 /**
+ * A media field's value as the slide uses it: the one reading of an `image`
+ * field, a slide background, an embed page and a video source (DY-811).
+ *
+ * A string, trimmed the way JavaScript trims (Unicode white space included, so
+ * more than the browser's URL parser strips); anything else is no media at
+ * all. Every renderer of such a field reads it through here, and so does the
+ * rule that keeps a model's answer from naming a host of its own
+ * (`server/utils/ai/model-media.js`): what the rule judges is exactly what
+ * the browser is handed, so the two cannot drift apart.
+ *
+ * @param {unknown} raw
+ * @returns {string}
+ */
+export function mediaValue(raw) {
+  return typeof raw === 'string' ? raw.trim() : '';
+}
+
+/**
  * Standard background field definition for slide types.
  * Use this constant instead of duplicating the field definition.
  *
@@ -419,7 +437,7 @@ export function pickAltText({
 }
 
 export function normalizeUrl(s) {
-  const t = String(s || '').trim();
+  const t = mediaValue(s);
   if (!t) return '';
   // Allow protocol-relative URLs too (//...)
   if (/^https?:\/\//i.test(t) || t.startsWith('//')) return t;
@@ -493,7 +511,7 @@ function looksLikeUuid(s) {
 }
 
 export function youtubeEmbedUrl(input) {
-  const raw = String(input || '').trim();
+  const raw = mediaValue(input);
   if (!raw) return '';
   const u = parseUrl(raw);
   if (!u) return '';
@@ -529,7 +547,7 @@ export function youtubeEmbedUrl(input) {
 }
 
 export function vimeoEmbedUrl(input) {
-  const raw = String(input || '').trim();
+  const raw = mediaValue(input);
   if (!raw) return '';
   const u = parseUrl(raw);
   if (u && hostMatches(u.hostname, 'vimeo.com')) {
@@ -582,7 +600,7 @@ export function appendQuery(url, params) {
  * @returns {string} The embed URL, or `''` when there is nothing to embed.
  */
 export function bunnyEmbedUrlFromInput(input, { libraryId = '' } = {}) {
-  const raw = String(input || '').trim();
+  const raw = mediaValue(input);
   if (!raw) return '';
 
   // A pasted play or embed URL is read for its two ids and nothing else: the

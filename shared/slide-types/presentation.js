@@ -4,6 +4,7 @@ import {
   isUuid,
   cryptoUuid,
   escapeHtml,
+  mediaValue,
 } from './helpers.js';
 import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
 import {
@@ -332,10 +333,7 @@ function resolveBgOverlayVariant(content, textClass) {
 // value, or nothing left after sanitizing). Shared so the variant-contrast
 // pass below tests for an image the same way the injector does.
 function resolveSlideBgImageUrl(content) {
-  const raw =
-    typeof content?.slideBgImage === 'string'
-      ? content.slideBgImage.trim()
-      : '';
+  const raw = mediaValue(content?.slideBgImage);
   return raw ? sanitizeBgUrl(raw) : '';
 }
 

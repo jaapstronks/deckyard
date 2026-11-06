@@ -222,9 +222,14 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   `mediaRef`, the answer keeps only a value the slides the model was given
   already held there, or one that names no other host (a served path, a bare
   video id in the installation's library), read the way the browser resolves
-  it. Anything else is emptied with a warning, and a slide left without a field
-  its type requires is not in the answer. A URL in the source text is data
-  and does not count as held. It runs after composition on every path that
+  it. The rule judges what the slide will use: the value as every renderer
+  reads it (`mediaValue()` in `shared/slide-types/helpers.js`; anything but a
+  string is emptied), on the slide as a read yields it (the read funnel's
+  legacy keys folded first). Anything else is emptied with a warning, and a
+  slide left without a field its type requires is not in the answer. A URL in
+  the source text is data and does not count as held. One known slack: for a
+  slide whose type the installation does not know, the held set is wider than
+  that slide's media fields; it holds only values the deck already has. It runs after composition on every path that
   turns an answer into slide content (finding 3). A person or an agent with
   write access can still put any `https:` URL in such a field: that is their
   own write. **Published editions are closed**:
@@ -450,7 +455,9 @@ What pins the controls above today, and the gaps per finding:
 - Tool results as data for the agent: `tests/mcp/mcp-result-marking.test.js`.
 - The scope of a plan: `tests/ai-plan-scope.test.js`.
 - Media a model's answer may hold, on every writing path:
-  `tests/ai-model-media.test.js`.
+  `tests/ai-model-media.test.js` drives every path with planted media in every
+  known spelling, and renders every media field of every type and every legacy
+  key the read funnel folds into one, resolving what a browser would fetch.
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 

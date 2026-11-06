@@ -3,11 +3,12 @@ import {
   cryptoUuid,
   escapeHtml,
   BACKGROUND_FIELD,
+  mediaValue,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 function normalizeEmbedUrl(raw) {
-  const s = String(raw || '').trim();
+  const s = mediaValue(raw);
   if (!s) return '';
   // Security: only allow HTTPS URLs
   if (!/^https:\/\//i.test(s)) return '';

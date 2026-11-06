@@ -7,6 +7,7 @@ import {
   bgClass,
   BACKGROUND_FIELD,
   imagePlaceholderHtml,
+  mediaValue,
 } from '../helpers.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
@@ -214,7 +215,7 @@ export default {
     const items = [];
     for (let i = 0; i < renderLogos.length; i++) {
       const logo = renderLogos[i];
-      const img = nonEmpty(logo.image);
+      const img = mediaValue(logo.image);
       const name = nonEmpty(logo.name);
 
       const alt = pickAltText({

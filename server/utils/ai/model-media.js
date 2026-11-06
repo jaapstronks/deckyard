@@ -18,13 +18,29 @@
  * refuses it. {@link dropForeignMedia} names those slides and the path leaves
  * them out with {@link leaveOut}, which says so on a slide that stays.
  *
+ * The rule judges what the slide will use, never a nearby spelling of it:
+ *
+ * - the value as every renderer reads it, through `mediaValue()` in
+ *   `shared/slide-types/helpers.js` (a trimmed string; JavaScript's trim takes
+ *   Unicode white space the URL parser leaves standing). Anything else in a
+ *   media field is no media the slide can use, and is emptied;
+ * - the slide as a read yields it. Every read runs the deck through
+ *   `migratePresentation()`, whose steps move legacy keys into media fields
+ *   (`bgImage` into `slideBgImage`, numbered `logo3Image` slots into
+ *   `logos[]`, a flat quote portrait into `quotes[]`, ...). A key the type
+ *   does not declare would pass the rule and land in a media field on the next
+ *   read, so the rule folds the slides first and judges the result.
+ *
  * Every path that turns a model's answer into slide content passes it through
  * {@link dropForeignMedia}, after the slides are composed, so the fields are
  * read off the canonical type. `tests/ai-model-media.test.js` holds the list
- * of paths and fails on a call to the transport it does not know.
+ * of paths and fails on a call to the transport it does not know, and renders
+ * every media field of every type with every hostile form it knows.
  */
 
+import { mediaValue } from '../../../shared/slide-types/helpers.js';
 import { resolveSlideTypeName } from '../../../shared/slide-types/registry.js';
+import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 
 /** Two bases, because `https:host` is a path under https and a host under http. */
 const BASES = ['https://installation.invalid/', 'http://installation.invalid/'];
@@ -64,17 +80,18 @@ function isMediaField(field) {
 }
 
 /**
- * Every declared media field of a slide's content that holds a string,
- * `items` entries included.
+ * Every declared media field of a slide's content that holds a value,
+ * `items` entries included. The value is what is stored, string or not; read
+ * it with `mediaValue()`.
  *
  * @param {object} content
  * @param {object[]} fields - the slide type's field declarations
- * @returns {Generator<{ holder: object, key: string, value: string, field: object }>}
+ * @returns {Generator<{ holder: object, key: string, value: unknown, field: object }>}
  */
 export function* mediaFields(content, fields) {
   for (const field of fields) {
     const value = content[field.key];
-    if (isMediaField(field) && typeof value === 'string') {
+    if (isMediaField(field) && value != null) {
       yield { holder: content, key: field.key, value, field };
     } else if (field.type === 'items' && Array.isArray(value)) {
       for (const item of value) {
@@ -124,16 +141,37 @@ export function mediaInSlides(slides, slideTypes) {
   for (const slide of Array.isArray(slides) ? slides : []) {
     if (!slide?.content || typeof slide.content !== 'object') continue;
     for (const { value } of slideMediaFields(slide, slideTypes)) {
-      if (value) held.add(value);
+      const used = mediaValue(value);
+      if (used) held.add(used);
     }
   }
   return held;
 }
 
 /**
+ * Whether a media field's stored value has to go: it is not a string, or the
+ * string as the slide uses it loads from another host and is not held.
+ */
+function isForeign(value, keep) {
+  if (typeof value !== 'string') return true;
+  const used = mediaValue(value);
+  return !keep.has(used) && loadsFromAnotherHost(used);
+}
+
+/**
+ * Fold the slides the way every read does, in place, so the rule sees the
+ * keys a read will render. The steps edit slides and their content in place
+ * (a type rename included), so the caller's objects are the folded ones.
+ */
+function foldAsRead(slides) {
+  migratePresentation({ slides });
+}
+
+/**
  * Empty every media field a model filled with a URL on another host that
- * the given slides did not hold. Mutates the slides and appends to their
- * `_aiWarnings`.
+ * the given slides did not hold, or with anything that is not a string. Folds
+ * the slides first, as a read does ({@link foldAsRead}). Mutates the slides
+ * and appends to their `_aiWarnings`.
  *
  * @param {Array<{ type?: string, content?: object, _aiWarnings?: string[] }>} slides
  * @param {object} opts
@@ -150,12 +188,14 @@ export function dropForeignMedia(
     throw new TypeError('dropForeignMedia: pass the slide-type map');
   }
   const unusable = new Set();
-  for (const slide of Array.isArray(slides) ? slides : []) {
+  if (!Array.isArray(slides)) return unusable;
+  foldAsRead(slides.filter((slide) => slide && typeof slide === 'object'));
+  for (const slide of slides) {
     if (!slide?.content || typeof slide.content !== 'object') continue;
     const warnings = [];
     for (const found of slideMediaFields(slide, slideTypes)) {
       const { holder, key, value, field } = found;
-      if (keep.has(value) || !loadsFromAnotherHost(value)) continue;
+      if (!isForeign(value, keep)) continue;
       holder[key] = '';
       warnings.push(field.type === 'image' ? IMAGE_WARNING : MEDIA_WARNING);
       if (field.required) unusable.add(slide);

@@ -11,6 +11,7 @@ import {
   pickAltText,
   objectPositionStyleAttrFromFocus,
   imagePlaceholderHtml,
+  mediaValue,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
@@ -19,7 +20,7 @@ function safeImagesArr(images) {
 }
 
 function imageHtml(image, idx, copy) {
-  const src = typeof image?.src === 'string' ? image.src.trim() : '';
+  const src = mediaValue(image?.src);
   const caption =
     typeof image?.caption === 'string' ? image.caption.trim() : '';
   const altExplicit = typeof image?.alt === 'string' ? image.alt.trim() : '';
