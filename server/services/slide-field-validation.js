@@ -283,24 +283,33 @@ function holdBackSlideFields(slide, previous, slideTypes, refused) {
  * @param {import('../storage/scope.js').StorageScope} scope
  * @param {Object} pres - The deck as stored.
  * @param {Object} projected - The doc's projection.
- * @returns {Promise<{deck: Object, refused: Array<{slideId: string, field: string, path: Array<number|string>, kind: 'list'|'value', errors: string[], value: unknown}>}>}
+ * @returns {Promise<{deck: Object, refused: Array<{slideId: string, field: string, path: Array<number|string>, kind: 'list'|'value', errors: string[], value: unknown, lang?: string}>}>}
  *   `path` is empty for a field, item index and sub-field inside a list;
- *   `kind` is `'list'` when a list was refused as a list.
+ *   `kind` is `'list'` when a list was refused as a list; `lang` is the
+ *   language version, active first.
  */
 export async function holdBackRefusedSlideFields(scope, pres, projected) {
   const buffers = submittedSlideBuffers(pres, projected);
   const slideTypes = await buildMergedSlideTypes(scope);
   const refused = [];
   const heldBack = new Map();
-  for (const { slides, before } of buffers) {
+  for (const { slides, before, lang } of buffers) {
     if (!Array.isArray(slides)) continue;
     const stored = new Map((before || []).map((s) => [s.id, s]));
+    const inVersion = [];
     heldBack.set(
       slides,
       slides.map((slide) =>
-        holdBackSlideFields(slide, stored.get(slide?.id), slideTypes, refused),
+        holdBackSlideFields(
+          slide,
+          stored.get(slide?.id),
+          slideTypes,
+          inVersion,
+        ),
       ),
     );
+    for (const entry of inVersion)
+      refused.push(lang ? { ...entry, lang } : entry);
   }
   const active = normalizeLang(projected.i18n?.active);
   const deck = { ...projected };
