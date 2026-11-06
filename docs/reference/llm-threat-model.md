@@ -253,10 +253,16 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   gradient, shape, transform or filter counts), and empties a value the
   model wrote that adds a load the render without its values does not have.
   `data-math` is a formula: KaTeX renders it without `trust`, so nothing in
-  it fetches, and a test fails when a KaTeX call passes `trust`. The search
-  costs at most one render per judged value plus two, and a call judges at
-  most 250 values that way; past that, a slide that loads more than its base
-  has every judged value emptied. A value the given slides held in the same
+  it fetches, and a test fails when a KaTeX call in `client/`, `shared/` or
+  `server/` passes `trust`. The search halves the judged values and renders
+  each group with only its own values filled in, so a render costs the
+  group rather than the slide; one loading value among 248 costs about
+  sixteen small renders. A budget in rendered characters per call
+  (`MAX_SEARCH_CHARS`) bounds the work, since time and heap both grow with
+  what is rendered (the heap of a render stays until the call returns); a
+  group past the budget is emptied. The slide as kept is rendered once more:
+  when it loads more than its base (values that only load together), every
+  judged value is emptied. A value the given slides held in the same
   field of the same type stays; a choice among a field's declared options is
   no writing. The render the rule reads is the server's (parse5 under
   jsdom, DOMPurify on it), and that is what a viewer gets: a database type
@@ -265,10 +271,14 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   markup differently (the content of a `<select>`, which Chrome's parser
   keeps and parse5 drops), so a type that rendered model text in the browser
   would need its own judgment. **A media value that holds more than one
-  address**: a type that writes its own image field into a CSS `url()` or a
-  `srcset` reads a second address after a quote, a parenthesis, a backslash,
-  white space or a control character, so a media value the model wrote and
-  the slides did not hold holds none of them. **A field the type withholds**
+  address**: a type that writes its own image field into a CSS `url()`, a
+  `srcset` or `{{raw}}` markup reads a second address after a quote, a
+  parenthesis, white space, a leading comma (a `srcset` skips commas before
+  each candidate), a `<` or a character reference `{{raw}}` decodes into one
+  of those. So a media value the model wrote and the slides did not hold is
+  checked for what it may hold rather than against a list to refuse: a
+  `data:` value of base64 and percent-encoded characters, or letters,
+  digits and `-._~/%?=#:+`. **A field the type withholds**
   (`ai: false`, such as a video's Bunny library): an answer that fills it
   gets back what the given slides held there (a list included), or the
   type's default, which carries the installation's configuration. The

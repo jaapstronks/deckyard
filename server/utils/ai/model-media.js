@@ -467,8 +467,9 @@ function cssMayLoad(value) {
 
 /**
  * Attributes only a runtime reads, that load nothing whatever they hold.
- * `data-math` is a formula KaTeX renders in `client/lib/slide-runtime/
- * slide-render.js` without `trust`, so `\href`, `\includegraphics` and
+ * `data-math` is a formula KaTeX renders without `trust`, in the editor
+ * (`client/lib/slide-runtime/slide-render.js`) and on the export page
+ * (`server/utils/prism-katex.js`), so `\href`, `\includegraphics` and
  * `\url` in it render as text and fetch nothing (measured in Chrome, review
  * of DY-863); `tests/ai-model-media.test.js` fails when a KaTeX call passes
  * `trust`. Read word for word as an address, a formula would count: `\\c`
@@ -586,8 +587,8 @@ function isDeclaredOption(def, path, value) {
  * a WeakRef keeps its target until the synchronous job ends. So the budget
  * counts the work, not the values. A render is charged its length plus
  * {@link RENDER_CHARGE}, the cost of a document whatever it holds. Measured
- * on dev, the densest markup (`<b>x</b>`) costs about 1,3 µs and 270 bytes of
- * heap per character rendered, so the budget stays near 0,5 s and 100 MB.
+ * on dev, the densest markup (`<b>x</b>`) costs about 1.3 µs and 270 bytes of
+ * heap per character rendered, so the budget stays near 0.5 s and 100 MB.
  */
 export const MAX_SEARCH_CHARS = 384 * 1024;
 
