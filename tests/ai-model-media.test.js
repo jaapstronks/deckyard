@@ -1785,7 +1785,11 @@ test('analysis: a proposed slide holds what the deck held, nothing new', async (
   const { suggestions } = await analyzePresentation(deck, {
     vendor: 'openai',
     slideTypes: TYPES,
+    ...(await loadSlideTypeOffer(scope())),
   });
+  const notes = suggestions.find((s) => s.proposedSlide?.type === NOTES_TYPE);
+  assert.ok(notes, 'the proposal of a type from the database stays');
+  assert.equal(notes.proposedSlide.content.body, '', 'its markup is gone');
   assert.equal(
     suggestions.length,
     3 + planted().length - 4,
