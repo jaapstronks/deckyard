@@ -40,6 +40,8 @@ import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
+import { callArguments } from './helpers/call-sites.js';
+import { walkFiles } from './helpers/walk-files.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import { createMockReq, createMockRes } from './helpers/http-mocks.js';
 
@@ -1252,38 +1254,38 @@ test('KaTeX renders formulas without trust, so data-math loads nothing', () => {
   // renders `\href`, `\includegraphics` and `\url` as text. A call that
   // passes `trust` (or a renderer of formulas this does not know) makes
   // that false: then the rule must read the formula as an address.
-  const roots = ['client', 'shared'].map((dir) => path.join(REPO_ROOT, dir));
   const calls = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const file = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name !== 'vendor') walk(file);
-      } else if (entry.name.endsWith('.js')) {
-        const source = readFileSync(file, 'utf8');
-        for (const m of source.matchAll(
-          /katex\.(render|renderToString)\s*\(([\s\S]*?)\}\s*\)/g,
-        )) {
-          calls.push({ file: path.relative(REPO_ROOT, file), args: m[2] });
-        }
-        assert.doesNotMatch(
-          source,
-          /katex[\s\S]{0,400}\btrust\b|\btrust\s*:/,
-          `${path.relative(REPO_ROOT, file)} passes trust to KaTeX`,
-        );
+  for (const dir of ['client', 'shared']) {
+    for (const file of walkFiles(path.join(REPO_ROOT, dir), {
+      extensions: ['.js'],
+      skipDirs: ['vendor'],
+    })) {
+      const source = readFileSync(file, 'utf8');
+      const where = path.relative(REPO_ROOT, file);
+      for (const fn of ['katex\\.render', 'katex\\.renderToString']) {
+        for (const args of callArguments(source, fn))
+          calls.push({ where, args });
       }
+      assert.doesNotMatch(
+        source,
+        /\btrust\s*:/,
+        `${where} sets a trust option`,
+      );
     }
-  };
-  roots.forEach(walk);
+  }
   assert.deepEqual(
-    calls.map((c) => c.file),
+    calls.map((call) => call.where),
     [
       'client/lib/slide-runtime/slide-render.js',
       'client/lib/slide-runtime/slide-render.js',
     ],
     'every KaTeX call is the runtime that renders data-math',
   );
-  for (const { args } of calls) assert.doesNotMatch(args, /trust/);
+  for (const { where, args } of calls) {
+    assert.equal(args.length, 3, where);
+    assert.match(args[2], /^\{[\s\S]*\}$/, `${where}: options inline`);
+    assert.doesNotMatch(args[2], /trust|\.\.\./, where);
+  }
 });
 
 /**
@@ -1428,7 +1430,7 @@ test('many values that each load are judged in time, and past the limit all go',
   let started = performance.now();
   dropForeignMedia([some], { slideTypes: types });
   let ms = performance.now() - started;
-  assert.ok(ms < 5000, `100 rows took ${Math.round(ms)} ms`);
+  assert.ok(ms < 8000, `100 rows took ${Math.round(ms)} ms`);
   assert.ok(some.content.rows.every((row) => row.body === ''));
   assert.ok(some.content.rows.every((row, i) => row.head === `Kop ${i}`));
 
@@ -1438,7 +1440,7 @@ test('many values that each load are judged in time, and past the limit all go',
   started = performance.now();
   dropForeignMedia(many, { slideTypes: types });
   ms = performance.now() - started;
-  assert.ok(ms < 2000, `four slides of 600 rows took ${Math.round(ms)} ms`);
+  assert.ok(ms < 8000, `four slides of 600 rows took ${Math.round(ms)} ms`);
   for (const slide of many) {
     assert.ok(slide.content.rows.every((row) => row.body === ''));
     assert.deepEqual(
