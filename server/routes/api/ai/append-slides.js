@@ -17,10 +17,8 @@ import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { attachBatchReviews } from '../../../utils/ai/slide-review.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { offerTextSourceImages } from '../../../utils/ai/text-source-images.js';
-import {
-  imagesInBatch,
-  resolveSourceImages,
-} from '../../../utils/ai/source-images.js';
+import { resolveSourceImages } from '../../../utils/ai/source-images.js';
+import { leaveOut, mediaInSlides } from '../../../utils/ai/model-media.js';
 import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 
 /**
@@ -95,12 +93,13 @@ export async function handleAiAppendSlides({
   // Validate slides and log any issues (unknown fields, schema mismatches, etc.)
   slides = validateAndFixRefinedSlides(slides, { slideTypes });
 
+  let unusable;
   try {
-    await resolveSourceImages(slides, sourceImages, {
+    ({ unusable } = await resolveSourceImages(slides, sourceImages, {
       signal,
       slideTypes,
-      keep: imagesInBatch(priorSlides, slideTypes),
-    });
+      keep: mediaInSlides(priorSlides, slideTypes),
+    }));
   } catch (e) {
     if (!signal.aborted) throw e;
     return true;
@@ -113,6 +112,6 @@ export async function handleAiAppendSlides({
     disabledSlideTypes: slideTypeOffer.disabledSlideTypes,
   });
 
-  serveJson(res, 200, { slides, rationale });
+  serveJson(res, 200, { slides: leaveOut(slides, unusable), rationale });
   return true;
 }

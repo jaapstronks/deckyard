@@ -18,6 +18,12 @@ import { refineSectionWithAi } from '../../../utils/ai/refine-section.js';
 import { attachBatchReviews } from '../../../utils/ai/slide-review.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import {
+  dropForeignMedia,
+  leaveOut,
+  mediaInSlides,
+} from '../../../utils/ai/model-media.js';
+import { LlmError } from '../../../utils/llm/error.js';
 
 /**
  * POST /api/ai/refine-section — revise a contiguous range of slides from user
@@ -88,10 +94,25 @@ export const handleAiRefineSection = withErrorHandler(
     });
     let slides = Array.isArray(parts?.slides) ? parts.slides : [];
     slides = validateAndFixRefinedSlides(slides, { slideTypes });
+    // The model was shown this deck: it may hand back the media the deck
+    // holds and nothing it wrote itself (DY-811).
+    const unusable = dropForeignMedia(slides, {
+      slideTypes,
+      keep: mediaInSlides(presentation.slides, slideTypes),
+    });
     attachBatchReviews(slides, revisedRaw, {
       slideTypes,
       disabledSlideTypes: slideTypeOffer.disabledSlideTypes,
     });
+    slides = leaveOut(slides, unusable);
+    // The editor replaces the selection by this answer: an empty one would
+    // delete the author's slides.
+    if (!slides.length) {
+      throw new LlmError(
+        'The model answered a section that cannot be used: every slide was built around an embed or video the deck does not hold.',
+        { phase: 'refine-section', vendor },
+      );
+    }
 
     serveJson(res, 200, { slides, rationale, range: { start, end } });
     return true;

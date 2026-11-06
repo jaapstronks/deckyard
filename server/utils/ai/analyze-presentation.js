@@ -13,6 +13,7 @@ import {
   untrustedData,
 } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
+import { dropForeignMedia, mediaInSlides } from './model-media.js';
 import {
   SLIDE_TYPE_CATALOG,
   getOfferedSlideTypes,
@@ -285,6 +286,9 @@ function normalizeAnalysisOutput(parsed, slides, offered) {
  * @param {Array} [options.customSlideTypes] - The org's published types,
  *   offered and accepted like the core ones (the one offer every AI path
  *   spreads in, `loadSlideTypeOffer()`; B660)
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map; a `proposedSlide` keeps only the media the deck already
+ *   holds, read off its type's declaration (DY-811)
  * @returns {Promise<Object>} Analysis results with suggestions
  */
 export async function analyzePresentation(
@@ -296,8 +300,12 @@ export async function analyzePresentation(
     signal,
     disabledSlideTypes = [],
     customSlideTypes = [],
+    slideTypes,
   } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError('analyzePresentation: pass the slide-type map');
+  }
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
 
@@ -366,6 +374,16 @@ export async function analyzePresentation(
     slides,
     offeredSlideTypes({ disabledSlideTypes, customSlideTypes }),
   );
+  // "Apply suggestion" writes a proposal into the deck: it may reuse the
+  // media the deck holds and bring none of its own.
+  const unusable = dropForeignMedia(
+    output.suggestions.map((s) => s.proposedSlide).filter(Boolean),
+    { slideTypes, keep: mediaInSlides(slides, slideTypes) },
+  );
+  for (const suggestion of output.suggestions) {
+    // The advice stays; a slide that cannot be stored is not proposed.
+    if (unusable.has(suggestion.proposedSlide)) suggestion.proposedSlide = null;
+  }
 
   output.metadata = {
     slideCount: slides.length,

@@ -14,6 +14,8 @@
  * embedded file, a Notion URL to re-host).
  */
 
+import { dropForeignMedia, mediaFields } from './model-media.js';
+
 /**
  * @typedef {object} SourceImage
  * @property {number} n - the number the source text marks it with (1-based)
@@ -26,9 +28,6 @@
 
 /** What phase 2 writes in an image field to use a source image. */
 const SOURCE_IMAGE_REF = /^\s*source-image:(\d+)\s*$/;
-
-/** An absolute or protocol-relative URL: bytes that live somewhere else. */
-const REMOTE_URL = /^\s*(?:[a-z][a-z0-9+.-]*:)?\/\//i;
 
 /**
  * The description of an image as the model reads it: caption, page, size.
@@ -65,64 +64,24 @@ export function uploadOnce(upload) {
 }
 
 /**
- * Every declared image field of a slide's content that holds a string,
- * `items` entries included.
- * @param {object} content
- * @param {object[]} fields - the slide type's field declarations
- * @returns {Generator<{ holder: object, key: string, value: string }>}
- */
-function* imageFields(content, fields) {
-  for (const field of fields) {
-    const value = content[field.key];
-    if (field.type === 'image' && typeof value === 'string') {
-      yield { holder: content, key: field.key, value };
-    } else if (field.type === 'items' && Array.isArray(value)) {
-      for (const item of value) {
-        if (item && typeof item === 'object') {
-          yield* imageFields(item, field.itemFields || []);
-        }
-      }
-    }
-  }
-}
-
-/**
- * The images a batch under revision already shows. Each reached the batch as a
- * copy or through the author's own pick, and the model hands it back; on a
- * provider with absolute URLs it would read as remote (DY-793).
- *
- * @param {Array<{ type?: string, content?: object }>|null} slides
- * @param {Record<string, object>} slideTypes - the merged slide-type map
- * @returns {Set<string>} to pass as `keep` to {@link resolveSourceImages}
- */
-export function imagesInBatch(slides, slideTypes) {
-  const images = new Set();
-  for (const slide of Array.isArray(slides) ? slides : []) {
-    if (!slide?.content || typeof slide.content !== 'object') continue;
-    const fields = slideTypes[slide.type]?.fields || [];
-    for (const { value } of imageFields(slide.content, fields)) {
-      images.add(value);
-    }
-  }
-  return images;
-}
-
-/**
- * Replace `source-image:N` in declared image fields by the uploaded URL.
+ * Replace `source-image:N` in declared image fields by the uploaded URL, then
+ * hold the answer to the rule for every media field ({@link dropForeignMedia}).
  *
  * Only the images a slide references are uploaded, each once. A reference
  * to an image the source does not have, or one whose upload fails, leaves
  * the field empty and says so in the slide's `_aiWarnings`. So does a remote
- * URL the model wrote itself: what comes out of here holds no image that was
- * not copied. Mutates the slides.
+ * URL the model wrote itself, and an embed or video it named: what comes out
+ * of here loads nothing that was not copied or already there. Mutates the
+ * slides.
  *
  * @param {Array<{ type?: string, content?: object, _aiWarnings?: string[] }>} slides
  * @param {SourceImage[]} [sourceImages]
  * @param {object} [opts]
  * @param {AbortSignal|null} [opts.signal] - checked before every upload
  * @param {Record<string, object>} opts.slideTypes - the merged slide-type map
- * @param {Set<string>} [opts.keep] - remote URLs that stay, from {@link imagesInBatch}
- * @returns {Promise<{ used: number[] }>} the numbers of the images placed
+ * @param {Set<string>} [opts.keep] - what stays, from `mediaInSlides`
+ * @returns {Promise<{ used: number[], unusable: Set<object> }>} the numbers
+ *   of the images placed, and the slides the caller leaves out (`leaveOut`)
  */
 export async function resolveSourceImages(
   slides,
@@ -165,19 +124,18 @@ export async function resolveSourceImages(
     if (!slide?.content || typeof slide.content !== 'object') continue;
     const fields = slideTypes[slide.type]?.fields || [];
     const warnings = [];
-    for (const { holder, key, value } of imageFields(slide.content, fields)) {
-      if (SOURCE_IMAGE_REF.test(value)) {
+    for (const { holder, key, value, field } of mediaFields(
+      slide.content,
+      fields,
+    )) {
+      if (field.type === 'image' && SOURCE_IMAGE_REF.test(value)) {
         holder[key] = await resolve(value, warnings);
-      } else if (REMOTE_URL.test(value) && !keep.has(value)) {
-        warnings.push(
-          'The generated slide named a remote image that was not copied; the image field was left empty.',
-        );
-        holder[key] = '';
       }
     }
     if (warnings.length) {
       slide._aiWarnings = [...(slide._aiWarnings || []), ...warnings];
     }
   }
-  return { used: [...used].sort((a, b) => a - b) };
+  const unusable = dropForeignMedia(slides, { slideTypes, keep });
+  return { used: [...used].sort((a, b) => a - b), unusable };
 }
