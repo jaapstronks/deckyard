@@ -93,24 +93,26 @@ and the per-slide review metadata (`_aiReasoning`, `_aiAlternatives`,
 
 ### Editing verbs: the model writes into an existing deck
 
-| Entry                                                                 | Starter                      | Author of the text                                                                                                               | Sink                                                                          |
-| --------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `POST /api/ai/append-slides` (`server/utils/openai/append.js`)        | Auth                         | The starter's request, plus a **deck summary the client sends** (collaborators' titles and bodies, quoted unescaped)             | Returned to the editor, which saves it through the ordinary PUT               |
-| `POST /api/v1/ai/append-slides`                                       | Key `ai`                     | Same                                                                                                                             | Returned                                                                      |
-| MCP `append_slides`                                                   | Key `ai`                     | The agent's text plus the **stored deck**                                                                                        | **Persisted** through `replaceSlides` (field validation runs)                 |
-| `POST /api/ai/refine-section` (`server/utils/ai/refine-section.js`)   | Auth                         | Selected and neighbouring slides from the client (collaborators), the starter's feedback bare                                    | Returned; validated and repaired                                              |
-| `POST /api/ai/iterate` (`server/utils/ai/iterate-deck.js`)            | Auth                         | The starter's command, **in the user message as the starter's request**; one slide or the **whole deck** as JSON (collaborators) | Returned as a plan plus the resulting deck; the editor applies it             |
-| MCP `iterate_presentation`                                            | Key `ai`                     | The agent's command plus the stored deck                                                                                         | **Persisted**: the whole slide list is replaced                               |
-| `POST /api/ai/convert-slide` (`server/utils/openai/convert-slide.js`) | Auth                         | One slide's fields, fenced, in a per-type-pair prompt                                                                            | Returned as `content`                                                         |
-| MCP `convert_slide`                                                   | Key `ai`                     | The stored slide                                                                                                                 | Persisted through `updateSlide` (field validation runs)                       |
-| `POST /api/ai/compress-deck` (`server/utils/ai/compress-deck.js`)     | Auth                         | Deck title, headings, the first 100 characters of each body, item titles (collaborators), bare                                   | A list of merges and removals; applying it deletes the slides the model chose |
-| MCP `compress_presentation`                                           | Key `ai`; write when applied | The stored deck                                                                                                                  | With `apply: true`, **persisted** removals                                    |
+| Entry                                                                 | Starter                      | Author of the text                                                                                                               | Sink                                                                                         |
+| --------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST /api/ai/append-slides` (`server/utils/openai/append.js`)        | Auth                         | The starter's request, plus a **deck summary the client sends** (collaborators' titles and bodies, quoted unescaped)             | Returned to the editor, which saves it through the ordinary PUT                              |
+| `POST /api/v1/ai/append-slides`                                       | Key `ai`                     | Same                                                                                                                             | Returned                                                                                     |
+| MCP `append_slides`                                                   | Key `ai`                     | The agent's text plus the **stored deck**                                                                                        | **Persisted** through `replaceSlides` (field validation runs)                                |
+| `POST /api/ai/refine-section` (`server/utils/ai/refine-section.js`)   | Auth                         | Selected and neighbouring slides from the client (collaborators), the starter's feedback bare                                    | Returned; validated and repaired                                                             |
+| `POST /api/ai/iterate` (`server/utils/ai/iterate-deck.js`)            | Auth                         | The starter's command, **in the user message as the starter's request**; one slide or the **whole deck** as JSON (collaborators) | Returned as a plan plus the resulting deck, bounded to the open slide; the editor applies it |
+| MCP `iterate_presentation`                                            | Key `ai`                     | The agent's command plus the stored deck                                                                                         | Returned as a plan; with `apply`, **persisted** for the listed slides only                   |
+| `POST /api/ai/convert-slide` (`server/utils/openai/convert-slide.js`) | Auth                         | One slide's fields, fenced, in a per-type-pair prompt                                                                            | Returned as `content`                                                                        |
+| MCP `convert_slide`                                                   | Key `ai`                     | The stored slide                                                                                                                 | Persisted through `updateSlide` (field validation runs)                                      |
+| `POST /api/ai/compress-deck` (`server/utils/ai/compress-deck.js`)     | Auth                         | Deck title, headings, the first 100 characters of each body, item titles (collaborators), bare                                   | Returned as a list of merges and removals; nothing is applied                                |
+| MCP `compress_presentation`                                           | Key `ai`; write when applied | The stored deck                                                                                                                  | Returned; `apply` removes the slides the agent lists, without a model call                   |
 
 What bounds these: every replacement slide goes through `validateAndFixSlide`
 (structure, lengths), the persisted MCP paths run `validateSlide` and the
-storage layer refuses unknown types. What does not is the scope of a plan:
-finding 4. On the editor paths the human sees the result before it is saved; on
-the MCP paths it is saved first and the agent is told afterwards.
+storage layer refuses unknown types. The scope of a plan is bounded in code,
+not in the prompt (`scopePlan`, finding 4): a plan writes only the slides the
+starter pointed at (the editor's open slide, the indexes in MCP `apply`) or,
+for a deck-wide command, any slide; a removal is never written, only
+proposed. MCP returns the plan before anything is stored.
 
 ### Analysis: the model talks about a deck
 
@@ -214,7 +216,9 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   attacker URL is requested from the server's own address.
 - **Links.** Markdown links allow `https?:` only and no images; `url` fields
   are checked at write time, and renderers re-check the scheme at render time.
-- **Destructive edits.** Iteration and compression plans can remove slides: finding 4.
+- **Destructive edits.** A model's plan never removes a slide and writes
+  only the slides the starter pointed at; removals come back as proposals
+  (finding 4).
 - **Comments.** Analysis suggestions are persisted under the AI identity and
   broadcast; comment links go through the mention allowlist.
 - **Email.** Digest fields are escaped in HTML and header-checked; the
@@ -322,7 +326,19 @@ says what it touches; the exact form follows with its fix.
    `tests/duplicate-reader-projection.test.js` pins it (DY-810).
 3. **A URL the model writes can load in a viewer's browser without a click**
    (DY-811). The scrub for such URLs does not cover every path yet.
-4. **A plan can reach further than the slides the starter named** (DY-812).
+4. **A plan could reach further than the slides the starter named.** A
+   deck-wide iteration and a compression plan applied `remove` and `replace`
+   on any index, MCP stored that before the agent saw it, and a slide title
+   could pull the target of a command. Fixed: `scopePlan`
+   (`server/utils/ai/iterate-deck.js`) writes a modification only on a slide
+   the starter pointed at (the editor's open slide, MCP `apply`) or under a
+   deck-wide command, and turns every removal into a proposal; MCP
+   `iterate_presentation` and `compress_presentation` write only with `apply`
+   and its indexes, compression without asking the model again; the target
+   is read from the command, never from a title. "Never remove the title or
+   payoff slide" stays in the prompt as advice, not as the boundary.
+   `tests/ai-plan-scope.test.js` pins an injection in slide 7 that asks to
+   remove slide 2 (DY-812).
 5. **Not every path that wrote slide content ran the declared-field validation,
    and the end slide did not re-check a link.** Fixed: the four paths refuse
    (§ Sinks) and the end slide renders a link only through `safeHref`. Editor
@@ -379,9 +395,8 @@ model-written URL cannot run or beacon.
 Is this threat model a launch condition for the public sandbox? **Not while
 the sandbox offers no AI.** `SANDBOX_MODE` forces `enableAi` off, so none of
 the paths above exist there and the findings do not change its posture. The
-day the sandbox offers AI, findings 3, 4 and 8 become launch conditions first
-(a beacon from a public deck, a model deleting slides in a stranger's deck, and
-unmetered spend on a public URL), and the sandbox's Mistral-only rule stops
+day the sandbox offers AI, findings 3 and 8 become launch conditions first
+(a beacon from a public deck and unmetered spend on a public URL), and the sandbox's Mistral-only rule stops
 being belt and braces.
 
 ## Tests
@@ -405,11 +420,11 @@ What pins the controls above today, and the gaps per finding:
   `email-template-escaping.test.js`.
 - Deck content as data on every model path: `llm-data-boundary.test.js`.
 - Tool results as data for the agent: `tests/mcp/mcp-result-marking.test.js`.
+- The scope of a plan: `tests/ai-plan-scope.test.js`.
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 
 Not pinned by any test, one per finding: a `javascript:` or foreign-host
-video source (added with the fix for finding 1), and the open findings 2, 3, 4,
-8 and 9. Each item
+video source (added with the fix for finding 1), and the open finding 3. Each item
 carries its regression test as an acceptance criterion, after the pattern of
 the faked seam in `tests/translate-undeclared-item-strings.test.js`.

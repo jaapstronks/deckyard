@@ -76,13 +76,13 @@ Add to your Cursor MCP settings:
 
 ### Modifying
 
-| Tool                   | Description                                             |
-| ---------------------- | ------------------------------------------------------- |
-| `update_slide`         | Patch a slide's content or visibility; convert its type |
-| `remove_slide`         | Remove a slide by index                                 |
-| `reorder_slides`       | Move a slide from one position to another               |
-| `convert_slide`        | AI-powered type conversion (e.g. content → list)        |
-| `iterate_presentation` | Natural language modification ("make slide 3 punchier") |
+| Tool                   | Description                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| `update_slide`         | Patch a slide's content or visibility; convert its type                                    |
+| `remove_slide`         | Remove a slide by index                                                                    |
+| `reorder_slides`       | Move a slide from one position to another                                                  |
+| `convert_slide`        | AI-powered type conversion (e.g. content → list)                                           |
+| `iterate_presentation` | Natural language modification ("make slide 3 punchier"); writes only the slides in `apply` |
 
 ### Commenting
 
@@ -139,13 +139,35 @@ API Keys → **Edit permissions**, or `PATCH /api/api-keys/:id` with
 `{ "permissions": [...] }` (B813). The gate re-reads the key on every request,
 so the new scope applies from the next call.
 
+### A model's plan writes only what you named
+
+`iterate_presentation` and `compress_presentation` hand you the model's plan
+first and write only what you name (DY-812). The model reads text that
+collaborators wrote, so a plan can ask for a change nobody requested; the
+tools decide what is written, not the prompt.
+
+- **`iterate_presentation`** without `apply` returns the plan and writes
+  nothing: `modifications` with each replacement slide, `proposals` for the
+  rest. With `apply: [0-based indexes]` it writes only modifications of those
+  slides. One index makes it a single-slide edit of that slide, whatever the
+  command names. A removal is never written, with or without `apply`: it
+  comes back under `proposals`, and you remove the slide yourself with
+  `remove_slide`. `applied` is true only when something was stored.
+- **`compress_presentation`** without `apply` returns the recommendations
+  (read access is enough). With `apply: [0-based indexes]` it removes exactly
+  those slides and asks the model nothing; the answer lists them under
+  `removed` with type and title. Pick the indexes from a preview of the same
+  deck: an index is a position, so a change in between moves it.
+- Both refuse an `apply` that is not a non-empty list of distinct indexes in
+  the deck, before any model call or write.
+
 ### Analyzing
 
-| Tool                    | Description                                                       |
-| ----------------------- | ----------------------------------------------------------------- |
-| `validate_presentation` | Check for density, repetition, and readability issues             |
-| `analyze_presentation`  | AI-powered improvement suggestions (language, structure, brevity) |
-| `compress_presentation` | Find merge/removal opportunities to tighten the deck              |
+| Tool                    | Description                                                           |
+| ----------------------- | --------------------------------------------------------------------- |
+| `validate_presentation` | Check for density, repetition, and readability issues                 |
+| `analyze_presentation`  | AI-powered improvement suggestions (language, structure, brevity)     |
+| `compress_presentation` | Find merge/removal opportunities; `apply` removes the slides you list |
 
 ### Previewing & exporting
 
@@ -221,7 +243,7 @@ Each tool maps directly to existing Deckyard functionality:
 - `create_presentation_from_slides` → `validateRefinedSlidesStrict()` / `validateAndFixRefinedSlides()` + `createPresentation()` (no AI pass; the slides ride in the create, so a refused payload leaves no deck behind, B609)
 - `add_slide` / `update_slide` → `addSlide()` / `updateSlide()` in `server/services/slides.js`, which hold the composed slide to `validateSlide()`, the answer the REST contract gives too. Agent content is checked, not repaired: no fix pass runs first, so an over-long list is refused rather than cut (D121 B4)
 - `convert_slide` → `convertSlideWithAi()`
-- `iterate_presentation` → `iteratePresentation()`
+- `iterate_presentation` → `iteratePresentation()`, bounded by `scopePlan()` (see below)
 - `validate_presentation` → `validateAndFixRefinedSlides()`
 
 Every validation on this surface reads the deck's theme, so a background variant the theme declares is a value on offer (D88). `validateAndFixRefinedSlides()` repairs model output only: `append_slides`, and the opt-in `validation: "fix"` of `create_presentation_from_slides`, which reports what it changed in `appliedFixes`.

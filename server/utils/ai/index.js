@@ -38,7 +38,7 @@ export {
   getUnknownFields,
 } from './validate-slides/index.js';
 
-export { analyzeForCompression, applyCompression } from './compress-deck.js';
+export { analyzeForCompression } from './compress-deck.js';
 
 export {
   logValidationEvent,

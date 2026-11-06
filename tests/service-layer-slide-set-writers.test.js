@@ -209,12 +209,11 @@ const WRITERS = {
     after: ['Hoi', 'Twee', 'Drie', 'Vier'],
   },
   compress_presentation: {
-    args: { apply: true },
-    answer: COMPRESS_ANSWER,
+    args: { apply: [2] },
     after: ['Hoi', 'Twee'],
   },
   iterate_presentation: {
-    args: { command: 'shorten everything' },
+    args: { command: 'shorten everything', apply: [0, 1, 2] },
     answer: ITERATE_ANSWER,
     after: ['Hoi', 'Kort', 'Drie'],
   },
@@ -317,13 +316,12 @@ test('the answers describe the stored deck', async (t) => {
   });
 
   await installDb();
-  stubModel(t, COMPRESS_ANSWER);
   const compressed = await mcpTool('compress_presentation')({
     presentationId: DECK_ID,
-    apply: true,
+    apply: [2],
   });
   assert.equal(compressed.applied, true);
-  assert.equal(compressed.removals, 1);
+  assert.equal(compressed.removed.length, 1);
   assert.equal(compressed.slidesAfter, 2);
 
   await installDb();
@@ -331,6 +329,7 @@ test('the answers describe the stored deck', async (t) => {
   const iterated = await mcpTool('iterate_presentation')({
     presentationId: DECK_ID,
     command: 'shorten everything',
+    apply: [0, 1, 2],
   });
   assert.equal(iterated.applied, true);
   assert.equal(iterated.totalSlides, 3);
@@ -454,7 +453,7 @@ test('reorder_slides: fromIndex and toIndex out of range are refused by name', a
   assert.deepEqual(storedDeck(db), before);
 });
 
-test('iterate_presentation: a plan that removes every slide is refused, not stored as an empty deck', async (t) => {
+test('iterate_presentation: a plan that removes every slide is only proposed, nothing is written (DY-812)', async (t) => {
   const db = await installDb();
   stubModel(t, {
     summary: 'Alles weg',
@@ -464,10 +463,23 @@ test('iterate_presentation: a plan that removes every slide is refused, not stor
     })),
   });
   const before = structuredClone(storedDeck(db));
+  const answer = await mcpTool('iterate_presentation')({
+    presentationId: DECK_ID,
+    command: 'shorten everything',
+    apply: [0, 1, 2],
+  });
+  assert.equal(answer.applied, false);
+  assert.equal(answer.proposals.length, 3);
+  assert.deepEqual(storedDeck(db), before);
+});
+
+test('compress_presentation: apply that names every slide is refused, not stored as an empty deck', async () => {
+  const db = await installDb();
+  const before = structuredClone(storedDeck(db));
   await assert.rejects(
-    mcpTool('iterate_presentation')({
+    mcpTool('compress_presentation')({
       presentationId: DECK_ID,
-      command: 'shorten everything',
+      apply: [0, 1, 2],
     }),
     /Cannot leave a presentation without slides/,
   );
@@ -491,6 +503,7 @@ test('iterate_presentation: a rewritten slide of an unknown type is refused, not
     mcpTool('iterate_presentation')({
       presentationId: DECK_ID,
       command: 'shorten everything',
+      apply: [0, 1, 2],
     }),
     /Unknown slide type: no-such-slide/,
   );

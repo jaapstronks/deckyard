@@ -150,7 +150,8 @@ Steps:
 1. First, get the presentation and show me what's in it
 2. Run validation and analysis to find issues
 3. ${focusNote}
-4. Apply 2-3 targeted improvements using iterate_presentation
+4. Apply 2-3 targeted improvements using iterate_presentation: preview each
+   plan first, then call it again with \`apply\` listing the slides to rewrite
 5. Show me what changed
 
 Be specific about what you changed and why.`,
@@ -188,7 +189,9 @@ Be specific about what you changed and why.`,
             text: `Modify the presentation "${presentationId}" using iterate_presentation.
 
 First, get the presentation so you can see the current slides.
-Then apply this change: "${instruction}"
+Then apply this change: "${instruction}", passing the 0-based indexes of the
+slides it should rewrite in \`apply\`. Removals come back as proposals; ask me
+before removing a slide with remove_slide.
 Show me the before and after for the affected slide(s).`,
           },
         },
@@ -228,10 +231,11 @@ Show me the before and after for the affected slide(s).`,
               text: `Compress the presentation "${presentationId}" using the Deckyard tools.
 
 1. First, get the presentation and count the slides
-2. Run compress_presentation in preview mode to see recommendations
+2. Run compress_presentation without \`apply\` to see recommendations
 3. Show me what it suggests (merges and removals)
 4. ${intensityNote}
-5. Ask me before applying — I want to approve first
+5. Ask me before applying — I want to approve first; then call
+   compress_presentation with \`apply\` listing the slide indexes I approved
 
 Show the current slide count and what it would become after compression.`,
             },

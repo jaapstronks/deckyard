@@ -7,17 +7,14 @@ import {
 import {
   getOptionalObject,
   getOptionalString,
-  getBoolean,
 } from '../../../utils/request-validators.js';
-import {
-  analyzeForCompression,
-  applyCompression,
-} from '../../../utils/ai/compress-deck.js';
+import { analyzeForCompression } from '../../../utils/ai/compress-deck.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/compress-deck — analyze a presentation for consolidation
- * opportunities (and optionally apply them).
+ * opportunities. It answers recommendations only: removing a slide is the
+ * starter's own write, never the model's (DY-812).
  * @param {import('./shared.js').AiContext} ctx
  */
 export const handleAiCompressDeck = withErrorHandler(
@@ -34,7 +31,6 @@ export const handleAiCompressDeck = withErrorHandler(
     const vendor = getOptionalString(body, 'vendor');
     const targetReduction =
       getOptionalString(body, 'targetReduction') || 'moderate';
-    const applyChanges = getBoolean(body, 'applyChanges', false);
 
     const recommendations = await analyzeForCompression(presentation, {
       targetReduction,
@@ -42,22 +38,7 @@ export const handleAiCompressDeck = withErrorHandler(
       slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
-    if (
-      applyChanges &&
-      (recommendations.merges.length > 0 || recommendations.removals.length > 0)
-    ) {
-      const compressed = applyCompression(presentation, recommendations);
-      serveJson(res, 200, {
-        recommendations,
-        presentation: compressed,
-        applied: true,
-      });
-    } else {
-      serveJson(res, 200, {
-        recommendations,
-        applied: false,
-      });
-    }
+    serveJson(res, 200, { recommendations });
     return true;
   },
 );
