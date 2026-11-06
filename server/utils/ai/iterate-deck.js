@@ -19,7 +19,7 @@ import {
 import { extractJsonObject, safeJsonParse } from '../openai/json.js';
 import { buildPhase2CatalogPrompt } from './slide-type-catalog.js';
 import { validateAndFixSlide } from './validate-slides/index.js';
-import { dropForeignMedia, leaveOut, mediaInSlides } from './model-media.js';
+import { dropForeignMedia, leaveOut, heldInSlides } from './model-media.js';
 import { prompts } from './prompts/index.js';
 
 /**
@@ -309,7 +309,7 @@ ${untrustedData(JSON.stringify({ type: slide.type, content: slide.content }, nul
 function ownMediaOnly(written, shown, slideTypes) {
   const unusable = dropForeignMedia(written, {
     slideTypes,
-    keep: mediaInSlides(shown, slideTypes),
+    keep: heldInSlides(shown, slideTypes),
   });
   return leaveOut(written, unusable);
 }

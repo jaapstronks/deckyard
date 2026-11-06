@@ -21,6 +21,18 @@ export async function initSanitizer() {
   return initPurify();
 }
 
+/**
+ * Whether the slide sanitizer runs here, or would fall back to escaping. A
+ * caller that judges what a sanitized render loads asks first: the escaped
+ * fallback loads nothing, while a viewer's browser has DOMPurify and keeps
+ * what the markup asks for, so judging the fallback would pass everything.
+ *
+ * @returns {boolean}
+ */
+export function sanitizerReady() {
+  return Boolean(slidePurify());
+}
+
 async function initPurify() {
   if (purify) return purify;
   if (initPromise) return initPromise;

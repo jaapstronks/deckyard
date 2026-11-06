@@ -79,14 +79,15 @@ export function uploadOnce(upload) {
  * @param {object} [opts]
  * @param {AbortSignal|null} [opts.signal] - checked before every upload
  * @param {Record<string, object>} opts.slideTypes - the merged slide-type map
- * @param {Set<string>} [opts.keep] - what stays, from `mediaInSlides`
+ * @param {{ media: Set<string>, fields: Set<string> }} [opts.keep] - what
+ *   stays, from `heldInSlides`
  * @returns {Promise<{ used: number[], unusable: Set<object> }>} the numbers
  *   of the images placed, and the slides the caller leaves out (`leaveOut`)
  */
 export async function resolveSourceImages(
   slides,
   sourceImages = [],
-  { signal = null, slideTypes, keep = new Set() } = {},
+  { signal = null, slideTypes, keep } = {},
 ) {
   if (!slideTypes || typeof slideTypes !== 'object') {
     throw new TypeError('resolveSourceImages: pass the slide-type map');
