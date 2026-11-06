@@ -4,6 +4,22 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.103.0](https://github.com/jaapstronks/deckyard/compare/v1.102.0...v1.103.0) (2026-11-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* MCP iterate_presentation writes nothing without `apply: [indexes]`, and never removes a slide (removals come back under `proposals`). MCP compress_presentation's `apply` is a list of slide indexes to remove, not a boolean. POST /api/ai/compress-deck no longer takes `applyChanges` and answers `{ recommendations }`. Removed export: `applyCompression` (server/utils/ai/compress-deck.js, utils/ai/index.js). `iteratePresentation` takes `targetSlideIndexes` instead of `currentSlideIndex`; `applyIterationPlan` no longer applies `remove`.
+
+### Security
+
+* a model's plan writes only the slides the starter named ([#2010](https://github.com/jaapstronks/deckyard/issues/2010)) ([6c97d92](https://github.com/jaapstronks/deckyard/commit/6c97d92b23ffca710134ea56314e570065e46a81))
+
+
+### Changed
+
+* release the plan-scope fix as a beta minor ([4eafffa](https://github.com/jaapstronks/deckyard/commit/4eafffa53b9df40e47665dac3ec49dc7d0e0fd15))
+
 ## [1.102.0](https://github.com/jaapstronks/deckyard/compare/v1.101.0...v1.102.0) (2026-11-05)
 
 
