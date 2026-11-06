@@ -4,6 +4,27 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.102.0](https://github.com/jaapstronks/deckyard/compare/v1.101.0...v1.102.0) (2026-11-05)
+
+
+### Added
+
+* count every model call per organization, refuse past a daily ceiling ([#2001](https://github.com/jaapstronks/deckyard/issues/2001)) ([b584782](https://github.com/jaapstronks/deckyard/commit/b58478277c999b37579ef587751bc12d19f7839b))
+
+
+### Fixed
+
+* a wizard past the AI ceiling refuses instead of returning fallback slides ([#2002](https://github.com/jaapstronks/deckyard/issues/2002)) ([e3ade26](https://github.com/jaapstronks/deckyard/commit/e3ade26a3c9fa88f42b8a181523f2dc71f6dbc7b))
+* an auth-off install is told to leave the MCP owner out, not to sign in ([#2007](https://github.com/jaapstronks/deckyard/issues/2007)) ([54b5aa9](https://github.com/jaapstronks/deckyard/commit/54b5aa9cd3b0513395bf76081952fc458a12064b))
+* an organization admin no longer reads the installation's AI call total ([#2004](https://github.com/jaapstronks/deckyard/issues/2004)) ([b520989](https://github.com/jaapstronks/deckyard/commit/b520989d80deb85c6e30f1f50eab2d8fab6ca137))
+* the runner install refuses an unsafe host path before its first write ([#2008](https://github.com/jaapstronks/deckyard/issues/2008)) ([10b9dcc](https://github.com/jaapstronks/deckyard/commit/10b9dccf316eced4d58d59ea539ac256b0792e62))
+
+
+### Security
+
+* a reader's copy of a deck carries no notes or hidden slides ([#2009](https://github.com/jaapstronks/deckyard/issues/2009)) ([97a929c](https://github.com/jaapstronks/deckyard/commit/97a929c4e953954e2b46c3faf696e1d4b233f903))
+* four more paths refuse an unsafe link in slide content ([#2000](https://github.com/jaapstronks/deckyard/issues/2000)) ([f23f3a2](https://github.com/jaapstronks/deckyard/commit/f23f3a242ccc59e4a8836cfe8b492b4dd2e1f118))
+
 ## [1.101.0](https://github.com/jaapstronks/deckyard/compare/v1.100.0...v1.101.0) (2026-11-05)
 
 
