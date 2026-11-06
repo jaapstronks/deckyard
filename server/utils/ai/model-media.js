@@ -7,7 +7,9 @@
  * answer keeps, in such a field, only what the slides it was given already
  * held there, or a value that names no other host: a path this installation
  * serves, a bare video id in the library the installation configured.
- * Everything else is emptied, and the slide says so in `_aiWarnings`.
+ * Everything else is emptied, and the slide says so in `_aiWarnings`. So is
+ * a value the model wrote that would read as more than one address where a
+ * template may put it (a CSS `url()`, a `srcset`).
  *
  * Which fields those are is the type's declaration, never a field name: an
  * `image` field, and any field that declares `mediaRef` (the string is a
@@ -42,6 +44,11 @@
  *   asks a browser to load ({@link loadSurfaces}); a text the model wrote
  *   that adds such a load is emptied. A text the given slides already held,
  *   in the same field of the same type, stays: that load was a person's.
+ *   The render read is the server's (parse5 under jsdom, with DOMPurify),
+ *   and that is what a viewer gets: a database type and a fork type always
+ *   render on the server. The browser's sanitizer keeps some markup the
+ *   server's drops (the content of a `<select>`), so a type that rendered a
+ *   model's text in the browser would need a judgment of its own.
  * - **A field the type keeps from the model** (`ai: false`, such as the
  *   Bunny library of a video). The catalog does not offer it; an answer that
  *   fills it anyway keeps only what the given slides held there, or the
@@ -163,15 +170,16 @@ function slideMediaFields(slide, slideTypes) {
  *
  * @returns {Generator<{ holder: object, key: string, value: unknown, path: string }>}
  */
-function* contentLeaves(holder, prefix = '') {
+function* contentLeaves(holder, prefix = '', skipped = () => false) {
   for (const [key, value] of Object.entries(holder)) {
+    if (skipped(holder, key)) continue;
     const path = Array.isArray(holder)
       ? prefix
       : prefix
         ? `${prefix}.${key}`
         : key;
     if (value && typeof value === 'object') {
-      yield* contentLeaves(value, path);
+      yield* contentLeaves(value, path, skipped);
     } else if (value != null) {
       yield { holder, key, value, path };
     }
@@ -181,6 +189,14 @@ function* contentLeaves(holder, prefix = '') {
 /** How a value is held: the same field of the same type. */
 function heldKey(type, path, value) {
   return `${type}\u0000${path}\u0000${String(value)}`;
+}
+
+/**
+ * How a whole `ai: false` field is held, a list included: its value as JSON,
+ * marked so no string a leaf holds spells the same key.
+ */
+function heldWholeKey(type, path, value) {
+  return heldKey(type, path, `\u0001${JSON.stringify(value)}`);
 }
 
 /**
@@ -208,9 +224,15 @@ export function heldInSlides(slides, slideTypes) {
       const used = mediaValue(value);
       if (used) held.media.add(used);
     }
-    const { type } = slideType(slide, slideTypes);
+    const { type, def } = slideType(slide, slideTypes);
     for (const { path, value } of contentLeaves(slide.content)) {
       held.fields.add(heldKey(type, path, value));
+    }
+    for (const { path, value } of withheldFields(
+      slide.content,
+      def?.fields || [],
+    )) {
+      held.fields.add(heldWholeKey(type, path, value));
     }
   }
   return held;
@@ -229,8 +251,24 @@ const NOTHING_HELD = Object.freeze({
 function isForeign(value, held) {
   if (typeof value !== 'string') return true;
   const used = mediaValue(value);
-  return !held.has(used) && loadsFromAnotherHost(used);
+  return (
+    !held.has(used) &&
+    (loadsFromAnotherHost(used) || MORE_THAN_ONE_ADDRESS.test(used))
+  );
 }
+
+/**
+ * Characters that let one value read as more than one address where a
+ * template puts it: a quote or a parenthesis ends a CSS string or `url()`, a
+ * backslash escapes inside one, white space splits a `srcset` candidate from
+ * the next, and a control character does either (DY-863). A type from the
+ * database or a fork may write its media field there (`url('{{esc photo}}')`,
+ * `srcset="{{esc photo}} 2x"`), so a value the model wrote holds none of
+ * them; core's background layer refuses the same ones. A comma alone splits
+ * nothing (a `srcset` candidate ends at white space) and a `data:` value
+ * needs it.
+ */
+const MORE_THAN_ONE_ADDRESS = /['"()\\\s\x00-\x1f\x7f]/u;
 
 /**
  * Fold the slides the way every read does, in place, so the rule sees the
@@ -295,18 +333,12 @@ function resetWithheld(slide, type, def, keep, warnings) {
     keys.add(key);
     withheld.set(holder, keys);
     if (isSameValue(value, standard)) continue;
-    if (isPrimitive(value) && keep.fields.has(heldKey(type, path, value))) {
-      continue;
-    }
+    if (keep.fields.has(heldWholeKey(type, path, value))) continue;
     if (standard === undefined) delete holder[key];
     else holder[key] = structuredClone(standard);
     warnings.push(WITHHELD_WARNING);
   }
   return withheld;
-}
-
-function isPrimitive(value) {
-  return value == null || typeof value !== 'object';
 }
 
 function isSameValue(a, b) {
@@ -406,12 +438,38 @@ function cssMayLoad(value) {
 }
 
 /**
+ * Attributes only a runtime reads, that load nothing whatever they hold.
+ * `data-math` is a formula KaTeX renders in `client/lib/slide-runtime/
+ * slide-render.js` without `trust`, so `\href`, `\includegraphics` and
+ * `\url` in it render as text and fetch nothing (measured in Chrome, review
+ * of DY-863); `tests/ai-model-media.test.js` fails when a KaTeX call passes
+ * `trust`. Read word for word as an address, a formula would count: `\\c`
+ * (a line break in LaTeX) parses as `//c`.
+ */
+const RUNTIME_INERT_ATTRIBUTES = new Set(['data-math']);
+
+const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+
+/**
+ * Whether a browser reads an attribute as CSS: `style` on any element, and
+ * the presentation attributes of SVG (`fill`, `mask`, `filter`, ...), which
+ * are every other attribute an SVG or MathML element may carry here. An HTML
+ * attribute is never CSS: `data-math="f(x)"` is a formula, not a function.
+ */
+function readsAsCss(element, name) {
+  return name === 'style' || element.namespaceURI !== HTML_NAMESPACE;
+}
+
+/**
  * Whether an attribute may make a browser load from another host: its value
  * as an address, each word of it as one (a `srcset` is a list, so is a
- * `data-*` value a runtime reads), or its value as CSS.
+ * `data-*` value a runtime reads), or, where the browser reads it as CSS
+ * ({@link readsAsCss}), its value as CSS.
  */
 function attributeMayLoad(element, name, value) {
-  if (INERT_ATTRIBUTES.has(name)) return false;
+  if (INERT_ATTRIBUTES.has(name) || RUNTIME_INERT_ATTRIBUTES.has(name)) {
+    return false;
+  }
   if (name.startsWith('aria-') || name.startsWith('xmlns')) return false;
   if (
     (name === 'href' || name === 'xlink:href') &&
@@ -419,7 +477,7 @@ function attributeMayLoad(element, name, value) {
   ) {
     return false;
   }
-  if (cssMayLoad(value)) return true;
+  if (readsAsCss(element, name) && cssMayLoad(value)) return true;
   return [value, ...value.split(/[\s,]+/)].some(
     (word) => word !== '' && loadsFromAnotherHost(word),
   );
@@ -495,6 +553,16 @@ function isDeclaredOption(def, path, value) {
 }
 
 /**
+ * How many values one call may judge by rendering them one by one. A slide
+ * that loads more than its base when its values outnumber what is left has
+ * every judged value emptied without that search: one render costs the whole
+ * slide, so the search is quadratic in the slide's size, and it runs
+ * synchronously (DY-863). Only a slide that loads more than its base spends
+ * from it; core text loads nothing, so a core deck never does.
+ */
+export const MAX_JUDGED_BY_RENDER = 250;
+
+/**
  * Empty every value the model wrote that makes the rendered slide load
  * something from another host its render without them does not.
  *
@@ -502,18 +570,26 @@ function isDeclaredOption(def, path, value) {
  * by their own rule), outside its `ai: false` fields (reset by theirs), that
  * are not a declared option and that the given slides did not hold in the
  * same field. The render with all of them empty is the base: what the type,
- * the installation and the held values load. While the slide loads more than
- * that, the first value whose emptying lowers the count is emptied. When no
- * single one does (an address split over two values), every value whose
- * emptying changes what the slide loads is emptied, and if the slide still
- * loads more than the base, all of them are. A render that throws empties
- * them all.
+ * the installation and the held values load. The slide as written is
+ * rendered once; when it loads no more than the base, every value stays.
+ * Otherwise each value in turn is emptied, and stays empty when the slide
+ * then loads less or something else (an address split over two values: the
+ * first half gone, the second loads on its own), until the slide loads no
+ * more than the base. If it still does after one pass,
+ * or a render throws, or the slide has more values to judge than `budget`
+ * has left ({@link MAX_JUDGED_BY_RENDER} per call), every judged value is
+ * emptied. At most one render per judged value plus two.
  */
-function emptyLoadingText(slide, type, def, { keep, skip, slideTypes }) {
+function emptyLoadingText(
+  slide,
+  type,
+  def,
+  { keep, skip, slideTypes, budget },
+) {
   const judged = [];
-  for (const leaf of contentLeaves(slide.content)) {
-    const { holder, key, value, path } = leaf;
-    if (skip.get(holder)?.has(key)) continue;
+  const skipped = (holder, key) => Boolean(skip.get(holder)?.has(key));
+  for (const leaf of contentLeaves(slide.content, '', skipped)) {
+    const { value, path } = leaf;
     if (keep.fields.has(heldKey(type, path, value))) continue;
     if (!path.includes('.') && isDeclaredOption(def, path, value)) continue;
     judged.push(leaf);
@@ -526,47 +602,32 @@ function emptyLoadingText(slide, type, def, { keep, skip, slideTypes }) {
   const restore = (leaf) => {
     leaf.holder[leaf.key] = leaf.value;
   };
+  const emptyAll = () => {
+    judged.forEach(empty);
+    return judged;
+  };
   try {
     judged.forEach(empty);
     const base = slideLoads(slide, type, slideTypes);
     judged.forEach(restore);
     const added = () => addedLoads(slideLoads(slide, type, slideTypes), base);
-    const emptied = [];
-    const left = [...judged];
     let now = added();
-    while (now.count > 0) {
-      const at = left.findIndex((leaf) => {
-        empty(leaf);
-        const after = added();
-        if (after.count < now.count) {
-          now = after;
-          return true;
-        }
-        restore(leaf);
-        return false;
-      });
-      if (at >= 0) {
-        emptied.push(...left.splice(at, 1));
-        continue;
-      }
-      for (const leaf of [...left]) {
-        empty(leaf);
-        const after = added();
-        if (after.which !== now.which) {
-          now = after;
-          emptied.push(...left.splice(left.indexOf(leaf), 1));
-        } else restore(leaf);
-      }
-      if (now.count > 0) {
-        left.forEach(empty);
-        emptied.push(...left);
-      }
-      break;
+    if (now.count === 0) return [];
+    if (judged.length > budget.left) return emptyAll();
+    budget.left -= judged.length;
+    const emptied = [];
+    for (const leaf of judged) {
+      empty(leaf);
+      const after = added();
+      if (after.count < now.count || after.which !== now.which) {
+        emptied.push(leaf);
+        now = after;
+        if (now.count === 0) return emptied;
+      } else restore(leaf);
     }
-    return emptied;
+    return emptyAll();
   } catch {
-    judged.forEach(empty);
-    return judged;
+    return emptyAll();
   }
 }
 
@@ -613,6 +674,7 @@ export function dropForeignMedia(
     );
   }
   foldAsRead(slides.filter((slide) => slide && typeof slide === 'object'));
+  const budget = { left: MAX_JUDGED_BY_RENDER };
   for (const slide of slides) {
     if (!slide?.content || typeof slide.content !== 'object') continue;
     const warnings = [];
@@ -642,6 +704,7 @@ export function dropForeignMedia(
         keep,
         skip,
         slideTypes,
+        budget,
       });
       if (emptied.length) warnings.push(MARKUP_WARNING);
       for (const { holder, path } of emptied) {

@@ -198,8 +198,13 @@ const { analyzePresentation } =
 const { generateDeck } = await import('../server/utils/ai/generate-deck.js');
 const { createPresentation } =
   await import('../server/services/presentations.js');
-const { dropForeignMedia, leaveOut, loadsFromAnotherHost, heldInSlides } =
-  await import('../server/utils/ai/model-media.js');
+const {
+  dropForeignMedia,
+  leaveOut,
+  loadsFromAnotherHost,
+  heldInSlides,
+  MAX_JUDGED_BY_RENDER,
+} = await import('../server/utils/ai/model-media.js');
 const { SLIDE_TYPES, canonicalSlideType } =
   await import('../shared/slide-types/registry.js');
 const { toRuntimeSlideType } =
@@ -476,6 +481,38 @@ const CSS_ATTRIBUTES = [
 const HREF_ATTRIBUTES = ['href', 'xlink:href'];
 
 /**
+ * The candidate URLs of a `srcset`, split the way the HTML standard splits
+ * it: a URL is a run without white space (trailing commas dropped), and its
+ * descriptors end at a comma outside parentheses, so `/a.png 1x,https://h/b`
+ * is two candidates (Chrome fetches the second, review of DY-863).
+ */
+function srcsetUrls(value) {
+  const urls = [];
+  const space = /[\t\n\f\r ]/;
+  let i = 0;
+  while (i < value.length) {
+    while (i < value.length && (space.test(value[i]) || value[i] === ',')) {
+      i += 1;
+    }
+    const start = i;
+    while (i < value.length && !space.test(value[i])) i += 1;
+    const url = value.slice(start, i);
+    if (!url) break;
+    urls.push(url.replace(/,+$/, ''));
+    if (url.endsWith(',')) continue;
+    for (let depth = 0; i < value.length; i += 1) {
+      if (value[i] === '(') depth += 1;
+      else if (value[i] === ')') depth = Math.max(0, depth - 1);
+      else if (value[i] === ',' && depth === 0) {
+        i += 1;
+        break;
+      }
+    }
+  }
+  return urls;
+}
+
+/**
  * Every address the rendered HTML makes a browser fetch or frame, read the
  * way the browser reads it: the attributes through an HTML parser (so every
  * character reference is decoded; only a `srcset` is a list), and in every
@@ -493,11 +530,8 @@ function addressesIn(html) {
     for (const name of URL_ATTRIBUTES) {
       const value = el.getAttribute(name);
       if (value == null) continue;
-      if (name === 'srcset') {
-        attributes.push(
-          ...value.split(/,\s+/).map((part) => part.trim().split(/\s+/)[0]),
-        );
-      } else attributes.push(value);
+      if (name === 'srcset') attributes.push(...srcsetUrls(value));
+      else attributes.push(value);
     }
     if (!['a', 'area'].includes(el.localName)) {
       for (const name of HREF_ATTRIBUTES) {
@@ -1123,6 +1157,337 @@ test("a field the type keeps from the model gets the installation's value back",
   });
   assert.equal(kept.content.bunnyLibraryId, PLANTED_LIBRARY);
   assert.equal(kept.content.transcript, 'An invented transcript.');
+});
+
+// ── Review of DY-863: formulas, media in a template, the cost ───────────────
+
+/**
+ * Prose a model writes in any text field of core. None of it loads anything:
+ * a formula renders through KaTeX without `trust`, a path with backslashes
+ * and a function call in a code block are text.
+ */
+const HARMLESS_PROSE = {
+  plain: 'Groei in het derde kwartaal',
+  parentheses: 'Omzet (2024) steeg met 4%',
+  'a URL in a sentence':
+    'Bron: https://www.cbs.nl/nl-nl/cijfers en eigen onderzoek',
+  'a Windows path': 'Pad C:\\Users\\jan',
+  'a comment marker': 'Let op /* dit */ niet',
+  'a markdown link': 'Lees [het rapport](https://www.cbs.nl/rapport) na',
+  'a code block': '```js\nconsole.log(fn(1))\n```',
+  'a formula with a function': 'Dan $f(x) = x^2$ en verder',
+  'a fraction': 'De energie $\\frac{1}{2}mv^2$',
+  'a root': 'De wortel is $\\sqrt{x}$ en $a^2$',
+  'a block formula': 'Formule:\n\n$$\\frac{a}{b}$$\n',
+  'a block formula with an integral': '$$\\int_0^1 x\\,dx$$',
+  'a line break in a formula': '$$a \\\\ b \\\\c$$',
+  'prices that are no formula': 'Kosten: $5 en $10 per stuk (excl. btw)',
+};
+
+const PROSE_TYPES = new Set(['string', 'markdown', 'csv', 'text', 'richtext']);
+
+/** Every free text field of a type, as a path into its content. */
+function* proseFields(fields, prefix = []) {
+  for (const field of fields || []) {
+    if (field.type === 'items') {
+      yield* proseFields(field.itemFields, [...prefix, field.key]);
+    } else if (
+      PROSE_TYPES.has(field.type) &&
+      field.ai !== false &&
+      !field.mediaRef &&
+      !Array.isArray(field.options)
+    ) {
+      yield [...prefix, field.key];
+    }
+  }
+}
+
+/** Put `value` at `keys` in a new slide's content, a list entry made if needed. */
+function proseSlide(type, keys, value) {
+  const slide = newSlide({ type, slideTypes: SLIDE_TYPES });
+  let holder = slide.content;
+  for (const key of keys.slice(0, -1)) {
+    if (!Array.isArray(holder[key]) || typeof holder[key][0] !== 'object') {
+      holder[key] = [{}];
+    }
+    holder = holder[key][0];
+  }
+  holder[keys.at(-1)] = value;
+  return { slide, read: () => holder[keys.at(-1)] };
+}
+
+test('prose and formulas a model writes in core stay, in every text field', () => {
+  let fields = 0;
+  const emptied = [];
+  for (const [type, def] of Object.entries(SLIDE_TYPES)) {
+    for (const keys of proseFields(def.fields)) {
+      fields += 1;
+      for (const [form, text] of Object.entries(HARMLESS_PROSE)) {
+        const { slide, read } = proseSlide(type, keys, text);
+        dropForeignMedia([slide], { slideTypes: SLIDE_TYPES });
+        if (read() !== text) emptied.push(`${type} ${keys.join('.')}: ${form}`);
+      }
+    }
+  }
+  assert.ok(fields > 200, `the sweep reaches the text fields (${fields})`);
+  assert.deepEqual(emptied, []);
+});
+
+test('a formula is read as a formula, any other runtime attribute as addresses', () => {
+  const count = (html) =>
+    [...loadSurfaces(html).values()].reduce((a, b) => a + b, 0);
+  assert.equal(count('<span data-math="f(x) \\\\c \\url{x}">f</span>'), 0);
+  assert.equal(count('<span data-note="\\\\c">x</span>'), 1, 'reads as //c');
+  assert.equal(count(`<span data-note="a ${IMAGE}">x</span>`), 1);
+  assert.equal(count('<span title="f(x)" data-x="f(x)">x</span>'), 0);
+  assert.equal(
+    count(`<svg><rect fill="url(/own.svg#p)" width="1"></rect></svg>`),
+    1,
+    'an SVG attribute is CSS',
+  );
+});
+
+test('KaTeX renders formulas without trust, so data-math loads nothing', () => {
+  // The render rule reads `data-math` as inert because KaTeX without `trust`
+  // renders `\href`, `\includegraphics` and `\url` as text. A call that
+  // passes `trust` (or a renderer of formulas this does not know) makes
+  // that false: then the rule must read the formula as an address.
+  const roots = ['client', 'shared'].map((dir) => path.join(REPO_ROOT, dir));
+  const calls = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== 'vendor') walk(file);
+      } else if (entry.name.endsWith('.js')) {
+        const source = readFileSync(file, 'utf8');
+        for (const m of source.matchAll(
+          /katex\.(render|renderToString)\s*\(([\s\S]*?)\}\s*\)/g,
+        )) {
+          calls.push({ file: path.relative(REPO_ROOT, file), args: m[2] });
+        }
+        assert.doesNotMatch(
+          source,
+          /katex[\s\S]{0,400}\btrust\b|\btrust\s*:/,
+          `${path.relative(REPO_ROOT, file)} passes trust to KaTeX`,
+        );
+      }
+    }
+  };
+  roots.forEach(walk);
+  assert.deepEqual(
+    calls.map((c) => c.file),
+    [
+      'client/lib/slide-runtime/slide-render.js',
+      'client/lib/slide-runtime/slide-render.js',
+    ],
+    'every KaTeX call is the runtime that renders data-math',
+  );
+  for (const { args } of calls) assert.doesNotMatch(args, /trust/);
+});
+
+/**
+ * Templates of a type from the database that put their own image field where
+ * a browser reads more than one address (review of DY-863, probe M).
+ */
+const MEDIA_TEMPLATES = {
+  'a quoted CSS url()': `<div class="slide" style="background-image:url('{{esc photo}}')"><h2>{{esc title}}</h2></div>`,
+  'a bare CSS url()': `<div class="slide" style="background-image:url({{esc photo}})"><h2>{{esc title}}</h2></div>`,
+  'a double-quoted CSS url()': `<div class="slide" style='background-image:url("{{esc photo}}")'><h2>{{esc title}}</h2></div>`,
+  'an image with a srcset': `<div class="slide"><h2>{{esc title}}</h2><img src="{{esc photo}}" srcset="{{esc photo}} 2x" alt=""></div>`,
+  'a picture source': `<div class="slide"><h2>{{esc title}}</h2><picture><source srcset="{{esc photo}}"><img src="/own.png" alt=""></picture></div>`,
+  'an image': `<div class="slide"><h2>{{esc title}}</h2><img src="{{esc photo}}" alt=""></div>`,
+};
+
+/** Own paths that end a CSS string or `url()`, or split a `srcset`. */
+const SECOND_ADDRESS_FORMS = {
+  'an apostrophe, a second layer': `/own.png'), url('${IMAGE}`,
+  'a parenthesis, a second layer': `/own.png), url(${IMAGE}`,
+  'a double quote, a second layer': `/own.png"), url("${IMAGE}`,
+  'a line feed, a second layer': `/own.png')\n, url('${IMAGE}`,
+  'a CSS escape in the own path': `/own.png\\'), url(\\'${IMAGE}`,
+  'a second srcset candidate': `/own.png 1x, ${IMAGE}`,
+  'a srcset candidate behind a comma': `/own.png 1x,${IMAGE}`,
+  'a srcset candidate behind a tab': `/own.png\t1x,${IMAGE}`,
+};
+
+function heroTypes(template) {
+  const def = toRuntimeSlideType({
+    id: 'cst-hero',
+    slug: 'hero',
+    label: 'Hero',
+    fields: [
+      { key: 'title', type: 'string', label: 'Title' },
+      { key: 'photo', type: 'image', label: 'Photo' },
+    ],
+    defaults: { title: '', photo: '' },
+    template,
+  });
+  return { ...TYPES, 'custom-hero': def };
+}
+
+test("a database type's image field loads one address on this host, wherever the template puts it", () => {
+  for (const [where, template] of Object.entries(MEDIA_TEMPLATES)) {
+    const types = heroTypes(template);
+    const hero = (photo) => ({
+      type: 'custom-hero',
+      content: { title: 'Hero', photo },
+    });
+    for (const [form, photo] of Object.entries(SECOND_ADDRESS_FORMS)) {
+      // Held, a person wrote it: the oracle sees the second address where
+      // the template gives it one (the image alone reads one address).
+      const held = hero(photo);
+      dropForeignMedia([held], {
+        slideTypes: types,
+        keep: heldInSlides([hero(photo)], types),
+      });
+      assert.equal(held.content.photo, photo, `${where}, ${form}: held`);
+      const slide = hero(photo);
+      dropForeignMedia([slide], { slideTypes: types });
+      assert.equal(slide.content.photo, '', `${where}, ${form}`);
+      assert.equal(slide.content.title, 'Hero');
+      assert.deepEqual(
+        plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+        [],
+        `${where}, ${form}`,
+      );
+    }
+    const own = hero('/uploads/x.png');
+    dropForeignMedia([own], { slideTypes: types });
+    assert.equal(own.content.photo, '/uploads/x.png', `${where}: own path`);
+    assert.equal(own._aiWarnings, undefined);
+    assert.ok(
+      renderSlideHtml(own, { slideTypes: types }).includes('/uploads/x.png'),
+    );
+  }
+  // The oracle reads the second address in the templates that give one.
+  const srcset = heroTypes(MEDIA_TEMPLATES['an image with a srcset']);
+  const glued = {
+    type: 'custom-hero',
+    content: {
+      title: 'x',
+      photo: SECOND_ADDRESS_FORMS['a srcset candidate behind a comma'],
+    },
+  };
+  assert.ok(
+    plantedLoads(renderSlideHtml(glued, { slideTypes: srcset })).length > 0,
+  );
+  const css = heroTypes(MEDIA_TEMPLATES['a quoted CSS url()']);
+  const layered = {
+    type: 'custom-hero',
+    content: {
+      title: 'x',
+      photo: SECOND_ADDRESS_FORMS['an apostrophe, a second layer'],
+    },
+  };
+  assert.ok(
+    plantedLoads(renderSlideHtml(layered, { slideTypes: css })).length > 0,
+  );
+});
+
+/** A database type whose list renders each body as markup. */
+function feedTypes() {
+  const def = toRuntimeSlideType({
+    id: 'cst-feed',
+    slug: 'feed',
+    label: 'Feed',
+    fields: [
+      { key: 'title', type: 'string', label: 'Title' },
+      {
+        key: 'rows',
+        type: 'items',
+        label: 'Rows',
+        itemFields: [
+          { key: 'head', type: 'string', label: 'Head' },
+          { key: 'body', type: 'string', label: 'Body' },
+        ],
+      },
+    ],
+    defaults: { title: '', rows: [] },
+    template:
+      '<div class="slide"><h2>{{esc title}}</h2>{{#each rows}}<h3>{{esc this.head}}</h3><div>{{raw this.body}}</div>{{/each}}</div>',
+  });
+  return { ...TYPES, 'custom-feed': def };
+}
+
+const feed = (n) => ({
+  type: 'custom-feed',
+  content: {
+    title: 'Feed',
+    rows: Array.from({ length: n }, (_, i) => ({
+      head: `Kop ${i}`,
+      body: `<img src="https://${HOST}/p?i=${i}">`,
+    })),
+  },
+});
+
+test('many values that each load are judged in time, and past the limit all go', () => {
+  const types = feedTypes();
+  // Under the limit: each body goes, each head stays.
+  const some = feed(100);
+  let started = performance.now();
+  dropForeignMedia([some], { slideTypes: types });
+  let ms = performance.now() - started;
+  assert.ok(ms < 5000, `100 rows took ${Math.round(ms)} ms`);
+  assert.ok(some.content.rows.every((row) => row.body === ''));
+  assert.ok(some.content.rows.every((row, i) => row.head === `Kop ${i}`));
+
+  // Past the limit, and a deck of such slides: every judged value goes
+  // without a render per value.
+  const many = [feed(300), feed(100), feed(100), feed(100)];
+  started = performance.now();
+  dropForeignMedia(many, { slideTypes: types });
+  ms = performance.now() - started;
+  assert.ok(ms < 2000, `four slides of 600 rows took ${Math.round(ms)} ms`);
+  for (const slide of many) {
+    assert.ok(slide.content.rows.every((row) => row.body === ''));
+    assert.deepEqual(
+      plantedLoads(renderSlideHtml(slide, { slideTypes: types })),
+      [],
+    );
+  }
+  assert.ok(MAX_JUDGED_BY_RENDER < 300 * 2);
+});
+
+test('a list the type keeps from the model stays when it was held there', () => {
+  const def = toRuntimeSlideType({
+    id: 'cst-credits',
+    slug: 'credits',
+    label: 'Credits',
+    fields: [
+      { key: 'title', type: 'string', label: 'Title' },
+      {
+        key: 'sponsors',
+        type: 'items',
+        label: 'Sponsors',
+        ai: false,
+        itemFields: [{ key: 'name', type: 'string', label: 'Name' }],
+      },
+    ],
+    defaults: { title: '', sponsors: [] },
+    template:
+      '<div class="slide"><h2>{{esc title}}</h2>{{#each sponsors}}<p>{{esc this.name}}</p>{{/each}}</div>',
+  });
+  const types = { ...TYPES, 'custom-credits': def };
+  const shown = {
+    type: 'custom-credits',
+    content: {
+      title: 'Dank',
+      sponsors: [{ name: 'Gemeente' }, { name: 'Fonds' }],
+    },
+  };
+  const keep = heldInSlides([shown], types);
+  const handedBack = structuredClone(shown);
+  handedBack.content.title = 'Met dank aan';
+  dropForeignMedia([handedBack], { slideTypes: types, keep });
+  assert.deepEqual(handedBack.content.sponsors, shown.content.sponsors);
+  assert.equal(handedBack._aiWarnings, undefined);
+
+  const changed = structuredClone(shown);
+  changed.content.sponsors.push({ name: 'Een eigen sponsor' });
+  dropForeignMedia([changed], { slideTypes: types, keep });
+  assert.deepEqual(changed.content.sponsors, []);
+  assert.match(changed._aiWarnings.join(' '), /left to people/);
 });
 
 test('the rule asks for what heldInSlides gives', () => {
