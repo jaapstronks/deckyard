@@ -29,6 +29,8 @@ export function createSaveStatus(options = {}) {
     [message, feedback.el],
   );
   let savingTimer = 0;
+  /** The last settled status, so a change in refused fields can redraw it. */
+  let settled = null;
 
   const clearSavingTimer = () => {
     if (savingTimer) window.clearTimeout(savingTimer);
@@ -55,6 +57,7 @@ export function createSaveStatus(options = {}) {
       return;
     }
     clearSavingTimer();
+    settled = [status, detail, blocked];
     const failed = status === 'error' || status === 'disconnected';
     const hasFeedback = feedback.sync(status);
     el.classList.toggle('is-failure', failed);
@@ -88,6 +91,14 @@ export function createSaveStatus(options = {}) {
     setStatus,
     setError: feedback.setError,
     addNormalized: feedback.addNormalized,
+    /**
+     * The fields the collab store holds back, as the whole current set.
+     * @param {Array<{slideId: string, field: string, errors: string[], lang?: string}>} fields
+     */
+    setRefused(fields) {
+      feedback.setRefused(fields);
+      setStatus(...(settled || ['saved']));
+    },
     detach() {
       clearSavingTimer();
       feedback.detach();

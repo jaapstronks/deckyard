@@ -409,6 +409,7 @@ export async function createEditorController({
   let setSaveStatus = () => {};
   let setSaveError = () => {};
   let addNormalizedFields = () => {};
+  let setRefusedFields = () => {};
   // Bound to the topbar once it exists; the share dropdown fires its first
   // sync before that, and the topbar runs its own at mount.
   let syncAnalyticsAvailability = () => {};
@@ -886,6 +887,7 @@ export async function createEditorController({
   setSaveStatus = saveStatus.setStatus;
   setSaveError = saveStatus.setError;
   addNormalizedFields = saveStatus.addNormalized;
+  setRefusedFields = saveStatus.setRefused;
   setSaveStatus(saveManager.getStatus(), saveManager.getLastError());
 
   // Let the undo manager drive the topbar undo/redo button states, and set the
@@ -1202,6 +1204,11 @@ export async function createEditorController({
               liveEdits?.detach();
               liveEdits = null;
             });
+            // What the collab store held back, for every peer (DY-856).
+            const offRefused = presenceHandle.session.onRefusedFieldsChange(
+              (fields) => setRefusedFields(fields),
+            );
+            cleanup.register('refusedFields', offRefused);
           },
         );
       })

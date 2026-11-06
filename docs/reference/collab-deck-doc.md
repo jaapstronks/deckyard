@@ -177,6 +177,17 @@ persistence hooks (`server/collab/persistence.js`):
   log again. A list refused as a list is keyed on slide, field, sub-field and
   its errors instead of the list, so a list that stays over its count logs
   once.
+- **Every peer is told.** The store broadcasts the refused fields as one
+  Hocuspocus stateless message (`shared/collab/refused-fields.js`: slide,
+  field, path, errors and language, never the value) whenever the set
+  changes, and `server/collab/mount.js` sends the current set to each new connection, an
+  empty one included. Loading a stored binary checks it against the JSON
+  first, so the first peer after an unload hears it before anyone edits. The
+  editor shows it where the save state lives, with "Go to field", until a
+  store accepts the field: a background failure in
+  [feedback-surfaces.md](feedback-surfaces.md). A peer on another slide
+  sees it too, because two concurrent inserts can push a list over its count
+  without either author typing anything the field refuses.
 
 **Storage**: `getYDocState`/`setYDocState`/`deleteYDocState` on the
 adapter — Postgres table `presentation_ydocs` (one merged update per deck,

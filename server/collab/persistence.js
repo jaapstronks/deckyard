@@ -19,8 +19,10 @@
  *   a refused item value is left out of its item, and a list refused as a
  *   list keeps the stored list of its field), and everything
  *   else in the store is written: the binary is a cache that a write from
- *   outside the doc deletes, so holding back more would risk losing it. The
- *   editor's link field shows that problem at the field.
+ *   outside the doc deletes, so holding back more would risk losing it.
+ *   Every peer is told which fields stay out (`shared/collab/refused-fields.js`):
+ *   the store broadcasts the set when it changes, and mount.js sends it to
+ *   each new connection, so the editor can say so where the save state lives.
  *
  * Dependencies are injectable for tests; production wiring is
  * `createCollabPersistence({ repoRoot })` from mount.js, gated by
@@ -35,6 +37,10 @@ import {
 import { isDeepStrictEqual } from 'node:util';
 import * as YDefault from 'yjs';
 import { deckYdocCodec } from './deck-doc.js';
+import {
+  encodeRefusedFields,
+  refusedFieldsForPeers,
+} from '../../shared/collab/refused-fields.js';
 import { presentationIdFromDocumentName } from './auth.js';
 import {
   getPresentation as defaultGetPresentation,
@@ -102,6 +108,8 @@ export function createCollabPersistence({
   const documentOrganizations = new Map();
   /** The values each open document has refused and logged, per document. */
   const loggedRefusals = new Map();
+  /** The encoded refused-fields message each open document last announced. */
+  const announcedRefusals = new Map();
 
   /**
    * The storage scope for one collab document. Preferred source is the
@@ -168,6 +176,55 @@ export function createCollabPersistence({
     else loggedRefusals.delete(documentName);
   }
 
+  /**
+   * Tell every peer of the document which fields this store held back, when
+   * that set differs from the last one announced. A Y.Doc without the
+   * Hocuspocus channel (a test, a direct call) is told nothing.
+   */
+  function announceRefusals(documentName, document, refused) {
+    const message = encodeRefusedFields(refusedFieldsForPeers(refused));
+    const empty = encodeRefusedFields([]);
+    if (message === (announcedRefusals.get(documentName) ?? empty)) return;
+    if (message === empty) announcedRefusals.delete(documentName);
+    else announcedRefusals.set(documentName, message);
+    document.broadcastStateless?.(message);
+  }
+
+  /**
+   * What a loaded binary holds that the deck JSON refused, announced like a
+   * store would. Telling is best effort: a failure here never fails the load.
+   */
+  async function recallRefusals(documentName, document, id, projected) {
+    try {
+      const storageScope = storageScopeFor(documentName);
+      const current = await getPresentation(storageScope, id);
+      if (!current) return;
+      const held = await holdBackRefusedSlideFields(
+        storageScope,
+        current,
+        projected,
+      );
+      announceRefusals(documentName, document, held.refused);
+    } catch (err) {
+      log.warn(
+        `[collab] could not check ${id} for refused fields on load:`,
+        err?.message || err,
+      );
+    }
+  }
+
+  /**
+   * Send a new connection the fields its document currently holds back, also
+   * when there are none: a reconnecting editor may still show an older set.
+   * @param {{sendStateless: Function}} connection
+   * @param {string} documentName
+   */
+  function sendRefusedFields(connection, documentName) {
+    connection.sendStateless(
+      announcedRefusals.get(documentName) ?? encodeRefusedFields([]),
+    );
+  }
+
   /** A doc is ours once bootstrap/load populated meta (guards empty docs). */
   function isPopulated(document) {
     return document.getMap('meta').get('extra') !== undefined;
@@ -199,6 +256,9 @@ export function createCollabPersistence({
             Y.encodeStateAsUpdate(document),
           );
         }
+        // A refused value outlives an unload in the binary: the first peer
+        // hears of it on connect, not only after the next store.
+        await recallRefusals(documentName, document, id, canonical);
         return document;
       }
 
@@ -246,6 +306,7 @@ export function createCollabPersistence({
   function afterUnloadDocument({ documentName }) {
     documentOrganizations.delete(documentName);
     loggedRefusals.delete(documentName);
+    announcedRefusals.delete(documentName);
   }
 
   async function onStoreDocument({ documentName, document }) {
@@ -319,6 +380,7 @@ export function createCollabPersistence({
           );
           deck = held.deck;
           logRefusals(documentName, id, held.refused);
+          announceRefusals(documentName, document, held.refused);
         }
         // Skip the JSON write when what would be written equals the stored deck
         // — notably right after the server-as-collaborator seam applied a fresh
@@ -345,5 +407,10 @@ export function createCollabPersistence({
     });
   }
 
-  return { onLoadDocument, onStoreDocument, afterUnloadDocument };
+  return {
+    onLoadDocument,
+    onStoreDocument,
+    afterUnloadDocument,
+    sendRefusedFields,
+  };
 }
