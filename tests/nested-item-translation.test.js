@@ -50,6 +50,7 @@ const {
   translatePresentationStrings,
   translatePresentationStringsFillMissing,
 } = await import('../server/utils/openai/translate.js');
+const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 const { buildBlankTargetFromSource, computeMissingTranslation } =
   await import('../shared/i18n-progress.js');
 const { mapItemTexts, textFieldSpecForType, translatableItemsFieldsForType } =
@@ -122,7 +123,11 @@ const rowsOf = (result) => result.slides[0].content.rows;
 
 test('the model is told about the nested items field', async () => {
   aiResponse = reply(deck('en-GB'));
-  await translatePresentationStrings(deck('nl'), { from: 'nl', to: 'en-GB' });
+  await translatePresentationStrings(deck('nl'), {
+    slideTypes: SLIDE_TYPES,
+    from: 'nl',
+    to: 'en-GB',
+  });
 
   const meta = JSON.parse(
     fencedData(lastUserMessage.slice(lastUserMessage.indexOf('SLIDE META'))),
@@ -139,6 +144,7 @@ test('nested item texts round-trip across two languages', async () => {
   // nl -> en-GB
   aiResponse = reply(deck('en-GB'));
   const toEn = await translatePresentationStrings(deck('nl'), {
+    slideTypes: SLIDE_TYPES,
     from: 'nl',
     to: 'en-GB',
   });
@@ -155,6 +161,7 @@ test('nested item texts round-trip across two languages', async () => {
   // en-GB -> nl, and we are back where we started.
   aiResponse = reply(deck('nl'));
   const backToNl = await translatePresentationStrings(toEn, {
+    slideTypes: SLIDE_TYPES,
     from: 'en-GB',
     to: 'nl',
   });
@@ -168,7 +175,11 @@ test('a nested text the model skipped stays empty for retry, per index', async (
   aiResponse = reply(partial);
 
   const out = rowsOf(
-    await translatePresentationStrings(deck('nl'), { from: 'nl', to: 'en-GB' }),
+    await translatePresentationStrings(deck('nl'), {
+      slideTypes: SLIDE_TYPES,
+      from: 'nl',
+      to: 'en-GB',
+    }),
   );
   assert.equal(out[0].blocks[0].title, 'Block A', 'index 0 is not disturbed');
   assert.equal(
@@ -184,13 +195,17 @@ test('omitted answers preserve existing target prose and leave new gaps empty', 
   const source = deck('nl');
   const existingTarget = deck('en-GB');
   const kept = await translatePresentationStrings(source, {
+    slideTypes: SLIDE_TYPES,
     from: 'nl',
     to: 'en-GB',
     fillMissing: true,
     existingTarget,
   });
-  assert.deepEqual(kept, existingTarget);
+  const { heldBack, ...keptVersion } = kept;
+  assert.deepEqual(heldBack, []);
+  assert.deepEqual(keptVersion, existingTarget);
   const blank = await translatePresentationStrings(source, {
+    slideTypes: SLIDE_TYPES,
     from: 'nl',
     to: 'en-GB',
   });
@@ -242,7 +257,7 @@ test('fillMissing fills only the empty nested text, from its own source path', a
 
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target },
-    { from: 'nl', to: 'en-GB' },
+    { from: 'nl', to: 'en-GB', slideTypes: SLIDE_TYPES },
   );
   assert.deepEqual(
     JSON.parse(fencedData(lastUserMessage)),

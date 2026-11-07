@@ -92,7 +92,7 @@ async function handleTranslate(ctx, presentationId) {
   } catch (err) {
     throw inV1Spelling(err);
   }
-  const { from, to, presentation: updated } = result;
+  const { from, to, presentation: updated, heldBack } = result;
 
   // Track AI usage
   fireAndForget(trackAiRequest(ctx), 'v1 AI usage tracking');
@@ -101,6 +101,7 @@ async function handleTranslate(ctx, presentationId) {
     translated: true,
     from,
     to,
+    heldBack,
     presentation: {
       id: updated.id,
       title: updated.title,

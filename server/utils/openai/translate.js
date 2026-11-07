@@ -10,10 +10,26 @@ import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent, untrustedData } from '../llm/index.js';
 import { ValidationError } from '../errors.js';
 import { slideTextRows } from '../../../shared/i18n-progress.js';
+import { holdTranslationToSource } from '../ai/model-media.js';
 import { isNonEmptyString } from '../../../shared/i18n-utils.js';
 import { extractJsonObject } from './json.js';
 import { labelForLang, normalizeLang } from './lang.js';
 import { translationReferenceLines } from './translation-instructions.js';
+
+/**
+ * The slide-type map a translation reads: the organization's, passed by the
+ * caller. Core's alone does not know a type from the database, so every
+ * string of such a slide (its image field included) would read as text to
+ * translate (DY-868); there is no default to fall back to.
+ * @param {Object} slideTypes
+ * @returns {Object}
+ */
+function requireSlideTypes(slideTypes) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError('translate: pass the slide-type map (slideTypes)');
+  }
+  return slideTypes;
+}
 
 /**
  * The top-level keys to translate on one stored slide: its type's text fields,
@@ -22,16 +38,17 @@ import { translationReferenceLines } from './translation-instructions.js';
  * everywhere else, so leaving them out of the prompt would report them missing
  * forever (D79).
  * @param {Object} slide - Stored slide, in the language being read
+ * @param {Object} slideTypes - The organization's slide-type map
  * @param {...Object} [others] - The same slide in other language versions
  * @returns {string[]}
  */
-function translateKeysForSlide(slide, ...others) {
+function translateKeysForSlide(slide, slideTypes, ...others) {
   const type = typeof slide?.type === 'string' ? slide.type : '';
   const contentOf = (s) =>
     s?.content && typeof s.content === 'object' ? s.content : {};
   return [
     ...perLanguageKeys(
-      textFieldSpecForType(type),
+      textFieldSpecForType(type, slideTypes),
       contentOf(slide),
       ...others.map(contentOf),
     ),
@@ -45,18 +62,38 @@ function translateKeysForSlide(slide, ...others) {
  * undeclared string inside an entry is listed like the top-level remnants
  * `translateKeysForSlide` lists (D116).
  * @param {Object} slide - Stored slide, in the language being read
+ * @param {Object} slideTypes - The organization's slide-type map
  * @param {...Object} [others] - The same slide in other language versions
  * @returns {{key: string, itemKeys: string[], itemsFields?: Object[]}[]}
  */
-function itemsFieldsForSlide(slide, ...others) {
+function itemsFieldsForSlide(slide, slideTypes, ...others) {
   const type = typeof slide?.type === 'string' ? slide.type : '';
   return translatableItemsFields(
-    textFieldSpecForType(type),
+    textFieldSpecForType(type, slideTypes),
     slide?.content,
     ...others.map((s) => s?.content),
   );
 }
 
+/**
+ * Translate a version's slides in one model call, and merge the answer into
+ * the source: the model's text lands only in the declared text fields of
+ * the organization's types, and a text that makes its slide load what the
+ * source text there did not falls back to the source
+ * ({@link holdTranslationToSource}, DY-868).
+ *
+ * @param {{title?: string, slides?: Object[]}} presentation - The source version
+ * @param {Object} opts
+ * @param {string} opts.from
+ * @param {string} opts.to
+ * @param {Object} opts.slideTypes - The organization's slide-type map
+ * @param {{title?: string, slides?: Object[]}|null} [opts.existingTarget]
+ * @param {boolean} [opts.fillMissing]
+ * @param {string|null} [opts.vendor]
+ * @param {string|null} [opts.organizationId]
+ * @returns {Promise<{title: string, slides: Object[], heldBack: Array<{slideId: string, path: Array<string|number>}>}>}
+ *   `heldBack` names the texts that kept their source
+ */
 export async function translatePresentationStrings(
   presentation,
   {
@@ -66,6 +103,7 @@ export async function translatePresentationStrings(
     fillMissing = false,
     vendor = null,
     organizationId = null,
+    slideTypes,
   } = {},
 ) {
   const fromLang = normalizeLang(from);
@@ -73,6 +111,7 @@ export async function translatePresentationStrings(
   if (!fromLang || !toLang || fromLang === toLang) {
     throw new ValidationError('Invalid translation language pair.');
   }
+  requireSlideTypes(slideTypes);
 
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
 
@@ -95,8 +134,8 @@ export async function translatePresentationStrings(
   const slideMeta = srcSlides.map((s) => ({
     id: typeof s?.id === 'string' ? s.id : '',
     type: typeof s?.type === 'string' ? s.type : '',
-    translateKeys: translateKeysForSlide(s, targetById.get(s?.id)),
-    itemsFields: itemsFieldsForSlide(s, targetById.get(s?.id)),
+    translateKeys: translateKeysForSlide(s, slideTypes, targetById.get(s?.id)),
+    itemsFields: itemsFieldsForSlide(s, slideTypes, targetById.get(s?.id)),
   }));
 
   const system = [
@@ -184,14 +223,17 @@ export async function translatePresentationStrings(
   );
 
   // Post-process: only accept translated values for per-language fields.
+  const written = [];
   const mergedSlides = srcSlides.map((src) => {
     const t = outById.get(src.id);
     const srcContent =
       src?.content && typeof src.content === 'object' ? src.content : {};
     const nextContent = { ...srcContent };
     const existing = targetById.get(src.id);
-    const keys = translateKeysForSlide(src, existing);
-    const spec = textFieldSpecForType(src?.type);
+    const keys = translateKeysForSlide(src, slideTypes, existing);
+    const spec = textFieldSpecForType(src?.type, slideTypes);
+    // The paths whose text is the model's, for the load rule below.
+    const paths = [];
     const tContent =
       t?.content && typeof t.content === 'object' ? t.content : null;
     const existingContent =
@@ -209,8 +251,10 @@ export async function translatePresentationStrings(
           continue;
         }
       }
-      if (typeof v === 'string') nextContent[k] = v;
-      else if (typeof srcContent[k] === 'string') nextContent[k] = '';
+      if (typeof v === 'string') {
+        nextContent[k] = v;
+        paths.push([k]);
+      } else if (typeof srcContent[k] === 'string') nextContent[k] = '';
     }
 
     // Handle items arrays (e.g., items, metrics, levels, cells, images) and
@@ -227,21 +271,28 @@ export async function translatePresentationStrings(
             if (typeof cur === 'string' && cur.trim()) return cur;
           }
           const v = valueAtPath(tContent, path);
-          return typeof v === 'string' ? v : '';
+          if (typeof v !== 'string') return '';
+          paths.push(path);
+          return v;
         },
       });
     }
 
-    return {
+    const slide = {
       ...src,
       // Ensure ids/types are unchanged
       id: src.id,
       type: src.type,
       content: nextContent,
     };
+    written.push({ slide, source: src, paths });
+    return slide;
   });
 
-  return { title: outTitle, slides: mergedSlides };
+  const heldBack = holdTranslationToSource(written, { slideTypes }).map(
+    ({ slide, path }) => ({ slideId: slide.id, path }),
+  );
+  return { title: outTitle, slides: mergedSlides, heldBack };
 }
 
 export async function translateShortText(
@@ -417,21 +468,28 @@ function setAtPath(root, path, value) {
  * gaps are the rows `computeMissingTranslation` reports, so the fill
  * and the count agree about what is missing.
  *
+ * A filled text that makes its slide load what the source text there did not
+ * keeps the source ({@link holdTranslationToSource}, DY-868).
+ *
  * @param {Object} args
  * @param {{title?: string, slides?: Object[]}} args.sourcePresentation - the version read from
  * @param {{title?: string, slides?: Object[]}} args.targetPresentation - the version written to
- * @param {Object} opts - `{ from, to, vendor, organizationId }`
- * @returns {Promise<{title: string, slides: Object[]}>} The target with its gaps filled
+ * @param {Object} opts - `{ from, to, slideTypes, vendor, organizationId }`;
+ *   `slideTypes` is the organization's slide-type map
+ * @returns {Promise<{title: string, slides: Object[], heldBack: Array<{slideId: string, path: Array<string|number>}>}>}
+ *   The target with its gaps filled; `heldBack` names the texts that kept
+ *   their source
  */
 export async function translatePresentationStringsFillMissing(
   { sourcePresentation, targetPresentation } = {},
-  { from, to, vendor = null, organizationId = null } = {},
+  { from, to, vendor = null, organizationId = null, slideTypes } = {},
 ) {
   const fromLang = normalizeLang(from);
   const toLang = normalizeLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
     throw new ValidationError('Invalid translation language pair.');
   }
+  requireSlideTypes(slideTypes);
 
   const src = sourcePresentation || {};
   const tgt = targetPresentation || {};
@@ -440,10 +498,10 @@ export async function translatePresentationStringsFillMissing(
     slides: structuredClone(Array.isArray(tgt.slides) ? tgt.slides : []),
   };
 
-  const gaps = slideTextRows(src, tgt).filter(
+  const gaps = slideTextRows(src, tgt, { slideTypes }).filter(
     (row) => isNonEmptyString(row.source) && !isNonEmptyString(row.target),
   );
-  if (!gaps.length) return out;
+  if (!gaps.length) return { ...out, heldBack: [] };
 
   const fields = Object.fromEntries(gaps.map((g, i) => [`f${i}`, g.source]));
   const translations = {};
@@ -464,6 +522,7 @@ export async function translatePresentationStringsFillMissing(
       .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
       .map((s) => [s.id, s]),
   );
+  const written = new Map();
   gaps.forEach((gap, i) => {
     const value = translations[`f${i}`];
     if (!isNonEmptyString(value)) return;
@@ -478,7 +537,18 @@ export async function translatePresentationStringsFillMissing(
     if (!slide || typeof slide !== 'object') return;
     if (!slide.content || typeof slide.content !== 'object') slide.content = {};
     setAtPath(slide.content, gap.path, value);
+    if (!written.has(slide)) {
+      written.set(slide, {
+        slide,
+        source: src.slides[gap.slideIndex],
+        paths: [],
+      });
+    }
+    written.get(slide).paths.push(gap.path);
   });
 
-  return out;
+  const heldBack = holdTranslationToSource([...written.values()], {
+    slideTypes,
+  }).map(({ slide, path }) => ({ slideId: slide.id, path }));
+  return { ...out, heldBack };
 }

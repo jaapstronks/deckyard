@@ -69,6 +69,7 @@ import {
   translationSource,
   translationFieldKey,
 } from '../../shared/translation-provenance.js';
+import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { alignToActiveVersion } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
@@ -368,8 +369,10 @@ async function writeTranslatedDeck(scope, actor, pres) {
  * @param {*} [input.overwrite=false] - Replace an existing target version.
  * @param {*} [input.fillMissing=true] - Keep what the target already has.
  * @param {string|null} [input.vendor] - The LLM vendor, when the caller names one.
- * @returns {Promise<{ from: string, to: string, presentation: Object }>} The
- *   pair as resolved and the deck as stored after the write.
+ * @returns {Promise<{ from: string, to: string, presentation: Object, heldBack: number }>} The
+ *   pair as resolved, the deck as stored after the write, and how many
+ *   translated texts kept their source because they made their slide load
+ *   something the source did not (DY-868).
  * @throws {NotFoundError} No deck with this id in this scope.
  * @throws {import('../utils/errors.js').ForbiddenError} The actor may not write the deck.
  * @throws {AppError} 400 `invalid` naming a refused field; a storage refusal
@@ -390,6 +393,10 @@ export async function translatePresentation(
     fillMissing,
   });
   seedSourceVersion(pres, pair.from);
+  // The organization's types: core's alone reads every string of a type from
+  // the database as text, its image field included (DY-868). The scan, the
+  // blank, the provenance and the model call read the same map.
+  const slideTypes = await buildMergedSlideTypes(scope);
 
   const src = pickVersion(pres, pair.from);
   const existingTarget =
@@ -397,7 +404,7 @@ export async function translatePresentation(
       ? pres.i18n.versions[pair.to]
       : null;
   const batches = translationBatches(src.slides || []);
-  const blank = buildBlankTargetFromSource(src);
+  const blank = buildBlankTargetFromSource(src, { slideTypes });
   const existingById = new Map(
     (existingTarget?.slides || []).map((slide) => [slide.id, slide]),
   );
@@ -451,6 +458,7 @@ export async function translatePresentation(
   let completed = 0;
   let titleAccepted = false;
   let overwritePrepared = false;
+  let heldBack = 0;
   const reload = async () => {
     const fresh = await getPresentation(scope, presentationId);
     if (!fresh) throw new NotFoundError('Presentation not found');
@@ -461,6 +469,7 @@ export async function translatePresentation(
     const remaining = computeMissingTranslation({
       source: pickVersion(fresh, pair.from),
       target: fresh.i18n.versions[pair.to],
+      slideTypes,
     });
     markTranslation(fresh.i18n, pair.to, {
       status: status || (remaining.missingCount ? 'partial' : 'done'),
@@ -484,8 +493,11 @@ export async function translatePresentation(
     if (
       pair.fillMissing &&
       !pair.overwrite &&
-      computeMissingTranslation({ source: sourceBatch, target: targetBatch })
-        .missingCount === 0
+      computeMissingTranslation({
+        source: sourceBatch,
+        target: targetBatch,
+        slideTypes,
+      }).missingCount === 0
     ) {
       completed += 1;
       continue;
@@ -499,6 +511,7 @@ export async function translatePresentation(
         fillMissing: pair.fillMissing && !pair.overwrite,
         vendor,
         organizationId: scope.organizationId,
+        slideTypes,
       });
     } catch (error) {
       if (!completed) throw error;
@@ -510,7 +523,7 @@ export async function translatePresentation(
     if (targetExisted && !fresh.i18n.versions[pair.to]) {
       delete fresh.i18n.translation?.[pair.to];
       presentation = await writeTranslatedDeck(scope, identity.actor, fresh);
-      return { from: pair.from, to: pair.to, presentation };
+      return { from: pair.from, to: pair.to, presentation, heldBack };
     }
     let freshTarget = fresh.i18n.versions[pair.to];
     if (!freshTarget) {
@@ -526,8 +539,8 @@ export async function translatePresentation(
     if (pair.overwrite && !overwritePrepared) {
       // Make the unfinished replacement retryable. Clear only text still equal
       // to the original plan; edits made while the first batch ran survive.
-      const fields = slideTextRows(src, plannedTarget).filter((row) =>
-        row.source.trim(),
+      const fields = slideTextRows(src, plannedTarget, { slideTypes }).filter(
+        (row) => row.source.trim(),
       );
       const cleared = applyMissingAnswers(
         freshTarget,
@@ -536,7 +549,7 @@ export async function translatePresentation(
         fields,
         { allowEmpty: true },
       );
-      for (const row of slideTextRows(src, cleared)) {
+      for (const row of slideTextRows(src, cleared, { slideTypes })) {
         if (!row.target.trim()) {
           delete cleared.translationSources?.[
             translationFieldKey(row.slideId, row.path)
@@ -559,7 +572,9 @@ export async function translatePresentation(
         plannedTarget.slides.find((candidate) => candidate.id === slide.id),
       ),
     };
-    const fields = slideTextRows(sourceBatch, plannedBatch).filter(
+    const fields = slideTextRows(sourceBatch, plannedBatch, {
+      slideTypes,
+    }).filter(
       (row) =>
         row.source.trim() &&
         (pair.overwrite || !row.target.trim()) &&
@@ -576,11 +591,17 @@ export async function translatePresentation(
     const acceptedKeys = new Set(
       accepted.map((row) => translationFieldKey(row.slideId, row.path)),
     );
-    for (const row of slideTextRows(sourceBatch, merged)) {
-      if (
-        !acceptedKeys.has(translationFieldKey(row.slideId, row.path)) ||
-        !row.target.trim()
-      )
+    // A text that kept its source is not a translation: no provenance, and
+    // the caller hears how many there were.
+    const keptSource = new Set(
+      translated.heldBack.map((row) =>
+        translationFieldKey(row.slideId, row.path),
+      ),
+    );
+    for (const key of keptSource) if (acceptedKeys.has(key)) heldBack += 1;
+    for (const row of slideTextRows(sourceBatch, merged, { slideTypes })) {
+      const key = translationFieldKey(row.slideId, row.path);
+      if (!acceptedKeys.has(key) || keptSource.has(key) || !row.target.trim())
         continue;
       recordTranslationSource(
         merged,
@@ -598,11 +619,12 @@ export async function translatePresentation(
   }
   const fresh = await reload();
   if (!fresh.i18n.versions[pair.to]) {
-    return { from: pair.from, to: pair.to, presentation: fresh };
+    return { from: pair.from, to: pair.to, presentation: fresh, heldBack };
   }
   const remaining = computeMissingTranslation({
     source: pickVersion(fresh, pair.from),
     target: fresh.i18n.versions[pair.to],
+    slideTypes,
   });
   const marker = fresh.i18n.translation?.[pair.to];
   const status = remaining.missingCount ? 'partial' : 'done';
@@ -618,7 +640,7 @@ export async function translatePresentation(
   if (remaining.missingCount > 0) {
     throw partialTranslationError(completed, batches.length);
   }
-  return { from: pair.from, to: pair.to, presentation };
+  return { from: pair.from, to: pair.to, presentation, heldBack };
 }
 
 /**
@@ -639,6 +661,8 @@ export async function translatePresentation(
  *   or a blank copy of the source when the deck has none yet.
  * @property {any[]} missing - The gaps, as `computeMissingTranslation` lists them.
  * @property {number} missingCount - `0` means there is nothing to do.
+ * @property {Record<string, Object>} slideTypes - The organization's
+ *   slide-type map the gaps were read with; the run reads the same (DY-868).
  */
 
 /**
@@ -665,18 +689,20 @@ export async function planMissingTranslation(
   });
   const pair = assertTranslatableInput(pres, { from, to });
   seedSourceVersion(pres, pair.from);
+  const slideTypes = await buildMergedSlideTypes(scope);
 
   const source = pickVersion(pres, pair.from);
   const target = pres.i18n.versions[pair.to]
     ? pickVersion(pres, pair.to)
-    : buildBlankTargetFromSource(source);
-  const missingInfo = computeMissingTranslation({ source, target });
+    : buildBlankTargetFromSource(source, { slideTypes });
+  const missingInfo = computeMissingTranslation({ source, target, slideTypes });
   return {
     pres,
     from: pair.from,
     to: pair.to,
     source,
     target,
+    slideTypes,
     missing: Array.isArray(missingInfo?.missing) ? missingInfo.missing : [],
     missingCount: Number(missingInfo?.missingCount || 0) || 0,
   };
@@ -693,9 +719,10 @@ export async function planMissingTranslation(
  * @param {MissingTranslationPlan} plan
  * @param {Object} [options]
  * @param {string|null} [options.vendor] - The LLM vendor, when the caller names one.
- * @returns {Promise<{ from: string, to: string, missingCount: number, updated: boolean, presentation: Object }>}
+ * @returns {Promise<{ from: string, to: string, missingCount: number, updated: boolean, presentation: Object, heldBack: number }>}
  *   The count that was filled and the deck as stored; `updated: false` with
- *   the deck as loaded for a plan without gaps.
+ *   the deck as loaded for a plan without gaps. `heldBack` counts the filled
+ *   texts that kept their source (see {@link translatePresentation}).
  * @throws {NotFoundError} The deck went away between the marker and the result.
  * @throws {AppError} A storage refusal; the model's own error.
  */
@@ -705,9 +732,17 @@ export async function runMissingTranslation(
   plan,
   { vendor = null } = {},
 ) {
-  const { pres, from, to, source, target, missing, missingCount } = plan;
+  const { pres, from, to, source, target, missing, missingCount, slideTypes } =
+    plan;
   if (!missingCount) {
-    return { from, to, missingCount: 0, updated: false, presentation: pres };
+    return {
+      from,
+      to,
+      missingCount: 0,
+      updated: false,
+      presentation: pres,
+      heldBack: 0,
+    };
   }
 
   markTranslation(pres.i18n, to, { status: 'running', from, missingCount });
@@ -715,7 +750,7 @@ export async function runMissingTranslation(
 
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target },
-    { from, to, vendor, organizationId: scope.organizationId },
+    { from, to, vendor, organizationId: scope.organizationId, slideTypes },
   );
 
   const fresh = await getPresentation(scope, pres.id);
@@ -728,19 +763,42 @@ export async function runMissingTranslation(
       identity.actor,
       fresh,
     );
-    return { from, to, missingCount, updated: false, presentation };
+    return {
+      from,
+      to,
+      missingCount,
+      updated: false,
+      presentation,
+      heldBack: 0,
+    };
   }
   const freshTarget =
-    fresh.i18n.versions[to] || buildBlankTargetFromSource(source);
-  fresh.i18n.versions[to] = recordTranslatedVersion(
+    fresh.i18n.versions[to] ||
+    buildBlankTargetFromSource(source, { slideTypes });
+  const accepted = [];
+  const merged = recordTranslatedVersion(
     source,
-    applyMissingAnswers(freshTarget, target, filled, missing),
+    applyMissingAnswers(freshTarget, target, filled, missing, { accepted }),
     from,
-    { previous: freshTarget },
+    { previous: freshTarget, slideTypes },
   );
+  // A text that kept its source is not a translation: no provenance, and the
+  // caller hears how many there were.
+  const acceptedKeys = new Set(
+    accepted.map((gap) => translationFieldKey(gap.slideId, gap.path)),
+  );
+  let heldBack = 0;
+  for (const row of filled.heldBack) {
+    const key = translationFieldKey(row.slideId, row.path);
+    if (!acceptedKeys.has(key)) continue;
+    heldBack += 1;
+    if (merged.translationSources) delete merged.translationSources[key];
+  }
+  fresh.i18n.versions[to] = merged;
   const after = computeMissingTranslation({
     source: pickVersion(fresh, from),
     target: pickVersion(fresh, to),
+    slideTypes,
   });
   markTranslation(fresh.i18n, to, {
     status: 'done',
@@ -749,7 +807,7 @@ export async function runMissingTranslation(
   });
 
   const presentation = await writeTranslatedDeck(scope, identity.actor, fresh);
-  return { from, to, missingCount, updated: true, presentation };
+  return { from, to, missingCount, updated: true, presentation, heldBack };
 }
 
 /**
@@ -764,7 +822,7 @@ export async function runMissingTranslation(
  * @param {*} [input.from] - Source language (see {@link assertTranslatableInput}).
  * @param {*} input.to - Target language, required.
  * @param {string|null} [input.vendor] - The LLM vendor, when the caller names one.
- * @returns {Promise<{ from: string, to: string, missingCount: number, updated: boolean, presentation: Object }>}
+ * @returns {Promise<{ from: string, to: string, missingCount: number, updated: boolean, presentation: Object, heldBack: number }>}
  * @throws {NotFoundError} No deck with this id in this scope.
  * @throws {import('../utils/errors.js').ForbiddenError} The actor may not write the deck.
  * @throws {AppError} 400 `invalid` naming a refused field; a storage refusal;
