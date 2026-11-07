@@ -22,6 +22,7 @@ const {
   translatePresentationStrings,
   translatePresentationStringsFillMissing,
 } = await import('../server/utils/openai/translate.js');
+const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 const { untrustedData } = await import('../server/utils/llm/untrusted-data.js');
 const { translationReferenceLines } =
   await import('../server/utils/openai/translation-instructions.js');
@@ -415,14 +416,15 @@ test('all four translation paths use the same target-language reference', async 
   const calls = [
     () => translateShortText('Hoi', opts),
     () => translateFieldMap({ title: 'Hoi' }, opts),
-    () => translatePresentationStrings(deck, opts),
+    () =>
+      translatePresentationStrings(deck, { ...opts, slideTypes: SLIDE_TYPES }),
     () =>
       translatePresentationStringsFillMissing(
         {
           sourcePresentation: deck,
           targetPresentation: { title: '', slides: [] },
         },
-        opts,
+        { ...opts, slideTypes: SLIDE_TYPES },
       ),
   ];
   for (const call of calls) {

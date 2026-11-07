@@ -1329,6 +1329,14 @@ paths:
                     type: string
                   to:
                     type: string
+                  heldBack:
+                    type: integer
+                    description: >-
+                      How many translated texts kept their source text,
+                      because the translation made the slide load something
+                      from another host that the source text did not. Such a
+                      field reads as the same as its source in the
+                      translation view.
                   presentation:
                     type: object
                     description: >-

@@ -101,6 +101,7 @@ export async function processTranslateJob(job) {
   const result = {
     from: translated.from,
     to: translated.to,
+    heldBack: translated.heldBack,
     presentationId,
     success: true,
     // Gates the download route against enumeration (security-audit H3).

@@ -49,6 +49,7 @@ const {
   translatePresentationStrings,
   translatePresentationStringsFillMissing,
 } = await import('../server/utils/openai/translate.js');
+const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 const { computeMissingTranslation } =
   await import('../shared/i18n-progress.js');
 const { translatableItemsFields, textFieldSpecForType } =
@@ -155,7 +156,7 @@ test('the scan reports the remnants, and the fill job closes them', async () => 
   aiResponse = JSON.stringify({ translations: { f0: 'First', f1: 'Aside' } });
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target },
-    { from: 'nl', to: 'en-GB' },
+    { from: 'nl', to: 'en-GB', slideTypes: SLIDE_TYPES },
   );
 
   assert.deepEqual(
@@ -176,6 +177,7 @@ test('the scan reports the remnants, and the fill job closes them', async () => 
 test('a full translation offers and merges the undeclared item strings', async () => {
   aiResponse = reply(deck('en-GB'));
   const out = await translatePresentationStrings(deck('nl'), {
+    slideTypes: SLIDE_TYPES,
     from: 'nl',
     to: 'en-GB',
   });

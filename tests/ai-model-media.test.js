@@ -44,6 +44,7 @@ import { callArguments } from './helpers/call-sites.js';
 import { walkFiles } from './helpers/walk-files.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import { createMockReq, createMockRes } from './helpers/http-mocks.js';
+import { fencedData } from './helpers/fenced-data.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.SANDBOX_MODE;
@@ -214,6 +215,16 @@ const { toRuntimeSlideType } =
 const { loadSurfaces } = await import('../server/utils/ai/model-media.js');
 const { loadSlideTypeOffer } =
   await import('../server/utils/org-slide-types.js');
+const { handlePresentations } =
+  await import('../server/routes/api/presentations/index.js');
+const { handleTranslation: handleV1Translation } =
+  await import('../server/routes/public-api/v1/translate.js');
+const { processTranslateJob } =
+  await import('../server/jobs/queue/workers/translate-worker.js');
+const { computeMissingTranslation } =
+  await import('../shared/i18n-progress.js');
+const { translatePresentationStrings } =
+  await import('../server/utils/openai/translate.js');
 
 /** Core plus the type from the database, as an org's merged map holds it. */
 const TYPES = {
@@ -2351,6 +2362,411 @@ test('analysis: a proposed slide holds what the deck held, nothing new', async (
   );
 });
 
+// ── Translation (DY-868) ────────────────────────────────────────────────────
+
+/**
+ * A type from the database with a field of every kind a translation must
+ * leave alone or judge: an image field, a `mediaRef` field and an `ai: false`
+ * text, next to a text the template renders as markup.
+ */
+const HERO_TYPE = 'custom-hero';
+function heroTypeRow() {
+  return {
+    ...notesTypeRow(),
+    id: 'cst-hero',
+    slug: 'hero',
+    label: 'Hero',
+    fields: [
+      { key: 'title', type: 'string', label: 'Title', maxLength: 200 },
+      { key: 'body', type: 'string', label: 'Body', maxLength: 4000 },
+      { key: 'photo', type: 'image', label: 'Photo' },
+      {
+        key: 'clip',
+        type: 'string',
+        label: 'Clip',
+        maxLength: 400,
+        mediaRef: { label: 'Clip' },
+      },
+      {
+        key: 'credit',
+        type: 'string',
+        label: 'Credit',
+        maxLength: 400,
+        ai: false,
+      },
+    ],
+    defaults: { title: '', body: '', photo: '', clip: '', credit: '' },
+    template:
+      '<div class="slide"><h2>{{esc title}}</h2><div>{{raw body}}</div>' +
+      '{{#if photo}}<img src="{{esc photo}}" alt="">{{/if}}' +
+      '{{#if clip}}<video src="{{esc clip}}"></video>{{/if}}' +
+      '<small>{{raw credit}}</small></div>',
+  };
+}
+
+const TRANSLATION_TYPES = {
+  ...TYPES,
+  [HERO_TYPE]: toRuntimeSlideType({ ...heroTypeRow(), baseType: null }),
+};
+
+const PARTNER_IMAGE = 'https://partner.example/logo.png';
+
+/** The Dutch deck every translation path translates to English. */
+const dutchSlides = () => [
+  {
+    id: 'slide-plan',
+    type: 'content-slide',
+    content: { title: 'Plan', body: 'Volgend jaar.' },
+  },
+  {
+    id: 'slide-hero',
+    type: HERO_TYPE,
+    content: {
+      title: 'Nieuws',
+      body: '<p>Hallo wereld</p>',
+      photo: '/uploads/x.png',
+      clip: '/uploads/clip.mp4',
+      credit: 'Foto: ANP',
+    },
+  },
+  {
+    id: 'slide-partner',
+    type: HERO_TYPE,
+    content: {
+      title: 'Partner',
+      body: `<p>Met dank aan</p><img src="${PARTNER_IMAGE}" alt="">`,
+      photo: '',
+      clip: '',
+      credit: '',
+    },
+  },
+];
+
+/** What an honest model makes of each Dutch text. */
+const ENGLISH = {
+  Roadmap: 'Roadmap',
+  Plan: 'Plan',
+  'Volgend jaar.': 'Next year.',
+  Nieuws: 'News',
+  '<p>Hallo wereld</p>': '<p>Hello world</p>',
+  'Foto: ANP': 'Photo: ANP',
+  Partner: 'Partner',
+  [`<p>Met dank aan</p><img src="${PARTNER_IMAGE}" alt="">`]: `<p>With thanks to</p><img src="${PARTNER_IMAGE}" alt="">`,
+};
+
+/**
+ * What a hijacked model makes of it: the host in the image field, the
+ * `mediaRef` field, and as markup in the text and the `ai: false` text. The
+ * partner's picture is carried over, as an honest translation would.
+ */
+const PLANTED_TRANSLATION = {
+  ...ENGLISH,
+  '<p>Hallo wereld</p>': `<p>Hello world</p><img src="${IMAGE}" alt="">`,
+  'Foto: ANP': `Photo: ANP<img src="${IMAGE}" alt="">`,
+  '/uploads/x.png': IMAGE,
+  '/uploads/clip.mp4': VIDEO,
+};
+
+/**
+ * `fetch` as a translating model, for both prompts: the whole deck
+ * (`translatePresentationStrings`) and the field map of the gaps
+ * (`translateFieldMap`). Every string it is shown comes back through
+ * `words`, the strings it is not shown (the image field, say) too: a model
+ * that writes them anyway.
+ */
+function translatingModel(words) {
+  const say = (value) =>
+    typeof value === 'string' && Object.hasOwn(words, value)
+      ? words[value]
+      : value;
+  return (body) => {
+    const { messages } = JSON.parse(body);
+    const user = messages.find((m) => m.role === 'user').content;
+    const shown = JSON.parse(fencedData(user));
+    if (shown.fields) {
+      return {
+        translations: Object.fromEntries(
+          Object.entries(shown.fields).map(([key, value]) => [key, say(value)]),
+        ),
+      };
+    }
+    return {
+      title: say(shown.title),
+      slides: dutchSlides().map((slide) => ({
+        id: slide.id,
+        type: slide.type,
+        content: Object.fromEntries(
+          Object.entries(slide.content).map(([key, value]) => [
+            key,
+            say(value),
+          ]),
+        ),
+      })),
+    };
+  };
+}
+
+async function translationSetup() {
+  const deck = await setup();
+  db.__tables.custom_slide_types.push(heroTypeRow());
+  const row = db.__tables.presentations.find((d) => d.id === deck.id);
+  const nl = { title: 'Roadmap', slides: dutchSlides() };
+  row.title = nl.title;
+  row.lang = 'nl';
+  row.slides = structuredClone(nl.slides);
+  row.i18n = {
+    dominant: 'nl',
+    active: 'nl',
+    versions: { nl: structuredClone(nl) },
+  };
+  return deck;
+}
+
+function translationRequest(body) {
+  const req = Readable.from([Buffer.from(JSON.stringify(body))]);
+  req.method = 'POST';
+  req.headers = { host: 'deck.example', 'content-type': 'application/json' };
+  req.socket = { remoteAddress: '203.0.113.9' };
+  return req;
+}
+
+/** The editor's `/translate` or `/translate/missing`, as the owner. */
+async function editorTranslate(body, route = 'translate') {
+  const res = createMockRes();
+  await handlePresentations({
+    repoRoot: REPO_ROOT,
+    storageScope: scope(),
+    req: translationRequest(body),
+    res,
+    url: new URL(`http://deck.example/api/presentations/${deckId}/${route}`),
+    authedUser: AUTHED,
+  });
+  return res;
+}
+
+/** The public v1 translate, with the owner's AI-capable key. */
+async function v1Translate(body) {
+  const res = createMockRes();
+  await handleV1Translation({
+    req: translationRequest(body),
+    res,
+    url: new URL(
+      `http://deck.example/api/v1/presentations/${deckId}/translate`,
+    ),
+    repoRoot: REPO_ROOT,
+    storageScope: {
+      repoRoot: REPO_ROOT,
+      organizationId: ORG,
+      actorUserId: AUTHED.id,
+      actorEmail: AUTHED.email,
+    },
+    apiKey: {
+      id: 'key-1',
+      name: 'Test key',
+      tier: 'free',
+      ownerEmail: AUTHED.email,
+      permissions: ['read', 'write', 'ai'],
+      organizationId: ORG,
+    },
+    authedUser: AUTHED,
+  });
+  return res;
+}
+
+/** The translate queue worker's handler, with a job double. */
+function workerTranslate(data) {
+  return processTranslateJob({
+    id: 'job-dy868',
+    data: {
+      presentationId: deckId,
+      organizationId: ORG,
+      repoRoot: REPO_ROOT,
+      actorEmail: AUTHED.email,
+      ...data,
+    },
+    updateProgress: async () => {},
+  });
+}
+
+const englishVersion = () => {
+  const row = stored();
+  const i18n = typeof row.i18n === 'string' ? JSON.parse(row.i18n) : row.i18n;
+  return i18n.versions['en-GB'];
+};
+
+/**
+ * The stored English version holds no address the model wrote and renders
+ * nothing from the planted host; its media fields are the Dutch ones, its
+ * texts the source where the translation would have loaded, the partner's
+ * picture is carried over, and the Dutch version is untouched.
+ */
+function assertTranslationHeld(where) {
+  const en = englishVersion();
+  assertNothingPlanted(en, where);
+  for (const slide of en.slides) {
+    const loads = plantedLoads(
+      renderSlideHtml(slide, { slideTypes: TRANSLATION_TYPES }),
+    );
+    assert.deepEqual(loads, [], `${where}: ${slide.type} loads ${loads}`);
+  }
+  const hero = en.slides.find((s) => s.id === 'slide-hero').content;
+  assert.equal(hero.photo, '/uploads/x.png', `${where}: the image field`);
+  assert.equal(hero.clip, '/uploads/clip.mp4', `${where}: the mediaRef field`);
+  assert.equal(hero.body, '<p>Hallo wereld</p>', `${where}: the source text`);
+  assert.equal(hero.credit, 'Foto: ANP', `${where}: the ai: false text`);
+  assert.equal(hero.title, 'News', `${where}: a text that loads nothing`);
+  assert.equal(
+    en.slides.find((s) => s.id === 'slide-partner').content.body,
+    ENGLISH[dutchSlides()[2].content.body],
+    `${where}: the partner's picture, carried over`,
+  );
+  assert.equal(
+    en.slides.find((s) => s.id === 'slide-plan').content.body,
+    'Next year.',
+  );
+  const key = (path) => JSON.stringify(['slide-hero', path]);
+  for (const path of [['body'], ['credit']]) {
+    assert.ok(
+      !en.translationSources?.[key(path)],
+      `${where}: ${path} kept its source, so it records no translation`,
+    );
+  }
+  const nl = stored().i18n.versions.nl;
+  assert.deepEqual(
+    nl.slides.map((s) => s.content),
+    dutchSlides().map((s) => s.content),
+    `${where}: the Dutch version`,
+  );
+}
+
+test('translation, the editor: the English version holds what the Dutch one loaded, nothing new', async (t) => {
+  await translationSetup();
+  stubModel(t, translatingModel(PLANTED_TRANSLATION));
+  const res = await editorTranslate({ from: 'nl', to: 'en-GB' });
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  assert.equal(res.json().heldBack, 2, 'two texts kept their source');
+  assertTranslationHeld('editor translate');
+});
+
+test("translation, the editor's fill of the gaps: a gap holds what the Dutch one loaded", async (t) => {
+  await translationSetup();
+  stubModel(t, translatingModel(PLANTED_TRANSLATION));
+  const res = await editorTranslate(
+    { from: 'nl', to: 'en-GB' },
+    'translate/missing',
+  );
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  assert.equal(res.json().heldBack, 2, 'two texts kept their source');
+  assertTranslationHeld('editor translate/missing');
+});
+
+test('translation, public v1: the English version holds what the Dutch one loaded', async (t) => {
+  await translationSetup();
+  stubModel(t, translatingModel(PLANTED_TRANSLATION));
+  const res = await v1Translate({ sourceLang: 'nl', targetLang: 'en-GB' });
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  assert.equal(res.json().heldBack, 2, 'two texts kept their source');
+  assertTranslationHeld('v1 translate');
+});
+
+test('translation, the queue worker: the English version holds what the Dutch one loaded', async (t) => {
+  await translationSetup();
+  stubModel(t, translatingModel(PLANTED_TRANSLATION));
+  const result = await workerTranslate({ from: 'nl', to: 'en-GB' });
+  assert.equal(result.heldBack, 2, 'two texts kept their source');
+  assertTranslationHeld('worker translate');
+});
+
+test('translation: an honest one of core and a database type keeps every text, and nothing is missing after', async (t) => {
+  for (const route of ['translate', 'translate/missing']) {
+    await t.test(route, async (st) => {
+      await translationSetup();
+      stubModel(st, translatingModel(ENGLISH));
+      const res = await editorTranslate({ from: 'nl', to: 'en-GB' }, route);
+      assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+      assert.equal(res.json().heldBack, 0);
+      const en = englishVersion();
+      for (const [i, slide] of dutchSlides().entries()) {
+        for (const [key, value] of Object.entries(slide.content)) {
+          const expected = Object.hasOwn(ENGLISH, value)
+            ? ENGLISH[value]
+            : value;
+          assert.equal(
+            en.slides[i].content[key],
+            expected,
+            `${slide.id}.${key}`,
+          );
+        }
+      }
+      const row = stored();
+      const { missingCount } = computeMissingTranslation({
+        source: row.i18n.versions.nl,
+        target: en,
+        slideTypes: TRANSLATION_TYPES,
+      });
+      assert.equal(missingCount, 0, 'the scan finds nothing left to fill');
+      assert.equal(row.i18n.translation['en-GB'].missingCount, 0);
+    });
+  }
+});
+
+test('translation: a type the map does not know keeps its source in every text', async (t) => {
+  // A type from the database taken out of publication, or a map that failed
+  // to load: the write seam refuses such a deck today, and the rule does not
+  // lean on that. The type renders as a placeholder until it is back.
+  const gone = { ...dutchSlides()[1], type: 'custom-gone' };
+  stubModel(t, (body) => {
+    const answer = translatingModel(PLANTED_TRANSLATION)(body);
+    return { ...answer, slides: [{ ...answer.slides[1], type: gone.type }] };
+  });
+  const out = await translatePresentationStrings(
+    { title: 'Roadmap', slides: [gone] },
+    { from: 'nl', to: 'en-GB', slideTypes: TRANSLATION_TYPES },
+  );
+  assertNothingPlanted(out.slides, 'a type the map does not know');
+  assert.deepEqual(out.slides[0].content, gone.content);
+  assert.equal(out.heldBack.length, 5, 'every text it wrote there');
+});
+
+test('a model writes `data:` in a media field only as an image', () => {
+  const kept = 'data:image/png;base64,iVBORw0KGgo=';
+  const refused = [
+    'data:application/vnd.apple.mpegurl;base64,I0VYVE0zVQo=',
+    'data:text/html,<p>hi</p>',
+    'data:text/html;base64,PHA+aGk8L3A+',
+    'DATA:application/octet-stream;base64,AAAA',
+  ];
+  for (const value of [kept, ...refused]) {
+    const slides = [
+      { type: 'image-slide', content: { title: 'A view', image: value } },
+    ];
+    dropForeignMedia(slides, { slideTypes: SLIDE_TYPES });
+    assert.equal(
+      slides[0].content.image,
+      value === kept ? kept : '',
+      `${value.slice(0, 40)}`,
+    );
+  }
+  const held = [
+    {
+      type: 'image-slide',
+      content: {
+        image: 'data:application/vnd.apple.mpegurl;base64,I0VYVE0zVQo=',
+      },
+    },
+  ];
+  const again = structuredClone(held);
+  dropForeignMedia(again, {
+    slideTypes: SLIDE_TYPES,
+    keep: heldInSlides(held, SLIDE_TYPES),
+  });
+  assert.equal(
+    again[0].content.image,
+    held[0].content.image,
+    'a held one stays',
+  );
+});
+
 // ── The list is closed ──────────────────────────────────────────────────────
 
 /** Files that call the transport and turn the answer into slide content. */
@@ -2363,13 +2779,13 @@ const WRITES_SLIDE_CONTENT = {
   'server/utils/ai/iterate-deck.js': 'iterate',
   'server/utils/openai/convert-slide.js': 'convert-slide',
   'server/utils/ai/analyze-presentation.js': 'analysis',
+  'server/utils/openai/translate.js': 'translation',
 };
 
 /** Files whose answer never becomes a media field, and why. */
 const WRITES_NO_MEDIA = {
   'server/utils/ai/compress-deck.js': 'indexes and reasons, no slide content',
   'server/utils/ai/compare-versions.js': 'insights about slides, returned',
-  'server/utils/openai/translate.js': 'strings for declared text keys only',
   'server/utils/llm/alt-text.js': 'alt text, previewed',
   'server/services/digest-generation.js': 'email fields',
   'server/routes/api/presentations/description.js': 'a description, returned',

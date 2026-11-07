@@ -28,7 +28,7 @@ export async function handlePresentationTranslate(
   if (!parsed.ok) return true;
   const body = parsed.body || {};
 
-  const { from, to, presentation } = await translatePresentation(
+  const { from, to, presentation, heldBack } = await translatePresentation(
     storageScope,
     { actor: authedUser },
     {
@@ -40,6 +40,6 @@ export async function handlePresentationTranslate(
       vendor: getOptionalString(body, 'vendor'),
     },
   );
-  serveJson(res, 200, { ok: true, from, to, presentation });
+  serveJson(res, 200, { ok: true, from, to, presentation, heldBack });
   return true;
 }
