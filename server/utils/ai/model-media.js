@@ -57,7 +57,9 @@
  *
  * Every path that turns a model's answer into slide content passes it through
  * {@link dropForeignMedia}, after the slides are composed, so the fields are
- * read off the canonical type. `tests/ai-model-media.test.js` holds the list
+ * read off the canonical type. A translation passes through
+ * {@link holdTranslationToSource} instead: the same render read, with the
+ * source text as what a judged text falls back to (DY-868). `tests/ai-model-media.test.js` holds the list
  * of paths and fails on a call to the transport it does not know, and renders
  * every media field of every type with every hostile form it knows.
  */
@@ -831,6 +833,10 @@ function foldedCopy(slide, slideTypes) {
  * reads as the same as its source in the translation view, which is where a
  * person sees that it was not translated.
  *
+ * A slide of a type the map does not know keeps its source in every text the
+ * model wrote: it renders as a placeholder today, and as its fields again
+ * when the type is back, so the render cannot judge it.
+ *
  * Only the texts the model wrote are judged: what the target already held (a
  * person's own text in that language, the machine values a version carries)
  * stays as it is and counts in the base. Media fields and `ai: false` fields
@@ -871,6 +877,17 @@ export function holdTranslationToSource(translations, { slideTypes } = {}) {
       const fallback = typeof before === 'string' ? before : '';
       if (value === fallback) continue;
       judged.push({ holder, key, value, fallback, path });
+    }
+    // A type the map does not know (one taken out of publication, or a map
+    // that failed to load) renders as a placeholder that loads nothing, so
+    // the render cannot judge it, and the slide renders its fields again the
+    // day its type is back. Every text the model wrote keeps its source.
+    if (!Object.hasOwn(slideTypes, foldedCopy(slide, slideTypes).type)) {
+      for (const leaf of judged) {
+        leaf.holder[leaf.key] = leaf.fallback;
+        reverted.push({ slide, path: leaf.path });
+      }
+      continue;
     }
     const render = () => {
       const { folded, type } = foldedCopy(slide, slideTypes);

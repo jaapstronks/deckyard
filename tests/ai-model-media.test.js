@@ -223,6 +223,8 @@ const { processTranslateJob } =
   await import('../server/jobs/queue/workers/translate-worker.js');
 const { computeMissingTranslation } =
   await import('../shared/i18n-progress.js');
+const { translatePresentationStrings } =
+  await import('../server/utils/openai/translate.js');
 
 /** Core plus the type from the database, as an org's merged map holds it. */
 const TYPES = {
@@ -2708,7 +2710,25 @@ test('translation: an honest one of core and a database type keeps every text, a
   }
 });
 
-test('a model writes `data:` in a media field only as a raster image', () => {
+test('translation: a type the map does not know keeps its source in every text', async (t) => {
+  // A type from the database taken out of publication, or a map that failed
+  // to load: the write seam refuses such a deck today, and the rule does not
+  // lean on that. The type renders as a placeholder until it is back.
+  const gone = { ...dutchSlides()[1], type: 'custom-gone' };
+  stubModel(t, (body) => {
+    const answer = translatingModel(PLANTED_TRANSLATION)(body);
+    return { ...answer, slides: [{ ...answer.slides[1], type: gone.type }] };
+  });
+  const out = await translatePresentationStrings(
+    { title: 'Roadmap', slides: [gone] },
+    { from: 'nl', to: 'en-GB', slideTypes: TRANSLATION_TYPES },
+  );
+  assertNothingPlanted(out.slides, 'a type the map does not know');
+  assert.deepEqual(out.slides[0].content, gone.content);
+  assert.equal(out.heldBack.length, 5, 'every text it wrote there');
+});
+
+test('a model writes `data:` in a media field only as an image', () => {
   const kept = 'data:image/png;base64,iVBORw0KGgo=';
   const refused = [
     'data:application/vnd.apple.mpegurl;base64,I0VYVE0zVQo=',
