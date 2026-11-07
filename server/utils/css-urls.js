@@ -79,10 +79,12 @@ function readUrlArgument(css, i) {
   while (isWhitespace(css[j])) j += 1;
   if (css[j] === '"' || css[j] === "'") {
     const str = readString(css, j);
-    if (!str.closed) return null;
+    if (!str.closed && str.next < css.length) return null;
     j = str.next;
     while (isWhitespace(css[j])) j += 1;
-    return css[j] === ')' ? { url: str.value, next: j + 1 } : null;
+    return css[j] === ')' || j === css.length
+      ? { url: str.value, next: Math.min(j + 1, css.length) }
+      : null;
   }
   let url = '';
   while (j < css.length) {
@@ -90,9 +92,24 @@ function readUrlArgument(css, i) {
     if (c === ')') return { url, next: j + 1 };
     if (isWhitespace(c)) {
       while (isWhitespace(css[j])) j += 1;
-      return css[j] === ')' ? { url, next: j + 1 } : null;
+      return css[j] === ')' || j === css.length
+        ? { url, next: Math.min(j + 1, css.length) }
+        : null;
     }
-    if (c === '"' || c === "'" || c === '(') return null;
+    if (
+      c === '"' ||
+      c === "'" ||
+      c === '(' ||
+      /[\x00-\x08\x0b\x0e-\x1f\x7f]/.test(c)
+    )
+      return null;
+    if (
+      c === '\\' &&
+      isWhitespace(css[j + 1]) &&
+      css[j + 1] !== ' ' &&
+      css[j + 1] !== '\t'
+    )
+      return null;
     if (c === '\\') {
       const esc = readEscape(css, j);
       url += esc.ch;
@@ -102,7 +119,17 @@ function readUrlArgument(css, i) {
     url += c;
     j += 1;
   }
-  return null;
+  return { url, next: j };
+}
+
+/** Skip the remnants of a bad URL token, including escaped parentheses. */
+function skipBadUrl(css, i) {
+  while (i < css.length) {
+    if (css[i] === ')') return i + 1;
+    if (css[i] === '\\') i = readEscape(css, i).next;
+    else i += 1;
+  }
+  return i;
 }
 
 /**
@@ -150,6 +177,12 @@ export function cssUrlReferences(css) {
         refs.push({ start, end: arg.next, url: arg.url });
         i = arg.next;
         continue;
+      }
+      // Unquoted bad-url remnants are a single token, not nested functions.
+      let argument = i + 1;
+      while (isWhitespace(css[argument])) argument += 1;
+      if (css[argument] !== '"' && css[argument] !== "'") {
+        i = skipBadUrl(css, argument);
       }
     }
   }

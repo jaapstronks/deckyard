@@ -287,11 +287,14 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   `server/export/edition-input.js` refuses any frame and any non-`data:` URL
   at publish time. **Exports fetch server-side** through the SSRF guard, which
   blocks private and metadata addresses and accepts public hosts, so a public
-  URL an author chose is requested from the server's own address. What the
-  export fetches is what a browser would load: its embed pass reads the
-  document's CSS only (`style` attributes, `<style>` and SVG presentation
+  URL an author chose is requested from the server's own address. The
+  CSS embed pass reads the document's CSS only (`style` attributes, `<style>` and SVG presentation
   attributes, through an HTML parser and a CSS tokenizer), so a `url(...)` in
   a title, a body or an alt text stays text and is never requested (DY-865).
+  Unstamped templates are excluded. PDF/PNG capture blocks browser requests
+  other than `data:` and `about:` before parsing through capture, including
+  sinks the embed pass does not read. This boundary does not apply to a
+  downloaded HTML document opened in a separate browser.
 - **Links.** Markdown links allow `https?:` only and no images; `url` fields
   are checked at write time, and renderers re-check the scheme at render time.
 - **Destructive edits.** A model's plan never removes a slide and writes

@@ -53,3 +53,11 @@ test('rewriteCssUrls replaces only what the callback maps', () => {
     css,
   );
 });
+
+test('EOF closes URL tokens and strings, while bad-url remnants stay inert', () => {
+  for (const css of ['url(/x', 'url(/x ', 'url("/x"', 'url("/x']) {
+    assert.deepEqual(urls(css), ['/x'], css);
+  }
+  assert.deepEqual(urls('url(bad(url(https://h/x))'), []);
+  assert.deepEqual(urls('url(bad url(https://h/x))'), []);
+});

@@ -414,17 +414,29 @@ export async function embedCssUrlsForExport(
   return rewriteLocalCssUrls(remoteEmbedded, local);
 }
 
-const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+// SVG presentation attributes whose CSS grammar accepts URL references.
+const SVG_URL_ATTRIBUTES = new Set([
+  'fill',
+  'stroke',
+  'filter',
+  'clip-path',
+  'mask',
+  'cursor',
+  'marker',
+  'marker-start',
+  'marker-mid',
+  'marker-end',
+]);
 
 /**
  * The CSS in an HTML string, as a browser reads it, with where it stands in
  * that string: the text of every `<style>` element, every `style` attribute,
- * and every attribute of an SVG or MathML element (SVG reads its presentation
- * attributes, `fill="url(…)"` and the like, as CSS). An attribute comes back
- * decoded, the way the browser decodes it. Text and the other HTML
+ * and SVG URL presentation attributes (`fill="url(…)"` and the like).
+ * An attribute comes back decoded, the way the browser decodes it. Text and the other HTML
  * attributes are not CSS: a `url(...)` in a title, a body or an alt text is
- * data, and loads nothing (DY-865). `<template>` content counts, as a runtime
- * may stamp it.
+ * data, and loads nothing (DY-865). Unstamped HTML templates are inert;
+ * export documents do not stamp them.
  *
  * Read with an HTML parser, never a regex over the document: the parser
  * decides what is markup and what is text the same way the browser does.
@@ -449,9 +461,13 @@ export function cssRegionsOfHtml(html) {
           attribute: false,
         });
       }
-      const foreign = element.namespaceURI !== HTML_NAMESPACE;
+      const svg = element.namespaceURI === SVG_NAMESPACE;
       for (const { name, value } of element.attributes) {
-        if (!foreign && name.toLowerCase() !== 'style') continue;
+        if (
+          name.toLowerCase() !== 'style' &&
+          !(svg && SVG_URL_ATTRIBUTES.has(name))
+        )
+          continue;
         const at = loc.attrs?.[name] || loc.attrs?.[name.toLowerCase()];
         if (!at) continue;
         regions.push({
@@ -461,10 +477,10 @@ export function cssRegionsOfHtml(html) {
           attribute: true,
         });
       }
-      if (element.localName === 'template') visit(element.content);
     }
   };
   visit(dom.window.document);
+  dom.window.close();
   return regions.sort((a, b) => a.start - b.start);
 }
 
@@ -495,7 +511,12 @@ async function embedCssUrlsInHtml(
 ) {
   // Every url() needs a `(`: in the source, or as a character reference an
   // attribute decodes to one. Without either there is nothing to read.
-  if (!html.includes('(') && !/&(?:lpar;|#0*40;|#x0*28;)/i.test(html)) {
+  if (
+    !html.includes('(') &&
+    !/&(?:lpar;|#0*40(?:;|(?=[^0-9]|$))|#x0*28(?:;|(?=[^0-9a-f]|$)))/i.test(
+      html,
+    )
+  ) {
     return html;
   }
   const regions = cssRegionsOfHtml(html).filter(

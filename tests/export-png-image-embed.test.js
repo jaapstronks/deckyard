@@ -98,6 +98,10 @@ function fakePage({ fail = null } = {}) {
   const calls = { defaultTimeout: null, setContent: null };
   return {
     calls,
+    async setRequestInterception() {},
+    on(event, listener) {
+      calls[event] = listener;
+    },
     setDefaultTimeout(ms) {
       calls.defaultTimeout = ms;
     },
@@ -144,5 +148,30 @@ test('EXPORT_RENDER_TIMEOUT_MS sets the cap; 0 disables it', () => {
   } finally {
     if (prev === undefined) delete process.env.EXPORT_RENDER_TIMEOUT_MS;
     else process.env.EXPORT_RENDER_TIMEOUT_MS = prev;
+  }
+});
+
+test('export page blocks non-embedded requests before loading', async () => {
+  const page = fakePage();
+  await loadExportDocument(page, '<p>x</p>', { label: 'PDF export' });
+  for (const url of [
+    'https://public.example/x',
+    'http://127.0.0.1/x',
+    'file:///etc/passwd',
+    'data:image/png;base64,AA==',
+    'about:blank',
+  ]) {
+    let outcome;
+    page.calls.request({
+      isInterceptResolutionHandled: () => false,
+      url: () => url,
+      continue: async () => {
+        outcome = 'continue';
+      },
+      abort: async () => {
+        outcome = 'abort';
+      },
+    });
+    assert.equal(outcome, /^(data:|about:)/.test(url) ? 'continue' : 'abort');
   }
 });

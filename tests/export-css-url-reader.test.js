@@ -8,10 +8,7 @@ import {
   renderSlideHtml,
   newSlide,
 } from '../shared/slide-types/presentation.js';
-import {
-  cssRegionsOfHtml,
-  embedImgSrcDataUrls,
-} from '../server/utils/html-utils.js';
+import { embedImgSrcDataUrls } from '../server/utils/html-utils.js';
 
 /**
  * DY-865: the export's `url(...)` safety net reads CSS, not the document. A
@@ -160,20 +157,6 @@ test('markup outside the CSS is left byte for byte', async () => {
   assert.ok(out.endsWith('\')">c</div>'), out);
 });
 
-test('cssRegionsOfHtml finds style text, style attributes and foreign attributes only', () => {
-  const html = `<p title="url(x)" style="a:b">t</p><style>.s{}</style><svg><rect fill="f"/></svg><template><i style="c:d"></i></template>`;
-  const regions = cssRegionsOfHtml(html).map((r) => [
-    html.slice(r.start, r.end),
-    r.css,
-  ]);
-  assert.deepEqual(regions, [
-    ['style="a:b"', 'a:b'],
-    ['.s{}', '.s{}'],
-    ['fill="f"', 'f'],
-    ['style="c:d"', 'c:d'],
-  ]);
-});
-
 test('a rewritten style attribute keeps its other quotes encoded', async () => {
   const html = `<p style="font-family:&quot;A B&quot;;background:url(https://${HOST}/b.png)">x</p>`;
   const out = await embedImgSrcDataUrls(repoRoot, html, {
@@ -184,3 +167,38 @@ test('a rewritten style attribute keeps its other quotes encoded', async () => {
     /^<p style="font-family:&quot;A B&quot;;background:url\(&#039;data:image\/png;base64,[^"]+&#039;\)">x<\/p>$/,
   );
 });
+
+for (const [name, html] of [
+  ['SVG label', `<svg aria-label="${INNER}" data-note="${INNER}"></svg>`],
+  ['MathML text', `<math data-note="${INNER}" alttext="${INNER}"></math>`],
+  [
+    'inert template',
+    `<template><style>p{background:${INNER}}</style><i style="background:${INNER}"></i></template>`,
+  ],
+]) {
+  test(`${name} is preserved without a server fetch`, async () => {
+    const out = await embedImgSrcDataUrls(repoRoot, html, {
+      embedRemote: true,
+    });
+    assert.deepEqual(fetchedFromHost(), []);
+    assert.equal(out, html);
+  });
+}
+
+for (const value of [
+  `url(https://${HOST}/eof`,
+  `url('https://${HOST}/eof'`,
+  `url('https://${HOST}/eof`,
+  `url&#40https://${HOST}/eof)`,
+  `url&#x28https://${HOST}/eof)`,
+]) {
+  test(`browser-loadable CSS is embedded: ${value}`, async () => {
+    const out = await embedImgSrcDataUrls(
+      repoRoot,
+      `<div style="background:${value}"></div>`,
+      { embedRemote: true },
+    );
+    assert.deepEqual(fetchedFromHost(), [`https://${HOST}/eof`]);
+    assert.ok(!out.includes(HOST), out);
+  });
+}

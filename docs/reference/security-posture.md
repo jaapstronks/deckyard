@@ -65,14 +65,18 @@ loopback, and other internal services. The guard resolves the hostname and
 unique-local and other non-public ranges (covering encoded IPv4, IPv6 and
 IPv4-mapped forms). Remote `http(s)` images referenced as field values, in
 `<img src>`, and in CSS `url()` backgrounds are each inlined through this guard or
-stripped, so no user-supplied URL reaches headless Chrome at `setContent` time.
+stripped. PDF/PNG capture additionally blocks browser requests except `data:` and
+`about:` in `loadExportDocument`, before parsing and through capture. Required
+local assets are embedded first; other sinks such as CSS imports are blocked
+rather than fetched by Chrome. Downloadable HTML is outside this browser boundary.
 The `url()` pass reads CSS, not the document: `cssRegionsOfHtml()` finds the
-`style` attributes, `<style>` text and SVG presentation attributes with an HTML
+`style` attributes, `<style>` text and SVG presentation URL attributes with an HTML
 parser (decoded as the browser decodes them), and `server/utils/css-urls.js`
 tokenizes that CSS, skipping strings and comments. Text is data: before DY-865
 the pass also read text, and fetched what it found there. Local `url()` targets
 take the same reader, so text cannot pull an asset into an export either.
 Pinned by `tests/export-css-url-reader.test.js` and `tests/css-url-references.test.js`.
+Unstamped templates are inert and excluded from the CSS pass.
 Fetches are also size- and time-capped as a memory-DoS bound.
 
 A **theme** is user-supplied too, and it takes a different route into the same
