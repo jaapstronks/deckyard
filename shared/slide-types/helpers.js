@@ -439,9 +439,22 @@ function inferAltFromUrl(urlOrPath) {
   const u = parseUrl(raw);
   // A bare path (`img/photo.png`) is not a URL; take the last segment by hand.
   const base = u
-    ? decodeURIComponent(u.pathname.split('/').pop() || '')
+    ? decodeSegment(u.pathname.split('/').pop() || '')
     : raw.split('?')[0].split('#')[0].split('/').pop() || '';
   return humanizeFilename(base);
+}
+
+/**
+ * Decode one path segment, or keep it as it is when it is not valid
+ * percent-encoding (`100%.png`): a field value never makes the render throw
+ * (DY-866).
+ */
+function decodeSegment(segment) {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
 }
 
 function humanizeFilename(filename) {
