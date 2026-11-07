@@ -51,6 +51,7 @@ process.on('exit', () => {
   globalThis.fetch = realFetch;
 });
 
+const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 const { translatePresentationStringsFillMissing } =
   await import('../server/utils/openai/translate.js');
 const { computeMissingTranslation } =
@@ -100,7 +101,7 @@ test('an empty entry in a shifted target collection gets its own source path onl
 
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target },
-    { from: 'nl', to: 'en-GB' },
+    { from: 'nl', to: 'en-GB', slideTypes: SLIDE_TYPES },
   );
 
   assert.deepEqual(
@@ -125,7 +126,7 @@ test('nothing missing asks the model nothing', async () => {
   const target = timeline([entry('2020', 'Start', 'Beginning')]);
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target },
-    { from: 'nl', to: 'en-GB' },
+    { from: 'nl', to: 'en-GB', slideTypes: SLIDE_TYPES },
   );
   assert.equal(asked.length, 0);
   assert.deepEqual(filled.slides, target.slides);
@@ -142,7 +143,7 @@ test('the fill closes exactly the gaps the scan reports', async () => {
   const { missingCount } = computeMissingTranslation({ source, target });
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target },
-    { from: 'nl', to: 'en-GB' },
+    { from: 'nl', to: 'en-GB', slideTypes: SLIDE_TYPES },
   );
   assert.equal(Object.keys(asked[0]).length, missingCount);
   assert.equal(
@@ -161,7 +162,7 @@ test('a large fill is split over several calls, each value still on its path', a
   const target = timeline([1, 2, 3, 4].map((n) => entry(`${n}`, `${n}`, '')));
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target },
-    { from: 'nl', to: 'en-GB' },
+    { from: 'nl', to: 'en-GB', slideTypes: SLIDE_TYPES },
   );
   assert.ok(asked.length > 1, 'more than one model call');
   filled.slides[0].content.items.forEach((it, i) => {

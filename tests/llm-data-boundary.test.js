@@ -170,7 +170,11 @@ const PATHS = {
   'server/utils/openai/translate.js': async () => {
     await translateShortText(INJECTION, { from: 'nl', to: 'en-GB' });
     await translateFieldMap({ title: INJECTION }, { from: 'nl', to: 'en-GB' });
-    await translatePresentationStrings(deck, { from: 'nl', to: 'en-GB' });
+    await translatePresentationStrings(deck, {
+      from: 'nl',
+      to: 'en-GB',
+      slideTypes: SLIDE_TYPES,
+    });
   },
   'server/utils/openai/append.js': () =>
     generateSlidesToAppendFromRawContent(COMMAND, {
@@ -269,7 +273,12 @@ test('an injection in a slide does not change a translation', async (t) => {
   const answer = () => ({ title: 'Translated', slides: [] });
   const { result } = await askObedientModel(
     t,
-    () => translatePresentationStrings(deck, { from: 'nl', to: 'en-GB' }),
+    () =>
+      translatePresentationStrings(deck, {
+        from: 'nl',
+        to: 'en-GB',
+        slideTypes: SLIDE_TYPES,
+      }),
     answer,
   );
   assert.equal(result.title, 'Translated');

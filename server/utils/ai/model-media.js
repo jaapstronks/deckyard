@@ -57,7 +57,9 @@
  *
  * Every path that turns a model's answer into slide content passes it through
  * {@link dropForeignMedia}, after the slides are composed, so the fields are
- * read off the canonical type. `tests/ai-model-media.test.js` holds the list
+ * read off the canonical type. A translation passes through
+ * {@link holdTranslationToSource} instead: the same render read, with the
+ * source text as what a judged text falls back to (DY-868). `tests/ai-model-media.test.js` holds the list
  * of paths and fails on a call to the transport it does not know, and renders
  * every media field of every type with every hostile form it knows.
  */
@@ -72,6 +74,7 @@ import {
 import { renderSlideHtml } from '../../../shared/slide-types/presentation.js';
 import { resolveSlideTypeName } from '../../../shared/slide-types/registry.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
+import { valueAtPath } from '../../../shared/slide-types/text-fields.js';
 
 const IMAGE_WARNING =
   'The generated slide named a remote image that was not copied; the image field was left empty.';
@@ -281,9 +284,11 @@ function isForeign(value, held) {
  * before its next candidate, and `{{raw}}` decodes `&#32;` into the space
  * that splits one. So the value is checked for what it may hold:
  *
- * - a `data:` value of base64 and percent-encoded characters (a comma or a
- *   colon in it stays inside the one address: a `srcset` candidate ends at
- *   white space only);
+ * - a `data:` value that is an image (`data:image/…`), of base64 and
+ *   percent-encoded characters (a comma or a colon in it stays inside the
+ *   one address: a `srcset` candidate ends at white space only). Any other
+ *   `data:` value is not an image, and in a field the template loads it is a
+ *   document or a stream of its own (an HLS playlist Chrome plays) (DY-868);
  * - otherwise characters a URL carries unencoded and no template reads as a
  *   boundary: letters, digits, `-._~/%?=#:+`. No comma, quote, parenthesis,
  *   backslash, `&`, `<`, `>`, `;`, white space or control character.
@@ -292,10 +297,10 @@ function isForeign(value, held) {
  * this host fit; a value that needs more is written by a person, or held.
  */
 function isOneAddress(value) {
-  return (
-    /^data:[A-Za-z0-9+/=;,.%_:-]*$/.test(value) ||
-    /^[A-Za-z0-9\-._~/%?=#:+]*$/.test(value)
-  );
+  if (/^data:/i.test(value)) {
+    return /^data:image\/[A-Za-z0-9+/=;,.%_:-]*$/i.test(value);
+  }
+  return /^[A-Za-z0-9\-._~/%?=#:+]*$/.test(value);
 }
 
 /**
@@ -602,23 +607,8 @@ const RENDER_CHARGE = 512;
  * The values judged are the slide's leaves outside its media fields (judged
  * by their own rule), outside its `ai: false` fields (reset by theirs), that
  * are not a declared option, not empty, and that the given slides did not
- * hold in the same field. The render with all of them empty is the base:
- * what the type, the installation and the held values load. The slide as
- * written is rendered once; when it loads no more than the base, every value
- * stays.
- *
- * Otherwise a search halves the values: a group is rendered with only its
- * own values filled in, the held ones empty too, so a render costs the group
- * rather than the slide. A group that loads nothing more than that bare
- * render keeps its values; one that does is halved, down to the single value,
- * which goes. A group the budget ({@link MAX_SEARCH_CHARS}) cannot pay for
- * any more goes as well. One value that loads among 248 costs about sixteen
- * small renders.
- *
- * Then the slide is rendered as it will be kept, the held values and the
- * values that passed together: when that loads no more than the base, it is
- * the answer, otherwise (values that only load together, across groups)
- * every judged value is emptied. So is every one when a render throws.
+ * hold in the same field. The search itself is {@link revertWhatLoads}, with
+ * empty as the value a judged leaf falls back to.
  */
 function emptyLoadingText(
   slide,
@@ -632,46 +622,83 @@ function emptyLoadingText(
   for (const leaf of contentLeaves(slide.content, '', skipped)) {
     const { value, path } = leaf;
     if (!path.includes('.') && isDeclaredOption(def, path, value)) continue;
-    if (keep.fields.has(heldKey(type, path, value))) held.push(leaf);
-    else if (value !== '') judged.push(leaf);
+    const fallback = typeof value === 'string' ? '' : undefined;
+    if (keep.fields.has(heldKey(type, path, value)))
+      held.push({ ...leaf, fallback });
+    else if (value !== '') judged.push({ ...leaf, fallback });
   }
+  return revertWhatLoads(judged, held, {
+    render: () => renderForLoads(slide, type, slideTypes),
+    budget,
+  });
+}
+
+/**
+ * Put back the fallback of every judged leaf that makes the render load
+ * something from another host the render with all of them at their fallback
+ * does not. A leaf is `{ holder, key, value, fallback }`; a fallback of
+ * `undefined` removes the key.
+ *
+ * The render with every judged leaf at its fallback is the base: what the
+ * type, the installation and the held values load. The slide as written is
+ * rendered once; when it loads no more than the base, every value stays.
+ *
+ * Otherwise a search halves the values: a group is rendered with only its
+ * own values in, the held ones at their fallback too, so a render costs the
+ * group rather than the slide. A group that loads nothing more than that bare
+ * render keeps its values; one that does is halved, down to the single value,
+ * which goes. A group the budget ({@link MAX_SEARCH_CHARS}) cannot pay for
+ * any more goes as well. One value that loads among 248 costs about sixteen
+ * small renders.
+ *
+ * Then the slide is rendered as it will be kept, the held values and the
+ * values that passed together: when that loads no more than the base, it is
+ * the answer, otherwise (values that only load together, across groups)
+ * every judged value falls back. So does every one when a render throws.
+ *
+ * @param {Array<{ holder: object, key: string|number, value: unknown, fallback: unknown }>} judged
+ * @param {Array<{ holder: object, key: string|number, value: unknown, fallback: unknown }>} held
+ * @param {{ render: () => string, budget: { left: number } }} opts
+ * @returns {object[]} the judged leaves that were put back to their fallback
+ */
+function revertWhatLoads(judged, held, { render, budget }) {
   if (!judged.length) return [];
-  const empty = (leaf) => {
-    if (typeof leaf.value === 'string') leaf.holder[leaf.key] = '';
-    else delete leaf.holder[leaf.key];
+  const fall = (leaf) => {
+    if (leaf.fallback === undefined) delete leaf.holder[leaf.key];
+    else leaf.holder[leaf.key] = leaf.fallback;
   };
   const restore = (leaf) => {
     leaf.holder[leaf.key] = leaf.value;
   };
-  const loads = () => loadSurfaces(renderForLoads(slide, type, slideTypes));
+  const loads = () => loadSurfaces(render());
   const charged = () => {
-    const html = renderForLoads(slide, type, slideTypes);
+    const html = render();
     budget.left -= html.length + RENDER_CHARGE;
     return loadSurfaces(html);
   };
-  const emptyAll = () => {
+  const fallAll = () => {
     held.forEach(restore);
-    judged.forEach(empty);
+    judged.forEach(fall);
     return judged;
   };
   try {
     const written = loads();
     if (written.size === 0) return [];
-    judged.forEach(empty);
+    judged.forEach(fall);
     const base = loads();
     judged.forEach(restore);
     if (addedLoads(written, base).count === 0) return [];
-    if (judged.length === 1) return emptyAll();
+    if (judged.length === 1) return fallAll();
 
-    judged.forEach(empty);
-    held.forEach(empty);
+    judged.forEach(fall);
+    held.forEach(fall);
     const bare = charged();
     const passed = [];
     const search = (group) => {
       if (budget.left <= 0) return;
       group.forEach(restore);
       const adds = addedLoads(charged(), bare).count > 0;
-      group.forEach(empty);
+      group.forEach(fall);
       if (!adds) passed.push(...group);
       else if (group.length > 1) halve(group);
     };
@@ -684,11 +711,11 @@ function emptyLoadingText(
 
     held.forEach(restore);
     passed.forEach(restore);
-    if (passed.length && addedLoads(loads(), base).count > 0) return emptyAll();
+    if (passed.length && addedLoads(loads(), base).count > 0) return fallAll();
     const kept = new Set(passed);
     return judged.filter((leaf) => !kept.has(leaf));
   } catch {
-    return emptyAll();
+    return fallAll();
   }
 }
 
@@ -778,6 +805,99 @@ export function dropForeignMedia(
     }
   }
   return unusable;
+}
+
+// ── A translation ───────────────────────────────────────────────────────────
+
+/** A slide folded the way a read folds it, as a copy, and its type. */
+function foldedCopy(slide, slideTypes) {
+  const [folded] = migratePresentation({
+    slides: [structuredClone(slide)],
+  }).slides;
+  return { folded, type: slideType(folded, slideTypes).type };
+}
+
+/**
+ * Hold a translation to what its source loads (DY-868): a text the model
+ * translated may not make the slide load from another host what the slide
+ * with the source text in that place does not. Mutates the translated slides.
+ *
+ * A translation is the model's answer turned into slide content, but the
+ * {@link dropForeignMedia} reading of "held" does not fit it: a translated
+ * sentence is a different string from its source, so it is never held, and
+ * a person's markup that the translation carries over (an `<img>` from a
+ * partner's site in a text a database type renders as markup) would go. So
+ * the comparison is the render, and what a judged text falls back to is the
+ * source text in the same place ({@link revertWhatLoads}): the slide then
+ * loads what its source loaded, the version stays complete, and the field
+ * reads as the same as its source in the translation view, which is where a
+ * person sees that it was not translated.
+ *
+ * A slide of a type the map does not know keeps its source in every text the
+ * model wrote: it renders as a placeholder today, and as its fields again
+ * when the type is back, so the render cannot judge it.
+ *
+ * Only the texts the model wrote are judged: what the target already held (a
+ * person's own text in that language, the machine values a version carries)
+ * stays as it is and counts in the base. Media fields and `ai: false` fields
+ * need no rule of their own here: the translation offers and accepts the
+ * declared text fields of the organization's types only, so it never writes
+ * a media field, and an `ai: false` text is a person's prose translated,
+ * judged by the render like every other text.
+ *
+ * @param {Array<{ slide: object, source: object|null|undefined, paths: Array<Array<string|number>> }>} translations
+ *   per translated slide: the slide, the slide it was translated from, and
+ *   the content paths whose text the model wrote
+ * @param {object} opts
+ * @param {Record<string, object>} opts.slideTypes - the merged slide-type map
+ * @returns {Array<{ slide: object, path: Array<string|number> }>} the texts
+ *   put back to their source
+ */
+export function holdTranslationToSource(translations, { slideTypes } = {}) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError('holdTranslationToSource: pass the slide-type map');
+  }
+  if (!sanitizerReady()) {
+    throw new Error(
+      `holdTranslationToSource: the slide sanitizer is not initialized (initSanitizer()${sanitizerFailure ? `: ${sanitizerFailure.message}` : ''})`,
+    );
+  }
+  const budget = { left: MAX_SEARCH_CHARS };
+  const reverted = [];
+  for (const { slide, source, paths } of translations || []) {
+    if (!slide?.content || typeof slide.content !== 'object') continue;
+    const judged = [];
+    for (const path of paths || []) {
+      if (!Array.isArray(path) || !path.length) continue;
+      const holder = valueAtPath(slide.content, path.slice(0, -1));
+      const key = path.at(-1);
+      const value = holder && typeof holder === 'object' ? holder[key] : null;
+      if (typeof value !== 'string' || value === '') continue;
+      const before = valueAtPath(source?.content, path);
+      const fallback = typeof before === 'string' ? before : '';
+      if (value === fallback) continue;
+      judged.push({ holder, key, value, fallback, path });
+    }
+    // A type the map does not know (one taken out of publication, or a map
+    // that failed to load) renders as a placeholder that loads nothing, so
+    // the render cannot judge it, and the slide renders its fields again the
+    // day its type is back. Every text the model wrote keeps its source.
+    if (!Object.hasOwn(slideTypes, foldedCopy(slide, slideTypes).type)) {
+      for (const leaf of judged) {
+        leaf.holder[leaf.key] = leaf.fallback;
+        reverted.push({ slide, path: leaf.path });
+      }
+      continue;
+    }
+    const render = () => {
+      const { folded, type } = foldedCopy(slide, slideTypes);
+      return renderForLoads(folded, type, slideTypes);
+    };
+    for (const leaf of revertWhatLoads(judged, [], { render, budget })) {
+      reverted.push({ slide, path: leaf.path });
+    }
+  }
+  return reverted;
 }
 
 /**

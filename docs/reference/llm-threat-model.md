@@ -136,18 +136,28 @@ can reuse an image or embed the deck holds and bring none of its own.
 
 ### Translation
 
-| Entry                                                                                                                                          | Starter                   | Author of the text                                                                                                                                                          | Sink                                                                                                       |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `POST /api/presentations/:id/translate`, `POST /api/v1/presentations/:id/translate`, the translate queue worker (dormant: nothing enqueues it) | Auth with write; key `ai` | The **whole stored deck** as JSON, one call per batch (`server/utils/openai/translate.js`), plus the **organization admin's translation instructions** in the system prompt | Only translated values for declared per-language keys are accepted; persisted through `updatePresentation` |
-| `POST …/translate/missing`                                                                                                                     | Auth with write           | The missing strings as a path map                                                                                                                                           | Written by path; persisted                                                                                 |
-| `POST …/translate/fields`                                                                                                                      | Auth with write           | A **field map the client sends**                                                                                                                                            | Returned only                                                                                              |
+| Entry                                                                                                                                          | Starter                   | Author of the text                                                                                                                                                          | Sink                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/presentations/:id/translate`, `POST /api/v1/presentations/:id/translate`, the translate queue worker (dormant: nothing enqueues it) | Auth with write; key `ai` | The **whole stored deck** as JSON, one call per batch (`server/utils/openai/translate.js`), plus the **organization admin's translation instructions** in the system prompt | Only translated values for the per-language keys of the organization's types are accepted, held to the source's loads; persisted through `updatePresentation` |
+| `POST …/translate/missing`                                                                                                                     | Auth with write           | The missing strings as a path map                                                                                                                                           | Written by path, held to the source's loads; persisted                                                                                                        |
+| `POST …/translate/fields`                                                                                                                      | Auth with write           | A **field map the client sends**                                                                                                                                            | Returned only                                                                                                                                                 |
 
 Deck content and the admin's reference
 (`server/utils/openai/translation-instructions.js`) are both fenced as data,
 and that module's comment says what that is worth: "Fencing is not a security
 boundary against malicious text." What bounds the answer is structural:
 the writer accepts only strings, only for keys the type declares as text (or
-stores as prose), never a URL, enum, number or image field.
+stores as prose), never a URL, enum, number or media field. The type is read
+off the organization's slide-type map (`buildMergedSlideTypes`), and the scan
+for missing translations, the blank a new version starts from, the provenance
+record and the model call read the same map: core's alone does not know a
+type from the database, so every string of such a slide read as text to
+translate, its image and `mediaRef` fields included (DY-868). A translated
+text is then held to what its source loads (finding 3): one that makes the
+slide load from another host what the source text in that place did not
+keeps the source text (`holdTranslationToSource`), and the answer counts
+those in `heldBack`. `translate/fields` returns suggestions the person takes
+over in the editor, so what lands is a person's write.
 `translateShortText` in the same module has no callers.
 
 ### Media
@@ -277,8 +287,9 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   each candidate), a `<` or a character reference `{{raw}}` decodes into one
   of those. So a media value the model wrote and the slides did not hold is
   checked for what it may hold rather than against a list to refuse: a
-  `data:` value of base64 and percent-encoded characters, or letters,
-  digits and `-._~/%?=#:+`. **A field the type withholds**
+  `data:image/` value of base64 and percent-encoded characters (any other
+  `data:` value is a document or a stream of its own, such as an HLS
+  playlist Chrome plays), or letters, digits and `-._~/%?=#:+`. **A field the type withholds**
   (`ai: false`, such as a video's Bunny library): an answer that fills it
   gets back what the given slides held there (a list included), or the
   type's default, which carries the installation's configuration. The
@@ -411,7 +422,11 @@ says what it touches; the exact form follows with its fix.
    model wrote that a type renders into a load (markup through `{{raw}}`, a
    value in an attribute) is emptied, read off the rendered slide, and a
    field a type withholds from the model gets back what was held or the
-   type's default (DY-863).
+   type's default (DY-863). Translation is one of those paths: it reads the
+   organization's types, so it never writes a media field, and a translated
+   text that makes its slide load what the source text there did not keeps
+   the source text, read off the two renders; a slide of a type the map does
+   not know keeps the source in every text the model wrote (DY-868).
 4. **A plan could reach further than the slides the starter named.** A
    deck-wide iteration and a compression plan applied `remove` and `replace`
    on any index, MCP stored that before the agent saw it, and a slide title
@@ -516,7 +531,10 @@ What pins the controls above today, and the gaps per finding:
   the parser refuses counts as a load). The planted set carries markup into
   a database type's text and attribute and a Bunny library of the model's
   own onto every path that offers such a type, and every form of planted
-  markup is rendered through the sanitizer.
+  markup is rendered through the sanitizer. Translation is driven on each
+  of its writers (the editor's `translate` and `translate/missing`, v1, the
+  queue worker) with a model that plants a host in a database type's image,
+  `mediaRef` and `ai: false` fields and in its markup.
 - Authorization: `tests/mcp/mcp-tool-permissions.test.js` (every tool
   declares a permission).
 

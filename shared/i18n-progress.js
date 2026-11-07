@@ -204,13 +204,16 @@ export function pickVersion(pres, lang) {
  * makes a fresh version look "already translated" to the missing-scan.
  *
  * @param {{title?: string, slides?: any[]}} source
+ * @param {Object} [opts]
+ * @param {Object} [opts.slideTypes] - slide-type registry, as for
+ *   {@link slideTextRows}: the blank must empty the fields the scan reads
  * @returns {{title: string, slides: any[]}}
  */
-export function buildBlankTargetFromSource(source) {
+export function buildBlankTargetFromSource(source, { slideTypes } = {}) {
   const slides = Array.isArray(source?.slides) ? source.slides : [];
   const outSlides = slides.map((s, idx) => {
     const type = typeof s?.type === 'string' ? s.type : '';
-    const spec = textFieldSpecForType(type);
+    const spec = textFieldSpecForType(type, slideTypes);
     const srcContent =
       s?.content && typeof s.content === 'object' ? s.content : {};
     const nextContent = { ...srcContent };

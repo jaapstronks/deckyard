@@ -443,6 +443,7 @@ test('the contracts answer in their own envelope', async (t) => {
   assert.deepEqual(job, {
     from: 'nl',
     to: 'it',
+    heldBack: 0,
     presentationId: DECK_ID,
     success: true,
     ownerEmail: OWNER_EMAIL,
