@@ -287,7 +287,11 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   `server/export/edition-input.js` refuses any frame and any non-`data:` URL
   at publish time. **Exports fetch server-side** through the SSRF guard, which
   blocks private and metadata addresses and accepts public hosts, so a public
-  URL an author chose is requested from the server's own address.
+  URL an author chose is requested from the server's own address. What the
+  export fetches is what a browser would load: its embed pass reads the
+  document's CSS only (`style` attributes, `<style>` and SVG presentation
+  attributes, through an HTML parser and a CSS tokenizer), so a `url(...)` in
+  a title, a body or an alt text stays text and is never requested (DY-865).
 - **Links.** Markdown links allow `https?:` only and no images; `url` fields
   are checked at write time, and renderers re-check the scheme at render time.
 - **Destructive edits.** A model's plan never removes a slide and writes
@@ -411,7 +415,9 @@ says what it touches; the exact form follows with its fix.
    model wrote that a type renders into a load (markup through `{{raw}}`, a
    value in an attribute) is emptied, read off the rendered slide, and a
    field a type withholds from the model gets back what was held or the
-   type's default (DY-863).
+   type's default (DY-863). An export read `url(...)` anywhere in the
+   rendered document, text included, and fetched it server-side; it now reads
+   only the document's CSS, so model text is data on that path too (DY-865).
 4. **A plan could reach further than the slides the starter named.** A
    deck-wide iteration and a compression plan applied `remove` and `replace`
    on any index, MCP stored that before the agent saw it, and a slide title

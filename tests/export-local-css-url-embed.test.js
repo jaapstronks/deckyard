@@ -69,13 +69,13 @@ test('a local url() outside the asset roots is left alone', async () => {
   // Widening *where* an asset may be referenced from must not widen *which*
   // files can be read: the roots are the same allow-list as the <img src> pass.
   const html = `<span style="--x:url(/etc/passwd)"></span>`;
-  const out = await embedLocalCssUrls(repoRoot, html);
+  const out = await embedImgSrcDataUrls(repoRoot, html);
   assert.equal(out, html);
 });
 
 test('a local url() traversing out of an asset root is left alone', async () => {
   const html = `<span style="--x:url(/assets/../../../etc/passwd)"></span>`;
-  const out = await embedLocalCssUrls(repoRoot, html);
+  const out = await embedImgSrcDataUrls(repoRoot, html);
   assert.equal(out, html);
 });
 
@@ -96,11 +96,11 @@ test('under /client/ only the vendored icon SVGs inline (B261)', async () => {
   // The renderer emits icon URLs itself, so every export carries them; the
   // rest of the client tree is code, and a url() naming it stays as written.
   const icon = `<span style="--icg-icon-url:url(/client/vendor/lucide-icons/activity.svg)"></span>`;
-  const inlined = await embedLocalCssUrls(repoRoot, icon);
+  const inlined = await embedImgSrcDataUrls(repoRoot, icon);
   assert.ok(inlined.includes('data:image/svg+xml;base64,'));
 
   const code = `<span style="--x:url(/client/lib/dom.js)"></span>`;
-  assert.equal(await embedLocalCssUrls(repoRoot, code), code);
+  assert.equal(await embedImgSrcDataUrls(repoRoot, code), code);
   const img = `<img src="/client/lib/dom.js">`;
   assert.equal(await embedImgSrcDataUrls(repoRoot, img), img);
 });

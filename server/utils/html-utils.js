@@ -6,13 +6,16 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { JSDOM } from 'jsdom';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { isServedAssetRef } from '../../shared/slide-types/deck-assets.js';
 import { isIconUrl } from '../../shared/icon-names.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { resolveServedPath } from './served-asset-path.js';
 import { isRemoteHttpUrl, safeFetchRemoteImage } from './ssrf-guard.js';
 import { mapLimit, exportEmbedConcurrency } from './map-limit.js';
 import { createLogger } from './logger.js';
+import { cssUrlReferences, rewriteCssUrls } from './css-urls.js';
 
 const log = createLogger('html-utils');
 
@@ -195,7 +198,22 @@ export async function embedImgSrcDataUrls(
   html,
   { transform = null, embedRemote = false, cache = null } = {},
 ) {
-  const s = String(html || '');
+  // CSS first, while the document is still small: only what a browser reads
+  // as CSS (see cssRegionsOfHtml). Remote url() is the safety net for a
+  // custom-HTML slide's `background-image:url('http://…')`, which the
+  // field-level embed pass and the <img src> net below both miss; left intact
+  // it reaches headless Chrome at setContent → server-side fetch (SSRF), so it
+  // is inlined through the guard or blanked (only with embedRemote, the
+  // export/render path; docs/reference/security-posture.md § SSRF guard on
+  // server-side image fetches). Local url() — a CSS mask or background
+  // pointing at an asset of this install — runs on every path, for the same
+  // reason as the <img src> pass: the document has no base URL once it
+  // reaches headless Chrome.
+  const s = await embedCssUrlsInHtml(repoRoot, String(html || ''), {
+    embedRemote,
+    transform,
+    cache,
+  });
   const uniq = new Map();
   for (const m of s.matchAll(LOCAL_SRC_RE)) {
     if (isRenderAssetRef(m[1])) uniq.set(m[1], true);
@@ -238,39 +256,98 @@ export async function embedImgSrcDataUrls(
     }
   }
 
-  // Safety net for CSS backgrounds: a custom-HTML slide can carry
-  // `background-image:url('http://…')` in its style, which the field-level
-  // embed pass and the <img src> net above both miss. Left intact it reaches
-  // headless Chrome at setContent → server-side fetch (SSRF). Inline remote
-  // url() through the same guard, or blank it so nothing is fetched. Only runs
-  // on the export/render path (embedRemote). See
-  // docs/reference/security-posture.md § SSRF guard on server-side image fetches.
-  if (embedRemote) {
-    out = await embedRemoteCssUrls(repoRoot, out, { transform, cache });
-  }
-
-  // Local `url(...)` — a CSS mask or background pointing at an asset of this
-  // install. Runs on the same paths as the <img src> pass above, because it has
-  // the same reason to exist: the document has no base URL once it reaches
-  // headless Chrome.
-  out = await embedLocalCssUrls(repoRoot, out, { transform, cache });
-
   return out;
 }
 
-/** Match a CSS `url(...)` whose target is a remote http(s) URL, capturing the
- *  optional matching quote and the URL. */
-const REMOTE_CSS_URL_RE = /url\(\s*(['"]?)(https?:\/\/[^)'"]+)\1\s*\)/gi;
+/** A remote http(s) target of a CSS `url(...)`. */
+const REMOTE_URL_RE = /^https?:\/\//i;
 
 /** Match a root-relative `src="…"`; {@link isRenderAssetRef} decides. */
 const LOCAL_SRC_RE = /\ssrc="(\/[^"]+)"/g;
 
-/** Match a root-relative CSS `url(...)`; {@link isRenderAssetRef} decides. */
-const LOCAL_CSS_URL_RE = /url\(\s*(['"]?)(\/[^)'"]+)\1\s*\)/gi;
+/**
+ * The local `url(...)` targets in some CSS texts that may be inlined, mapped
+ * to their data URL. An allowed asset that could not be read maps to itself
+ * and is named in a warning: unresolvable is better than silently rewritten,
+ * and it shows up in the export as the same missing asset it already was. Not
+ * silently, though: the same refusal form as an unreadable font (B542, D278).
+ *
+ * Same predicate and containment check as the `<img src>` pass, so a `url()`
+ * widens *where* a local asset may be referenced from, not *which* files can
+ * be read.
+ *
+ * @param {string} repoRoot
+ * @param {string[]} cssTexts
+ * @param {Object} opts
+ * @returns {Promise<Map<string, string>>}
+ */
+async function localCssUrlMap(repoRoot, cssTexts, { transform, cache }) {
+  const uniq = new Set();
+  for (const css of cssTexts) {
+    for (const { url } of cssUrlReferences(css)) {
+      if (url.startsWith('/') && isRenderAssetRef(url)) uniq.add(url);
+    }
+  }
+  const urls = [...uniq];
+  const datas = await mapLimit(urls, exportEmbedConcurrency(), (url) =>
+    toDataUrlIfLocal(repoRoot, url, { transform, cache }),
+  );
+  const map = new Map(urls.map((u, i) => [u, datas[i] || u]));
+  for (const [url, data] of map) {
+    if (data === url) {
+      log.warn(`Not inlining ${url}: local asset unresolvable or unreadable`);
+    }
+  }
+  return map;
+}
+
+/** Apply a {@link localCssUrlMap} to one CSS text. */
+function rewriteLocalCssUrls(css, map) {
+  if (!map.size) return css;
+  return rewriteCssUrls(css, (url) => {
+    const data = map.get(url);
+    return data && data !== url ? `url('${data}')` : undefined;
+  });
+}
 
 /**
- * Inline local `url(...)` targets — in a stylesheet or in a `style` attribute —
- * as data URLs.
+ * The remote `url(...)` targets in some CSS texts, mapped to what the SSRF
+ * guard made of them: a data URL, or `''` when the fetch was blocked or
+ * failed.
+ *
+ * @param {string} repoRoot
+ * @param {string[]} cssTexts
+ * @param {Object} opts
+ * @returns {Promise<Map<string, string>>}
+ */
+async function remoteCssUrlMap(repoRoot, cssTexts, { transform, cache }) {
+  const uniq = new Set();
+  for (const css of cssTexts) {
+    for (const { url } of cssUrlReferences(css)) {
+      if (REMOTE_URL_RE.test(url)) uniq.add(url);
+    }
+  }
+  const urls = [...uniq];
+  const datas = await mapLimit(urls, exportEmbedConcurrency(), (url) =>
+    // embedRemote inlines through the guard or returns '' (stripped).
+    toDataUrlIfLocal(repoRoot, url, { embedRemote: true, transform, cache }),
+  );
+  return new Map(urls.map((u, i) => [u, datas[i] || '']));
+}
+
+/** Apply a {@link remoteCssUrlMap} to one CSS text: a blocked or failed
+ *  target becomes `url('')`, so Chrome fetches nothing. */
+function rewriteRemoteCssUrls(css, map) {
+  if (!map.size) return css;
+  return rewriteCssUrls(css, (url) => {
+    if (!map.has(url)) return undefined;
+    const data = map.get(url);
+    return data ? `url('${data}')` : "url('')";
+  });
+}
+
+/**
+ * Inline local `url(...)` targets in a CSS text as data URLs.
  *
  * The export HTML reaches headless Chrome through `setContent()`, so the
  * document has no base URL and a root-relative path resolves to nothing. For
@@ -281,11 +358,12 @@ const LOCAL_CSS_URL_RE = /url\(\s*(['"]?)(\/[^)'"]+)\1\s*\)/gi;
  * and the chip rendered as the bare `background-color` — a solid dark square
  * where the icon should be, in every PDF and PNG export.
  *
- * Same predicate and containment check as the `<img src>` pass, so this widens
- * *where* a local asset may be referenced from, not *which* files can be read.
+ * CSS text only (a stylesheet, the theme vars). Markup goes through
+ * {@link embedImgSrcDataUrls}, which reads the CSS out of it first: in markup,
+ * a `url(...)` in a title or an alt text is text (DY-865).
  *
  * @param {string} repoRoot
- * @param {string} html
+ * @param {string} cssText
  * @param {Object} [opts]
  * @param {Function} [opts.transform] - Optional image-bytes transform.
  * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
@@ -293,49 +371,14 @@ const LOCAL_CSS_URL_RE = /url\(\s*(['"]?)(\/[^)'"]+)\1\s*\)/gi;
  */
 export async function embedLocalCssUrls(
   repoRoot,
-  html,
+  cssText,
   { transform = null, cache = null } = {},
 ) {
-  const s = String(html || '');
-  const uniq = new Set();
-  for (const m of s.matchAll(LOCAL_CSS_URL_RE)) {
-    if (isRenderAssetRef(m[2])) uniq.add(m[2]);
-  }
-  if (!uniq.size) return s;
-
-  const urls = [...uniq];
-  const datas = await mapLimit(urls, exportEmbedConcurrency(), (url) =>
-    toDataUrlIfLocal(repoRoot, url, { transform, cache }),
-  );
-  const map = new Map(urls.map((u, i) => [u, datas[i]]));
-  // An asset that could not be read keeps its original url(): unresolvable is
-  // better than silently rewritten, and it shows up in the export as the same
-  // missing-asset it already was. Not silently, though: a warning names the
-  // path, the same refusal form as an unreadable font (B542, D278).
-  for (const url of urls) {
-    const data = map.get(url);
-    if (!data || data === url) {
-      log.warn(`Not inlining ${url}: local asset unresolvable or unreadable`);
-    }
-  }
-
-  return s.replace(LOCAL_CSS_URL_RE, (whole, _q, url) => {
-    const data = map.get(url);
-    return data && data !== url ? `url('${data}')` : whole;
-  });
+  const css = String(cssText || '');
+  const map = await localCssUrlMap(repoRoot, [css], { transform, cache });
+  return rewriteLocalCssUrls(css, map);
 }
 
-/**
- * Inline (or blank) remote `url(...)` targets in a CSS/HTML string through the
- * SSRF guard, so a user-supplied background URL never reaches headless Chrome.
- * A blocked/failed fetch becomes `url('')` (Chrome fetches nothing).
- * @param {string} repoRoot
- * @param {string} html
- * @param {Object} [opts]
- * @param {Function} [opts.transform] - Optional image-bytes transform.
- * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
- * @returns {Promise<string>}
- */
 /**
  * Neutralize every `url(...)` in a stylesheet for a self-contained export:
  * remote targets go through the SSRF guard (inlined, or blanked so nothing is
@@ -361,34 +404,130 @@ export async function embedCssUrlsForExport(
   cssText,
   { transform = null, cache = null } = {},
 ) {
-  const remoteEmbedded = await embedRemoteCssUrls(repoRoot, cssText, {
+  const css = String(cssText || '');
+  const remote = await remoteCssUrlMap(repoRoot, [css], { transform, cache });
+  const remoteEmbedded = rewriteRemoteCssUrls(css, remote);
+  const local = await localCssUrlMap(repoRoot, [remoteEmbedded], {
     transform,
     cache,
   });
-  return embedLocalCssUrls(repoRoot, remoteEmbedded, { transform, cache });
+  return rewriteLocalCssUrls(remoteEmbedded, local);
 }
 
-async function embedRemoteCssUrls(
+const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+
+/**
+ * The CSS in an HTML string, as a browser reads it, with where it stands in
+ * that string: the text of every `<style>` element, every `style` attribute,
+ * and every attribute of an SVG or MathML element (SVG reads its presentation
+ * attributes, `fill="url(…)"` and the like, as CSS). An attribute comes back
+ * decoded, the way the browser decodes it. Text and the other HTML
+ * attributes are not CSS: a `url(...)` in a title, a body or an alt text is
+ * data, and loads nothing (DY-865). `<template>` content counts, as a runtime
+ * may stamp it.
+ *
+ * Read with an HTML parser, never a regex over the document: the parser
+ * decides what is markup and what is text the same way the browser does.
+ *
+ * @param {string} html
+ * @returns {Array<{ start: number, end: number, css: string,
+ *   attribute: boolean }>} In document order. For an attribute, `start..end`
+ *   spans `name="value"`; for a `<style>`, its text.
+ */
+export function cssRegionsOfHtml(html) {
+  const dom = new JSDOM(html, { includeNodeLocations: true });
+  const regions = [];
+  const visit = (root) => {
+    for (const element of root.querySelectorAll('*')) {
+      const loc = dom.nodeLocation(element);
+      if (!loc) continue;
+      if (element.localName === 'style' && loc.startTag && loc.endTag) {
+        regions.push({
+          start: loc.startTag.endOffset,
+          end: loc.endTag.startOffset,
+          css: element.textContent,
+          attribute: false,
+        });
+      }
+      const foreign = element.namespaceURI !== HTML_NAMESPACE;
+      for (const { name, value } of element.attributes) {
+        if (!foreign && name.toLowerCase() !== 'style') continue;
+        const at = loc.attrs?.[name] || loc.attrs?.[name.toLowerCase()];
+        if (!at) continue;
+        regions.push({
+          start: at.startOffset,
+          end: at.endOffset,
+          css: value,
+          attribute: true,
+        });
+      }
+      if (element.localName === 'template') visit(element.content);
+    }
+  };
+  visit(dom.window.document);
+  return regions.sort((a, b) => a.start - b.start);
+}
+
+/**
+ * A value as it is written back between double quotes: as is when nothing in
+ * it needs a character reference, which keeps the inlined `url('…')` readable.
+ */
+function inAttribute(value) {
+  return /[&"]/.test(value) ? escapeHtml(value) : value;
+}
+
+/**
+ * Inline (or blank) the `url(...)` targets of the CSS in an HTML string:
+ * local ones always, remote ones through the SSRF guard with `embedRemote`.
+ * Only the CSS {@link cssRegionsOfHtml} finds is read and rewritten; every
+ * other byte of the document stays as written, a region that does not change
+ * included.
+ *
+ * @param {string} repoRoot
+ * @param {string} html
+ * @param {Object} opts
+ * @returns {Promise<string>}
+ */
+async function embedCssUrlsInHtml(
   repoRoot,
   html,
-  { transform = null, cache = null } = {},
+  { embedRemote, transform, cache },
 ) {
-  const s = String(html || '');
-  const uniq = new Set();
-  for (const m of s.matchAll(REMOTE_CSS_URL_RE)) uniq.add(m[2]);
-  if (!uniq.size) return s;
-
-  const urls = [...uniq];
-  const datas = await mapLimit(urls, exportEmbedConcurrency(), (url) =>
-    // embedRemote inlines through the guard or returns '' (stripped).
-    toDataUrlIfLocal(repoRoot, url, { embedRemote: true, transform, cache }),
+  // Every url() needs a `(`: in the source, or as a character reference an
+  // attribute decodes to one. Without either there is nothing to read.
+  if (!html.includes('(') && !/&(?:lpar;|#0*40;|#x0*28;)/i.test(html)) {
+    return html;
+  }
+  const regions = cssRegionsOfHtml(html).filter(
+    (r) => cssUrlReferences(r.css).length,
   );
-  const map = new Map(urls.map((u, i) => [u, datas[i]]));
+  if (!regions.length) return html;
 
-  return s.replace(REMOTE_CSS_URL_RE, (_m, _q, url) => {
-    const data = map.get(url);
-    return data ? `url('${data}')` : "url('')";
+  const cssTexts = regions.map((r) => r.css);
+  const remote = embedRemote
+    ? await remoteCssUrlMap(repoRoot, cssTexts, { transform, cache })
+    : new Map();
+  const remoteEmbedded = cssTexts.map((css) =>
+    rewriteRemoteCssUrls(css, remote),
+  );
+  const local = await localCssUrlMap(repoRoot, remoteEmbedded, {
+    transform,
+    cache,
   });
+
+  let out = '';
+  let at = 0;
+  regions.forEach((region, i) => {
+    const css = rewriteLocalCssUrls(remoteEmbedded[i], local);
+    if (css === region.css || region.start < at) return;
+    const source = html.slice(region.start, region.end);
+    const written = region.attribute
+      ? `${source.slice(0, source.indexOf('=') + 1)}"${inAttribute(css)}"`
+      : css;
+    out += html.slice(at, region.start) + written;
+    at = region.end;
+  });
+  return out + html.slice(at);
 }
 
 /**
