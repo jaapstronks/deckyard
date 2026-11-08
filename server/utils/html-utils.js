@@ -431,7 +431,7 @@ const SVG_URL_ATTRIBUTES = new Set([
 
 /**
  * The CSS in an HTML string, as a browser reads it, with where it stands in
- * that string: the text of every `<style>` element, every `style` attribute,
+ * that string: the text of CSS `<style>` elements, every `style` attribute,
  * and SVG URL presentation attributes (`fill="url(…)"` and the like).
  * An attribute comes back decoded, the way the browser decodes it. Text and the other HTML
  * attributes are not CSS: a `url(...)` in a title, a body or an alt text is
@@ -453,7 +453,16 @@ export function cssRegionsOfHtml(html) {
     for (const element of root.querySelectorAll('*')) {
       const loc = dom.nodeLocation(element);
       if (!loc) continue;
-      if (element.localName === 'style' && loc.startTag && loc.endTag) {
+      // HTML and SVG style elements execute CSS only with an absent/empty
+      // type or an ASCII-case-insensitive text/css. Do not trim or accept
+      // MIME parameters: Chrome treats those values as inert text too.
+      const styleType = element.getAttribute('type') || '';
+      if (
+        element.localName === 'style' &&
+        /^(?:text\/css)?$/i.test(styleType) &&
+        loc.startTag &&
+        loc.endTag
+      ) {
         regions.push({
           start: loc.startTag.endOffset,
           end: loc.endTag.startOffset,

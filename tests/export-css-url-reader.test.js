@@ -202,3 +202,46 @@ for (const value of [
     assert.ok(!out.includes(HOST), out);
   });
 }
+
+// Active controls pin both the remote fetch and the local file-read pass.
+for (const namespace of ['html', 'svg']) {
+  for (const type of [
+    null,
+    '',
+    'text/css',
+    'TEXT/CSS',
+    'text/plain',
+    'text/less',
+    ' text/css',
+    'text/css ',
+    'text/css;charset=utf-8',
+  ]) {
+    test(`${namespace} style type ${JSON.stringify(type)} controls CSS embedding`, async () => {
+      const active =
+        type === null || type === '' || type.toLowerCase() === 'text/css';
+      const remote = `https://${HOST}/typed.png`;
+      const local = '/client/vendor/lucide-icons/star.svg';
+      const style = `<style${type === null ? '' : ` type="${type}"`}>.x{background:url(${remote});mask:url(${local})}</style>`;
+      const html =
+        namespace === 'svg'
+          ? `<svg>${style}<rect class="x" /></svg>`
+          : `${style}<div class="x">x</div>`;
+      const out = await embedImgSrcDataUrls(repoRoot, html, {
+        embedRemote: true,
+        cache: new Map(),
+      });
+      assert.deepEqual(fetchedFromHost(), active ? [remote] : []);
+      if (active) {
+        assert.ok(out.includes('data:image/png;base64,'), out);
+        assert.ok(out.includes('data:image/svg+xml;base64,'), out);
+        assert.ok(!out.includes(remote) && !out.includes(local), out);
+      } else {
+        assert.equal(
+          out,
+          html,
+          'inert text, including its local URL, stays byte for byte',
+        );
+      }
+    });
+  }
+}
