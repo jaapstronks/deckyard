@@ -1,4 +1,7 @@
 import { envInt } from '../config/utils.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
+
+const offlinePages = new WeakSet();
 
 /** Puppeteer raises a TimeoutError (name === 'TimeoutError') on timeout. */
 function isTimeoutError(err) {
@@ -43,6 +46,21 @@ export function exportRenderTimeoutMs() {
  * @returns {Promise<void>}
  */
 export async function loadExportDocument(page, html, { label, hint = '' }) {
+  // All required assets have already been embedded by the guarded server
+  // passes. Block sinks the CSS reader does not cover (imports, frames, etc.)
+  // before parsing, and keep the boundary through capture and page disposal.
+  if (!offlinePages.has(page)) {
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+      if (request.isInterceptResolutionHandled()) return;
+      const allowed = /^(?:data:|about:)/i.test(request.url());
+      fireAndForget(
+        allowed ? request.continue() : request.abort(),
+        'export request interception',
+      );
+    });
+    offlinePages.add(page);
+  }
   const timeout = exportRenderTimeoutMs();
   page.setDefaultTimeout(timeout);
   try {
