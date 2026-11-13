@@ -4,6 +4,33 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.104.0](https://github.com/jaapstronks/deckyard/compare/v1.103.0...v1.104.0) (2026-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Fork impact of #2012. `imagesInBatch` is removed from server/utils/ai/source-images.js; use `heldInSlides` (renamed from `mediaInSlides` in #2017; it returns `{ media, fields }`) from server/utils/ai/model-media.js. `convertSlideWithAi(slide, toType, { slideTypes })` and `analyzePresentation(pres, { slideTypes })` throw a TypeError without the merged type map. `resolveSourceImages` returns `{ used, unusable }`; a caller that composes model slides passes `unusable` to `leaveOut`. An AI-generated embed slide, or a video slide whose source is a URL, is left out with a warning (`_aiWarnings`, on MCP and v1 `warnings`); MCP `append_slides` can answer `appended: 0`, and single-slide iterate and convert can answer 502 `bad_gateway`. Core renderers of image, background, embed and video fields read through the new `mediaValue()` (shared/slide-types/helpers.js), so a non-string renders nothing; a fork type with its own reading of such a field should use it. The background layer renders no background for a value with an apostrophe, a backslash, a control character, or one the URL parser refuses. No route, tool or parameter changes; openapi.yaml is unchanged.
+* `imagesInBatch` is removed from server/utils/ai/source-images.js; use `heldInSlides` (renamed from `mediaInSlides` in #2017; it returns `{ media, fields }`) from server/utils/ai/model-media.js. `convertSlideWithAi` and `analyzePresentation` require `slideTypes` in their options. `resolveSourceImages` also returns `unusable`, the slides its caller leaves out. An AI-generated embed slide, or a video slide with a URL, is no longer stored with the address the model wrote: generation, append and iterate leave that slide out and say so in the warnings. A slide background whose value the URL parser refuses, or whose CSS string cannot carry it, renders no background.
+
+### Fixed
+
+* a nested list is checked as deep on a new item as on a stored one ([#2015](https://github.com/jaapstronks/deckyard/issues/2015)) ([68d1681](https://github.com/jaapstronks/deckyard/commit/68d16819e112ae19cc55004058f5275ef856a7a1))
+* a video slide exports to PDF and PNG as the slide itself (DY-871) ([#2026](https://github.com/jaapstronks/deckyard/issues/2026)) ([c52de24](https://github.com/jaapstronks/deckyard/commit/c52de24aeb61142b7c16fe98446e7b98be65eed6))
+* an image URL with a broken percent sequence no longer breaks the render (DY-866) ([#2022](https://github.com/jaapstronks/deckyard/issues/2022)) ([f7955f2](https://github.com/jaapstronks/deckyard/commit/f7955f254c3aea46804be505f9ccede29b98febf))
+* every collab peer hears which field did not save ([#2013](https://github.com/jaapstronks/deckyard/issues/2013)) ([1a12f99](https://github.com/jaapstronks/deckyard/commit/1a12f99709d87d05f1da9b3a8140a7a8b38f14ee))
+
+
+### Security
+
+* a model's answer brings no remote media of its own ([7eed4d7](https://github.com/jaapstronks/deckyard/commit/7eed4d7491bb52a09796c521b779be3cafb468f1))
+* a model's answer loads nothing beyond the media fields either (DY-863) ([#2017](https://github.com/jaapstronks/deckyard/issues/2017)) ([8e3cf15](https://github.com/jaapstronks/deckyard/commit/8e3cf15521473e1da5a69b3e506426856832f6b9))
+* the export fetches only what its CSS loads, not text (DY-865) ([#2023](https://github.com/jaapstronks/deckyard/issues/2023)) ([6de6314](https://github.com/jaapstronks/deckyard/commit/6de631453cb724187e3296c3506bfce17bd38860))
+
+
+### Changed
+
+* release the model-media rule as a beta minor ([adc23dc](https://github.com/jaapstronks/deckyard/commit/adc23dc986cf3e162d353672658e6b420e1442ed))
+
 ## [1.103.0](https://github.com/jaapstronks/deckyard/compare/v1.102.0...v1.103.0) (2026-11-06)
 
 
