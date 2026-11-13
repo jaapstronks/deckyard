@@ -156,16 +156,15 @@ test(
   async () => {
     // The family bound, not a single symptom. Every slide type below sets a blurred
     // shadow outside the `--slide-shadow-*` tokens and therefore needs its own
-    // `@media print` rule: poll already had one, the timeline did not, and the
-    // video placeholder's `.vpdf-screen`/`.vpdf-base` live in the
-    // export CSS itself (`PDF_DOC_CSS` in server/export/pdf-slides.js). A new type
+    // `@media print` rule: poll already had one, the timeline did not. The video
+    // slide's PDF still carried two (a laptop frame) until DY-871 drew it as the
+    // slide's own frame; it stays here so a shadow added back fails. A new type
     // that repeats the pattern fails here rather than in someone's Preview.
     const theme = await seedThemeConfig('amethyst');
     const deck = {
       title: 'Alles wat een schaduw draagt',
       slides: [
-        // No `source`: the placeholder renders its laptop frame without a poster
-        // fetch, which is exactly the part that carries the shadows.
+        // No `source`: the still frame renders without a poster fetch.
         { id: 'v', type: 'video-slide', content: { title: 'Video' } },
         {
           id: 'p',

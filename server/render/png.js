@@ -20,7 +20,7 @@ import {
 } from '../utils/script-chain.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import { settleRenderedPage } from '../utils/settle-rendered-page.js';
-import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
+import { staticVideoContext } from '../export/static-video.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import {
   loadExportCssBundle,
@@ -91,15 +91,16 @@ export async function buildSlidePngHtml(
     }
   }
 
-  let slideHtml =
-    cloned?.type === 'video-slide'
-      ? await renderVideoSlidePngHtml(cloned)
-      : renderSlideHtml(cloned, {
-          theme,
-          slideTypes,
-          stripEditorAttrs: true,
-          lang,
-        });
+  let slideHtml = renderSlideHtml(cloned, {
+    theme,
+    slideTypes,
+    stripEditorAttrs: true,
+    lang,
+    staticVideo: await staticVideoContext(cloned, {
+      transform: imageTransform,
+      cache,
+    }),
+  });
   const styleContent = buildExportStyleContent(css, [PNG_DOC_CSS]);
   // Cap each <img src> at a retina margin over the size it is drawn at, so a
   // gallery thumbnail does not embed at full-bleed resolution. The 1600x900
