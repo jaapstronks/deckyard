@@ -6,15 +6,34 @@ A video slide can't play inside a static PDF. When a deck is exported to PDF
 
 ## What the placeholder looks like
 
-- **Left:** a laptop outline (CSS chrome, not hand-authored path data) framing
-  a still of the video with a play badge overlaid. The still reuses the video's
+The page is the slide itself, with the player swapped for a still. The export
+renders the video slide through `renderSlideHtml` like every other slide and
+hands it `ctx.staticVideo`; the slide type then draws, instead of the iframe:
+
+- **The same ground, title and frame.** The background is the slide's own
+  (`bgClass(content.background)`, including a theme's named variants and their
+  contrast class, gradients and background images); the title sits where the
+  slide puts it; the frame has the embed's position and size.
+- **A still in the frame**, with a play badge over it. The still is the video's
   own thumbnail/poster where one can be resolved (Bunny/YouTube/Vimeo); when it
-  can't, a neutral gradient stands in. See
+  can't, a neutral dark gradient stands in, still with the badge. See
   [How the still is resolved](#how-the-still-is-resolved-server-side).
-- **Right:** copy in the deck's language explaining this is a video slide, plus
-  the live URL where the video can be watched. The printed link text drops the
-  scheme (`go.ciiic.nl/our-video`, not `https://go.ciiic.nl/our-video`) because a
-  reader has to read or retype it; the `href` keeps the full URL.
+- **A caption under the frame (PDF only)**: one line in the deck's language
+  with the live URL where the video can be watched, in the slide's muted text
+  colour and its link colour (`--slide-link`), so it reads on a dark variant as
+  well as on a light ground. The link is clickable in the PDF. The printed link
+  text drops the scheme (`go.ciiic.nl/our-video`, not
+  `https://go.ciiic.nl/our-video`) because a reader has to read or retype it;
+  the `href` keeps the full URL. With no URL the caption says the video is not
+  available online. Only an http(s) address becomes a link.
+
+The frame may give up some height (the still is cropped, not squeezed) so that
+under a title that wraps to two lines the caption stays on the page. The PNG
+export draws the same frame without the caption: a picture cannot be clicked.
+
+A fork that overrides `video-slide` with its own `renderHtml` takes this over
+too: a renderer that ignores `ctx.staticVideo` puts its player markup in the
+export, which a static page cannot play.
 
 ## How the still is resolved (server-side)
 
@@ -112,10 +131,14 @@ shared one instead.
 
 ## Code
 
-- `server/export/video-watch-url.js` — URL resolver (the ladder above).
-- `server/export/pdf-slides.js` — `renderVideoSlidePdfHtml()` builds the
-  placeholder page and its scoped CSS (`.vpdf-*`).
-- `server/export/video-thumbnail.js` — poster resolution + inlining (shared with
-  the PNG export).
-- `server/utils/video-slide-html.js` — the PNG placeholder markup.
-- Tests: `tests/video-watch-url.test.js`, `tests/video-thumbnail.test.js`.
+- `shared/slide-types/types/video-slide/static-frame.js` - the still frame and
+  the watch caption; `video-slide.js` renders it when `ctx.staticVideo` is set.
+  Its CSS (`.video-frame--still`, `.video-still`, `.video-play`,
+  `.video-caption`) is in `client/styles/slides/02-content-and-media/20-video.css`.
+- `server/export/static-video.js` - `staticVideoContext()`: the poster and, for
+  the PDF, the watch URL, resolved before the slide renders. One call per export
+  path (`pdf-slides.js`, `png-slides.js`, `server/render/png.js`).
+- `server/export/video-watch-url.js` - URL resolver (the ladder above).
+- `server/export/video-thumbnail.js` - poster resolution + inlining.
+- Tests: `tests/video-static-frame.test.js`, `tests/video-watch-url.test.js`,
+  `tests/video-thumbnail.test.js`.

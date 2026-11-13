@@ -15,9 +15,7 @@ import {
   detectLayoutRuntimeNeeds,
 } from '../utils/script-chain.js';
 import { getAppBaseUrl } from '../config/utils.js';
-import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
-import { resolveVideoWatchUrl } from './video-watch-url.js';
-import { getSlideCopy } from '../../shared/slide-types/slide-copy.js';
+import { staticVideoContext } from './static-video.js';
 import {
   loadExportCssBundle,
   buildExportStyleContent,
@@ -32,98 +30,8 @@ import {
 import { rasterizeGradientBackgrounds } from './gradient-raster.js';
 
 /**
- * Render a video slide as a static "watch online" placeholder for PDF export.
- *
- * A video can't play in a PDF, so instead of the live embed we render a
- * laptop-framed still (with a play badge) on the left and, on the right, copy
- * in the deck language pointing the reader at a live URL. The URL is resolved
- * server-side by {@link resolveVideoWatchUrl} (published deck deep-link →
- * provider URL → none). See docs/reference/video-slide-pdf-export.md.
- *
- * @param {object} slide - The video slide.
- * @param {object} opts
- * @param {object} opts.pres - The presentation (for its published state).
- * @param {number} opts.slideIndex - 0-based export index (for the deck deep-link).
- * @param {string} opts.baseUrl - Public base URL (from getAppBaseUrl()).
- * @param {string} opts.docLang - Normalised document language.
- * @param {Function} [opts.transform] - Image-bytes transform for the still.
- * @param {Map<string, Promise<string>>} [opts.cache] - Per-run embed cache.
- * @returns {Promise<string>} HTML for one PDF page.
- */
-async function renderVideoSlidePdfHtml(
-  slide,
-  { pres, slideIndex, baseUrl, docLang, transform = null, cache = null },
-) {
-  const content = slide && typeof slide === 'object' ? slide.content : {};
-  const title = String(content?.title || '').trim();
-  const bg = content?.background === 'lime' ? 'slide-bg-lime' : 'slide-bg-mist';
-  const copy = getSlideCopy(docLang);
-
-  const titleHtml = title
-    ? `<div class="heading vpdf-title">${escapeHtml(title)}</div>`
-    : `<div class="heading vpdf-title vpdf-kicker">${escapeHtml(copy.videoPdfKicker)}</div>`;
-
-  // The still: the video's own poster, fetched and inlined here rather than left
-  // as a remote <img src> for the generic embed pass. Bunny's CDN 403s a request
-  // without a referer, so that pass would silently drop it. See video-thumbnail.js.
-  const thumbnailDataUrl = await resolveVideoThumbnailDataUrl(content, {
-    transform,
-    cache,
-  });
-  const stillHtml = thumbnailDataUrl
-    ? `<img class="vpdf-still" src="${escapeHtml(thumbnailDataUrl)}" alt="${escapeHtml(
-        title || copy.videoPdfKicker,
-      )}" />`
-    : `<div class="vpdf-still vpdf-still--empty"></div>`;
-
-  // Left: a laptop outline (CSS chrome, not path data) framing the still, with
-  // a play badge overlaid to read as "this is a video".
-  const deviceHtml = `
-    <div class="vpdf-laptop">
-      <div class="vpdf-screen">
-        ${stillHtml}
-        <div class="vpdf-play" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        </div>
-      </div>
-      <div class="vpdf-base"></div>
-    </div>
-  `;
-
-  // Right: deck-language copy + the resolved watch URL (or a "not online" line).
-  // Printed link text drops the scheme (and a trailing slash): the reader has to
-  // read or retype it, and `https://` is noise in both cases. The href keeps it.
-  const { url } = resolveVideoWatchUrl(slide, pres, { baseUrl, slideIndex });
-  const linkText = String(url || '')
-    .replace(/^https?:\/\//i, '')
-    .replace(/\/$/, '');
-  const linkHtml = url
-    ? `<p class="vpdf-lead">${escapeHtml(copy.videoPdfLead)}</p>
-       <a class="vpdf-url" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-         linkText,
-       )}</a>`
-    : `<p class="vpdf-lead">${escapeHtml(copy.videoPdfNoUrl)}</p>`;
-
-  return `
-    <div class="slide slide-video vpdf ${bg}">
-      <div class="slide-inner vpdf-grid">
-        <div class="vpdf-left">
-          ${deviceHtml}
-        </div>
-        <div class="vpdf-right">
-          ${titleHtml}
-          <div class="vpdf-copy">
-            ${linkHtml}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-/**
- * Document CSS that never varies with the deck: the video-slide placeholder,
- * the native-size page/stage boxes and the print rules.
+ * Document CSS that never varies with the deck: the native-size page/stage
+ * boxes and the print rules.
  *
  * Hoisted out of the document template so the gradient raster can probe the
  * *real* cascade before the document exists. A pseudo-element layer only paints
@@ -131,83 +39,6 @@ async function renderVideoSlidePdfHtml(
  * the theme CSS alone would measure a layer that is not laid out yet.
  */
 const PDF_DOC_CSS = `
-      /*
-       * Video-slide "watch online" placeholder. A video can't play in a PDF, so
-       * we render a laptop-framed still on the left and deck-language copy + a
-       * live watch URL on the right. Laid out for the native 1600x900 canvas.
-       */
-      .slide-video.vpdf .vpdf-grid {
-        display: grid;
-        grid-template-columns: 1.05fr 0.95fr;
-        gap: 90px;
-        align-items: center;
-        height: 100%;
-        box-sizing: border-box;
-        padding: 110px 130px;
-      }
-      .vpdf-left { display: flex; align-items: center; justify-content: center; }
-      /* Laptop: a screen bezel over a tapered base bar. Simple boxes, no path data. */
-      .vpdf-laptop { width: 100%; max-width: 620px; }
-      .vpdf-screen {
-        position: relative;
-        aspect-ratio: 16 / 9;
-        border: 14px solid #1b1f1e;
-        border-radius: 18px;
-        background: #0b0f0e;
-        overflow: hidden;
-        box-shadow: 0 24px 60px rgba(0,0,0,0.28);
-      }
-      .vpdf-still {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-      .vpdf-still--empty {
-        background: linear-gradient(135deg, #2a312f 0%, #11201a 100%);
-      }
-      .vpdf-play {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 128px;
-        height: 128px;
-        border-radius: 50%;
-        background: rgba(0,0,0,0.55);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-      }
-      .vpdf-play svg { width: 56px; height: 56px; margin-left: 8px; }
-      .vpdf-base {
-        width: 118%;
-        height: 26px;
-        margin: 0 auto;
-        margin-left: -9%;
-        background: #1b1f1e;
-        border-radius: 0 0 16px 16px;
-        box-shadow: 0 10px 22px rgba(0,0,0,0.22);
-      }
-      .vpdf-right { min-width: 0; }
-      .slide-video.vpdf .vpdf-title { margin: 0 0 26px; }
-      .vpdf-title.vpdf-kicker { opacity: 0.72; }
-      .vpdf-lead {
-        font-size: 34px;
-        line-height: 1.4;
-        margin: 0 0 24px;
-      }
-      .vpdf-url {
-        display: inline-block;
-        font-size: 30px;
-        font-weight: 600;
-        word-break: break-all;
-        text-decoration: underline;
-      }
-
       /* Make browsers preserve colors as much as possible in print/PDF */
       html, body {
         -webkit-print-color-adjust: exact;
@@ -274,15 +105,6 @@ const PDF_DOC_CSS = `
         .pdf-toolbar { display: none !important; }
         .pdf-page {
           margin: 0;
-          box-shadow: none;
-        }
-        /* Same reason .pdf-page drops its shadow here: Chrome turns a blurred
-           box-shadow into a transparency group behind an /SMask << /S /Luminosity >>,
-           and CoreGraphics (Preview, Quick Look, all of PDFKit) paints that group's
-           bounding box solid instead of compositing it. On screen - the
-           /export/pdf-slides preview - the shadows are fine and stay. */
-        .vpdf-screen,
-        .vpdf-base {
           box-shadow: none;
         }
         @page {
@@ -360,23 +182,21 @@ export async function buildSlidesPdfHtml(
     cache: embedCache,
   });
 
+  // A video cannot play in a PDF: the video slide renders its poster in the
+  // embed's box with a caption pointing at where it can be watched.
   const slidesHtml = await Promise.all(
     slides.map(async (s, i) =>
-      s?.type === 'video-slide'
-        ? renderVideoSlidePdfHtml(s, {
-            pres,
-            slideIndex: i,
-            baseUrl,
-            docLang,
-            transform: imageTransform,
-            cache: embedCache,
-          })
-        : renderSlideHtml(s, {
-            theme,
-            slideTypes,
-            stripEditorAttrs: true,
-            lang: resolveDeckLang(pres),
-          }),
+      renderSlideHtml(s, {
+        theme,
+        slideTypes,
+        stripEditorAttrs: true,
+        lang: resolveDeckLang(pres),
+        staticVideo: await staticVideoContext(s, {
+          transform: imageTransform,
+          cache: embedCache,
+          watch: { pres, baseUrl, slideIndex: i },
+        }),
+      }),
     ),
   );
 

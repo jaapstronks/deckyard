@@ -12,6 +12,7 @@ import {
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 import { bunnyPlayerColors } from './video-slide/player-colors.js';
+import { renderStaticVideoFrame } from './video-slide/static-frame.js';
 
 export default {
   structure: 'singleton',
@@ -149,6 +150,26 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
+    const wrap = (frame) => `
+        <div class="slide slide-video ${bg}">
+          <div class="slide-inner">
+            ${title}
+            ${frame}
+          </div>
+        </div>
+      `;
+
+    // An output where the video cannot play (the PDF and PNG exports) asks for
+    // the poster in the embed's own box instead of the player: same ground,
+    // same title, same frame, so the page still reads as this slide.
+    if (ctx?.staticVideo) {
+      return wrap(
+        renderStaticVideoFrame(ctx.staticVideo, {
+          alt: pickAltText({ explicit: content?.title, hardFallback: 'Video' }),
+          lang: ctx?.lang,
+        }),
+      );
+    }
 
     const sourceRaw = mediaValue(content?.source);
 
@@ -245,13 +266,6 @@ export default {
             </div>
           `;
 
-    return `
-        <div class="slide slide-video ${bg}">
-          <div class="slide-inner">
-            ${title}
-            ${frame}
-          </div>
-        </div>
-      `;
+    return wrap(frame);
   },
 };

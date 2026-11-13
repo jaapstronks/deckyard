@@ -183,12 +183,11 @@ const NAME_BRANCH_EXEMPTIONS = {
     'A per-type renderer table — a row per type is what it is, not a list a ' +
     'type can fall out of unnoticed. Already accounted for in the branching ' +
     'inventory (tests/helpers/slide-type-name-branching.js).',
-  'server/export/pdf-slides.js':
-    'Answers a different question: a video slide has no still frame, so the ' +
-    'PDF draws a poster instead of a player. That is about rasterising a ' +
-    'video, not about which fidelity tier a type gets.',
-  'server/export/png-slides.js':
-    'Same question as pdf-slides.js, same answer, other raster target.',
+  'server/export/static-video.js':
+    'Answers a different question: a video cannot play in a PDF or PNG, so ' +
+    'the export hands the video slide a poster to draw instead of a player ' +
+    '(ctx.staticVideo). That is about rasterising a video, not about which ' +
+    'fidelity tier a type gets. The one place the PDF and PNG paths ask it.',
 };
 
 /**
