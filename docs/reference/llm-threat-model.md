@@ -267,10 +267,11 @@ https:`, `media-src`, `connect-src` and `frame-src` likewise open to any
   no writing. The render the rule reads is the server's (parse5 under
   jsdom, DOMPurify on it), and that is what a viewer gets: a database type
   and a fork type always render on the server (`triggerServerRender`,
-  `OVERRIDDEN_CORE_SLIDE_TYPE_NAMES`). The browser's sanitizer reads some
-  markup differently (the content of a `<select>`, which Chrome's parser
-  keeps and parse5 drops), so a type that rendered model text in the browser
-  would need its own judgment. **A media value that holds more than one
+  `OVERRIDDEN_CORE_SLIDE_TYPE_NAMES`). The two parsers do not read all
+  markup alike; the one known difference, the content of a `<select>` (which
+  Chrome's parser keeps and parse5 drops), the sanitizer drops on both sides
+  (DY-867, `tests/sanitizer-select-content.test.js`). A type that rendered
+  model text in the browser would still need its own judgment. **A media value that holds more than one
   address**: a type that writes its own image field into a CSS `url()`, a
   `srcset` or `{{raw}}` markup reads a second address after a quote, a
   parenthesis, white space, a leading comma (a `srcset` skips commas before
