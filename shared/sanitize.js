@@ -130,6 +130,18 @@ const SLIDE_FORBID_TAGS = [
 const SLIDE_FORBID_ATTR = ['srcdoc', 'ping', 'formaction', 'action'];
 
 /**
+ * Forbidden tags whose content goes too, not only the tag (DY-867). A
+ * forbidden tag otherwise keeps its children, and for `select` the two
+ * parsers disagree on what those are: parse5 (the server) drops markup inside
+ * a select, Chrome's parser keeps it since the customizable select. The same
+ * author HTML then kept an `<img>`, `<video poster>` or `style` with `url()`
+ * in the browser that the server never saw. Dropping the content makes both
+ * sides keep the same nothing. The other forbidden tags parse alike on both
+ * sides; their text (a button label, say) stays.
+ */
+const SLIDE_FORBID_CONTENTS = ['select'];
+
+/**
  * Sanitize raw author HTML for a custom-HTML slide.
  *
  * Permissive by design (full HTML + SVG + MathML structural markup, class/id/
@@ -222,6 +234,7 @@ const SLIDE_HTML_CONFIG = Object.freeze({
   ADD_ATTR: ['target'],
   FORBID_TAGS: SLIDE_FORBID_TAGS,
   FORBID_ATTR: SLIDE_FORBID_ATTR,
+  ADD_FORBID_CONTENTS: SLIDE_FORBID_CONTENTS,
   ALLOW_DATA_ATTR: true,
 });
 

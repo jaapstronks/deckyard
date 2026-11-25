@@ -47,9 +47,10 @@
  *   in the same field of the same type, stays: that load was a person's.
  *   The render read is the server's (parse5 under jsdom, with DOMPurify),
  *   and that is what a viewer gets: a database type and a fork type always
- *   render on the server. The browser's sanitizer keeps some markup the
- *   server's drops (the content of a `<select>`), so a type that rendered a
- *   model's text in the browser would need a judgment of its own.
+ *   render on the server. The two parsers do not read all markup alike; the
+ *   one known difference, the content of a `<select>`, the sanitizer drops on
+ *   both sides (DY-867). A type that rendered a model's text in the browser
+ *   would still need a judgment of its own.
  * - **A field the type keeps from the model** (`ai: false`, such as the
  *   Bunny library of a video). The catalog does not offer it; an answer that
  *   fills it anyway keeps only what the given slides held there, or the
