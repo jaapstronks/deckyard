@@ -71,6 +71,9 @@ export function createEditorTopbar({
   // menu.
   onOpenTranslateView,
   collabLanguage,
+  // After another language version is on screen (DY-874): the save notice
+  // speaks about that version's problems.
+  onVersionShown,
 } = {}) {
   const detachers = [];
 
@@ -153,6 +156,8 @@ export function createEditorTopbar({
     toast,
     collabLanguage,
     onOpenTranslateView,
+    slideTypes,
+    onVersionShown,
   });
 
   // ============================================================
@@ -612,6 +617,7 @@ export function createEditorTopbar({
     setPresenceNames,
     syncLangUi: languageMode.syncLangUi,
     revealRefusedVersion: languageMode.revealRefusedVersion,
+    leaveRemovedVersion: languageMode.leaveRemovedVersion,
     syncUndoButtons,
     syncAnalyticsAvailability,
     openNotesQr,

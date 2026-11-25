@@ -619,6 +619,20 @@ summary.ghost-icon-btn::-webkit-details-marker {
   min-width: 15rem;
 }
 
+@media (max-width: 480px) {
+  /* Hung from the trigger's right edge, the menu ran 48px off the left of a
+     320px screen and cut every row's first word (DY-874). On a phone it spans
+     the screen between the gutters instead; `top` stays at its static
+     position, under the trigger. */
+  .lang-menu .dropdown-menu {
+    position: fixed;
+    left: var(--ps-space-2);
+    right: var(--ps-space-2);
+    top: auto;
+    min-width: 0;
+  }
+}
+
 .lang-menu-item.is-active {
   font-weight: 600;
   background: hsl(var(--app-bg-hover));

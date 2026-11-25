@@ -99,6 +99,13 @@ export function createSaveStatus(options = {}) {
       feedback.setRefused(fields);
       setStatus(...(settled || ['saved']));
     },
+    /**
+     * Redraw the settled status for the version now on screen: a switch to
+     * another language version shows that version's review notice (DY-874).
+     */
+    refresh() {
+      if (!savingTimer) setStatus(...(settled || ['saved']));
+    },
     detach() {
       clearSavingTimer();
       feedback.detach();

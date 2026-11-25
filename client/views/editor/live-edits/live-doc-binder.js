@@ -934,6 +934,19 @@ export function createLiveDocBinder({
 
     const nextLangs = codec.getDocLangs(doc);
     if (!jsonEq(nextLangs, shadow.langs)) {
+      // A language the doc carried and no longer does was removed (DY-874):
+      // its buffer goes too, or the next local sync would add it back
+      // (`applyI18nToDoc` is additive). Only a language the doc *had* counts:
+      // a version this client just created is not in the doc yet.
+      const versions = isPlainObject(pres.i18n?.versions)
+        ? pres.i18n.versions
+        : null;
+      for (const l of shadow.langs) {
+        if (nextLangs.includes(l) || !versions) continue;
+        delete versions[l];
+        if (isPlainObject(pres.i18n.translation))
+          delete pres.i18n.translation[l];
+      }
       shadow.langs = nextLangs;
       refreshVersionBuffers();
       metaChanged = true;

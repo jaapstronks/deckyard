@@ -42,6 +42,7 @@ import {
 } from '../../../../shared/i18n-progress.js';
 import { setQueryParams } from '../../../lib/state/router.js';
 import { setTopbarTitleText } from './title-button.js';
+import { qualityIssueCounts } from '../save-feedback.js';
 
 /**
  * Create the language menu component.
@@ -62,6 +63,10 @@ import { setTopbarTitleText } from './title-button.js';
  * @param {Function} options.toast - Toast notifications
  * @param {(targetLang?: string) => void} [options.onOpenTranslateView] - Open
  *   the side-by-side view, with a newly created language as its target
+ * @param {object} [options.slideTypes] - The slide-type registry, for the
+ *   stored-quality count per version
+ * @param {() => void} [options.onVersionShown] - After another version is on
+ *   screen, so the save notice can speak about that version's own problems
  * @returns {object} Language menu controller
  */
 export function createLanguageMode({
@@ -85,6 +90,8 @@ export function createLanguageMode({
   // `{ loadLanguageVersion(lang) => presLike|null }`
   collabLanguage = null,
   onOpenTranslateView,
+  slideTypes = null,
+  onVersionShown,
 } = {}) {
   const errorMessage = (e) => String(e?.message || e || '').trim();
 
@@ -155,7 +162,7 @@ export function createLanguageMode({
    * action, never a side effect of opening a version: the "Make this the source
    * version" row below the list is the only thing that does it.
    */
-  const versionItem = (lang, { active, progress }) => {
+  const versionItem = (lang, { active, progress, issues }) => {
     const isActive = lang === active;
     const row = h('button', {
       class: `dropdown-item lang-menu-item${isActive ? ' is-active' : ''}`,
@@ -170,6 +177,28 @@ export function createLanguageMode({
     row.append(
       h('span', { class: 'lang-menu-name', text: getLangDisplayName(lang) }),
     );
+
+    // Problems in a version that is not on screen wait here (DY-874); the one
+    // on screen has the save notice.
+    const toReview = isActive ? 0 : issues?.[lang] || 0;
+    if (toReview) {
+      row.append(
+        h('span', {
+          class: 'lang-menu-status is-review',
+          text: t('editor.lang.reviewCount', '{n} to review', {
+            n: String(toReview),
+          }),
+          title: t(
+            'editor.lang.reviewCountTitle',
+            {
+              one: '1 text here no longer meets its field’s rules. Open this version to review it.',
+              many: '{count} texts here no longer meet their field’s rules. Open this version to review them.',
+            },
+            { count: toReview },
+          ),
+        }),
+      );
+    }
 
     if (lang === progress.dominant) {
       row.append(
@@ -315,6 +344,124 @@ export function createLanguageMode({
       text: t('editor.lang.makeSource', 'Make this the source version'),
     });
 
+  /**
+   * Remove a language version (DY-874), after a confirmation.
+   *
+   * Unsaved edits are saved first, so the server removes the version from the
+   * deck as the author sees it, and the version on screen is left for the
+   * source first when it is the one going. The server stores the deck as a
+   * version-history snapshot before it writes, which is what the confirmation
+   * promises. A deck left with one version is a one-language deck: no counts,
+   * no other version to report on.
+   */
+  const removeVersion = async (lang, { onStatus } = {}) => {
+    const dominant = normalizeLang(pres?.i18n?.dominant);
+    if (!lang || lang === dominant || !pres?.i18n?.versions?.[lang]) return;
+    const name = getLangDisplayName(lang);
+    const ok = await confirmModal(root || document.body, {
+      title: t('editor.lang.removeTitle', 'Remove the {lang} version', {
+        lang: name,
+      }),
+      message: t(
+        'editor.lang.removeConfirm',
+        'Every {lang} text in this deck is removed, for everyone editing it. The {source} version stays as it is. The deck as it is now is kept in version history, so you can restore it from there.',
+        { lang: name, source: getLangDisplayName(dominant) },
+      ),
+      confirmLabel: t('editor.lang.removeConfirmBtn', 'Remove version'),
+      danger: true,
+    });
+    if (!ok) return;
+
+    if (activeLang() === lang) {
+      await switchLanguageMode(dominant, { onStatus });
+      if (activeLang() === lang) return;
+    }
+    if (isDirty?.()) {
+      await requestSave?.();
+      if (isDirty?.()) {
+        onStatus?.({
+          level: 'error',
+          msg: t(
+            'editor.lang.removeAborted',
+            'Could not save; the {lang} version was not removed.',
+            { lang: name },
+          ),
+        });
+        return;
+      }
+    }
+
+    let result;
+    try {
+      result = await api(
+        `/api/presentations/${id}/languages/${encodeURIComponent(lang)}`,
+        { method: 'DELETE' },
+      );
+    } catch (e) {
+      onStatus?.({ level: 'error', msg: errorMessage(e) });
+      return;
+    }
+    // The server answered with the deck as stored; locally only the version
+    // and its translation status go, and the revision moves with the write.
+    delete pres.i18n.versions[lang];
+    if (pres.i18n.translation && typeof pres.i18n.translation === 'object')
+      delete pres.i18n.translation[lang];
+    applyServerMeta(result?.presentation);
+    syncLangUi();
+    onVersionShown?.();
+    onStatus?.({
+      level: 'success',
+      msg: t(
+        'editor.lang.removeDone',
+        'The {lang} version was removed. The deck before the removal is in version history.',
+        { lang: name },
+      ),
+    });
+  };
+
+  /** The "Remove {lang} version…" row, one per version but the source. */
+  const removeItem = (lang) =>
+    h('button', {
+      class: 'dropdown-item lang-menu-action lang-menu-remove',
+      type: 'button',
+      onclick: () => {
+        closeMenu();
+        removeVersion(lang, { onStatus: toastStatus });
+      },
+      text: t('editor.lang.remove', 'Remove {lang} version…', {
+        lang: getLangDisplayName(lang),
+      }),
+    });
+
+  /**
+   * Leave a version someone else removed while it was on screen: the editor
+   * moves to the source version, and says why. A no-op while the version on
+   * screen still exists.
+   * @returns {Promise<boolean>} Whether the editor moved.
+   */
+  const leaveRemovedVersion = async () => {
+    const active = activeLang();
+    if (!pres?.i18n?.versions || pres.i18n.versions[active]) return false;
+    const dominant = normalizeLang(pres.i18n.dominant);
+    if (!dominant || dominant === active) return false;
+    const moved = await loadLanguageIntoView(dominant, {
+      onStatus: toastStatus,
+    });
+    if (moved)
+      toastStatus({
+        level: 'info',
+        msg: t(
+          'editor.lang.removedElsewhere',
+          'The {lang} version was removed. You are now editing the {source} version.',
+          {
+            lang: getLangDisplayName(active),
+            source: getLangDisplayName(dominant),
+          },
+        ),
+      });
+    return moved;
+  };
+
   /** One menu row under "Add language…": a workspace language with no version yet. */
   const addItem = (lang) =>
     h('button', {
@@ -335,7 +482,10 @@ export function createLanguageMode({
     const active = activeLang();
     const progress = translationProgress(pres);
     const listed = listedLangs();
-    const items = listed.map((lang) => versionItem(lang, { active, progress }));
+    const issues = slideTypes ? qualityIssueCounts(pres, slideTypes) : {};
+    const items = listed.map((lang) =>
+      versionItem(lang, { active, progress, issues }),
+    );
 
     // Directly under the list it belongs to: the row it moves the "source"
     // badge onto is the one the eye just passed.
@@ -358,6 +508,16 @@ export function createLanguageMode({
           text: t('editor.translateView.open', 'Translate side by side…'),
         }),
       );
+    }
+
+    // Removing is about a version the deck has, so it closes the part of the
+    // menu about those; the source version is never offered (DY-874).
+    const removable = listed.filter(
+      (l) => l !== progress.dominant && !!pres?.i18n?.versions?.[l],
+    );
+    if (removable.length) {
+      items.push(h('div', { class: 'dropdown-sep' }));
+      for (const lang of removable) items.push(removeItem(lang));
     }
 
     const addable = getSupportedLangs().filter((l) => !listed.includes(l));
@@ -470,6 +630,7 @@ export function createLanguageMode({
     setUrlLangParam(next);
     editorState.refreshAll();
     syncLangUi();
+    onVersionShown?.();
   };
 
   /** Show a refused off-screen buffer without asking the failing save again. */
@@ -593,6 +754,7 @@ export function createLanguageMode({
     el: langMenuWrapper,
     syncLangUi,
     revealRefusedVersion,
+    leaveRemovedVersion,
     detach: () => {
       langMenu.detach();
     },

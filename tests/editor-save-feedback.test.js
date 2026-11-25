@@ -14,7 +14,7 @@ Object.defineProperty(globalThis, 'navigator', {
 });
 const { createSaveStatus } =
   await import('../client/views/editor/save-status.js');
-const { savedQualityIssues } =
+const { savedQualityIssues, qualityIssueCounts } =
   await import('../client/views/editor/save-feedback.js');
 const slideTypes = {
   'text-slide': { fields: [{ key: 'title', type: 'string', maxLength: 5 }] },
@@ -139,6 +139,9 @@ test('retained old prose is saved with a review notice, not a save failure', () 
   const issues = savedQualityIssues(deck, slideTypes);
   assert.equal(issues.length, 1);
   assert.equal(issues[0].lang, 'en-GB');
+  // The notice speaks about the version being edited (DY-874).
+  deck.i18n.active = 'en-GB';
+  deck.slides = deck.i18n.versions['en-GB'].slides;
   const status = createSaveStatus({ pres: deck, slideTypes, onReveal() {} });
   status.setStatus('saved');
   assert.equal(status.el.hidden, false);
@@ -148,6 +151,25 @@ test('retained old prose is saved with a review notice, not a save failure', () 
   deck.i18n.versions['en-GB'].slides[0].content.title = 'Good';
   status.setStatus('saved');
   assert.equal(status.el.hidden, true);
+  status.detach();
+});
+
+test('a save in one language says nothing about a version the author is not in (DY-874)', () => {
+  // Dutch on screen, an English title over its limit: the Dutch save is quiet.
+  const deck = pres();
+  const status = createSaveStatus({ pres: deck, slideTypes, onReveal() {} });
+  status.setStatus('saved');
+  assert.equal(status.el.hidden, true, 'no notice about the English field');
+  status.setStatus('saved');
+  assert.equal(status.el.hidden, true, 'not after the next save either');
+  assert.deepEqual(qualityIssueCounts(deck, slideTypes), { 'en-GB': 1 });
+
+  // Opening the English version shows it without waiting for a save.
+  deck.i18n.active = 'en-GB';
+  deck.slides = deck.i18n.versions['en-GB'].slides;
+  status.refresh();
+  assert.equal(status.el.hidden, false);
+  assert.match(status.el.textContent, /English.*slide 1, field title/);
   status.detach();
 });
 

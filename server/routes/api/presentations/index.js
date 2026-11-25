@@ -21,6 +21,7 @@ import { handlePresentationDescriptionGenerate } from './description.js';
 import { handlePresentationTranslateFields } from './translate-fields.js';
 import { handlePresentationTranslateMissing } from './translate-missing.js';
 import { handlePresentationTranslate } from './translate.js';
+import { handlePresentationLanguageVersion } from './language-versions.js';
 import {
   handlePresentationVersions,
   handlePresentationVersionItem,
@@ -207,6 +208,15 @@ export const ROUTES = [
     captures: ['uuid'],
     handler: handlePresentationTranslate,
     feature: 'ai',
+  },
+
+  // Remove a language version (DY-874). The language is a deck-language
+  // code (`nl`, `en-GB`); the service refuses one the deck does not carry.
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/presentations\/([^/]+)\/languages\/([^/]+)$/,
+    captures: ['uuid', 'text'],
+    handler: handlePresentationLanguageVersion,
   },
 
   {
