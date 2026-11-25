@@ -37,11 +37,11 @@
   "email.activationReminder.expiry": "Deze uitnodigingslink is nog geldig.",
 
   "email.collaboratorInvite.subject": "{inviter} heeft \"{presTitle}\" met je gedeeld",
-  "email.collaboratorInvite.body": "<strong>{inviter}</strong> heeft je uitgenodigd om {permission} <strong>{presTitle}</strong>.",
+  "email.collaboratorInvite.body": "<strong>{inviter}</strong> heeft je uitgenodigd om <strong>{presTitle}</strong> {permission}.",
   "email.collaboratorInvite.button": "Presentatie openen",
   "email.collaboratorInvite.access": "Je hebt nu {accessLevel} tot deze presentatie.",
   "email.collaboratorInvite.permission.view": "te bekijken",
-  "email.collaboratorInvite.permission.comment": "te bekijken en te reageren op",
+  "email.collaboratorInvite.permission.comment": "te bekijken en erop te reageren",
   "email.collaboratorInvite.permission.edit": "te bewerken",
   "email.collaboratorInvite.permission.admin": "te bewerken en te beheren",
   "email.collaboratorInvite.accessLevel.view": "kijktoegang",

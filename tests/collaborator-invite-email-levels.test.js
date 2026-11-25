@@ -8,6 +8,9 @@
  * and the custom-template variables share. An unknown level is refused rather
  * than dressed up as "view".
  *
+ * Dutch puts the title before the verb ("om Q3 te bewerken"), in the HTML and
+ * in the plain-text part alike (DY-877).
+ *
  * Run with: node --test tests/collaborator-invite-email-levels.test.js
  */
 
@@ -33,14 +36,20 @@ const EXPECTED = {
     ],
   },
   nl: {
-    view: [/uitgenodigd om te bekijken </, /Je hebt nu kijktoegang/],
+    view: [
+      /uitgenodigd om <strong>Q3<\/strong> te bekijken\./,
+      /Je hebt nu kijktoegang/,
+    ],
     comment: [
-      /om te bekijken en te reageren op </,
+      /uitgenodigd om <strong>Q3<\/strong> te bekijken en erop te reageren\./,
       /Je hebt nu reactietoegang/,
     ],
-    edit: [/om te bewerken </, /Je hebt nu volledige bewerkingstoegang/],
+    edit: [
+      /uitgenodigd om <strong>Q3<\/strong> te bewerken\./,
+      /Je hebt nu volledige bewerkingstoegang/,
+    ],
     admin: [
-      /om te bewerken en te beheren </,
+      /uitgenodigd om <strong>Q3<\/strong> te bewerken en te beheren\./,
       /Je hebt nu volledige bewerk- en beheertoegang/,
     ],
   },
@@ -78,6 +87,13 @@ test('no level beyond view falls back to the view wording', () => {
       assert.notEqual(wording.accessLevel, view.accessLevel, permission);
       assert.notEqual(wording.permissionText, view.permissionText, permission);
     }
+  }
+});
+
+test('nl: the plain-text part names the title before the verb', () => {
+  for (const permission of ALL_PERMISSIONS) {
+    const { textContent } = build('nl', permission);
+    assert.match(textContent, /heeft je uitgenodigd om Q3 te /, permission);
   }
 });
 
