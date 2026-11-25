@@ -6,10 +6,23 @@ import { copyToClipboard } from '../../lib/dom/clipboard.js';
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 import { validateSlideFields } from '../../../shared/slide-types/presentation.js';
 
-/** Locate stored prose quality problems without treating them as failed saves. */
-export function savedQualityIssues(pres, slideTypes) {
+/**
+ * Locate stored prose quality problems without treating them as failed saves.
+ *
+ * With `lang`, only that language version is checked. The save notice asks
+ * for the version on screen only (DY-874): a version the author does not work
+ * in would otherwise come back after every save, so its problems wait in the
+ * language menu instead ({@link qualityIssueCounts}).
+ *
+ * @param {Object} pres
+ * @param {Object} slideTypes
+ * @param {{lang?: string}} [opts]
+ * @returns {Array<{slideId: string, lang: string, field: string, errors: string[]}>}
+ */
+export function savedQualityIssues(pres, slideTypes, { lang: only } = {}) {
   const issues = [];
   for (const [lang, version] of Object.entries(pres?.i18n?.versions || {})) {
+    if (only && lang !== only) continue;
     const slides = lang === pres.i18n.active ? pres.slides : version.slides;
     for (const slide of slides || []) {
       const opts = {
@@ -28,6 +41,21 @@ export function savedQualityIssues(pres, slideTypes) {
     }
   }
   return issues;
+}
+
+/**
+ * The number of stored quality problems per language version, for the quiet
+ * place a version that is not on screen reports them: its row in the language
+ * menu. Languages without problems are absent.
+ * @param {Object} pres
+ * @param {Object} slideTypes
+ * @returns {Record<string, number>}
+ */
+export function qualityIssueCounts(pres, slideTypes) {
+  const counts = {};
+  for (const { lang } of savedQualityIssues(pres, slideTypes))
+    counts[lang] = (counts[lang] || 0) + 1;
+  return counts;
 }
 
 /**
@@ -172,7 +200,7 @@ export function createSaveFeedback({
       const failed = status === 'error';
       const quality =
         !failed && status === 'saved'
-          ? savedQualityIssues(pres, slideTypes)
+          ? savedQualityIssues(pres, slideTypes, { lang: pres?.i18n?.active })
           : [];
       target = failed
         ? error?.details

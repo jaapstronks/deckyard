@@ -410,6 +410,7 @@ export async function createEditorController({
   let setSaveError = () => {};
   let addNormalizedFields = () => {};
   let setRefusedFields = () => {};
+  let refreshSaveNotice = () => {};
   // Bound to the topbar once it exists; the share dropdown fires its first
   // sync before that, and the topbar runs its own at mount.
   let syncAnalyticsAvailability = () => {};
@@ -828,6 +829,8 @@ export async function createEditorController({
     syncShareUi: dropdowns.syncShareUi,
     markDirty,
     onOpenOverview: openDeckOverview,
+    // Late-bound: the save status is built after the topbar (DY-874).
+    onVersionShown: () => refreshSaveNotice(),
     onOpenAiReview: openAiDeckReview,
     onOpenTranslateView: openTranslateView,
     // AI Analysis exists only where AI does: with AI off the server answers
@@ -854,6 +857,22 @@ export async function createEditorController({
   });
 
   topbarTitle = topbarApi.topbarTitleEl;
+
+  // A language version that disappears from under the editor (removed in
+  // another tab or by a collab peer, DY-874) leaves the menu and, when it was
+  // on screen, the editor. The signal fires on every inspector render, so the
+  // check is the set of version languages, not a rebuild per emit.
+  let versionLangsKey = Object.keys(pres.i18n?.versions || {}).join('|');
+  cleanup.register(
+    'removedLanguageVersion',
+    versionTextSignal.subscribe(() => {
+      const key = Object.keys(pres.i18n?.versions || {}).join('|');
+      if (key === versionLangsKey) return;
+      versionLangsKey = key;
+      topbarApi.syncLangUi();
+      topbarApi.leaveRemovedVersion();
+    }),
+  );
   syncAnalyticsAvailability = topbarApi.syncAnalyticsAvailability;
   cleanup.register('topbar', topbarApi.detach);
   shell.append(topbarApi.topbarEl);
@@ -888,6 +907,7 @@ export async function createEditorController({
   setSaveError = saveStatus.setError;
   addNormalizedFields = saveStatus.addNormalized;
   setRefusedFields = saveStatus.setRefused;
+  refreshSaveNotice = saveStatus.refresh;
   setSaveStatus(saveManager.getStatus(), saveManager.getLastError());
 
   // Let the undo manager drive the topbar undo/redo button states, and set the

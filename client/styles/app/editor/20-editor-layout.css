@@ -804,3 +804,15 @@
      slide canvas, where a 44px floor would break the slide's own layout
      rather than the chrome around it. */
 }
+
+/* The language menu's rows that belong to the editor (DY-874). Stored text in
+   a version that is not on screen and no longer meets its field's rules is
+   said on that version's row, quietly, instead of after every save; removing
+   a version is destructive, so its row carries the danger token. */
+.lang-menu-status.is-review {
+  color: hsl(var(--app-warning-text));
+}
+
+.lang-menu-action.lang-menu-remove {
+  color: hsl(var(--app-danger));
+}

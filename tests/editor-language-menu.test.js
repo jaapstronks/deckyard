@@ -125,8 +125,12 @@ const modalActions = () => [
 const sourceAction = (controller) =>
   controller.el.querySelector('.lang-menu-source-action') ?? undefined;
 
-/** `[label, status]` for every row, in menu order, sections separated by `--`. */
-function readMenu(controller) {
+/**
+ * `[label, status]` for every row, in menu order, sections separated by `--`.
+ * The "Remove … version" section (DY-874) is left out unless asked for: it
+ * has its own tests below, and the others are about the rows above it.
+ */
+function readMenu(controller, { withRemove = false } = {}) {
   const menu = controller.el.querySelector('.dropdown-menu');
   // A complete version shows a check icon and names it in .sr-only text.
   const statusOf = (status) =>
@@ -140,6 +144,16 @@ function readMenu(controller) {
     el.classList.contains('lang-menu-translate'),
   );
   if (translate >= 0) children.splice(translate - 1, 2);
+  if (!withRemove) {
+    const first = children.findIndex((el) =>
+      el.classList.contains('lang-menu-remove'),
+    );
+    if (first >= 0) {
+      let end = first;
+      while (children[end]?.classList.contains('lang-menu-remove')) end += 1;
+      children.splice(first - 1, end - first + 1);
+    }
+  }
   return children.map((el) => {
     if (el.classList.contains('dropdown-sep')) return '--';
     if (el.classList.contains('dropdown-help')) return `# ${el.textContent}`;
@@ -565,4 +579,156 @@ test('cancelling the confirmation leaves the source where it was', async () => {
   assert.equal(calls.markDirty, 0, 'nothing was marked dirty');
   assert.equal(calls.saves, 0, 'and nothing was saved');
   assert.deepEqual(readMenu(controller), before);
+});
+
+// ── Removing a version, and problems in a version not on screen (DY-874) ──
+
+/** The "Remove … version" rows, by label. */
+const removeRows = (controller) => [
+  ...controller.el.querySelectorAll('.lang-menu-remove'),
+];
+
+test('every version but the source can be removed; a one-language deck offers nothing', () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const controller = mount({ pres: makeTrilingualPres() });
+  assert.deepEqual(
+    removeRows(controller).map((el) => el.textContent),
+    ['Remove Deutsch version…', 'Remove Français version…'],
+  );
+
+  const single = makeTrilingualPres();
+  delete single.i18n.versions.de;
+  delete single.i18n.versions.fr;
+  assert.deepEqual(removeRows(mount({ pres: single })), []);
+});
+
+test('removing a version confirms, asks the server, and leaves a one-language deck', async () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const pres = makeTrilingualPres();
+  delete pres.i18n.versions.fr;
+  const before = structuredClone(pres.i18n.versions.nl);
+  const requests = [];
+  const controller = mount({
+    pres,
+    api: async (url, opts) => {
+      requests.push([opts?.method || 'GET', url]);
+      return { ok: true, lang: 'de', presentation: { revision: 7 } };
+    },
+  });
+
+  removeRows(controller)[0].click();
+  await flush();
+  const [cancel] = modalActions();
+  cancel.click();
+  await flush();
+  assert.deepEqual(requests, [], 'cancelling removes nothing');
+  assert.ok(pres.i18n.versions.de);
+
+  removeRows(controller)[0].click();
+  await flush();
+  const [, confirm] = modalActions();
+  confirm.click();
+  await flush();
+
+  assert.deepEqual(requests, [
+    ['DELETE', '/api/presentations/p1/languages/de'],
+  ]);
+  assert.deepEqual(Object.keys(pres.i18n.versions), ['nl']);
+  assert.deepEqual(pres.i18n.versions.nl, before, 'the source is untouched');
+  assert.equal(pres.revision, 7, 'the revision moves with the write');
+  assert.deepEqual(readMenu(controller, { withRemove: true }), [
+    ['Nederlands', 'source'],
+    '--',
+    '# Add language…',
+    ['English', ''],
+    ['Deutsch', ''],
+    ['Français', ''],
+  ]);
+});
+
+test('removing the version on screen first moves the editor to the source', async () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const pres = makeTrilingualPres();
+  pres.i18n.active = 'de';
+  pres.title = pres.i18n.versions.de.title;
+  pres.slides = pres.i18n.versions.de.slides;
+  const order = [];
+  const controller = mount({
+    pres,
+    api: async (url, opts) => {
+      order.push(
+        `${opts?.method || 'GET'} ${url} (active ${pres.i18n.active})`,
+      );
+      if (opts?.method === 'DELETE') return { presentation: { revision: 3 } };
+      return structuredClone(pres);
+    },
+  });
+  removeRows(controller)[0].click();
+  await flush();
+  modalActions()[1].click();
+  await flush();
+  await flush();
+
+  assert.equal(pres.i18n.active, 'nl');
+  assert.equal(
+    order.at(-1),
+    'DELETE /api/presentations/p1/languages/de (active nl)',
+    'the removal is asked only once the source is on screen',
+  );
+  assert.ok(!pres.i18n.versions.de);
+});
+
+test('a stored problem in a version not on screen waits on its menu row', () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const slideTypes = {
+    'title-slide': { fields: [{ key: 'title', type: 'string', maxLength: 5 }] },
+  };
+  const pres = makeTrilingualPres();
+  pres.i18n.versions.de.slides[0].content.title = 'Viel zu lang';
+  const controller = createLanguageMode({
+    root: document.body,
+    pres,
+    id: 'p1',
+    api: async () => ({}),
+    normalizeLang,
+    editorState: { refreshAll: () => {} },
+    toast: { info() {}, success() {}, error() {} },
+    slideTypes,
+  });
+  const review = () =>
+    [...controller.el.querySelectorAll('.lang-menu-status.is-review')].map(
+      (el) => [
+        el.closest('.lang-menu-item').querySelector('.lang-menu-name')
+          .textContent,
+        el.textContent,
+      ],
+    );
+  assert.deepEqual(review(), [['Deutsch', '1 to review']]);
+
+  // On screen, the save notice speaks about it instead.
+  pres.i18n.active = 'de';
+  controller.syncLangUi();
+  assert.deepEqual(review(), []);
+});
+
+test('a version removed elsewhere while on screen leaves the editor on the source', async () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const pres = makeTrilingualPres();
+  pres.i18n.active = 'de';
+  const infos = [];
+  const controller = mount({
+    pres,
+    api: async () => {
+      const fresh = structuredClone(pres);
+      fresh.i18n.active = 'nl';
+      return fresh;
+    },
+    toast: { info: (m) => infos.push(m), success() {}, error() {} },
+  });
+  assert.equal(await controller.leaveRemovedVersion(), false, 'still there');
+
+  delete pres.i18n.versions.de;
+  assert.equal(await controller.leaveRemovedVersion(), true);
+  assert.equal(pres.i18n.active, 'nl');
+  assert.match(infos.at(-1), /Deutsch version was removed/);
 });
