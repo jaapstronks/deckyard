@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.104.1](https://github.com/jaapstronks/deckyard/compare/v1.104.0...v1.104.1) (2026-11-25)
+
+
+### Fixed
+
+* a save notice names the version on screen, and a language version can be removed (DY-874) ([#2029](https://github.com/jaapstronks/deckyard/issues/2029)) ([632aa00](https://github.com/jaapstronks/deckyard/commit/632aa006da161160de4409d0e2b0a57a0e1cf1bd))
+
 ## [1.104.0](https://github.com/jaapstronks/deckyard/compare/v1.103.0...v1.104.0) (2026-11-13)
 
 
