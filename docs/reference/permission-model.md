@@ -117,6 +117,13 @@ the deck (migration 022, which widened the `check_collaborator_permission`
 constraint). It is unrelated to the instance-wide `isAdmin` flag and to an
 organization role — see _Authz & tenancy_ below.
 
+Inviting a member of the deck's organization preselects `edit`
+(`DEFAULT_INVITE_PERMISSION`): among colleagues, working together is the
+ordinary intent, and too much is less harmful than too little (DY-876). The
+default belongs to the invite form only. The API still demands an explicit
+level, and share links and organization-wide visibility keep their narrower
+defaults, because they reach people nobody picked one by one.
+
 Read also lets someone copy a deck, and the copy is theirs; it carries what
 its maker may read. A `view` or `comment` collaborator, or an organization
 member on a deck they may not write, copies the reader projection

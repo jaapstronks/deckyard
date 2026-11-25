@@ -613,8 +613,12 @@
   max-width: 100%;
 }
 
+/* The button names the role it hands out (DY-876), so its label can outgrow
+   a narrow panel at large text: it never exceeds the row, and the label then
+   wraps on word boundaries inside its own button. */
 .share-collaborator-form-row .btn {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  max-width: 100%;
 }
 
 /* At 320 px and 200 % zoom the section keeps the 8 px inset of the

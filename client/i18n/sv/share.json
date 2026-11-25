@@ -2,7 +2,6 @@
   "share.collaborators.alreadyExists": "En eller flera användare är redan medarbetare",
   "share.collaborators.empty": "Inga medarbetare ännu",
   "share.collaborators.help": "Bjud in teammedlemmar att samarbeta om den här presentationen.",
-  "share.collaborators.invite": "Bjud in",
   "share.collaborators.invited.many": "{count} inbjudningar skickade",
   "share.collaborators.invited.one": "Inbjudan skickad",
   "share.collaborators.invitedPartial": "{successful} av {total} inbjudningar skickade. {failed} misslyckades.",

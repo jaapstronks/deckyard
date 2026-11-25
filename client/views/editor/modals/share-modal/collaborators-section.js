@@ -16,8 +16,35 @@ import {
   getPermissionDescription,
 } from '../../../../lib/permission-labels.js';
 import { h } from '../../../../lib/dom/index.js';
-import { ALL_PERMISSIONS } from '../../../../../shared/constants/permissions.js';
+import {
+  ALL_PERMISSIONS,
+  DEFAULT_INVITE_PERMISSION,
+} from '../../../../../shared/constants/permissions.js';
 import { findEligibleOwner } from './utils.js';
+
+/**
+ * The Invite button names the level it hands out, so whoever never looks at
+ * the select still reads the role on the button they press (DY-876).
+ * @type {Record<string, { key: string, fallback: string }>}
+ */
+const INVITE_AS = {
+  view: {
+    key: 'share.collaborators.inviteAs.view',
+    fallback: 'Invite as viewer',
+  },
+  comment: {
+    key: 'share.collaborators.inviteAs.comment',
+    fallback: 'Invite as commenter',
+  },
+  edit: {
+    key: 'share.collaborators.inviteAs.edit',
+    fallback: 'Invite as editor',
+  },
+  admin: {
+    key: 'share.collaborators.inviteAs.admin',
+    fallback: 'Invite as administrator',
+  },
+};
 
 /**
  * Create the collaborators section component.
@@ -74,18 +101,31 @@ export function createCollaboratorsSection({
     ),
   });
 
+  // Colleagues are invited to work together, so the form starts at editing;
+  // fewer rights are a deliberate choice (DY-876, permission-model.md).
   const permissionSelect = h('select', {
     class: 'form-input share-collaborator-permission',
+    'aria-label': t('share.permission.label', 'Permission'),
+    onchange: () => {
+      addBtn.textContent = inviteLabel();
+    },
   });
   permissionSelect.append(
     ...ALL_PERMISSIONS.map((value) =>
       h('option', { value, text: getPermissionLabel(value) }),
     ),
   );
+  permissionSelect.value = DEFAULT_INVITE_PERMISSION;
+
+  /** The Invite button's text for the level currently chosen. */
+  function inviteLabel() {
+    const { key, fallback } = INVITE_AS[permissionSelect.value];
+    return t(key, fallback);
+  }
 
   const addBtn = h('button', {
     class: 'btn btn-primary',
-    text: t('share.collaborators.invite', 'Invite'),
+    text: inviteLabel(),
   });
 
   // Progress indicator for batch invites
@@ -436,7 +476,7 @@ export function createCollaboratorsSection({
 
       // Reset form
       autocomplete.clear();
-      permissionSelect.value = 'view';
+      permissionSelect.value = DEFAULT_INVITE_PERMISSION;
 
       await loadCollaborators();
 
@@ -498,7 +538,7 @@ export function createCollaboratorsSection({
     } finally {
       isAddingCollaborator = false;
       addBtn.disabled = false;
-      addBtn.textContent = t('share.collaborators.invite', 'Invite');
+      addBtn.textContent = inviteLabel();
       progressEl.classList.remove('is-visible');
       progressEl.textContent = '';
     }

@@ -43,9 +43,11 @@
   "email.collaboratorInvite.permission.view": "te bekijken",
   "email.collaboratorInvite.permission.comment": "te bekijken en te reageren op",
   "email.collaboratorInvite.permission.edit": "te bewerken",
+  "email.collaboratorInvite.permission.admin": "te bewerken en te beheren",
   "email.collaboratorInvite.accessLevel.view": "kijktoegang",
   "email.collaboratorInvite.accessLevel.comment": "reactietoegang",
   "email.collaboratorInvite.accessLevel.edit": "volledige bewerkingstoegang",
+  "email.collaboratorInvite.accessLevel.admin": "volledige bewerk- en beheertoegang",
 
   "email.magicLink.subject": "Je inloglink",
   "email.magicLink.body": "Klik op de knop hieronder om in te loggen. Geen wachtwoord nodig!",

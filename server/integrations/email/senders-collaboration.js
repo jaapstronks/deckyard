@@ -8,6 +8,7 @@ import {
   buildGuestVerificationEmail,
   buildCollaboratorInviteEmail,
   buildGuestInvitationEmail,
+  collaboratorInviteWording,
 } from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 import { resolveRecipientLocale } from './recipient-locale.js';
@@ -178,29 +179,10 @@ export async function sendCollaboratorInviteEmail({
   // Get sender identity from settings
   const senderOverride = await getSenderIdentity(repoRoot);
 
-  // Permission text mapping
-  const permissionTextMap = {
-    view: tr('email.collaboratorInvite.permission.view', 'view'),
-    comment: tr(
-      'email.collaboratorInvite.permission.comment',
-      'view and comment on',
-    ),
-    edit: tr('email.collaboratorInvite.permission.edit', 'edit'),
-  };
-  const permissionText = permissionTextMap[permission] || 'access';
-
-  const accessLevelMap = {
-    view: tr('email.collaboratorInvite.accessLevel.view', 'view access'),
-    comment: tr(
-      'email.collaboratorInvite.accessLevel.comment',
-      'commenting access',
-    ),
-    edit: tr(
-      'email.collaboratorInvite.accessLevel.edit',
-      'full editing access',
-    ),
-  };
-  const accessLevel = accessLevelMap[permission] || accessLevelMap.view;
+  const { permissionText, accessLevel } = collaboratorInviteWording(
+    tr,
+    permission,
+  );
 
   // Try custom template first
   const customResult = await trySendCustomTemplate({

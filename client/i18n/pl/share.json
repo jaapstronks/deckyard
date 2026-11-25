@@ -2,7 +2,6 @@
   "share.collaborators.alreadyExists": "Jeden lub więcej użytkowników jest już współpracownikami",
   "share.collaborators.empty": "Brak współpracowników",
   "share.collaborators.help": "Zaproś członków zespołu do współpracy nad tą prezentacją.",
-  "share.collaborators.invite": "Zaproś",
   "share.collaborators.invited.many": "Wysłano zaproszeń: {count}",
   "share.collaborators.invited.one": "Zaproszenie wysłane",
   "share.collaborators.invitedPartial": "Wysłano {successful} z {total} zaproszeń. Nie powiodło się: {failed}.",

@@ -43,9 +43,11 @@
   "email.collaboratorInvite.permission.view": "view",
   "email.collaboratorInvite.permission.comment": "view and comment on",
   "email.collaboratorInvite.permission.edit": "edit",
+  "email.collaboratorInvite.permission.admin": "edit and manage",
   "email.collaboratorInvite.accessLevel.view": "view access",
   "email.collaboratorInvite.accessLevel.comment": "commenting access",
   "email.collaboratorInvite.accessLevel.edit": "full editing access",
+  "email.collaboratorInvite.accessLevel.admin": "full editing and management access",
 
   "email.magicLink.subject": "Your sign-in link",
   "email.magicLink.body": "Click the button below to sign in. No password needed!",

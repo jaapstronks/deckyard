@@ -29,6 +29,19 @@ export const PERMISSIONS = {
 export const ALL_PERMISSIONS = Object.values(PERMISSIONS);
 
 /**
+ * The level the invite form preselects when a member of the organization is
+ * invited to a deck (DY-876).
+ *
+ * Among colleagues in one organization, working together is the ordinary
+ * intent, and giving a little too much is less harmful than giving too little:
+ * so the form starts at EDIT and fewer rights take a deliberate choice. This
+ * is a default of the form only. The API still demands an explicit level, and
+ * share links and organization-wide visibility keep their own, narrower
+ * defaults, because they reach people nobody picked one by one.
+ */
+export const DEFAULT_INVITE_PERMISSION = PERMISSIONS.EDIT;
+
+/**
  * Permission levels a **share link** may carry.
  *
  * A link is a URL anyone can hold, so it never grants collaborator management:
