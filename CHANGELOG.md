@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.104.2](https://github.com/jaapstronks/deckyard/compare/v1.104.1...v1.104.2) (2026-11-25)
+
+
+### Fixed
+
+* inviting a colleague gives edit by default, and the button names the role (DY-876) ([#2032](https://github.com/jaapstronks/deckyard/issues/2032)) ([7155cbc](https://github.com/jaapstronks/deckyard/commit/7155cbc255588c273fec0b171713c1f97888aa86))
+
 ## [1.104.1](https://github.com/jaapstronks/deckyard/compare/v1.104.0...v1.104.1) (2026-11-25)
 
 
