@@ -2,7 +2,6 @@
   "share.collaborators.alreadyExists": "Ein oder mehrere Benutzer sind bereits Mitwirkende",
   "share.collaborators.empty": "Noch keine Mitwirkenden",
   "share.collaborators.help": "Laden Sie Teammitglieder ein, um an dieser Präsentation mitzuarbeiten.",
-  "share.collaborators.invite": "Einladen",
   "share.collaborators.invited.many": "{count} Einladungen gesendet",
   "share.collaborators.invited.one": "Einladung gesendet",
   "share.collaborators.invitedPartial": "{successful} von {total} Einladungen gesendet. {failed} fehlgeschlagen.",

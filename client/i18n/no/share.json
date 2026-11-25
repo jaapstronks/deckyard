@@ -2,7 +2,6 @@
   "share.collaborators.alreadyExists": "Én eller flere brukere er allerede samarbeidspartnere",
   "share.collaborators.empty": "Ingen samarbeidspartnere ennå",
   "share.collaborators.help": "Inviter teammedlemmer til å samarbeide om denne presentasjonen.",
-  "share.collaborators.invite": "Inviter",
   "share.collaborators.invited.many": "{count} invitasjoner sendt",
   "share.collaborators.invited.one": "Invitasjon sendt",
   "share.collaborators.invitedPartial": "{successful} av {total} invitasjoner sendt. {failed} mislyktes.",

@@ -42,4 +42,5 @@ export {
   buildGuestVerificationEmail,
   buildCollaboratorInviteEmail,
   buildGuestInvitationEmail,
+  collaboratorInviteWording,
 } from './collaboration.js';

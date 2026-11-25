@@ -2,7 +2,6 @@
   "share.collaborators.alreadyExists": "Yksi tai useampi käyttäjä on jo yhteistyökumppani",
   "share.collaborators.empty": "Ei vielä yhteistyökumppaneita",
   "share.collaborators.help": "Kutsu tiimin jäseniä tekemään yhteistyötä tässä esityksessä.",
-  "share.collaborators.invite": "Kutsu",
   "share.collaborators.invited.many": "{count} kutsua lähetetty",
   "share.collaborators.invited.one": "Kutsu lähetetty",
   "share.collaborators.invitedPartial": "{successful}/{total} kutsua lähetetty. {failed} epäonnistui.",

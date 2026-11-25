@@ -71,14 +71,18 @@ ${safeToIgnore}
 // COLLABORATOR INVITE TEMPLATE
 // ============================================================
 
-export function buildCollaboratorInviteEmail({
-  tr,
-  name,
-  presTitle,
-  inviter,
-  permission,
-  editUrl,
-}) {
+/**
+ * The words an invite uses for the level it grants: the verb phrase of the
+ * body ("edit") and the access sentence ("full editing access"). One place,
+ * read by the default template and the custom-template variables alike.
+ *
+ * Every level has its own words: a level without them would promise less than
+ * was given (an admin invite used to read "view access", DY-876).
+ * @param {Function} tr - Translator for the recipient's locale
+ * @param {string} permission - 'view' | 'comment' | 'edit' | 'admin'
+ * @returns {{ permissionText: string, accessLevel: string }}
+ */
+export function collaboratorInviteWording(tr, permission) {
   const permissionTextMap = {
     view: tr('email.collaboratorInvite.permission.view', 'view'),
     comment: tr(
@@ -86,9 +90,8 @@ export function buildCollaboratorInviteEmail({
       'view and comment on',
     ),
     edit: tr('email.collaboratorInvite.permission.edit', 'edit'),
+    admin: tr('email.collaboratorInvite.permission.admin', 'edit and manage'),
   };
-  const permissionText = permissionTextMap[permission] || 'access';
-
   const accessLevelMap = {
     view: tr('email.collaboratorInvite.accessLevel.view', 'view access'),
     comment: tr(
@@ -99,8 +102,32 @@ export function buildCollaboratorInviteEmail({
       'email.collaboratorInvite.accessLevel.edit',
       'full editing access',
     ),
+    admin: tr(
+      'email.collaboratorInvite.accessLevel.admin',
+      'full editing and management access',
+    ),
   };
-  const accessLevel = accessLevelMap[permission] || accessLevelMap.view;
+  if (!Object.hasOwn(permissionTextMap, permission)) {
+    throw new Error(`Unknown collaborator permission: ${permission}`);
+  }
+  return {
+    permissionText: permissionTextMap[permission],
+    accessLevel: accessLevelMap[permission],
+  };
+}
+
+export function buildCollaboratorInviteEmail({
+  tr,
+  name,
+  presTitle,
+  inviter,
+  permission,
+  editUrl,
+}) {
+  const { permissionText, accessLevel } = collaboratorInviteWording(
+    tr,
+    permission,
+  );
 
   const greeting = tr('email.common.greeting', 'Hi {name},', { name });
   const bodyText = tr(
